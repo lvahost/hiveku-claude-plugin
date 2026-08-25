@@ -31,7 +31,19 @@ Reconnect `hk` from `/mcp`, or start a new session in that folder, and the accou
 | `/hiveku:bind` | Bind this directory to one connected account. |
 | `/hiveku:unbind` | Remove this directory's binding. |
 | `/hiveku:status` | What is bound here, and whether a second Hiveku connection is live. |
+| `/hiveku:pull` | Pull department data (SEO, PPC, CRM, social, …) into `hiveku-data/` as local files — 25 departments, 100+ datasets. Local files beat live calls. |
+| `/hiveku:knowledge` | Sync the account's memory, rules, and skills into local files by department; `status` reports drift without writing. |
 | `/hiveku:brief` | Load the account's persona and context before strategic work. |
+
+## Local data instead of live calls
+
+One `/hiveku:pull` replaces dozens of MCP round-trips: datasets land in
+`hiveku-data/<dept>/<dataset>.json` with a README per department, fetch timestamps, truncation
+flags, and a `STATUS.json` whose `failed` array separates "not retrieved" from "no data". A failed
+refresh never clobbers a previous good snapshot. The file shapes are byte-compatible with the
+Hiveku VS Code extension's exports, so both tools can serve the same folder. Knowledge files carry
+frontmatter (domain, department, version) and sync never deletes a local file — upstream deletions
+are reported, not executed.
 
 ## How the credentials work
 
