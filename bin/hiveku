@@ -23,7 +23,7 @@ import { resolveBinding, writeBinding, removeBinding, looksLikeHivekuFolder } fr
 import { detectExtensionServer, describeCollision } from '../lib/collision.mjs';
 import { runLoopbackConsent, exchangeCode } from '../lib/connect.mjs';
 import { Upstream } from '../lib/upstream.mjs';
-import { HIVEKU_APP_URL, PLUGIN_VERSION, keyPreview, isUuid } from '../lib/util.mjs';
+import { HIVEKU_APP_URL, HIVEKU_MCP_URL, CLIENT_ID, PLUGIN_VERSION, keyPreview, isUuid } from '../lib/util.mjs';
 
 const HELP = `hiveku ${PLUGIN_VERSION} — Hiveku for Claude Code
 
@@ -79,8 +79,10 @@ async function cmdConnect(flags) {
   let payload;
   if (flags.manual) {
     fail(
-      'Manual connection is not available yet. On a machine without a browser, create a key at ' +
-        'app.hiveku.com (Settings > LLM Connectors) and run: hiveku accounts add <key>',
+      'Manual connection: create a key at app.hiveku.com (Settings > LLM Connectors) on any ' +
+        'device, then on this machine run: hiveku accounts add <key>. The key is validated ' +
+        'against the live server before anything is stored.',
+      2,
     );
   }
 
@@ -142,11 +144,17 @@ async function cmdAccounts(flags, positional) {
     if (!isUuid(accountId)) {
       fail('Hiveku accepted the key but did not return an account id. Nothing was stored.');
     }
+    // A pasted key's access level can't be trusted from the user's memory — ask
+    // the server (the authenticated GET /mcp info endpoint reports the enforced
+    // scope). If this server doesn't report one yet, store nothing rather than
+    // guessing: a read-only key labeled "full" is the wrong direction to be
+    // wrong in, and this is exactly the contractor-pastes-a-key case.
+    const scope = await fetchKeyScope(key);
     await upsertAccounts(dataDir, [
-      { account_id: accountId, key, label: info.name || info.account_name || accountId },
+      { account_id: accountId, key, label: info.name || info.account_name || accountId, ...(scope ? { scope } : {}) },
     ]);
-    out(flags.json, { added: { account_id: accountId, label: info.name || accountId, key_preview: keyPreview(key) } }, [
-      `Stored the key for ${info.name || accountId} (${accountId}).`,
+    out(flags.json, { added: { account_id: accountId, label: info.name || accountId, key_preview: keyPreview(key), scope: scope || 'unknown' } }, [
+      `Stored the key for ${info.name || accountId} (${accountId}, ${scopeLabel(scope)} access).`,
       'Next: cd into that account\'s folder and run /hiveku:bind.',
     ]);
     return;
@@ -199,6 +207,33 @@ function parseToolJson(res) {
   } catch {
     return null;
   }
+}
+
+/**
+ * Ask the server what a key is actually allowed to do. GET /mcp is the
+ * authenticated info endpoint; servers deployed since 2026-08-25 include the
+ * enforced `scope` in it. Returns 'full' | 'read_only' | null (unknown) — and
+ * never throws, because failing to LEARN the scope must not fail the add.
+ */
+async function fetchKeyScope(key) {
+  try {
+    const res = await fetch(HIVEKU_MCP_URL, {
+      method: 'GET',
+      headers: { Authorization: `Bearer ${key}`, Accept: 'application/json', 'X-Hiveku-Client': CLIENT_ID },
+    });
+    if (!res.ok) return null;
+    const info = await res.json().catch(() => null);
+    return info?.scope === 'read_only' || info?.scope === 'full' ? info.scope : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Human wording for a stored scope. Unknown stays unknown — never claim full. */
+function scopeLabel(scope) {
+  if (scope === 'read_only') return 'read-only';
+  if (scope === 'full') return 'full';
+  return 'unknown';
 }
 
 async function revokeSelf(key) {
@@ -254,7 +289,7 @@ async function cmdBind(flags) {
   await ensureGitignore(dir);
 
   out(flags.json, { bound: { account_id: flags.account, label: account.label, dir, file } }, [
-    `Bound ${dir} to ${account.label} (${flags.account}, ${account.scope || 'full'}).`,
+    `Bound ${dir} to ${account.label} (${flags.account}, ${scopeLabel(account.scope)} access).`,
     'Hiveku tools activate when this directory\'s MCP server next starts — reconnect "hk" under /mcp,',
     'or start a new session here.',
   ]);
@@ -332,7 +367,7 @@ async function cmdStatus(flags) {
     human.push(`Bound to ${binding.label} (${binding.accountId}) but no key is stored on this machine.`);
     human.push('Run /hiveku:connect to reconnect.');
   } else {
-    human.push(`Bound to ${account.label} (${binding.accountId}, ${account.scope || 'full'} access).`);
+    human.push(`Bound to ${account.label} (${binding.accountId}, ${scopeLabel(account.scope)} access).`);
   }
   if (collision) human.push('', collision);
 
@@ -379,7 +414,7 @@ async function cmdHook(positional) {
   } else {
     if (binding && account) {
       lines.push(
-        `Hiveku: bound to ${account.label} (${binding.accountId}, ${account.scope === 'read_only' ? 'read-only' : 'full'} access). ` +
+        `Hiveku: bound to ${account.label} (${binding.accountId}, ${scopeLabel(account.scope)} access). ` +
           'Before any write: confirm with get_account_info, and check project_version_log / project_files_status ' +
           'because you are not the only writer.',
       );
