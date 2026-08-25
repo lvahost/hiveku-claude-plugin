@@ -1,0 +1,26 @@
+{
+  "description": "Reports which Hiveku account this directory is bound to, and warns when a second Hiveku connection is live in the same session.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "HIVEKU_PLUGIN_DATA=\"${CLAUDE_PLUGIN_DATA}\" \"${CLAUDE_PLUGIN_ROOT}/bin/hiveku\" hook session-start",
+            "statusMessage": "Hiveku: checking account binding"
+          }
+        ]
+      }
+    ],
+    "CwdChanged": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "HIVEKU_PLUGIN_DATA=\"${CLAUDE_PLUGIN_DATA}\" \"${CLAUDE_PLUGIN_ROOT}/bin/hiveku\" hook cwd-changed"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,436 @@
+#!/usr/bin/env node
+/**
+ * The Hiveku CLI that the plugin's slash commands drive.
+ *
+ * Everything here is non-interactive and supports --json, because the caller is
+ * usually Claude rather than a human: the slash command runs a subcommand,
+ * reads the JSON, and talks to the user itself. Human-readable output is the
+ * fallback, not the contract.
+ *
+ * Nothing in here ever prints a full account key.
+ */
+import path from 'node:path';
+import os from 'node:os';
+import { promises as fs } from 'node:fs';
+import {
+  resolveDataDir,
+  readCredentials,
+  upsertAccounts,
+  removeAccount,
+  publicAccountList,
+} from '../lib/credentials.mjs';
+import { resolveBinding, writeBinding, removeBinding, looksLikeHivekuFolder } from '../lib/binding.mjs';
+import { detectExtensionServer, describeCollision } from '../lib/collision.mjs';
+import { runLoopbackConsent, exchangeCode } from '../lib/connect.mjs';
+import { Upstream } from '../lib/upstream.mjs';
+import { HIVEKU_APP_URL, PLUGIN_VERSION, keyPreview, isUuid } from '../lib/util.mjs';
+
+const HELP = `hiveku ${PLUGIN_VERSION} — Hiveku for Claude Code
+
+  connect [--manual]            Connect Hiveku accounts through the browser
+  accounts [--json]             List connected accounts (never prints keys)
+  accounts add <key>            Store an account key directly (escape hatch)
+  accounts remove <account-id>  Revoke the key server-side, then forget it
+  bind [--account <id>] [--dir <path>]
+                                Bind a directory to one connected account
+  unbind [--dir <path>]         Remove this directory's binding
+  status [--json] [--dir <path>]
+                                What this directory is bound to, and to what else
+  hook <session-start|cwd-changed>
+                                Internal: used by the plugin's hooks
+
+Keys live in the plugin's private data directory, encrypted with a key held in
+your OS keychain. They are never written into a project.`;
+
+function parseFlags(argv) {
+  const flags = {};
+  const positional = [];
+  const valued = new Set(['account', 'dir', 'app-url']);
+  for (let i = 0; i < argv.length; i++) {
+    const a = argv[i];
+    if (a.startsWith('--')) {
+      const name = a.slice(2);
+      if (valued.has(name)) flags[name] = argv[++i];
+      else flags[name] = true;
+    } else {
+      positional.push(a);
+    }
+  }
+  return { flags, positional };
+}
+
+function out(json, obj, humanLines) {
+  if (json) process.stdout.write(JSON.stringify(obj, null, 2) + '\n');
+  else process.stdout.write(humanLines.join('\n') + '\n');
+}
+
+function fail(message, code = 1) {
+  process.stderr.write(`hiveku: ${message}\n`);
+  process.exit(code);
+}
+
+/* ── connect ─────────────────────────────────────────────────────────────── */
+
+async function cmdConnect(flags) {
+  const dataDir = resolveDataDir();
+  const existing = await readCredentials(dataDir);
+  const appUrl = flags['app-url'] || HIVEKU_APP_URL;
+
+  let payload;
+  if (flags.manual) {
+    fail(
+      'Manual connection is not available yet. On a machine without a browser, create a key at ' +
+        'app.hiveku.com (Settings > LLM Connectors) and run: hiveku accounts add <key>',
+    );
+  }
+
+  process.stderr.write('hiveku: opening your browser to approve access...\n');
+  payload = await runLoopbackConsent({
+    appUrl,
+    alreadyConnected: Object.keys(existing.accounts),
+    onUrl: (url) => process.stderr.write(`hiveku: if the browser did not open, visit:\n${url}\n`),
+  });
+
+  const incoming = payload.accounts.map((a) => ({
+    account_id: a.account_id,
+    key: a.api_key,
+    label: a.account_name || a.account_id,
+    scope: a.scope || payload.scope || 'full',
+    connected_as: payload.connected_as || null,
+    departments: payload.departments || [],
+  }));
+
+  await upsertAccounts(dataDir, incoming);
+
+  const rows = incoming.map((a) => ({
+    account_id: a.account_id,
+    label: a.label,
+    scope: a.scope,
+    key_preview: keyPreview(a.key),
+  }));
+
+  out(flags.json, { connected: rows, connected_as: payload.connected_as || null }, [
+    `Connected ${rows.length} account${rows.length === 1 ? '' : 's'}:`,
+    ...rows.map((r) => `  ${r.label}  (${r.account_id}, ${r.scope})`),
+    '',
+    'Next: cd into the folder for an account and run /hiveku:bind.',
+  ]);
+}
+
+/* ── accounts ────────────────────────────────────────────────────────────── */
+
+async function cmdAccounts(flags, positional) {
+  const dataDir = resolveDataDir();
+  const sub = positional[0];
+
+  if (sub === 'add') {
+    const key = positional[1];
+    if (!key || !/^(hvk|olp)_/.test(key)) {
+      fail('Pass an account key that starts with hvk_ (from app.hiveku.com > Settings > LLM Connectors).');
+    }
+    // Validate against the live server and learn which account it belongs to,
+    // rather than trusting whatever the user believes it is.
+    const probe = new Upstream({ key, accountId: 'unknown', label: 'unknown' });
+    let info;
+    try {
+      const res = await probe.forward({ jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name: 'get_account_info', arguments: {} } });
+      info = parseToolJson(res);
+    } catch (err) {
+      fail(`That key did not work: ${err.message}`);
+    }
+    const accountId = info?.account_id || info?.id;
+    if (!isUuid(accountId)) {
+      fail('Hiveku accepted the key but did not return an account id. Nothing was stored.');
+    }
+    await upsertAccounts(dataDir, [
+      { account_id: accountId, key, label: info.name || info.account_name || accountId },
+    ]);
+    out(flags.json, { added: { account_id: accountId, label: info.name || accountId, key_preview: keyPreview(key) } }, [
+      `Stored the key for ${info.name || accountId} (${accountId}).`,
+      'Next: cd into that account\'s folder and run /hiveku:bind.',
+    ]);
+    return;
+  }
+
+  if (sub === 'remove') {
+    const accountId = positional[1];
+    if (!accountId) fail('Pass the account id to remove. Run "hiveku accounts" to see them.');
+    const creds = await readCredentials(dataDir);
+    const acct = creds.accounts[accountId];
+    if (!acct) fail(`No stored key for ${accountId}.`);
+
+    // Revoke FIRST and require proof. Deleting locally first would leave a live
+    // key on the server that the user can no longer see or revoke.
+    const revoked = await revokeSelf(acct.key);
+    if (!revoked.ok) {
+      fail(
+        `Could not revoke the key server-side (${revoked.reason}). Nothing was deleted locally, so you ` +
+          'can retry. Revoke it manually at app.hiveku.com > Settings > LLM Connectors if this persists.',
+      );
+    }
+    await removeAccount(dataDir, accountId);
+    out(flags.json, { removed: accountId, revoked: true }, [
+      `Revoked and removed ${acct.label} (${accountId}).`,
+    ]);
+    return;
+  }
+
+  const creds = await readCredentials(dataDir);
+  const list = publicAccountList(creds.accounts);
+  out(flags.json, { accounts: list }, [
+    list.length ? 'Connected accounts:' : 'No accounts connected yet. Run /hiveku:connect.',
+    ...list.map((a) => `  ${a.label}  (${a.account_id}, ${a.scope})`),
+  ]);
+}
+
+/**
+ * Unwraps an Olympus tool result. The envelope is {data, total} and `data` is
+ * usually an ARRAY even for single-record reads like get_account_info, so the
+ * first element is the record.
+ */
+function parseToolJson(res) {
+  const text = res?.result?.content?.[0]?.text;
+  if (typeof text !== 'string') return null;
+  try {
+    const parsed = JSON.parse(text);
+    const data = parsed && typeof parsed === 'object' && 'data' in parsed ? parsed.data : parsed;
+    if (Array.isArray(data)) return data[0] ?? null;
+    return data ?? null;
+  } catch {
+    return null;
+  }
+}
+
+async function revokeSelf(key) {
+  try {
+    const res = await fetch(new URL('/api/account/mcp-keys/revoke-self', HIVEKU_APP_URL).toString(), {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({}),
+    });
+    if (!res.ok) return { ok: false, reason: `HTTP ${res.status}` };
+    const body = await res.json().catch(() => null);
+    // An idempotent {revoked:false, reason:'not_found_or_inactive'} means the
+    // key is already dead, which satisfies the intent.
+    if (body?.revoked === true) return { ok: true };
+    if (body?.reason === 'not_found_or_inactive') return { ok: true };
+    return { ok: false, reason: body?.reason || 'server did not confirm revocation' };
+  } catch (err) {
+    return { ok: false, reason: err.message };
+  }
+}
+
+/* ── bind / unbind / status ──────────────────────────────────────────────── */
+
+async function cmdBind(flags) {
+  const dataDir = resolveDataDir();
+  const dir = path.resolve(flags.dir || process.cwd());
+  const creds = await readCredentials(dataDir);
+  const list = publicAccountList(creds.accounts);
+
+  if (flags.list || !flags.account) {
+    out(flags.json, { accounts: list, dir }, [
+      list.length
+        ? `Accounts available to bind to ${dir}:`
+        : 'No accounts connected yet. Run /hiveku:connect first.',
+      ...list.map((a) => `  ${a.account_id}  ${a.label} (${a.scope})`),
+      list.length ? '\nRun: hiveku bind --account <id>' : '',
+    ]);
+    return;
+  }
+
+  const account = creds.accounts[flags.account];
+  if (!account) fail(`No stored key for ${flags.account}. Run /hiveku:connect, or "hiveku accounts" to list.`);
+
+  if (path.resolve(dir) === path.resolve(os.homedir())) {
+    fail('Refusing to bind your home directory: that would attach an account to every folder on this machine.');
+  }
+
+  const file = await writeBinding(dir, {
+    accountId: flags.account,
+    label: account.label,
+    keyPreview: account.key_preview,
+  });
+  await ensureGitignore(dir);
+
+  out(flags.json, { bound: { account_id: flags.account, label: account.label, dir, file } }, [
+    `Bound ${dir} to ${account.label} (${flags.account}, ${account.scope || 'full'}).`,
+    'Hiveku tools activate when this directory\'s MCP server next starts — reconnect "hk" under /mcp,',
+    'or start a new session here.',
+  ]);
+}
+
+/** Keeps local Hiveku state out of the user's git history. */
+async function ensureGitignore(dir) {
+  const file = path.join(dir, '.gitignore');
+  const wanted = ['.hiveku/', 'hiveku-data/'];
+  let current = '';
+  try {
+    current = await fs.readFile(file, 'utf8');
+  } catch {
+    /* no .gitignore yet */
+  }
+  const lines = current.split('\n').map((l) => l.trim());
+  const missing = wanted.filter((w) => !lines.includes(w));
+  if (!missing.length) return;
+  const addition = (current && !current.endsWith('\n') ? '\n' : '') + missing.join('\n') + '\n';
+  await fs.writeFile(file, current + addition, 'utf8');
+}
+
+async function cmdUnbind(flags) {
+  const dir = path.resolve(flags.dir || process.cwd());
+  const removed = await removeBinding(dir);
+  out(flags.json, { unbound: removed, dir }, [
+    removed ? `Unbound ${dir}.` : `${dir} was not bound.`,
+    removed
+      ? 'Any hiveku-data/ and knowledge files here still hold that account\'s data; delete them if you meant to fully detach.'
+      : '',
+  ]);
+}
+
+async function cmdStatus(flags) {
+  const dir = path.resolve(flags.dir || process.cwd());
+  let dataDir = null;
+  let creds = { accounts: {} };
+  let dataDirError = null;
+  try {
+    dataDir = resolveDataDir();
+    creds = await readCredentials(dataDir);
+  } catch (err) {
+    dataDirError = err.message;
+  }
+
+  const binding = await resolveBinding(dir);
+  const account = binding ? creds.accounts[binding.accountId] : null;
+  const detected = await detectExtensionServer(dir);
+  const collision = describeCollision(detected, account?.label || null, creds.accounts);
+
+  const result = {
+    dir,
+    bound: Boolean(binding),
+    account_id: binding?.accountId || null,
+    label: account?.label || binding?.label || null,
+    scope: account?.scope || null,
+    key_stored: Boolean(account),
+    binding_file: binding?.file || null,
+    connected_accounts: publicAccountList(creds.accounts).length,
+    extension_server_present: Boolean(detected),
+    collision_warning: collision,
+    data_dir_error: dataDirError,
+  };
+
+  const human = [];
+  if (dataDirError) human.push(`Warning: ${dataDirError}`);
+  if (!binding) {
+    human.push(`${dir} is not bound to a Hiveku account.`);
+    human.push(
+      result.connected_accounts
+        ? 'Run /hiveku:bind to pick one of your connected accounts.'
+        : 'Run /hiveku:connect to connect an account.',
+    );
+  } else if (!account) {
+    human.push(`Bound to ${binding.label} (${binding.accountId}) but no key is stored on this machine.`);
+    human.push('Run /hiveku:connect to reconnect.');
+  } else {
+    human.push(`Bound to ${account.label} (${binding.accountId}, ${account.scope || 'full'} access).`);
+  }
+  if (collision) human.push('', collision);
+
+  out(flags.json, result, human);
+}
+
+/* ── hooks ───────────────────────────────────────────────────────────────── */
+
+/**
+ * SessionStart / CwdChanged output. Kept to what is load-bearing: which account
+ * is live, and whether a second Hiveku connection is also live. Silence is the
+ * default, because this plugin is installed once at user scope and is therefore
+ * present in every project on the machine.
+ */
+async function cmdHook(positional) {
+  const which = positional[0];
+  const payload = await readHookStdin();
+  const dir = path.resolve(payload?.cwd || process.cwd());
+
+  let creds = { accounts: {} };
+  try {
+    creds = await readCredentials(resolveDataDir());
+  } catch {
+    return; // no data dir: stay silent, the shim already explains itself
+  }
+
+  const binding = await resolveBinding(dir);
+  const account = binding ? creds.accounts[binding.accountId] : null;
+  const lines = [];
+
+  if (which === 'cwd-changed') {
+    // The MCP server pinned its account at spawn. If the user has moved into a
+    // folder belonging to a different account, say so — never silently re-pin.
+    const projectDir = process.env.CLAUDE_PROJECT_DIR;
+    if (projectDir) {
+      const sessionBinding = await resolveBinding(path.resolve(projectDir));
+      if (binding && sessionBinding && binding.accountId !== sessionBinding.accountId) {
+        lines.push(
+          `Hiveku: this directory belongs to ${binding.label}, but the live Hiveku connection is pinned ` +
+            `to ${sessionBinding.label} from session start. Start a new session here to work on ${binding.label}.`,
+        );
+      }
+    }
+  } else {
+    if (binding && account) {
+      lines.push(
+        `Hiveku: bound to ${account.label} (${binding.accountId}, ${account.scope === 'read_only' ? 'read-only' : 'full'} access). ` +
+          'Before any write: confirm with get_account_info, and check project_version_log / project_files_status ' +
+          'because you are not the only writer.',
+      );
+    } else if (binding && !account) {
+      lines.push(
+        `Hiveku: this directory is bound to ${binding.label} but no key for it is stored here. Run /hiveku:connect.`,
+      );
+    } else if (await looksLikeHivekuFolder(dir)) {
+      lines.push('Hiveku: this looks like a Hiveku account folder but is not bound. Run /hiveku:bind.');
+    }
+    // No Hiveku artifacts and nothing bound: print NOTHING.
+  }
+
+  const detected = await detectExtensionServer(dir);
+  const collision = describeCollision(detected, account?.label || null, creds.accounts);
+  if (collision) lines.push(collision);
+
+  if (lines.length) process.stdout.write(lines.join('\n') + '\n');
+}
+
+async function readHookStdin() {
+  if (process.stdin.isTTY) return null;
+  const chunks = [];
+  for await (const c of process.stdin) chunks.push(c);
+  const raw = Buffer.concat(chunks).toString('utf8').trim();
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
+/* ── entry ───────────────────────────────────────────────────────────────── */
+
+async function main() {
+  const [, , cmd, ...rest] = process.argv;
+  const { flags, positional } = parseFlags(rest);
+
+  switch (cmd) {
+    case 'connect': return cmdConnect(flags);
+    case 'accounts': return cmdAccounts(flags, positional);
+    case 'bind': return cmdBind(flags);
+    case 'unbind': return cmdUnbind(flags);
+    case 'status': return cmdStatus(flags);
+    case 'hook': return cmdHook(positional);
+    case 'version': case '--version': process.stdout.write(PLUGIN_VERSION + '\n'); return;
+    default:
+      process.stdout.write(HELP + '\n');
+      if (cmd && cmd !== 'help' && cmd !== '--help' && cmd !== '-h') process.exit(1);
+  }
+}
+
+main().catch((err) => fail(err?.message || String(err)));

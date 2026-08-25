@@ -1,0 +1,40 @@
+#!/usr/bin/env node
+/**
+ * Hiveku MCP stdio server for Claude Code.
+ *
+ * Claude Code spawns this once per session per working directory. It resolves
+ * which Hiveku account this directory is bound to, looks up that account's key
+ * locally, and proxies MCP traffic to core.hiveku.com with exactly that key.
+ *
+ * It is intentionally boring: no plugins, no dependencies, no configuration
+ * surface. The interesting property is what it CANNOT do — it resolves one key
+ * for one directory and has no code path that reaches any other tenant.
+ */
+import { runShim } from '../lib/shim.mjs';
+import { resolveDataDir } from '../lib/credentials.mjs';
+
+async function main() {
+  // CLAUDE_PROJECT_DIR is substituted by the plugin loader and is the directory
+  // the user is actually working in. process.cwd() is the fallback for a direct
+  // invocation (tests, debugging).
+  const projectDir = process.env.HIVEKU_PROJECT_DIR || process.env.CLAUDE_PROJECT_DIR || process.cwd();
+
+  let dataDir;
+  try {
+    dataDir = resolveDataDir();
+  } catch (err) {
+    // Without a data directory there are no credentials, so serve inert rather
+    // than exiting: a non-zero exit here would surface as a failed MCP server in
+    // every session on the machine, including ones that have nothing to do with
+    // Hiveku.
+    process.stderr.write(`hiveku: ${err.message}\n`);
+    dataDir = null;
+  }
+
+  await runShim({ projectDir, dataDir: dataDir || '/nonexistent' });
+}
+
+main().catch((err) => {
+  process.stderr.write(`hiveku: fatal: ${err?.stack || err}\n`);
+  process.exit(1);
+});

@@ -1,0 +1,21 @@
+{
+  "name": "hiveku",
+  "version": "0.1.0",
+  "description": "Operate your Hiveku accounts from Claude Code. Binds each working directory to one account, then serves that account's Hiveku tools (CRM, SEO, PPC, content, email, social, websites, analytics) over a local stdio bridge. Run /hiveku:connect to get started.",
+  "author": {
+    "name": "Hiveku",
+    "url": "https://app.hiveku.com"
+  },
+  "homepage": "https://app.hiveku.com",
+  "repository": "https://github.com/lvahost/hiveku-claude-plugin",
+  "license": "MIT",
+  "keywords": [
+    "hiveku",
+    "mcp",
+    "crm",
+    "seo",
+    "ppc",
+    "marketing",
+    "agency"
+  ]
+}

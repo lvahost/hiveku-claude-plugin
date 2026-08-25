@@ -1,0 +1,10 @@
+{
+  "hk": {
+    "command": "${CLAUDE_PLUGIN_ROOT}/bin/hiveku-mcp",
+    "args": [],
+    "env": {
+      "HIVEKU_PLUGIN_DATA": "${CLAUDE_PLUGIN_DATA}",
+      "HIVEKU_PROJECT_DIR": "${CLAUDE_PROJECT_DIR}"
+    }
+  }
+}
