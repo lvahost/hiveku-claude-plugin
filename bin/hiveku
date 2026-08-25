@@ -22,6 +22,7 @@ import {
 import { resolveBinding, writeBinding, removeBinding, looksLikeHivekuFolder } from '../lib/binding.mjs';
 import { detectExtensionServer, describeCollision } from '../lib/collision.mjs';
 import { runLoopbackConsent, exchangeCode } from '../lib/connect.mjs';
+import { runPullData } from '../lib/pulldata.mjs';
 import { Upstream } from '../lib/upstream.mjs';
 import { HIVEKU_APP_URL, HIVEKU_MCP_URL, CLIENT_ID, PLUGIN_VERSION, keyPreview, isUuid } from '../lib/util.mjs';
 
@@ -36,6 +37,9 @@ const HELP = `hiveku ${PLUGIN_VERSION} — Hiveku for Claude Code
   unbind [--dir <path>]         Remove this directory's binding
   status [--json] [--dir <path>]
                                 What this directory is bound to, and to what else
+  pull [<dept ...>] [--default | --all | --stale [h] | --dataset <dept:id> | --list]
+                                Pull department data into hiveku-data/ for the
+                                bound account (local files beat live calls)
   hook <session-start|cwd-changed>
                                 Internal: used by the plugin's hooks
 
@@ -323,6 +327,44 @@ async function cmdUnbind(flags) {
   ]);
 }
 
+/* ── pull ────────────────────────────────────────────────────────────────── */
+
+async function cmdPull(flags, positional) {
+  const dir = path.resolve(flags.dir || process.cwd());
+  const binding = await resolveBinding(dir);
+  if (!binding) {
+    fail(`${dir} is not bound to a Hiveku account. Run /hiveku:bind first (and /hiveku:connect before that if needed).`);
+  }
+  const dataDir = resolveDataDir();
+  const creds = await readCredentials(dataDir);
+  const account = creds.accounts[binding.accountId];
+  if (!account) {
+    fail(`This folder is bound to ${binding.label} (${binding.accountId}) but no key for it is stored here. Run /hiveku:connect.`);
+  }
+
+  // Rebuild the runner's argv grammar from parsed flags (parseFlags split them).
+  let argv;
+  if (flags.list) argv = ['--list'];
+  else if (flags.dataset) argv = ['--dataset', positional[0] || ''];
+  else if (flags.all) argv = ['--all'];
+  else if (flags.default) argv = ['--default'];
+  else if (flags.stale) {
+    const hours = positional.find((p) => Number(p) > 0);
+    argv = hours ? ['--stale', hours] : ['--stale'];
+  } else argv = positional;
+
+  const result = await runPullData({
+    rootDir: binding.dir,
+    endpoint: HIVEKU_MCP_URL,
+    key: account.key,
+    argv,
+    log: (line) => process.stdout.write(line + '\n'),
+  });
+  if (!result.ok) {
+    fail('Every dataset failed — the stored key may be dead. Run /hiveku:status, then /hiveku:connect to re-mint.');
+  }
+}
+
 async function cmdStatus(flags) {
   const dir = path.resolve(flags.dir || process.cwd());
   let dataDir = null;
@@ -460,6 +502,7 @@ async function main() {
     case 'bind': return cmdBind(flags);
     case 'unbind': return cmdUnbind(flags);
     case 'status': return cmdStatus(flags);
+    case 'pull': return cmdPull(flags, positional);
     case 'hook': return cmdHook(positional);
     case 'version': case '--version': process.stdout.write(PLUGIN_VERSION + '\n'); return;
     default:
