@@ -20,21 +20,23 @@ every folder.
 /plugin install hiveku@hiveku
 ```
 
-Then connect your accounts and bind a folder:
+Then connect your accounts and create the workspace:
 
 ```
 /hiveku:connect          # browser consent; pick accounts, pick read-only per account
-cd ~/clients/acme-corp
-/hiveku:bind             # bind this folder to one account
+/hiveku:setup            # creates + binds one folder per account under ~/Hiveku-Accounts
 ```
 
-Reconnect `hk` from `/mcp`, or start a new session in that folder, and the account's tools are live.
+Open any of those folders in Claude (the Code tab's folder picker, or `cd`) and that client's
+account is live — the session banner names it. Prefer your own folder layout? Skip `setup` and run
+`/hiveku:bind` inside any folder instead.
 
 ## Commands
 
 | Command | What it does |
 |---|---|
 | `/hiveku:connect` | Connect accounts through the browser. Nothing is pasted. |
+| `/hiveku:setup` | Create + bind one folder per connected account (`~/Hiveku-Accounts`). |
 | `/hiveku:bind` | Bind this directory to one connected account. |
 | `/hiveku:unbind` | Remove this directory's binding. |
 | `/hiveku:status` | What is bound here, and whether a second Hiveku connection is live. |

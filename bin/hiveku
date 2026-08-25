@@ -24,6 +24,7 @@ import { detectExtensionServer, describeCollision } from '../lib/collision.mjs';
 import { runLoopbackConsent, exchangeCode } from '../lib/connect.mjs';
 import { runPullData } from '../lib/pulldata.mjs';
 import { pullKnowledge, knowledgeStatus } from '../lib/knowledge.mjs';
+import { runSetup, DEFAULT_ROOT_NAME } from '../lib/setup.mjs';
 import { Upstream } from '../lib/upstream.mjs';
 import { HIVEKU_APP_URL, HIVEKU_MCP_URL, CLIENT_ID, PLUGIN_VERSION, keyPreview, isUuid } from '../lib/util.mjs';
 
@@ -33,6 +34,8 @@ const HELP = `hiveku ${PLUGIN_VERSION} — Hiveku for Claude Code
   accounts [--json]             List connected accounts (never prints keys)
   accounts add <key>            Store an account key directly (escape hatch)
   accounts remove <account-id>  Revoke the key server-side, then forget it
+  setup [--root <path>]         Create + bind one folder per connected account
+                                (default root: ~/Hiveku-Accounts)
   bind [--account <id>] [--dir <path>]
                                 Bind a directory to one connected account
   unbind [--dir <path>]         Remove this directory's binding
@@ -53,7 +56,7 @@ your OS keychain. They are never written into a project.`;
 function parseFlags(argv) {
   const flags = {};
   const positional = [];
-  const valued = new Set(['account', 'dir', 'app-url']);
+  const valued = new Set(['account', 'dir', 'app-url', 'root']);
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a.startsWith('--')) {
@@ -123,7 +126,7 @@ async function cmdConnect(flags) {
     `Connected ${rows.length} account${rows.length === 1 ? '' : 's'}:`,
     ...rows.map((r) => `  ${r.label}  (${r.account_id}, ${r.scope})`),
     '',
-    'Next: cd into the folder for an account and run /hiveku:bind.',
+    'Next: run "hiveku setup" to create + bind a folder per account (or /hiveku:bind in a folder of your own).',
   ]);
 }
 
@@ -264,6 +267,31 @@ async function revokeSelf(key) {
 }
 
 /* ── bind / unbind / status ──────────────────────────────────────────────── */
+
+/* ── setup ───────────────────────────────────────────────────────────────── */
+
+async function cmdSetup(flags) {
+  const dataDir = resolveDataDir();
+  const creds = await readCredentials(dataDir);
+  const ids = Object.keys(creds.accounts);
+  if (!ids.length) fail('No accounts connected yet. Run /hiveku:connect first.');
+
+  const root = flags.root || path.join(os.homedir(), DEFAULT_ROOT_NAME);
+  const { root: rootAbs, results } = await runSetup({ root, accounts: creds.accounts });
+
+  const lines = [`Account folders under ${rootAbs}:`];
+  for (const r of results) {
+    if (r.status === 'created') lines.push(`  created  ${r.dir}  -> ${r.label}`);
+    else if (r.status === 'exists') lines.push(`  exists   ${r.dir}  -> ${r.label}`);
+    else if (r.status === 'conflict') lines.push(`  CONFLICT ${r.dir} is already bound to a different account (${r.bound_to}) — left untouched`);
+    else lines.push(`  ERROR    ${r.dir}: ${r.error}`);
+  }
+  lines.push('', 'Open any of these folders in Claude (the Code tab\'s folder picker, or cd) and the account is live.');
+  lines.push('Inside one, /hiveku:pull fetches its department data and /hiveku:knowledge its memory and skills.');
+  out(flags.json, { root: rootAbs, results }, lines);
+
+  if (results.some((r) => r.status === 'error')) process.exit(1);
+}
 
 async function cmdBind(flags) {
   const dataDir = resolveDataDir();
@@ -548,6 +576,7 @@ async function main() {
   switch (cmd) {
     case 'connect': return cmdConnect(flags);
     case 'accounts': return cmdAccounts(flags, positional);
+    case 'setup': return cmdSetup(flags);
     case 'bind': return cmdBind(flags);
     case 'unbind': return cmdUnbind(flags);
     case 'status': return cmdStatus(flags);
