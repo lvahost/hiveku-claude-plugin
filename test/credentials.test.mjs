@@ -125,6 +125,17 @@ test('refuses a data dir inside a cloud-synced folder', async () => {
   );
 });
 
-test('resolveDataDir explains itself when unset rather than crashing opaquely', () => {
-  assert.throws(() => resolveDataDir({}), /CLAUDE_PLUGIN_DATA/);
+test('rejects an UNSUBSTITUTED placeholder instead of using it as a path', () => {
+  // "${CLAUDE_PROJECT_DIR}" is a truthy string. Claude Code leaves such a
+  // reference literal when it cannot resolve it, so every falsy check and every
+  // `||` fallback sails straight past it and the plugin quietly operates on a
+  // directory named after the placeholder. This is the exact shape that made
+  // the first shipped .mcp.json non-functional.
+  assert.throws(() => resolveDataDir({ HIVEKU_PLUGIN_DATA: '${CLAUDE_PLUGIN_DATA}' }), /could not locate/);
+  assert.throws(() => resolveDataDir({ CLAUDE_PLUGIN_DATA: '${CLAUDE_PLUGIN_DATA}' }), /could not locate/);
+});
+
+test('an explicit data dir is honoured verbatim', () => {
+  const dir = path.join(os.tmpdir(), 'hiveku-explicit');
+  assert.equal(resolveDataDir({ HIVEKU_PLUGIN_DATA: dir }), path.resolve(dir));
 });

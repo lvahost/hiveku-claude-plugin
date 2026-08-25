@@ -14,10 +14,15 @@ import { runShim } from '../lib/shim.mjs';
 import { resolveDataDir } from '../lib/credentials.mjs';
 
 async function main() {
-  // CLAUDE_PROJECT_DIR is substituted by the plugin loader and is the directory
-  // the user is actually working in. process.cwd() is the fallback for a direct
-  // invocation (tests, debugging).
-  const projectDir = process.env.HIVEKU_PROJECT_DIR || process.env.CLAUDE_PROJECT_DIR || process.cwd();
+  // process.cwd() IS the working directory: Claude Code spawns stdio MCP
+  // servers without setting `cwd`, so the child inherits its own.
+  //
+  // Do NOT reach for ${CLAUDE_PROJECT_DIR} here. That variable is injected into
+  // hook and statusline environments only, never into MCP server env — an
+  // unresolved reference is left in the config as the LITERAL string
+  // "${CLAUDE_PROJECT_DIR}", which is truthy, so a `||` fallback never fires and
+  // the binding search silently starts from a path that cannot exist.
+  const projectDir = process.env.HIVEKU_PROJECT_DIR || process.cwd();
 
   let dataDir;
   try {
