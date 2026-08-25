@@ -8,6 +8,13 @@ client — and a directory that is not bound stays completely inert.
 
 ## Install
 
+**Claude desktop app:** Settings → Plugins → **Add** → **Add from a repository** →
+paste `lvahost/hiveku-claude-plugin`. When the **hiveku** plugin appears, install
+it — choose the all-projects option if asked for a scope, so it follows you into
+every folder.
+
+**Terminal:**
+
 ```
 /plugin marketplace add lvahost/hiveku-claude-plugin
 /plugin install hiveku@hiveku
