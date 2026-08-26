@@ -21,12 +21,12 @@ import {
 } from '../lib/credentials.mjs';
 import { resolveBinding, writeBinding, removeBinding, looksLikeHivekuFolder } from '../lib/binding.mjs';
 import { detectExtensionServer, describeCollision } from '../lib/collision.mjs';
-import { runLoopbackConsent, exchangeCode } from '../lib/connect.mjs';
+import { runLoopbackConsent, exchangeCode, revokeSelf, keysToRotate } from '../lib/connect.mjs';
 import { runPullData } from '../lib/pulldata.mjs';
 import { pullKnowledge, knowledgeStatus } from '../lib/knowledge.mjs';
 import { runSetup, DEFAULT_ROOT_NAME } from '../lib/setup.mjs';
 import { Upstream } from '../lib/upstream.mjs';
-import { HIVEKU_APP_URL, HIVEKU_MCP_URL, CLIENT_ID, PLUGIN_VERSION, keyPreview, isUuid } from '../lib/util.mjs';
+import { HIVEKU_APP_URL, HIVEKU_MCP_URL, CLIENT_ID, PLUGIN_VERSION, keyPreview, isUuid, mapLimit } from '../lib/util.mjs';
 
 const HELP = `hiveku ${PLUGIN_VERSION} — Hiveku for Claude Code
 
@@ -113,7 +113,17 @@ async function cmdConnect(flags) {
     departments: payload.departments || [],
   }));
 
+  // Rotation targets are computed BEFORE the upsert overwrites the old keys,
+  // and revoked only AFTER the new keys are safely stored — a failed store must
+  // never leave this device with zero working keys.
+  const rotations = keysToRotate(existing.accounts, incoming);
   await upsertAccounts(dataDir, incoming);
+
+  const rotationFailures = [];
+  if (rotations.length) {
+    const outcomes = await mapLimit(rotations, 6, async (r) => ({ ...r, result: await revokeSelf(r.oldKey) }));
+    for (const o of outcomes) if (!o.result.ok) rotationFailures.push(o);
+  }
 
   const rows = incoming.map((a) => ({
     account_id: a.account_id,
@@ -122,12 +132,28 @@ async function cmdConnect(flags) {
     key_preview: keyPreview(a.key),
   }));
 
-  out(flags.json, { connected: rows, connected_as: payload.connected_as || null }, [
-    `Connected ${rows.length} account${rows.length === 1 ? '' : 's'}:`,
-    ...rows.map((r) => `  ${r.label}  (${r.account_id}, ${r.scope})`),
-    '',
-    'Next: run "hiveku setup" to create + bind a folder per account (or /hiveku:bind in a folder of your own).',
-  ]);
+  out(
+    flags.json,
+    {
+      connected: rows,
+      connected_as: payload.connected_as || null,
+      rotated: rotations.length - rotationFailures.length,
+      rotation_failures: rotationFailures.map((o) => ({ account_id: o.account_id, reason: o.result.reason })),
+    },
+    [
+      `Connected ${rows.length} account${rows.length === 1 ? '' : 's'}:`,
+      ...rows.slice(0, 20).map((r) => `  ${r.label}  (${r.account_id}, ${r.scope})`),
+      ...(rows.length > 20 ? [`  … and ${rows.length - 20} more`] : []),
+      ...(rotations.length
+        ? [`Rotated ${rotations.length - rotationFailures.length} of ${rotations.length} replaced key${rotations.length === 1 ? '' : 's'} (old keys revoked server-side).`]
+        : []),
+      ...rotationFailures.map(
+        (o) => `  WARNING: could not revoke the old key for ${o.label} (${o.result.reason}) — it is still active; revoke it at app.hiveku.com > Settings > LLM Connectors.`,
+      ),
+      '',
+      'Next: run "hiveku setup" to create + bind a folder per account (or /hiveku:bind in a folder of your own).',
+    ],
+  );
 }
 
 /* ── accounts ────────────────────────────────────────────────────────────── */
@@ -247,24 +273,6 @@ function scopeLabel(scope) {
   return 'unknown';
 }
 
-async function revokeSelf(key) {
-  try {
-    const res = await fetch(new URL('/api/account/mcp-keys/revoke-self', HIVEKU_APP_URL).toString(), {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({}),
-    });
-    if (!res.ok) return { ok: false, reason: `HTTP ${res.status}` };
-    const body = await res.json().catch(() => null);
-    // An idempotent {revoked:false, reason:'not_found_or_inactive'} means the
-    // key is already dead, which satisfies the intent.
-    if (body?.revoked === true) return { ok: true };
-    if (body?.reason === 'not_found_or_inactive') return { ok: true };
-    return { ok: false, reason: body?.reason || 'server did not confirm revocation' };
-  } catch (err) {
-    return { ok: false, reason: err.message };
-  }
-}
 
 /* ── bind / unbind / status ──────────────────────────────────────────────── */
 
@@ -279,12 +287,25 @@ async function cmdSetup(flags) {
   const root = flags.root || path.join(os.homedir(), DEFAULT_ROOT_NAME);
   const { root: rootAbs, results } = await runSetup({ root, accounts: creds.accounts });
 
-  const lines = [`Account folders under ${rootAbs}:`];
-  for (const r of results) {
-    if (r.status === 'created') lines.push(`  created  ${r.dir}  -> ${r.label}`);
-    else if (r.status === 'exists') lines.push(`  exists   ${r.dir}  -> ${r.label}`);
-    else if (r.status === 'conflict') lines.push(`  CONFLICT ${r.dir} is already bound to a different account (${r.bound_to}) — left untouched`);
+  // A SaaS roster can be hundreds of accounts; print the interesting rows in
+  // full and summarize the bulk (the --json output always carries everything).
+  const HUMAN_ROW_CAP = 20;
+  const interesting = results.filter((r) => r.status === 'conflict' || r.status === 'error');
+  const routine = results.filter((r) => r.status !== 'conflict' && r.status !== 'error');
+  const counts = results.reduce((m, r) => ((m[r.status] = (m[r.status] || 0) + 1), m), {});
+  const lines = [
+    `Account folders under ${rootAbs}: ` +
+      Object.entries(counts).map(([k, n]) => `${n} ${k}`).join(', '),
+  ];
+  for (const r of interesting) {
+    if (r.status === 'conflict') lines.push(`  CONFLICT ${r.dir} is already bound to a different account (${r.bound_to}) — left untouched`);
     else lines.push(`  ERROR    ${r.dir}: ${r.error}`);
+  }
+  for (const r of routine.slice(0, HUMAN_ROW_CAP)) {
+    lines.push(`  ${r.status.padEnd(8)} ${r.dir}  -> ${r.label}`);
+  }
+  if (routine.length > HUMAN_ROW_CAP) {
+    lines.push(`  … and ${routine.length - HUMAN_ROW_CAP} more (use --json for the full list)`);
   }
   lines.push('', 'Open any of these folders in Claude (the Code tab\'s folder picker, or cd) and the account is live.');
   lines.push('Inside one, /hiveku:pull fetches its department data and /hiveku:knowledge its memory and skills.');

@@ -9,7 +9,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { makePkcePair, safeEqual, buildConnectedParam, exchangeCode } from '../lib/connect.mjs';
+import { makePkcePair, safeEqual, buildConnectedParam, exchangeCode, keysToRotate } from '../lib/connect.mjs';
 
 function serverSideChallenge(verifier) {
   // Byte-identical to hiveku_builder's pkceMatches / RFC 7636 S256.
@@ -81,4 +81,24 @@ test('exchangeCode rejects an empty accounts array rather than returning nothing
   } finally {
     globalThis.fetch = origFetch;
   }
+});
+
+test('keysToRotate: only this device\'s replaced keys, never new or unchanged ones', () => {
+  const prior = {
+    'acc-1': { key: 'hvk_old1', label: 'Acme' },
+    'acc-2': { key: 'hvk_same', label: 'Beta' },
+    'acc-4': { key: 'hvk_other_device_only_local_absent' },
+  };
+  const incoming = [
+    { account_id: 'acc-1', key: 'hvk_new1' },   // replaced -> rotate
+    { account_id: 'acc-2', key: 'hvk_same' },   // unchanged -> leave
+    { account_id: 'acc-3', key: 'hvk_new3' },   // brand new -> nothing to revoke
+  ];
+  const rotations = keysToRotate(prior, incoming);
+  assert.deepEqual(rotations, [{ account_id: 'acc-1', label: 'Acme', oldKey: 'hvk_old1' }]);
+});
+
+test('keysToRotate: empty prior store rotates nothing', () => {
+  assert.deepEqual(keysToRotate({}, [{ account_id: 'a', key: 'k' }]), []);
+  assert.deepEqual(keysToRotate(undefined, [{ account_id: 'a', key: 'k' }]), []);
 });

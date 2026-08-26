@@ -44,6 +44,24 @@ account is live — the session banner names it. Prefer your own folder layout? 
 | `/hiveku:knowledge` | Sync the account's memory, rules, and skills into local files by department; `status` reports drift without writing. |
 | `/hiveku:brief` | Load the account's persona and context before strategic work. |
 
+## Growing and shrinking the roster
+
+- **Add accounts later:** run `/hiveku:connect` again — the consent page pre-selects what you
+  already have; tick the new ones. Then `/hiveku:setup` again: existing folders are reported and
+  left alone, only the new accounts get folders. Re-connecting also **rotates** any keys it
+  replaces: the old key is revoked server-side automatically, so repeat connects never
+  accumulate live orphan keys.
+- **Already have a `Hiveku-Accounts` folder** (for example from the Hiveku VS Code extension,
+  which uses the same folder names)? `setup` **adopts** matching unbound folders — it adds the
+  binding and touches nothing else. A folder bound to a *different* account is reported as a
+  conflict and never touched.
+- **SaaS owner with hundreds of accounts:** connect only what you're focused on — the consent
+  page starts platform admins at zero selected, and you can always come back for more. `setup`
+  itself is pure filesystem work (no network), so even a full roster is instant; the console
+  summarizes past 20 folders (`--json` has everything). If you script data pulls across many
+  account folders, stagger them — each account's key has its own rate budget (100 req/min), but
+  hundreds of simultaneous pulls is a lot of load for no benefit.
+
 ## Local data instead of live calls
 
 One `/hiveku:pull` replaces dozens of MCP round-trips: datasets land in

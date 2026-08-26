@@ -55,6 +55,31 @@ test('setup is idempotent: second run reports exists, changes nothing', async ()
   assert.equal(await fs.readFile(path.join(root, 'ctca-7f6bb2cf/.hiveku/account.json'), 'utf8'), before);
 });
 
+test('an existing UNBOUND folder (the VS Code extension shape) is ADOPTED, its files untouched', async () => {
+  const home = await fs.mkdtemp(path.join(os.tmpdir(), 'hiveku-setup-home-'));
+  const root = path.join(home, 'Hiveku-Accounts');
+  // The extension's workspace: same name, .env + .mcp.json, NO binding file.
+  const dir = path.join(root, 'ctca-7f6bb2cf');
+  await fs.mkdir(dir, { recursive: true });
+  await fs.writeFile(path.join(dir, '.env'), 'OLYMPUS_API_KEY=hvk_extension\n');
+  await fs.writeFile(path.join(dir, '.mcp.json'), '{"mcpServers":{"hiveku":{}}}');
+  await fs.writeFile(path.join(dir, '.gitignore'), '.mcp.json\n.env\n');
+
+  const { results } = await runSetup({ root, accounts: ACCOUNTS, homeDir: home });
+  const ctca = results.find((r) => r.label === 'CTCA');
+  assert.equal(ctca.status, 'adopted');
+
+  // The binding now exists and resolves; the extension's files are byte-identical.
+  const resolved = await resolveBinding(dir, home);
+  assert.equal(resolved.accountId, '7f6bb2cf-1111-4222-8333-444455556666');
+  assert.equal(await fs.readFile(path.join(dir, '.env'), 'utf8'), 'OLYMPUS_API_KEY=hvk_extension\n');
+  assert.equal(await fs.readFile(path.join(dir, '.mcp.json'), 'utf8'), '{"mcpServers":{"hiveku":{}}}');
+  // .gitignore gains the plugin entries without losing the extension's.
+  const gitignore = await fs.readFile(path.join(dir, '.gitignore'), 'utf8');
+  assert.match(gitignore, /^\.mcp\.json$/m);
+  assert.match(gitignore, /^\.hiveku\/$/m);
+});
+
 test('a folder bound to a DIFFERENT account is a conflict, never rebound', async () => {
   const home = await fs.mkdtemp(path.join(os.tmpdir(), 'hiveku-setup-home-'));
   const root = path.join(home, 'Hiveku-Accounts');
