@@ -4,6 +4,9 @@
     "name": "Hiveku",
     "url": "https://app.hiveku.com"
   },
+  "metadata": {
+    "description": "Hiveku for Claude Code: operate your marketing, CRM, SEO, PPC, content, and website accounts directly from a session. Each working directory binds to one Hiveku account, so the tools you see are always that client's."
+  },
   "plugins": [
     {
       "name": "hiveku",
