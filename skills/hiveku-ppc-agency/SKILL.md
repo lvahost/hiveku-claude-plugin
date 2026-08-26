@@ -311,3 +311,21 @@ so the next session inherits the state. Link the report file in the PM task.
 - Customer Match / Matched Audience uploads: pre-hash SHA256 yourself, never send raw PII; lists must already
   exist; expect 24-48h before sizes update.
 - New campaigns and RSAs create PAUSED by design - the deliberate last step is `ppc_enable_resource`, with confirmation.
+
+## Deep references: load one when the work goes past this file
+
+Everything above is the operating layer. Each reference below is a full operator manual for one
+half of the account, and each opens with its own "what this covers" section. Load ONE when the work
+actually goes there, not preemptively: they are 25KB to 34KB each and loading them all would cost
+more context than the account data you are trying to reason about.
+
+| Reference | Load it when |
+| --- | --- |
+| `references/account-structure.md` | Auditing or rebuilding how an account is wired: campaigns, ad groups, naming conventions, bulk operations, change history, and platform recommendations. |
+| `references/keywords-search-terms-negatives.md` | Search-term mining, negative lists, match-type strategy or migration, and keyword forecasting. The deep manual behind the search-term play. |
+| `references/bidding-budgets-pacing.md` | Anything about money: bid strategies, modifiers, budget caps, pacing, spend control, and impression-share economics. |
+| `references/ads-assets-quality.md` | The gap between the query and the click: responsive search ads, extensions and assets, ad strength, disapprovals, and auction insights. |
+| `references/audiences-and-remarketing.md` | Who sees the ads: remarketing, RLSA, Customer Match, list architecture, first-party data, and activation. |
+| `references/measurement-and-conversions.md` | Whether the numbers can be trusted at all: tracking integrity, offline conversion import, metric definitions, anomalies. Load this BEFORE optimising toward a conversion number you have not verified. |
+| `references/google-ads-advanced.md` | Google-specific depth the cross-platform tools cannot express: the raw read lane, Performance Max, Shopping, advanced targeting, forecasting. |
+| `references/paid-social-and-bing.md` | Anything that is not Google Ads: Microsoft/Bing, Meta, TikTok, LinkedIn, including their per-platform quirks and metric definitions. |

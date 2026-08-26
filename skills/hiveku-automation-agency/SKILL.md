@@ -440,3 +440,9 @@ want that workflow gone by name. When the intent is "stop this from running",
 8. **Every text and recipient field on a node is a `{"mode":"expression","value":"..."}`
    OBJECT, not a plain string.** Only `label` stays plain. Re-get the node after a
    create or update to confirm the field actually landed.
+
+## Deep reference
+
+| Reference | Load it when |
+| --- | --- |
+| `references/node-rail.md` | Working with individual NODES rather than whole workflows: discovering what node types exist and their config schemas, building a workflow incrementally, reading per-node run output to debug, or using `workflow_run` with `test_mode` as a dry run. Also load it when a capability appears to have no MCP tool: roughly 332 palette nodes are executable from this surface, and several of them do things no direct tool does, so a missing tool name does not mean a missing capability. |

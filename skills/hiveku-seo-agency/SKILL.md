@@ -391,3 +391,20 @@ enable after review. Full manual: the `hiveku-automation-agency` skill.
 - Nothing client-visible (publishing, sitemap submissions, deploys, emails) without
   explicit confirmation. Log every material decision with `memory_create` so the
   next session does not re-litigate it.
+
+## Deep references: load one when the work goes past this file
+
+Each reference below is a full operator manual behind one of the plays above, and each opens with
+its own "what this covers" section. Load ONE when the work actually goes there rather than
+preemptively: they run 25KB to 35KB each.
+
+| Reference | Load it when |
+| --- | --- |
+| `references/keyword-research.md` | Building a keyword universe, clustering topics, sizing opportunity, or deciding what to target. |
+| `references/rankings-and-search-console.md` | Reading GSC or Bing Webmaster like an analyst: separating a real ranking move from noise, seasonality, a measurement artifact, or an algorithm update. |
+| `references/content-strategy.md` | Deciding what to write, refresh, merge, or retire, and how to brief it. |
+| `references/technical-seo.md` | Crawl and index health, Core Web Vitals, rendering, site architecture, or anything structural. |
+| `references/link-building-and-competitors.md` | Authority baselines, the opportunity queue, lost-link recovery, competitor sets, and link-gap work on a money keyword. |
+| `references/local-seo.md` | Google Business Profile as a managed asset: reviews, listings, media, services, citations. Load before running any of those plays. |
+| `references/aeo.md` | How the brand appears inside AI answers and answer engines rather than in the classic ten blue links. |
+| `references/reporting-and-delivery.md` | The point where analysis becomes something a client sees or a machine executes: monthly reports, deliverables, handoff. |
