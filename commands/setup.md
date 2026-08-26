@@ -21,5 +21,9 @@ picker) and that client's account is live — the session banner names it. Sugge
 /hiveku:pull inside a folder to bring that account's department data down, and /hiveku:knowledge
 for its memory and skills.
 
+A brand-new account has no memory at all, so every department agent runs unhydrated until it does.
+If /hiveku:knowledge comes back empty for a folder, point the user at /hiveku:seed, which drafts the
+department memory set and writes it in one `memory_bulk_create` call.
+
 Folder names match the Hiveku VS Code extension's (`<label-slug>-<id8>`), so a machine running
 both tools shares one folder per client.

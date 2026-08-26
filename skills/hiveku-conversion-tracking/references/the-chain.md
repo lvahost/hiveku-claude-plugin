@@ -301,7 +301,8 @@ counted`) sum to the total, so the unknown is always quantified rather than hand
 Web and call identity unify at hop 3, so the whole chain applies; the calls reference owns the detail.
 From this page: `marketing_call_attribution_breakdown` for source/medium/campaign plus call quality,
 `marketing_call_attribution_list` for individual calls and the crediting pool session (check
-`totals.truncated`), `marketing_call_transcript_get` for one call by the `id` from that list,
+`totals.truncated`), `marketing_call_transcript_get({ call_id })` for one call, passing the `id` from that list as
+`call_id` (the argument is named `call_id`, not `id`),
 `analytics_channel_scorecard` for the reconciliation causes (`upload_disabled | no_click_id_captured |
 outbox_stuck | action_missing | action_disabled | action_not_counted | no_upload_lane |
 platform_unreadable`), plus `voice_recent_calls`, `voice_calls_list`, `voice_numbers_list`.

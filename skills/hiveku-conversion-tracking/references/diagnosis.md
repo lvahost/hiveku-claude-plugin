@@ -238,8 +238,9 @@ the tracking DID that rang, the crediting pool session, duration bucket, whether
 account's conversion policy, `has_transcript`, `has_summary` (`include_summaries` inlines the AI
 summaries). **Percentages cover up to 5000 scanned calls - check `totals.truncated` first.**
 
-**`marketing_call_transcript_get`** - ONE call's verbatim unredacted transcript plus AI summary, by
-the `id` from the list; a deliberately separate costlier step (S3 round trip), so never fetch in
+**`marketing_call_transcript_get({ call_id })`** - ONE call's verbatim unredacted transcript plus AI
+summary. Pass the `id` from the list as `call_id`; that is the only property the schema declares and
+it is required, so `{ id }` fails validation. A deliberately separate costlier step (S3 round trip), so never fetch in
 bulk to browse. **When absent, `transcript_state` says WHICH of five: `never_recorded | pending |
 failed | purged | unreadable`, and NONE of them means "empty"** - a retention deletion (`purged`)
 misread as a transcription failure sends someone chasing a bug that does not exist.
@@ -249,7 +250,9 @@ not attributed at all; also `voice_recent_calls`, `voice_calls_list`, `voice_num
 `crm_calls_list` for per-contact history (filters `contact_id`, `company_id`, `deal_id`,
 `has_recording`, `has_transcript`) - **`crm_get_contact` does NOT include calls**.
 
-Swap health issues: `site_unreachable | snippet_missing | pool_empty | pool_exhausted`, and
+Swap health issues, which come from the DASHBOARD monitor and NO MCP tool (never report these codes
+as if you read them; substitute `voice_numbers_list` for the pool half and `analytics_probe_page` for
+the snippet half): `site_unreachable | snippet_missing | pool_empty | pool_exhausted`, and
 **"attribution quietly stopped after a redeploy" is almost always `snippet_missing`** - the DNI
 loader tag dropped off the page and nobody asks on the day it happens.
 

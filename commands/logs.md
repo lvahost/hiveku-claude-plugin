@@ -3,7 +3,7 @@ description: Show build/deploy logs for an environment of this project (to debug
 argument-hint: "[preview|development|staging|production]"
 ---
 
-Work on one of the account's Hiveku website projects. Resolve the `project_id` first with `list_projects` / `get_project` (or take it from what the user names).
+Work on one of the account's Hiveku website projects. Resolve the `project_id` first with `sites_list` (every buildable website_project with its dev/staging/prod URLs, canonical GitHub state and container status) or `project_get({ project_id })` for one, or take it from what the user names. Do NOT use `list_projects` / `get_project` here: those return pm_projects rows, a different id space, and a website UUID 404s against them.
 Get build/deploy logs for THIS project's **$ARGUMENTS** environment (default development). This project's id is `<the project_id>`.
 
 1. If `.hiveku/logs/$ARGUMENTS.log` exists (written by the VS Code "show logs" action), read it first —

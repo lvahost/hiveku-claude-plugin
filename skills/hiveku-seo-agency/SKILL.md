@@ -14,8 +14,14 @@ would pay for. Every tool named below is a real Hiveku MCP tool.
   It returns persona, brand voice, avatars, domain memory, skills, and rules. Re-read its
   instructions field before every generative call.
 - Hiveku is the source of truth. Durable findings (agreed strategy, target clusters,
-  competitor set, decisions) -> `memory_create`. Work items -> `pm_tasks_create` /
+  competitor set, decisions) -> the `seo` memory document. Work items -> `pm_tasks_create` /
   `pm_tasks_complete`. Client-facing artifacts -> `seo_deliverable_save`.
+- There is ONE memory document per domain and `memory_update` REPLACES it. Every write is
+  read-merge-write: `memory_list({ domain: "seo" })`, append to the `content` it returns,
+  then `memory_update({ memory_id, content })` with the whole merged body. Sending only the
+  new note destroys every prior entry. `memory_create({ type: "memory", name: "seo", content })`
+  only on the first run (a 409 means one already exists). If a document does get clobbered,
+  `memory_list_versions({ memory_id })` then `memory_restore_version({ version_id })` recovers it.
 - Confirm before writes. Summarize what you are about to create, update, publish, or
   submit and get a yes first. Tracking a keyword is cheap and reversible; publishing
   pages, submitting sitemaps, and deploying are not.
@@ -233,8 +239,11 @@ Running the outreach (cross-discipline with Outbound - this is a paid agency ser
    it should link: which of our pages/assets, and the competitor link that proves the
    relevance (from `backlinks_page_intersection`).
 2. Find the human: `web_search` / `web_scrape` the site for author, editor or
-   contact pages; `business_data_business_listings_search` for local prospects.
-   Verify addresses before loading - list quality IS deliverability.
+   contact pages; for local prospects `seo_research({ action: 'gbp-locations', query,
+   location_name })` finds businesses by query and `seo_research({ action: 'gbp-info', domain })`
+   (or `target` / `place_id`) returns one business's snapshot. Both spend DataForSEO credits
+   under the account's monthly SEO research cap - confirm the spend with the human before
+   calling. Verify addresses before loading - list quality IS deliverability.
 3. Hand the list to the outbound program (the `hiveku-outbound-agency` skill has a
    dedicated "Backlink outreach campaigns" section): contacts loaded via
    `crm_contacts_bulk_create` tagged link-outreach, a Smartlead campaign for the
@@ -249,8 +258,19 @@ Running the outreach (cross-discipline with Outbound - this is a paid agency ser
   -> `seo_connection_update` with gbp_account_id + gbp_location_id).
 - GBP health: `seo_gbp_insights({ connection_id })` (website clicks, calls,
   direction requests - Maps vs Search) and `seo_gbp_reviews({ connection_id })`
-  (rating trend, unanswered reviews). Review replies and GBP posts happen in the GBP
-  UI - raise them as tasks; do not pretend to post from here.
+  (rating trend, unanswered reviews).
+- Review replies ARE tool-driven: `seo_gbp_review_reply({ connection_id, review_id, reply })`.
+  The first call WITHOUT `confirm` publishes nothing - it returns a preview (reply text and
+  length, the review, the connection) with `requires_confirm: true`; repeat the IDENTICAL call
+  with `confirm: true` to publish. Max 4096 chars, it REPLACES any existing owner reply, and it
+  posts publicly on the client's live listing. One review at a time, never looped.
+  `seo_gbp_review_reply_delete({ connection_id, review_id })` removes a reply on the same
+  two-step confirm.
+- GBP POSTS (What's New, offers, events) have no tool in this lane by design - publish them via
+  `social_create_post` with platform `google_business_profile`, which goes through the approval
+  queue. Do not claim to have posted from here.
+- The full review, listing, media, services and citations plays are in
+  `references/local-seo.md`; load it before running any of them.
 - Local performance: `seo_local_search_performance({ days: 90, source: 'all' })`
   summary; `seo_local_top_queries` / `seo_local_top_pages` (GSC + Bing merged);
   `seo_local_rank_changes({ days: 30, min_drop: 3 })` for drops;
@@ -285,6 +305,15 @@ Running the outreach (cross-discipline with Outbound - this is a paid agency ser
 6. Anomaly rule: any traffic move > 20 percent WoW on a money page = same-day
    investigation (indexation via `seo_gsc_inspect_url`, SERP-feature shifts,
    competitor launches). Never let the client find out first.
+
+**Install the recurring ones instead of re-deriving them.** Several of these plays ship as
+workflow templates: lost-backlink alert, tech-audit regression, rank-drop response,
+content-decay refresh, monthly AEO visibility, GBP review SLA, weekly GBP post draft, and a
+Core Web Vitals watch. `workflow_templates_list` → `workflow_create_from_template({ slug,
+overrides })` installs one per client. Read the template's `variables[]` first (each has a
+key, a type, and a required flag); a missing required variable fails with a 400. The tool
+defaults `is_enabled: true`, so confirm with the operator or pass `is_enabled: false` and
+enable after review. Full manual: the `hiveku-automation-agency` skill.
 
 ## Monthly report (the artifact the retainer pays for)
 1. Shell: `seo_deliverable_save({ title: 'SEO Monthly Report - <Month Year>',

@@ -144,6 +144,8 @@ The platform notifies on EVERY submission, and a user-built notification workflo
 
 ## Part 3: Workflows behind a form
 
+This part covers the form-facing slice. For building an automation from scratch, event triggers, cron schedules, version rollback, and the full run-debug ladder, load the `hiveku-automation-agency` skill.
+
 ### The 401, verbatim (F16)
 
 > "When a website form silently fails, the visitor sees a fake success but no email arrives and no CRM contact is created, or a test POST returns 401 'Unauthorized: Missing Bearer token', this is almost never a code bug. It is the workflow trigger's auth config: the `workflow_triggers` row has `require_auth_token = true` while the form is a PUBLIC lead form that posts with no credential. PUBLIC FORMS MUST BE `authentication: 'none'`. Do NOT rewrite the form component, add a proxy route, or tell the user the webhook endpoint is broken. The workflow-level `authRequired` flag is MISLEADING, the trigger row's `require_auth_token` is what gates the webhook."
@@ -154,13 +156,27 @@ Fix with `workflow_trigger_update`, config `{ authentication: 'none' }`. Webhook
 
 ### Binding a form to a workflow
 
-`workflow_bind_form` is regex-based, not AST-based, so it only finds a form that follows the convention: file at `components/sections/*-form-island.tsx`, a literal `process.env.NEXT_PUBLIC_<PAGE>_<FORM>_WEBHOOK_URL` reference, native HTML `name="..."` on inputs (hidden, submit and button skipped), `"use client"`, and a client-side `fetch` POST with `FormData`. Its warnings name the deviation ("React Hook Form register() detected, field detection is incomplete", "useState-style field storage detected with no HTML name attributes", "No process.env.NEXT_PUBLIC_*_WEBHOOK_URL reference found"). `dry_run=true` previews.
+`workflow_bind_form({ workflow_id, project_id, form_file_path, dry_run? })` is regex-based, not AST-based, so it only finds a form that follows the convention: file at `components/sections/*-form-island.tsx`, a literal `process.env.NEXT_PUBLIC_<PAGE>_<FORM>_WEBHOOK_URL` reference, native HTML `name="..."` on inputs (hidden, submit and button skipped), `"use client"`, and a client-side `fetch` POST with `FormData`. Its warnings name the deviation ("React Hook Form register() detected, field detection is incomplete", "useState-style field storage detected with no HTML name attributes", "No process.env.NEXT_PUBLIC_*_WEBHOOK_URL reference found"). `dry_run=true` previews.
+
+**For a whole site, do not run that dance N times.** `workflow_bulk_provision_for_project({ project_id, template_slug?, overrides?, file_paths?, dry_run? })` scans the project for form components and, per form, instantiates the canonical template (`template_slug` defaults to `contact-form-canonical`), looks up the freshly provisioned webhook URL, and sets that form's `NEXT_PUBLIC_*_WEBHOOK_URL` project secret, which auto-rebuilds the preview. It returns per-form `{ workflow_id, webhook_url, env_var, warnings }` plus `skipped` (no env var found, not a form) and `errored` lists, and takes a site from roughly 15 MCP calls to 1.
+
+Two things to hold when you use it. **Run `dry_run: true` first and read `skipped`**: a skipped form is a form whose leads go nowhere, and it is silent. And **`overrides` apply to EVERY form in the batch**, so a site where sales@ takes the contact form and service@ takes the booking form cannot be done in one call: use `workflow_create_from_template` + `workflow_bind_form` per form, or fix it afterwards with `workflow_set_recipient({ workflow_id, recipient })` on the individual workflow.
+
+A bare "webhook in, action out" with no project form attached is `workflow_provision_webhook({ name })`, which returns `{ workflow_id, webhook_url, trigger_id }` in one shot. It defaults `is_enabled: true`, so the URL is live the moment it returns, and if you pass `authentication: 'bearer'` the one-time `bearer_token` in the response is never shown again.
 
 ### Node config, expressions, and the literal-string trap (F17)
 
 Config shape differs per node: hand-built editor panels (`sendEmail`, `delay`, `conditional`, `apiCall`, `transformData`) read fields FLAT off `node.data`; the generic schema panel reads `node.data.config.<key>`.
 
-Every text and recipient field is a `{"mode":"expression","value":"..."}` OBJECT, not a plain string, which shows up BLANK in the node panel. Only `label` stays plain. Always read the node catalog first (there are roughly 287 node types), always validate before saving, and always re-get after a create or update to confirm the fields actually landed. That read-back is the only thing that catches a field that did not stick. Reference trigger data as `{{trigger.output.payload.<field>}}`. `sendEmail`'s body field is `body`, plain text, no `htmlBody`, and it is zero-setup, so never block a form workflow on sender-domain verification.
+Every text and recipient field is a `{"mode":"expression","value":"..."}` OBJECT, not a plain string, which shows up BLANK in the node panel. Only `label` stays plain. Reference trigger data as `{{trigger.output.payload.<field>}}`. `sendEmail`'s body field is `body`, plain text, no `htmlBody`, and it is zero-setup, so never block a form workflow on sender-domain verification.
+
+Three tools exist so you never have to guess at any of this, and they have names:
+
+- **`workflow_node_types_list`** before you add a node. It is the only way to know which `type` strings the engine accepts: 260+ types with category, label, description, and per-type `fields[]` where the required ones are marked `required: true`. The exact set moves per deploy, so read the catalog rather than a type string from memory.
+- **`workflow_templating_syntax`** before you write any `{{...}}` value. It returns what the executor resolves at run time, what `trigger.output.payload` / `headers` / `query` contain, how to reference an upstream node's output, and the `{mode, value}` field modes `sendEmail` uses.
+- **`workflow_validate({ workflow_id })`** after every batch of edits, before `workflow_test` or `workflow_enable`. It returns `{ ok, issues[], summary: { nodes, edges, triggers, errors, warnings } }` and catches unknown node types, missing required fields, dangling edges, duplicate ids and no trigger as errors, plus orphan nodes, multiple triggers (**only the first fires**), self-loops and invalid source handles as warnings.
+
+Then re-get the node after a create or update to confirm the fields actually landed. That read-back is the only thing that catches a field that did not stick.
 
 Then F17, the one that pollutes the CRM:
 
@@ -168,19 +184,50 @@ Then F17, the one that pollutes the CRM:
 
 Read the form's real field names before writing the expression; never infer them from the design.
 
+### Dry-run before you enable, always
+
+`workflow_test({ workflow_id, input_data })` runs the graph with every side-effecting node short-circuited: no outbound email, SMS, Slack or Discord, no CRM writes, no external `apiCall`, no helpdesk tickets, no PM writes, no `dbInsert`/`dbUpdate`/`dbDelete`, no deploys or file saves. Transforms, array ops, template resolution and flow control still run, so the shape of the run is real. Run quota is not debited and no run row persists.
+
+Then `workflow_run_get({ workflow_id, run_id })` and read each short-circuited node's `step_states` entry: it carries `__dry_run: true` and `would_have: { ...the args it would have sent }`. **That `would_have` payload is where you catch F17**: the recipient that resolved to a literal `{{body.email}}`, the empty subject, the CRM contact with no name, all before a customer ever sees it. Enabling a new form workflow and letting a real submission be the test is how a client's first lead becomes the bug report.
+
+One caveat to state when you report a passing test: a downstream node referencing `{{nodeId.output.X}}` sees the `would_have` payload or a synthetic field (a fake `messageId` from `sendEmail`), so structural correctness is proven and delivery is not. Never use `workflow_run` as a test. It sends for real.
+
 ### on_error and the circuit breaker (F18)
 
 `on_error` defaults to `"fail"` and stops the whole downstream path.
 
 > "a client had every form on their site returning 500 for six days because a CRM write sat in series ahead of the notification email with the default."
 
-Wire the notification and the CRM write as SIBLINGS off the trigger. A failing CRM write must never swallow the owner's lead email.
+For a workflow you are BUILDING: wire the notification and the CRM write as SIBLINGS off the trigger. A failing CRM write must never swallow the owner's lead email.
+
+For a workflow you are REPAIRING that is 500ing right now, re-architecting a live graph under traffic is the risky move, and `on_error` is a settable field rather than a fixed default. One patch is safer:
+
+```
+workflow_node_update({ workflow_id, node_id, data: { on_error: 'continue' } })
+```
+
+on the non-critical leg. The engine reads the mode from `node.data.config.on_error` or `node.data.on_error`, values `'continue' | 'fail'`, and the run then completes with degraded steps instead of blasting a 5xx back at the form. The soft-failed step is recorded in `step_states` as `status: 'completed'` with `degraded: true`, `original_error`, and `on_error_mode: 'continue'`, and `workflow_run_logs` carries a `warn` line naming it, so it stays visible rather than silent. Downstream nodes see that node's output as `{ __error, __degraded: true }` instead of crashing. Do not set it on a node whose failure actually matters: it converts a loud failure into a quiet one.
+
+Note `data` is SHALLOW-merged into the node's existing data, so this patches one key without resending the node, and setting a key to `null` clears it. Since every text field is a `{mode, value}` object (above), a shallow merge is what you want here.
 
 Five consecutive failures auto-pause a workflow.
 
 > "its webhook still ACCEPTS deliveries (the payload is stored) but nothing runs them... Nothing un-pauses it automatically, even after the bug is fixed. ONE CLIENT'S FORMS WERE DOWN SIX DAYS that way, and the cause had been fixed on day two."
 
-Recovery order is strict: inspect the failing run, fix and validate, list stranded, resume, replay. Resuming before fixing re-trips the breaker; replaying before resuming is rejected.
+Recovery order is strict, and every step has a guard:
+
+1. `workflow_run_get({ workflow_id, run_id })` on the failing run for per-node `step_states`. If you do not know which workflow tripped, `workflow_runs_recent({ status: 'failed', since })` is account-wide and names it.
+2. Fix it (`workflow_node_update`), then `workflow_validate({ workflow_id })`, then `workflow_test`. Resuming a workflow that is still broken just re-trips the breaker.
+3. `workflow_stranded_list({ workflow_id })` is READ-ONLY. It returns the pause window, the count, and the stored submissions.
+4. **Show the operator the submissions, not a count, and get approval.**
+5. `workflow_resume({ workflow_id })` clears the pause and resets the failure counter. It runs nothing by itself, and replay is rejected while the workflow is still paused, so this must come first.
+6. `workflow_stranded_replay({ workflow_id, confirm: true })`.
+
+That last call SENDS REAL NOTIFICATIONS through the workflow's CURRENT definition. Three things to hold before you make it:
+
+- **`confirm: true` is required.** The route returns 400 without it, so a first call that omits it fails outright.
+- **It is capped at 25 per call**, silently clamped. A 60-submission backlog takes three calls; re-run `workflow_stranded_list` to confirm it actually drained rather than assuming one call did it. Pass `trigger_run_ids` to replay a chosen subset instead.
+- **These submissions can be days old.** On the six-day outage above, an unannounced replay emails a week of people about a form they filled in last Tuesday. Say that in those words before you send, and offer to replay only the recent ones.
 
 ### Never a database for leads (F19)
 
@@ -200,8 +247,10 @@ Recovery order is strict: inspect the failing run, fix and validate, list strand
 | Records from the search box, filter bar, or newsletter. | Those are `<form>` elements and capture is ungated. | Add `data-hiveku-capture="off"`. |
 | Records with `chatWidgetId` / `conversationId`, or a beacon flood. | A chat widget or Meta pixel POSTing through `HTMLFormElement.prototype.submit`. | Both discarded platform-side now. If you still see them, check custom code for a hand-rolled pixel. |
 | A CRM contact whose email is literally `{{body.email}}`. | Unresolved workflow expression written through as a string. | Read the form's real field names, fix the expression, clean the junk contacts. |
-| "Forms stopped working days ago" and nothing changed. | Circuit breaker: 5 consecutive failures paused it. The webhook still accepts and stores deliveries, nothing runs them. | Inspect the failing run, fix, validate, list stranded, resume, replay. In that order. |
-| "Every form on the site returns 500." | `on_error: "fail"` default with a failing node in series ahead of the rest. | Re-wire notification and CRM write as siblings off the trigger. |
+| "Forms stopped working days ago" and nothing changed. | Circuit breaker: 5 consecutive failures paused it. The webhook still accepts and stores deliveries, nothing runs them. | `workflow_run_get` the failing run, fix, `workflow_validate`, `workflow_stranded_list`, get approval, `workflow_resume`, `workflow_stranded_replay({ confirm: true })`. In that order, and the replay is capped at 25. |
+| "Every form on the site returns 500." | `on_error: "fail"` default with a failing node in series ahead of the rest. | Building: re-wire notification and CRM write as siblings off the trigger. Repairing live: `workflow_node_update({ data: { on_error: 'continue' } })` on the non-critical leg. |
+| A lead never arrived and the form records look fine. | The workflow tripped, not the capture. Capture and automation are independent. | `workflow_runs_recent({ status: 'failed', since })` is account-wide, so you find WHICH workflow without iterating. Then `workflow_run_get` for `step_states`, `workflow_run_logs` for the timeline. Filtering on `queued` or `succeeded` returns nothing and looks healthy; the vocabulary is `pending \| waiting \| running \| completed \| failed \| cancelled` plus `stopped_*`. |
+| A scheduled workflow (weekly report, nightly sync) never ran. | Usually the workflow itself is disabled, and the schedule will not fire if it is. Or there is no `scheduledTrigger` node at all. | `workflow_get_schedule({ workflow_id })`: `null` means no schedule node exists, and it also reports whether the workflow is enabled plus `next_run_at`. Check `timezone`, which defaults to UTC. |
 | A React form captures nothing. | Controlled inputs with no native `name`, `id`, `aria-label`, or `placeholder`. | Add native `name` attributes. React need not use them. |
 | A customer cannot enter their phone number. | A mask, a `maxLength`, or a validating onChange. | Strip all of it. Any format in, normalize at submit. |
 

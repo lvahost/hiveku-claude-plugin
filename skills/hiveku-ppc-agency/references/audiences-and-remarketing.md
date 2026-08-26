@@ -163,8 +163,10 @@ The only audience action that reliably cuts waste in week one. Before any prospe
    and subscribers, opportunities sales is already working, employees and job seekers, existing installs.
 2. Source it. Converter lists usually exist from the tag (Play 1); customer lists come from the CRM. CRM
    read tools are NOT on this surface: pull the segment through the CRM skill's tools or a dashboard
-   export, or `talk_to_department({ domain: "sales", message: <segment and why> })`, then bring back only
-   the hashed result.
+   export, then bring back only the hashed result. There is no sales department agent -
+   `talk_to_department({ domain: "sales" })` is refused with `Unknown domain 'sales'`. If you need the
+   sales side's judgment on which segment to suppress, load `agent_identity_get({ domain: "sales" })`
+   and reason it out yourself, or ask the operator.
 3. Apply with `ppc_audience_ops` in its exclusion operation, campaign level for "never on this offer," ad
    group level for surgical cases. Confirm each individually, naming the campaign and the traffic effect.
 4. Verify next day with `ppc_audience_performance({ connection_id, days: 7 })` plus impressions in

@@ -25,7 +25,7 @@ Thirty-one rules. The mechanism behind each is in the sections below, so you can
 
 **Next.js structural reservations**
 12. DO NOT create a `page.tsx` sibling to a reserved metadata file (`sitemap.ts`, `robots.ts`, `manifest.ts`, `opengraph-image.tsx`, `twitter-image.tsx`, `icon.tsx`, `apple-icon.tsx`, `favicon.ico`). Unlike the sibling trap, this one is fatal at build time. A human-readable sitemap page goes at `app/html-sitemap/page.tsx`.
-13. DO run `ls app src/app 2>/dev/null` before creating ANY page, route, or layout. Detect, never assume.
+13. DO detect the router directory before creating ANY page, route, or layout. Detect, never assume. Your local Bash cannot see a Hiveku project's files - use `project_files_list` on the saved tree, or hand `ls app src/app` to `preview_exec` with the project_id and cmd (cwd defaults to `/app`) to ask the container.
 14. DO NOT put routes in both `app/` and `src/app/`. A project uses one or the other as its router.
 15. DO default-ALLOW `/api/*` in middleware. Use the canonical matcher `export const config = { matcher: ['/((?!api|_next|.*\\..*).*)'] };`.
 16. DO NOT default-deny or blanket-redirect `/api/*`, `/api/portal/*`, or `/api/admin/*`.
@@ -39,8 +39,8 @@ Thirty-one rules. The mechanism behind each is in the sections below, so you can
 22. DO NOT use a reserved payment-page slug: `new edit admin api assets static thanks thank-you success cancel checkout pay portal login signin sign-in health robots.txt favicon.ico`.
 
 **Redirects**
-23. DO call `redirects_list` before telling a user a redirect does not exist.
-24. DO run `redirects_deploy` after saving platform rules. Saved is not live.
+23. DO call `project_redirects_list` before telling a user a redirect does not exist.
+24. DO run `project_redirects_deploy({ project_id, tier })` after saving platform rules. Saved is not live, and the tier matters: `development` | `staging` | `production`, default production. Deploying to one tier and then checking another is its own silent no-op.
 25. DO NOT test a platform redirect in the live preview. It always "fails" there, and that is expected.
 26. DO NOT write a `/foo -> /foo/` rule. Hosting handles both forms for every rule; such a rule is a no-op at best and a self-loop at worst.
 27. DO prefer 302 while experimenting. Browsers cache 301s hard.
@@ -96,6 +96,10 @@ The 14 are the fleet-wide set. Every project also generates its own: any offload
 > "acquiremarketplace.com's /learn/*, /services/* and /blog/* routes went down after a Vite -> Next.js conversion (2026-08-05): dirs that were legitimate static output under Vite became routes under Next."
 
 Nothing was wrong with the new Next.js pages. Those directories had earned CloudFront behaviors while they were static build output, and the behaviors outlived the framework that justified them. Before converting a project, enumerate its offloaded `public/` subdirectories and treat each one as a reserved prefix for the new route tree.
+
+There are tools for exactly this, and the plugin's Play 11 (framework conversion and CDN repair) is the full sequence. In short: `project_cdn_behaviors_list({ project_id, environment })` marks every behavior `protected` or `stale` and names what keeps a non-stale one alive in `backed_by` (`asset_rows` -> `assets_delete`; `asset_bucket_objects` -> `project_assets_orphan_sweep`; `site_bucket_objects` -> not sweepable by any tool). Clear the backing, DEPLOY, then `project_cdn_behaviors_prune` (dry-run by default). **Pruning before deploying is undone by the deploy**, which rebuilds behaviors from whatever backing remains. Also run `site_reanalyze({ project_id })` after the conversion and clean everything it reports in `leftovers[]`.
+
+The neighbouring signature has its own tool: every page route 404s while `/_next/*` chunks load fine means a static-era viewer-request function is rewriting paths against a Lambda origin. Confirm with `project_cdn_config_get`, then `project_cdn_repair({ project_id, environment, action: 'clear_viewer_function' })`, then redeploy so the tier re-attaches the correct function.
 
 ### Diagnosis
 
@@ -208,7 +212,7 @@ The practical case is the visual sitemap. "If you want a human-readable visual s
 
 A project uses EITHER a root `app/` directory OR `src/app/` as its router, not both. Many projects keep all routes in root `app/` and use `src/` ONLY for components, lib, and hooks, which is exactly the layout that tempts you to guess wrong.
 
-Before you create ANY page, route, or layout: `ls app src/app 2>/dev/null`.
+Before you create ANY page, route, or layout, find out which one this project uses. Your own Bash tool is on your machine, not on the project - the two instruments that can answer are `project_files_list({ project_id })` (the SAVED tree, which is what deploys) and `preview_exec` with `cmd: 'ls app src/app'` (the CONTAINER tree, which is what the dev server sees). When they disagree you have learned something: that is the stale-oracle case in `build-and-deploy.md` section 5.
 
 PUTTING A ROUTE UNDER THE WRONG APP DIR CREATES A DEAD FILE NEXT.JS SILENTLY IGNORES.
 
@@ -290,21 +294,23 @@ The consequence for your diagnosis: a bare 404 from one of these paths is the sy
 
 There are two, they are independent, and neither is visible from the other's console.
 
-**1. Platform redirects.** Dashboard under Hosting > Redirects, or the `redirects_*` tools. Stored on the project. Applied at Hiveku's edge on DEPLOYED environments only, NEVER in the live preview.
+**1. Platform redirects.** Dashboard under Hosting > Redirects, or the `project_redirects_list` / `project_redirect_create` / `project_redirect_update` / `project_redirect_delete` / `project_redirects_deploy` tools. Stored on the project. Applied at Hiveku's edge on DEPLOYED environments only, NEVER in the live preview.
 
 **2. Code redirects.** `next.config.js` `redirects()`. Run in preview AND deploys, and are invisible to the dashboard.
 
 Rules that follow:
 
-- "ALWAYS call `redirects_list` before telling the user a redirect doesn't exist." A redirect you cannot see in the code may exist at the edge, and vice versa.
-- "Saved platform rules do NOT take effect until `redirects_deploy` runs." Saving is not shipping.
+- "ALWAYS call `project_redirects_list` before telling the user a redirect doesn't exist." A redirect you cannot see in the code may exist at the edge, and vice versa.
+- "Saved platform rules do NOT take effect until `project_redirects_deploy` runs." Saving is not shipping. Pass the `tier` you actually want live (`development` | `staging` | `production`, default production). The same call also deploys the DOMAIN redirects derived from attached domains (every non-primary domain 301s to the primary), and those are production-tier only.
 - "Testing a platform rule in the preview iframe always 'fails' - that is expected." Do not debug a rule that is behaving exactly as designed.
 - "Hiveku's hosting layer auto-handles both /foo and /foo/ for every rule - you do NOT need a rule like /foo -> /foo/. Such a rule is a no-op at best and a SELF-LOOP at worst." A self-loop presents as `ERR_TOO_MANY_REDIRECTS` and is trivially self-inflicted.
 - Prefer 302 while experimenting, because browsers cache 301s hard. A wrong 301 that a customer has already loaded persists in their browser after you fix it, and they will tell you your fix did not work.
 - Do NOT suggest HashRouter. Ever.
 - Never conflate `ERR_TOO_MANY_REDIRECTS`, a 404, and a blank page. "Read the literal error the user typed." They point at three different systems: a loop points at rule logic, a 404 points at ownership or a platform block, a blank page points at the app.
 
-**The diagnostic that settles which system is responsible:** `curl -sI <URL>`. `x-cache: FunctionGeneratedResponse from cloudfront` means the redirect comes from the platform, not your code. Run this before editing either system, because editing the wrong one produces a change with no observable effect, which then reads as "the fix did not work" and invites a second wrong edit.
+**The diagnostic that settles which system is responsible:** a headers-only request to the DEPLOYED URL. `x-cache: FunctionGeneratedResponse from cloudfront` means the redirect comes from the platform, not your code. Run it before editing either system, because editing the wrong one produces a change with no observable effect, which then reads as "the fix did not work" and invites a second wrong edit.
+
+The URL is public, so a local `curl -sI <URL>` or a WebFetch from your own machine is the right instrument here. Do NOT reach for `preview_http_get` for this one: it issues the request against localhost INSIDE the preview container, which is upstream of CloudFront and therefore structurally incapable of showing you an `x-cache` header. `preview_http_get` is for the other job in this file - reading a 500 page's embedded error when the dev server swallows the stack, or checking an API route without leaving the container.
 
 ---
 
@@ -327,15 +333,16 @@ The restart cannot help, because the files it would serve have not arrived. It c
 | Symptom | What it actually means | What to check |
 |---|---|---|
 | 403 AccessDenied on one section, rest of the site fine | Page route under a reserved CDN prefix, served straight from S3 | Is the first segment one of the 14, or an offloaded `public/` subdir for this project? Look for `reserved_cdn_prefix_page_collision` |
-| Whole sections died right after a framework conversion | Old static output directories became CloudFront behaviors and now shadow real routes | Enumerate offloaded `public/` subdirectories; compare to the new route tree (acquiremarketplace pattern) |
+| Whole sections died right after a framework conversion | Old static output directories became CloudFront behaviors and now shadow real routes | `project_cdn_behaviors_list` for the tier and read `backed_by`; `site_reanalyze` for `leftovers[]`; then clear backing -> deploy -> `project_cdn_behaviors_prune` (acquiremarketplace pattern) |
+| Every route 404s but `/_next/*` chunks load fine | A static-era viewer-request function is rewriting paths against a Lambda/SSR origin | `project_cdn_config_get` to confirm, then `project_cdn_repair({ action: 'clear_viewer_function' })`, then redeploy |
 | "A page changed back on its own", old template returned, no deploy, no edit | Sibling collision resolved the other way on an unrelated rebuild | `project_route_owner` on that URL: read `served_by` and `shadowed[]`. Then find the dynamic sibling's data source |
 | Your edit saved but does not appear on the site | Your file is the loser of a collision | The `route_collision_edit_not_visible` warning; `route_collisions[]`, not the orphan count |
 | Validator says `orphans: 0`, routing still broken | The orphan scan cannot see collisions; a `[slug]` route resolves any single segment | `route_collisions[]` in the same result |
-| A newly added page 404s after deploy | Wrong app dir, a `_` ancestor, a shadowing sibling, or a same-turn preview sync | `ls app src/app`; check for `_private` ancestors; `project_route_owner`; if this turn, wait |
+| A newly added page 404s after deploy | Wrong app dir, a `_` ancestor, a shadowing sibling, or a same-turn preview sync | `project_files_list` (or `ls app src/app` via `preview_exec`); check for `_private` ancestors; `project_route_owner`; if this turn, wait |
 | Build dies: "Conflicting page and metadata at /X" | A `page.tsx` sibling to a reserved metadata file | Rename the page (for example to `html-sitemap`), not the metadata file |
 | Authenticated `/api/...` call started returning a redirect or HTML | Middleware is matching `/api/*` and pre-empting a self-authenticating handler | The middleware matcher, before the handler |
 | Bare 404 on a portal, review, or payment path | The platform edge blocked it on purpose; a redirect would leak the platform host | The reservation lists in section 8. Do not add a redirect rule |
-| Redirect works in preview but not live, or vice versa | Two systems: code redirects run in preview and deploys, platform redirects only on deployed environments | `curl -sI` for `x-cache: FunctionGeneratedResponse from cloudfront`; `redirects_list`; did `redirects_deploy` run? |
+| Redirect works in preview but not live, or vice versa | Two systems: code redirects run in preview and deploys, platform redirects only on deployed environments | Local `curl -sI` against the deployed host for `x-cache: FunctionGeneratedResponse from cloudfront` (not `preview_http_get` - it is inside the container); `project_redirects_list`; did `project_redirects_deploy` run, and on WHICH tier? |
 | `ERR_TOO_MANY_REDIRECTS` after adding a rule | Likely a trailing-slash rule that hosting already handles, now self-looping | Delete any `/foo -> /foo/` rule |
 | Fix deployed, customer says nothing changed | Possibly a cached 301, possibly you edited the redirect system that was not responsible | Which system produced it; whether the rule was 301 |
 
@@ -345,7 +352,7 @@ The restart cannot help, because the files it would serve have not arrived. It c
 
 Run this before you save, not after the customer calls.
 
-1. `ls app src/app 2>/dev/null`. Know which directory is the router.
+1. Know which directory is the router: `project_files_list({ project_id })`, or `ls app src/app` through `preview_exec`. Never assume from memory of another project.
 2. List the router's first-level entries. Any bracketed segment in first position is a greedy route and a site-wide hazard.
 3. For every URL you are about to create: is its first segment one of the 14 reserved prefixes, an offloaded `public/` subdir, a portal or review or payment reservation, or the URL of a reserved metadata file? Remember that `(groups)` do not protect you and `_private` ancestors kill the branch entirely.
 4. For every URL you are about to create: does a sibling dynamic route generate this slug? Find its `generateStaticParams` and read its data source, which is often a plain lib module with no routes in it.
@@ -353,7 +360,7 @@ Run this before you save, not after the customer calls.
 6. Save the whole change set in one `project_files_bulk_save` call and read its warnings, especially `reserved_cdn_prefix_page_collision`, `route_collision_edit_not_visible`, and `route_collision_new_dynamic_shadows`.
 7. Run `project_files_validate_orphan_routes` and read `route_collisions[]`. Not the orphan count.
 8. Confirm ownership on the specific URLs you touched with `project_route_owner`: `shadowed[]` must be empty.
-9. If a redirect is involved, `redirects_list` first, then create, then `redirects_deploy`, then verify with `curl -sI` against the deployed host.
+9. If a redirect is involved, `project_redirects_list` first, then `project_redirect_create`, then `project_redirects_deploy({ project_id, tier })` for the tier you are about to check, then verify the response headers against the DEPLOYED host (a local `curl -sI`, or WebFetch). `preview_http_get` cannot do this check: it hits localhost inside the preview container, so it never sees a CloudFront header.
 10. Do not restart the preview because a route you just created 404s.
 
 Green build, green typecheck, and `orphans: 0` are together compatible with two pages that will silently revert to an older template on the next scheduled CMS publish. Section 2 is not optional reading.

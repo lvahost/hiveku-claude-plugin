@@ -3,7 +3,7 @@ description: Show this project's version history — timeline, commits, checkpoi
 argument-hint: "[a file path, to show that file's version history]"
 ---
 
-Work on one of the account's Hiveku website projects. Resolve the `project_id` first with `list_projects` / `get_project` (or take it from what the user names).
+Work on one of the account's Hiveku website projects. Resolve the `project_id` first with `sites_list` (every buildable website_project with its dev/staging/prod URLs, canonical GitHub state and container status) or `project_get({ project_id })` for one, or take it from what the user names. Do NOT use `list_projects` / `get_project` here: those return pm_projects rows, a different id space, and a website UUID 404s against them.
 Show the history for THIS project (all read-only — nothing changes). This project's id is `<the project_id>`.
 
 - If "$ARGUMENTS" is a FILE PATH: `project_file_versions({ project_id: <the project_id>, file_path: "$ARGUMENTS" })`

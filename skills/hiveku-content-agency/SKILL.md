@@ -20,7 +20,8 @@ disciplined strategy-calendar-production-distribution-refresh loop instead of on
    bad output. Re-read its `instructions` field before every generative call.
 2. **Generative work goes through `talk_to_department`.** Drafting, headlines, angles, campaign
    copy, strategy narratives: `talk_to_department({ domain: "content", message })` (or
-   `"social"` / `"email"` / `"marketing"` for those channels). The department agents run with
+   `"social"` / `"marketing"` for those channels — there is NO `email` department agent, so email
+   copy goes through `"content"` or `"marketing"`). The department agents run with
    FULL hydration — memory, brand, avatars, journeys, skills, rules. Then persist the result with
    the matching direct tool (`content_create`, `social_create_post`, `email_campaign_create`).
 3. **Direct tools are for CRUD only** — status flips, list queries, scheduling, metadata, linking.
@@ -51,15 +52,54 @@ An agency never writes before it knows WHO, WHAT TRANSFORMATION, and WHICH VOICE
    phrases, colors, logo usage.
 
 **If any of these are missing, build them first** — this IS agency work, bill-worthy on its own:
-- `customer_avatar_populate` — AI-fills a complete avatar from account context (confirm inputs
-  with the user: who is the actual buyer?).
-- `customer_journey_populate` and `before_after_grid_populate` — same pattern; then
-  `customer_journey_link_to_avatar` / `before_after_grid_link_to_avatar` to relate them.
-- `entity_populate` for other strategy entities; `brand_guide_create` / `brand_guide_update`
-  for the voice/visual system.
 
-5. **Coverage audit:** pull `content_list({ limit: 200 })` and `marketing_content_list`, then
-   build an avatar x journey-stage matrix. Every cell should have at least one performing piece.
+- **Brand-new account with nothing on file:** draft the whole foundation with the user, then commit
+  it in ONE `account_seed_initialize({ brand_guide, avatars[], journeys[], grids[], media[] })` call
+  instead of 15-20 individual creates. Each section is independent (avatars alone is fine), a grid
+  may set `target_avatar_name` to point at an avatar created in the SAME payload (the server
+  substitutes the new avatar's id), and errors are per-row so one bad item does not fail the rest.
+  Read back `{brand_guide_id, avatar_ids[], journey_ids[], grid_ids[], media_asset_ids[], summary,
+  errors}` and report any per-row failures before moving on.
+- **Otherwise create the row, then enrich it.** The populate tools take an `entity_id` — they
+  enrich an EXISTING row, they do not create one. So `customer_avatar_create({ name, ... })` first,
+  then `customer_avatar_populate({ entity_id, ... })`. Same for
+  `customer_journey_create` → `customer_journey_populate` and `before_after_grid_create` →
+  `before_after_grid_populate`; then `customer_journey_link_to_avatar` /
+  `before_after_grid_link_to_avatar` to relate them. `entity_populate({ entity_type: 'avatar' |
+  'journey' | 'grid', entity_id, ... })` is the same tool with the type passed explicitly.
+- **The populate tools REFUSE without grounding.** If the account has no `brand_style_guide` AND you
+  supply no `urls_to_scrape` / `search_queries` / `agent_notes` / `related_research`, the call
+  returns 400 `code: 'context_insufficient'` and never reaches the LLM. On a fresh account — exactly
+  the case that sends you here — you MUST pass grounding: `urls_to_scrape` (max 5; the homepage plus
+  /about plus key service pages are highest-signal), `search_queries` (max 3), `agent_notes` (max
+  8KB), `related_research` (max 16KB), `additional_instructions` (max 2KB). Expect ~10-60s per call
+  when scrapes or searches are requested.
+- **Surface `_meta` before treating the output as fact.** Every populate response carries
+  `{requires_human_review, fields_with_low_confidence[], sources_used[], notes}`. Show it to the
+  user on fresh or sparse accounts. The model is instructed to leave fields null and arrays empty
+  when the context does not ground a confident answer — a null field is the tool working correctly,
+  not something to fill in yourself.
+- **Brand guide.** `brand_guide_create` REQUIRES `name` + `color_primary`, and every color field is
+  format-validated as `#rgb` / `#rrggbb` / `#rrggbbaa` — a create without a valid hex primary is a
+  400 naming the field. The voice rules the quality gate enforces have machine-readable homes on
+  `brand_guide_update`: `ai_forbidden_phrases`, `ai_preferred_phrases`, `copy_dos`, `copy_donts`,
+  `brand_personality`, `ai_brand_adjectives`, `brand_is`, `brand_is_not` (all string[]; a bare string
+  is auto-wrapped). Put the banned-phrase list THERE, not in a memory note. `mood_board_images` must
+  be `{url, prompt?, style?}` objects — a flat string[] persists but the dashboard editor renders
+  zero items, a silent client-visible failure. Logos go through `brand_guide_set_logo` (slots:
+  logo_primary_url, logo_secondary_url, logo_wordmark_url, logo_icon_url, logo_dark_url,
+  logo_light_url; pass an explicit `null` to clear one). `brand_guide_delete` only soft-deletes
+  (is_active=false), so churn leaves tombstones that inflate the dashboard counts — find them with
+  `brand_guide_list({ is_active: 'false' })` and hard-delete with `brand_guide_purge` (409
+  still_active if not soft-deleted first, 409 fk_constraint if anything still references it).
+  Confirm with the user before purging: purge is irreversible.
+
+5. **Coverage audit:** pull `content_list({ limit: 200 })`, paginating with `page`/`limit` and
+   filtering on `status` / `content_type` / `category_id` / `tags`, then
+   build an avatar x journey-stage matrix. Do NOT also pull `marketing_content_list` — it is the
+   thinner duplicate of the same route (search/page/limit only, no status or type filter), so
+   concatenating the two double-counts published inventory, which is the number the monthly report
+   is graded on. Every cell should have at least one performing piece.
    Empty cells are the strategy backlog; overloaded cells (five posts, all awareness, all avatar
    one) explain why traffic does not convert. Report the matrix to the user before proposing
    the calendar.
@@ -117,10 +157,18 @@ Per piece, in order:
      (a snippet, a list, a comparison table) to compete for the space that exists.
    - Think in `seo_eeat_scores` terms: named author, first-hand evidence, citations, updated
      date. Readability: short paragraphs, descriptive subheads every 150-300 words, scannable.
-4. **Visuals:** `generate_image` / `generate_image_set` for branded originals, or
-   `stock_photos_search` + `stock_photos_download` when authentic photography fits better.
-   ALWAYS land assets in the media library via `media_upload` (verify with
-   `media_library_list`) and reference library assets — never hotlink inline external URLs.
+4. **Visuals:** `generate_image` / `generate_image_set` for branded originals. Both AUTO-REGISTER
+   into the media library and return `media_asset_id` — use that id directly; re-uploading produces
+   duplicate rows. `media_upload` is only for raw bytes the user actually handed you (it requires
+   `file_name` + base64 `content`, which you do not have after a generation). For a pre-hosted URL —
+   including a `stock_photos_search` result — register it with `marketing_media_register_external_url({
+   file_url, source_type, title, alt_text })`, or `media_library_register_external_url_batch` for up
+   to 100 at once. `stock_photos_download` is the website-project lane and needs `{ url, project_id,
+   save_path }`; it does not touch the media library. Verify with `media_library_list` and reference
+   library assets — never hotlink inline external URLs. For text-heavy or branded graphics (quote
+   cards, carousels, promo tiles) use the Creative Studio lane instead — `design_templates_list` →
+   `design_create` → `design_export_image` — it has no per-image generation cost. Full media
+   procedure: `/hiveku:media`.
 5. **Quality gate (before persisting, check all of these):**
    - Voice matches the brand guide (compare against recent published pieces from
      `account_context_get`), zero banned phrases.
@@ -150,11 +198,23 @@ Publishing without distribution is where in-house content programs die; agencies
      key points from the media library; caption carries the transformation angle.
    - Every derivative maps back to a pillar from `social_pillar_list` — orphan posts dilute
      the feed's positioning.
-2. **Email.** `email_audience_list` to pick the audience segment, then
-   `email_newsletter_create` for the recurring digest or `email_campaign_create` for a
-   dedicated send. ALWAYS `email_campaign_test_send` to the user before
-   `email_campaign_schedule` / `email_campaign_send_now`, and get explicit confirmation of
-   audience + send time. Evergreen pieces can also feed `email_sequence_create` nurture steps.
+2. **Email. Sends are GATED, and the gates fail at SEND time, not at build time** — a campaign
+   drafted against a suspended account or an unverified domain is fully built before anything
+   tells you it can never go out. Run the gates FIRST, in this order, before drafting a word:
+   `marketing_setup_status` (do not build until `ready_to_send: true`) AND `email_service_status`
+   (read `sending_enabled` — setup_status does not check account-level SES suspension, and only
+   Hiveku staff can lift one). Then `email_audience_list` / `email_audience_preview` and report the
+   DELIVERABLE count, not the raw one. Then `email_campaign_create` for a dedicated send, or
+   `email_newsletter_create` for a newsletter-shaped draft (it is a convenience wrapper that
+   pre-fills inline_html from body_html and returns ONE draft campaign — there is no recurring or
+   scheduled-digest behavior in it). Then `email_campaign_send_now({ id, dry_run: true })`, then
+   `email_campaign_test_send` (max 5 addresses), and only then `email_campaign_schedule` /
+   `email_campaign_send_now` with explicit confirmation of audience + send time.
+   Every body you author needs `{{unsubscribe_link}}` and the account's physical mailing address,
+   in the HTML body and in the plain-text body separately, or CAN-SPAM validation fails the TEST
+   send as well as the real one. **The full procedure with every trap is `/hiveku:email` — follow
+   it rather than improvising.** Evergreen pieces can feed a nurture sequence: that has its own
+   ordering rules (activate BEFORE enrolling) — follow `/hiveku:sequence`.
 3. **On-site publishing (Hiveku-hosted sites).** For CMS-driven blogs: `cms_list_collections` /
    `cms_list_entries` to find the blog collection, `cms_write_entry` to publish the post. For
    standalone landing/pillar pages: `pages_list` / `pages_create` / `pages_update`. Remember
@@ -171,8 +231,16 @@ Monthly at minimum; weekly glance during active campaigns.
 2. **Social performance:** `social_post_sync_analytics` to pull fresh numbers, then
    `social_analytics_summary` for the rollup. Identify the top 10 percent of posts — those
    angles get reused.
-3. **Email performance:** `email_campaign_metrics` per send — judge by clicks, not opens
-   (Apple MPP inflates opens).
+3. **Email performance:** `email_campaign_metrics` per send returns ONLY a by_status breakdown of
+   the send rows — sent / failed / skipped_suppressed / skipped_unsubscribed /
+   skipped_frequency_cap. It has NO open, click, delivery, bounce or conversion data, despite what
+   its own tool description claims. NEVER report an open or click rate from it. Use it for DELIVERY
+   review: sent vs the skipped_* buckets is why a send under-delivered. For engagement,
+   `email_logs_list({ limit: 500 })` carries per-message open_count / click_count / delivered_at /
+   bounced_at / complained_at — but it has NO campaign filter and caps at 500 rows, so above 500
+   recipients a true campaign open or click rate is not obtainable from tools: say so and point the
+   client at the dashboard rather than estimating. Where clicks ARE measurable, judge by clicks, not
+   opens (Apple MPP inflates opens).
 4. **Refresh cycle:** `seo_content_decay` finds previously-ranking pages losing clicks. For
    decayed winners, UPDATE IN PLACE with `content_update` (and the matching `cms_write_entry`)
    — same URL keeps the accumulated authority; a new URL starts from zero. Refresh execution
@@ -197,7 +265,8 @@ Monthly at minimum; weekly glance during active campaigns.
 2. Next week's calendar: confirm every scheduled piece has a finished draft, visuals in the media
    library, and distribution derivatives queued.
 3. Last week's pieces: early signal from `analytics_pages` + `social_analytics_summary` +
-   `email_campaign_metrics` — one line per piece.
+   `email_campaign_metrics` (delivery only — sent vs skipped_*; opens and clicks are not in it) —
+   one line per piece.
 4. Deliver as a short markdown status to the user; adjust the coming week's calendar if
    production is behind (cut scope, never quality).
 
@@ -206,7 +275,11 @@ Monthly at minimum; weekly glance during active campaigns.
 Compile a markdown report to the account's reports area covering:
 1. **Published inventory** — everything shipped this month with type, avatar, stage, cluster.
 2. **Performance per piece** — traffic, engagement, conversions where trackable
-   (`analytics_pages`), social reach/engagement, email clicks.
+   (`analytics_pages`), social reach/engagement, and for email the DELIVERY numbers from
+   `email_campaign_metrics` (sent, and what the skipped_* buckets ate). Report an email click rate
+   only when `email_logs_list` actually covers the send (no campaign filter, 500-row cap); over
+   that, state that the rate is dashboard-only. A fabricated open rate in a client report is worse
+   than a missing one.
 3. **Avatar coverage map** — the updated avatar x journey-stage matrix; what got filled, what
    remains empty.
 4. **Refresh and consolidation actions taken** — decay recoveries, cannibalization merges.
@@ -237,8 +310,11 @@ sessions and the department agents build on this month instead of rediscovering 
 - Nothing publishes with zero derivatives; distribution is planned at brief time, not after.
 
 **Email health floors:** click rate 1-3 percent is normal, unsubscribes under 0.3 percent,
-spam complaints under 0.1 percent. Breach the floors -> pause volume, fix segmentation
-(`email_audience_list` review) before sending more.
+spam complaints under 0.1 percent. These come from the dashboard or from `email_logs_list`
+(open_count / click_count / complained_at, 500-row cap, no campaign filter) — not from
+`email_campaign_metrics`, which carries none of them. Breach the floors -> pause volume, fix
+segmentation (`email_audience_list` review, `email_suppression_list` for who is already burned)
+before sending more.
 
 ## Pitfalls (learned the expensive way)
 
@@ -250,8 +326,13 @@ spam complaints under 0.1 percent. Breach the floors -> pause volume, fix segmen
   `email_campaign_schedule`, `social_publish_post`, `content_schedule` — restate the
   what/where/when and wait for a yes. A wrong send to a real audience is a client-relationship
   incident, not a bug.
-- **Media assets belong in the media library** (`media_upload`), not as inline external URLs —
-  hotlinks rot, break brand consistency, and are invisible to `media_library_list` audits.
+- **Media assets belong in the media library**, not as inline external URLs — hotlinks rot, break
+  brand consistency, and are invisible to `media_library_list` audits. The right registration tool
+  depends on what you are holding: generated images register themselves, a hosted URL goes through
+  `marketing_media_register_external_url`, and only raw bytes go through `media_upload`. Set
+  `media_update({ asset_id, alt_text, tags })` on what you file. Before any `media_delete`, run
+  `media_usage_get({ asset_id })` — it lists every email, page section, and CMS entry that would
+  break; the delete is a hard delete plus S3 purge, and `force: true` orphans live content.
 - **Do not create new URLs for decayed content.** Update in place; the old URL holds the equity.
 - **Do not publish into an empty strategy.** No avatars or journeys on file means Play 1 runs
   first — producing content without them is billing for guesswork.

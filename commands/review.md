@@ -1,8 +1,8 @@
 ---
-description: Resolve a LOCAL visual review — read the on-disk annotations (boxes/pins + comments on a screenshot), fix the code each points at, mark them resolved. Optionally capture a page first.
+description: Resolve a visual review — the LOCAL on-disk annotations (boxes/pins + comments on a screenshot), plus the client's annotations left in Hiveku on a PM task. Fix the code each points at, mark them resolved. Optionally capture a page first.
 ---
 
-Work on one of the account's Hiveku website projects. Resolve the `project_id` first with `list_projects` / `get_project` (or take it from what the user names).
+Work on one of the account's Hiveku website projects. Resolve the `project_id` first with `sites_list` (every buildable website_project with its dev/staging/prod URLs, canonical GitHub state and container status) or `project_get({ project_id })` for one, or take it from what the user names. Do NOT use `list_projects` / `get_project` here: those return pm_projects rows, a different id space, and a website UUID 404s against them.
 Resolve a LOCAL visual review for THIS project. This project's id is `<the project_id>`. Everything lives on disk under `.hiveku/review/` — no app chat, no annotation server, and it is gitignored so it never leaves the machine.
 
 STEP 0 — CAPTURE (only if the user asks to "capture <path>", or `.hiveku/review/` has no screenshots yet):
@@ -36,3 +36,16 @@ STEP 5 — VERIFY before shipping: `verify_typecheck` / `verify_lint` (or local 
 STEP 6 — MARK RESOLVED: In that page's `annotations.json`, set each FIXED annotation's `status:"resolved"` + `resolvedAt:<ISO>` and rewrite the file preserving every other field. Then update `index.json`: read the FULL file, find the row with the matching `slug`, and set `annotationCount = annotations.length`, `openCount = count(status !== "resolved")`, `resolvedCount = count(status === "resolved")`, keeping that row's other fields (slug, pageUrl, capturedAt, savedAt) AND every OTHER page row untouched. `pages` stays an ARRAY — never rewrite it as an object or drop sibling rows. Report a summary: per annotation — comment → file changed → status.
 
 STEP 7 — Commit only if asked (branch first, never `main` directly), then `/hiveku:deploy` on explicit request (commit ≠ live). Use `trash` not `rm`; no emojis in code/copy.
+
+---
+
+SERVER-SIDE BRANCH — annotations the CLIENT left in Hiveku, not on this disk.
+
+Everything above is the LOCAL review loop. A client reviewing the live preview through Hiveku leaves their annotations on a PM TASK instead, and nothing under `.hiveku/review/` will ever show them. Run this branch too when the operator says "the client left feedback" or when the local folder is empty.
+
+A. Find the PM project: `pm_projects_list` (it filters only by `status`, so scan the returned list for the `website` project_type yourself). Note this is a pm_projects id, NOT the website_projects id you used above; `pm_projects_create` links the two through `website_project_id`.
+B. `pm_tasks_list({ project_id, status })` for the open review tasks.
+C. `pm_tasks_get({ id })` on each. Its `data` carries an `annotations` array plus `annotation_count`. Per annotation: `{ id, annotation_type, priority, annotation_text, page_url, page_title, coordinates, screenshot_url, screenshot_key, screenshot_status, capture_method, viewport_size, created_by_name, created_by_email, created_at, resolved_at }`.
+D. Process only annotations with `resolved_at` null. `screenshot_url` is a directly-fetchable public PNG — view it for the WHERE, read `annotation_text` for the WHAT, and use `page_url` + `coordinates` to locate the element. If `screenshot_status` is `capturing` and `screenshot_url` is null the async capture is still running: re-fetch `pm_tasks_get` shortly rather than working blind. `failed` or `none` means there is no image at all — work from `annotation_text` + `page_url` and say the screenshot was unavailable.
+E. Locate and fix exactly as in STEP 3 / STEP 4 (`project_files_search` / Grep over the local tree), then verify per STEP 5.
+F. Record the resolution with `pm_tasks_comment({ id, content })`, naming the annotation and the file changed. There is no MCP tool that flips an individual annotation's `resolved_at` — do not claim you marked one resolved. The comment plus `pm_tasks_complete({ id, summary })` when the whole task's feedback is addressed is the record.

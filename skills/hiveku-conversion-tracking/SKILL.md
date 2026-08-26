@@ -1,6 +1,6 @@
 ---
 name: hiveku-conversion-tracking
-description: Operator manual for conversion tracking and attribution on a Hiveku account. Use for ANY report that conversions, leads, or attribution are wrong or missing - "conversion tracking is broken", "not recording conversions", "Google Ads shows zero", "the numbers don't match", "our leads aren't showing in Google Ads", "Awaiting conversions", form submissions missing or duplicated, spam leads, form tracking, call tracking, DNI, call attribution, GTM tags and containers, UET and Bing goals, Meta pixel and CAPI, offline conversions and deal-won uploads, gclid / msclkid / fbclid, consent mode, tag not firing, double counting, "why does this paid lead read as Organic".
+description: Operator manual for conversion tracking and attribution on a Hiveku account. Use for ANY report that conversions, leads, or attribution are wrong or missing - "conversion tracking is broken", "not recording conversions", "Google Ads shows zero", "the numbers don't match", "our leads aren't showing in Google Ads", "Awaiting conversions", form submissions missing or duplicated, spam leads, form tracking, call tracking, DNI, call attribution, GTM tags and containers, UET and Bing goals, Meta pixel and CAPI, offline conversions and deal-won uploads, gclid / msclkid / fbclid, consent mode, tag not firing, double counting, "why does this paid lead read as Organic". ALSO the read-only voice operations surface - phone system health, "the phones aren't ringing", "is my phone system set up", IVR, ring group, extension, voicemail, "outbound calls rejected" / can't dial out, toll-fraud cap, E911 addresses.
 ---
 
 # Hiveku Conversion Tracking
@@ -53,6 +53,7 @@ carries the number that makes the problem undeniable), `hiveku_recorded` vs
 | Calls unattributed, or "stopped after a redeploy" | `marketing_call_attribution_breakdown`, then `marketing_call_attribution_list`, `voice_diagnose_setup` | calls |
 | Real leads the platform cannot optimise on | the two-step offline upload lane | offline-conversions |
 | GTM or a pasted tag involved | `seo_gtm_install_status` / `seo_gtm_status`, `project_custom_code_get` | site-instrumentation |
+| The PHONE SYSTEM itself: not ringing, wrong IVR, extension unreachable, outbound rejected, E911 | `voice_diagnose_setup` (no args) FIRST, then the section 13 ladder or `/hiveku:phone-check`. Not an attribution question - do not start at the scorecard | calls (§13) |
 
 **4. Name the broken link out loud** ("the click id never reached the CRM", "the tag is in
 the code but not in the served HTML"). A verdict without a named link is a guess. Then
@@ -114,6 +115,12 @@ work items with `pm_tasks_create`.
   reconciliation): dashboard UI only, visible here just through
   `analytics_channel_scorecard`'s call reconciliation causes. Send the operator there,
   likewise for the Google Ads "Import" conversion source setting.
+- NO MCP TOOL exists for DNI **swap health** either (`site_unreachable`, `snippet_missing`,
+  `pool_empty`, `pool_exhausted`): dashboard only. Never report those codes as if you read them.
+  Substitute `voice_numbers_list` for pool inventory and `analytics_probe_page` +
+  `analytics_diagnose_tracking`'s `tag-not-deployed` for whether the loader is in the served HTML.
+- The whole `voice_*` family is READ-ONLY - no provisioning, no routing edit, no E911 registration,
+  no cap change. A voice finding ships as a named cause plus `pm_tasks_create`, never as a fix.
 
 ## Reference map
 
@@ -122,6 +129,6 @@ work items with `pm_tasks_create`.
 | `references/the-chain.md` | Storage keys, ingest payloads, click-id fields, `first_touch_at`. |
 | `references/diagnosis.md` | Any live investigation: finding codes, per-platform status tools. |
 | `references/forms.md` | Missing, duplicate, or spam leads: `form_key`, sources, reCAPTCHA. |
-| `references/calls.md` | Call tracking and DNI: pools, matchers, swap health, transcripts. |
+| `references/calls.md` | Call tracking and DNI: pools, matchers, swap health, transcripts. §13 is voice operations: phone system health, routing, toll fraud, E911 - all read-only. |
 | `references/offline-conversions.md` | Uploading deals and calls: gates, dating, consent, refusals. |
 | `references/site-instrumentation.md` | Getting tags onto the page: code tiers, consent, GTM CRUD. |

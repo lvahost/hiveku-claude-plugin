@@ -7,7 +7,7 @@
 ## 0. Before you touch anything
 
 1. `account_context_get({ domain })` first, as always. Rules and memory here often already record which forms are the money forms and which are internal test forms.
-2. Identify the project. Most project-scoped tools need a `project_id` from `list_projects` (details from `get_project`). If the account has one project, still read the id back rather than guessing.
+2. Identify the project. Form and site tools need a **website_projects** `project_id` from `sites_list` (details for one from `project_get({ project_id })`). Do NOT use `list_projects` / `get_project` here: those return pm_projects rows, a different id space, and a website UUID 404s against them. If the account has one project, still read the id back rather than guessing.
 3. `ppc_digest` before you trust any ad-platform number you plan to reconcile against; it warns on stale connections (more than 25h since sync). Reconciling Hiveku against a platform that has not synced since Tuesday produces a fake discrepancy and a wasted hour.
 
 Confirm every write. Nothing in this file justifies a bulk edit, a bulk delete, or an upload without the operator saying yes to a named list.

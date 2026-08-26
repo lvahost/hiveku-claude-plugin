@@ -32,7 +32,7 @@ Read these first. The mechanism behind each is in the parts that follow, so you 
 - **R39.** Set `metadataBase` in `layout.tsx`.
 - **R47.** Define every color as a semantic CSS variable in `globals.css` `:root{}`, in HSL without the `hsl()` wrapper.
 - **R48.** Check the page at 375px before you call it done.
-- **R50.** Run `ls app src/app 2>/dev/null` before creating any route, layout, or metadata file.
+- **R50.** Detect the router directory (`project_files_list`, or `ls app src/app` through `preview_exec`) before creating any route, layout, or metadata file.
 - **R61.** Run the esbuild parse check after any structural JSX/TSX edit. It catches tag-balance errors `tsc` lets through.
 
 ---
@@ -157,7 +157,7 @@ Without `metadataBase`, relative `og:image` URLs never become absolute and socia
 
 **R49.** Next.js reserved metadata filenames compile to a Route Handler at the same URL segment, so a sibling `page.tsx` kills the build with "Conflicting page and metadata at /X": `app/sitemap.ts`, `app/robots.ts`, `app/manifest.ts`, `app/opengraph-image.tsx`, `app/twitter-image.tsx`, `app/icon.tsx`, `app/apple-icon.tsx`, `app/favicon.ico`. If the client wants a human-readable visual sitemap page, name it `app/html-sitemap/page.tsx`, never `app/sitemap/page.tsx`.
 
-**R50. Detect `app/` vs `src/app/`, never assume.** A project uses **either** a root `app/` directory **or** `src/app/` as its router, not both. Many projects keep routes in root `app/` and use `src/` only for components, lib, and hooks. Run `ls app src/app 2>/dev/null` before you create any page, route, layout, or metadata file. **Putting a route under the wrong app dir creates a dead file Next.js silently ignores**, which reads exactly like "my change did not appear".
+**R50. Detect `app/` vs `src/app/`, never assume.** A project uses **either** a root `app/` directory **or** `src/app/` as its router, not both. Many projects keep routes in root `app/` and use `src/` only for components, lib, and hooks. Find out which before you create any page, route, layout, or metadata file. Your own Bash tool runs on your machine and cannot see a Hiveku project, so use `project_files_list({ project_id })` for the SAVED tree (what deploys) or hand `ls app src/app` to `preview_exec` with the project_id and cmd for the CONTAINER tree (what the dev server sees; cwd defaults to `/app`). **Putting a route under the wrong app dir creates a dead file Next.js silently ignores**, which reads exactly like "my change did not appear".
 
 ### ★ robots.ts
 
@@ -206,7 +206,7 @@ That was a lost sale, on a form that passed every test we could run against it. 
 | Share card blank after a "metadata improvement" | `openGraph` exported without `images` | The page's metadata export (R36); then `metadataBase` (R39) |
 | Site looks unstyled in Google's rendered view | `/_next/` disallowed in robots | `app/robots.ts` (R41) |
 | Build fails "Conflicting page and metadata at /X" | A `page.tsx` sibling to a reserved metadata file | R49 |
-| New route 404s and the file looks correct | Route created under the wrong app dir | `ls app src/app` (R50) |
+| New route 404s and the file looks correct | Route created under the wrong app dir | `project_files_list`, or `ls app src/app` via `preview_exec` (R50) |
 | Build error names `turbopack.root` or "workspace root" | Infrastructure, not your code | Report it; do not edit `next.config` (R8) |
 
 One caution that governs all of the above: the build and preview oracles can lag behind what you just wrote. If a red result cites a file:line that does not match your edit, read the cited file. If the quoted text is gone, that is a stale oracle, not a bug, and editing further means "fixing" code that is already correct. Never edit twice on the same symptom without the oracle changing.

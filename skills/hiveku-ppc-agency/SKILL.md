@@ -14,6 +14,13 @@ audited before touched, measured before optimized, every spend change confirmed,
    It returns persona, brand voice, avatars, domain memory, skills, and rules. Also `memory_list` for
    account-specific PPC facts: protected brand campaigns, approval thresholds, target CPA/ROAS, sacred
    geos or keywords. If memory says a campaign is protected, you do not touch it — you flag it.
+   There is ONE `ppc` memory document and `memory_update` REPLACES it, so every write below is
+   read-merge-write: `memory_list({ domain: "ppc" })`, append to the `content` it returns, then
+   `memory_update({ memory_id, content })` with the whole merged body. A bare note wipes the
+   account's PPC history — including the protected-campaign list this skill depends on.
+   `memory_create({ type: "memory", name: "ppc", content })` only on the first run (409 = exists).
+   Recover a clobbered document with `memory_list_versions({ memory_id })` then
+   `memory_restore_version({ version_id })`.
 2. **NEVER apply a spend-affecting change without explicit per-change confirmation.** Budgets, bids,
    bidding strategies, enabling campaigns/ads/keywords, applying Google recommendations, pausing anything
    with meaningful volume — each one gets its own "here is the change, here is why, confirm?" exchange.
@@ -235,6 +242,14 @@ status, budgets by resource_name) — one API call instead of N.
 9. Offline-conversion upload if the CRM loop is live (section 6.1).
 10. Log everything: pm_tasks_comment on the weekly task — changes made (with confirmations), changes proposed,
     tests running and their end dates.
+
+**Install the recurring ones instead of re-deriving them.** Several of these plays ship as workflow
+templates: weekly search-terms-to-negatives for Google AND Bing, ad disapproval triage, and
+impression-share review. `workflow_templates_list` → `workflow_create_from_template({ slug, overrides })`
+installs one per client, and **every PPC write inside them stages to approval and never auto-applies**.
+Do this on a retainer account rather than performing the same steps by hand every Monday. Note the tool
+defaults `is_enabled: true`, so confirm with the operator first or pass `is_enabled: false` and enable
+after review. Full manual: the `hiveku-automation-agency` skill.
 
 ## 8. Monthly report (client deliverable)
 

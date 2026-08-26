@@ -7,25 +7,54 @@ Operate on a Hiveku website project for the bound account$ARGUMENTS. Hiveku proj
 platform (not GitHub); you edit them through the MCP tools. The high-leverage move is to pull the files
 LOCAL so you edit with your native file tools, then push once — not round-trip every file.
 
-**1. Pick the project.** `list_projects` (or `get_project`) → capture the `project_id`. Everything below
-needs it.
+**1. Pick the project.** `sites_list` → capture the `project_id`. That is the one call that returns every
+buildable website_project with its dev/staging/prod URLs, canonical GitHub connection state (read from
+`builder_project_settings`, not pm_projects), and dev container status — if the container is `stopped`,
+`preview_start` before `preview_sync`. `project_get({ project_id })` gives the same detail for a single
+project you already have a UUID for. Do NOT use `list_projects` / `get_project`: those are PM-projects
+tools and a website_projects UUID 404s against them. Everything below needs this id.
 
-**2. Pull it local.** `project_files_bulk_get({ project_id })` in ONE call, and write the files under
+**2. Pull it local.** `project_files_bulk_get({ project_id })` and write the files under
 `projects/<slug>/` in this folder so you can read and edit them natively. Get the current branch (`main`).
+It is ONE call only if the project fits: the response caps at 1MB per file (oversized files come back
+marked `truncated` — refetch those with `project_file_get`) and 20MB total, above which it returns
+`partial: true` + `next_cursor` that you MUST pass back to resume. An unresumed partial looks exactly
+like a complete tree and is how you end up editing 424 of 538 files. Binary assets are excluded by
+default and listed in `excluded_asset_paths[]`.
 
 **3. Change it.** Edit the local files. Understand the framework from the files before editing; match the
 project's existing patterns.
 
 **4. VERIFY before you ship — a commit is not a deploy, and a green build is not a typecheck:**
    - `verify_typecheck`, `verify_lint`, `verify_run_tests` as applicable.
-   - `project_test_build({ project_id })`. On failure, read `project_build_error_get` + `preview_logs` and
-     fix — do not deploy a red build.
+   - `project_test_build({ project_id, use_db_state: true })`. It is ASYNC: it returns
+     `{ build_session_id }` and nothing else, so poll `project_test_build_log_get({ project_id,
+     session_id })` every ~10s until `status` is `succeeded` or `failed`. A session id is not a pass.
+     (`use_db_state: true` builds from the canonical saved files, which removes any dependence on your
+     bulk_get being complete. `wait: true` blocks up to 5 min server-side, longer than most client
+     timeouts — a timeout there is not a failed build.)
+   - On a failed TEST build, read `project_test_build_log_get({ session_id })` — that is the oracle.
+     Do NOT read `project_build_error_get` here: it returns the last failed real DEPLOY, which can be
+     days old and from a different change set. Preview-container runtime errors are `preview_logs` /
+     `preview_runtime_errors`; browser-side (hydration, dead interactivity) is `preview_client_errors`.
+     Do not deploy a red build.
 
-**5. Save + version.** `project_files_bulk_save({ project_id, files })` in ONE call (not N saves), then
+**5. Save + version.** For a small batch you just authored, `project_files_bulk_save({ project_id,
+files })` in ONE call (not N saves). For a WHOLE-PROJECT or large push, use the byte-exact lane
+instead: `COPYFILE_DISABLE=1 tar czf site.tar.gz -C <dir> .` excluding `node_modules/`, `.git/`,
+`.next/` → `project_import_presign({ project_id })` → PUT to `upload_url` replaying `required_headers`
+→ `project_import_finalize` → verify the returned per-file sha256 manifest against your local hashes.
+Nothing goes through the model on that path, so no escaping, newline, or truncation corruption, and
+binaries are lane-routed automatically. Archive cap 200MB compressed. Then
 `project_vcs_commit({ project_id, message })` to version on `main`. Commit ≠ live.
 
-**6. Deploy when asked.** `deploy_site({ project_id, ... })`, then confirm with `deploy_status` / `deploy_get`.
-Preview deploys are safe to ship freely; confirm before a production deploy.
+**6. Deploy when asked.** `deploy_site({ project_id, environment })` — `environment` is required and is
+the TIER: `development` (default, safe, ship here first), `staging` (412 `staging_not_enabled` unless
+opted in per project), `production` (slow CodeBuild path). Confirm with `deploy_status` /
+`deploy_get`. Confirm with the user before a production deploy. Note that the tiers DO NOT share code
+and there is no auto-promote: every change you want in production needs its own
+`deploy_site({ environment: "production" })` call. Saving files reaches the Fly preview instantly and
+touches no deployed tier.
 
 Rules: never deploy an unverified or red build. Show the diff and confirm before committing or deploying.
 Keep `projects/` out of anything you push elsewhere — it holds the account's code.

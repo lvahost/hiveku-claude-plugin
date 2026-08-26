@@ -3,7 +3,7 @@ description: Restore this project — one file, a whole checkpoint, or a point i
 argument-hint: "[what to restore — a file path, a checkpoint hash, or a time]"
 ---
 
-Work on one of the account's Hiveku website projects. Resolve the `project_id` first with `list_projects` / `get_project` (or take it from what the user names).
+Work on one of the account's Hiveku website projects. Resolve the `project_id` first with `sites_list` (every buildable website_project with its dev/staging/prod URLs, canonical GitHub state and container status) or `project_get({ project_id })` for one, or take it from what the user names. Do NOT use `list_projects` / `get_project` here: those return pm_projects rows, a different id space, and a website UUID 404s against them.
 Restore THIS project — pick the SMALLEST scope that fixes the problem, and PREVIEW before applying.
 This project's id is `<the project_id>`. Confirm the exact target with the user before any restore that overwrites files.
 

@@ -50,7 +50,9 @@ account is live — the session banner names it. Prefer your own folder layout? 
 | `/hiveku:unbind` | Remove this directory's binding. |
 | `/hiveku:status` | What is bound here, and whether a second Hiveku connection is live. |
 | `/hiveku:pull` | Pull department data (SEO, PPC, CRM, social, …) into `hiveku-data/` as local files — 25 departments, 100+ datasets. Local files beat live calls. |
-| `/hiveku:knowledge` | Sync the account's memory, rules, and skills into local files by department; `status` reports drift without writing. |
+| `/hiveku:knowledge` | Sync the account's memory, rules, and skills into local files by department; `status` reports drift without writing. Account-level entries only. |
+| `/hiveku:seed` | Seed a brand-new account's department memory in one `memory_bulk_create` call. |
+| `/hiveku:remember` | Persist a learning into the right department memory (read-merge-write, never a blind overwrite). |
 | `/hiveku:brief` | Load the account's persona and context before strategic work. |
 | `/hiveku:daily` | Morning operating brief — what changed, what needs attention, what to do today. |
 | `/hiveku:research` | Deep web research for the account (competitors, gaps, prospects) via the escalating web_* ladder. |
@@ -65,20 +67,24 @@ Beyond the core commands above, the plugin ships the plays an agency runs every 
 - **SEO** — `seo-fix` (audit → fix → track), `seo-decay` (find decaying/cannibalizing content → refresh plan)
 - **PPC** — `ppc-optimize` (search terms → negatives, pacing, disapprovals), `ppc-report` (period-over-period)
 - **Content / social** — `campaign` (plan + draft + schedule), `social-plan`, `social-report`, `media` (brand-aware images + AI video)
-- **Email** — `email` (build + launch through the send gates), `email-review`
-- **Sales / outbound** — `pipeline`, `followups`, `replies`, `outbound-health`
+- **Email** — `email` (build + launch through the send gates), `sequence` (nurture sequences, in the order that actually fires), `email-review`
+- **Sales / outbound** — `pipeline`, `followups`, `replies`, `outbound-health`, `outbound-launch` (pre-launch go/no-go gate)
 - **Helpdesk** — `tickets`, `kb-gaps`
+- **Voice** — `phone-check` (phone system health: provisioning + blocking issues, toll-fraud cap on outbound, routing, DID inventory, E911 exposure — read-only, every fix is a dashboard action)
 - **PM** — `standup`, `triage`
-- **Accounting** — `books-close` (AP/AR + approve queue), `books-chase` (overdue receivables)
+- **Accounting** — `books-close` (AP aging + draft/submitted/open sweeps + approve queue), `books-pay` (weekly pay run, one confirmed payment at a time), `books-chase` (overdue receivables), `books-payroll` (timesheet reconcile → run → dashboard hand-off), `books-month-end` (period P&L + aging + payroll, with the caveats stated)
+- **Commerce** — `quotes` (stalled quotes, unsigned contracts, unpaid invoices), `store` (weekly Shopify connection, catalog drift, stockouts)
 - **Cadence** — `weekly`, `report`
-- **Build** — `new-site` (spin up a new site from 70+ templates + 220 prebuilt sections)
+- **Build** — `new-site` (spin up a new site from 70+ templates + 220 prebuilt sections), `commit` (status → build gate → version on a branch), `deploy` (preflight → diff → confirmed ship to a tier → serving check), `preview`, `cms`, `domains`, `redirects`, `env`, `checkpoint`, `restore`, `redesign` (import an existing site page by page and rebuild it)
+- **Automation** — `automate` (build a workflow: discover node types → wire → validate → safe dry-run → enable on approval; also the debug + stranded-replay recovery ladder)
 
 Each is a guided workflow with the exact tool chain, not a prompt — the same plays the VS Code
 extension scaffolds per role, shipped here in full so any account can run any of them.
 
 ## Agency doctrine, not just tools
 
-The plugin ships five **agency methodology skills** — SEO, PPC, content, sales, and outbound — each a
+The plugin ships one **agency methodology skill** per discipline — SEO, PPC, content, sales, outbound,
+social, analytics, commerce, helpdesk, web, conversion tracking, accounting, PM, and automation — each a
 full retainer-agency operating system (research → strategy → execution plays with exact tool chains →
 weekly cadence → monthly reporting → benchmarks and pitfalls). Claude loads the relevant one automatically
 when your work matches, so a request like "the rankings dropped, fix it" is answered with a real SEO

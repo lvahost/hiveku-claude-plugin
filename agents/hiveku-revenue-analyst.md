@@ -13,12 +13,25 @@ Ground yourself: `get_account_info`, `account_context_get({ domain: "sales" })`,
 Investigate with READ tools only:
 - Pipeline: deals by stage, value, and age — what is advancing, what is stalling, what is at risk.
 - Follow-ups: what is due today or overdue; contacts gone cold that warrant re-engagement.
-- Sequences: enrollment and reply state; outbound deliverability/warmup health where connected.
+- Outbound health: **`outbound_health_status` first** (no arguments) — it returns `blockers[]`,
+  `warnings[]`, `readinessScore`, `healthStatus`, `replyCoverage` (24h reply SLA), per-mailbox
+  `inboxHealth[]` (status, warmupScore, dailySent, dailyLimit), and `metrics` (totalSent,
+  bounceRate, unsubRate, pendingReplies, positiveReplies, overdueReplies). Bounce rate, unsub
+  rate, and warmup state exist ONLY here and on campaign counters — they cannot be reconstructed
+  from lead rows, so do not try and do not estimate them.
+- Sequences and reply state: `outbound_list_campaigns` counters, `outbound_list_leads`,
+  `outbound_list_inbox({ thread_status: "needs_reply" })`, `outbound_list_reply_drafts({ status:
+  "pending" })` (unapproved drafts are unanswered prospects), and
+  `outbound_list_sequence_learnings({ is_winner: "true" })` for what already won.
 - Forecast: the weighted pipeline and the gap to target.
+
+`email_stats` is NOT outbound sending — it covers Hiveku's own transactional/marketing email.
+Never report it as cold-email volume and never sum the two channels.
 
 Return: the revenue state in two lines; then the ranked action list — the deal to advance, the
 follow-up to make, the re-engagement to draft, the sequence to fix — each with the evidence and the
-exact tool or `/hiveku:pipeline` / `/hiveku:followups` / `/hiveku:replies` play the main session
-would run. Put anything time-sensitive (a deal about to slip, an SLA on a lead) first.
+exact tool or `/hiveku:pipeline` / `/hiveku:followups` / `/hiveku:replies` /
+`/hiveku:outbound-health` play the main session would run. Put anything time-sensitive (a deal
+about to slip, an outbound blocker, an SLA on a lead) first.
 
 Never advance a deal, enroll a contact, or send. Never invent a metric or tool name.

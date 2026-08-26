@@ -6,6 +6,10 @@ to an ad click, what happens to calls that never produce a recording, how a call
 contact, activity and deal, and how to read the call quality the ad platform structurally cannot
 report. Load it when the question involves a phone number on the site, a call that did or did not get
 attributed, "our Google Ads call conversions look inflated", a transcript, or a swap-health alert.
+It also carries the **voice operations** ladder in section 13: phones not ringing, callers landing in
+the wrong IVR menu, an extension nobody can reach, outbound calls rejected, voicemail, E911
+compliance. That half is pure telephony, has nothing to do with attribution, and every tool in it is
+read-only.
 For the form half load the forms reference; for "why is this channel not recording conversions at
 all" start at `analytics_channel_scorecard` in the diagnosis reference and return here once the
 verdict points at calls. Read `account_context_get` before any strategic or client-facing output.
@@ -124,7 +128,24 @@ linkage is `crm_activities.deal_id`. Two things follow that you need constantly:
 
 ## 7. Swap health, and the redeploy failure
 
-The swap health monitor reports four issues:
+**Swap health is a DASHBOARD view. There is no MCP tool for it.** Do not invent one, do not go
+hunting for a `swap_health` / `pool_status` tool (no tool name in the registry contains pool, swap or
+dni), and never report the issue codes below as if you read them. They are named here so you
+recognise the failure shapes and can assemble the equivalent from tools that do exist:
+
+- `pool_empty` / `pool_exhausted` -> `voice_numbers_list` for the DID inventory (filter
+  `is_active: 'true'`). Pool sizing against concurrent visitors is your own arithmetic, not a
+  returned field.
+- `snippet_missing` / `site_unreachable` -> `analytics_probe_page` on the money URL to see what the
+  server actually served, plus `analytics_diagnose_tracking({ project_id })` and its
+  `tag-not-deployed` finding. Between them they tell you whether the DNI loader is in the served
+  HTML and whether the page loads at all. Note `analytics_diagnose_tracking` emits NO runtime
+  findings without a probe, and both tools need a custom domain (without one: 400, nothing checked).
+
+Say plainly which of those two tools you ran. "Swap health shows `snippet_missing`" is a fabricated
+sentence unless the operator read it in the dashboard themselves.
+
+The four issues the dashboard monitor reports:
 
 | Issue | Meaning | First move |
 |---|---|---|
@@ -139,8 +160,10 @@ working perfectly: real numbers render, phones ring, revenue continues, and ever
 moment is unattributed. Nobody asks on the day it happens because nothing looks broken. It surfaces
 weeks later as "our Google Ads calls fell off a cliff in July".
 
-Operating rule: **after any redeploy, check swap health before interpreting a call attribution
-trend.** If the drop starts on a deploy date you have your answer, so stop analyzing campaigns. Same
+Operating rule: **after any redeploy, prove the loader is in the served HTML before interpreting a
+call attribution trend** - `analytics_probe_page` on the money URL, or the dashboard's swap health if
+the operator has it open. If the drop starts on a deploy date you have your answer, so stop
+analyzing campaigns. Same
 disease on the code side: `analytics_diagnose_tracking`'s `tag-not-deployed` finding exists because
 committing is not deploying.
 
@@ -174,9 +197,13 @@ pool, therefore which campaign group), the conversion-policy flag. Decide: which
 transcript pull, and which belong in an upload batch.
 
 ### `marketing_call_transcript_get`
-One call's verbatim, unredacted transcript plus the AI summary, keyed by the `id` from
-`marketing_call_attribution_list`. Deliberately a separate and costlier step because it makes an S3
-round trip. Do not loop it across a day of calls; pull the handful that matter.
+One call's verbatim, unredacted transcript plus the AI summary. **The argument is `call_id`, and it
+is the only property the schema declares (required).** Pass the list row's `id` as `call_id`;
+`marketing_call_transcript_get({ id })` fails validation. Deliberately a separate and costlier step
+because it makes an S3 round trip. Do not loop it across a day of calls; pull the handful that
+matter. The text is verbatim and unredacted, so it can contain card numbers, dates of birth and
+health details: treat it as the most sensitive class of customer data and do not paste it anywhere it
+would outlive the question.
 
 **When the transcript is absent, `transcript_state` tells you which of five, and NONE of them means
 "empty":**
@@ -201,18 +228,46 @@ evidence. Again: `crm_get_contact` does not include calls, so reaching for it an
 history" is a wrong answer, not a missing one.
 
 ### Voice diagnostics
-- **`voice_diagnose_setup`** returns `blocking_issues[]`. Run it first when calls are wrong at the
-  telephony layer rather than the attribution layer. Non-empty means stop analyzing attribution and
-  fix the phone system.
-- **`voice_recent_calls`** and **`voice_calls_list`** are the raw call log, independent of whether
-  attribution ran. This is how you prove a call exists at all. "We got a call at 2:15 and it is not
-  in the report": a call present here and absent from `marketing_call_attribution_list` is an
-  attribution question; absent from both, it never reached the platform.
-- **`voice_numbers_list`** for DID inventory (pool sizing, `pool_empty` / `pool_exhausted`).
-- **`voice_extensions_list`**, **`voice_extension_status`**, **`voice_ring_groups_list`**,
-  **`voice_ivrs_list`** for routing: why calls go unanswered, where they land, whether the IVR is
-  where callers abandon. **`voice_toll_fraud_state`** and **`voice_e911_addresses_list`** are the
-  safety and compliance surface, not attribution tools; know they exist.
+The whole `voice_*` family is **READ-ONLY**. There is no MCP write tool anywhere in it: no number
+provisioning, no ring-group edit, no E911 registration, no cap raise. Every fix is a dashboard action
+or a PM task. Your deliverable from any voice investigation is the named finding plus
+`pm_tasks_create`, never "fixed".
+
+- **`voice_diagnose_setup`** takes NO arguments and returns `tenant_provisioned`, active DIDs, DIDs
+  missing E911, counts of extensions / ring groups / IVRs / verified E911 addresses, and a
+  `blocking_issues[]` array of human-readable problems. Cheapest health signal in the registry. Run
+  it first when calls are wrong at the telephony layer rather than the attribution layer. Non-empty
+  `blocking_issues[]` means stop analyzing attribution and fix the phone system.
+- **`voice_recent_calls`** (`limit` default 10 max 50, `hours_back` default 24 max 168) and
+  **`voice_calls_list`** are the raw call log, independent of whether attribution ran. This is how
+  you prove a call exists at all. "We got a call at 2:15 and it is not in the report": a call present
+  here and absent from `marketing_call_attribution_list` is an attribution question; absent from
+  both, it never reached the platform.
+- **`voice_numbers_list`** for DID inventory (`is_active` is the string `'true'` / `'false'`, not a
+  boolean). This is the pool-sizing read.
+- **`voice_extensions_list`** (`endpoint_type` is one of `desk_phone`, `softphone_mobile`,
+  `softphone_desktop`, `external_number`), **`voice_extension_status({ q })`** where `q` is the dial
+  number like `'1003'` or the extension UUID, **`voice_ring_groups_list`**, **`voice_ivrs_list`** for
+  routing: why calls go unanswered, where they land, whether the IVR is where callers abandon.
+- **`voice_toll_fraud_state`** takes no arguments and returns current daily-outbound billable seconds
+  against the toll-fraud cap. It is the definitive answer to "why are our outbound calls being
+  rejected" - see the play in section 13.
+- **`voice_e911_addresses_list`** returns registered plus pending-verification addresses. Compliance
+  surface, not attribution - see the play in section 13.
+
+**The two call surfaces use DIFFERENT vocabularies. Translate before comparing.**
+
+| | `voice_calls_list` | `marketing_call_attribution_*` |
+|---|---|---|
+| `disposition` | a single STRING: `answered \| no_answer \| voicemail \| busy \| failed` | an ARRAY: `answered \| ai_handled \| voicemail \| missed \| abandoned` |
+| `direction` | `inbound \| outbound` only | `inbound \| outbound \| internal` |
+
+Filtering `voice_calls_list` with `missed` or `abandoned` returns nothing, and an empty filtered
+result reads as "no missed calls" when it actually means "wrong enum" - that is the exact filter
+someone types after section 10 tells them a high missed share is a staffing finding. In the other
+direction, `disposition` on the attribution tools must be an array (`['missed']`, not `'missed'`).
+And a `voice_calls_list` total silently excludes internal calls, so the two totals legitimately
+differ before any attribution gap exists. Never read the raw totals as directly comparable.
 
 ### Cross-references
 **`analytics_channel_scorecard`** tops the ladder for "why isn't this channel recording conversions",
@@ -275,7 +330,9 @@ a constant.
 **What NOT to conclude.** A high missed or voicemail share is a staffing or routing finding, not a
 tracking failure: confirm with `voice_ring_groups_list` and `voice_extension_status` before blaming
 attribution. And few attributed calls beside many total calls in `voice_calls_list` is an
-attribution gap (start at swap health and `snippet_missing`), not a weak campaign.
+attribution gap (start at the snippet: `analytics_probe_page` on the money URL), not a weak campaign.
+Before you compare those two counts at all, read the vocabulary note in section 8: the totals are not
+directly comparable.
 
 ## 11. Worked play: reading a lead's call transcript to understand what they wanted
 
@@ -287,7 +344,9 @@ Sales says the leads from a campaign are junk. Nobody has listened to a call.
 2. `marketing_call_attribution_list` over the same window for the campaign, the crediting pool
    session, and the `id` the transcript tool needs. Do not look for a transcript id in
    `crm_calls_list`; the transcript tool is keyed by the attribution list's id.
-3. `marketing_call_transcript_get({ id })`. If it returns no transcript, relay `transcript_state` and
+3. `marketing_call_transcript_get({ call_id })`, passing the list row's `id` as `call_id`. The
+   parameter is named `call_id` and it is the only one; `{ id }` fails input validation.
+   If it returns no transcript, relay `transcript_state` and
    act on it: `pending` means re-pull, `purged` means the evidence is gone by policy and you say so,
    `failed` or `unreadable` means escalate.
 4. Read what the caller asked for in their first two sentences against the ad and landing page they
@@ -318,3 +377,53 @@ max age 63 days), `TOO_RECENT_*` (6-hour minimum upload delay, so this morning's
 uploadable yet). And outside our system entirely: the conversion action must exist in the Ads UI
 **and be configured with source Upload** (Conversions, New conversion, Import) or the upload succeeds
 into nothing. Verify with `ppc_conversion_actions_list` before the first batch.
+
+## 13. Voice operations: the phone system itself, not its attribution
+
+Everything above assumes the phones work. When the complaint is telephony ("the phones aren't
+ringing", "callers land in the wrong menu", "nobody can reach extension 1003", "we can't dial out"),
+stop doing attribution work and run this ladder. `/hiveku:phone-check` is the same ladder as a
+command.
+
+**The ladder.**
+
+1. **`voice_diagnose_setup`** - no arguments. If `tenant_provisioned` is false, that is the whole
+   answer: the account has no voice tenant and nothing below will make sense. If `blocking_issues[]`
+   is non-empty, report those verbatim and stop; they outrank anything you would find further down.
+2. **If the complaint is OUTBOUND** ("outbound calls rejected", "can't dial out", "calls fail
+   immediately when we dial") - **`voice_toll_fraud_state`**, no arguments. It returns current
+   daily-outbound billable seconds against the toll-fraud cap. A cap hit is **not a bug and not a
+   Hiveku fault**: it is a spend guard that did its job. Report the current seconds, the cap, and
+   what burned them (`voice_calls_list({ direction: 'outbound', hours_back: 24 })` shows the volume).
+   The remedy is a dashboard or account action, never a tool call.
+3. **Prove calls exist at all** - `voice_recent_calls({ hours_back })` (max 168) or
+   `voice_calls_list`. No inbound rows at all in a window where the client swears they were called is
+   a carrier or DID-routing problem, not a routing-config problem.
+4. **Routing** - `voice_ring_groups_list` and `voice_ivrs_list` for where a call is supposed to land,
+   `voice_extension_status({ q })` with the dial number (`'1003'`) or the extension UUID for whether
+   that seat is actually registered. An unregistered endpoint is the usual "my phone never rings":
+   the ring group is correct and the device is not connected.
+5. **DID inventory** - `voice_numbers_list({ is_active: 'true' })`. A number the client publishes
+   that is not in this list is not ours to ring.
+
+**Everything here is read-only.** There is no MCP tool to provision a number, edit a ring group,
+change an IVR, register an E911 address or raise the toll-fraud cap. Do not promise a fix. The
+deliverable is the named cause plus `pm_tasks_create` for the dashboard work, and if it is client
+visible, the honest sentence about what is broken and who has to touch it.
+
+### E911 compliance (run at onboarding and in every periodic review)
+
+An active DID with no verified E911 address means a 911 call from that number may not reach the right
+PSAP with the right location. For an agency running a client's phone system that is legal exposure
+under Kari's Law and RAY BAUM'S Act, not a nice-to-have.
+
+1. `voice_diagnose_setup` - read `DIDs missing E911` and the verified-address count.
+2. `voice_e911_addresses_list` - registered plus pending-verification addresses. **Pending is not
+   registered.** Count them separately.
+3. Cross-reference against `voice_numbers_list({ is_active: 'true' })` to name WHICH active DIDs have
+   no verified address. The tool does not do this join for you; you do it, and you report the actual
+   numbers, not a count.
+4. File it: `pm_tasks_create` with the named DIDs, and raise it to the client as a risk item.
+
+Registration is a dashboard action. There is no MCP write tool, so the deliverable is the named list
+plus the task - never "I registered them".

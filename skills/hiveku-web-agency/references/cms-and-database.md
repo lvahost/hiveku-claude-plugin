@@ -98,6 +98,8 @@ Same class as the phone field that rejected a real customer's number. That custo
 
 A staged draft is written beside its entry as **`{slug}.draft.{ext}`**. **Readers must skip any path containing `.draft.`.** A glob of `*.mdx` picks up `about-us.draft.mdx` and publishes an unreviewed draft next to its own live entry, as a duplicate with the same title. Filter on the filename before you parse. Diagnosis: a duplicated entry on the live page with a near-identical title is this, not a double write.
 
+**What creates one, and what does not.** The shadow file is written by `cms_write_entry({ project_id, collection_id, slug, fields, draft: true })`, and only by that. Draft writes skip field validation, so a partial working copy is fine. `cms_promote_draft` copies the shadow over the live entry, deletes the shadow, and fires save webhooks - refusing with 422 if the draft no longer validates against the CURRENT schema or has dangling references (drafts sit while schemas evolve), 409 if a concurrent live edit landed since the draft was saved (`force: true` overwrites, which is a lost update), and 404 if there is no shadow to promote. Two things that look like they make a draft and do not: a top-level `status: "draft"` on `cms_write_entry` is just a field the site reads (see the reserved system-field list above), and `cms_preview_write` paints the Fly preview iframe without writing to the database at all - promote after that alone gets the 404.
+
 ---
 
 ## Part 3: authoring rules
@@ -129,9 +131,9 @@ Worse than not building it at all, because the customer now has a control panel 
 1. **Refactor the page to read `content/<id>/` build-safely.** Server component, build-time read, the `isLive` filter, deterministic sort, tolerant of an empty directory (zero entries renders an empty state, it does not throw the build).
 2. **REMOVE the now-redundant hardcoded data module.** Never two sources. If both survive, the next editor cannot tell which one the page uses.
 3. **Match shapes in BOTH directions.** Every field the page reads exists in the manifest, and every manifest field is rendered or deliberately unused. A field the page reads but the schema does not define renders `undefined` for every entry.
-4. **Grep the page to verify the read.** It references `content/<id>/` and no longer references the deleted module. This catches a half-applied refactor.
+4. **Grep the page to verify the read** with `project_files_search({ project_id, query: "content/<id>/", glob })` - that tool is `grep -rn` over the project's current files (literal by default, `is_regex` for patterns, capped at 500 matches). Your local Bash grep cannot see a Hiveku project. Confirm the page references `content/<id>/` and no longer references the deleted module. This catches a half-applied refactor.
 
-Diagnosis: "I edited it in the CMS and nothing changed on my site" almost never means a stale cache or a missed deploy. Grep the page for `content/<id>/` before you look anywhere else.
+Diagnosis: "I edited it in the CMS and nothing changed on my site" almost never means a stale cache or a missed deploy. `project_files_search` the page for `content/<id>/` before you look anywhere else.
 
 **When to ask.** Ask **before** the work whenever the request is a collection of three or more similar items: gallery, team, products, testimonials, services, FAQs, events, case studies, portfolio, blog posts, pricing plans, locations. Hardcode without asking **only** for genuine one-offs. Twelve hardcoded locations means a ticket for every phone number change; an unasked-for collection is a schema they now maintain.
 

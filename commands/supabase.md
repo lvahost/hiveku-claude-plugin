@@ -3,7 +3,7 @@ description: Manage this project's Supabase backend — auth users, storage, edg
 argument-hint: "[what to do — e.g. 'list storage buckets' or 'add an auth user']"
 ---
 
-Work on one of the account's Hiveku website projects. Resolve the `project_id` first with `list_projects` / `get_project` (or take it from what the user names).
+Work on one of the account's Hiveku website projects. Resolve the `project_id` first with `sites_list` (every buildable website_project with its dev/staging/prod URLs, canonical GitHub state and container status) or `project_get({ project_id })` for one, or take it from what the user names. Do NOT use `list_projects` / `get_project` here: those return pm_projects rows, a different id space, and a website UUID 404s against them.
 Manage THIS project's Supabase backend$ARGUMENTS. This project's id is `<the project_id>`. Every call takes `project_id: <the project_id>`.
 (Only for projects with a provisioned Supabase DB — `database_status({ project_id })` confirms.)
 

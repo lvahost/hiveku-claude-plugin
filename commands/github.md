@@ -3,7 +3,7 @@ description: GitHub sync for this project — status, branches, PRs, and per-tie
 argument-hint: "[e.g. 'open a PR from feature/x' or 'status']"
 ---
 
-Work on one of the account's Hiveku website projects. Resolve the `project_id` first with `list_projects` / `get_project` (or take it from what the user names).
+Work on one of the account's Hiveku website projects. Resolve the `project_id` first with `sites_list` (every buildable website_project with its dev/staging/prod URLs, canonical GitHub state and container status) or `project_get({ project_id })` for one, or take it from what the user names. Do NOT use `list_projects` / `get_project` here: those return pm_projects rows, a different id space, and a website UUID 404s against them.
 GitHub operations for THIS project$ARGUMENTS. This project's id is `<the project_id>`.
 
 FIRST check this project is GitHub-connected: `project_deployment_mode_get({ project_id: <the project_id> })` (mode must be github_sync) and `github_status({ project_id: <the project_id> })`. If it's on Hiveku-native VCS instead, use /hiveku:commit — github_* won't apply.
