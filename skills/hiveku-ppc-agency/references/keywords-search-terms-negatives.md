@@ -315,8 +315,10 @@ batch, suspect the negatives and reverse the least-confident ones from the ledge
 
 ## 8. Persistence and reporting
 
-**Memory.** After every mining cycle, `memory_update` the PPC record (or `memory_create({ type:
-"memory", name: "ppc", content })` if none exists) with: target CPA/ROAS and when it was set; the
+**Memory.** After every mining cycle, `memory_list({ domain: "ppc" })` then `memory_update({ memory_id,
+content })` the PPC record with the returned body plus your addition, since that call REPLACES it and a
+bare delta wipes the ledger (or `memory_create({ type:
+"memory", name: "ppc", content })` if none exists). Hold: target CPA/ROAS and when it was set; the
 negatives ledger (text, match type, scope, `resource_name`, reason code JUNK / THEME / ROUTING / ONE-OFF,
 date, routing negatives marked so a cleanup does not remove them); the match-type doctrine in force;
 protected campaigns, do-not-block terms, competitor-bidding permissions; and the watchlist with expiry

@@ -205,11 +205,11 @@ destroys the best repeat revenue in the account. Get the cycle from the client o
    Manager, and say which path you used.
 3. **Extract the segment** through CRM tooling (Play 2 step 2), with the filter written down verbatim.
 4. **Normalize, THEN hash. This is the step people get wrong.**
-   - Email: strip leading and trailing whitespace, lowercase, then SHA-256, hex, lowercase.
-   - Phone: E.164 with country code (`+15551234567`), no spaces, dashes or parentheses, then SHA-256 hex
+ - Email: strip leading and trailing whitespace, lowercase, then SHA-256, hex, lowercase.
+ - Phone: E.164 with country code (`+15551234567`), no spaces, dashes or parentheses, then SHA-256 hex
      lowercase. A phone without a country code matches nothing.
-   - First and last name: trim, lowercase, strip punctuation, then SHA-256 hex lowercase.
-   - Country and postal code: NOT hashed, sent in the clear beside the hashed name fields.
+ - First and last name: trim, lowercase, strip punctuation, then SHA-256 hex lowercase.
+ - Country and postal code: NOT hashed, sent in the clear beside the hashed name fields.
    Send email AND phone AND name-plus-address where you have them, as separate identifier sets on the same
    record: multi-field records match materially better. Drop rows with no usable identifier, since blanks
    depress the match rate you later use as a diagnostic.
@@ -375,7 +375,9 @@ also errors in ways that look like audience problems, so verify it per SKILL.md 
 
 ## 11. Persistence and reporting
 
-**Memory** (`memory_create` first run, `memory_update` after, `type: "memory"`, `name: "ppc"`). Carry the
+**Memory** (`memory_create({ type: "memory", name: "ppc", content })` first run, then
+`memory_update({ memory_id, content })` after: it takes no `type`/`name` and REPLACES the document,
+so read it with `memory_list({ domain: "ppc" })` and resend the merged body). Carry the
 list inventory with ids, types, sizes and states; each tier's DEFINITION in words; upload dates, record
 counts and match rates; the repurchase and exclusion windows agreed with the client; the consent basis on
 file; which campaigns carry observation layers and since when; the index readings behind each modifier;

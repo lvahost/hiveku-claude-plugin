@@ -354,7 +354,9 @@ report crawl health but not indexation"), then get it connected. Never estimate 
 
 ## 7. Persistence and reporting
 
-**Memory** (`memory_list` first, then `memory_create` or `memory_update`). Keep current: the exact
+**Memory** (`memory_list({ domain: "seo" })` first, then `memory_create` only if nothing came back,
+otherwise `memory_update({ memory_id, content })` carrying the WHOLE merged document, because that
+call REPLACES the entry rather than appending to it). Keep current: the exact
 GSC property string and Bing site_url; the canonical and indexation strategy including intentional
 exclusions; the CWV baseline with date and field/lab label; the latest audit id and cadence;
 protected templates and client constraints ("the dev team owns robots.txt"); and resolved decisions,

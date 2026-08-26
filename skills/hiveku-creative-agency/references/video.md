@@ -96,7 +96,7 @@ MP4 will be.
 
 ### 2.3 Editing an existing design: the round-trip rule (`design_state_get`)
 
-★ This is the read half of the round-trip: always state_get -> reason -> update. Never author a full canvas
+This is the read half of the round-trip: always state_get -> reason -> update. Never author a full canvas
 blind over the top of a user's edits.
 
 `design_state_get` returns a human-readable plus structured summary - element by element position, size,
@@ -209,7 +209,7 @@ re-reads current state whenever you are unsure what is stored.
 
 ### 3.3 Submit, then stop
 
-★ **THE AGENT CANNOT APPROVE: after creating, submit for approval and stop.**
+**THE AGENT CANNOT APPROVE: after creating, submit for approval and stop.**
 
 `marketing_storyboard_submit_for_approval({ storyboard_id })`, then report and halt. The report the human
 needs is short and specific:
@@ -264,7 +264,7 @@ why lane 2 exists.
 
 ## 5. Registering and attaching the finished asset
 
-★ Generated images and video clips auto-register. **Design exports and stock-photo URLs do NOT** - register
+Generated images and video clips auto-register. **Design exports and stock-photo URLs do NOT** - register
 those explicitly before attaching them anywhere.
 
 **Lane 3** output auto-registers and returns a `media_asset_id`; nothing more is needed to make it
@@ -289,9 +289,11 @@ lane 1.
 **Imported footage** comes in through `media_library_register_external_url`, `media_upload`, or
 `marketing_media_upload_base64`. Import is never a production credit.
 
-Attaching, once registered: social posts via `social_create_post` / `social_update_post` with `media_urls`,
-targeting connected accounts from `social_list_accounts` (the social lane's rules still apply - setting
-`scheduled_at` is publishing on a timer, and no tool can approve a post); cross-channel via `content_create`.
+Attaching, once registered: social posts via `social_create_post` with `media_urls`, targeting connected
+accounts from `social_list_accounts`. `media_urls` is NOT on `social_update_post`'s schema, so media can
+only be attached at create - the proxy drops it on an update and the call returns 200 having changed
+nothing. Pick the asset before you create the post. The social lane's rules still apply - setting
+`scheduled_at` is publishing on a timer, and no tool can approve a post; cross-channel via `content_create`.
 Decisions worth keeping (aspect ratio, the animation style signed off, the storyboard template that worked)
 go to `memory_create`, production work items to `pm_tasks_create`. `media_usage_get` says where an asset is
 used; `media_delete` on one a live post depends on breaks that post silently, so confirm it.
@@ -350,8 +352,9 @@ export_image, export_mp4).
 
 **Context and departments:** `account_context_get`, `talk_to_department`, `list_departments`.
 
-**Downstream attach and persistence:** `social_create_post`, `social_update_post`, `social_list_accounts`,
-`content_create`, `memory_create`, `pm_tasks_create`.
+**Downstream attach and persistence:** `social_create_post` (the only media attach point),
+`social_update_post` (copy, platforms, and schedule only), `social_list_accounts`, `content_create`,
+`memory_create`, `pm_tasks_create`.
 
 ## Notes on constraints
 

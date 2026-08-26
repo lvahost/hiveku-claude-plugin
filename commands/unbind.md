@@ -10,7 +10,7 @@ Unbind the current directory.
 ```
 
 This deletes `.hiveku/account.json` only. It does not revoke anything and does not delete any data
-already pulled into this folder — say so, because `hiveku-data/` and any synced knowledge here
+already pulled into this folder - say so, because `hiveku-data/` and any synced knowledge here
 still contain that account's information.
 
 To revoke the key itself and forget the account entirely, that is

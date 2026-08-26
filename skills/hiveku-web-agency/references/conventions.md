@@ -15,12 +15,9 @@ Read these first. The mechanism behind each is in the parts that follow, so you 
 - **R21/R22.** Do not create a root-level `images/` folder, and never save into `public/src/`.
 - **R23.** Do not reference `imported/images/...` as a URL. It is source storage, not a served path.
 - **R24.** Do not put a raw `hiveku-project-assets.s3...amazonaws.com` URL in code. That bucket is private and 403s in the browser.
-- **R27/R30.** Do not write `srcset`, do not hand-roll image conversion, and do not create a parallel converted-image directory. ★
-- **R32.** Do not change *which* picture a section shows without explicit confirmation.
+- **R27/R30.** Do not write `srcset`, do not hand-roll image conversion, and do not create a parallel converted-image directory. - **R32.** Do not change *which* picture a section shows without explicit confirmation.
 - **R36.** Do not export `openGraph` without an `images` key.
-- **R41.** Do not put `/_next/` in a robots disallow list. ★
-- **R47.** Do not hardcode a Tailwind color (`bg-blue-500`, `text-white`, `border-gray-200`). ★
-- **R51/R52/R53.** Do not name an infrastructure provider, recommend a competitor, or invent platform folklore in anything the client reads.
+- **R41.** Do not put `/_next/` in a robots disallow list. - **R47.** Do not hardcode a Tailwind color (`bg-blue-500`, `text-white`, `border-gray-200`). - **R51/R52/R53.** Do not name an infrastructure provider, recommend a competitor, or invent platform folklore in anything the client reads.
 - **R56.** Do not fabricate a logo. Not an SVG you drew, not a generated one, not a placeholder icon.
 
 **Do:**
@@ -112,7 +109,7 @@ components/sections/services-filter-island.tsx  <- "use client": the one interac
 
 **R34.** Deleting a code file: `rm` works. Deleting a **binary asset**: `rm` is not enough. Binary deletes are deliberately not inferred; use the asset delete tool.
 
-### ★ There is no runtime image optimizer
+### There is no runtime image optimizer
 
 **R27.** Deployed Hiveku sites do **not** run a runtime image optimizer and emit **no `srcset`**. Whatever resolution you store is the only one every screen gets. A full-res PNG hero ships as-is, and a single 1.8MB PNG is a multi-second mobile load.
 
@@ -159,7 +156,7 @@ Without `metadataBase`, relative `og:image` URLs never become absolute and socia
 
 **R50. Detect `app/` vs `src/app/`, never assume.** A project uses **either** a root `app/` directory **or** `src/app/` as its router, not both. Many projects keep routes in root `app/` and use `src/` only for components, lib, and hooks. Find out which before you create any page, route, layout, or metadata file. Your own Bash tool runs on your machine and cannot see a Hiveku project, so use `project_files_list({ project_id })` for the SAVED tree (what deploys) or hand `ls app src/app` to `preview_exec` with the project_id and cmd for the CONTAINER tree (what the dev server sees; cwd defaults to `/app`). **Putting a route under the wrong app dir creates a dead file Next.js silently ignores**, which reads exactly like "my change did not appear".
 
-### ★ robots.ts
+### robots.ts
 
 **R41. NEVER add `/_next/` to a disallow list.** It is a prefix match that blocks Googlebot from every JS chunk, stylesheet, and font under `/_next/static/`. Google then renders the page unstyled and half-broken and ranks it accordingly. Do **not** copy the generic SaaS robots recipe (`disallow: ['/api/', '/_next/', '/dashboard/']`): these sites have no `/dashboard/` or `/admin/`, and robots.txt is not access control anyway. To fix an existing one, add `allow: ["/", "/_next/static/", "/_next/image"]` (longest match wins).
 
@@ -171,7 +168,7 @@ Without `metadataBase`, relative `og:image` URLs never become absolute and socia
 
 **R43.** Exactly **one `<h1>` per page**, and real landmark elements (`header`, `nav`, `main`, `section`, `footer`) instead of div soup. **R44.** Descriptive `alt` on every image; decorative images get `alt=""`, not a filename. **R45.** `loading="lazy"` below the fold. **R46.** No "click here" link text; `role="contentinfo"` on the footer; network-specific `aria-label`s on social links ("Follow us on Instagram", not "Social").
 
-### ★ Design tokens
+### Design tokens
 
 **R47. NEVER hardcode a color.** Every color is a semantic CSS variable in `globals.css` `:root{}`, in HSL channel form. Use `bg-primary`, `text-foreground`, `border-border`, `bg-muted`. Never `bg-blue-500`, `text-white`, `border-gray-200`.
 

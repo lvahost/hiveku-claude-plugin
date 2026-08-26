@@ -1,5 +1,5 @@
 ---
-description: Triage Mission Control intake — classify, route, raise decisions, spawn the PM work.
+description: Triage Mission Control intake - classify, route, raise decisions, spawn the PM work.
 ---
 Triage pass over the account's Mission Control board. MC is the intake and decision surface; PM is where
 the work is tracked. They are separate systems joined by a bridge (see the `hiveku-pm-mission-control` skill).
@@ -47,7 +47,7 @@ the work is tracked. They are separate systems joined by a bridge (see the `hive
    When a decision resolves, promote it: `mc_decision_to_memory({ id, memory_domain: "<dept>" })`. It
    composes the entry from the card title, chosen label, answer text, decider and date, and returns
    `memory_entry_id`. Returns 412 `code='not_resolved'` if `decision_answer` is not set. `memory_domain`
-   follows the same canonical-department rule as `memory_create` (see hiveku-orient) — a non-canonical
+   follows the same canonical-department rule as `memory_create` (see hiveku-orient) - a non-canonical
    value like `pm` or `crm` files the entry with department NULL and no agent ever hydrates it. This is
    what stops the next agent on this account from re-litigating a settled call.
 
@@ -60,4 +60,4 @@ the work is tracked. They are separate systems joined by a bridge (see the `hive
    pm_task status change, run `mc_task_mirror_from_pm({ id })` to keep the card in step (412 if unlinked,
    `no_change: true` if it already matches).
 
-6. Finish every session of work the same way: persist notable learnings to department memory — read the department's current document with `memory_list({ domain: "<dept>" })`, append your note to the `content` it returns, and send the WHOLE merged document to `memory_update({ memory_id, content })`, which REPLACES it (sending only the new note destroys everything that department had accumulated); use `memory_create({ type: "memory", name: "<dept>", content })` only when no entry exists, and keep `<dept>` to a canonical department name (see hiveku-orient), and reflect the work in Hiveku PM: `pm_projects_list` to find the project (it filters only by `status`; `project_type` is named in its description but is NOT in its schema, so the proxy drops it and you filter the returned list yourself), or `pm_projects_create({ name, project_type })` where project_type is one of seo | ppc | marketing | website | app_dev, then `pm_tasks_create({ project_id, title })` (the field is `title`, not `name`), `pm_tasks_update` as it moves, `pm_tasks_complete({ id, summary })` when the loop is closed. Reopen a task closed too early with `pm_tasks_uncomplete`, never `pm_tasks_update`. Hiveku, not this folder, is the source of truth.
+6. Finish every session of work the same way: persist notable learnings to department memory - read the department's current document with `memory_list({ domain: "<dept>" })`, append your note to the `content` it returns, and send the WHOLE merged document to `memory_update({ memory_id, content })`, which REPLACES it (sending only the new note destroys everything that department had accumulated); use `memory_create({ type: "memory", name: "<dept>", content })` only when no entry exists, and keep `<dept>` to a canonical department name (see hiveku-orient), and reflect the work in Hiveku PM: `pm_projects_list` to find the project (it filters only by `status`; `project_type` is named in its description but is NOT in its schema, so the proxy drops it and you filter the returned list yourself), or `pm_projects_create({ name, project_type })` where project_type is one of seo | ppc | marketing | website | app_dev, then `pm_tasks_create({ project_id, title })` (the field is `title`, not `name`), `pm_tasks_update` as it moves, `pm_tasks_complete({ id, summary })` when the loop is closed. Reopen a task closed too early with `pm_tasks_uncomplete`, never `pm_tasks_update`. Hiveku, not this folder, is the source of truth.

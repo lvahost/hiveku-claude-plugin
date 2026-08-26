@@ -18,8 +18,8 @@ call, and it is a cheap one.
 1. **`voice_diagnose_setup`** - takes NO arguments. Returns `tenant_provisioned`, active DIDs, DIDs
    missing E911, counts of extensions / ring groups / IVRs / verified E911 addresses, and
    `blocking_issues[]`, an array of human-readable problems.
-   - `tenant_provisioned: false` is the whole answer. The account has no voice tenant; stop here.
-   - Non-empty `blocking_issues[]` outranks everything below. Report those verbatim, then stop and
+ - `tenant_provisioned: false` is the whole answer. The account has no voice tenant; stop here.
+ - Non-empty `blocking_issues[]` outranks everything below. Report those verbatim, then stop and
      hand them back. Do not keep digging past a blocking issue to find something more interesting.
 2. **Outbound complaints only** ("outbound calls rejected", "can't dial out", "calls fail the moment
    we dial") - **`voice_toll_fraud_state`**, no arguments. Current daily-outbound billable seconds

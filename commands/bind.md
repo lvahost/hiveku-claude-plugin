@@ -15,7 +15,7 @@ First, list what is available:
 If the list is empty, tell the user to run `/hiveku:connect` first and stop.
 
 Otherwise show the accounts and ask which one this directory is for. Do not guess from the folder
-name — a wrong bind sends work to the wrong client. Then:
+name - a wrong bind sends work to the wrong client. Then:
 
 ```
 "${CLAUDE_PLUGIN_ROOT}/bin/hiveku" bind --account <account-id>

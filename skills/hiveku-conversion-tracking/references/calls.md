@@ -139,8 +139,15 @@ recognise the failure shapes and can assemble the equivalent from tools that do 
 - `snippet_missing` / `site_unreachable` -> `analytics_probe_page` on the money URL to see what the
   server actually served, plus `analytics_diagnose_tracking({ project_id })` and its
   `tag-not-deployed` finding. Between them they tell you whether the DNI loader is in the served
-  HTML and whether the page loads at all. Note `analytics_diagnose_tracking` emits NO runtime
-  findings without a probe, and both tools need a custom domain (without one: 400, nothing checked).
+  HTML and whether the page loads at all. Know how each one refuses. `analytics_probe_page` returns
+  403 (not 400) unless the URL's host matches a `custom_domain` on one of this account's projects -
+  it only loads sites the account owns. `analytics_diagnose_tracking` returns 400 only when you OMIT
+  `project_id` and the account has no live project carrying a custom domain; pass an explicit
+  `project_id` and a domainless project still returns 200, with source-scan findings only:
+  `browser_checked: false`, and no `tag-not-deployed`, because that finding compares source against
+  served HTML and there is no domain to fetch. When the project does have a custom domain,
+  `analytics_diagnose_tracking` runs the browser probe itself - you do not have to call
+  `analytics_probe_page` first to get runtime findings.
 
 Say plainly which of those two tools you ran. "Swap health shows `snippet_missing`" is a fabricated
 sentence unless the operator read it in the dashboard themselves.

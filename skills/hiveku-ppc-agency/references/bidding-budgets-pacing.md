@@ -399,7 +399,9 @@ credentials. Escalate with the exact change needed and `pm_tasks_create` so the 
 ## 12. Persistence and reporting
 
 **Memory** holds the account's money doctrine and is what the next session inherits. After any material
-change, `memory_create` or `memory_update` with `type: "memory"`, `name: "ppc"`, covering: the monthly
+change, `memory_create({ type: "memory", name: "ppc", content })` on the first run, then
+`memory_update({ memory_id, content })` after (it takes ONLY `memory_id` and `content`, never
+`type`/`name`, and REPLACES the document, so resend the merged body), covering: the monthly
 ceiling and its approval date; target CPA/ROAS per campaign with the Framework D derivation; current bidding
 strategy per campaign and the date set; active freeze end dates; protected campaigns; every temporary budget
 or target change with its revert date; and frontier conclusions ("campaign X cannot grow past ~70% IS at

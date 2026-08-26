@@ -360,11 +360,11 @@ same category of visibility lever as attributes (Play L3), and just as commonly 
    major-directory list: Google, Yelp, Facebook, Bing Places, Apple Maps, BBB, Yellow Pages, Foursquare,
    and Tripadvisor where category-relevant.
 3. Three traps, all of them real:
-   - It **spends DataForSEO credits** against the account's monthly SEO research cap and has **no confirm
+ - It **spends DataForSEO credits** against the account's monthly SEO research cap and has **no confirm
      step**, so you are the gate: confirm with the human before calling.
-   - A **24h server-side cooldown** returns 429 with `retry_at` plus the stored audit. That is not a
+ - A **24h server-side cooldown** returns 429 with `retry_at` plus the stored audit. That is not a
      failure - read the stored audit and report it as of `audited_at`.
-   - `missing_major` entries carry a `basis` field. `basis: 'no_signal'` means presence is **UNVERIFIED**,
+ - `missing_major` entries carry a `basis` field. `basis: 'no_signal'` means presence is **UNVERIFIED**,
      not confirmed absent. **Never report a `no_signal` directory to the client as "not listed."** Report
      it as unverified, or verify it by hand.
 4. It is AUDIT ONLY. It never writes to any directory, and no submission tool exists anywhere in Hiveku
@@ -435,15 +435,15 @@ same category of visibility lever as attributes (Play L3), and just as commonly 
   `requires_confirm: true` with a preview first and publish only on an identical repeat with
   `confirm: true`. There is no unlisted GBP write that publishes immediately. What each preview shows,
   because they are not the same and the differences are the point:
-  - `seo_gbp_location_update`: the changed fields only.
-  - `seo_gbp_attributes_update`: attribute names and count, connection name.
-  - `seo_gbp_review_reply`: the reply text and its length, the review, the connection.
-  - `seo_gbp_review_reply_delete`: the existing reply and the review.
-  - `seo_gbp_services_update`: a live diff - `current_count` / `new_count` / `added` / `removed` /
+ - `seo_gbp_location_update`: the changed fields only.
+ - `seo_gbp_attributes_update`: attribute names and count, connection name.
+ - `seo_gbp_review_reply`: the reply text and its length, the review, the connection.
+ - `seo_gbp_review_reply_delete`: the existing reply and the review.
+ - `seo_gbp_services_update`: a live diff - `current_count` / `new_count` / `added` / `removed` /
     `kept`. This is a FULL REPLACE, so `removed[]` is the field that saves you.
-  - `seo_gbp_media_add`: category, `source_url`, media format, and whether primary imagery is replaced.
+ - `seo_gbp_media_add`: category, `source_url`, media format, and whether primary imagery is replaced.
     URL and category validation run at the preview step, so a bad input fails before confirm.
-  - `seo_gbp_media_delete`: the live item's category, format, `googleUrl`/thumbnail, create time and view
+ - `seo_gbp_media_delete`: the live item's category, format, `googleUrl`/thumbnail, create time and view
     count.
   Read the preview: it catches a wrong `connection_id`, which on a multi-location account means
   publishing to the wrong branch.
@@ -461,7 +461,9 @@ same category of visibility lever as attributes (Play L3), and just as commonly 
 
 ## 7. Persistence and reporting
 
-**Memory** (`memory_create`, `memory_update`): durable facts and decisions only. Per location: connection
+**Memory** (`memory_create` on the first run, then `memory_list({ domain: "seo" })` and
+`memory_update({ memory_id, content })` with the merged body, because `memory_update` REPLACES the
+document): durable facts and decisions only. Per location: connection
 id and branch, canonical NAP exactly as published, categories, service area or storefront choice, agreed
 review voice and escalation contact, the approval rule for listing edits, and each month's Listing Score
 with its date. Record refusals too: a declined keyword-stuffed name should not be re-litigated next

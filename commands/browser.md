@@ -1,5 +1,5 @@
 ---
-description: Drive this project in a real browser with Playwright — local dev server or a deployed env.
+description: Drive this project in a real browser with Playwright - local dev server or a deployed env.
 argument-hint: "[path, default /]"
 ---
 

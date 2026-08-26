@@ -196,14 +196,14 @@ first: `segment-report` with `dimensions: "geo_target_constant"` over 30 days sh
    deliberately excluded. `campaign-language-targets-list` returns language criteria, and **no criteria means
    all languages**, a common silent source of irrelevant traffic on English-only businesses.
 3. **Fix, one confirmed change at a time.**
-   - `campaign-geo-target-add({ params: { campaign_id, geo_target_ids: [...] } })`, max 100 per call. **Adding
+ - `campaign-geo-target-add({ params: { campaign_id, geo_target_ids: [...] } })`, max 100 per call. **Adding
      the first positive location narrows the campaign from everywhere to only those places** - the largest
      single-call reach change in this reference. Confirm it in those words. The same op with `negative: true`
      excludes; a `bid_modifier` is not allowed on an exclusion.
-   - `campaign-geo-target-remove({ params: { resource_names: [...] } })`, max 100; removing an exclusion WIDENS
+ - `campaign-geo-target-remove({ params: { resource_names: [...] } })`, max 100; removing an exclusion WIDENS
      reach. `campaign-proximity-add({ params: { campaign_id, latitude, longitude, radius, radius_units:
      "MILES" } })`, max 500 miles or 800 kilometers, is the instrument for service areas that ignore city lines.
-   - `campaign-location-settings-update({ params: { campaign_id, positive_geo_target_type: "PRESENCE" } })`, per
+ - `campaign-location-settings-update({ params: { campaign_id, positive_geo_target_type: "PRESENCE" } })`, per
      2.3. `campaign-language-target-add({ params: { campaign_id, language_ids: ["en"] } })`, max 50, matches the
      user's Google interface language, not the language of their query.
 
@@ -388,7 +388,8 @@ Account memory overrides these. They are the defaults you argue from.
 ## 14. Persistence and reporting
 
 **Memory.** After any session producing a durable fact, write it with `memory_create({ type: "memory",
-name: "ppc", content })`, or `memory_update` to correct one: the bound `customer_id` and `manager_id` and why
+name: "ppc", content })`, or, to correct one, `memory_update({ memory_id, content })` with the whole
+merged document, since it REPLACES the entry and takes no `type`/`name`. Record the bound `customer_id` and `manager_id` and why
 that child; protected campaigns; the brand fence's shared-set name, resource name and attached campaigns; the
 primary conversion action ids and the reasoning behind their `count_type` and lookback; the geo geometry
 decision and its date; the PMax verdict window's end date, so the next session does not re-litigate early;

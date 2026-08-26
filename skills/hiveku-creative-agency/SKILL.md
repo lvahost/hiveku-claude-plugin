@@ -98,7 +98,7 @@ over someone's afternoon of edits destroys it silently. The loop is always
 element-by-element summary (position, size, style, text, animation, plus `featuredImageUrl`
 when a preview exists), so use `design_get` only when you need the raw Fabric JSON.
 
-★ This is the read half of the round-trip: always state_get -> reason -> update. Never
+This is the read half of the round-trip: always state_get -> reason -> update. Never
 author a full canvas blind over the top of a user's edits.
 
 Snapshot before any large or destructive edit: `design_version_create({ id, versionName,
@@ -123,10 +123,10 @@ Version History panel, and `design_versions_list` reads them back. A parallel
 7. Confirm before anything irreversible or billable; MP4 renders block up to 240s, so say
    what you are doing before you start one.
 
-★ Generated images and video clips auto-register. **Design exports and stock-photo URLs do
+Generated images and video clips auto-register. **Design exports and stock-photo URLs do
 NOT** - register those explicitly before attaching them anywhere.
 
-★ "**THE AGENT CANNOT APPROVE: after creating, submit for approval and stop.**"
+"**THE AGENT CANNOT APPROVE: after creating, submit for approval and stop.**"
 
 ## Campaign cadence
 

@@ -1,6 +1,6 @@
 ---
 name: hiveku-pm-mission-control
-description: How Hiveku's two work systems fit together — Mission Control (the HITL inbox and decision board) and PM (projects, tasks, milestones, recurrences) — and the bridge tools that link a card to a task. Use for ANY work involving triage, intake from Slack/email/webhooks, raising a decision to a human and waiting on the answer, kanban lanes, card templates, recurring retainer deliverables, reopening a task closed too early, or reading the client annotations attached to a PM task.
+description: How Hiveku's two work systems fit together - Mission Control (the HITL inbox and decision board) and PM (projects, tasks, milestones, recurrences) - and the bridge tools that link a card to a task. Use for ANY work involving triage, intake from Slack/email/webhooks, raising a decision to a human and waiting on the answer, kanban lanes, card templates, recurring retainer deliverables, reopening a task closed too early, or reading the client annotations attached to a PM task.
 ---
 
 # Mission Control and PM
@@ -39,7 +39,7 @@ per-status counts plus `uncategorized_counts`, and **the first read seeds the de
 (Intake, Decisions, Discoveries, Doing, Done) for an account that has never used Mission Control.
 Skip it on a newly onboarded client and the board stays empty.
 
-- `mc_lane_create({ name, description, color, display_order })` — name must be unique per account;
+- `mc_lane_create({ name, description, color, display_order })` - name must be unique per account;
   a conflict returns 409 `code='duplicate_name'`.
 - `mc_lane_update({ id, archived: true })` is the right way to retire a column. The label survives in
   event history.
@@ -49,7 +49,7 @@ Skip it on a newly onboarded client and the board stays empty.
 
 Listing cards: `mc_tasks_list({ status, priority, assignee, lane_id, search, limit, offset })`.
 Default limit 50, max 200. `lane_id: "null"` (the literal string) filters to uncategorized cards.
-`assignee` is a free-form substring match, so there is no "unassigned" filter — use `lane_id: "null"`
+`assignee` is a free-form substring match, so there is no "unassigned" filter - use `lane_id: "null"`
 or the Intake lane instead. `mc_task_get({ id })` before any mutation: it returns the body, the
 comment timeline (with `parent_comment_id` threading), recent events, and the claim/decision audit
 fields so you can see "a human is already on this".
@@ -89,7 +89,7 @@ decision_options: [{ key, label, description }] })`. Max 20 options, six or fewe
 auto-appends a reserved `OTHER` row, so never send `OTHER` as one of your own keys. The writeup goes
 in `body` (`description` is a forgiving alias), tags go in `tags` (`labels` is the alias).
 
-**See what is waiting** with `mc_decisions_pending` — every `awaiting_human` card bucketed
+**See what is waiting** with `mc_decisions_pending` - every `awaiting_human` card bucketed
 P0/P1/P2/P3, shaped to drop straight into a digest. Default limit 200, max 500.
 
 **Wait** with `mc_decision_check({ id })`, a cheap payload carrying `resolved`, the answer, who
@@ -112,7 +112,7 @@ include_card_link })`. It composes the entry from the card title, chosen label, 
 and date, returns `memory_entry_id`, appends to `meta.memory_links`, and emits a `memory_promoted`
 event. 412 `code='not_resolved'` if `decision_answer` is not set. `memory_domain` is a memory
 document name (`'seo'`, `'branding'`, or a `_skill:<name>` document) and follows the same
-canonical-department rule as `memory_create` — see the `hiveku-orient` skill. Do this every time a
+canonical-department rule as `memory_create` - see the `hiveku-orient` skill. Do this every time a
 decision closes; it is what stops the next agent on the account re-litigating a settled call.
 
 ## The bridge: card to task and back
@@ -139,7 +139,7 @@ already matches. Call it after every pm_task status change; there is no webhook 
 
 ## PM tasks
 
-`pm_tasks_create({ project_id, title, ... })` — required `project_id` + `title`. The field is
+`pm_tasks_create({ project_id, title, ... })` - required `project_id` + `title`. The field is
 `title`, NOT `name` (`name` is `pm_projects_create`); the route accepts `name` as a forgiving alias
 but do not rely on it. `pm_tasks_create_bulk` takes up to 500 and validates every `project_id`
 before any insert, so one bad id blocks the whole batch.
@@ -158,12 +158,12 @@ while sitting in an open status. Defaults are `status='in_progress'` and `progre
 capped at 99.
 
 `pm_tasks_get({ id })` returns more than the task. Its `data` carries an `annotations` array and
-`annotation_count` — the browser annotations a reviewer or client dropped on the live preview. Each
+`annotation_count` - the browser annotations a reviewer or client dropped on the live preview. Each
 one has `annotation_text`, `page_url`, `page_title`, `coordinates`, `priority`, `created_by_name`,
 `resolved_at`, and a `screenshot_url` that is a directly-fetchable public PNG. `screenshot_status`
 is `ready | capturing | failed | none`; `capturing` with a null url means the async capture is still
 running, so re-fetch shortly instead of working blind. There is no MCP tool that flips one
-annotation's `resolved_at` — record the fix with `pm_tasks_comment` and do not claim otherwise.
+annotation's `resolved_at` - record the fix with `pm_tasks_comment` and do not claim otherwise.
 `/hiveku:review` runs this loop.
 
 ## Recurring work: the retainer engine
@@ -196,7 +196,7 @@ Four things that bite:
 - **Pause is the reversible stop.** `pm_task_recurrence_pause` / `_resume` flip `is_active` and are
   idempotent; resume does NOT backfill occurrences missed while paused (call `_run_now` for a
   one-off catch-up). `pm_task_recurrence_delete` stops future fires and leaves already-spawned tasks
-  behind with their `recurrence_id` nulled. Deleting is not undoable — confirm with the operator and
+  behind with their `recurrence_id` nulled. Deleting is not undoable - confirm with the operator and
   prefer pause.
 
 ### MC schedules and templates (spawn cards)
@@ -204,7 +204,7 @@ Four things that bite:
 Templates are reusable markdown card bodies with `{{var}}` markers.
 `mc_templates_list({ domain, include_builtins })` returns tenant templates and platform built-ins
 together; when both define a name, the tenant version wins (`is_tenant_override: true`).
-**Built-ins cannot be edited** — `mc_template_update` refuses them, so shadow one with
+**Built-ins cannot be edited** - `mc_template_update` refuses them, so shadow one with
 `mc_template_create({ name, body, domain, description, variables })` first (name is lowercase a-z
 0-9 with `.` `_` `-`; `variables` is auto-extracted from the body markers if omitted).
 `mc_templates_render({ name, variables, strict })` renders server-side and you pipe the result
@@ -225,18 +225,18 @@ schedule and leaves already-spawned cards alone.
 
 ## Digest reads
 
-- `mc_decisions_pending` — blocked on a human, bucketed by priority. The bucket the operator acts on.
-- `mc_tasks_next({ assignee, limit })` — ready-to-work only (`open`, `awaiting_agent`,
+- `mc_decisions_pending` - blocked on a human, bucketed by priority. The bucket the operator acts on.
+- `mc_tasks_next({ assignee, limit })` - ready-to-work only (`open`, `awaiting_agent`,
   `in_progress`). It **excludes `awaiting_human` by construction**, so it is never the full queue on
   its own. Default limit is 5 and max is 50; without `limit` you report five cards. Without
   `assignee` you get the whole account.
-- `mc_sla_breached` — past the priority SLA (defaults P0 1h, P1 4h, P2 24h, P3 168h; override per
+- `mc_sla_breached` - past the priority SLA (defaults P0 1h, P1 4h, P2 24h, P3 168h; override per
   call with `sla_P0_hours` and friends). Rows carry `age_hours`, `sla_hours`, `over_by_hours`.
-- `mc_tasks_aged({ status, over_hours })` — measured against `updated_at`, so any comment or nudge
+- `mc_tasks_aged({ status, over_hours })` - measured against `updated_at`, so any comment or nudge
   resets it. Default `awaiting_human` over 24h.
-- `mc_tasks_stalled({ over_hours, status })` — measured against the EVENT log, so a card whose only
+- `mc_tasks_stalled({ over_hours, status })` - measured against the EVENT log, so a card whose only
   update was an agent claim still counts. Default 48h. Returns `hours_since_last_event`.
-- `account_audit_health({ account_id })` — one call for memory / MC / PM / sites / keys / CRM counts
+- `account_audit_health({ account_id })` - one call for memory / MC / PM / sites / keys / CRM counts
   and last activity, plus `drift_flags[]` and a `drift_score`. Per-tenant: `account_id` must be this
   key's own account, from `get_account_info`.
 

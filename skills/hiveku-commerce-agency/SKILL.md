@@ -31,20 +31,25 @@ them. Every tool named below is a real Hiveku MCP tool.
   structure, quote templates, contract terms, decisions) -> `memory_create`. Work items ->
   `pm_tasks_create` / `pm_tasks_complete`. There is no commerce deliverable tool - the
   monthly report is assembled from live pulls plus memory (see Monthly report).
-- Know what this MCP surface can and cannot write. Shopify here is READ plus one write:
+- Know what this MCP surface can and cannot write. Shopify here is READ-ONLY in practice.
   `shopify_admin` dispatches named handlers, and the ones that exist are: `ping`, `get_shop`,
   `list_products`, `list_orders`, `list_installed_apps`, `invalidate_cache`, `app_compat_check`,
-  `create_product_draft`, `product_inventory`. `create_product_draft` is the only one that
-  creates anything. Note that ORDERS and per-product INVENTORY are readable here
-  (`list_orders`, `product_inventory`), so revenue and stock questions do not need to leave
-  Claude. There is still no product update, price, SEO-field, metafield, collection, or publish
-  handler. Catalog and pricing changes are a documented HANDOFF: you audit, you draft the
-  copy, the client applies it in Shopify admin. Never tell a client you changed their store.
-- Confirm before writes, and treat the two engines differently. Reading a catalog or listing
+  `create_product_draft`, `product_inventory`. Eight of the nine never change anything in the
+  store (`invalidate_cache` only pings deployed Hiveku sites). `create_product_draft` is the one
+  that creates, and it carries `policy: 'admin'`, which is satisfied by a forwarded
+  `x-builder-user-id` header that the Olympus proxy does not send - so over MCP it returns 403
+  "Write actions require a forwarded x-builder-user-id with admin or owner role" every time.
+  Never build a plan on it; product creation is a dashboard action. ORDERS and
+  per-product INVENTORY are readable (`list_orders`, `product_inventory`), so revenue and stock
+  questions do not need to leave Claude. There is no product update, price, SEO-field,
+  metafield, collection, or publish handler at all. Catalog and pricing changes are a documented
+  HANDOFF: you audit, you draft the copy, the client applies it in Shopify admin. Never tell a
+  client you changed their store.
+- Confirm before writes, and treat the two engines differently. Reading a catalog, orders, or
   estimates is safe. But `crm_estimate_send` and `crm_envelope_send` put a document in front
-  of a paying client, `crm_estimate_convert_to_invoice` revokes the client's live estimate
-  link and cannot be undone, and `shopify_eject_manifest` is a one-way strip of a project's
-  storefront scaffold. Summarize exactly what you are about to send or change, and get a yes.
+  of a paying client, and `crm_estimate_convert_to_invoice` flips the estimate to 'converted'
+  and revokes the client's live estimate link, which cannot be undone. Summarize exactly what
+  you are about to send or change, and get a yes.
 - ALL money on the CRM side is integer CENTS (`unit_cents`, `discount_cents`, `amount_cents`)
   and ALL tax is BASIS POINTS (`tax_bps`: 825 = 8.25%). Dollars x 100, percent x 100, every
   single write. `unit_cents: 199.99` quotes a client two dollars; `tax_bps: 8.25` charges
@@ -75,18 +80,31 @@ them. Every tool named below is a real Hiveku MCP tool.
    connect flow (Play 0) before promising any Shopify work.
 3. Catalog census: `shopify_catalog_list({ project_id, params: { first: 100 } })`. Know the
    real return shape: product-level rows only - handle, title, status, `totalInventory`
-   aggregate, price, featured image. Max 100 per call, newest products first, no cursor. It
-   does NOT return variants, description bodies, SEO title/meta, or collection membership, so
-   a "full census" of a catalog over 100 products is not available from MCP - work by handle
-   and say so. Capture the product count, draft-vs-active split, and the gaps you CAN see
-   (status wrong for the item, zero `totalInventory` on an active product, no featured image).
-4. Inventory baseline: `shopify_inventory_get({ project_id, params: { first: 50 } })` for the
-   50 most recently created products, or `{ params: { handle } }` per named product. Returns
-   each product's variants with `inventoryQuantity`, `price`, `sku`, `title`, `options`. There
-   is no location breakdown and no bestseller or velocity query anywhere in the registry. Note
-   stockouts, negatives, and anything at zero that is still active.
-5. Quote-to-cash census: `crm_estimate_list` -> every estimate and status (draft, sent, viewed,
-   accepted, declined, expired, converted). `crm_envelope_list` -> contracts by status
+   aggregate, price, featured image. `first` is 1-100 and defaults to 20, and there is no
+   cursor. The sort is `sortKey: UPDATED_AT, reverse: true` - MOST RECENTLY EDITED first, NOT
+   newest-created. A product created two years ago and touched yesterday is row 1, so never
+   describe the top of this list as "new products". It does NOT return variants, description
+   bodies, SEO title/meta, or collection membership, so a "full census" of a catalog over 100
+   products is not available from MCP - work by handle and say so. Capture the product count,
+   draft-vs-active split, and the gaps you CAN see (status wrong for the item, zero
+   `totalInventory` on an active product, no featured image).
+4. Inventory and revenue baseline: `shopify_inventory_get({ project_id, params: { first: 50 } })`
+   for the 50 most recently UPDATED products (same `UPDATED_AT` sort; `first` is 1-50, default
+   20), or `{ params: { handle } }` per named product. Returns each product's variants with
+   `inventoryQuantity`, `price`, `sku`, `title`, `options`. There is no location breakdown and
+   no bestseller or velocity query anywhere in the registry. Note stockouts, negatives, and
+   anything at zero that is still active. Then take the revenue baseline from orders:
+   `shopify_admin({ project_id, admin_action: 'list_orders', params: { first: 100 } })` ->
+   per-order `name`, `processedAt`, `createdAt`, `email`, `displayFinancialStatus`,
+   `displayFulfillmentStatus`, `totalPriceSet.shopMoney { amount, currencyCode }`, and
+   `customer`. Newest-processed first, `first` is 1-100 (default 25), optional `query` is a
+   Shopify search filter string (max 200 chars, e.g. `"updated_at:>=2026-06-01"`). It needs the
+   `read_orders` scope, which IS in the default Shopify scope set - a connection made with a
+   custom `scopes` override may be missing it, and that reads as an empty order list.
+5. Quote-to-cash census: `crm_estimate_list` -> estimates and status (draft, sent, viewed,
+   accepted, declined, expired, converted). It PAGES: `limit` defaults to 50 and maxes at 200,
+   with `offset` - so "every estimate" on a busy account means walking pages, not one call.
+   `crm_envelope_list` -> contracts by status
    (draft/sent/viewed/completed/declined/voided). `crm_estimate_template_list`,
    `crm_invoice_template_list`, and `crm_contract_template_list` -> the template library to
    build on. `accounting_invoice_list({ status: 'all' })` and `accounting_ar_aging` -> the
@@ -95,9 +113,9 @@ them. Every tool named below is a real Hiveku MCP tool.
 6. Storefront reality: native Shopify online store, or a headless / Hiveku-hosted storefront?
    `shopify_scaffold_compat({ project_id, feature: 'storefront-client' })` reports the router
    type, path aliases, Tailwind presence, and route collisions without writing anything - that
-   tells you what surface you are on. Do NOT run `shopify_eject_manifest` for orientation; it
-   is a one-way strip (see Play 4). To see what a scaffold placed, read the project files
-   through the web department's tooling.
+   tells you what surface you are on. To see what a scaffold actually placed, read the project
+   files through the web department's tooling - `shopify_eject_manifest` will not tell you (see
+   Play 4: it is broken over MCP).
 7. Record the baseline in `memory_create` - store domain and connection state, product count
    and draft/active split, the seller handles the CLIENT names as their top sellers (no tool
    ranks them), the catalog gaps you verified, the stalled-quote and unsigned-contract and
@@ -131,10 +149,19 @@ Do this before any Shopify play, and re-check whenever calls start failing.
   granted scopes. `shopify_status({ project_id })` -> the project's EFFECTIVE connection,
   override or account default.
 - Prereq before connecting: the account needs a bring-your-own Shopify OAuth app. Find it with
-  `oauth_app_list({ provider: 'shopify' })`. Without one, `shopify_connect_start` returns 412
-  with `code='no_oauth_app'`. Shopify apps are registered in the Hiveku dashboard (Commerce ->
-  Settings -> Shopify, client_id and client_secret from the client's Shopify Partner or custom
-  app), NOT via `oauth_app_create` - raise a `pm_tasks_create` ticket for that step.
+  `oauth_app_list` - note its published `provider` enum is google | microsoft | meta only, so
+  `provider: 'shopify'` is off-schema; nothing validates args against the schema server-side and
+  the route does accept it, but the safe call is `oauth_app_list({})` and filtering the rows
+  yourself. Without an app, `shopify_connect_start` returns 412 with `code='no_oauth_app'`.
+- Registering that app: prefer the Hiveku dashboard (Commerce -> Settings -> Shopify; the
+  connect dialog takes name, client_id, client_secret from the client's Shopify Partner or
+  custom app, and is the ONLY place that also stores the App Automation Token used for headless
+  extension deploys). `oauth_app_create({ provider: 'shopify', name, client_id, client_secret,
+  products: ['shopify_storefront'] })` does reach the same table - the route's provider list
+  includes shopify and `shopify_storefront` is a valid product for it - but 'shopify' is
+  likewise absent from that tool's published enum, `name` is required (omit it and the route
+  400s), and it cannot set the automation token. Raise a `pm_tasks_create` ticket for the
+  dashboard step unless the client explicitly wants it done from here.
 - Not connected: `shopify_connect_start({ oauth_app_id, shop_domain, intent_type })`, all three
   required. `intent_type` is an ENUM VALUE, not a tool name: `shopify_account_connect` (account
   default), `shopify_project_connect` (bind to one project - also pass `project_id`; this is
@@ -148,13 +175,22 @@ Do this before any Shopify play, and re-check whenever calls start failing.
 - Token expired or scopes changed: run `shopify_connect_start` again with
   `intent_type: 'shopify_reconnect'` and the existing `connection_id`. A silent 401 or empty
   result from a Shopify read almost always means a lapsed token - reconnect before debugging.
-- After the client edits the store in Shopify admin, run
-  `shopify_admin({ project_id, admin_action: 'invalidate_cache' })` so Hiveku re-reads it;
-  otherwise your next catalog read can serve the pre-edit picture.
-- One CRM-side prerequisite belongs here too: `crm_envelope_send` requires the `from_email`
-  setting on `crm_payment_integrations`, which is a dashboard setting with no MCP tool. Confirm
-  with the client that it is set before the engagement's first contract send. A first-send
-  failure there is configuration, not payload - do not rewrite the envelope chasing it.
+- Your own reads are never stale: `shopify_catalog_list`, `shopify_inventory_get`, and
+  `list_orders` all hit the Admin API with `cache: 'no-store'`, so they are live every time.
+  `invalidate_cache` is for the DEPLOYED SITE, not for you - it fans a cache-tag bust out to
+  every deployed Hiveku site rendering that store, so a headless storefront stops serving the
+  pre-edit page. It REQUIRES a `tags` array (1-20 strings, 1-64 chars each) and 400s without
+  one; the tags the platform itself uses are `shopify-products` and `shopify-collections`:
+  `shopify_admin({ project_id, admin_action: 'invalidate_cache', params: { tags: ['shopify-products'] } })`.
+  It reports `{ attempted, succeeded, failed }` - `attempted: 0` means no deployed site uses
+  this connection, which is normal on a native-Shopify store.
+- One CRM-side setting belongs here too, and it is a BRANDING choice, not a blocker.
+  `crm_envelope_send` does NOT require the `from_email` on `crm_payment_integrations`: with it
+  set (and the domain verified) the contract sends from the client's own commerce domain via
+  SES; with it unset the route falls back to Hiveku's contract sender
+  (`agreements@notifications.hiveku.com`) via Resend and the signer still gets the email. It is
+  a dashboard setting with no MCP tool, so you cannot read or set it - ask the client which
+  sender they want before the engagement's first contract send.
 - OAuth redirect and app-install steps happen in a browser, not from here. When a step needs
   the client to click "Install" or approve scopes in their Shopify admin, raise a
   `pm_tasks_create` task with exact instructions - do not pretend to complete a browser
@@ -166,9 +202,14 @@ play is AUDIT plus COPY plus HANDOFF - Hiveku cannot edit an existing Shopify pr
 
 Read first (cheap, run freely):
 - `shopify_catalog_list({ project_id, params: { first: 100 } })` -> handle, title, status,
-  `totalInventory`, price, featured image. Product level only, max 100 per call, newest first.
+  `totalInventory`, price, featured image. Product level only, `first` 1-100 (default 20),
+  sorted MOST RECENTLY UPDATED first (`sortKey: UPDATED_AT`), not newest-created.
 - `shopify_inventory_get({ project_id, params: { handle } })` -> that product's variants with
   `inventoryQuantity`, `price`, `sku`, `title`, `options`.
+- `shopify_admin({ project_id, admin_action: 'list_orders', params: { first: 100, query } })`
+  -> the order side of the same catalog: which handles are actually selling is NOT in here
+  (orders come back without line items), but order count, order value, financial status, and
+  fulfillment status are.
 
 What you can audit from MCP: status (draft vs active), missing featured image, zero or
 negative inventory on an active product, variant structure and per-variant price and sku,
@@ -187,12 +228,15 @@ Write descriptions and merchandising copy the brand way:
 - `talk_to_department({ domain: 'content', message })` with the product, its attributes, the
   target avatar, and the SEO keyword it should own -> copy in the brand voice, not generic
   marketplace filler. Same for collection descriptions. (`domain: 'commerce'` is rejected.)
-- Deliver it, do not paste it. `shopify_admin` has no product-update handler. The only Shopify
-  create available is `shopify_admin({ project_id, admin_action: 'create_product_draft',
-  params })` for a NEW draft product. For anything existing, ship a `pm_tasks_create` ticket
-  holding the exact product handle, the field-by-field before and after, and the copy ready to
-  paste. After the client applies it, run
-  `shopify_admin({ project_id, admin_action: 'invalidate_cache' })` and re-read to confirm.
+- Deliver it, do not paste it. `shopify_admin` has no product-update handler, and the one
+  create handler (`create_product_draft`) is admin-role-gated on a header the Olympus proxy
+  never forwards, so it 403s from here - do not offer it as a shortcut. EVERY product change,
+  new or existing, ships as a `pm_tasks_create` ticket holding the exact product handle, the
+  field-by-field before and after, and the copy ready to paste. After the client applies it,
+  re-read `shopify_catalog_list` / `shopify_inventory_get` to confirm - those reads are live, so
+  nothing has to be invalidated first. If the client runs a headless Hiveku storefront, follow
+  up with `invalidate_cache` and its required `tags` so the deployed page stops serving the old
+  copy.
 - If the storefront is a Hiveku-hosted project, display copy may live in project files or CMS
   instead - route that through the web department's tools, where you CAN write.
 
@@ -201,9 +245,10 @@ Both are recommendation work here. No pricing, collection, or metafield handler 
 - Pricing: audit with `shopify_inventory_get` (per-variant `price`) and `shopify_catalog_list`
   (product price). Model the change, show the client the exact resulting list product by
   product with old price and new price, and hand it over as a `pm_tasks_create` ticket they
-  apply in Shopify admin. Never describe a price change as done until you have re-read it
-  after `invalidate_cache`. Compare-at pricing (the strike-through) is a merchandising lever,
-  not a lie - recommend it only where the item genuinely sold higher.
+  apply in Shopify admin. Never describe a price change as done until you have re-read it with
+  `shopify_inventory_get` (that read is live - no cache step needed). Compare-at pricing (the
+  strike-through) is a merchandising lever, not a lie - recommend it only where the item
+  genuinely sold higher.
 - Collections are the store's navigation and the merchandiser's shelf, and they are entirely
   outside this MCP surface: you cannot read membership and cannot change it. Design the
   collection structure, write the collection copy, specify the membership rules, and ticket
@@ -215,17 +260,21 @@ Both are recommendation work here. No pricing, collection, or metafield handler 
 Stockouts on sellers and dead stock on shelves both cost money. Your job is to surface, the
 client's job is usually to buy.
 - `shopify_inventory_get({ project_id, params })` -> per-VARIANT `inventoryQuantity`, `price`,
-  `sku`, `title`, `options`. Selection is `{ handle }` for one product or `{ first: N }` (max
-  50) for the most RECENTLY CREATED products. There is no way to query by sales velocity or
-  bestseller rank - `{ first: 50 }` is newest, not top.
+  `sku`, `title`, `options`. Selection is `{ handle }` for one product or `{ first: N }` (1-50,
+  default 20) for the most RECENTLY UPDATED products - the handler sorts
+  `sortKey: UPDATED_AT, reverse: true`, so row 1 is whatever was edited last, which may be an
+  old SKU and need not include a product added this week. There is no way to query by sales
+  velocity or bestseller rank; `{ first: 50 }` is last-touched, not newest and not top.
 - Build the seller watchlist by hand and persist it: ask the client which handles are their
   sellers, store that list with `memory_create`, and each week iterate `{ handle }` calls over
   it. That list is the only "top sellers" this skill has.
 - Stockout watchlist: any active seller at or near zero is an active revenue leak - every
   day out of stock is lost orders plus a demotion in Shopify's own product ranking. Surface
-  these the day they cross the line, as a task with the SKU and on-hand. Velocity is not
-  available from any tool - if you quote a units-per-day figure, it came from the client or
-  from an analytics source you name, never from Shopify here.
+  these the day they cross the line, as a task with the SKU and on-hand. PER-SKU velocity is
+  still not obtainable: `list_orders` returns order headers only (no line items), so it gives
+  you order count and order value over a date window but never units-per-SKU-per-day. Quote a
+  units-per-day figure only from the client or from an analytics source you name - and quote
+  order-level revenue from `list_orders`, which is real and yours to cite.
 - Reorder points: for each core SKU set a floor (average daily sales x lead time in days, plus
   a safety buffer, with the sales figure supplied by the client); when on-hand crosses it,
   raise a restock task. There is no automated reorder tool - the discipline is the weekly check.
@@ -258,14 +307,21 @@ optionally `sitemap`, `customer-account`, `reviews`, `subscriptions`.
 
 - Scaffolding is idempotent: existing files are SKIPPED unless `overwrite: true`. Never pass
   `overwrite: true` on a project someone has hand-edited without confirming - it clobbers.
+- `shopify_storefront_scaffold` 412s with "No Shopify connection is active for this project"
+  when the project has no effective connection. Run Play 0 first; that 412 is not a scaffold
+  bug. `shopify_scaffold_compat` has no such gate - it only analyzes the project (router type,
+  aliases, Tailwind, route collisions), so it answers even with no store connected.
 - After scaffolding, the coder/deploy pipeline picks up the new files. Use `preview_sync` /
   deploy to make them live. Scaffolded is not shipped.
-- `shopify_eject_manifest({ project_id })` is DESTRUCTIVE and ONE-WAY BY DESIGN. It ejects the
-  Shopify storefront manifest from the project and cannot be undone. Never run it to inspect,
-  orient, or "see what the scaffold placed" - to do that, read the project files through the
-  web department's tooling. Run it only on an explicit client instruction to take the
-  storefront off Hiveku's managed scaffold, and only after you have restated in plain words
-  what will be removed and gotten a yes.
+- `shopify_eject_manifest({ project_id })` DOES NOT WORK from here and is not the destructive
+  tool its one-line registry description implies. The registry maps it to a POST, the builder
+  route behind it exports GET only, so the call comes back 405. And that GET is read-only by
+  construction: it computes a migration plan for moving the project to a stand-alone
+  Hydrogen/Oxygen repo, persists nothing, and transforms nothing - the actual eject runner is
+  unbuilt. So: do not run it (it fails), do not warn a client that it would strip their
+  storefront (it would not), and never promise an eject. If a client genuinely wants off the
+  managed scaffold, that is a scoped engineering project - ticket it with `pm_tasks_create`.
+  To see what a scaffold placed, read the project files through the web department's tooling.
 - The scaffolded storefront reads Shopify live at runtime, so the catalog work in Plays 1-2
   (applied by the client in Shopify admin) powers the headless pages - catalog first,
   storefront second. Code edits, build, and deploy belong to the web department's tooling.
@@ -329,7 +385,7 @@ Work the pipeline (where the money is):
   restarted, and restarting it is the retainer's job.
 - When a client accepts but the system still shows "sent", `crm_estimate_mark_accepted` records
   it so the pipeline stays honest and the quote is eligible to convert. Only on real acceptance
-  - never to flatter a report. Expired quotes get re-issued with fresh pricing and a new expiry
+ - never to flatter a report. Expired quotes get re-issued with fresh pricing and a new expiry
   (`crm_estimate_create`, or `crm_estimate_update` then re-send), not resurrected stale.
 
 ## Play 6 - Contracts and e-signature envelopes
@@ -367,10 +423,13 @@ Create and send:
   `account_context_get({ domain: 'sales' })`, or use `talk_to_department({ domain: 'content' })`
   for client-facing narrative (`domain: 'commerce'` is rejected). Binding legal terms are not
   something to improvise - use the template language and flag anything nonstandard for review.
-- `crm_envelope_send({ envelope_id, message? })` -> dispatch for signature. PREREQUISITE: the
-  `from_email` setting on `crm_payment_integrations` must be configured or the send errors;
-  that is a dashboard setting with no MCP tool, so verify it with the client before the first
-  send of an engagement (see Play 0). On first send status moves draft -> sent and per-signer
+- `crm_envelope_send({ envelope_id, message? })` -> dispatch for signature. The tool's registry
+  line says it "requires the from_email setting on crm_payment_integrations"; the Olympus route
+  does not - it resolves `from_email` if set (send from the client's verified commerce domain
+  via SES) and otherwise falls back to Hiveku's `agreements@notifications.hiveku.com` via
+  Resend, so the signer is emailed either way. Treat `from_email` as a branding question for
+  the client (see Play 0), not a blocker, and never blame a failed send on it without evidence.
+  On first send status moves draft -> sent and per-signer
   plaintext access tokens are minted server-side; omitting `signer_tokens` regenerates fresh
   ones, which stales any token you captured at create time. On a PARALLEL envelope every
   pending signer is emailed; on a SEQUENTIAL envelope only the first pending signer is - the
@@ -402,19 +461,41 @@ Turn the accepted, signed deal into a bill, then get it paid. Note the seam: est
 under `crm_*`, invoices live under `accounting_*`. There is no `crm_invoice_get`,
 `crm_invoice_list`, or `crm_invoice_send` - `crm_invoice_template_*` is TEMPLATES ONLY.
 
-- Setup, once per account, not per conversion: `crm_invoice_template_list` /
-  `crm_invoice_template_get` to choose the default template (branding, tax, notes, terms) and
-  set `default_due_days`, which seeds each invoice's due date (issue_date + days). That is your
-  net terms. Do this in the strategy phase.
+- Invoice templates are a DASHBOARD surface, and they do not touch the conversion path. You can
+  read them (`crm_invoice_template_list` / `crm_invoice_template_get`) and write them
+  (`crm_invoice_template_create({ name, line_items, ... })`, `crm_invoice_template_update`) -
+  both accept `default_due_days`, `tax_bps`, `notes`, `terms`, `currency`. What you CANNOT do
+  from here is mark one the account default: `is_default` exists only on the dashboard route,
+  not on the Olympus route or either MCP tool (unlike `crm_estimate_template_create`, which does
+  expose it). And `default_due_days` is read by exactly one consumer, the dashboard's
+  new-invoice screen, which prefills a due date from the template you pick there. So a template
+  is worth building for the operator who invoices in the dashboard - but do not tell a client it
+  sets net terms on any invoice you raise from here.
 - `crm_estimate_convert_to_invoice({ estimate_id })` - `estimate_id` is the ONLY argument. It
-  takes no template selection; do not look for one. It creates a fresh DRAFT invoice (copying
-  line items, totals, notes, terms), links it back via `converted_invoice_id` on the estimate,
-  moves the estimate to status 'converted', REVOKES the estimate's portal tokens so the
-  client's quote link dies instantly, and returns 409 if already converted.
-- Nothing reaches the client on that call. It does not send, and it does not bill. What makes
-  it a gate is that it is irreversible: the status change sticks and the client's live estimate
-  link is gone. Confirm real acceptance (and signature on a gated deal) before you run it, for
-  that reason - not because it charges anyone.
+  takes no template selection; do not look for one, and do not expect one to apply. It creates a
+  fresh DRAFT invoice copying line items, totals, `currency`, `tax_bps`, `notes`, and `terms`
+  FROM THE ESTIMATE, stamps `issue_date` as today, and writes NO due_date at all - the invoice
+  it makes has no net terms until someone sets them in the dashboard. It also links back via
+  `converted_invoice_id`, moves the estimate to status 'converted', increments the linked deal's
+  `invoice_count` and `total_invoiced_cents`, and REVOKES the estimate's portal tokens so the
+  client's quote link dies instantly.
+- It is a GATE THE SERVER ENFORCES, not a discipline you keep. Three separate 409s, and you
+  need to know which one you got:
+ - already converted (`converted_invoice_id` set) - the response carries the existing
+    `invoice_id`; go look at that invoice rather than making a second.
+ - `status !== 'accepted'` - "Only accepted estimates can be converted to invoices (current
+    status: X)", hinting at mark-accepted. A sent-but-unaccepted quote CANNOT be converted;
+    record the real acceptance with `crm_estimate_mark_accepted` first, or have the client
+    accept in the portal. Never mark-accept just to clear this 409.
+ - the estimate carries a payment plan (`payment_plan_schedule_id` or `payment_plan_json`) -
+    "its invoices were created by the plan at acceptance. Converting would bill the full amount
+    a second time." That is a double-billing guard. Do not work around it: the invoices already
+    exist, so find them with `accounting_invoice_list` instead.
+- Nothing is emailed to the client on that call and nothing is charged. It is still
+  irreversible: the status change sticks and the client's live estimate link is gone. It also
+  fires the `estimate.converted` workflow trigger, so if the account has a workflow on that
+  event, something downstream CAN reach the client - check before you convert on an account you
+  did not configure. Confirm real acceptance (and signature on a gated deal) first.
 - Find what you just made: `accounting_invoice_list({ status: 'draft' })`. Statuses are
   draft | sent | viewed | partially_paid | paid | void | all, and each row carries the linked
   contact and company.
@@ -433,30 +514,38 @@ under `crm_*`, invoices live under `accounting_*`. There is no `crm_invoice_get`
   `pm_tasks_complete` the pipeline task so the monthly report reconciles.
 
 ## Weekly cadence (every week, both engines)
-Run it as `/hiveku:store` (steps 1-2) and `/hiveku:quotes` (steps 3-5), or by hand:
+Run it as `/hiveku:store` (steps 1-3) and `/hiveku:quotes` (steps 4-6), or by hand:
 1. Inventory: `shopify_inventory_get({ project_id, params: { handle } })` over the watchlist
    handles in memory. Any active seller at or below its reorder floor -> a restock task the
    same day with the on-hand number. Any new stockout -> surface immediately; do not let the
    client discover it from a lost sale.
-2. Catalog drift: `shopify_catalog_list({ project_id, params: { first: 100 } })` - newest
-   first, so new products surface at the top. Flag new products sitting in draft, or active
-   with zero `totalInventory` or no featured image. Publication state and collection membership
+2. Catalog drift: `shopify_catalog_list({ project_id, params: { first: 100 } })` - sorted by
+   LAST UPDATE, so the top of the list is what changed recently, which is the right signal for
+   a drift check but is NOT a list of new products. To find genuinely new SKUs, diff the handle
+   set against last week's snapshot in memory. Flag products sitting in draft, or active with
+   zero `totalInventory` or no featured image. Publication state and collection membership
    are NOT readable here; if the client reports a product missing from the storefront, that is
    a check on the live URL or in their Shopify admin, not a tool call. Ticket the week it
    appears.
-3. Quote pipeline: `crm_estimate_list({ status: 'sent', order: 'created_asc' })` and
+3. Orders: `shopify_admin({ project_id, admin_action: 'list_orders', params: { first: 100 } })`
+   -> the week's order count and order value, plus anything stuck in an unfulfilled
+   `displayFulfillmentStatus` or an unpaid `displayFinancialStatus`. Those two columns are the
+   fastest read on a store quietly failing to ship or failing to collect. 100 is the hard cap
+   per call and there is no cursor argument, so on a high-volume store scope the window with
+   `params.query` instead of trying to page.
+4. Quote pipeline: `crm_estimate_list({ status: 'sent', order: 'created_asc' })` and
    `{ status: 'viewed' }` -> aging quotes are follow-up tasks; freshly accepted moves to
    contract or invoice; expired gets re-issued or closed. Never let a quote sit in limbo for
    two weeks. Watch the 30-day portal-token clock, not just `expires_at`.
-4. Contract pipeline: `crm_envelope_list({ status: 'sent' })`, then
+5. Contract pipeline: `crm_envelope_list({ status: 'sent' })`, then
    `crm_envelope_list_signers({ envelope_id })` on each to find the partially-signed ones
    (some `signed_at` set, some null). Those and long-sent-untouched envelopes get a nudge task.
    Pick up `declined` as a real outcome. A signature that never lands is a deal that never
    closes.
-5. Receivables: `accounting_ar_aging` plus `accounting_invoice_list({ status: 'sent' })` ->
+6. Receivables: `accounting_ar_aging` plus `accounting_invoice_list({ status: 'sent' })` ->
    anything past due gets a chase. `/hiveku:books-chase` runs this end to end with drafted
    reminders.
-6. Pipeline hygiene: `pm_tasks_update` on everything in flight - what shipped, what is
+7. Pipeline hygiene: `pm_tasks_update` on everything in flight - what shipped, what is
    blocked, what waits on the client. Stalled and waiting-on-client are different; label them
    honestly and escalate the ones actually stuck. A stockout on a watchlist seller or a quote
    total that looks wrong gets a same-day look - before the client's.
@@ -477,25 +566,35 @@ the web department. Every number must trace to a named tool call:
 3. Inventory - stockouts caught and cleared, dead stock addressed, current watchlist, from
    `shopify_inventory_get` per-variant `inventoryQuantity`. Frame stockouts as revenue
    protected. Do NOT publish units-per-day or revenue-per-SKU figures from this tool; it
-   returns stock counts and prices only. Sales figures come from the client or a named
-   analytics source, attributed as such.
-4. Quote-to-cash - from `crm_estimate_list` (sent / viewed / accepted / declined / expired /
+   returns stock counts and prices only.
+4. Store revenue - from `shopify_admin({ admin_action: 'list_orders', params: { first, query } })`
+   only. Sum `totalPriceSet.shopMoney.amount` over the window and report currency alongside it
+   (`currencyCode` is per order; never add two currencies into one figure). Order count, average
+   order value, and the unpaid/unfulfilled split from `displayFinancialStatus` /
+   `displayFulfillmentStatus` are all defensible. State the window and the fact that the pull is
+   capped at 100 orders per call, so on a busy store the figure is the window you queried, not
+   the month, unless the window fits. Per-SKU or per-collection revenue is NOT derivable -
+   orders come back without line items; that number comes from the client or a named analytics
+   source, attributed as such.
+5. Quote-to-cash - from `crm_estimate_list` (sent / viewed / accepted / declined / expired /
    converted counts and value), `crm_envelope_list` plus `crm_envelope_list_signers` (contracts
    sent, partially signed, completed, declined), `accounting_invoice_list` (invoices raised, by
    status) and `accounting_ar_aging` (dollars outstanding, by bucket), and closed deals in
    memory. There is no "partially signed" status to filter, so that figure is derived from the
    signer read - derive it, do not estimate it. Usually the clearest ROI story - lead with it
    when the numbers are good.
-5. Work completed and next-month plan - from `pm_tasks_complete`, with expected impact per
+6. Work completed and next-month plan - from `pm_tasks_complete`, with expected impact per
    item. Every figure must be reproducible from a named tool call - no vibes. If a number the
    client wants is not obtainable from any tool (collection membership, SEO field state,
-   per-location stock, sales velocity), say that in the report instead of producing one.
+   per-location stock, per-SKU velocity or per-SKU revenue), say that in the report instead of
+   producing one.
    Cross-check against `pm_milestones_list` so the report aligns with committed milestones.
 
 ## Benchmarks and decision rules
 - Stockout urgency: an out-of-stock active seller loses both direct sales and ranking in
-  Shopify's catalog sort. Any top-20 seller at zero is a same-day escalation; long-tail SKUs
-  wait for the weekly cycle. Reorder floor = average daily units x lead-time days, plus a
+  Shopify's catalog sort. Any handle on the client-supplied seller watchlist at zero is a
+  same-day escalation; everything off the watchlist waits for the weekly cycle. No tool ranks
+  sellers, so "top 20" only ever means the 20 the client named. Reorder floor = average daily units x lead-time days, plus a
   safety buffer sized to demand volatility.
 - Dead stock: meaningful on-hand plus near-zero sales over 60-90 days = promote, bundle, or
   archive. The markdown that clears it funds restocking a seller.
@@ -523,10 +622,18 @@ the web department. Every number must trace to a named tool call:
   the registry only as an OAuth product string.
 - All of those except `shopify_connect_start` and `shopify_connection_status` require
   `project_id`. Resolve it from `sites_list` before the first Shopify call of a session.
-- `shopify_admin` cannot edit an existing product. Nine handlers, one of which creates anything
-  (`create_product_draft`). No price, SEO, metafield, collection, or publish WRITE exists.
-  Orders and per-product inventory are READABLE (`list_orders`, `product_inventory`). Never tell
-  a client you changed their store; you ticket it.
+- `shopify_admin` cannot write anything from here. Nine handlers; the only one that creates
+  (`create_product_draft`) is `policy: 'admin'` and 403s over MCP because the Olympus proxy
+  forwards no `x-builder-user-id`. No price, SEO, metafield, collection, or publish handler
+  exists at all. Orders and per-product inventory are READABLE (`list_orders`,
+  `product_inventory`). Never tell a client you changed their store; you ticket it.
+- `invalidate_cache` is not a refresh for your reads - Admin API reads here are `cache: 'no-store'`
+  and always live. It busts cache tags on DEPLOYED sites, and it REQUIRES
+  `params: { tags: [...] }` (1-20 strings; the platform's own are `shopify-products` and
+  `shopify-collections`). Calling it bare 400s.
+- `list_orders` gives order HEADERS only: no line items, so no per-SKU units or per-SKU revenue.
+  `first` caps at 100 with no cursor argument, so a wider window means `params.query`
+  (a Shopify search filter string, max 200 chars), not paging.
 - Hiveku reads the merchant's ADMIN view only. Whether a buyer can actually see and purchase an
   item - publication channel, collection membership, live availability - has no tool. To
   confirm what a buyer sees, open the live storefront URL or the deployed page. Never trust a
@@ -534,8 +641,10 @@ the web department. Every number must trace to a named tool call:
 - A silent 401 or empty Shopify result is almost always an expired token or changed scopes, not
   missing data - check `shopify_connection_status` first, then re-run `shopify_connect_start`
   with `intent_type: 'shopify_reconnect'` and the existing `connection_id`.
-- `shopify_eject_manifest` is ONE-WAY BY DESIGN and destructive. It is not an inspection tool
-  and must never appear in an onboarding or orientation sequence.
+- `shopify_eject_manifest` is BROKEN, not dangerous. The registry maps it to POST; the builder
+  route exports GET only, so it returns 405. Behind that GET is a read-only migration-plan
+  computation that persists and transforms nothing - the eject runner does not exist yet.
+  Do not call it, and do not repeat the registry's "one-way, by design" line to a client.
 - CENTS and BASIS POINTS on every CRM money write: `unit_cents`, `discount_cents`,
   `amount_cents` are integer cents; `tax_bps` is basis points (825 = 8.25%). Read the total
   back with `crm_estimate_get` before any send.
@@ -548,17 +657,20 @@ the web department. Every number must trace to a named tool call:
 - Estimate portal tokens live 30 days no matter what `expires_at` says, and
   `crm_estimate_delete` and `crm_estimate_convert_to_invoice` both revoke them immediately -
   the client's link dies the moment you run either.
-- `crm_estimate_convert_to_invoice` does NOT bill anyone. It makes a DRAFT invoice and 409s if
-  already converted; sending that invoice is a dashboard action with no MCP tool. Do not report
-  a client as invoiced on the strength of the conversion alone. Confirm acceptance and
-  signature first anyway - the conversion is irreversible and kills the estimate link.
+- `crm_estimate_convert_to_invoice` does NOT bill anyone. It makes a DRAFT invoice with NO
+  due_date; sending that invoice is a dashboard action with no MCP tool. Do not report a client
+  as invoiced on the strength of the conversion alone. It 409s three ways - already converted,
+  status not 'accepted', or the estimate carries a payment plan (that last one is a
+  double-billing guard; the plan already made the invoices). Know which 409 you got before you
+  react to it, and never mark an estimate accepted just to get past the second one.
 - "Partially signed" is not an envelope status. Derive it from
   `crm_envelope_list({ status: 'sent' })` plus `crm_envelope_list_signers` per envelope, or the
   weekly chase finds zero and the monthly report carries a number nobody can reproduce.
-- `crm_envelope_send` needs the `from_email` setting on `crm_payment_integrations`, which no
-  MCP tool sets. On a sequential envelope only signer 1 is emailed on send; that is correct
-  behavior, not a bug to chase.
-- Nothing client-facing - a sent quote or contract, a recorded payment, a deployed storefront,
-  an ejected manifest - goes out without explicit confirmation. Reflect every material action
-  in the PM tasks and every material decision in `memory_create`, so the account has a memory
-  longer than one session.
+- `crm_envelope_send` does NOT need the `from_email` on `crm_payment_integrations`, whatever the
+  registry line says - unset, it sends from `agreements@notifications.hiveku.com` via Resend.
+  The setting only decides whose domain the contract appears to come from. On a sequential
+  envelope only signer 1 is emailed on send; that is correct behavior, not a bug to chase.
+- Nothing client-facing - a sent quote or contract, a recorded payment, a deployed storefront -
+  goes out without explicit confirmation. Reflect every material action in the PM tasks and
+  every material decision in `memory_create`, so the account has a memory longer than one
+  session.

@@ -20,41 +20,66 @@ verbatim; never claim something sent without checking.
 1. **Setup gates first:** `marketing_setup_status`. It checks exactly five conditions -
    marketing_enabled, not_paused, ses_provisioned, verified_sending_domain, mailing_address - each
    with the fix. Do not build until `ready_to_send: true`. What it misses, and what bites:
-   - It does NOT check account-level SES suspension. Also run `email_service_status` and read
+ - It does NOT check account-level SES suspension. Also run `email_service_status` and read
      `sending_enabled` FIRST. When it is false a `suspension` block carries the reason, and ALL
      sending is blocked regardless of how healthy the reputation numbers below it look. Suspensions
      are lifted by Hiveku staff, not by any tool. Stop and tell the user; do not build a campaign.
-   - a VERIFIED sending domain: `email_domain_add({ domain })` returns the DNS records - surface them
+ - a VERIFIED sending domain: `email_domain_add({ domain })` returns the DNS records - surface them
      VERBATIM. Then `email_domain_check_dns({ id })`, NOT `email_domain_verify`. check_dns resolves
      each DKIM CNAME, the SPF TXT and the DMARC TXT against live DNS and returns `action_items[]`
      naming exactly what is still missing or wrong; `email_domain_verify` only echoes SES's yes/no
      and never reports SPF or DMARC at all. Once `all_valid` is true, `email_domain_set_default`.
      The campaign's from_email must be on that verified domain or the send is refused with
      `domain_unverified`.
-   - the CAN-SPAM mailing address (`marketing_mailing_address_set` - all of address, city, state,
+ - the CAN-SPAM mailing address (`marketing_mailing_address_set` - all of address, city, state,
      zip_code, country) - footer validation FAILS without a physical address, so NOTHING can send.
 2. **Audience:** `email_audience_list` - pick or create. `email_audience_create({ name, kind,
    filter_json })`: `kind: "dynamic"` (default) re-evaluates filter_json at send time, `"static"` is a
    hand-maintained list you fill with `email_audience_members_add({ id, contact_ids })`. Members are
    CRM CONTACTS: get ids via `crm_search_contacts` / `crm_contact_upsert_by_email`.
-   - filter_json keys honoured by BOTH the preview and the send, verbatim - do not invent others:
-     include_tags, exclude_tags, lifecycle_stages, lead_statuses, lead_sources, utm_campaigns,
-     created_after, created_before, has_email, min_score, max_score, icp_tiers, company_ids,
-     owner_ids, in_journey_stage, deal_stages, has_open_deal, custom_fields, engaged_campaign_ids,
-     opened_campaign_ids, clicked_campaign_ids, has_shopify_order, shopify_min_orders,
-     shopify_min_spend, shopify_ordered_after, unsubscribed, suppressed.
-   - `visited_pages` and `last_seen_within_days` narrow the SEND correctly but the preview cannot
-     count them - take that number from the dashboard and say so rather than quoting the preview.
-   - `groups`, and any filter_version other than 1, are REFUSED at create/update with a 400 - refused
-     rather than accepted-and-ignored, because a filter the send drops silently widens the campaign to
-     people the operator deliberately excluded. A contradictory filter (a tag both included and
-     excluded) is refused the same way, including when you flip a static audience to dynamic.
-   - lead_sources and utm_campaigns match the CURRENT or the FIRST-TOUCH value, so a contact
-     attributed to that source or campaign at any point qualifies.
-   Then `email_audience_preview({ id })` - it returns total_candidates, deliverable, skipped and
-   skipped_breakdown (no_email / suppressed_bounce / suppressed_complaint / suppressed_manual /
-   globally_unsubscribed). Report the DELIVERABLE count, not total_candidates, and why the rest are
-   skipped. Zero deliverable = the send will be refused.
+ - The WHOLE filter_json vocabulary the engine honours, verbatim - the send and the preview run the
+     same resolver, so this one list covers both: has_email, include_tags, any_tags, exclude_tags,
+     lifecycle_stages, lead_sources, utm_campaigns, lead_statuses, min_lead_score, max_lead_score,
+     created_after, created_before, has_deal, deal_status, deal_pipeline_id, deal_stage_ids,
+     custom_fields, icp_matched_ids, min_icp_confidence, visited_pages, last_seen_within_days,
+     in_journey_stage, engaged_campaign_ids, not_engaged_campaign_ids, has_shopify_order,
+     min_shopify_total_spent_cents, max_shopify_total_spent_cents, min_shopify_order_count,
+     shopify_last_order_after, shopify_last_order_before.
+ - **An unknown key is NOT rejected - it is stored and then ignored.** Neither write path validates
+     key names, so `min_score`, `max_score`, `icp_tiers`, `company_ids`, `owner_ids`, `deal_stages`,
+     `has_open_deal`, `opened_campaign_ids`, `clicked_campaign_ids`, `shopify_min_orders`,
+     `shopify_min_spend`, `shopify_ordered_after`, `unsubscribed`, `suppressed`, `groups`,
+     `filter_version` and every other invented name save with a 201 and then narrow NOTHING - the
+     campaign goes to everyone the remaining keys allow, including the people the operator meant to
+     exclude. Older builds of the tool description advertise several of those names; they are stale,
+     and the list above is the authority. Type those names exactly, then read filter_json back
+     (`email_audience_list`) and confirm the preview count moved the way you expected before you
+     attach the audience to a campaign.
+ - The ONLY filter refusal is the contradiction check (400, with a `contradictions[]` body naming
+     the colliding keys): a tag both required and excluded, every any_tags value also excluded, an
+     inverted lead-score / Shopify-spend / created / last-order range, has_shopify_order:false
+     alongside min_shopify_order_count >= 1, the same campaign id in both engaged_campaign_ids and
+     not_engaged_campaign_ids, and conflicting custom_fields predicates. It fires on create, on
+     update, and when you flip a static audience to dynamic (that hands the stored filter control of
+     who gets mailed). Every predicate AND-intersects - there is no OR.
+ - Score bounds are min_lead_score / max_lead_score, 0-100, and a contact with a NULL lead_score
+     never matches either. has_deal is exactly 'any' | 'open' | 'won' | 'none'; deal_status is an
+     exact deal-status slug that combines with 'any'/'none' and is ignored under 'open'/'won'.
+ - visited_pages and last_seen_within_days resolve against ClickHouse, and `email_audience_preview`
+     DOES size them - same resolver as the send. If ClickHouse is unreachable the resolver throws
+     and the preview route answers `Audience not found`, so a 404 on an audience carrying those two
+     keys means the analytics backend, not a missing audience.
+ - lead_sources and utm_campaigns each match the CURRENT or the FIRST-TOUCH column (lead_source OR
+     original_lead_source, utm_campaign OR original_utm_campaign), so a contact attributed to that
+     source or campaign at any point qualifies. Exact, case-sensitive equality on the raw stored
+     string: "Spring_Promo" does not match "spring_promo".
+   Then `email_audience_preview({ id })` - it returns audience_id, total_candidates, deliverable,
+   skipped and skipped_breakdown (no_email / suppressed_bounce / suppressed_complaint /
+   suppressed_manual / globally_unsubscribed). Report the DELIVERABLE count, not total_candidates,
+   and why the rest are skipped. Zero deliverable = the send will be refused, and the response says
+   so in a `warning` field. The preview resolves at most 10000 contacts, so an exact 10000 is a
+   CEILING, not a count - on a list that big, say the audience is 10000 or more rather than quoting
+   it as the size.
 3. **Content:** `account_context_get({ domain: "marketing" })` FIRST, then draft via
    `talk_to_department({ domain: "content", message })` - subject (<50 chars) + preview text + HTML +
    plain text. Save it with `marketing_template_create` (layout_json block tree, or raw compiled_html).
@@ -69,19 +94,19 @@ verbatim; never claim something sent without checking.
    stays editable in the visual builder, which pasted `compiled_html` does not.
 4. **Draft:** `email_campaign_create({ name, subject, from_email, audience_id, ... })` - those four
    are required - then read back with `email_campaign_get`.
-   - Subject split test: `ab_test_enabled: true` + `ab_subject_b` (on create or update). Assignment is
+ - Subject split test: `ab_test_enabled: true` + `ab_subject_b` (on create or update). Assignment is
      a flat 50/50 at materialization and it tests the SUBJECT ONLY - no body split, no auto-promotion
      of a winner, and `email_campaign_metrics` does NOT break results out by variant. Plan to read the
      result in the dashboard and tell the client that up front; never promise a tool-side readout.
-   - `send_in_recipient_tz: true` delivers at the scheduled wall-clock time in each recipient's own
+ - `send_in_recipient_tz: true` delivers at the scheduled wall-clock time in each recipient's own
      timezone (contacts with no timezone on file fall back to the campaign's scheduled_for). Offer it
      on any send where local time-of-day matters.
 5. **DRY RUN - never skip:** `email_campaign_send_now({ id, dry_run: true })`. It materializes the
    recipient list and reports materialization.totalCandidates / totalQueued / totalSkipped /
    skippedBreakdown WITHOUT sending. Two things a clean dry run does NOT prove:
-   - The plan-cap and empty-audience checks only run on the REAL call. A campaign over the monthly
+ - The plan-cap and empty-audience checks only run on the REAL call. A campaign over the monthly
      email cap dry-runs green and then fails 402 on the real send.
-   - totalQueued is NOT the number who will receive it. The 7-day per-contact frequency cap is applied
+ - totalQueued is NOT the number who will receive it. The 7-day per-contact frequency cap is applied
      at DISPATCH by the cron tick, not at materialization, and skippedBreakdown only ever contains
      no_email / suppressed_bounce / suppressed_complaint / suppressed_manual / globally_unsubscribed.
      Run `marketing_frequency_cap_get` HERE, not after the send. If cap > 0, tell the user totalQueued
@@ -96,23 +121,23 @@ verbatim; never claim something sent without checking.
    the send landed with `email_campaign_metrics({ id })`: status must be 'sent' AND `by_status.sent`
    must be > 0. A 'sent' campaign with `by_status.sent: 0` reached NOBODY.
 8. **After:** `email_campaign_metrics({ id })` returns ONLY `{ campaign_id, status, by_status, total }`
-   - a count of the send rows per status (queued / sending / sent / failed / skipped_suppressed /
+ - a count of the send rows per status (queued / sending / sent / failed / skipped_suppressed /
    skipped_unsubscribed / skipped_frequency_cap). It has NO open, click, delivery, bounce or
-   conversion data, despite what its own tool description claims. NEVER report an open or click rate
-   from it.
-   - Under-delivered? The skipped_* buckets are the answer. A large skipped_frequency_cap means the
+   conversion data - older builds of the tool description promise those counters, and they do not
+   exist. NEVER report an open or click rate from it, and never break it out by A/B variant.
+ - Under-delivered? The skipped_* buckets are the answer. A large skipped_frequency_cap means the
      7-day cap ate the difference (`marketing_frequency_cap_get`); skipped_suppressed /
      skipped_unsubscribed mean the list, not the send, is the problem.
-   - Engagement: `email_logs_list({ limit: 500 })` returns per-message open_count, click_count,
+ - Engagement: `email_logs_list({ limit: 500 })` returns per-message open_count, click_count,
      delivered_at, bounced_at, complained_at. It has NO campaign filter and caps at 500 rows, so on a
      send larger than 500 recipients you CANNOT compute a true campaign open or click rate from tools.
      Say that and point the user at the dashboard - do not estimate.
-   - Why one specific person didn't get it: `email_suppression_list({ type })` names the individual
+ - Why one specific person didn't get it: `email_suppression_list({ type })` names the individual
      addresses (bounce | complaint | manual | unsubscribe). `email_suppression_remove` REFUSES on
      sticky suppressions (hard bounces and spam complaints) - deliberate, and there is no way around
      it: the address must re-opt-in through a form, it cannot be re-added. `email_subscription_list`
      shows the preference-center lists that appear on unsubscribe pages.
-   - `email_campaign_resend_non_openers({ id })` builds a NEW static audience of
+ - `email_campaign_resend_non_openers({ id })` builds a NEW static audience of
      delivered-but-never-opened contacts and clones the campaign against it, landing as a DRAFT. It
      sends nothing - the clone goes back through steps 5-7.
-9. Finish every session of work the same way: persist notable learnings to department memory — read the department's current document with `memory_list({ domain: "<dept>" })`, append your note to the `content` it returns, and send the WHOLE merged document to `memory_update({ memory_id, content })`, which REPLACES it (sending only the new note destroys everything that department had accumulated); use `memory_create({ type: "memory", name: "<dept>", content })` only when no entry exists, and keep `<dept>` to a canonical department name (see hiveku-orient), and reflect the work in Hiveku PM: `pm_projects_list` to find the project (it filters only by `status`; `project_type` is named in its description but is NOT in its schema, so the proxy drops it and you filter the returned list yourself), or `pm_projects_create({ name, project_type })` where project_type is one of seo | ppc | marketing | website | app_dev, then `pm_tasks_create({ project_id, title })` (the field is `title`, not `name`), `pm_tasks_update` as it moves, `pm_tasks_complete({ id, summary })` when the loop is closed. Reopen a task closed too early with `pm_tasks_uncomplete`, never `pm_tasks_update`. Hiveku, not this folder, is the source of truth.
+9. Finish every session of work the same way: persist notable learnings to department memory - read the department's current document with `memory_list({ domain: "<dept>" })`, append your note to the `content` it returns, and send the WHOLE merged document to `memory_update({ memory_id, content })`, which REPLACES it (sending only the new note destroys everything that department had accumulated); use `memory_create({ type: "memory", name: "<dept>", content })` only when no entry exists, and keep `<dept>` to a canonical department name (see hiveku-orient), and reflect the work in Hiveku PM: `pm_projects_list` to find the project (it filters only by `status`; `project_type` is named in its description but is NOT in its schema, so the proxy drops it and you filter the returned list yourself), or `pm_projects_create({ name, project_type })` where project_type is one of seo | ppc | marketing | website | app_dev, then `pm_tasks_create({ project_id, title })` (the field is `title`, not `name`), `pm_tasks_update` as it moves, `pm_tasks_complete({ id, summary })` when the loop is closed. Reopen a task closed too early with `pm_tasks_uncomplete`, never `pm_tasks_update`. Hiveku, not this folder, is the source of truth.

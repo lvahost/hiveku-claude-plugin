@@ -153,11 +153,11 @@ Ten minutes weekly, and the highest-yield recurring habit in link work.
 2. Compare `profile.lost_backlinks_30d` and `new_backlinks_30d` from `seo_backlinks_list` with last
    week's recorded values.
 3. For each loss worth chasing, `web_scrape({ url: <source_url> })` and classify it:
-   - Page live, our link removed: editorial or redesign. Recoverable by outreach.
-   - Page 404: host removed it. Not recoverable; hunt a replacement page with
+ - Page live, our link removed: editorial or redesign. Recoverable by outreach.
+ - Page 404: host removed it. Not recoverable; hunt a replacement page with
      `web_map({ url: <source_domain> })`.
-   - Our target URL 404s or chains: **our fault**. Fix the redirect. Free recovery, today.
-   - Page live and link present: crawler artifact. Do not chase, do not report as lost.
+ - Our target URL 404s or chains: **our fault**. Fix the redirect. Free recovery, today.
+ - Page live and link present: crawler artifact. Do not chase, do not report as lost.
 4. `seo_serp_get({ keyword: <cluster head the link supported> })` only if a top-10 position moved
    the same week. A lost link plus a stable ranking is a logging item, not an incident.
 
@@ -190,7 +190,8 @@ task.
    and target pages. Outbound owns loading, sequencing and sending. **Do not send from here.**
 
 **Closes the loop:** `pm_tasks_create` for the campaign with segment counts and target link count;
-`memory_create` the angle and segments, or `memory_update` the existing link-strategy note.
+`memory_create` the angle and segments, or, if the note already exists, `memory_update({ memory_id,
+content })` with the existing link-strategy note plus your addition, since that call REPLACES it.
 
 **Confirm before handoff:** segment counts, five sample prospects with why each qualifies, and the
 angle copy. Get a yes. Outreach is client-facing sending: never silent, never bulk-applied.
@@ -357,8 +358,10 @@ plumbing, not strategy.
 
 ## 6. Persistence and reporting
 
-**Memory (decisions, not data).** `memory_list` first to avoid duplicates, then `memory_create` for
-a new decision or `memory_update` to amend one. In memory: the agreed competitor set and why; the
+**Memory (decisions, not data).** `memory_list({ domain: "seo" })` first to avoid duplicates, then
+`memory_create` only when nothing came back. To amend, send `memory_update({ memory_id, content })`
+the whole document with your edit folded in: it REPLACES the entry, so a bare amendment erases every
+prior decision. In memory: the agreed competitor set and why; the
 authority baseline with its date; the link strategy (lanes, assets, anchors we will and will not
 request); vetoed domains; the disavow stance. Never link tables or prospect lists - those live in
 deliverable sheets and `hiveku-data/`.

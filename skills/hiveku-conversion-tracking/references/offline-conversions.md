@@ -291,15 +291,15 @@ show, confirm.
   silence is judged on `all_conversions`.** `conversions: 0, all_conversions: 50` is a secondary
   action recording fine, NOT a dead tag.
 - **`ppc_google_conversion_actions`** (create, get-tag, update):
-  - **`type_` carries a trailing underscore.** `WEBPAGE | UPLOAD_CLICKS | UPLOAD_CALLS | AD_CALL |
+ - **`type_` carries a trailing underscore.** `WEBPAGE | UPLOAD_CLICKS | UPLOAD_CALLS | AD_CALL |
     WEBSITE_CALL | CLICK_TO_CALL`. This lane wants `UPLOAD_CLICKS` (deals) or `UPLOAD_CALLS` (calls).
-  - `include_in_conversions_optimization: false` makes it **reporting-only, excluded from Smart
+ - `include_in_conversions_optimization: false` makes it **reporting-only, excluded from Smart
     Bidding.** True if offline deals should change bidding, false to observe without disturbing a
     working campaign. Say which you chose.
-  - `phone_call_duration_seconds`: calls shorter than this record **NOTHING**. Set it to the
+ - `phone_call_duration_seconds`: calls shorter than this record **NOTHING**. Set it to the
     account's real qualification threshold; set too low, it is the same threshold that makes a
     12-second wrong number a conversion.
-  - **`always_use_default_value: true` FLATTENS every conversion to one number and destroys
+ - **`always_use_default_value: true` FLATTENS every conversion to one number and destroys
     transaction-level revenue reporting.** tROAS then bids against a constant, indistinguishable from
     having no value-based bidding while looking like you do. Never set it on a revenue lane; if a
     client asks for it, confirm explicitly.

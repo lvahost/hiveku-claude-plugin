@@ -155,13 +155,35 @@ you already added with `workflow_node_add`.
 
 ## Install a template instead of running the play by hand
 
-`workflow_templates_list` returns 16 shipped, agent-instantiable templates: 3
-form/newsletter migration defaults plus 13 marketing delivery playbooks - weekly
-search-terms-to-negatives for Google AND Bing, ad disapproval triage, impression-share
-review, lost-backlink alert, tech-audit regression, rank-drop response, content-decay
-refresh, monthly AEO visibility, GBP review SLA, weekly GBP post draft, and a Core Web
-Vitals watch. **Every PPC write inside them stages to approval and never auto-applies**,
-which is the safety property that makes them appropriate on a client account.
+`workflow_templates_list` returns 19 shipped, agent-instantiable templates: 3
+form/newsletter migration defaults (`contact-form-canonical`, `quote-form-canonical`,
+`newsletter-canonical`) plus 16 marketing delivery playbooks:
+
+| slug | what it does |
+|---|---|
+| `weekly-search-terms-negatives` | Weekly Google Ads search terms to negative keywords |
+| `weekly-bing-wasted-spend` | Weekly Bing wasted spend to negative keywords |
+| `search-terms-ai-triage` | Google search terms, agent-classified, staged as ONE bulk review item |
+| `bing-search-terms-ai-triage` | The Bing sibling of the above |
+| `disapproval-triage` | Ad disapproval triage (event trigger) |
+| `monthly-impression-share-review` | Monthly impression share review |
+| `monthly-budget-reallocation-review` | Monthly cross-platform reallocation brief by email |
+| `weekly-lost-backlink-alert` | Lost backlink alert (weekly) |
+| `monthly-tech-audit-regression` | Monthly tech audit plus regression diff |
+| `rank-drop-response` | Rank drop response (event trigger) |
+| `monthly-decay-refresh` | Monthly content decay to refresh briefs |
+| `monthly-aeo-visibility` | Monthly AEO visibility report |
+| `weekly-cwv-watch` | Weekly Core Web Vitals watch |
+| `gbp-review-sla-escalation` | GBP review SLA escalation (daily) |
+| `weekly-gbp-post-draft` | Weekly GBP post draft |
+| `new-review-response` | New review response (event trigger) |
+
+**Every PPC write inside them stages to approval and never auto-applies** - the AI
+triage plays stage with `auto_apply` OFF and the reallocation review only emails a
+brief. That is the safety property that makes them appropriate on a client account.
+Do not trust this table over the tool: call `workflow_templates_list` and read the
+returned `count` and `variables[]` before instantiating, because templates are added
+between plugin releases.
 
 When a recurring play is identified, install it once rather than performing it every
 week by hand:
@@ -228,7 +250,7 @@ Run this in order. Do not skip to the interesting step.
    `last_succeeded_at` / `last_failed_at` / `last_failed_run_id`. Drill into that last
    id. It caps at 1000 runs in the window, so narrow `since` on a busy workflow.
 3. **You know the run.** `workflow_run_get({ workflow_id, run_id })` for `step_states`
-   - a per-node map of `{ status, input, output, error }` showing exactly what each
+ - a per-node map of `{ status, input, output, error }` showing exactly what each
    node received, produced, or failed on. This is the primary debug surface.
    (`workflow_run_status` is the same payload under an older name.)
 4. **You need the timeline, not the final state.** `workflow_run_logs({ workflow_id, run_id })`
@@ -250,6 +272,20 @@ failed | cancelled`, plus `stopped_paused`, `stopped_loop_detected`,
 returns nothing and looks exactly like a healthy account. (`workflow_run_summary`'s
 aggregate response does key one of its counts `succeeded` - that is a response field,
 not a filter value. Do not send it as a `status` filter.)
+
+`stopped_circuit_breaker` is in the vocabulary but the engine never persists one: the
+only statuses actually written are `stopped_loop_detected` (cascade guard),
+`stopped_rate_limit` (per-account per-minute cap), and `stopped_paused` (an internal
+event arriving at a paused workflow). Filtering on `stopped_circuit_breaker` always
+returns empty, which is not evidence of health. A circuit-breaker auto-pause shows up
+as the failures that preceded it plus `stopped_paused` rows afterwards.
+
+Two limits on `stopped_paused` worth knowing before you promise an operator a full
+replay. It records EVENT triggers only - a webhook hitting a paused workflow is
+deliberately not logged (the pause is already recorded on the workflow itself), so
+stranded webhook deliveries live in `trigger_runs` and surface only through
+`workflow_stranded_list`. And the recording is capped at 200 rows per pause window; a
+busy workflow left paused past that stops banking replayable rows entirely.
 
 ## `on_error`: the cheap fix for a workflow that is already 500ing
 

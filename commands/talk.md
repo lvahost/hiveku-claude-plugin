@@ -1,9 +1,9 @@
 ---
 description: Delegate generative or strategic work to a Hiveku department agent, then persist the result.
-argument-hint: "[department and the ask — e.g. 'seo: a refresh plan for the decaying posts']"
+argument-hint: "[department and the ask - e.g. 'seo: a refresh plan for the decaying posts']"
 ---
 
-For generative or strategic work on the bound account$ARGUMENTS, run the department agent — it executes
+For generative or strategic work on the bound account$ARGUMENTS, run the department agent - it executes
 with the account's full hydration (persona, brand voice, memory, skills), which a raw tool call does not.
 
 0. **Confirm the account can reach the department:** `list_departments`. It returns exactly the domains
@@ -16,17 +16,24 @@ with the account's full hydration (persona, brand voice, memory, skills), which 
 2. **Delegate:** `talk_to_department({ domain, message })`. Exactly 14 domains are accepted: `seo`,
    `social`, `content`, `marketing`, `branding`, `outbound`, `ppc`, `analytics`, `customer_avatar`,
    `customer_journey`, `before_after_grid`, `website_design`, `knowledge_base`, `workflow`. Anything
-   else is refused server-side with `Unknown domain '<x>'` — there is no soft fallback to a default
+   else is refused server-side with `Unknown domain '<x>'` - there is no soft fallback to a default
    department. Give it the real objective and the constraints, not a thin prompt.
 
    The two enums differ in both directions: `sales` and `helpdesk` are valid contexts but are NOT
    department agents, and `analytics` is a department agent but is NOT a valid context domain (use
-   `marketing` there). There is no agent at all behind accounting, PM, voice, creative or email —
-   for those, load context with the nearest valid domain, then draft directly yourself and say that
-   is what you did, or call `agent_identity_get` for the department's identity bundle. Drive the
-   work with the direct tools (`accounting_*`, `pm_*`, `voice_*`) plus the matching skill. Being in
-   the enum is not entitlement either — `list_departments` returns what this account actually has.
-3. **Persist** the output with the matching direct tool so it becomes account state, not just chat —
+   `marketing` there). There is no agent at all behind accounting, PM, voice, creative or email.
+   For those, load context with the nearest valid domain, then draft directly yourself and say that
+   is what you did. `agent_identity_get` is no reliable way around that: its `domain` enum is the
+   same 15 values as `account_context_get`, so `accounting`, `pm`, `voice`, `creative` and `email`
+   are not valid arguments and the call can be refused by schema validation before it is ever sent.
+   Do not plan around it. (The Olympus route behind it happens to allow `accounting` as a 16th
+   domain, so that one call may go through where a client forwards it; `pm`, `voice`, `creative`
+   and `email` are not in the route's list either and come back 400 `invalid_domain`. Treat an
+   accounting bundle as a bonus if you get it, never as the step the play depends on.) Use it for a
+   valid neighbouring domain. Drive the work with the
+   direct tools (`accounting_*`, `pm_*`, `voice_*`) plus the matching skill. Being in the enum is
+   not entitlement either - `list_departments` returns what this account actually has.
+3. **Persist** the output with the matching direct tool so it becomes account state, not just chat -
    `content_create` for content, `crm_create_deal` / `crm_*` for pipeline, and memory for a decision or
    a reusable play. For memory, read first: `memory_list({ domain })` returns the department's WHOLE
    document, so append your note to that text and send the full merged body to
@@ -35,7 +42,7 @@ with the account's full hydration (persona, brand voice, memory, skills), which 
    work that is never persisted is lost.
 
 `talk_to_department` is a WRITE-capable primitive (it runs an agent with its own full toolset), so a
-read-only key cannot use it — that is by design. Two other refusals read differently and need
+read-only key cannot use it - that is by design. Two other refusals read differently and need
 different handling: an entitlement refusal ("This account does not have access to the '<x>'
 department. Upgrade or enable it in the dashboard settings") is fixed in the dashboard, not by
 picking a different department; a timeout ("did not respond within Ns… may be cold-starting or

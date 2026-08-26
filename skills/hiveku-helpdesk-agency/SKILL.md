@@ -307,8 +307,14 @@ Knowing when to escalate is as valuable as knowing how to answer.
   now" on the strength of this call alone. There is a concrete check: run `voice_diagnose_setup`
   (no arguments) and read `tenant_provisioned`. False means the account has no voice tenant, so the
   annotation is a dead end and the ticket would carry a callback expectation nothing will honor -
-  do not transfer, reply in the ticket instead. Then verify through `helpdesk_ticket_messages` that
-  the call actually happened before you close the ticket.
+  do not transfer, reply in the ticket instead. Verification is NOT in helpdesk: the handler writes
+  a `source_meta` marker (`transfer_to_voice_requested_at`, `transfer_to_voice_target`) and bumps
+  `last_activity_at`, and adds no ticket message - so `helpdesk_ticket_messages` shows nothing about
+  the transfer whether or not a call happened, and `helpdesk_ticket_get({ id })` only proves the
+  marker was written. Call evidence lives in voice/CRM: `voice_recent_calls({ hours_back })` or
+  `voice_calls_list({ direction: 'outbound', hours_back })`, or `crm_calls_list({ contact_id })`
+  using the ticket's `crm_contact_id`. Nothing joins a call row to the ticket, so match it yourself
+  on number and timestamp. Never close the ticket on the marker alone.
 - Assignment vs escalation: reassigning within the team is `helpdesk_ticket_assign({ id,
   assigned_to_id | queue_id })` and is routine - no priority change, no tag. Escalation changes
   the tier of ownership and forces urgent, so it is not. When all you need is a different owner,
@@ -366,8 +372,8 @@ The structure that routes work is itself a deliverable you maintain.
    counts tell you which channel generates the unhappiness. Ratings are `great | ok | not_great`
    and `csat_score = great / total`, so an "ok" counts against the score - that is the definition
    our 90/80 bands assume. Check `csat_survey` in `helpdesk_automations_get` before you read
-   anything into a low response rate: a survey that is disabled, or that fires on a transition the
-   team rarely uses, is a config problem, not customer sentiment. Each low-CSAT ticket gets a
+   anything into a low `response_count`: a survey that is disabled, or that fires on a transition
+   the team rarely uses, is a config problem, not customer sentiment. Each low-CSAT ticket gets a
    root-cause note and, where warranted, a follow-up.
 2. Backlog trend: `helpdesk_ticket_list` counts by status vs last week (page through with
    `page` / `limit`; a single page is not a count), and the
@@ -405,9 +411,12 @@ Include, in this order:
    two different failures with two different fixes. If a list comes back at exactly its limit,
    your figure is a floor, and you must say so rather than report it as the total.
 3. Satisfaction - `helpdesk_csat_stats({ since })` month over month with the per-assignee split,
-   response rate, and 2-3 representative verbatims from `helpdesk_csat_list` (one glowing, one
-   critical, one typical) so the client hears real customers. State the CSAT definition you are
-   using: `csat_score = great / total` over `great | ok | not_great`.
+   the `response_count` it returns in `totals` as your sample size, and 2-3 representative
+   verbatims from `helpdesk_csat_list` (one glowing, one critical, one typical) so the client
+   hears real customers. State the CSAT definition you are using: `csat_score = great / total`
+   over `great | ok | not_great`. Do not report a survey response rate: no helpdesk tool returns
+   surveys-sent, so the denominator does not exist. Report the response count instead, and say
+   plainly when a score rests on a handful of responses.
 4. Top contact reasons - the demand map, with what you shipped to deflect each (KB articles and
    macros created this month).
 5. Knowledge and automation - articles created/updated, macros created/updated, any queue or
@@ -431,9 +440,12 @@ Every figure must trace to a named tool call. No vibes, no rounded-up guesses.
 - CSAT reference band: 90%+ is excellent, 80-90% solid, below 80% needs a root-cause plan this
   month. Those bands assume Hiveku's definition, `csat_score = great / total` across
   `great | ok | not_great`, so "ok" ratings drag the number down - do not silently rebase it
-  against a scale where "ok" is a pass. A rising response rate matters as much as the score - a
-  great score on a 5% response rate is not a great score - and check `csat_survey` in
-  `helpdesk_automations_get` before blaming a low response rate on customers.
+  against a scale where "ok" is a pass. Sample size matters as much as the score - a great score
+  on four responses is not a great score - so read `response_count` from the `totals` block and
+  quote it next to every CSAT figure. There is no response-rate metric in this tool family:
+  nothing exposes surveys-sent, so responses are a numerator with no denominator. When the count
+  is low, check `csat_survey` in `helpdesk_automations_get` - a disabled or mistimed survey is a
+  config problem, not customer sentiment.
 - Deflection is the margin lever. Each of the top 5 contact reasons answered by a KB article
   plus a macro removes real handle time; prioritize writing those over one-off polish.
 - Macro-first, not macro-only. A macro that is sent verbatim on an emotional ticket reads as a

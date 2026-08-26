@@ -14,18 +14,18 @@ Why it needs a manual: this is the one place where Claude and the human write to
 
 - **D1. Editable beats flat.** If the user will ever want to tweak it, it belongs in a design project
   (`design_create`), not a one-off PNG from `generate_image`. Hand back the `dashboardUrl` every time.
-- **D2. ★ This is the read half of the round-trip: always state_get -> reason -> update. Never author a
+- **D2. This is the read half of the round-trip: always state_get -> reason -> update. Never author a
   full canvas blind over the top of a user's edits.**
 - **D3. Snapshot before destructive edits** with `design_version_create`, so the user can roll back from
   the dashboard's Version History panel. Restyles, re-layouts, deletions, and artboard changes count.
 - **D4. Start from `design_templates_list`, not a blank artboard.** Its 52 templates come back
   brand-substituted with the account's active brand guide. A blank artboard means you pick the colors and
   fonts, which means off-brand.
-- **D5. ★ Generated images and video clips auto-register. Design exports and stock-photo URLs do NOT -
+- **D5. Generated images and video clips auto-register. Design exports and stock-photo URLs do NOT -
   register those explicitly before attaching them anywhere.**
 - **D6. Confirm before anything billable or blocking.** `design_export_mp4` and `design_video_rerender`
   block 240s; `generate_image` and `generate_image_set` cost money.
-- **D7. ★ THE AGENT CANNOT APPROVE: after creating, submit for approval and stop.** A multi-scene video is
+- **D7. THE AGENT CANNOT APPROVE: after creating, submit for approval and stop.** A multi-scene video is
   `marketing_storyboard_create`, not this lane, and it stops at the human gate.
 - **D8. One write path.** `design_update` with `canvasData` REPLACES the canvas wholesale. There is no
   per-layer patch tool in the grounded surface, so the merge happens in your context, not on the server.
@@ -202,7 +202,7 @@ and refuses early if the canvas has no objects. The social lane's call shape is
 up to four minutes. `design_video_rerender({ id, template_id, props })` re-renders one Remotion-template
 clip inside a design and swaps the MP4 in place; it blocks 240s too.
 
-**Then register the output.** ★ Generated images and video clips auto-register. Design exports and
+**Then register the output.** Generated images and video clips auto-register. Design exports and
 stock-photo URLs do NOT - register those explicitly before attaching them anywhere. Use
 `media_library_register_external_url` for one file or `media_library_register_external_url_batch` for a
 carousel's worth in one call. An unregistered export has no media asset id, cannot be attached by id
@@ -273,11 +273,11 @@ downstream, and the URL in your hand is its only handle.
 2. `design_state_get({ id })` for the layer inventory and z-order, then `design_version_create` if this is
    an existing design rather than a fresh one.
 3. Add `animation` bottom-up, in `objects[]` order, so the reveal follows the eye:
-   - background `{ preset: 'fade-in', delay_ms: 0, duration_ms: 400 }`, or `breathe` for a slow ambient
-   - hero image `{ preset: 'scale-in', delay_ms: 200, duration_ms: 600 }`
-   - headline lines `fade-up`, staggered 120 to 180ms apart starting around 500ms
-   - body `fade-up` after the headline lands
-   - CTA and logo last, `pop` or `fade-up`, then at most one `pulse`
+ - background `{ preset: 'fade-in', delay_ms: 0, duration_ms: 400 }`, or `breathe` for a slow ambient
+ - hero image `{ preset: 'scale-in', delay_ms: 200, duration_ms: 600 }`
+ - headline lines `fade-up`, staggered 120 to 180ms apart starting around 500ms
+ - body `fade-up` after the headline lands
+ - CTA and logo last, `pop` or `fade-up`, then at most one `pulse`
 4. Root: `_animation: { duration_ms: 6000, fps: 30, loop: true }`. Verify the last layer's
    `delay_ms + duration_ms` lands by about 3.5s so the finished frame holds before the loop restarts.
 5. Preview cheaply with `design_export_image({ id, frame: 45 })` (1.5s at 30fps) and `frame: 120` (4s),
@@ -292,7 +292,7 @@ downstream, and the URL in your hand is its only handle.
    hand-authored `storyboard`), read back with `marketing_storyboard_get`, fixed with
    `marketing_storyboard_update` on `validation.errors`, restyled with `marketing_storyboard_set_look`,
    then `marketing_storyboard_submit_for_approval`.
-   ★ THE AGENT CANNOT APPROVE: after creating, submit for approval and stop.
+   THE AGENT CANNOT APPROVE: after creating, submit for approval and stop.
 
 ---
 
@@ -303,6 +303,6 @@ File on disk: `/private/tmp/claude-501/-Users-aberubarts-Documents-main-hiveku/3
 - **Size is 21.1KB, about 5 percent over the 12-20KB ceiling.** I cut it from an initial 27.6KB. Everything left is coverage the brief asked for by name. If you need it under 20KB, the two cheapest remaining cuts are the `design_*` vs `marketing_design_*` bullet in Part 7 (~600 bytes, a naming-verification note, not one of the three required failure modes) and the `stock_photos_download` bullet (~560 bytes, arguably belongs in a sibling images/media reference).
 - **Deliberately deferred to a sibling reference, not forgotten:** the "reuse before generating" doctrine (grounding doctrine 6) and the media-library housekeeping tools (`media_library_list`, `media_library_get`, `media_folders_list`, `media_collections_list`, `media_usage_get`, `media_delete`, `media_update`). I cut them for budget since this reference is the canvas, not the asset library. Re-add a one-line pointer if no images reference will carry them.
 - **Capabilities I flagged as having no tool, with the fallback named** (per your rule): no per-layer patch (full `canvasData` replacement only, merge in context); no version RESTORE tool (dashboard Version History; fallback is holding the pre-edit `design_get` payload); no design DELETE tool (dashboard action); no gradient/shadow/blur/mask in the Fabric styling set (stacked-rect scrim, duplicated offset text layer, `stroke` outline, or say it is a dashboard-editor job); no multi-page design object (one design per artboard, so a carousel is N designs).
-- **Star rules preserved verbatim**, each appearing in Part 1 and repeated at its point of use: D2 (state_get round-trip), D5 (auto-register, repeated in Part 6), D7 (agent cannot approve, repeated in Play C step 8). Five `★` occurrences total.
+- **Star rules preserved verbatim**, each appearing in Part 1 and repeated at its point of use: D2 (state_get round-trip), D5 (auto-register, repeated in Part 6), D7 (agent cannot approve, repeated in Play C step 8). Five `` occurrences total.
 - Cross-checked against `domains-truth.md`: only `branding`, `social`, and `content` are used with `talk_to_department`, all three valid there; `branding` is valid for `account_context_get`. The reference states outright that there is no `creative` domain.
 - No frontmatter, no emojis, no em dashes. Opens with what it covers and when to load it, matching the house style of `hiveku-web-agency/references/forms.md`.

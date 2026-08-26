@@ -77,10 +77,15 @@ real Hiveku MCP tool.
    from_date, to_date, limit })` - ONE call per connected account. The required arg is
    `social_account_id` (the connected-account row id from `social_list_accounts`, not
    the Hiveku account id and not the platform's own account id); omitting it is a 400
-   `social_account_id is required`. It returns daily rows (followers, reach, avg
-   engagement rate), newest day first, limit max 100 / default 30 - so a 90-day baseline
-   needs `limit: 100` or paging. Empty rows mean the account-analytics sync has not run
-   for that account yet; say so rather than reporting zeros as a result.
+   `social_account_id is required`. It returns whole daily rows, newest day first, limit
+   max 100 / default 30 - so a 90-day baseline needs `limit: 100` or paging. The columns
+   are `followers_count`, `followers_gained`, `followers_lost`, `net_followers`,
+   `posts_published`, `total_impressions`, `total_engagements`, `total_clicks`,
+   `avg_engagement_rate`, `page_views`, `unique_visitors`, `button_clicks`. There is NO
+   reach column on this table - the tool's own description says "reach" and is stale.
+   Account-level reach is impressions here; say impressions. Empty rows mean the
+   account-analytics sync has not run for that account yet; say so rather than reporting
+   zeros as a result.
    Then `social_analytics_summary` for the blended topline. Know its window: the route
    reads only a `period` param the tool cannot send, so it ALWAYS returns the trailing
    7 days plus a comparison against the 7 before it. `from_date`/`to_date` on that tool
@@ -183,12 +188,12 @@ container you build once.
   are required". Full shape:
   `social_calendar_create({ title, event_type, start_date, end_date, description,
   target_platforms, tags, linked_post_id, color, icon })`.
-  - `event_type` is free text (no server-side enum). Pick one convention up front and
+ - `event_type` is free text (no server-side enum). Pick one convention up front and
     keep it - `planned_post`, `campaign`, `holiday` is the intent the registry
     documents. Nothing validates it, so a typo silently creates a second category.
-  - `start_date` is stored as a DATE. A time component is dropped. Per-slot times live
+ - `start_date` is stored as a DATE. A time component is dropped. Per-slot times live
     on `social_calendar_update` (`start_time`, `end_time`, `timezone`), not on create.
-  - `linked_post_id` is what makes the calendar operational: it binds the event to the
+ - `linked_post_id` is what makes the calendar operational: it binds the event to the
     actual `social_posts` row. Create the post, then create (or update) the event with
     its id. An unlinked event is a sticky note.
 - Read with `social_calendar_list({ from_date, to_date, event_type, status, page,
@@ -241,9 +246,11 @@ Draft the copy hook to CTA:
 
 Persist the draft:
 - `social_create_post({ title, content, content_type, target_platforms, target_accounts,
-  media_urls, tags, category, pillar_id, ai_generated })`. Required: `content` and
+  media_urls, tags, category, pillar_id })`. Required: `content` and
   `target_platforms`. Confirm the copy with the user before creating when it is
-  client-facing.
+  client-facing. The schema also advertises `ai_generated`, and the create route never
+  reads it - it hardcodes the flag itself. Passing it is a silent no-op like `status` on
+  `social_update_post`, so leave it out.
 - ALWAYS pass `target_accounts` as well - the connected-account row ids from
   `social_list_accounts`. It is not required by the tool and defaults to `[]`, and the
   publish path hard-fails a post with none: 400 "Post has no target accounts
@@ -267,12 +274,19 @@ Persist the draft:
   `content_create` then bring it into a social post. Use `content_schedule` when the
   content workflow owns the timing.
 - Review and revise drafts with `social_get_post` and `social_update_post` before
-  anything is scheduled or published. Two limits on that revise loop:
-  - `social_update_post` advertises `status` and `approval_status` in its schema, and
+  anything is scheduled or published. Three limits on that revise loop:
+ - `social_update_post` can only change FOUR things: `title`, `content`,
+    `target_platforms`, and `scheduled_at`. Those, plus the two dead fields below, are
+    its entire schema. `target_accounts`, `media_urls`, `media_types`, `tags`,
+    `category`, `pillar_id`, `content_type` and `platform_overrides` are NOT on it, so
+    the proxy drops them and the call returns 200 having changed nothing. Get all of
+    those right on `social_create_post`; if one is wrong, the fix is a new post (or the
+    dashboard), not an update.
+ - `social_update_post` advertises `status` and `approval_status` in its schema, and
     the server never reads either one. The call returns 200 and those two fields come
     back exactly as they were - a silent no-op, not an error. Never use them to approve
     a post or to force a state; approval is dashboard-only (Play 8).
-  - A post at status 'publishing' or 'published' is EDIT-LOCKED: any update is a 400
+ - A post at status 'publishing' or 'published' is EDIT-LOCKED: any update is a 400
     "Cannot modify a published post" / "Cannot modify a publishing post". It has already
     been handed to the platform. To
     revise, create a new post with `social_create_post` or duplicate it in the
@@ -292,13 +306,16 @@ A post is copy plus creative. The creative is often what stops the scroll.
 - Bring in externally sourced or client-supplied visuals with
   `marketing_media_register_external_url` so they live in the media library and can be
   attached to posts like any other asset.
-- Attach the chosen media to the post via `social_create_post` / `social_update_post`.
+- Attach the chosen media with `media_urls` on `social_create_post`. That is the ONLY
+  attach point: `media_urls` is not on `social_update_post`'s schema, so media cannot be
+  added or swapped after create from any tool here. Have the asset picked before you
+  create the post; otherwise it is a new post or a dashboard edit.
 - Platform format notes worth respecting: square or 4:5 for Instagram feed, vertical
   9:16 for Reels/TikTok/Stories, landscape or square for LinkedIn, and a clean
   landscape/square with legible text for GBP. Carousels earn saves and dwell time -
   lean on `generate_image_set` for those.
 - Video has three real lanes. Pick one before spending anything:
-  - MULTI-SCENE Reel/TikTok/promo: `marketing_storyboard_create` (pass exactly one of
+ - MULTI-SCENE Reel/TikTok/promo: `marketing_storyboard_create` (pass exactly one of
     `template_id` + `substitutions`, or a hand-authored `storyboard`). It is FREE and
     fast - it validates, prices, and stores; nothing is billed or enqueued until a human
     approves. THE AGENT CANNOT APPROVE: after
@@ -306,11 +323,11 @@ A post is copy plus creative. The creative is often what stops the scroll.
     runtime, and cost, then STOP. Do not fan out single clips to work around the gate.
     Track an approved run with `marketing_video_pipeline_status({ pipeline_id })` - same
     id as the storyboard. Full procedure with every trap: `/hiveku:media`.
-  - ONE CLIP: `marketing_generate_video({ prompt, aspect_ratio })` - ~10s, 720p, PAID
+ - ONE CLIP: `marketing_generate_video({ prompt, aspect_ratio })` - ~10s, 720p, PAID
     (~$1 each), Premium-plan only, 20 clips per account per month. ALWAYS call with
     `dry_run: true` first and tell the user the remaining quota before spending. Animate
     an existing still by passing it as `reference_media_asset_id`.
-  - MOTION GRAPHICS (text/layout/branded cards, no generation cost): build it in Creative
+ - MOTION GRAPHICS (text/layout/branded cards, no generation cost): build it in Creative
     Studio and render with `design_export_mp4({ id, canvas_json, width, height,
     duration_seconds })`.
 - Client-supplied or agency-produced footage still comes in through
@@ -356,9 +373,9 @@ Publishing is half the service. The other half is the two-way engagement that th
 algorithms actually reward and that turns followers into customers.
 
 - Monitor with two concrete calls, not one blind list:
-  - `social_comments_list({ requires_response: 'true', limit: 100 })` - the response
+ - `social_comments_list({ requires_response: 'true', limit: 100 })` - the response
     queue, the thing you actually work.
-  - `social_comments_list({ sentiment: 'negative', limit: 100 })` - reputation risk,
+ - `social_comments_list({ sentiment: 'negative', limit: 100 })` - reputation risk,
     handled same-day.
   `search` does a case-insensitive contains match on comment text when you are chasing a
   specific thread, and `status` filters the triage state. The boolean filters are
@@ -386,8 +403,17 @@ and only one of them involves `social_publish_post`. Know which one you are on.
 
 Path A - the schedule. This is the one that actually ships content, and it needs no
 approval anywhere:
-- Set the time with `social_update_post({ post_id, scheduled_at })`. The post moves to
-  status 'scheduled'. The publish cron runs every minute and takes every post with
+- Set the time with `social_update_post({ post_id, scheduled_at })`. A clean draft moves
+  to status 'scheduled'. Two posts do NOT, and both are silent:
+ - A post already HELD for approval (status 'pending_approval' OR
+    `approval_status: 'pending'`) keeps its status. The timestamp updates so the approver
+    sees the new slot, but the post is still held and the cron will not touch it. Setting
+    a time does not release it.
+ - A REJECTED post (`approval_status: 'rejected'`) is sent straight back through
+    approval: the service writes status 'pending_approval' and `approval_status:
+    'pending'`. Re-scheduling a rejected post re-stages it into the queue, it does not
+    schedule it. Say that, do not report it as scheduled.
+  The publish cron runs every minute and takes every post with
   status 'scheduled' and `scheduled_at <= now` whose `approval_status` is not 'pending'
   or 'rejected'. The column defaults to 'not_required', which passes. So a schedule IS
   an unattended publish - treat setting `scheduled_at` with the same confirm you would
@@ -403,14 +429,14 @@ approval anywhere:
 Path B - `social_publish_post`. It is a governance gate, not a publish button:
 - `social_publish_post({ post_id })` has three outcomes, and you must read the response
   body to know which one you got:
-  - `approval_status` is 'approved' -> it publishes to the post's configured target
+ - `approval_status` is 'approved' -> it publishes to the post's configured target
     accounts. This is the only outcome that puts a post live.
-  - `approval_status` is 'not_required' (the default on everything you create) -> it
+ - `approval_status` is 'not_required' (the default on everything you create) -> it
     does NOT publish. It writes `{ approval_status: 'pending', status: 'pending_approval' }`
     and returns HTTP 200 with `{ pending_approval: true, message: 'Post moved to the
     approval queue...' }`. Report that as "queued for approval in the dashboard". Never
     report it as published.
-  - `approval_status` is 'pending' -> 400 "Post requires approval before publishing".
+ - `approval_status` is 'pending' -> 400 "Post requires approval before publishing".
     'rejected' -> 400 "Post was rejected and cannot be published".
 - NEVER call `social_publish_post` on a post that already has a `scheduled_at`. If it is
   unapproved, staging it moves it out of status 'scheduled' and the cron can no longer
@@ -422,8 +448,10 @@ Path B - `social_publish_post`. It is a governance gate, not a publish button:
   a human. Do not promise a client that you will approve their post.
 - You cannot publish to a subset. The `platforms` arg is deprecated and ignored; the
   route always publishes to ALL of the post's `target_accounts`, and a post with none is
-  a 400 "Post has no target accounts configured". Fix targeting with
-  `social_update_post` before publishing, not with a publish argument.
+  a 400 "Post has no target accounts configured". And you cannot fix it from here:
+  `target_accounts` is not on `social_update_post`'s schema (Play 3), so a post created
+  without accounts can only be corrected in the dashboard or replaced with a new
+  `social_create_post`. Get `target_accounts` right at create time.
 - Confirm the exact post and account(s) before every publish, and never loop
   `social_publish_post` over a batch of drafts.
 - Post one asset to several platforms only after the copy is tuned per platform - which
@@ -455,20 +483,24 @@ step constantly, and nothing chases them on its own.
   that the approval action lives in the dashboard SocialApprovalQueue and only they can
   take it. You cannot approve from any tool here.
 - Know what approval does, because it differs by post and it can go live instantly:
-  - The post HAS a `scheduled_at` -> approving releases it back to status 'scheduled'
+ - The post HAS a `scheduled_at` -> approving releases it back to status 'scheduled'
     and the cron ships it at that time. If the slot has already passed, it publishes on
     the next cron tick.
-  - The post has NO `scheduled_at` -> approving PUBLISHES IT IMMEDIATELY. Tell the
+ - The post has NO `scheduled_at` -> approving PUBLISHES IT IMMEDIATELY. Tell the
     client that before they click.
-  - Rejecting returns the post to status 'draft' with `approval_status: 'rejected'`.
-    A rejected post cannot be published or scheduled out until it is revised and
-    re-staged - `social_publish_post` on it is a 400.
+ - Rejecting returns the post to status 'draft' with `approval_status: 'rejected'`.
+    `social_publish_post` on it is a 400. Setting `scheduled_at` on it does NOT schedule
+    it either - the service re-stages it into the approval queue at status
+    'pending_approval' (Play 7 Path A). A rejected post only goes out by being revised
+    and approved again by a human.
 - After approval, verify rather than assume: `social_get_post({ post_id })` and read
   `status`, `published_at`, and each version's `status` / `error_message`. A post can
   report success at the route level and still have a failed version (an expired token,
   the X plan cap).
-- A post staged into the queue by a publish attempt has LOST its schedule. If the client
-  approves it late and it had a slot, re-set `scheduled_at` yourself.
+- Staging a post into the queue does NOT wipe its `scheduled_at` - the publish route
+  writes only `approval_status` and `status`, and the approve route restores status from
+  the timestamp. Do not "helpfully" re-set the time on a held post: it stays held either
+  way (Play 7 Path A), and you have only moved the slot the client was going to approve.
 
 ## Weekly cadence (every week, the heartbeat of the retainer)
 1. Fill and confirm next week's calendar: check `social_calendar_list` and
@@ -484,13 +516,14 @@ step constantly, and nothing chases them on its own.
    detail use `social_post_analytics({ post_id })`, one post per call. Feed the winners
    back into next week's ideation.
 4. Account health, two parts:
-   - `social_list_accounts` and read `connection_status`, `is_active`, `can_post`, and
+ - `social_list_accounts` and read `connection_status`, `is_active`, `can_post`, and
      `last_error` per account. A connected-but-erroring account is a silent publish
      failure - the cron will try, the version row lands 'failed', and nothing tells you.
      Check this BEFORE scheduling a week, and raise a reconnect task the same day.
-   - `social_account_analytics({ social_account_id, from_date, to_date })` per connected
-     account for follower movement and reach trend. A sudden reach drop is investigated
-     the same week (posting gap, format change, a flagged post), not at month end.
+ - `social_account_analytics({ social_account_id, from_date, to_date })` per connected
+     account for follower movement and the `total_impressions` trend (these rows carry no
+     reach column). A sudden impressions drop is investigated the same week (posting gap,
+     format change, a flagged post), not at month end.
 5. Approval sweep: `social_list_posts({ status: 'pending_approval', limit: 100 })` -
    anything sitting in the queue is content the client is paying for that is not
    shipping. Chase it (Play 8).
@@ -508,55 +541,63 @@ went. Build it from named tool calls only - every number must be reproducible.
 
 1. Gather the month's data, in this order, and know what each call can and cannot give
    you - there is no single tool that returns "the month":
-   - `social_post_sync_analytics({ post_id })` on every post in the month, first. Nothing
+ - `social_post_sync_analytics({ post_id })` on every post in the month, first. Nothing
      downstream is current until this runs.
-   - `social_account_analytics({ social_account_id, from_date, to_date, limit: 100 })`
+ - `social_account_analytics({ social_account_id, from_date, to_date, limit: 100 })`
      once PER connected account. This is the month's real per-platform series (daily
-     followers, reach, avg engagement rate) and the only source of follower growth over
-     an arbitrary window. Empty rows mean the sync has not run - report that, do not
-     report zero.
-   - `social_post_analytics({ post_id })` on the top posts, one call each. This is the
+     `followers_count`, `total_impressions`, `total_engagements`, `avg_engagement_rate`)
+     and the only source of follower growth over an arbitrary window. It carries NO reach
+     column - impressions is the account-level number you have. Empty rows mean the sync
+     has not run - report that, do not report zero.
+ - `social_post_analytics({ post_id })` on the top posts, one call each. This is the
      only per-post metric source: impressions, reach, engagements, likes, comments,
      shares, saves, clicks, video views, engagement rate, plus the per-platform version
      breakdown with each version's platform URL.
-   - `social_list_posts({ status: 'published', from_date, to_date, limit: 100 })` for the
+ - `social_list_posts({ status: 'published', from_date, to_date, limit: 100 })` for the
      DELIVERY count only. It returns no metrics at all - id, title, content, platforms,
      accounts, status, approval_status, pillar and so on. Its date filter is on
      `created_at`, not `published_at`.
-   - `social_analytics_summary` gives the trailing 7 DAYS only (the route reads a
+ - `social_analytics_summary` gives the trailing 7 DAYS only (the route reads a
      `period` param the tool cannot send; `from_date`/`to_date` are ignored). Use it as
      the closing-week snapshot, never as the month's topline. Its `accounts` array is a
      good current follower-count-per-platform read, and its `engagement_rate` is
      engagements over impressions - say which denominator you are quoting.
-   - `social_analytics_timeseries` returns a fixed trailing 30-day window regardless of
+ - `social_analytics_timeseries` returns a fixed trailing 30-day window regardless of
      any argument, and can 404 or come back empty. If it is empty, build the trend from
      the `social_account_analytics` daily rows instead and say the blended series was
      unavailable. Never leave a hole or invent the line.
 2. Report sections, in this order:
-   - Executive summary - five bullets max: headline metric (reach or follower growth),
-     the single best post and why, biggest learning, what we shipped, what is next.
-     Written last, placed first.
-   - Growth and reach - followers gained per platform MoM and the reach/impressions
-     trend, both built from the `social_account_analytics` daily rows per account
-     (first row of the month versus last). Show the direction, not just a snapshot.
-     `social_analytics_timeseries` is a nice-to-have overlay when it returns data.
-   - Top content - the three to five best posts by engagement (`social_post_analytics`),
+ - Executive summary - five bullets max: headline metric (impressions or follower
+     growth), the single best post and why, biggest learning, what we shipped, what is
+     next. Written last, placed first.
+ - Growth and impressions - followers gained per platform MoM and the
+     `total_impressions` trend, both built from the `social_account_analytics` daily rows
+     per account (first row of the month versus last). Show the direction, not just a
+     snapshot. `social_analytics_timeseries` is a nice-to-have overlay when it returns
+     data. There is no monthly REACH figure in this lane: `social_account_analytics` has
+     no reach column, and the only reach numbers available are per-post
+     (`social_post_analytics`) and a trailing-7-day blended total from
+     `social_analytics_summary` that SUMS each post version's reach, so it double-counts
+     anyone two posts reached. Report impressions for the month; if you quote reach, label
+     it as the top posts' reach or the closing week's, never as the account's monthly
+     reach.
+ - Top content - the three to five best posts by engagement (`social_post_analytics`),
      each with the pillar, format, and the reason it worked. This is where you prove the
      strategy, not just the activity.
-   - Pillar and cadence delivery - posts published per platform vs the committed cadence
+ - Pillar and cadence delivery - posts published per platform vs the committed cadence
      (`social_list_posts({ status: 'published', platform, from_date, to_date })`, read
      `pagination.total`), and the actual pillar ratio vs target: one
      `social_list_posts({ pillar_id, status: 'published', from_date, to_date })` per
      pillar, compared against that pillar's `target_percentage` and
      `target_posts_per_week` from `social_pillar_list`. Do not use the pillar's own post
      count for this - it is lifetime, not the month. Honesty here builds trust.
-   - Approval queue - anything still at status 'pending_approval' at month end, named,
+ - Approval queue - anything still at status 'pending_approval' at month end, named,
      with how long it has waited. Unshipped approved-pending content is the single most
      common reason a month underdelivers, and it is the client's action, not yours.
-   - Engagement and community - comments handled, notable conversations, leads or
+ - Engagement and community - comments handled, notable conversations, leads or
      support issues routed to other departments.
-   - Next month plan - the calendar theme, any campaign, the format experiments queued.
-   - Local clients: a Google Business Profile line - posts published
+ - Next month plan - the calendar theme, any campaign, the format experiments queued.
+ - Local clients: a Google Business Profile line - posts published
      (`social_list_posts({ platform: 'google_business_profile', status: 'published',
      from_date, to_date })`). Listing-side signals (views, calls, direction requests)
      come from the SEO lane's GBP tools, not from these; if that connection is not

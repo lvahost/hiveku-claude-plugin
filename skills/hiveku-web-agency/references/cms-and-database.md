@@ -64,7 +64,7 @@ Skip it and the page renders `[object Object]` into a `src`, or crashes reading 
 
 ## Part 2: the isLive filter
 
-★ Every page that renders a collection filters entries with **exactly this**:
+Every page that renders a collection filters entries with **exactly this**:
 
 ```ts
 const isLive = !fields.archived &&
@@ -78,7 +78,7 @@ const isLive = !fields.archived &&
 
 **3. `publishAt` can be a number.** A numeric epoch-milliseconds value must still gate the entry: `new Date(1767225600000)` handles it, a string comparison does not.
 
-**4. ★ The unparseable-publishAt trap.** A published entry carrying a **non-empty but unparseable** `publishAt` yields `Invalid Date`, and `NaN <= now` is **false**. Nothing hides it via `archived`, nothing rejects it via `status`, and it never becomes visible: **the site hides the entry FOREVER**. It reports as `scheduled`, never `published`, so the operator sees a date and assumes it is waiting, when no future moment can satisfy the comparison.
+**4. The unparseable-publishAt trap.** A published entry carrying a **non-empty but unparseable** `publishAt` yields `Invalid Date`, and `NaN <= now` is **false**. Nothing hides it via `archived`, nothing rejects it via `status`, and it never becomes visible: **the site hides the entry FOREVER**. It reports as `scheduled`, never `published`, so the operator sees a date and assumes it is waiting, when no future moment can satisfy the comparison.
 
 **Diagnosis.** Symptom: "this post never went live", or an item stuck on scheduled. Meaning: almost always this third state, not caching and not deploy. Check: read the entry with `cms_read_entry` and inspect the raw `publishAt` (`"soon"`, `"TBD"`, `"March"`, `"2026-13-01"` all give `Invalid Date`); distinguish genuinely empty (safe, the clause short-circuits) from present-and-garbage (fatal); only then look at build and deploy. An entry failing `isLive` fails identically on every rebuild, which is why it reads as a stuck platform rather than bad data. Prevention: on write or import, normalize `publishAt` to ISO or omit it. Absent is safe by construction; present and bad is permanent.
 
@@ -106,7 +106,7 @@ A staged draft is written beside its entry as **`{slug}.draft.{ext}`**. **Reader
 
 **Never raw-write** to `content/` or `hiveku.cms.json`: "the tools validate against the manifest and trigger preview sync + GitHub auto-commit; direct writes skip those and may produce entries that fail to parse." A raw write is not a faster path to the same result; it is a different result: unvalidated, unsynced to the preview, uncommitted. The entry you cannot see in the preview and the entry that throws at build time both come from here.
 
-**★ CMS writes are SEQUENTIAL.** "Do NOT batch CMS write tools in a parallel tool_use group. The builder serializes per-entry writes via an advisory lock; parallel calls queue, and a hung call can wedge the whole turn." This inverts the code-lane rule: code goes out in ONE `project_files_bulk_save`, CMS entries one `cms_write_entry` at a time. For genuine bulk use `cms_bulk_import` with a deduped, validated payload.
+**CMS writes are SEQUENTIAL.** "Do NOT batch CMS write tools in a parallel tool_use group. The builder serializes per-entry writes via an advisory lock; parallel calls queue, and a hung call can wedge the whole turn." This inverts the code-lane rule: code goes out in ONE `project_files_bulk_save`, CMS entries one `cms_write_entry` at a time. For genuine bulk use `cms_bulk_import` with a deduped, validated payload.
 
 **Do not store content in the database.** Blog posts, services, team bios and FAQs are files. Content in the DB costs you the CMS editor, versioning (`cms_list_entry_versions`, `cms_restore_entry_version`), the activity trail (`cms_activity`), and scheduled publishing, all free in the file-based CMS.
 
@@ -118,7 +118,7 @@ A staged draft is written beside its entry as **`{slug}.draft.{ext}`**. **Reader
 
 ---
 
-## Part 4: ★ a collection is only integrated when the PAGE RENDERS FROM IT
+## Part 4: a collection is only integrated when the PAGE RENDERS FROM IT
 
 The most important rule in this file.
 
@@ -139,7 +139,7 @@ Diagnosis: "I edited it in the CMS and nothing changed on my site" almost never 
 
 **A collection changes when the site rebuilds, which is a routing hazard.** Scheduled CMS publishes are a listed rebuild trigger that detonates a latent Next.js route collision. 3rd Degree Screening, 2026-08-19: a concrete `app/industries/healthcare/page.tsx` was added while a sibling `app/industries/[slug]/page.tsx` still generated the same slug. "Nothing failed. The live site kept serving a pre-collision artifact for weeks. Then an unrelated rebuild was the first to resolve the collision the other way, and **TWO PAGES SILENTLY REVERTED TO AN OLDER TEMPLATE** with no deploy and no edit by the owner."
 
-That is your problem the moment a collection has a `routePattern`, because a collection-backed dynamic route is exactly the sibling that steals a concrete page's URL. Run `project_files_validate_orphan_routes` and **read `route_collisions`, not just the orphan count**: ★ "`orphans: 0` does NOT mean routing is healthy... a `[slug]` route matches any single segment, so a URL owned by TWO files still resolves and still counts as zero orphans." `project_route_owner` names the owner of one URL.
+That is your problem the moment a collection has a `routePattern`, because a collection-backed dynamic route is exactly the sibling that steals a concrete page's URL. Run `project_files_validate_orphan_routes` and **read `route_collisions`, not just the orphan count**: "`orphans: 0` does NOT mean routing is healthy... a `[slug]` route matches any single segment, so a URL owned by TWO files still resolves and still counts as zero orphans." `project_route_owner` names the owner of one URL.
 
 ---
 
@@ -147,7 +147,7 @@ That is your problem the moment a collection has a `routePattern`, because a col
 
 **Hiveku runs its own managed Supabase.** "users NEVER need to sign up at supabase.com, create accounts, copy API keys, or do ANY manual setup." Provision with `database_provision`; `database_status` says whether one exists. Do not provision a database a static-plus-CMS site does not need.
 
-★ **If provisioning errors: report the exact error verbatim, STOP, no workarounds.** The anti-pattern is named explicitly, and it is the reflex when a tool call fails:
+**If provisioning errors: report the exact error verbatim, STOP, no workarounds.** The anti-pattern is named explicitly, and it is the reflex when a tool call fails:
 
 > "The managed provisioning tool failed. Here's how to set it up yourself: 1. Go to supabase.com..."
 
@@ -164,17 +164,17 @@ That is your problem the moment a collection has a `routePattern`, because a col
 
 Enforced, not advisory: production data cannot be destroyed by an agent that misread a schema. Past 100 rows, paginate with an `ORDER BY` and a stated reason. The blocked `ALTER TABLE RENAME` is the same two-writer problem as renaming a collection id: the table moves, the code reading it does not, nothing reports the break. Add the new column, migrate, drop nothing.
 
-### ★ RLS is mandatory, and a policy-less RLS table returns zero rows
+### RLS is mandatory, and a policy-less RLS table returns zero rows
 
 Every new table **MUST** have RLS enabled **and** a policy. Never leave RLS off. Never grant `anon` or `authenticated`. Never use the `service_role` key or any `rolbypassrls` credential to bypass RLS; grant the right role instead.
 
-★ The half-done state produces the confusing bug report: **an RLS table with no policy for the app role returns ZERO ROWS.** Not an error, not permission denied. An empty result set, indistinguishable from an empty table.
+The half-done state produces the confusing bug report: **an RLS table with no policy for the app role returns ZERO ROWS.** Not an error, not permission denied. An empty result set, indistinguishable from an empty table.
 
 **Diagnosis.** Symptom: "the query returns nothing but I just inserted a row", or a page rendering an empty list from a table you can see data in. Meaning: RLS is on and no policy admits the reading role. Check `database_describe` for RLS state and policies, and confirm which role is reading, since a row inserted as one role is invisible to a query as another when the policy is scoped. Do not disable RLS and do not reach for a bypass credential; both convert a visibility problem into a security finding. The reverse mistake, RLS simply left off, never fails in testing: it fails when someone else's data is readable and nobody notices for months.
 
 ---
 
-## Part 6: ★ the native CRM rule
+## Part 6: the native CRM rule
 
 > "NEVER provision a database (or reach for an external service) when a native node exists: CRM contacts/leads/deals/companies -> `crmCreateContact` / `crmUpsertContact` / `crmCreateDeal` / `crmCreateCompany` write to Hiveku's BUILT-IN CRM with NO database and NO setup. **NEVER use `dbCreateRow`, and NEVER provision or suggest a project database, to store a contact, lead, or form submission** - that's exactly what the crm* nodes are for (`dbCreateRow` is only for a user's OWN custom app tables). A 'contact form -> save the lead + notify us' workflow is `webhookTrigger` -> `crmCreateContact` (+ `sendEmail`) - NO DATABASE, EVER."
 

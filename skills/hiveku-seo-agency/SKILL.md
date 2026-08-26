@@ -22,6 +22,10 @@ would pay for. Every tool named below is a real Hiveku MCP tool.
   new note destroys every prior entry. `memory_create({ type: "memory", name: "seo", content })`
   only on the first run (a 409 means one already exists). If a document does get clobbered,
   `memory_list_versions({ memory_id })` then `memory_restore_version({ version_id })` recovers it.
+  One catch on the read: `memory_list({ domain: "seo" })` returns ACCOUNT-level rows only. A
+  project-scoped document needs `memory_list({ domain: "seo", project_id })` or
+  `include_project_scoped: true`. Skip that and the account looks empty, you `memory_create` a
+  second document, and the account splits its SEO history across two rows.
 - Confirm before writes. Summarize what you are about to create, update, publish, or
   submit and get a yes first. Tracking a keyword is cheap and reversible; publishing
   pages, submitting sitemaps, and deploying are not.
@@ -53,9 +57,9 @@ would pay for. Every tool named below is a real Hiveku MCP tool.
    consumer-facing sites) -> `seo_audit_get({ audit_id })` once each completes.
 4. GSC history - capture the FULL 16-month window now (that is all Google retains;
    this is your only chance to baseline it):
-   - Trend: `seo_gsc_search_analytics({ site_url, start, end, dimensions: ['date'] })`
+ - Trend: `seo_gsc_search_analytics({ site_url, start, end, dimensions: ['date'] })`
      across 16 months.
-   - Demand map: `dimensions: ['query']` and `['page']` with `row_limit: 5000`;
+ - Demand map: `dimensions: ['query']` and `['page']` with `row_limit: 5000`;
      `['query','page']` answers which query drives which page.
 5. Authority baseline: `backlinks_summary({ target })` for the domain AND each named
    competitor - one row per domain in the baseline sheet.
@@ -196,12 +200,12 @@ change worked in the next report.
   `on_page_instant_pages` load metrics. Treat a slow template as ONE ticket, not N
   page tickets.
 - Indexation:
-  - `seo_gsc_index_coverage({ site_url, urls })` - buckets URL Inspection results by
+ - `seo_gsc_index_coverage({ site_url, urls })` - buckets URL Inspection results by
     coverage_state. Capped at 50 URLs per call - batch the sitemap or top pages.
-  - `seo_gsc_inspect_url({ site_url, inspection_url })` - single-URL deep dive
+ - `seo_gsc_inspect_url({ site_url, inspection_url })` - single-URL deep dive
     (indexability, mobile usability, rich results). It inspects the indexed snapshot
     only; there is no live-test via the API.
-  - "Discovered/Crawled - currently not indexed" at scale is a quality or
+ - "Discovered/Crawled - currently not indexed" at scale is a quality or
     internal-linking problem, not a submission problem. Fix the page, then resubmit.
 - Sitemaps: `seo_generate_sitemap({ project_id })`, then `seo_gsc_submit_sitemap`
   and `seo_bing_submit_sitemap` (single URLs: `seo_bing_submit_url`). Verify with
@@ -212,7 +216,7 @@ Profile (target = any domain, ours or theirs):
 - `backlinks_summary` - topline backlinks, referring domains, rank. Run monthly for
   us + the competitor set.
 - `backlinks_backlinks` - individual links, filterable; `backlinks_referring_domains`
-  - domain-level rollup.
+ - domain-level rollup.
 - `backlinks_anchors` - anchor-text distribution; flag over-optimized exact-match
   anchors before they become a problem.
 - `backlinks_bulk_spam_score` - spam scores in bulk. A spike in high-spam referrers
@@ -321,16 +325,16 @@ enable after review. Full manual: the `hiveku-automation-agency` skill.
    summary })`.
 2. Sections via `seo_report_add_section({ deliverable_slug, title, content })`
    (markdown body), in this order:
-   - Executive summary - 5 bullets max: headline metric, biggest win, biggest risk,
+ - Executive summary - 5 bullets max: headline metric, biggest win, biggest risk,
      what we did, what is next. Written last, placed first.
-   - Rankings movement - from `seo_rankings_list` + `seo_gsc_period_comparison`
+ - Rankings movement - from `seo_rankings_list` + `seo_gsc_period_comparison`
      (MoM): climbers, droppers, striking-distance list for next month.
-   - Organic traffic - `seo_gsc_time_series` MoM and YoY (YoY keeps you honest about
+ - Organic traffic - `seo_gsc_time_series` MoM and YoY (YoY keeps you honest about
      seasonality), top pages and queries, annotated with ship dates.
-   - Authority - `backlinks_summary` delta, notable new/lost links, outreach status.
-   - Work completed - from completed pm tasks; link every shipped URL.
-   - Next month plan - the roadmap slice, expected impact per item.
-   - (Local clients: a Local section from `seo_gbp_insights` +
+ - Authority - `backlinks_summary` delta, notable new/lost links, outreach status.
+ - Work completed - from completed pm tasks; link every shipped URL.
+ - Next month plan - the roadmap slice, expected impact per item.
+ - (Local clients: a Local section from `seo_gbp_insights` +
      `seo_local_compare_periods`.)
 3. Data appendices as sheet tabs: `seo_sheet_create_tab` / `seo_sheet_add_rows` for
    the full keyword table - keeps the narrative readable.

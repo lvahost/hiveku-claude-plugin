@@ -14,8 +14,7 @@ Two facts shape the rest. `design_templates_list` returns its 52-template librar
 
 - **R1.** No `account_context_get({ domain: 'creative' })`. There is no `creative` domain; the visual-system domain is `branding`. An unlisted value is a server-side rejection, not a soft fallback.
 - **R2.** Do not generate before checking the library, and do not attach a design export or stock-photo URL by id - neither is in the library until you put it there (R14, Part 8).
-- **R3.** Do not call `media_delete` without running `media_usage_get` first. ★
-- **R4.** Do not call `brand_guide_purge` without an explicit instruction naming what is being purged. `brand_guide_delete` removes one guide; a purge is the wide blast radius, and there is no undo tool here.
+- **R3.** Do not call `media_delete` without running `media_usage_get` first. - **R4.** Do not call `brand_guide_purge` without an explicit instruction naming what is being purged. `brand_guide_delete` removes one guide; a purge is the wide blast radius, and there is no undo tool here.
 - **R5.** Do not use `stock_photos_download` to get an image into the Media Library. It cannot; it is the website-project lane only (Part 7).
 - **R6.** Do not invent brand values. No accent color, no secondary typeface, no tone rule means ask the client or read it off their site. A guessed hex ships across every template afterwards.
 - **R7.** Do not fabricate a logo. Not an SVG you drew, not a generated one, not a placeholder mark. A logo comes from the client.
@@ -28,7 +27,7 @@ Two facts shape the rest. `design_templates_list` returns its 52-template librar
 - **R11.** Name and file every asset as you create it. An unnamed file in the root is one nobody finds again, so it gets regenerated.
 - **R12.** Send generative and strategic visual questions to `talk_to_department({ domain: 'branding' })`, then persist the chosen output with the matching direct tool.
 - **R13.** Hand back the dashboard URL every time. The human's job is to see and edit; a report without a link is a dead end.
-- **R14.** ★ Generated images and video clips auto-register. **Design exports and stock-photo URLs do NOT** - register those explicitly before attaching them anywhere.
+- **R14.** Generated images and video clips auto-register. **Design exports and stock-photo URLs do NOT** - register those explicitly before attaching them anywhere.
 
 ---
 
@@ -36,7 +35,7 @@ Two facts shape the rest. `design_templates_list` returns its 52-template librar
 
 `branding` is the visual-system domain and it is valid for both `account_context_get` and `talk_to_department`. Three adjacent domains are valid for both as well, and visual work leans on them constantly: `customer_avatar` (who the creative speaks to), `before_after_grid` (the transformation it dramatizes), and `website_design` (the site's own visual language, when creative must match it).
 
-`creative` is not valid for either. Neither is `web`, `email`, `pm`, `accounting`, `voice`, or `knowledge`. When you need something the branding agent does not cover, load a valid context domain, draft directly with that hydration, and say plainly that is what you are doing; `agent_identity_get` is the other option, returning a department's full identity bundle so you can act as it without an upstream call. `list_departments` tells you which departments THIS account has enabled - a domain being in the enum is not entitlement.
+`creative` is not valid for either. Neither is `web`, `email`, `pm`, `accounting`, `voice`, or `knowledge`. When you need something the branding agent does not cover, load a valid context domain, draft directly with that hydration, and say plainly that is what you are doing; `agent_identity_get` is the other option, returning a department's full identity bundle so you can act as it without an upstream call - but it takes the SAME 15 domains as `account_context_get`, so it is not a way to reach `creative`, `web`, `email`, `pm`, `voice` or `knowledge`; pass it one of the valid domains or not at all. `list_departments` tells you which departments THIS account has enabled - a domain being in the enum is not entitlement.
 
 Re-read the `instructions` field `account_context_get` returns before every generative call. It is the account's standing orders, and it changes.
 
@@ -128,7 +127,7 @@ Carry `photographer`, `source`, and `attribution` into the registered asset's me
 
 **The register rule, because it is the one that silently breaks attachments:**
 
-★ Generated images and video clips auto-register. **Design exports and stock-photo URLs do NOT** - register those explicitly before attaching them anywhere.
+Generated images and video clips auto-register. **Design exports and stock-photo URLs do NOT** - register those explicitly before attaching them anywhere.
 
 A `design_export_image` PNG and a `design_export_mp4` render are outputs, not library assets. If the export will be reused, register it first or the attachment has nothing to point at.
 
@@ -151,7 +150,7 @@ One more lever: a still can be animated rather than re-shot. `marketing_generate
 
 ## Part 9. Deleting safely
 
-★ **`media_usage_get` before `media_delete`. Always.**
+**`media_usage_get` before `media_delete`. Always.**
 
 An asset here is referenced by id from places the library view does not show you: social posts, design canvases, brand guides, website projects, campaigns. `media_usage_get` tells you where. Run it, read the list back, and get an explicit yes before deleting anything with a non-empty usage list. A delete that breaks a live design does not fail at delete time; it fails later, in the client's dashboard, as a broken layer in a design they were about to send.
 
@@ -169,7 +168,7 @@ Say each of these plainly rather than routing around it silently.
 - **Moving an asset between folders.** No `media_move`. `media_update` if the field is on the schema, otherwise the dashboard. Never delete and re-upload.
 - **Bulk delete.** `media_delete` is one asset per call. Given R3, that is a feature.
 - **A brand-compliance check on finished creative.** Nothing scores a design against the guide. `design_state_get` returns an element-by-element read of position, size, style, text, and animation - compare fills and fonts yourself, report the diff.
-- **Approving anything.** No creative approval tool exists in this lane. ★ "**THE AGENT CANNOT APPROVE: after creating, submit for approval and stop.**" That is written about storyboards and it is the rule everywhere here: you build, the human approves, in the dashboard.
+- **Approving anything.** No creative approval tool exists in this lane. "**THE AGENT CANNOT APPROVE: after creating, submit for approval and stop.**" That is written about storyboards and it is the rule everywhere here: you build, the human approves, in the dashboard.
 
 ---
 

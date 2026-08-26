@@ -189,18 +189,18 @@ the conversion action id you upload against: the wrong id silently trains the wr
    is outside this reference's tool surface; SKILL.md section 6.1 names it, and the fallbacks are a
    client-supplied export or the dashboard. Never invent values to fill gaps.
 2. **Validate every row before sending.** This is where uploads fail, quietly, if you let them.
-   - `conversion_date_time` as `YYYY-MM-DD HH:MM:SS+HH:MM` with an explicit UTC offset. Missing offset or a
+ - `conversion_date_time` as `YYYY-MM-DD HH:MM:SS+HH:MM` with an explicit UTC offset. Missing offset or a
      bare date is rejected. Use the Ads account's timezone offset, not the client's local one unless they
      match, and record which you used.
-   - Conversion time at or after click time. A deal timestamped before its own click is the classic symptom
+ - Conversion time at or after click time. A deal timestamped before its own click is the classic symptom
      of an offset applied backwards.
-   - Click old enough to be findable (allow several hours between click and upload) and young enough to be
+ - Click old enough to be findable (allow several hours between click and upload) and young enough to be
      in window. Clicks older than the click-through window (commonly 30 days, up to 90) are rejected. A long
      sales cycle against a 30-day window means most closed deals are unuploadable: lengthen the window in
      the dashboard before the first batch.
-   - `conversion_value` numeric; `currency_code` a valid ISO code matching the account currency; a stable
+ - `conversion_value` numeric; `currency_code` a valid ISO code matching the account currency; a stable
      `order_id` where available so re-uploads deduplicate instead of double-counting.
-   - Deduplicate against your own upload log. The tool does not know you sent this deal last week; the PM
+ - Deduplicate against your own upload log. The tool does not know you sent this deal last week; the PM
      task record is the only guard.
 3. **Confirm the batch.** Row count, total value, date range, target conversion action, one sample row. One
    explicit confirmation. This write changes what the bidding algorithm optimizes toward, so it is never
@@ -237,14 +237,14 @@ engineering. Say which, rather than implying the Google loop covers everything.
    prior-7-day average; pass `threshold_pct: 30` above 500 per day of spend, where 30 percent is already
    thousands.
 3. **Triage tree.** Answer in order, stop at the first yes.
-   - Inside the lag window or below the volume floor (Framework D)? Not real yet.
-   - Delivery broken? Disapproved ads, paused campaign, exhausted budget, billing hold. The disapproval and
+ - Inside the lag window or below the volume floor (Framework D)? Not real yet.
+ - Delivery broken? Disapproved ads, paused campaign, exhausted budget, billing hold. The disapproval and
      change-history reads live in `ads-assets-quality.md` and `account-structure.md`.
-   - A human changed something? Change history reaches 30 days and is the first place to look before blaming
+ - A human changed something? Change history reaches 30 days and is the first place to look before blaming
      the algorithm.
-   - Tracking? `ppc_conversion_tracking_status({ connection_id, days: 7 })`. A conversion cliff with flat
+ - Tracking? `ppc_conversion_tracking_status({ connection_id, days: 7 })`. A conversion cliff with flat
      clicks and flat spend is a tag failure until proven otherwise.
-   - Demand? `ppc_segment_report({ dimensions: ["date"], days: 30 })` for shape, then `["date","device"]` or
+ - Demand? `ppc_segment_report({ dimensions: ["date"], days: 30 })` for shape, then `["date","device"]` or
      `["date","ad_network_type"]` to localize. Concentrated in one device or network is mechanical; spread
      evenly is market.
 4. **Signatures.** Clicks flat, conversions to zero = tracking. Spend up, clicks flat = CPC inflation or a
@@ -439,8 +439,10 @@ loop `ppc_sync` hoping for a different outcome.
 ## 18. Persistence and reporting
 
 **Memory** is what the next session inherits, and here it is unusually load-bearing because the facts are
-invisible in the data itself. After any material finding, `memory_create` or `memory_update` with
-`type: "memory"`, `name: "ppc"`: which conversion actions are trusted and which are primary; counting and
+invisible in the data itself. After any material finding, `memory_create({ type: "memory", name:
+"ppc", content })` on the first run, then `memory_update({ memory_id, content })` after (only
+`memory_id` and `content`, and it REPLACES the document, so resend the merged body). Hold: which
+conversion actions are trusted and which are primary; counting and
 window settings plus the date of any change; reconciliation baseline gaps with the date measured; deal
 value, close rate and derived lead value with the derivation; the offline import conversion action id, last
 uploaded outcome date and current match rate; known reporting discontinuities; and any measurement decision

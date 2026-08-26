@@ -208,15 +208,15 @@ showing zero impressions.
 Sequence: callouts (no destinations), sitelinks (need real URLs), structured snippets, images.
 
 1. `ppc_asset_create({ connection_id, asset_type, ... })` per asset. Limits that matter:
-   - **callout**: 25 chars, 2 minimum to serve, 4 to 6 working set. Differentiators, not adjectives:
+ - **callout**: 25 chars, 2 minimum to serve, 4 to 6 working set. Differentiators, not adjectives:
      "Same-day service" beats "Great service".
-   - **sitelink**: 25-char link text plus two optional 35-char description lines. **Always write both
+ - **sitelink**: 25-char link text plus two optional 35-char description lines. **Always write both
      lines** (much larger desktop rendering), and **four sitelinks is the magic number**: below that the
      row often will not render.
-   - **structured_snippet**: a header from Google's fixed list (Services, Brands, Types, Models,
+ - **structured_snippet**: a header from Google's fixed list (Services, Brands, Types, Models,
      Amenities, Insurance Coverage) plus 3 values minimum of up to 25 chars; supply 5 to 8.
-   - **call**: the verified number from `get_account_info`, never an unconfirmed tracking number.
-   - **promotion / price**: strong, date-bound, a compliance liability the day they expire. Build only
+ - **call**: the verified number from `get_account_info`, never an unconfirmed tracking number.
+ - **promotion / price**: strong, date-bound, a compliance liability the day they expire. Build only
      with an owner and an end date in a PM task.
 2. Record every returned `resource_name`. **There is no asset list tool**: the resource_names in your PM
    task and the `ppc` memory are the only registry, and losing them means the Ads UI.
@@ -241,15 +241,15 @@ Sequence: callouts (no destinations), sitelinks (need real URLs), structured sni
 1. `ppc_disapprovals_list({ connection_id })`: per row read the ad or asset identity, policy topic,
    approval status (disapproved vs eligible-limited) and the parent group and campaign.
 2. Classify by Framework F and by policy topic, because remedies differ completely:
-   - **Editorial** (capitalization, punctuation, repetition, gimmicky characters): a copy defect; rewrite
+ - **Editorial** (capitalization, punctuation, repetition, gimmicky characters): a copy defect; rewrite
      the offending strings and ship via Play 2.
-   - **Trademark**: a competitor or brand term in the copy. Remove it; appeal only if the client holds
+ - **Trademark**: a competitor or brand term in the copy. Remove it; appeal only if the client holds
      documented authorization, and that is a UI escalation, not a rewrite.
-   - **Destination mismatch or page not working**: the URL, not the ad. `web_scrape` the exact final URL,
+ - **Destination mismatch or page not working**: the URL, not the ad. `web_scrape` the exact final URL,
      then fix the site or repoint the ad.
-   - **Misrepresentation or unreliable claims**: superlatives, guarantees, results claims. Soften or
+ - **Misrepresentation or unreliable claims**: superlatives, guarantees, results claims. Soften or
      substantiate on the page; this tier escalates toward suspension if you resubmit unchanged.
-   - **Regulated vertical** (healthcare, finance, gambling, alcohol): certification, an account-level UI
+ - **Regulated vertical** (healthcare, finance, gambling, alcohol): certification, an account-level UI
      process, no tool. Raise as a client action naming it.
 3. Remediate. Google ads are effectively immutable, so the pattern is **replace, never edit**: create the
    corrected RSA with `ppc_responsive_search_ad_create` (lands paused), review, confirm, enable with
@@ -355,7 +355,9 @@ client first.
 ## 8. Persistence and reporting
 
 **Memory is your asset registry.** With no asset list tool, after every build write the inventory back with
-`memory_update` on the `ppc` memory (`memory_create` if none exists): asset type, the copy, the returned
+`memory_update({ memory_id, content })` on the `ppc` memory (`memory_create` if none exists). That call
+REPLACES the document, so send the body `memory_list({ domain: "ppc" })` returned with the new rows folded
+in, never the new rows alone. Record: asset type, the copy, the returned
 resource_name, the attach level, the campaign or ad group ids. Also persist prohibited phrases from
 disapprovals, concluded RSA tests with their numbers, the pins that are legally compelled, and the
 auction-insights competitor set by month.

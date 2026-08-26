@@ -8,8 +8,9 @@ version-snapshotted and server-validated.
 
 1. Context: `account_context_get({ domain: "workflow" })`. Then `workflow_list`. If something close
    already exists, `workflow_clone({ workflow_id, new_name, overrides? })` (clone starts disabled)
-   beats rebuilding. And before hand-building anything recurring, call `workflow_templates_list`: 16
-   templates ship, and 13 of them are the standing SEO/PPC delivery plays; install one with
+   beats rebuilding. And before hand-building anything recurring, call `workflow_templates_list`: 19
+   templates ship, and 16 of them are the standing SEO/PPC/reputation delivery plays (read the
+   returned `count` rather than assuming - the catalog grows between releases); install one with
    `workflow_create_from_template({ slug, overrides })` (it defaults to `is_enabled: true`, so
    confirm first or pass `is_enabled: false`).
 2. Discover, do not guess. `workflow_event_trigger_types_list` for a trigger that fires on an
@@ -36,9 +37,15 @@ version-snapshotted and server-validated.
    9am report lands at 2am. Read it back with `workflow_get_schedule`.
 7. Enable only after the operator says yes: `workflow_enable({ workflow_id })`. Hand off with
    `workflow_dashboard_url({ workflow_id })` so they can watch it in the editor.
-8. Finish every session of work the same way: persist notable learnings to department memory
-   (`memory_list` → `memory_create({ type: "memory", name: "workflow", content })` or `memory_update`),
-   and reflect the work in Hiveku PM: `pm_projects_list` to find or `pm_projects_create` the project,
+8. Finish every session of work the same way: persist notable learnings to department memory. Read
+   the current document FIRST with `memory_list({ domain: "workflow" })`, which returns the row's
+   `id` and its WHOLE `content`. Append your note to that text and send the full merged body to
+   `memory_update({ memory_id, content })`, which REPLACES the document: sending only the new note
+   wipes everything the workflow department had accumulated. The prior content is snapshotted before
+   the overwrite, so a bad write is recoverable with `memory_list_versions({ memory_id })` then
+   `memory_restore_version({ version_id })`. Use `memory_create({ type: "memory", name: "workflow",
+   content })` only when no entry exists yet.
+   Then reflect the work in Hiveku PM: `pm_projects_list` to find or `pm_projects_create` the project,
    then `pm_tasks_create({ project_id, title })` (the field is `title`, not `name`),
    `pm_tasks_complete({ id, summary })` when the loop is closed.
 

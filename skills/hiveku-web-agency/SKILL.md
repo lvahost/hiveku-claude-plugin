@@ -59,15 +59,15 @@ VCS (no GitHub) and deployed through Hiveku, not through git.
    the account, then `sites_list` -> the projects and their `project_id`s. For the working
    project, `project_get({ project_id })` for status, deploy mode, and attached domains.
 2. Inventory the site as it stands:
-   - `pages_list({ project_id })` - every page, its slug, and which is homepage.
-   - `project_files_list({ project_id })` and `project_files_status({ project_id })` - the
+ - `pages_list({ project_id })` - every page, its slug, and which is homepage.
+ - `project_files_list({ project_id })` and `project_files_status({ project_id })` - the
      code tree and any uncommitted/dirty state. A dirty tree from a prior session is the
      first thing to reconcile.
-   - `cms_list_collections({ project_id })` - content models in play.
-   - `database_tables({ project_id })` and `database_status({ project_id })` - is there a
+ - `cms_list_collections({ project_id })` - content models in play.
+ - `database_tables({ project_id })` and `database_status({ project_id })` - is there a
      provisioned project DB, and what is in it.
-   - `project_domains_list` and `project_redirects_list` - live hostnames and redirect map.
-   - `deploy_history({ project_id })` and `deploy_status({ project_id })` - what is live
+ - `project_domains_list` and `project_redirects_list` - live hostnames and redirect map.
+ - `deploy_history({ project_id })` and `deploy_status({ project_id })` - what is live
      and when it last shipped. `deploy_doctor({ project_id })` if anything looks off.
 3. Record the baseline to `memory_create`: project_id, template lineage, deploy mode, live
    domains, homepage slug, CMS collections, DB state, known constraints. This is what every
@@ -99,16 +99,16 @@ tokens the brand system expects.
    style, search, template_id) and an unfiltered response paginates 100 at a time - use
    `facets.categories` from the response to narrow before iterating.
 2. Scaffold:
-   - New Hiveku-hosted site from a template:
+ - New Hiveku-hosted site from a template:
      `site_create({ name, creation_mode: 'template', template_id })`. `creation_mode`
      defaults to `'blank'`, and a `template_id` passed WITHOUT `creation_mode: 'template'`
      is ignored - you get a bare scaffold and think the template failed. The other modes
      are `'blank'` (bare Next.js + Tailwind) and `'import'` (empty project for bringing an
      existing app, paired with `project_import_presign` / `project_import_finalize`).
      `project_type` defaults to `nextjs`.
-   - Duplicate an existing project to iterate on: `site_clone({ project_id })`. The clone
+ - Duplicate an existing project to iterate on: `site_clone({ project_id })`. The clone
      does NOT carry the database, custom domain, CloudFront/DNS/cert, or GitHub connection.
-   - Register a site that lives elsewhere: `site_create_external`. Re-run analysis on an
+ - Register a site that lives elsewhere: `site_create_external`. Re-run analysis on an
      imported/external site, or after any framework conversion, with
      `site_reanalyze({ project_id })` (Play 11).
 3. Lay in pages to match the IA: `pages_create({ project_id, name, slug, ... })` per page -
@@ -184,25 +184,25 @@ services, team, case studies, locations. Code is for one-off layout; CMS is for 
    Bulk migration -> `cms_bulk_import` (dedupe and validate the payload first).
 3. Draft -> review -> publish, never publish blind. What makes something a draft is
    `draft: true`, nothing else:
-   - `cms_write_entry({ project_id, collection_id, slug, fields, draft: true })` writes the
+ - `cms_write_entry({ project_id, collection_id, slug, fields, draft: true })` writes the
      entry's DRAFT SHADOW instead of the live entry. Draft writes skip field validation, so
      partial working copies are fine.
-   - Review it. `cms_read_entry({ ..., draft: "1" })` reads the shadow back.
+ - Review it. `cms_read_entry({ ..., draft: "1" })` reads the shadow back.
      `cms_preview_write` pushes a file into the Fly preview so the iframe shows the change,
      but it writes NOTHING to the database and creates no draft - it is a look-at-it tool
      only, and `cms_promote_draft` after it alone returns 404.
-   - `cms_promote_draft({ project_id, collection_id, slug, locale?, force? })` copies the
+ - `cms_promote_draft({ project_id, collection_id, slug, locale?, force? })` copies the
      shadow over the live entry, deletes the draft, and fires save webhooks. Confirm before
      promoting. Read its failures rather than retrying blindly: 422 if the draft no longer
      validates against the CURRENT schema or has dangling references (drafts sit while
      schemas evolve), 409 if a concurrent live edit landed since the draft was saved
      (`force: true` overwrites it - that is a lost update, so confirm first), 404 if no
      draft exists. Localized collections need `locale` to promote a specific variant.
-   - Top-level `status` and `publish_at` on `cms_write_entry` are NOT the draft mechanism:
+ - Top-level `status` and `publish_at` on `cms_write_entry` are NOT the draft mechanism:
      they are merged in as ordinary fields (`status`, `publishAt`) the site reads.
      `publish_at` alone only date-gates rendering; a real scheduled flip needs the schedule
      cron.
-   - `cms_list_entry_versions` + `cms_restore_entry_version` recover a bad edit;
+ - `cms_list_entry_versions` + `cms_restore_entry_version` recover a bad edit;
      `cms_activity` shows who changed what. Read entries with `cms_read_entry` /
      `cms_list_entries`; find one with `cms_search_entries`.
 4. Deletes: `cms_delete_entry` / `cms_delete_collection` are destructive and can break pages
@@ -321,12 +321,12 @@ GitHub note at the end of this play.)
 
 1. Pre-flight: build is green (Play 5), changes are committed (Play 6), and you have
    explicit approval. Then, in order:
-   - `project_deploy_preflight({ project_id })` FIRST - it returns `ready`, `blockers[]`,
+ - `project_deploy_preflight({ project_id })` FIRST - it returns `ready`, `blockers[]`,
      and `hints[]`. Surface `blockers[]` verbatim to the user; only they can fix those.
      Read `hints[]` for `reserved_cdn_prefix_page_collision`, which means a shipping page
      route sits under a reserved CDN asset prefix (videos/, media/, images/, ...) and WILL
      403 on the deployed URL - rename the route before shipping.
-   - `deploy_diff({ project_id, environment })` to see the file + route delta versus what is
+ - `deploy_diff({ project_id, environment })` to see the file + route delta versus what is
      live. Read `data.has_changes` as a TRI-STATE, not a boolean: `false` is a confident
      all-clear (exact baseline, code and assets match - safe to skip the deploy); `true` is
      a concrete change (never_deployed implies true); `null` means we CANNOT prove no-change
@@ -388,17 +388,17 @@ Connecting a custom domain and preserving link equity is core agency work.
    are PRODUCTION TIER ONLY, and nothing at all takes effect until the deploy runs.
 6. Redirects preserve SEO and fix broken paths. Map old URLs to new BEFORE you delete or
    rename pages:
-   - `project_redirects_list` to see the current map (each row carries the `id` you need to
+ - `project_redirects_list` to see the current map (each row carries the `id` you need to
      edit or delete it).
-   - `project_redirect_create({ project_id, from_path, to_path, status_code, match_type })` -
+ - `project_redirect_create({ project_id, from_path, to_path, status_code, match_type })` -
      301 for permanent moves, 302 only for temporary; match_type is exact | prefix | regex.
      The route validates duplicate sources, self-loops, and circular chains up to depth 10.
      `project_redirect_update`, `project_redirect_delete` for the rest.
-   - Redirects are staged until published: `project_redirects_deploy({ project_id, tier })`
+ - Redirects are staged until published: `project_redirects_deploy({ project_id, tier })`
      makes them live, tier is `development` | `staging` | `production` (default production).
      Deploying to development and then checking production is its own silent no-op. Confirm,
      then verify a couple of the mappings actually 301 against the deployed host.
-   - Every renamed slug or deleted page in Play 1/2/3 needs a matching 301 here. An orphaned
+ - Every renamed slug or deleted page in Play 1/2/3 needs a matching 301 here. An orphaned
      old URL is lost traffic and a lost ranking.
 
 ## Play 9 - Conversion optimization (make the pages earn)
@@ -425,32 +425,32 @@ Design and content in service of the primary action per page - not decoration.
   `project_custom_code_get` - it returns `run_in_preview` plus every tier's entries, where
   the row with `page_path: ""` is that tier's site-wide code and every other row is a
   per-page override that APPENDS after it.
-  - `project_custom_code_set_tier({ project_id, tier, head_code, body_code, pages })` is the
+ - `project_custom_code_set_tier({ project_id, tier, head_code, body_code, pages })` is the
     full writer, and it REPLACES that tier in full: **any per-page override missing from
     `pages` is DELETED**. Always read-then-merge, never write `pages` from memory. It
     validates server-side and fails with details on an unclosed script/style/comment.
     Snippets cap at 20,000 chars each. Tier enum is preview | development | staging |
     production.
-  - `project_custom_code_page_set` upserts ONE page override without touching the rest of
+ - `project_custom_code_page_set` upserts ONE page override without touching the rest of
     the tier - prefer it for a single-page change. `project_custom_code_delete({ entry_id })`
     removes one row.
-  - **Saved is not live.** Custom code is saved instantly but takes effect on the NEXT
+ - **Saved is not live.** Custom code is saved instantly but takes effect on the NEXT
     DEPLOY of that tier. That is the whole of the "I added the GTM tag and it is not on my
     site" ticket - tell the client the deploy is required. The preview tier additionally
     runs nothing until `project_custom_code_preview_toggle({ run_in_preview: true })`, which
     is off by default so tracking snippets do not fire while editing.
-  - Prefer a prebuilt integration over raw third-party script when one exists.
+ - Prefer a prebuilt integration over raw third-party script when one exists.
 - CDN: `project_cdn_config_get` to inspect the deployed distribution's actual configuration
   for a tier (origins, attached viewer functions, policies) when a site serves wrong and you
   need facts rather than a verdict. `project_cdn_invalidate` after a deploy that changed a
   cached asset behind an unchanged URL. If a deploy "did not take" visually, suspect the CDN
   cache before the build. Invalidation rules, because it bills the ACCOUNT:
-  - Send `/*`. It counts as ONE path and covers the whole site; enumerating paths is how an
+ - Send `/*`. It counts as ONE path and covers the whole site; enumerating paths is how an
     agency running many client projects bills itself.
-  - The free quota is 1,000 invalidation paths per month per ACCOUNT, shared across every
+ - The free quota is 1,000 invalidation paths per month per ACCOUNT, shared across every
     client project on it. Paths cap at 25 per call and each must start with `/`.
-  - Never call it in a retry loop - propagation is usually under a minute.
-  - Skip it entirely for `_next/static` hashed bundles. They get a new URL every build.
+ - Never call it in a retry loop - propagation is usually under a minute.
+ - Skip it entirely for `_next/static` hashed bundles. They get a new URL every build.
     Invalidation is only for files replaced in place at the same path: images, fonts,
     documents.
 - Scheduled jobs the site needs (nightly rebuilds, data refresh): `project_crons_list` to
@@ -460,13 +460,13 @@ Design and content in service of the primary action per page - not decoration.
   `sensitive_keys` IS set, not missing) and `project_secrets_set` for keys the site's server
   code needs. Config only; never hardcode a feature flag as an env var, and never put a
   secret value in a commit, log, or report.
-  - **A secrets write BOUNCES the live preview machine** (stop -> updateMachine -> start,
+ - **A secrets write BOUNCES the live preview machine** (stop -> updateMachine -> start,
     about 11s of downtime) so the dev server sees the new values. Setting five secrets in a
     loop restarts the client's preview five times. Batch them: pass
     `apply_to_preview: false` on every call but the last. Confirm propagation by reading
     `preview_env_applied` + `preview_env_apply_reason` (`no_preview_machine`,
     `only_non_dev_keys_set`, or a Fly error) on the response.
-  - Key resolution for the preview: `_DEV`-suffixed keys are stripped to the base name;
+ - Key resolution for the preview: `_DEV`-suffixed keys are stripped to the base name;
     `_PROD` / `_PRODUCTION` / `_STAGING` keys are SKIPPED for the preview and go only to the
     deployed Lambdas. Any `NEXT_PUBLIC_` key auto-triggers a `preview_sync` afterwards
     because it is inlined at compile time - check `preview_synced` in the response.

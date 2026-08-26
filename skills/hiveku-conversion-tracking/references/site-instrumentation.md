@@ -47,7 +47,7 @@ Consequences:
 
 - **Form leads with no sessions or pageviews is coherent, not a contradiction.** Capture is working
   while analytics is off, gated, or consent-blocked. Do not open a bug.
-- ★ **The always-on capture module can never send `attribution_captured_at`** - storage-free by design,
+- **The always-on capture module can never send `attribution_captured_at`** - storage-free by design,
   it has no persisted first-touch store to read, so a lead written only by inline capture carries no
   click-dated first touch. Expected, not data loss.
 - Sites hard-cache the embed, so **most embeds in the field are stale**; every server-side path is
@@ -55,7 +55,7 @@ Consequences:
 
 **The DNI loader is a separate tag**, served from `/api/embed/phone-tracking.js`, POSTing to
 `/api/embed/phone-swap/<projectId>`, re-running on a MutationObserver so SPA routes keep swapping.
-★ **"Call attribution quietly stopped after a redeploy" is almost always this tag dropping off the
+**"Call attribution quietly stopped after a redeploy" is almost always this tag dropping off the
 page** - the swap health monitor calls it `snippet_missing`, and nobody reports it on the day because
 the site looks fine. Re-check `voice_diagnose_setup` (`blocking_issues[]`) after any custom-code change
 on a DNI project; `?hkswaptest=<nonce>` forces test mode without burning a session.
@@ -78,14 +78,14 @@ Reading the response: **`page_path === ""` is that tier's SITE-WIDE row**, where
 other `page_path` is page-scoped, usually a thank-you page conversion tag. `enabled: false` is the
 reason an "installed" tag records nothing; check that flag first.
 
-★★ **`project_custom_code_set_tier` REPLACES A WHOLE TIER. Any page omitted from `pages` is DELETED.**
+**`project_custom_code_set_tier` REPLACES A WHOLE TIER. Any page omitted from `pages` is DELETED.**
 Never call it from memory or a partial picture: `project_custom_code_get` and keep the tier's full
 `entries`; build `pages` as *the existing rows, edited*, not as the one row you care about; show a diff
 of what stays, changes, and disappears; get a yes; then call it. To change one page use
 `project_custom_code_page_set`; to remove one use `project_custom_code_delete` with its id. Snippets
 cap at **20000 characters**, and the failure is a refused write, not a truncated one.
 
-★★ **UNIVERSAL TRAP: custom-code edits are SAVED INSTANTLY but take effect on the NEXT DEPLOY of that
+**UNIVERSAL TRAP: custom-code edits are SAVED INSTANTLY but take effect on the NEXT DEPLOY of that
 tier. Saved is not live.** Every downstream check inherits this - `seo_gtm_install_status` will report
 the container installed on production while production still serves pre-edit HTML. Say it in the same
 message where you say the tag is in, or the client tests it, sees nothing, and you debug a deploy you
@@ -103,7 +103,7 @@ GPC is honoured. `url_passthrough` and `ads_data_redaction` are both set. Third-
 (OneTrust, Cookiebot, Usercentrics, Didomi, CookieYes) are read through Google Consent Mode state, not
 each vendor's private API.
 
-★ **The banner reading FAILS OPEN.** Only an EXPLICIT denial suppresses; absent or unknown reads as
+**The banner reading FAILS OPEN.** Only an EXPLICIT denial suppresses; absent or unknown reads as
 not-denied. Deliberate: a vendor renaming a field cannot silently switch off tracking fleet-wide. So:
 
 - A "tracking" verdict is not proof the banner integration is wired right. It may only mean nothing
@@ -112,7 +112,7 @@ not-denied. Deliberate: a vendor renaming a field cannot silently switch off tra
   accepted is a direct multiplier on every number, since most visitors never touch the banner.
   `analytics_diagnose_tracking` reports it as `consent-changes-outcome` (CRITICAL);
   `analytics_probe_page` shows it by loading one URL twice and returning `as_first_time_visitor` and
-  `as_visitor_who_accepted` - compare the two `observed` arrays. ★ Only a `conversion`-role signal
+  `as_visitor_who_accepted` - compare the two `observed` arrays. Only a `conversion`-role signal
   makes a channel "tracking"; container, tag, and pageview signals prove nothing about conversions.
 - Two more findings worth knowing: `conversion-fires-denied` (CRITICAL: delivered carrying consent
   denied, so unattributable while looking fine in a network trace) and `consent-no-url-passthrough`
@@ -127,7 +127,7 @@ not-denied. Deliberate: a vendor renaming a field cannot silently switch off tra
 - `verification_status` flips to verified on the **first fire**. Until then assume nothing is
   installed: snippet missing, placed in `<body>` behind a consent script, or stripped by the CMS.
 
-★ **The external snippet convention looks wrong and is correct.** In it, `accountId = the projectId`
+**The external snippet convention looks wrong and is correct.** In it, `accountId = the projectId`
 and `projectId = the subdomain`. Two conventions coexist: the external/dashboard snippet sends
 `accountId = PROJECT uuid`, while the consent and SSR injectors send `accountId = ACCOUNT uuid` plus
 `projectId`; resolution prefers `projectId`. **Do not "fix" a snippet that looks mismatched** - you
@@ -142,7 +142,7 @@ Verifying:
   real leads as spam.
 - First traffic: `analytics_events_list` filtered to `event_name=form_submit`, then
   `analytics_overview` / `analytics_sessions` / `analytics_traffic_sources` for topline.
-- ★ `analytics_diagnose_tracking` **requires a custom domain**: without one it returns 400 and nothing
+- `analytics_diagnose_tracking` **requires a custom domain**: without one it returns 400 and nothing
   is checked. On a staging subdomain you get no findings, and that is not a clean bill of health.
 
 **No `project_custom_code_*` tool applies to an external site** - the client's CMS or developer owns
@@ -183,7 +183,7 @@ update) for `conversion_id` and `conversion_label`; `ppc_bing_uet_tag_list` for 
 
 ### 5.3 The SPA trigger doctrine
 
-★ **A `page_path` trigger defaults to `trigger_type: 'both'` - a pageview trigger AND a historyChange
+**A `page_path` trigger defaults to `trigger_type: 'both'` - a pageview trigger AND a historyChange
 trigger.** Not padding. Coverage of two disjoint blind spots:
 
 - On a client-routed site, a form submit landing on `/thank-you` is a **client-side route change**. A
@@ -196,14 +196,14 @@ than expected, with a tag that tests fine in whichever case the tester tried. Le
 `both`. Narrow it only deliberately, and expect the missing half to surface later as
 `spa-history-trigger` or `conversion-never-fires:<channel>`.
 
-★ **`uet_auto_spa_tracking`**: a Bing URL goal on a single-page thank-you page **silently never fires**
+**`uet_auto_spa_tracking`**: a Bing URL goal on a single-page thank-you page **silently never fires**
 without it. No error, no warning in the Bing UI, the goal sits at zero looking like a media problem.
 Set it on any SPA. Separate from the trigger doctrine - a GTM trigger firing does not help if UET
 never registers the virtual pageview.
 
 ### 5.4 The conversion VALUE trap
 
-★ **Omitting `conversion_value` + `currency_code` + `transaction_id` sends NO VALUE.** The conversion
+**Omitting `conversion_value` + `currency_code` + `transaction_id` sends NO VALUE.** The conversion
 still records, so nothing looks broken - but every conversion is then worth the same, and value-based
 bidding (tROAS above all) optimises against a constant. The account bids identically for a 200 dollar
 job and a 20000 dollar job until someone notices.
@@ -211,13 +211,13 @@ job and a 20000 dollar job until someone notices.
 - Pass all three whenever a value exists, even estimated. A defensible average beats a blank.
 - `transaction_id` is the deduplication key when the same conversion can also arrive by another path
   (a server-side upload, a second tag, a platform pixel).
-- Platform-side sibling: ★ `always_use_default_value: true` on `ppc_google_conversion_actions`
+- Platform-side sibling: `always_use_default_value: true` on `ppc_google_conversion_actions`
   FLATTENS every conversion and destroys transaction-level revenue reporting. Never set it to answer a
   "missing value" complaint - that hardcodes the exact problem you were asked to fix.
 
 ### 5.5 Container pinning
 
-★ **The first successful use claims the container onto the connection.** A later call naming a
+**The first successful use claims the container onto the connection.** A later call naming a
 DIFFERENT container is refused with a 403 that names both. It guards against writing tags into a
 container nobody serves, and it fires the first time you work an account set up against a test
 container. On that 403: do not retry, do not guess. Read both ids from the error, confirm which
@@ -227,7 +227,7 @@ else on an account.
 
 ### 5.6 Draft until published
 
-★ **Every `seo_gtm_*` write is a WORKSPACE DRAFT. Nothing serves to a single real visitor until
+**Every `seo_gtm_*` write is a WORKSPACE DRAFT. Nothing serves to a single real visitor until
 `seo_gtm_version_create` and then `seo_gtm_publish`.** Two calls, in that order, every time.
 
 It has a signature: the tag is visible in the GTM UI, GTM Preview fires it perfectly, production
@@ -245,13 +245,13 @@ Run it before adding a single tag to an account you did not set up.
 | Finding | Means | Why it costs money |
 |---|---|---|
 | **WRONG CONTAINER** | Not the container the connection targets | Every tag you write goes somewhere nobody serves |
-| ★ **DUPLICATE INSTALL** | Container is on the page twice | **Double counts every conversion.** Reads as performance IMPROVING and corrupts every downstream CPA and ROAS number |
+| **DUPLICATE INSTALL** | Container is on the page twice | **Double counts every conversion.** Reads as performance IMPROVING and corrupts every downstream CPA and ROAS number |
 | **TIER DRIFT** | Verified on staging, never installed on production | The account is measured in the one environment nobody buys from |
 
 Duplicate install is the only finding whose symptom is a happy client: if conversions roughly doubled
 with no media change on the date a container was touched, check for it first.
 
-★ **SCOPE LIMITS - say these out loud whenever you report a clean result.** (1) It reads **saved custom
+**SCOPE LIMITS - say these out loud whenever you report a clean result.** (1) It reads **saved custom
 code ONLY**; a container hardcoded in the site's own source is **invisible to it**, so use
 `analytics_diagnose_tracking`, whose `duplicate-conversion-paths` check is exactly that case. (2) It
 reports the **SAVED** state, **never the LIVE** one. "Install status is clean" means only "the saved
@@ -266,9 +266,9 @@ Stop when you have a `conversion`-role signal from a real deployed URL.
 1. **Deploy or publish first**: `deploy_site` the tier, or `seo_gtm_version_create` then
    `seo_gtm_publish`. Skip it and everything below correctly reports nothing there.
 2. `seo_gtm_install_status` and `seo_gtm_status` (saved state only), then `analytics_diagnose_tracking`
-   for the code and the served HTML. Read `browser_checked` and `caveats` FIRST: ★ if no probe
+   for the code and the served HTML. Read `browser_checked` and `caveats` FIRST: if no probe
    succeeded the runtime checks emit NOTHING, so no findings on an unprobed site is absence of
-   evidence. ★ `tag-not-deployed` is THE most common reason a tag "definitely installed" records
+   evidence. `tag-not-deployed` is THE most common reason a tag "definitely installed" records
    nothing.
 3. `analytics_probe_page` on the conversion URL; compare `as_first_time_visitor` against
    `as_visitor_who_accepted`. Once a conversion has had time to flow, confirm platform-side with
@@ -285,7 +285,7 @@ unprobed site means healthy, or that a pageview or container signal means the ch
 Hiveku-hosted site, Google Ads and Bing running, forms plus phone calls.
 
 1. `account_context_get` for the domain. Confirm which channels are actually being spent on.
-2. **Before the site ships**: ★ **give every form a stable, human `id` or a `data-hiveku-form-key`
+2. **Before the site ships**: **give every form a stable, human `id` or a `data-hiveku-form-key`
    attribute.** `form_key` is `<identity>@<pathname>`; a real identity is NOT path-scoped, a junk one
    (a Tailwind class, a placeholder) keeps the path. That attribute is the difference between one form
    equalling one record with working notifications and nineteen records for a handful of forms. Ship it

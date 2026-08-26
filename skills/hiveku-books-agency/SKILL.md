@@ -43,8 +43,8 @@ you need brand-voiced client-facing copy (an AR reminder, an owner update), load
   cents integer.
 - One write is genuinely irreversible: see the one-way door below. Two others are effectively
   one-way in practice - `accounting_member_create` and `accounting_vendor_create` have no update
-  or delete tool, so a wrong `is_1099`, `tax_id`, `target_currency` or `pay_rate` is stuck until
-  someone fixes it in the dashboard.
+  or delete tool, so a wrong `is_1099` or `tax_id` on a vendor, or a wrong `pay_rate`,
+  `pay_period` or `target_currency` on a member, is stuck until someone fixes it in the dashboard.
 - `hiveku-data/` snapshots are for orientation only. Balances, statuses and aging move whenever
   anyone pays anything; pull live for any number that reaches a client or a payment.
 
@@ -69,16 +69,21 @@ drops it and you cannot set the key yourself; a distinct `reference` (check numb
 confirmation code) is the only lever you have. Verify `balance_due_cents` in the response
 actually moved before reporting a payment as recorded.
 
-**Refusals are guardrails, not obstacles.** Expect these verbatim:
+**Refusals are guardrails, not obstacles.** Expect these, and match on a distinctive prefix rather
+than the whole string - AP and AR word several of them differently and some carry an em dash:
 - 400 `Amount exceeds balance due` (AP) / `Amount exceeds the invoice balance` (AR). Overpayment
   is refused, never split. One wire covering three invoices is three calls against three ids.
 - 409 `A card charge on this invoice is still being confirmed with the payment processor. Resolve
   that hold before recording a manual payment, so the client cannot end up paying twice.` STOP
   and escalate to a human. Never route around this one.
 - 409 `Cannot pay a "void" bill` / `Cannot record payment on a voided invoice`.
-- 409 `This bill was just updated by another payment. Reload and try again.` Re-read with
-  `accounting_bill_get` and re-confirm the amount before retrying. Never blind-retry a payment.
-- 409 `Duplicate idempotency key - this payment was already recorded.` Treat as already done.
+- 409 `This bill was just updated by another payment. Reload and try again.` (AR: `This invoice
+  was just updated by another payment. Reload and try again.`) Re-read with `accounting_bill_get`
+  or a fresh `accounting_invoice_list` and re-confirm the amount before retrying. Never
+  blind-retry a payment.
+- 409 `Duplicate idempotency key`. Match on exactly that prefix. AR returns it bare with no
+  suffix; AP appends an EM DASH and "this payment was already recorded." Treat as already done,
+  then re-read the record to confirm what is actually booked.
 
 ## Play 0 - Account setup (do this the first time you touch an account's books)
 1. `accounting_settings_get` -> `bill_prefix`, `default_currency`, `default_payment_terms`.
@@ -101,12 +106,17 @@ Decisions made at creation are stuck: **there is no `accounting_vendor_update` t
 1. `accounting_vendor_list({ q: '<name>' })` first - duplicate vendors are the commonest source
    of a double-booked payable.
 2. `accounting_expense_category_list` -> pick the category this vendor's bills will code to.
-3. `accounting_vendor_create({ name, email, target_currency, default_payment_terms, is_1099,
-   tax_id, phone, notes })`. `name` is the only required field, but decide all of these up front:
-   `target_currency` is the payout currency for the Wise export (USD, PHP, ...),
+3. `accounting_vendor_create({ name, email, default_payment_terms, is_1099, tax_id, phone,
+   notes })`. `name` is the only required field, but decide all of these up front:
    `default_payment_terms` is free text ("Net 30"), and `is_1099` plus `tax_id` (EIN or SSN) are
    what year-end 1099 reporting reads. Getting `is_1099` wrong is a January problem you cannot
    fix from here.
+   **Do not pass `target_currency`.** The tool advertises it and the registry description calls it
+   "the payout currency for the Wise export", but the route parses with `vendorBaseSchema`, which
+   has no such key, so zod strips it and the create never writes it - `accounting_vendors` has no
+   `target_currency` column at all. Payout currency is a PAYROLL MEMBER field
+   (`accounting_member_create.target_currency`); the Wise CSV is built from payroll run items, not
+   vendors. Sending it looks accepted and stores nothing.
 
 ## Play 2 - Accounts payable, end to end
 Lifecycle: **create (draft) -> submit -> approve (open) -> record payment (partially_paid ->
@@ -162,7 +172,10 @@ or reminder tool in the registry** - only `accounting_invoice_list` and
   `pm_tasks_create`.
 - Cash arrives -> `accounting_invoice_record_payment({ invoice_id, amount_cents, method,
   reference, received_at })`. `method` is one of check, wire, cash, credit_note, manual, ach.
-  Re-read the one-way door section first.
+  **Always send it.** The tool's `required` is only `invoice_id` and `amount_cents`, but the AR
+  schema's `method` is a bare enum with no default and no `.optional()`, unlike the AP side which
+  defaults to `check` - omit it and the call dies on 400 `Invalid payload`. Re-read the one-way
+  door section first.
 
 ## Play 4 - Timesheets and payroll
 Payroll has three traps that produce wrong pay, and it does not finish here.
@@ -179,13 +192,14 @@ Payroll has three traps that produce wrong pay, and it does not finish here.
    still looks like a valid run.** So: `accounting_time_entries_list({ member_id?, from, to })` -
    it returns `{ entries, total_minutes }`, capped at 500 rows - and confirm the hours per hourly
    member against what they actually worked before you generate anything.
-   Log missing time with `accounting_time_entry_create`. Its inputSchema declares **no
-   properties** ("Body mirrors the accounting dashboard's timesheet form"), so the shape is not
-   discoverable from the tool; the real body is
-   `{ member_id (uuid, required, ownership-validated), work_date ("YYYY-MM-DD", required),
-   minutes | hours (one of the two, minutes 0-1440 or hours 0-24), project?, billable?
-   (default true), note? }`. Zero or missing time returns 400 `Enter time worked`; an unknown or
-   foreign `member_id` returns 400 `Unknown member`.
+   **You cannot log time from here.** `accounting_time_entry_create` is in the registry but is
+   not callable. It declares `properties: {}`, and the proxy's no-allowlist branch builds its
+   allowlist from `Object.keys(inputSchema.properties)` - an EMPTY set, not an absent one - so it
+   drops `member_id`, `work_date`, `minutes`, `hours`, `project`, `billable` and `note` alike and
+   POSTs `{}`. The route requires `member_id` and `work_date`, so every call comes back 400
+   `Invalid payload`. Missing time is a dashboard entry, the same hand-off as payroll finalize:
+   name the member, the date and the hours, have the owner add them on the accounting timesheet,
+   then re-run `accounting_time_entries_list` and confirm the minutes landed before you generate.
 4. `accounting_payroll_run_create({ period_start, period_end, source_currency?, label? })` -
    dates are `YYYY-MM-DD`. It returns the run with per-member items; show those amounts for
    approval before anyone acts on them.
@@ -208,8 +222,9 @@ appears in `accounting_pnl_summary`. See the P&L caveats below.
 approve action; the builder has a PATCH route for it that was never exposed. Review the pending
 queue against real balances, then hand the approve or deny decision to the owner in the
 dashboard. Do not invent a tool name. Note also that approved PTO does not create time entries,
-so it does not feed hourly payroll - paid leave for an hourly member is a manual
-`accounting_time_entry_create` decision the owner has to make.
+so it does not feed hourly payroll - paid leave for an hourly member is a deliberate timesheet
+entry the owner has to make in the dashboard, because `accounting_time_entry_create` cannot carry
+a body (see Play 4).
 
 ## Play 6 - Profit and loss, honestly
 `accounting_pnl_summary({ period_start, period_end })` returns exactly four numbers:
@@ -240,7 +255,8 @@ on any client-facing surface.
 3. **AR chase** - `accounting_ar_aging` plus a full paginated `accounting_invoice_list`,
    reconciled to the aging total. Overdue rows get a drafted reminder and a PM task.
 4. **Timesheets** - `accounting_time_entries_list({ from, to })` for the week. Missing time from
-   an hourly member is next period's wrong paycheck; chase it now, not on run day.
+   an hourly member is next period's wrong paycheck; chase it now, not on run day. You cannot
+   enter it for them - the entry is theirs to make in the dashboard.
 5. **Exceptions to PM** - duplicate vendor, a bill with no matching schedule, an amount out of
    pattern, an invoice sitting in draft, a member with zero logged hours.
 
@@ -266,8 +282,9 @@ No tool aggregates 1099 totals - build it, and start in December, not April.
 2. Per flagged vendor, `accounting_bill_list({ vendor_id, status: "all", limit: 200, offset })`
    paginated, then `accounting_bill_get` on each paid bill to sum the payments that fall inside
    the calendar year. Payment dates, not bill dates, decide the year.
-3. Hand the owner a per-vendor total with the vendor's `tax_id` and `target_currency`, and say
-   plainly that Hiveku does not file 1099s - this is the worksheet, not the filing.
+3. Hand the owner a per-vendor total with the vendor's `tax_id`, and say plainly that Hiveku does
+   not file 1099s - this is the worksheet, not the filing. Vendors carry no payout currency, so do
+   not put one on the worksheet; if the owner needs it, it comes from their Wise records.
 
 ## Pitfalls
 - Cents, always cents. Except `accounting_member_create.pay_rate`, which is dollars. Echo both
@@ -285,5 +302,7 @@ No tool aggregates 1099 totals - build it, and start in December, not April.
 - P&L is cash basis and excludes payroll. Never hand that number to a client as "profit" without
   the label and the AP aging beside it.
 - No update tool for vendors or members, no create tool for bill schedules, no PTO approval tool,
-  no invoice create or send tool, no payroll finalize tool. When the play needs one of those, name
-  the dashboard action and the exact record; do not guess a tool name that does not exist.
+  no invoice create, send or get tool, no payroll finalize tool, and no working time-entry create
+  (`accounting_time_entry_create` exists but drops every argument). When the play needs one of
+  those, name the dashboard action and the exact record; do not guess a tool name that does not
+  exist, and do not report a number you could only have gotten from one.

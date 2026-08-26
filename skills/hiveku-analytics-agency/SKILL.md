@@ -28,8 +28,9 @@ naming the survey, the channel and the recipient count.
   enums differ. Use `marketing` for context, `analytics` for the chat.
 - Hiveku is the source of truth. Durable findings (agreed KPIs, channel taxonomy, what counts as
   a conversion, known tracking gaps, seasonality) go to memory under the `marketing` domain -
-  `analytics` is not a canonical department, so an entry filed there lands with department NULL
-  and is hydrated into nothing. Work items (a tag to fix, a pixel to install, a report to ship) go
+  `account_context_get` hydrates the memory row whose `domain` matches the domain you asked for,
+  and it cannot be asked for `analytics` at all, so a row filed under `analytics` is never read
+  back by the tool this skill opens with. Work items (a tag to fix, a pixel to install, a report to ship) go
   to `pm_tasks_create` / `pm_tasks_update` / `pm_tasks_complete`. There is no analytics-deliverable
   tool - the report is assembled as a document and the decisions behind it live in memory.
 - Memory is ONE document per domain and `memory_update` REPLACES it. Read before you write:
@@ -46,7 +47,23 @@ naming the survey, the channel and the recipient count.
   to account scope, so a report that omits it on some calls and not others will not reconcile on
   a multi-site account. `analytics_visitors` and `analytics_events_list` are different again:
   visitors is account-scoped with no project filter at all, events takes `project_id` optionally.
+  `analytics_diagnose_tracking` and `analytics_channel_scorecard` take it optionally too, and
+  omitting it does NOT mean account-wide: the server picks one project for you (the primary
+  published site, and for the scorecard the most recently updated published project with a custom
+  domain). On a multi-site account that silently diagnoses the wrong site, so always pass it.
   Say which scope every figure came from.
+- The conversion layer is a DIFFERENT scope: connection, not project, and one connection per ad
+  platform. Get the UUID from `ppc_connection_list` (optional `platform` filter: google | meta |
+  linkedin | microsoft | tiktok) and pass `connection_id` on every conversion call.
+  `ppc_conversion_tracking_status` and `ppc_conversion_actions_list` both declare
+  `required: ['connection_id']` and error without it - there is no account-wide default.
+  Both are GOOGLE ADS ONLY: a Microsoft/Meta/LinkedIn/TikTok connection_id returns a wrong-platform
+  error, not an empty result. Microsoft Ads has its own pair
+  (`ppc_bing_conversion_tracking_status`, `ppc_bing_conversion_goal_list`), Meta has
+  `ppc_meta_custom_conversions` and `ppc_meta_conversion_volume`, and LinkedIn and TikTok have NO
+  conversion-health read in this lane - say that plainly rather than substituting the Google tool.
+  If the account has no PPC connection at all, there is no conversion-configuration read available:
+  report the events layer (`analytics_events_list`) and name the gap.
 - `hiveku-data/analytics/*.json` is the local snapshot and it holds exactly three files:
   `visitors.json` (`analytics_visitors`, limit 100), `top_pages.json` (`analytics_pages`, 90d,
   limit 200) and `sessions.json` (`analytics_sessions`, 90d, limit 200), the last two scoped per
@@ -108,11 +125,14 @@ connected GA4 / Search Console properties, and two consequences shape every numb
    demographics - see Play 6. Account-scoped across all sites, so label it that way in a
    multi-site baseline.
 9. Events and conversions: `analytics_events_list` for what is actually tracked (form submits,
-   clicks, custom events) and whether the taxonomy is coherent. Then the conversion layer:
-   `ppc_conversion_tracking_status` for the health verdict, `ppc_conversion_actions_list` (and
-   `ppc_google_conversion_actions` for detail) for what is configured to count as a conversion. A site with
-   pageviews but zero configured conversion actions has no way to prove ROI - a headline finding,
-   not a footnote.
+   clicks, custom events) and whether the taxonomy is coherent. Then the conversion layer, which
+   needs a `connection_id` from `ppc_connection_list` first (both calls declare it required):
+   `ppc_conversion_tracking_status({ connection_id, days })` (`days` 1-90, default 7) for the
+   health verdict, `ppc_conversion_actions_list({ connection_id })` for what is configured to count
+   as a conversion. Google Ads connections only - use the Microsoft/Meta equivalents named in the
+   operating principles for those platforms, and record "no conversion layer readable" when the
+   account has no PPC connection. A site with pageviews but zero configured conversion actions has
+   no way to prove ROI - a headline finding, not a footnote.
 10. Record the baseline into the `marketing` memory (read-merge-update, per the operating
    principles) - the project ids it was measured on, the 90-day levels per metric, connected sources,
    channel mix, tracking gaps found and where, configured conversion actions, and any seasonality
@@ -164,8 +184,10 @@ Where attention goes and where it leaks - first-party reads.
   read them together: views tell you what gets consumed, the overview's landing pages tell you
   what the market lands on.
 - For any anomalous page - huge traffic and no engagement, or zero traffic where you expect some
-  - `analytics_probe_page({ url })` before concluding anything. It tells you whether tracking is
-  even present. Half of "this page is dead" findings are actually "this page has no pixel".
+ - `analytics_probe_page({ url })` before concluding anything. It tells you whether tracking is
+  even present. Half of "this page is dead" findings are actually "this page has no pixel". It
+  takes a full URL and REFUSES a URL on a domain this account does not own, so a competitor or
+  staging host is not probeable from here.
 - Landing-page diagnosis pattern: a top landing page (from `analytics_overview`) with low
   engagement is either a
   message-match failure (ad/organic promise does not match the page) or a tracking artifact (the
@@ -189,13 +211,13 @@ Where the traffic comes from - the play that decides where the client should spe
   `analytics_events_list({ project_id, page_path?, from_date, to_date })` rather than expecting
   a deeper cut from the sources tool.
 - Attribution literacy, to keep the report honest:
-  - Direct traffic is a catch-all, not a loyalty metric. Dark social, untagged email, and
+ - Direct traffic is a catch-all, not a loyalty metric. Dark social, untagged email, and
     stripped referrers all land in direct, so a rising direct share often means a tagging problem,
     not rising brand - check UTM coverage on campaigns before you celebrate.
-  - First-party analytics uses last-touch by default. A conversion credited to organic may have
+ - First-party analytics uses last-touch by default. A conversion credited to organic may have
     been assisted by an earlier paid click - do not claim single-channel causation from
     last-touch data, say "last-touch" out loud, and never double-count across first-party and GA4.
-  - Self-referrals and unfiltered staff/preview traffic inflate referral/direct, meaningfully
+ - Self-referrals and unfiltered staff/preview traffic inflate referral/direct, meaningfully
     skewing small-site numbers - flag it as a tracking-config task, not a data insight.
 - Campaign questions (which UTM drove what) have NO tool in this lane: no analytics tool accepts
   a campaign or UTM argument. The closest honest read is `analytics_events_list({ project_id,
@@ -211,15 +233,27 @@ The play that earns the retainer: numbers only matter if the tracking is sound, 
   events = broken form tracking); events firing implausibly often (a click on every pageview =
   mis-bound selector); inconsistent names for one action (`form_submit`, `formSubmit`, `lead` =
   a taxonomy problem that makes every downstream count unreliable).
-- Conversion configuration: `ppc_conversion_tracking_status` for the overall verdict (healthy, are
-  actions receiving data), then `ppc_conversion_actions_list` for the configured conversion actions
-  and `ppc_google_conversion_actions` for the detail of one. A configured action with zero events in 30 days
-  is a dead funnel or a broken tag - probe the page it should fire on and read the events first.
+- Conversion configuration: `ppc_connection_list` FIRST for the Google Ads `connection_id` - both
+  calls below declare `required: ['connection_id']` and error without it, and both are Google Ads
+  only. Then `ppc_conversion_tracking_status({ connection_id, days })` for the overall verdict
+  (`days` 1-90, default 7; it returns action_count / enabled_count / silent_count plus a
+  `warnings[]` array naming each silent action). Judge silence on `all_conversions`, not
+  `conversions` - an action deliberately excluded from the Conversions column can legitimately show
+  `conversions: 0` with `all_conversions: 50`, and calling that a dead tag is a false alarm. Then
+  `ppc_conversion_actions_list({ connection_id })` for the configured actions (id, name, status,
+  category, counting_type, attribution, lookback windows, origin, primary_for_goal). That list IS
+  the detail - there is no read-only per-action tool. A configured action with zero events in 30
+  days is a dead funnel or a broken tag - probe the page it should fire on and read the events first.
+- `ppc_google_conversion_actions` is NOT a read. It is Google Ads conversion-action CRUD
+  (`operation`: conversion-action-create | conversion-action-get-tag | conversion-action-update,
+  `required: ['connection_id', 'operation']`) and create/update change what Smart Bidding optimizes
+  toward on a live spending account. It belongs to the PPC discipline. Never call it from here; if
+  a conversion action needs creating or fixing, that is the PM handoff.
 - Cross-check the chain end to end for each KPI:
   1. Does an event exist for the KPI action? (`analytics_events_list`)
   2. Is its volume consistent with reality? (event count vs known CRM lead volume)
-  3. Is it wired to a conversion action? (`ppc_conversion_actions_list` / `ppc_google_conversion_actions`)
-  4. Is that action healthy and receiving data? (`ppc_conversion_tracking_status`)
+  3. Is it wired to a conversion action? (`ppc_conversion_actions_list({ connection_id })`)
+  4. Is that action healthy and receiving data? (`ppc_conversion_tracking_status({ connection_id })`)
   A break anywhere means the KPI is not truly measured. Report the exact broken link, the page it
   lives on (`analytics_probe_page`), and hand the fix to the owning department as a
   `pm_tasks_create` with the repro. You diagnose; they fix.
@@ -232,7 +266,7 @@ ready defect. Run this any time a metric moves in a way the business cannot expl
   loads the customer's live converting pages in a real browser TWICE (once as a first-time
   visitor, once as one who already accepted cookies), records what each ad channel sends, and
   compares that against what the platform says it received. It returns one verdict per ad channel
-  - `tracking | partially_tracking | not_tracking | unknown` - each with `headline`,
+ - `tracking | partially_tracking | not_tracking | unknown` - each with `headline`,
   `hiveku_recorded` vs `platform_recorded` conversion counts, `how_we_know`, `how_to_fix` and
   `agent_task`. Relay `headline` VERBATIM: it carries the number that makes the problem
   undeniable ("24 leads arrived from Google Ads clicks and Google Ads recorded 0"). It is the
@@ -320,9 +354,12 @@ something to a real human, so it sits behind an explicit yes.
    channel-volume read, and it belongs in Play 5 monthly or on suspicion.
 4. `analytics_pages({ project_id, ... })` - any new page surging or a money page dropping (investigate same day)?
    Probe any money page that dropped with `analytics_probe_page`.
-5. `analytics_events_list` + `ppc_conversion_tracking_status` - are conversions still firing at the
-   expected rate? A count that flatlined mid-week is a broken tag until proven otherwise - probe
-   and open a task.
+5. `analytics_events_list` + `ppc_conversion_tracking_status({ connection_id, days: 7 })` (the
+   `connection_id` from `ppc_connection_list`; the call errors without it, and it reads Google Ads
+   only) - are conversions still firing at the expected rate? A count that flatlined mid-week is a
+   broken tag until proven otherwise - probe and open a task. On a Microsoft or Meta account use
+   `ppc_bing_conversion_tracking_status` / `ppc_meta_conversion_volume` instead; on an account with
+   no PPC connection this step is the events read alone, and say so.
 6. Anomaly rule: any metric moving more than 20 percent WoW on a money page or a KPI conversion
    gets same-day investigation via Play 5. Measurement break or real change - decide which before
    the client asks. Never let the client discover a data outage in the monthly report.
@@ -336,28 +373,35 @@ in a named tool call.
 1. Pull the month's numbers with `project_id` on every call that takes one, all with an explicit
    window and its prior-period comparison: `analytics_overview` (topline, devices, countries,
    landing pages), `analytics_sessions`, `analytics_pages`, `analytics_traffic_sources`
-   (channels), `analytics_events_list`, `ppc_conversion_tracking_status`,
-   `ppc_conversion_actions_list`, plus `analytics_visitors` for the account-wide ICP-matched
-   list. Run `analytics_diagnose_tracking` so the report can state the data is trustworthy (or
-   name where it is not). Run `analytics_channel_scorecard` ONCE here if a paid channel's
-   conversion counts are in question - it takes minutes and returns verdicts, not volumes.
+   (channels), `analytics_events_list`, then the conversion layer on a `connection_id` from
+   `ppc_connection_list` - `ppc_conversion_tracking_status({ connection_id, days: 30 })` (`days`
+   defaults to 7, so pass 30 for a month) and `ppc_conversion_actions_list({ connection_id })`,
+   both Google Ads only - plus `analytics_visitors` for the account-wide ICP-matched
+   list. If there is no Google Ads connection, use the platform's own pair
+   (`ppc_bing_conversion_tracking_status` / `ppc_bing_conversion_goal_list`,
+   `ppc_meta_custom_conversions` / `ppc_meta_conversion_volume`) or state that the conversion
+   section has no readable source this month. Never omit the section silently.
+   Run `analytics_diagnose_tracking({ project_id })` so the report can state the data is
+   trustworthy (or name where it is not). Run `analytics_channel_scorecard({ project_id, days })`
+   ONCE here if a paid channel's conversion counts are in question - it takes minutes and returns
+   verdicts, not volumes.
 2. Draft the narrative with `talk_to_department({ domain: 'analytics', message })`, feeding it
    every figure. Sections, in this order:
-   - Executive summary - 5 bullets max: headline metric MoM, biggest win, biggest risk, the one
+ - Executive summary - 5 bullets max: headline metric MoM, biggest win, biggest risk, the one
      thing that changed, what is next. Written last, placed first.
-   - Data health - one honest paragraph: is tracking sound this month, what gaps exist, what got
+ - Data health - one honest paragraph: is tracking sound this month, what gaps exist, what got
      fixed. Leading with this is what separates an agency from a dashboard screenshot.
-   - Audience and traffic - overview + sessions, MoM and YoY (YoY keeps you honest about
+ - Audience and traffic - overview + sessions, MoM and YoY (YoY keeps you honest about
      seasonality): device and geography from `analytics_overview`. There is no new-vs-returning
      figure available; omit it rather than estimating it. Add the account-wide ICP-matched
      visitor count from `analytics_visitors`, labeled account-wide.
-   - Channels - `analytics_traffic_sources` MoM: which channel grew, which shrank, share shift,
+ - Channels - `analytics_traffic_sources` MoM: which channel grew, which shrank, share shift,
      and the last-touch caveat stated plainly.
-   - Content - top pages (`analytics_pages`) and top landing pages (`analytics_overview`),
+ - Content - top pages (`analytics_pages`) and top landing pages (`analytics_overview`),
      biggest movers.
-   - Conversions - status + actions + relevant events: conversions by action, rate vs prior
+ - Conversions - status + actions + relevant events: conversions by action, rate vs prior
      period, measurement caveats. If a KPI is not yet measurable, say so and point to the task.
-   - Work completed and next - from completed/open PM tasks: fixes shipped, plan for next.
+ - Work completed and next - from completed/open PM tasks: fixes shipped, plan for next.
 3. Numbers must reconcile: every figure must be reproducible from a named tool call and labeled
    with its source (first-party vs GA4 vs GSC) and window. No blended, unlabeled numbers, no
    vibes. Then persist the report's key decisions and any newly discovered gaps with
