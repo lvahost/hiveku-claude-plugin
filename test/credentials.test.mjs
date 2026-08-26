@@ -169,3 +169,17 @@ test('an explicit data dir is honoured verbatim', () => {
   const dir = path.join(os.tmpdir(), 'hiveku-explicit');
   assert.equal(resolveDataDir({ HIVEKU_PLUGIN_DATA: dir }), path.resolve(dir));
 });
+
+// The version string is the ONLY update signal for installed users, and it lives
+// in three files. plugin.json wins SILENTLY over marketplace.json, so drift means
+// shipping a release nobody receives (or receives wrongly) with no error anywhere.
+test('the plugin version is identical in all three places it is declared', async () => {
+  const root = new URL('../', import.meta.url);
+  const plugin = JSON.parse(await fs.readFile(new URL('.claude-plugin/plugin.json', root), 'utf8'));
+  const market = JSON.parse(await fs.readFile(new URL('.claude-plugin/marketplace.json', root), 'utf8'));
+  const util = await fs.readFile(new URL('lib/util.mjs', root), 'utf8');
+  const entry = market.plugins.find((p) => p.name === plugin.name);
+  const inUtil = /export const PLUGIN_VERSION = '([^']+)'/.exec(util)[1];
+  assert.equal(entry.version, plugin.version, 'marketplace.json entry version != plugin.json');
+  assert.equal(inUtil, plugin.version, 'lib/util.mjs PLUGIN_VERSION != plugin.json');
+});
