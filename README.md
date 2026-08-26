@@ -48,6 +48,25 @@ account is live — the session banner names it. Prefer your own folder layout? 
 | `/hiveku:code` | Work on the account's Hiveku website projects — pull code local, edit, verify, commit, deploy. |
 | `/hiveku:talk` | Delegate generative work to a department agent (with full account hydration), then persist it. |
 
+## Playbooks — the recurring agency motions
+
+Beyond the core commands above, the plugin ships the plays an agency runs every week, one per
+`/hiveku:<name>`. Claude runs them against the bound account, confirming every write:
+
+- **SEO** — `seo-fix` (audit → fix → track), `seo-decay` (find decaying/cannibalizing content → refresh plan)
+- **PPC** — `ppc-optimize` (search terms → negatives, pacing, disapprovals), `ppc-report` (period-over-period)
+- **Content / social** — `campaign` (plan + draft + schedule), `social-plan`, `social-report`, `media` (brand-aware images + AI video)
+- **Email** — `email` (build + launch through the send gates), `email-review`
+- **Sales / outbound** — `pipeline`, `followups`, `replies`, `outbound-health`
+- **Helpdesk** — `tickets`, `kb-gaps`
+- **PM** — `standup`, `triage`
+- **Accounting** — `books-close` (AP/AR + approve queue), `books-chase` (overdue receivables)
+- **Cadence** — `weekly`, `report`
+- **Build** — `new-site` (spin up a new site from 70+ templates + 220 prebuilt sections)
+
+Each is a guided workflow with the exact tool chain, not a prompt — the same plays the VS Code
+extension scaffolds per role, shipped here in full so any account can run any of them.
+
 ## Agency doctrine, not just tools
 
 The plugin ships five **agency methodology skills** — SEO, PPC, content, sales, and outbound — each a
