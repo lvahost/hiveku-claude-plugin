@@ -43,6 +43,18 @@ account is live — the session banner names it. Prefer your own folder layout? 
 | `/hiveku:pull` | Pull department data (SEO, PPC, CRM, social, …) into `hiveku-data/` as local files — 25 departments, 100+ datasets. Local files beat live calls. |
 | `/hiveku:knowledge` | Sync the account's memory, rules, and skills into local files by department; `status` reports drift without writing. |
 | `/hiveku:brief` | Load the account's persona and context before strategic work. |
+| `/hiveku:daily` | Morning operating brief — what changed, what needs attention, what to do today. |
+| `/hiveku:research` | Deep web research for the account (competitors, gaps, prospects) via the escalating web_* ladder. |
+| `/hiveku:code` | Work on the account's Hiveku website projects — pull code local, edit, verify, commit, deploy. |
+| `/hiveku:talk` | Delegate generative work to a department agent (with full account hydration), then persist it. |
+
+## Agency doctrine, not just tools
+
+The plugin ships five **agency methodology skills** — SEO, PPC, content, sales, and outbound — each a
+full retainer-agency operating system (research → strategy → execution plays with exact tool chains →
+weekly cadence → monthly reporting → benchmarks and pitfalls). Claude loads the relevant one automatically
+when your work matches, so a request like "the rankings dropped, fix it" is answered with a real SEO
+playbook, not a guess. They cost nothing until they load.
 
 ## Growing and shrinking the roster
 
