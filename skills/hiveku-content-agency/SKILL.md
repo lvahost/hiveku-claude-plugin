@@ -109,10 +109,12 @@ Per piece, in order:
    what you want back> })` — the agent drafts with full brand hydration. Iterate there for
    structure and voice; do not rewrite its brand voice yourself.
 3. **Optimize against the SERP reality:**
-   - `content_analysis_search` — what top-ranking content on this topic actually covers
-     (entities, subtopics, sentiment); feed gaps back to the department for revision.
-   - `content_analysis_summary` / `content_analysis_phrase_trends` — topical research and
-     phrase momentum for angles and terminology.
+   - `seo_serp_get` on the target query — read what is actually ranking, then `web_scrape` or
+     `web_extract` the top results to see the subtopics and entities they cover. Feed the gaps
+     back to the department for revision. The SERP is the specification.
+   - `seo_content_gaps` — topics competitors rank for that this account does not, which is
+     where the angles come from. `seo_serp_features` tells you what shape the page must take
+     (a snippet, a list, a comparison table) to compete for the space that exists.
    - Think in `seo_eeat_scores` terms: named author, first-hand evidence, citations, updated
      date. Readability: short paragraphs, descriptive subheads every 150-300 words, scannable.
 4. **Visuals:** `generate_image` / `generate_image_set` for branded originals, or
@@ -175,8 +177,8 @@ Monthly at minimum; weekly glance during active campaigns.
    decayed winners, UPDATE IN PLACE with `content_update` (and the matching `cms_write_entry`)
    — same URL keeps the accumulated authority; a new URL starts from zero. Refresh execution
    checklist per page:
-   - Re-run `content_analysis_search` on the target query — what do current winners cover
-     that this page does not? Close those gaps first.
+   - Re-read the SERP with `seo_serp_get` on the target query, and `web_scrape` the current
+     winners — what do they cover that this page does not? Close those gaps first.
    - Update every dated fact, statistic, screenshot, and year reference.
    - Rewrite the title and intro against the current SERP (the old ones already lost).
    - Add internal links from newer related pieces published since (check

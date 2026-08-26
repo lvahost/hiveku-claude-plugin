@@ -8,6 +8,8 @@ client — and a directory that is not bound stays completely inert.
 
 ## Install
 
+Full walkthrough, including troubleshooting: **[INSTALL.md](INSTALL.md)**.
+
 **Claude desktop app:** Settings → Plugins → **Add** → **Add from a repository** →
 paste `lvahost/hiveku-claude-plugin`. When the **hiveku** plugin appears, install
 it — choose the all-projects option if asked for a scope, so it follows you into
@@ -19,6 +21,13 @@ every folder.
 /plugin marketplace add lvahost/hiveku-claude-plugin
 /plugin install hiveku@hiveku
 ```
+
+> **Then turn on auto-update — one click, easy to miss.** Claude Code enables auto-update for
+> Anthropic's own marketplaces, but third-party ones like this start with it **off**. Leave it off
+> and you keep the version you installed forever: no new skills, no fixes, and nothing tells you
+> you are behind. Open `/plugin` (or Settings → Plugins), go to **Marketplaces**, select
+> **hiveku**, and choose **Enable auto-update**. To update by hand instead:
+> `/plugin marketplace update hiveku` then `/plugin update hiveku@hiveku`.
 
 Then connect your accounts and create the workspace:
 

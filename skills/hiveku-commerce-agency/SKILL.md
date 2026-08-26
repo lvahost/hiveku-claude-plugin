@@ -87,12 +87,16 @@ moving.
 Do this before any Shopify play, and re-check whenever calls start failing.
 - `shopify_connection_status` -> current state and granted scopes; `shopify_status` ->
   store-level health.
-- Not connected: `shopify_connect_start` begins the OAuth handshake. Bind at the right level -
-  `shopify_account_connect` ties the store to the account, `shopify_project_connect` ties it
-  to a specific Hiveku project (where a headless storefront lives). Choose based on whether
-  the storefront is native Shopify or Hiveku-hosted.
-- Token expired or scopes changed: `shopify_reconnect` refreshes the grant. A silent 401 from
-  `shopify_admin` almost always means a lapsed token - reconnect before debugging a payload.
+- Not connected: `shopify_connect_start` begins the OAuth handshake. It takes an `intent_type`,
+  and that argument is where you choose the binding level: `shopify_account_connect` ties the
+  store to the account, `shopify_project_connect` ties it to a specific Hiveku project (where a
+  headless storefront lives), and `shopify_reconnect` re-authorizes an existing connection (pass
+  its `connection_id`). These are VALUES you pass, not tools you call. It returns a `setup_url`
+  the merchant must open themselves - you cannot approve it for them - plus a `callback_url` that
+  has to be in the Shopify app's allowed redirection URLs. Then poll `shopify_connection_status`.
+- Token expired or scopes changed: run `shopify_connect_start` again with
+  `intent_type: 'shopify_reconnect'`. A silent 401 from `shopify_admin` almost always means a
+  lapsed token - reconnect before debugging a payload.
 - OAuth redirect and app-install steps happen in a browser, not from here. When a step needs
   the client to click "Install" or approve scopes in their Shopify admin, raise a
   `pm_tasks_create` task with exact instructions - do not pretend to complete a browser
@@ -104,8 +108,8 @@ The catalog is the storefront's conversion surface. Thin product data is lost re
 Read first (cheap, run freely):
 - `shopify_catalog_list` -> products, variants, prices, status, images, SEO fields. Your
   working set for every audit below.
-- `shopify_storefront` -> the Storefront API as the customer sees it (published products,
-  collection membership, availability). Confirm what is actually shoppable versus what merely
+- `shopify_catalog_list` and `shopify_inventory_get` -> what is actually published and in stock.
+  Confirm what is genuinely shoppable versus what merely
   exists in admin - a product active in admin but excluded from every published collection is
   invisible to buyers, a common silent leak.
 
@@ -133,7 +137,7 @@ Write descriptions and merchandising copy the brand way:
   list. Compare-at pricing (the strike-through) is a merchandising lever, not a lie - set it
   only where the item genuinely sold higher.
 - Collections are the store's navigation and the merchandiser's shelf. Build or reorganize
-  them via `shopify_admin`; read current membership back from `shopify_storefront` to confirm
+  them via `shopify_admin`; read current membership back with `shopify_catalog_list` to confirm
   the customer-facing result matches intent. A well-built "best sellers" or seasonal
   collection lifts average order value more than any single product edit. Metafields
   (`shopify_admin`) hold structured attributes - materials, dimensions, specs - that power
@@ -168,7 +172,7 @@ When the buy experience lives in a Hiveku project rather than the native Shopify
   like any code change: committed and reviewed first, not live until deployed.
 - `shopify_eject_manifest` -> inspect what a scaffold placed (generated files and wiring) so
   you know what is safe to touch before hand-modifying it.
-- Scaffolded storefront data comes live from `shopify_storefront` at runtime, so the catalog
+- The scaffolded storefront reads Shopify live at runtime, so the catalog
   work in Plays 1-2 (written to Shopify admin) powers the headless pages - catalog first,
   storefront second. Code edits, build, and deploy belong to the web department's tooling.
 
@@ -239,7 +243,7 @@ Turn the accepted, signed deal into a bill.
    surface immediately; do not let the client discover it from a lost sale.
 2. Catalog and storefront drift: `shopify_catalog_list` for anything newly added or changed
    (new products with no description, image, or collection are the most common silent
-   regression), and spot-check `shopify_storefront` that top sellers are shoppable and in
+   regression), and spot-check with `shopify_catalog_list` that top sellers are published and in
    their collections - an accidental unpublish or emptied collection is invisible in admin but
    fatal to conversion. Fix or ticket the week it appears.
 3. Quote pipeline: `crm_estimate_list` -> "sent" and aging is a follow-up task; freshly
@@ -297,9 +301,10 @@ tool call:
   or availability change. Confirm every write, verify one before a batch, never run a
   catalog-wide mutation you have not proofed on a single product. A silent 401 or empty result
   is almost always an expired token or changed scopes, not missing data - check
-  `shopify_connection_status` and `shopify_reconnect` first.
-- `shopify_admin` is what the merchant edits; `shopify_storefront` is what the customer can
-  buy. A product perfect in admin but unpublished or out of every collection is invisible to
+  `shopify_connection_status` first, then re-run `shopify_connect_start` with
+  `intent_type: 'shopify_reconnect'`.
+- `shopify_admin` is what the merchant edits; `shopify_catalog_list` and `shopify_inventory_get`
+  show what the customer can actually buy. A product perfect in admin but unpublished or out of every collection is invisible to
   buyers - confirm the customer-facing result. Never trust a `hiveku-data/commerce` snapshot
   for current stock or status; pull live.
 - Sending is not reversible the way editing is. `crm_estimate_send` and `crm_envelope_send`

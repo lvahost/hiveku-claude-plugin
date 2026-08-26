@@ -7,7 +7,7 @@ the ad-strength grade, the policy system that silently switches ads off, and the
 (impression share, auction insights) that say whether a weak result is a creative, bid, budget or rival
 problem. Load it for creative audits, shipping RSAs, running an ad test, building a sitelink/callout/
 snippet stack, remediating disapprovals, raising ad strength, or answering "why are we losing to this
-competitor." Keywords, bids and budgets, audiences and measurement are separate references, and SKILL.md
+competitor." Keywords, bids and budgets, audiences and measurement are separate references; SKILL.md
 section 0 (context first, confirm every spend-affecting write, fresh data or no data, PM tasks) is in
 force here.
 
@@ -27,7 +27,7 @@ inputs, is computed before a single impression serves, and does not feed the auc
 that. Poor is a build defect, Excellent optional.
 
 **Assets are free CTR.** Sitelinks, callouts and structured snippets cost nothing and lift CTR roughly 10
-to 20 percent on a top-position ad: the highest-leverage first hour on an inherited account.
+to 20 percent on a top-position ad: the best first hour on an inherited account.
 
 **Policy is a silent kill switch.** A disapproved ad does not warn you and does not spend; it stops being
 eligible, and the group serves nothing if it was the only ad. Disapprovals are therefore the first check on
@@ -39,8 +39,8 @@ calls. Check `fetched_at`; `truncated: true` means `count` is a floor; an `error
 NOT RETRIEVED, never "none exist," and must never reach a client as "you have no disapprovals."
 
 **Google-only versus portable.** Every creative, asset, disapproval and competitive tool here is Google Ads
-only, and a non-Google connection_id returns a wrong-platform error, so the mistake fails loudly.
-`ppc_ad_list` is the cached cross-platform read.
+only and errors on a non-Google connection_id, so the mistake fails loudly; `ppc_ad_list` is the cached
+cross-platform read.
 
 ---
 
@@ -50,8 +50,8 @@ only, and a non-Google connection_id returns a wrong-platform error, so the mist
    language. In health, legal, finance, housing and employment it carries the phrases legal cleared and the
    ones that trigger disapproval; skipping it earns a misrepresentation strike.
 2. `memory_list`, then the `ppc` memory: protected or brand campaigns you must not touch, the approval
-   threshold, target CPA/ROAS, previously disapproved copy, cleared or rejected offer claims, and the asset
-   resource_names created before (section 8: your only registry).
+   threshold, target CPA/ROAS, previously disapproved copy, cleared or rejected offer claims, and the
+   asset resource_names created before (section 8: your only registry).
 3. `get_account_info` for legal business name, live phone and canonical domain before writing callouts or
    call assets. Never invent a phone number for an ad.
 4. If `hiveku-data/ppc/` is over roughly 24 hours old, sync per SKILL.md 0.3 before quoting an ad-level
@@ -115,7 +115,7 @@ ad-group attachment replaces a four-sitelink campaign set and shrinks the ad. Co
 
 ### 3.6 Framework F: disapproval severity ladder
 
-Triage top down, never as one "fix the disapprovals" task; within a tier, order by 30-day spend.
+Triage top down, never as one "fix the disapprovals" task; within a tier, by 30-day spend.
 
 1. **Account suspension or account-level flag.** Everything is off. Stop other work, notify the client
    within the hour, go to the Ads UI Policy Manager; no tool remediates this.
@@ -142,7 +142,7 @@ of page rate, outranking share. Classify:
 - **Aggregators and marketplaces on top**: unwinnable on head terms. Pivot to long-tail intent and brand
   defence.
 
-Auction insights is context, not a trigger: nothing in it moves a bid directly.
+Auction insights is context, not a trigger: nothing in it moves a bid.
 
 ---
 
@@ -176,15 +176,17 @@ Auction insights is context, not a trigger: nothing in it moves a bid directly.
 2. `ppc_responsive_search_ad_create({ connection_id, ad_group_id, headlines, descriptions, final_url,
    path1?, path2?, pinned_headlines? })`. Limits are API-enforced (30 / 90 / 15) and one over-length string
    fails the whole call, so count before sending. **The ad is created PAUSED**, deliberately.
-3. Record the returned ad `resource_name` and any ad strength: you need it to pause the ad later.
+3. Record the returned ad `resource_name` and any ad strength; you need it to pause the ad later.
 4. Review the paused ad in the dashboard (no preview tool exists), confirm with the approving stakeholder
    in one explicit exchange, then `ppc_enable_resource({ connection_id, resource_type: "ad", resource_id,
-   ad_group_id })`; the parent `ad_group_id` is required for ads, as it is for `ppc_pause_resource`.
+   ad_group_id })`; the parent `ad_group_id` is required, as it is for `ppc_pause_resource`.
 5. If this replaces an incumbent, do not pause the incumbent in the same breath unless it is disapproved:
-   run Play 3. On Microsoft, `ppc_platform_responsive_search_ad_create` takes the same shape; Bing imports
-   from Google then drifts (imported ads stop updating, assets often do not come across), and since the
-   asset and disapproval tools are Google-only, Microsoft policy states are read in the Microsoft UI or
-   inferred from enabled ads with zero impressions.
+   run Play 3.
+
+Microsoft parity: `ppc_platform_responsive_search_ad_create` takes the same shape. Bing imports from Google
+then drifts (imported ads stop updating, assets often do not come across), and since the asset and
+disapproval tools are Google-only, Microsoft policy states are read in that UI or inferred from enabled ads
+showing zero impressions.
 
 ### Play 3: The RSA test protocol
 
@@ -193,18 +195,17 @@ Auction insights is context, not a trigger: nothing in it moves a bid directly.
 2. Check ad rotation in the dashboard first. **No tool exposes rotation.** Under Optimize, Google skews
    delivery to its own prediction: fine for performance, poison for a clean read. Say so in the write-up
    rather than pretend the split was even.
-3. Minimum read: about 100 clicks AND about 10 conversions per variant, or two full weeks, whichever is
-   later. Never call a test in week one, and never on CTR when the goal is conversions.
-4. Read `ppc_ad_list` rows or `hiveku-data/ppc/metrics_daily.json` at ad granularity, same window for both.
-   The challenger wins on cost per conversion by roughly 15 percent or better, or it does not; ties go to
-   the control, since switching costs learning.
+3. Minimum read is the section 5 significance bar. Never call a test in week one, nor on CTR when the goal
+   is conversions.
+4. Read `ppc_ad_list` rows or `hiveku-data/ppc/metrics_daily.json` at ad granularity, same window for both;
+   ties go to the control, since switching costs learning.
 5. Confirm, then `ppc_pause_resource({ connection_id, resource_type: "ad", resource_id, ad_group_id })` on
    the loser and queue the next challenger; a one-ad group is fragile. `memory_update` the `ppc` memory
    with hypothesis, variant, window, numbers and decision.
 
 ### Play 4: Asset buildout, then pruning
 
-Sequence: callouts (no destinations needed), sitelinks (need real URLs), structured snippets, images.
+Sequence: callouts (no destinations), sitelinks (need real URLs), structured snippets, images.
 
 1. `ppc_asset_create({ connection_id, asset_type, ... })` per asset. Limits that matter:
    - **callout**: 25 chars, 2 minimum to serve, 4 to 6 working set. Differentiators, not adjectives:
@@ -227,7 +228,7 @@ Sequence: callouts (no destinations needed), sitelinks (need real URLs), structu
    logos 1:1 from 128x128 and 4:1; under roughly 5MB). `ppc_google_asset_upload` puts the file in the
    account, `ppc_asset_attach` places it, and an unattached upload does nothing. Images get their own
    policy review and are the most rejected type (no text-heavy overlays, collages, blurry crops), so
-   re-check `ppc_disapprovals_list` a day later. Video and YouTube have **no tool**: Ads UI.
+   re-check `ppc_disapprovals_list` next day. Video and YouTube have **no tool**: Ads UI.
 5. Prune quarterly or on any offer change. Google labels asset performance Low / Good / Best / Learning in
    the UI and **no tool exposes these**: read them in the dashboard, never inferring from ad-level metrics.
    Retire anything on an expired promotion, dead service, changed price, dead number or a URL that now
@@ -238,7 +239,7 @@ Sequence: callouts (no destinations needed), sitelinks (need real URLs), structu
 ### Play 5: Disapproval remediation loop
 
 1. `ppc_disapprovals_list({ connection_id })`: per row read the ad or asset identity, policy topic,
-   approval status (disapproved vs eligible-limited) and the parent ad group and campaign.
+   approval status (disapproved vs eligible-limited) and the parent group and campaign.
 2. Classify by Framework F and by policy topic, because remedies differ completely:
    - **Editorial** (capitalization, punctuation, repetition, gimmicky characters): a copy defect; rewrite
      the offending strings and ship via Play 2.
@@ -278,32 +279,33 @@ Sequence: callouts (no destinations needed), sitelinks (need real URLs), structu
 
 **RSA build standard.** 12 to 15 headlines, 4 descriptions, both paths, 2 headlines carrying the primary
 keyword verbatim, at most 3 pinned headlines and only when compelled, zero duplicate claims. Below 8
-headlines or 3 descriptions is under-built regardless of grade.
+headlines or 3 descriptions is under-built regardless of grade. Review RSAs quarterly and replace on decay
+or an offer change, never on a schedule.
 
 **Character limits (API-enforced; count before sending).** Headline 30, description 90, path 15 each,
 sitelink text 25, sitelink description lines 35 each, callout 25, structured snippet value 25. Count real
 characters including spaces, and remember keyword insertion and countdown customizers expand at serve time,
-so a 28-character headline with an insertion can exceed the limit live and be truncated.
+so a 28-character headline with an insertion can exceed the limit live.
 
 **Asset minimums to render.** Sitelinks 4; callouts 2 minimum, 4 to 6 target; structured snippets 3 values
-minimum, 5 to 8 target. If a full stack gains nothing in two weeks at stable position, suspect an ad-group
-attachment suppressing the campaign set (Framework E).
+minimum, 5 to 8 target. A full stack that gains nothing in two weeks at stable position usually means an
+ad-group attachment is suppressing the campaign set (Framework E).
 
 **CTR.** Non-brand search 3 to 6 percent healthy; below 2 percent at decent position is a creative or
-relevance failure. Brand 10 percent and up, and brand below 8 percent usually means a competitor is bidding
-on the name. Never blend brand with non-brand, or Display and Discovery with search, in one average.
+relevance failure. Brand 10 percent and up, and below 8 percent usually means a competitor is bidding on
+the name. Never blend brand with non-brand, or Display and Discovery with search, in one average.
 
-**Impression share.** Brand holds 90 percent or better; below 80 percent on brand is an urgent defence
-problem. Non-brand lost-to-budget above 20 percent with CPA at target is growth headroom, not a creative
-issue, and absolute top share under roughly 20 percent where top presence matters is a rank problem.
+**Impression share.** Brand holds 90 percent or better; under 80 percent on brand is an urgent defence
+problem. Non-brand lost-to-budget over 20 percent with CPA at target is growth headroom, not a creative
+issue, and absolute top share under 20 percent where top presence matters is a rank problem.
+
+**Test significance.** About 100 clicks AND about 10 conversions per variant, or two full weeks, whichever
+is later; a 15 percent or better delta in cost per conversion to call a winner, and CTR-only wins reported
+as CTR-only wins.
 
 **Disapproval clocks.** Only-ad-in-group: same day. Any disapproval on a campaign above 20 percent of
 account spend: 24 hours. Everything else: the weekly cadence. Account suspension: immediately, telling the
-client before you start fixing.
-
-**Test significance and refresh.** 100 clicks AND 10 conversions per variant, or two full weeks, whichever
-is later, and a 15 percent delta in cost per conversion to call a winner. Review RSAs quarterly, replacing
-on decay or an offer change, never on a schedule.
+client first.
 
 ---
 
@@ -314,13 +316,14 @@ on decay or an offer change, never on a schedule.
   SKILL.md 1.3 and 6, then `ppc_impression_share` for whether you fell out of the auction rather than out
   of eligibility.
 - **An ad group spends nothing.** Count enabled ads via `ppc_ad_list` filtered to that group: zero enabled
-  ads, or one that appears in `ppc_disapprovals_list`, explains it. Second cause: the ad is enabled but its
+  ads, or one that appears in `ppc_disapprovals_list`, explains it. Second cause: the ad is enabled but the
   parent group or campaign is paused, so the ad's own status misleads.
 - **`ppc_impression_share` shows nulls or zeros.** Not available for every campaign type or for very low
   volume, and Display and video report different share metrics; never show a null as a zero or average
   across types. Ad strength is likewise sometimes absent: read it in the dashboard or say it was not
-  retrieved, never infer it from headline count and call it Google's grade. An empty `ppc_auction_insights` is the same story: below
-  Google's threshold, so widen to 90 days or run at account level.
+  retrieved, never infer it from headline count and call it Google's grade. An empty
+  `ppc_auction_insights` is the same story: below Google's threshold, so widen to 90 days or run at
+  account level.
 - **`ads.json` disagrees with the Ads UI.** Staleness (check `fetched_at`, sync per SKILL.md 0.3), else
   timezone or attribution lag; and a write that just succeeded is absent from the mirror until a sync, so
   do not "fix" it twice and create duplicate ads.
@@ -332,21 +335,20 @@ on decay or an offer change, never on a schedule.
 ## 7. Edge cases and failure modes
 
 - **Never bulk-enable ads, and never enable one without its own confirmation.** Enabling puts live copy in
-  front of the public under the client's name; hence RSAs are created paused. Equally, never pause the
-  last enabled ad in a group without a replacement live and eligible: that is a revenue outage.
+  front of the public under the client's name; hence RSAs are created paused. Equally, never pause the last
+  enabled ad in a group without a replacement live and eligible: that is a revenue outage.
 - **Never edit around a disapproval you believe is wrong** without telling the client: you discard their
   appeal and often their strongest claim. Never resubmit unchanged copy after a misrepresentation or
   trademark disapproval either; that escalates toward suspension.
-- **Never attach a partial asset set at ad-group level** and never chase Excellent by removing a compelled
-  pin. **Detach is not delete**: `ppc_asset_detach` drops the association only, an asset still showing
-  after a detach is attached at another level, and you never delete one to tidy up, because with no list
-  tool you cannot verify where else it is used.
+- **Never attach a partial asset set at ad-group level**, and never chase Excellent by removing a compelled
+  pin. **Detach is not delete**: an asset still showing after a detach is attached at another level, and
+  you never delete one to tidy up, since with no list tool you cannot see where else it is used.
 - **One creative test per ad group at a time**, with no final-URL, landing-page, bid-strategy or budget
   change on that campaign mid-test; any of those makes the test unreadable, worse than no test.
 - **Protected campaigns and approval thresholds**: inside a campaign account memory marks protected you
   create, enable, pause and reattach nothing, not even a "harmless" test ad; surface it and stop. Creative
   work sits below the spend-approval line, but any change to a live offer, price, guarantee or legal claim
-  goes to the client regardless of spend impact.
+  goes to the client whatever the spend impact.
 
 ---
 
@@ -364,7 +366,7 @@ approval) and resource_names created or paused; `pm_tasks_complete` only once th
 verified. Landing-page and certification items become client or web-team tasks.
 
 **Client reporting.** The creative section of the monthly report carries, in order: ads shipped and tests
-concluded with hypothesis, variant, window, result and decision; asset coverage before and after with the
+concluded with hypothesis, variant, window, result and decision; asset coverage before and after with
 CTR effect; policy events with what was fixed and what is still an open client action; impression share
 split into lost-to-rank versus lost-to-budget, so the client sees whether the constraint is craft or money;
 auction insights month over month with new entrants named. Source every claim from a tool

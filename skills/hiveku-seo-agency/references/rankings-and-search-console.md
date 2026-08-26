@@ -25,8 +25,9 @@ the diagnosis. Never blend them into one number.
 **The tracker tells you position, GSC tells you consequence, Bing tells you whether it is you or
 Google.** A tracked keyword falling 4 to 9 with GSC clicks flat is usually noise. GSC clicks halving
 with the tracker flat is coverage, CTR or SERP shape, not rank. Both engines falling on the same date
-is almost never an algorithm update; it is your site. (`seo_gsc` is the raw action router the named
-wrappers map onto: use a wrapper unless none exists.)
+is almost never an algorithm update; it is your site. (Always use the named `seo_gsc_*` tools below.
+There is no generic Search Console tool to fall back on, so if none of them covers what you need,
+say so rather than reaching for something that does not exist.)
 
 ---
 
