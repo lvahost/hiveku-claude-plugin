@@ -122,6 +122,28 @@ test('status reports changed_remote on a version bump and locally_modified on a 
   }
 });
 
+test('a type that FAILS to list carries its prior entries forward, not deletes them', async () => {
+  const opts = await OPTS();
+  await pullKnowledge(opts); // full success: baseline includes the sales rule
+  const before = JSON.parse(await fs.readFile(path.join(opts.rootDir, '.hiveku/knowledge-manifest.json'), 'utf8'));
+  assert.ok(before.entries['sales'], 'baseline: the rule entry exists');
+
+  // Make memory_list('rule') fail on the next pull (the mock returns a non-array,
+  // which listMemory rejects); every other type still succeeds.
+  const savedRules = upstream.rule;
+  upstream.rule = { __fail: true };
+  try {
+    const result = await pullKnowledge(opts);
+    assert.ok(result.failedTypes.includes('rule'), 'rule must be reported as a failed type');
+    const after = JSON.parse(await fs.readFile(path.join(opts.rootDir, '.hiveku/knowledge-manifest.json'), 'utf8'));
+    assert.ok(after.entries['sales'], "the failed type's prior entry must be carried forward, not erased");
+    assert.ok(!result.deletedRemote.includes('sales'), 'a failed type must never be false-flagged as deleted');
+    await fs.access(path.join(opts.rootDir, 'rules/sales/no-emojis.md'));
+  } finally {
+    upstream.rule = savedRules;
+  }
+});
+
 test('status before any pull says initialized:false instead of inventing drift', async () => {
   const opts = await OPTS();
   const status = await knowledgeStatus(opts);

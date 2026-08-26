@@ -189,6 +189,40 @@ test('--dataset refreshes one dataset and merges into the department status', as
   assert.ok(status.departments.crm.datasets.deals);
 });
 
+test('STATUS.json preserves the extension\'s failures for departments this run did not touch', async () => {
+  const rootDir = await freshDir();
+  const dataDir = path.join(rootDir, 'hiveku-data');
+  await fs.mkdir(dataDir, { recursive: true });
+  // An extension-written STATUS.json: departments as an ARRAY, failures only in
+  // the top-level `failed` array — including one for a department this pull will
+  // NOT target.
+  await fs.writeFile(
+    path.join(dataDir, 'STATUS.json'),
+    JSON.stringify({
+      account: 'Mock Co',
+      departments: ['seo', 'crm'],
+      failed: [{ department: 'seo', dataset: 'audits', error: 'seo failed earlier' }],
+    }),
+  );
+  await runPullData({ ...OPTS(rootDir), argv: ['crm'] }); // touches crm only
+  const status = JSON.parse(await fs.readFile(path.join(dataDir, 'STATUS.json'), 'utf8'));
+  const seoFail = status.failed.find((f) => f.department === 'seo');
+  assert.ok(seoFail, "the extension's untouched-department failure must survive a targeted pull");
+  assert.equal(seoFail.error, 'seo failed earlier');
+  // And crm's own failure (the always-fails dataset) is recorded too.
+  assert.ok(status.failed.some((f) => f.department === 'crm' && f.dataset === 'broken'));
+});
+
+test('detailSlug matches the extension runner byte-for-byte (dots/underscores collapse, cap 60)', async () => {
+  const { detailSlug } = await import('../lib/pulldata.mjs');
+  // The extension's deptData.slugify: /[^a-z0-9]+/ -> '-', trim, slice(0,60), 'item'.
+  // util.slugify (WRONG for this) would keep dots and underscores and cap at 100.
+  assert.equal(detailSlug('Acme.Corp_LLC'), 'acme-corp-llc');
+  assert.equal(detailSlug('Q3 2026 — Report'), 'q3-2026-report');
+  assert.equal(detailSlug(''), 'item');
+  assert.equal(detailSlug('x'.repeat(80)).length, 60);
+});
+
 test('unknown department fails loudly, not silently', async () => {
   const rootDir = await freshDir();
   await assert.rejects(() => runPullData({ ...OPTS(rootDir), argv: ['nope'] }), /Unknown department/);

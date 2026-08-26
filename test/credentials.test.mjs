@@ -100,6 +100,36 @@ test('a missing store is empty and is NOT reported as corrupt', async () => {
   assert.equal(creds.corrupt, undefined);
 });
 
+// A store that read as unreadable (keychain locked, or damaged) must never be
+// the basis for a write: merging one account onto its empty map and saving
+// would erase every key it held. Reading tolerates it; MUTATING must refuse.
+// A garbage aes-256-gcm envelope reads as locked (no key) or corrupt (key
+// present, decrypt fails) — either way, the mutation must throw and change
+// nothing on disk.
+async function writeUnreadableEnvelope(dir) {
+  const file = credentialsPath(dir);
+  const body = JSON.stringify({ v: 1, enc: 'aes-256-gcm', iv: 'AAAAAAAAAAAAAAAA', tag: 'AAAAAAAAAAAAAAAAAAAAAA', data: 'AAAA' }, null, 2) + '\n';
+  await writeFileSecure(file, body);
+  return { file, body };
+}
+
+test('upsertAccounts REFUSES to clobber an unreadable encrypted store', async () => {
+  const dir = await tmpdata();
+  const { file, body } = await writeUnreadableEnvelope(dir);
+  await assert.rejects(
+    () => upsertAccounts(dir, [{ account_id: A, key: 'hvk_' + 'a'.repeat(64), label: 'Acme' }]),
+    /keychain|could not be read|CredentialStoreUnavailable/,
+  );
+  assert.equal(await fs.readFile(file, 'utf8'), body, 'the store must be byte-unchanged after a refused write');
+});
+
+test('removeAccount REFUSES to act on an unreadable encrypted store', async () => {
+  const dir = await tmpdata();
+  const { file, body } = await writeUnreadableEnvelope(dir);
+  await assert.rejects(() => removeAccount(dir, A), /keychain|could not be read|CredentialStoreUnavailable/);
+  assert.equal(await fs.readFile(file, 'utf8'), body);
+});
+
 test('publicAccountList never exposes key material', async () => {
   const dir = await tmpdata();
   await upsertAccounts(dir, [{ account_id: A, key: 'hvk_' + 'z'.repeat(64), label: 'Acme' }]);
