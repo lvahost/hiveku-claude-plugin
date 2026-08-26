@@ -339,3 +339,18 @@ with named tool calls. Structure:
 - Nothing client-visible (deploys, domain changes, redirect publishes, CMS promotes, DB
   mutations) without explicit confirmation. Log every material decision with `memory_create`
   and reflect the work in `pm_tasks_*` so the next session does not re-litigate it.
+## Deep references - load the one that matches the work
+
+This skill is the map. The manuals below carry the mechanisms, the thresholds, and the real
+incidents behind every rule. Read the relevant one BEFORE writing code, not after a symptom.
+
+| Reference | Load it when |
+|---|---|
+| `references/forms.md` | Building, editing, moving, or debugging ANY form; a lead that never arrived; duplicate or junk form records; the workflow behind a form. |
+| `references/routes-and-collisions.md` | Adding, moving, or renaming a route; a page that 404s or serves the wrong content; reserved paths; redirects; anything with a dynamic segment. |
+| `references/build-and-deploy.md` | A failing build, a deploy that verifies red, size or serverless limits, binary assets, secrets, and reading the verification oracles correctly. |
+| `references/cms-and-database.md` | Any CMS collection or entry, publish scheduling, or the project database, RLS, and where a lead must NOT be stored. |
+| `references/conventions.md` | Writing a page or section: the stack, the server/client boundary, images, metadata and SEO, accessibility, design tokens, and client-facing voice. |
+
+Conversion tracking has its own skill (`hiveku-conversion-tracking`) with a matching reference
+library. Anything about tags, attribution, or "the numbers do not match" belongs there.

@@ -1,0 +1,384 @@
+# Keyword and Topic Research: Operator Manual
+
+## What this covers, and when to load it
+
+The deep manual behind Play 1 of the `hiveku-seo-agency` SKILL.md: building a keyword universe from
+seeds, qualifying it, clustering it, tearing down the SERP to learn what the page has to be, sizing the
+opportunity with a defensible forecast, choosing what to track, and re-qualifying on a cadence. Load it
+for net-new research, rebuilding a stale keyword set, planning a content roadmap, judging whether a
+cluster is winnable, forecasting traffic or revenue from rankings, or diagnosing keyword and ranking
+data that looks wrong. Not for rank reporting (`rankings-and-search-console.md`), briefs and refresh
+decisions (`content-strategy.md`), or competitor and link intelligence
+(`link-building-and-competitors.md`). SKILL.md owns the metered DataForSEO Labs expansion suite and the
+shared CTR and difficulty tables; this file does not repeat them.
+
+---
+
+## 0. Pre-flight (never skip; free)
+
+1. `account_context_get({ domain: 'seo' })`. Read the `instructions` field before any generative call.
+   Mine it for what the client actually sells (business-value scoring is worthless without it), the
+   geography they serve, and any protected terms (brand, partner marks, conquest rules).
+2. `memory_list`, then read prior research memories: a previous session almost certainly agreed a
+   competitor set, location code, seed vocabulary and rejected-terms list.
+3. Local snapshot before live calls: `hiveku-data/seo/keywords.json`, `rankings.json`, `projects.json`,
+   `competitors.json`, plus `hiveku-data/localseo/*.json`. Free orientation, never decision-grade.
+4. Scope: `seo_list_projects` for `project_id`, `seo_project_get({ project_id })` for domain, location
+   and configured sources. Nearly every tool below needs `project_id`. No project or no data sources:
+   stop and follow the SETUP path in SKILL.md. `get_account_info` gives the account-level domain and
+   timezone for report framing.
+
+Alias note: several reads ship under two names (`seo_list_keywords` / `seo_keywords_list`,
+`seo_list_rankings` / `seo_rankings_list`); same capability, so call one and try the other if it rejects
+an argument shape, before concluding data is missing.
+
+---
+
+## 1. Decision frameworks
+
+### 1.1 The funnel
+
+`seeds -> universe -> qualified -> clustered -> mapped -> prioritized -> tracked -> forecast -> roadmap`
+
+Every stage removes keywords. A pass ending with more keywords than it can defend is a spreadsheet, not
+research. Healthy shrinkage on a service business: 25 seeds, 3,000 universe, 600 qualified, 40 clusters,
+8 prioritized this quarter, 60 tracked.
+
+### 1.2 Seeds are a business question
+
+You cannot expand your way out of a bad seed set. Build from four labelled sources: **offer seeds** (the
+services or products, in the client's words and in the customer's words, which differ; the
+`account_context_get` avatars carry the customer's), **problem seeds** (the symptom typed before the
+buyer knows the product name), **comparison seeds** (category plus vs, alternative, best, pricing,
+cost), and **geography seeds** (local clients only, and only units they can serve). Validate the
+vocabulary first: `web_search` two or three problem seeds and read the language in the top results, or
+`web_scrape` the client's service pages plus a competitor's and `web_extract` the recurring nouns.
+
+### 1.3 The SERP is the specification
+
+Never decide what to build from volume and difficulty alone. `seo_serp_get({ keyword })` on the cluster
+head, every time, before the cluster is committed. Read the **result type mix** (top ten are product
+category pages, a blog post cannot win however good; top ten are editorial listicles, a product page
+cannot win), **who holds 1-5** (three or more national brands, marketplaces or Wikipedia means re-scope
+whatever the difficulty number says), **freshness** (top five all dated inside 90 days makes this a
+recurring-refresh keyword, and that ongoing cost is part of the decision), and **depth signals**
+(word-count band, subheading pattern, tables, calculators, video). Then
+`seo_serp_features({ project_id, keyword })` for the feature layout (AI Overview, featured snippet,
+People Also Ask, local pack, shopping, video, sitelinks). Features are a tax on CTR (3.2) and sometimes
+the only winnable slot on the page.
+
+### 1.4 Intent taxonomy, and what it forces you to build
+
+| Intent | Signal | Page type that ranks | Weight |
+|---|---|---|---|
+| Transactional | buy, quote, near me, hire, book, pricing | Money page, service page, product | 1.0 |
+| Commercial | best, vs, review, top, alternatives | Comparison, listicle, case study | 0.8 |
+| Informational | how, what, why, guide | Guide, pillar, tutorial | 0.4 |
+| Navigational | brand names | Existing brand asset | 0.1 |
+
+Two rules violated constantly. Intent is whatever the SERP shows, not what the modifier suggests ("best
+X" often returns product category pages). And one intent gets one URL: same-intent keywords split across
+clusters is cannibalization on paper, which materializes the day both pages publish.
+
+### 1.5 Priority scoring
+
+SKILL.md gives the base formula (volume x intent weight x business value / difficulty band). Apply the
+three adjustments it leaves out:
+
+- **Serviceability (0 or 1)**: can the client fulfil this, in this geography, at this price? A 0 kills
+  the keyword regardless of score. Main source of roadmaps that generate unqualified leads.
+- **SERP feature drag (0.5 to 1.0)**: the factor from 3.2. A 1,000-volume keyword under a full AI
+  Overview plus local pack is worth less than a clean 400-volume SERP.
+- **Asset readiness (0.7 to 1.3)**: already ranking 5-30 discounts the cost, so a bonus; a net-new
+  pillar plus spokes on a KD-50 cluster takes the penalty.
+
+Rank clusters descending. That ordering is the roadmap; write it and its inputs to memory so next
+quarter argues with numbers.
+
+### 1.6 Sequencing doctrine
+
+Ordered by time-to-value: (1) **harvest** striking distance, positions 4-15 on keywords we already rank
+for, weeks; (2) **refresh** decaying URLs that hold the intent, weeks to two months; (3) **fill**
+clusters missing one spoke; (4) **build** net-new pillars, three to six months; (5) **siege** KD 60-plus
+heads, only with a funded link plan. Never open an engagement at step 4: the first 60 days need a
+visible win, and steps 1 and 2 are where it lives.
+
+---
+
+## 2. The plays
+
+### Play 1: Build the universe
+
+1. Pre-flight, then seeds per 1.2.
+2. `seo_research({ project_id, ... })` is the account-native entry point: it expands and qualifies
+   against the project's configured providers and persists into the project keyword store. Pass the full
+   batched seed list, the correct `location_code` and language, and a `limit` you can actually process.
+   One call with 25 seeds, never 25 calls with one seed. Metered, and the most expensive routine action
+   in this manual.
+3. Read out keyword, volume, difficulty, intent, CPC. On first read look for **shape**, not individual
+   keywords: volume concentrated in three heads or spread across a long tail, intent mix commercial or
+   informational. That decides pillar-and-spoke build versus money-page tuning.
+4. `seo_list_keywords({ project_id })` to read back what actually persisted. Always read back. The gap
+   between what you asked for and what landed is where silent truncation and provider fallbacks hide.
+5. For the deeper metered expansion suite (keyword ideas, suggestions, related keywords,
+   keywords-for-site, bulk difficulty and intent, Ads-grade volume) use the tool names in SKILL.md Play
+   1: batch to the documented maximum, dedupe the union before qualifying, qualify in bulk.
+
+**Decision**: whether the account has a real demand pool. Under roughly 150 qualified keywords with
+meaningful volume is a low-demand niche; say so, and pivot toward conversion, local and AEO rather than
+promising traffic growth. **Closes the loop**: `memory_create` with the seed set, location and language
+codes, run date, universe size, and rejected terms with reasons.
+
+### Play 2: Cluster the universe
+
+1. `seo_keyword_clusters({ project_id })` returns intent and semantic clusters over the project's
+   keywords, a free DB read once keywords exist. Read out label, member count, aggregate volume,
+   dominant intent, difficulty spread.
+2. Audit before accepting. Three failure shapes: **mega-cluster** (200 keywords under one label; split
+   by intent then modifier family), **singleton spray** (dozens of one-member clusters; merge by SERP
+   overlap, not string similarity), **intent bleed** (transactional and informational together; always
+   split).
+3. Confirm the structure with the user, then `seo_keyword_cluster_create` per agreed cluster with an
+   explicit name and member list. This is a write; never bulk-create forty clusters from a machine
+   grouping you have not read.
+4. For clusters deserving a pillar, `seo_topic_clusters({ project_id })` for hub-and-spoke mapping, then
+   `seo_topic_cluster_create` for pillar plus spokes. Same rule.
+
+**Keyword vs topic cluster**: a keyword cluster is queries sharing one URL; a topic cluster is one
+pillar, N spokes, and the internal links between them. Never create both for the same keyword set, or
+the next session builds both. Under 5 keywords or ~300 aggregate MSV it is a keyword cluster on a single
+page. **Closes the loop**: `pm_tasks_create`, one per committed cluster, titled with the head keyword and
+page type.
+
+### Play 3: SERP teardown before a cluster is committed
+
+Run on the cluster head and its two highest-volume members, not on all of them.
+
+1. `seo_serp_get({ keyword })` at the right location. Read the ten organic results per 1.3.
+2. `seo_serp_features({ project_id, keyword })`. Record the features present; this feeds the CTR haircut
+   and the format decision.
+3. `seo_entity_check` on the client's brand and on the topic entity. A weak or absent entity on a
+   commercial cluster means the trust layer (about, authorship, citations, schema) ships alongside the
+   money page, or that page underperforms its difficulty score.
+4. If the SERP is ambiguous, `web_scrape` the top two results and `web_extract` their headings.
+
+**Decision**: page type, depth, schema, go/no-go. A cluster that survives the score but fails the top-5
+composition test gets demoted to siege or dropped.
+
+### Play 4: Striking-distance harvest (do this first, every account)
+
+`seo_list_rankings({ project_id, limit: 200 })`, filtered to positions 4-15 and cross-referenced against
+the qualified universe for real volume and business value, is the harvest list. Per item,
+`seo_serp_get({ keyword })` confirms the intent still matches the ranking URL, since intent drift is the
+most common reason a page sits at 8 forever.
+
+**Decision**: the first 30 days of work, as on-page tune, internal link and content-addition tasks, not
+net-new pages. **Closes the loop**: `pm_tasks_create` per item with URL, target keyword, current
+position and the specific change; `seo_track_keyword` for anything not already tracked so movement is
+provable.
+
+### Play 5: Featured snippet and SERP feature targeting
+
+`seo_featured_snippets({ project_id })` gives the winnable list, and a position 4-8 page on a snippet
+SERP is the cheapest top-of-page real estate on the board. Per candidate, `seo_serp_get({ keyword })` and
+read the **current snippet format**: paragraph, numbered list, bulleted list, table. Match it; answering
+a table query with a paragraph loses. `seo_serp_features({ project_id, keyword })` confirms the feature
+is still live, since presence is volatile and stored data can be days old; if it shows on two of three
+checks, treat it as present. You generally need to be top 10 already, ideally top 5, before format
+optimization matters; at position 14 this is a ranking problem. No tool here publishes the change, so
+raise `pm_tasks_create` and hand it to the content play.
+
+### Play 6: Forecasting
+
+Two independent methods; run both. Disagreement over 2x is a data problem, not a forecast.
+
+**Method A, tool-based**: `seo_ranking_predictions({ project_id })`. Read predicted positions and the
+horizon. It is model output driven by the project's ranking history, only as good as that history.
+Gates before quoting it: reject predicted improvement over 15 positions inside 90 days unless a funded
+plan backs it, because models extrapolate trends and do not know the budget; reject predictions on
+keywords with under ~8 weeks of history (`seo_tracked_keywords_list` gives the start date), and on
+keywords that never entered the top 50.
+
+**Method B, hand-built (the one you show the client)**:
+
+```
+expected monthly clicks = MSV x seasonal index x CTR(target position) x feature factor x geo share
+expected monthly value  = expected clicks x CVR x value per conversion
+```
+
+MSV is itself a 12-month average, so seasonal businesses need the index on top. CTR comes from the
+blended curve in SKILL.md, feature factor from 3.2. Geo share is the fraction of a national keyword's
+volume inside the service area; if you cannot estimate it defensibly, use the geo-modified keyword's own
+volume. CVR benchmarks when the client has no data: local service lead form 5-12 percent, B2B lead form
+2-4 percent, ecommerce transactional 1.5-3 percent, informational content under 1 percent. These are
+benchmarks, never the client's numbers.
+
+Present forecasts as a band, never a point: plus or minus 30 percent at 90 days, plus or minus 50
+percent at six months, and state the assumption that the plan ships on time. **Closes the loop**:
+`memory_create` the forecast, its inputs and its date. When the client asks in month 4 why we said 800
+clicks, you need those inputs.
+
+### Play 7: Tracking list construction and pruning
+
+Tracking is a reporting decision: track what you will report on.
+
+1. `seo_tracked_keywords_list` for the current list.
+2. Target 20-100 keywords: 40 percent money terms tied to revenue, 30 percent striking distance (the
+   harvest list), 20 percent cluster heads for work in flight, 10 percent sentinels (brand, plus one or
+   two competitor-owned terms).
+3. `seo_track_keyword({ keyword, target_domain })` per keyword. `goal_id` auto-derives from the domain
+   so they group; `location_code` defaults to 2840 (US). **Set `location_code` explicitly for any non-US
+   client.** Tracking a Canadian, UK or Australian client at 2840 produces plausible, entirely wrong
+   rankings, silently.
+4. `seo_tracked_keyword_delete` removes the keyword and its history irreversibly, and that history is
+   what makes next quarter's report possible. Prune only at a quarterly review, with explicit
+   confirmation, one at a time, never a keyword that appeared in a delivered report in the last two
+   quarters. If the list is merely too long, stop adding rather than deleting history.
+
+### Play 8: Local and geo-modified expansion
+
+For locations or service areas, "service + city" is the opportunity, not the head term. Include only
+places the client will actually serve, and do not filter geo terms on volume: they report 10-50 or zero,
+and a zero-reported "emergency plumber + suburb" converts at rates that make its cluster the most
+valuable on the account. Run `seo_serp_get` on two or three representative geo terms; a SERP dominated
+by a local pack means the win is a Google Business Profile play, not a page.
+
+### Play 9: Quarterly re-qualification
+
+Volume and difficulty do not move daily; weekly re-pulls waste metered budget. Once a quarter, re-run
+`seo_research` on the same seeds and location and diff against the stored universe for new keywords and
+any whose volume moved more than 40 percent; re-run `seo_keyword_clusters({ project_id })` against the
+committed clusters, adding new members via a confirmed `seo_keyword_cluster_create`; and read
+`seo_list_rankings` for which clusters are moving, because a shipped pillar with no movement after six
+months is a strategy failure, not a patience problem. Close with `memory_update`.
+
+### Generative work
+
+Anything strategic or written (cluster rationale, topic-map narrative, briefs, the roadmap) goes through
+`talk_to_department({ domain: 'seo', message })`, then persists with the matching direct tool. Feed it
+evidence, not the request: the cluster and members, the SERP teardown findings, the top-3 result
+formats, the intent verdict, internal link targets, and the `account_context_get` constraints. A brief
+without SERP evidence is a guess with good grammar. Pure CRUD uses the direct tools.
+
+---
+
+## 3. Thresholds and benchmarks
+
+### 3.1 Gates
+
+| Gate | Threshold | Action if failed |
+|---|---|---|
+| Keyword volume floor | < 10 MSV | Keep only if transactional, geo-modified, or in a cluster with >= 150 aggregate |
+| Cluster viability | >= 5 keywords or >= 300 aggregate MSV | Merge into a neighbor or fold into an existing page |
+| Pillar viability | >= 12 keywords, >= 800 aggregate MSV, >= 3 sub-intents | Build one page, not a pillar |
+| Top-5 composition | >= 3 of top 5 are national brands, marketplaces or Wikipedia | Demote to siege or drop, whatever the KD |
+| Difficulty vs authority | Bands in SKILL.md | Over band: a funded link plan attaches, or it does not enter the roadmap |
+| Tracked list size | 20-100 | Over 100: stop adding, review at quarter end |
+| Ranking history for a forecast | >= 8 weeks | Below: CTR model only, say predictions are unavailable |
+| Shipped pillar, no movement | 6 months | Escalate with a revised plan, do not quietly extend |
+
+### 3.2 SERP feature CTR haircuts (multiply the position CTR)
+
+Working factors for opportunity sizing, not measurements of this client's SERPs.
+
+| SERP condition | Factor |
+|---|---|
+| Clean SERP, no features above organic | 1.0 |
+| Featured snippet held by someone else | 0.6 to 0.75 |
+| Featured snippet held by us | 1.3 to 1.8 on that keyword |
+| AI Overview, informational query | 0.55 to 0.7 |
+| AI Overview, commercial or transactional | 0.75 to 0.85 |
+| Local pack above organic | 0.7 to 0.8 |
+| Four top ads on a commercial query | 0.75 to 0.85 |
+| Shopping carousel | 0.6 to 0.75 |
+
+Stack multiplicatively; floor the product at 0.35.
+
+### 3.3 Timing expectations for the plan
+
+Striking-distance tune plus internal links, 2 to 6 weeks. Refresh of a ranking URL, 3 to 8 weeks.
+Net-new page in an established cluster, 2 to 4 months. Net-new pillar in a new topic area, 4 to 8
+months. KD 60-plus head with a link campaign, 2 to 4 quarters. Put these in writing at plan time.
+
+---
+
+## 4. Diagnosis: when data looks wrong
+
+| Symptom | Cause, in check order | Action |
+|---|---|---|
+| `seo_research` returns few or no keywords | `location_code`/language invalid or mismatched; seeds too narrow or branded; `seo_project_get` shows no data sources; metered credit exhausted, which surfaces as an empty result, not an error | Test one broad seed, then one `seo_serp_get` on a keyword known to have volume. SERP works and research does not means the provider is at fault, not the account |
+| Volumes uniform, round, or all zero | Provider fallback or a cached low-fidelity source | Spot-check two keywords against `seo_serp_get` result depth and ad density plus a `web_search` read. Not credible means unusable: say so and re-run, never forecast on it |
+| `seo_keyword_clusters` / `seo_topic_clusters` empty | Clustering runs on persisted keywords; nothing persisted | `seo_list_keywords({ project_id })`. Empty means the research pass never landed, whatever the response looked like |
+| `seo_list_rankings` empty or thin | Nothing tracked, or nothing synced yet | `seo_tracked_keywords_list` to confirm. Rankings populate on a sync cadence; a keyword tracked an hour ago having no data is correct |
+| Rankings look wrong to the client | `location_code` mismatch (2840 on a non-US client); a personalized mobile SERP versus a clean desktop SERP at a set location; local pack read as organic; direction, where lower is better | Reproduce with `seo_serp_get({ keyword })` at the tracked location before conceding an error |
+| `seo_ranking_predictions` empty or absurd | Insufficient ranking history | Check the tracking start date, fall back to Play 6 Method B, say predictions arrive after a full quarter |
+| `seo_entity_check` says the brand is unrecognized | A finding, not an error | Often why a page ranks below its difficulty band. Route to the entity, schema and AEO work |
+
+Two standing rules: when `hiveku-data/` disagrees with a live tool the live tool wins, and when an
+argument shape is unclear use `hiveku_docs_search` then `hiveku_docs_get` rather than guessing, because
+guessed arguments against a live account are how silent wrong-data failures start.
+
+---
+
+## 5. Edge cases and failure modes
+
+- **Zero-volume keywords that print money.** Emergency, hyper-local and new-category terms report zero
+  and convert at 10 percent. Never cut on volume alone; cut on serviceability and intent.
+- **Brand terms inflate everything.** With brand queries in the universe, cluster volumes, average
+  difficulty and the forecast all lie. Segment brand out before scoring, and never propose
+  deprioritizing or repurposing a brand page or term: brand is protected, as is anything flagged
+  protected in `account_context_get`.
+- **Seasonal keywords.** Volume is a 12-month average, so a term doing 40,000 in December and 200 in
+  July looks like a steady mid-volume opportunity. Apply a seasonal index or be wrong twice a year.
+- **Machine clusters are a draft.** Two keywords 80 percent alike in string with different SERPs belong
+  on different pages: the SERP overlap test beats the string test.
+- **Never bulk-create or bulk-track from a machine list.** Every `seo_keyword_cluster_create`,
+  `seo_topic_cluster_create`, `seo_track_keyword` and `seo_tracked_keyword_delete` writes to a live
+  client account. Summarize, confirm, execute deliberately. Confirmation can cover a batch of related
+  writes, but the user must see the list before it lands. `seo_tracked_keyword_delete` in particular is
+  destructive and silent: the history does not come back.
+- **Do not track competitor brand terms without approval.** It consumes the tracking allotment, shows up
+  in reports, and some clients have contractual reasons against it.
+- **Do not present `seo_ranking_predictions` output as a commitment.** It is a model, the client will
+  remember the number, and you will own it. Band it, caveat it, or use the CTR model.
+- **Do not build a roadmap without `account_context_get`.** Scoring business value without knowing what
+  the client sells optimizes for traffic they cannot monetize, the top cause of a technically correct
+  SEO program getting cancelled.
+- **Do not let the tracked list become the strategy.** Tracking 400 keywords does not move rankings.
+
+---
+
+## 6. Persistence and client reporting
+
+**Memory**, so the next session does not re-derive: `memory_create` after the first universe build
+(seeds by category, location and language codes, universe and qualified sizes, run date, rejected terms
+with reasons); after cluster commitment (head keyword, page type, adjusted score, ordering); and after
+any forecast shown to a client (inputs, factors, band, date). `memory_update` at quarterly
+re-qualification, `memory_list` first to find the canonical record.
+
+**PM tasks**, so the work is visible: `pm_tasks_create` one per committed cluster and per harvest item,
+titled with the target keyword and the deliverable, carrying target URL, current position and the window
+from 3.3. `pm_tasks_update` when a target changes or blocks. `pm_tasks_complete` only when the change is
+live, not when it is drafted or committed.
+
+**Reporting**: the research artifact (priority matrix, cluster table, forecast) belongs in a deliverable
+with a sheet tab so nobody re-pays for it next quarter; those tools live in `reporting-and-delivery.md`.
+Lead with the decision and its reason, not the method: which clusters, in what order, why, expected
+impact and by when. Every number must be reproducible from a named tool call, and nothing client-visible
+goes out without explicit confirmation.
+
+---
+
+## 7. No tool for these (use the fallback, never invent one)
+
+- **Keyword-level conversion or revenue data**: none. Get it from the analytics or PPC surfaces or the
+  client; CVR figures stay benchmarks until then.
+- **Competitor keyword gap and domain intersection**: the metered suite in SKILL.md Play 1 and
+  `link-building-and-competitors.md`.
+- **SERP screenshots, visual layout, competitor on-page structure**: none. Use `web_scrape` plus
+  `web_extract`, or the dashboard.
+- **Bulk export of the universe**: none here. Use a deliverable sheet (`reporting-and-delivery.md`).
+- **Editing a tracked keyword's location**: no update tool. You would delete and re-track, destroying
+  history. Set `location_code` correctly the first time.
+- **Historical volume by month**: none. Ask the client, or infer seasonality from the GSC time series
+  tooling in `rankings-and-search-console.md` on queries we already rank for.
