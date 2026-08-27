@@ -167,7 +167,7 @@ Four distinct causes, and they need different responses:
   domain on a full-write key can still be refused. `list_departments` is the only reliable
   pre-check - it returns exactly the domains this tenant can reach, with `identity_name` and
   `has_identity`. Call it before delegating.
-- **Transient.** "Department '<x>' did not respond within Ns… may be cold-starting or overloaded."
+- **Transient.** "Department '<x>' did not respond within Ns... may be cold-starting or overloaded."
   Wait 30s and retry once, or break the request into a smaller ask. A mid-stream stall returns a
   partial answer in `response` alongside the message - salvage the partial rather than re-running
   the whole ask.
@@ -212,3 +212,4 @@ off the pm_projects field.
 | Reference | Load it when |
 | --- | --- |
 | `references/integrations.md` | Anything about whether an integration is connected, or getting the user connected: a tool that fails because Google Ads, Search Console, GA4, Tag Manager, Gmail, Shopify or an ads platform is not set up; reading `connections_status` and knowing what it does not cover; the three independent layers a Google connection can fail at (the OAuth client's registered products, the connection row, the granted scopes) and which tool reveals each; and how to hand the user a real `setup_url` instead of reporting a failure and stopping. Load it the moment you are about to tell someone an integration is missing. |
+| `references/stating-coverage.md` | Before delivering any audit, report, sweep, review or inventory - anything a reader could mistake for exhaustive. The rule that an output must state how many of how many, sampled or complete, and what was NOT looked at; why an unstated sample is invisible to the user in a way it never is for a human consultant. Names the real caps that silently under-report: `seo_audit_start`'s 50-page default crawl budget, `seo_gsc_index_coverage`'s 50 URLs per call, `ppc_change_history`'s 30-day ceiling, the ~90 tools whose `limit` is undocumented, `crm_list_contacts`, whose description says default 25 while the route runs 50 (cap 100), and `pm_tasks_list`, whose `page` parameter the route ignores while returning a `total` that is only the page length. Also carries copyable coverage phrasing and the honest answer for the four checks Hiveku has NO tool for (`X-Robots-Tag` headers, canonical validity, redirect-chain depth, near-duplicate pages). |

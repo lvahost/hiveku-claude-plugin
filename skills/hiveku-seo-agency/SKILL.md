@@ -404,6 +404,7 @@ preemptively: they run 25KB to 35KB each.
 | `references/rankings-and-search-console.md` | Reading GSC or Bing Webmaster like an analyst: separating a real ranking move from noise, seasonality, a measurement artifact, or an algorithm update. |
 | `references/content-strategy.md` | Deciding what to write, refresh, merge, or retire, and how to brief it. |
 | `references/technical-seo.md` | Crawl and index health, Core Web Vitals, rendering, site architecture, or anything structural. |
+| `references/technical-seo-blind-spots.md` | The checks that pass per page and fail across the set: X-Robots-Tag headers, canonical validity site-wide, redirect chain depth, near-duplicate templated pages, thin pages, index coverage truth. Load it alongside `technical-seo.md` before any audit you will report on, before shipping a Next.js site, or when a site has hundreds of pages and no rankings. Names which of these Hiveku has no tool for, and how to state coverage so a sample is never reported as a census. |
 | `references/link-building-and-competitors.md` | Authority baselines, the opportunity queue, lost-link recovery, competitor sets, and link-gap work on a money keyword. |
 | `references/local-seo.md` | Google Business Profile as a managed asset: reviews, listings, media, services, citations. Load before running any of those plays. |
 | `references/aeo.md` | How the brand appears inside AI answers and answer engines rather than in the classic ten blue links. |

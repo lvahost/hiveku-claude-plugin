@@ -321,6 +321,7 @@ more context than the account data you are trying to reason about.
 
 | Reference | Load it when |
 | --- | --- |
+| `references/spend-change-discipline.md` | BEFORE your first write of the session on any account you did not build, and before touching a live campaign that is already spending. The order of operations for a mutation: the reads that earn it, the current/proposed/cost-if-wrong diff, why bulk applies are the wrong shape, which confirm gates and budget rails Hiveku actually enforces in code versus which warnings are prose only, the read that verifies each class of write, and the changes never to make unprompted. |
 | `references/account-structure.md` | Auditing or rebuilding how an account is wired: campaigns, ad groups, naming conventions, bulk operations, change history, and platform recommendations. |
 | `references/keywords-search-terms-negatives.md` | Search-term mining, negative lists, match-type strategy or migration, and keyword forecasting. The deep manual behind the search-term play. |
 | `references/bidding-budgets-pacing.md` | Anything about money: bid strategies, modifiers, budget caps, pacing, spend control, and impression-share economics. |
