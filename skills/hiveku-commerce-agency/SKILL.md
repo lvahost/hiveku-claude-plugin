@@ -114,8 +114,8 @@ them. Every tool named below is a real Hiveku MCP tool.
    `shopify_scaffold_compat({ project_id, feature: 'storefront-client' })` reports the router
    type, path aliases, Tailwind presence, and route collisions without writing anything - that
    tells you what surface you are on. To see what a scaffold actually placed, read the project
-   files through the web department's tooling - `shopify_eject_manifest` will not tell you (see
-   Play 4: it is broken over MCP).
+   files through the web department's tooling - `shopify_eject_manifest` will not tell you: it
+   returns a migration plan, not a listing of what a scaffold wrote.
 7. Record the baseline in `memory_create` - store domain and connection state, product count
    and draft/active split, the seller handles the CLIENT names as their top sellers (no tool
    ranks them), the catalog gaps you verified, the stalled-quote and unsigned-contract and
@@ -313,15 +313,18 @@ optionally `sitemap`, `customer-account`, `reviews`, `subscriptions`.
   aliases, Tailwind, route collisions), so it answers even with no store connected.
 - After scaffolding, the coder/deploy pipeline picks up the new files. Use `preview_sync` /
   deploy to make them live. Scaffolded is not shipped.
-- `shopify_eject_manifest({ project_id })` DOES NOT WORK from here and is not the destructive
-  tool its one-line registry description implies. The registry maps it to a POST, the builder
-  route behind it exports GET only, so the call comes back 405. And that GET is read-only by
-  construction: it computes a migration plan for moving the project to a stand-alone
-  Hydrogen/Oxygen repo, persists nothing, and transforms nothing - the actual eject runner is
-  unbuilt. So: do not run it (it fails), do not warn a client that it would strip their
-  storefront (it would not), and never promise an eject. If a client genuinely wants off the
-  managed scaffold, that is a scoped engineering project - ticket it with `pm_tasks_create`.
-  To see what a scaffold placed, read the project files through the web department's tooling.
+- `shopify_eject_manifest({ project_id })` is a READ, despite the name. It returns a migration
+  plan for moving the project to a stand-alone Hydrogen/Oxygen repo: it persists nothing,
+  transforms nothing, and performs no eject, because the eject runner is unbuilt. Safe to run
+  to show a client what leaving would involve. Never promise an eject on the strength of it,
+  and never warn a client that running it would strip their storefront - it would not. If a
+  client genuinely wants off the managed scaffold, that is a scoped engineering project -
+  ticket it with `pm_tasks_create`. To see what a scaffold placed, read the project files
+  through the web department's tooling.
+
+  (Until 2026-08-27 this tool 405'd on every call, because the registry mapped it POST at a
+  GET-only route, and its description advertised a destructive "one-way" eject. Both are fixed.
+  If you are on an older MCP server and it still 405s, the read is unavailable, not dangerous.)
 - The scaffolded storefront reads Shopify live at runtime, so the catalog work in Plays 1-2
   (applied by the client in Shopify admin) powers the headless pages - catalog first,
   storefront second. Code edits, build, and deploy belong to the web department's tooling.
