@@ -19,11 +19,18 @@ verbatim; never claim something sent without checking.
    and the previous result has not changed).
 1. **Setup gates first:** `marketing_setup_status`. It checks exactly five conditions -
    marketing_enabled, not_paused, ses_provisioned, verified_sending_domain, mailing_address - each
-   with the fix. Do not build until `ready_to_send: true`. What it misses, and what bites:
- - It does NOT check account-level SES suspension. Also run `email_service_status` and read
-     `sending_enabled` FIRST. When it is false a `suspension` block carries the reason, and ALL
-     sending is blocked regardless of how healthy the reputation numbers below it look. Suspensions
-     are lifted by Hiveku staff, not by any tool. Stop and tell the user; do not build a campaign.
+   with the fix, plus a sixth: account-level suspension, evaluated with the same predicate the
+   dispatcher itself calls. Do not build until `ready_to_send: true`. A passing check no longer
+   carries fix text, so any `fix` you see is a real instruction rather than leftover prose.
+ - `email_service_status.sending_enabled` is NOT the same flag and is not a second opinion on this
+     one. `ready_to_send` covers the MARKETING CAMPAIGN lane (campaigns and sequences through the
+     account's SES tenant); `sending_enabled` covers the TRANSACTIONAL lane (hk_ API keys,
+     smtp.hiveku.com, /api/v1/email/send). An account whose marketing was never provisioned reads
+     false on the first and true on the second, and both are correct. Do not read one as
+     contradicting the other.
+ - Suspension is the ONE gate they share, so when either reports it the `suspension` block carries
+     the reason and ALL sending is blocked regardless of how healthy the reputation numbers look.
+     Suspensions are lifted by Hiveku staff, not by any tool. Stop and tell the user.
  - a VERIFIED sending domain: `email_domain_add({ domain })` returns the DNS records - surface them
      VERBATIM. Then `email_domain_check_dns({ id })`, NOT `email_domain_verify`. check_dns resolves
      each DKIM CNAME, the SPF TXT and the DMARC TXT against live DNS and returns `action_items[]`

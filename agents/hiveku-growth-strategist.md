@@ -17,9 +17,12 @@ Investigate with READ tools only:
 - Social: `social_list_accounts` (connection health per platform), scheduled vs published, and
   performance reads - cadence gaps and top/bottom posts.
 - Email: `marketing_setup_status` (marketing enabled, not paused, SES provisioned, verified domain,
-  CAN-SPAM address) AND `email_service_status` - setup_status does NOT check account-level SES
-  suspension, so a suspended account returns `ready_to_send: true`; read `sending_enabled` and report
-  the `suspension` block if it is false, since only Hiveku staff can lift one. Then audiences
+  CAN-SPAM address). It now DOES check account-level suspension, through the same predicate the
+  dispatcher uses, so a suspended account no longer reads `ready_to_send: true`. `email_service_status`
+  answers a DIFFERENT question: `ready_to_send` is the marketing campaign lane, `sending_enabled` is
+  the transactional lane, and an account with marketing never provisioned is correctly false on the
+  first and true on the second. Suspension is the one gate they share, so they cannot disagree about
+  it. Report the `suspension` block when either is false, since only Hiveku staff can lift one. Then audiences
   (`email_audience_list`, `email_audience_preview` for real deliverable sizes) and delivery review
   from `email_campaign_metrics` - that tool returns ONLY a by_status count of send rows (sent /
   failed / skipped_*); it has NO open, click, delivery or conversion data. Do not report an open or

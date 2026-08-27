@@ -14,8 +14,11 @@ duplicates, so a second `email_sequence_enroll` for an exited contact is a NO-OP
 reports an error at any point.
 
 1. **Gates first, same as any marketing send.** `marketing_setup_status` (do not build until
-   `ready_to_send: true`) AND `email_service_status` (read `sending_enabled` - setup_status does not
-   check account-level SES suspension, and only Hiveku staff lift one). Sequence sends go through the
+   `ready_to_send: true`). It checks account-level suspension itself now, with the same predicate the
+   dispatcher uses. `email_service_status.sending_enabled` answers a different question: the
+   TRANSACTIONAL lane rather than the marketing campaign lane, so the two can legitimately disagree
+   about everything except suspension, which is the one gate they share. Only Hiveku staff lift a
+   suspension. Sequence sends go through the
    same CAN-SPAM validation and the same monthly plan cap as campaigns.
 2. **Create:** `email_sequence_create({ name, trigger_kind, trigger_config })`. trigger_kind is
    `manual` (you enroll via the API), `tag_added`, `form_submit`, or `workflow`. It is created
