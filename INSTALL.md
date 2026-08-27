@@ -88,6 +88,108 @@ Prefer your own folder layout? Skip `setup`, open a folder you already use, and 
 
 ---
 
+## Which tools to approve once, and which to keep approving
+
+Hiveku exposes about 1,350 tools. Roughly 500 of them only read, and the rest can change
+something. Approving each read individually gets old fast, and approving everything means the
+one call that publishes a campaign goes through as quietly as a list query.
+
+The shape that works: **allow the server, then force a prompt on the short list that spends,
+publishes, sends, or overwrites.** Claude Code evaluates rules in the order deny, then ask,
+then allow, so an `ask` rule wins over the blanket `allow` underneath it.
+
+Put this in `.claude/settings.json` (per project) or `~/.claude/settings.json` (everywhere):
+
+```json
+{
+  "permissions": {
+    "allow": ["mcp__plugin_hiveku_hk__*"],
+    "ask": [
+      "mcp__plugin_hiveku_hk__deploy_site",
+      "mcp__plugin_hiveku_hk__deploy_run",
+      "mcp__plugin_hiveku_hk__project_files_bulk_save",
+      "mcp__plugin_hiveku_hk__project_vcs_commit",
+      "mcp__plugin_hiveku_hk__project_vcs_merge",
+      "mcp__plugin_hiveku_hk__site_delete",
+      "mcp__plugin_hiveku_hk__content_publish_to_site",
+      "mcp__plugin_hiveku_hk__content_schedule",
+      "mcp__plugin_hiveku_hk__email_campaign_send_now",
+      "mcp__plugin_hiveku_hk__email_campaign_schedule",
+      "mcp__plugin_hiveku_hk__email_campaign_resend_non_openers",
+      "mcp__plugin_hiveku_hk__crm_envelope_send",
+      "mcp__plugin_hiveku_hk__crm_estimate_send",
+      "mcp__plugin_hiveku_hk__helpdesk_ticket_send_reply",
+      "mcp__plugin_hiveku_hk__marketing_report_send",
+      "mcp__plugin_hiveku_hk__ppc_budget_update",
+      "mcp__plugin_hiveku_hk__ppc_platform_budget_update",
+      "mcp__plugin_hiveku_hk__ppc_bid_modifier_update",
+      "mcp__plugin_hiveku_hk__ppc_keyword_bid_update",
+      "mcp__plugin_hiveku_hk__ppc_platform_keyword_bid_update",
+      "mcp__plugin_hiveku_hk__ppc_bidding_strategy_update",
+      "mcp__plugin_hiveku_hk__ppc_platform_bidding_strategy_update",
+      "mcp__plugin_hiveku_hk__ppc_campaign_create",
+      "mcp__plugin_hiveku_hk__accounting_bill_record_payment",
+      "mcp__plugin_hiveku_hk__accounting_invoice_record_payment"
+    ]
+  }
+}
+```
+
+**One trap worth knowing.** Partial wildcards work in `allow` rules only. A rule like
+`"ask": ["mcp__plugin_hiveku_hk__email_*"]` is skipped rather than applied, so it looks like
+protection and is not. Every entry in `ask` has to be a complete tool name, which is why the
+list above is spelled out. If you add to it, add whole names.
+
+### What is safe to leave on allow
+
+Reads cannot change anything, so the blanket allow covers them:
+
+- `*_list` and `*_get` (about 250 tools), the bulk of everyday work
+- `*_status`, `*_overview`, `*_logs`, `*_summary`, `*_history`, `*_stats`
+- `preview_overview`, `preview_logs`, `deploy_status`, `connections_status`,
+  `account_context_get`, `list_projects`, `project_files_bulk_get`
+
+Do not go by HTTP verb alone. `verify_typecheck`, `verify_lint` and `project_test_build` are
+POSTs because they run something, but they only report; there is no reason to gate them.
+Equally, plenty of PATCH tools edit a draft nobody sees. The question is not the verb, it is
+whether anyone outside the session notices.
+
+### If you also run the VS Code extension
+
+The extension serves its tools under a different prefix, and rules written for one prefix do
+nothing for the other. Cover both:
+
+```json
+{
+  "permissions": {
+    "allow": ["mcp__plugin_hiveku_hk__*", "mcp__hiveku__*"],
+    "ask": ["mcp__hiveku__deploy_site", "mcp__plugin_hiveku_hk__deploy_site"]
+  }
+}
+```
+
+Worth checking the prefix once on your own machine rather than trusting this file: run
+`/permissions`, or let a Hiveku tool prompt you and read the name it shows.
+
+### For an org admin
+
+The same JSON works as managed settings, which no user setting can override:
+
+- macOS: `/Library/Application Support/ClaudeCode/managed-settings.json`
+- Linux and WSL: `/etc/claude-code/managed-settings.json`
+- Windows: `C:\Program Files\ClaudeCode\managed-settings.json`
+
+Deny beats everything from any source, so `deny` is the tool for something nobody should reach.
+Adding `"allowManagedPermissionRulesOnly": true` makes Claude Code ignore user and project
+rules entirely and honor only yours.
+
+**This is guidance, not a boundary.** Permission rules live on the machine and a determined
+user can edit their own. The real control is the key: mark a connection read-only during
+`/hiveku:connect` and the server refuses writes no matter what the client asks for. Use
+read-only for accounts somebody should look at but never touch.
+
+---
+
 ## Staying up to date
 
 **Read this part.** Claude Code enables auto-update by default for Anthropic's own
@@ -162,6 +264,29 @@ stays out of the way in projects that have nothing to do with Hiveku.
 
 **"I get 401 errors from Hiveku tools."**
 The key for that account was revoked or rotated. Run `/hiveku:connect` again to re-mint it.
+
+**"A connected integration inside Hiveku has gone stale (Google Ads, Search Console, Business
+Profile, Analytics)."**
+This is a different problem from the one above: your Hiveku key is fine, but the integration's
+own OAuth grant with Google has expired or been revoked. Claude can drive most of the repair.
+Just ask it to reconnect the integration, and it will:
+
+1. Read `connections_status` and `integration_list` to see which ones are actually broken,
+   rather than guessing from a symptom.
+2. Call `integration_oauth_initiate`, which returns a `setup_url` for you to open plus a
+   `setup_token` for polling.
+3. Poll `integration_oauth_check` while you approve in the browser.
+4. Finish with `integration_test`, which performs a real token refresh. That matters: it proves
+   the new grant works instead of assuming it did because a page said "connected".
+
+You still click through Google's consent screen yourself, which is the point; nothing can
+approve access on your behalf. Everything either side of that, Claude handles.
+
+Email and Shopify have their own starters (`email_connect_start`, `shopify_connect_start`), and
+ad platforms can be added with `ppc_connection_create`. Social connections (Meta, TikTok,
+LinkedIn) are still done in the Hiveku web app, because their consent flows hand back a picker
+of every page the login administers and someone has to choose which ones belong to that
+workspace.
 
 **"I also run the Hiveku VS Code extension."**
 That is fine, and both can be live at once. The session-start banner tells you which account
