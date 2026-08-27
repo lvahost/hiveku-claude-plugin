@@ -206,3 +206,9 @@ off the pm_projects field.
 - `/hiveku:seed` - seed a brand-new account's department memory in one `memory_bulk_create` call.
 - `/hiveku:remember` - persist a learning into the right department memory, read-merge-write.
 - `/hiveku:knowledge` - mirror the account's memory, rules and skills locally (account-level only).
+
+## Deep reference
+
+| Reference | Load it when |
+| --- | --- |
+| `references/integrations.md` | Anything about whether an integration is connected, or getting the user connected: a tool that fails because Google Ads, Search Console, GA4, Tag Manager, Gmail, Shopify or an ads platform is not set up; reading `connections_status` and knowing what it does not cover; the three independent layers a Google connection can fail at (the OAuth client's registered products, the connection row, the granted scopes) and which tool reveals each; and how to hand the user a real `setup_url` instead of reporting a failure and stopping. Load it the moment you are about to tell someone an integration is missing. |
