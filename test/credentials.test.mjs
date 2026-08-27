@@ -155,14 +155,42 @@ test('refuses a data dir inside a cloud-synced folder', async () => {
   );
 });
 
-test('rejects an UNSUBSTITUTED placeholder instead of using it as a path', () => {
+test('never uses an UNSUBSTITUTED placeholder as a path', () => {
   // "${CLAUDE_PROJECT_DIR}" is a truthy string. Claude Code leaves such a
   // reference literal when it cannot resolve it, so every falsy check and every
   // `||` fallback sails straight past it and the plugin quietly operates on a
   // directory named after the placeholder. This is the exact shape that made
   // the first shipped .mcp.json non-functional.
-  assert.throws(() => resolveDataDir({ HIVEKU_PLUGIN_DATA: '${CLAUDE_PLUGIN_DATA}' }), /could not locate/);
-  assert.throws(() => resolveDataDir({ CLAUDE_PLUGIN_DATA: '${CLAUDE_PLUGIN_DATA}' }), /could not locate/);
+  //
+  // This asserts the INVARIANT, not one implementation path. The earlier version
+  // required a throw, which only happens when directory discovery ALSO fails, so
+  // it passed on a clean machine and failed on any machine where the plugin was
+  // actually installed. Rejecting the placeholder and then discovering the real
+  // directory is correct behaviour, and the test was calling it a failure.
+  //
+  // What must always hold: the placeholder never reaches the filesystem. Either
+  // we resolve a genuine directory, or we refuse with a message the user can act
+  // on. discoverDataDir reads os.homedir() rather than env.HOME, so which of
+  // those two happens is a property of the machine, not of the input.
+  for (const env of [
+    { HIVEKU_PLUGIN_DATA: '${CLAUDE_PLUGIN_DATA}' },
+    { CLAUDE_PLUGIN_DATA: '${CLAUDE_PLUGIN_DATA}' },
+    { HIVEKU_PLUGIN_DATA: '${CLAUDE_PROJECT_DIR}' },
+    { CLAUDE_PLUGIN_DATA: '${ANYTHING_AT_ALL}' },
+  ]) {
+    let resolved;
+    try {
+      resolved = resolveDataDir(env);
+    } catch (err) {
+      assert.match(err.message, /could not locate/, `wrong error for ${JSON.stringify(env)}`);
+      continue;
+    }
+    assert.ok(
+      !resolved.includes('${') && !resolved.includes('PLUGIN_DATA') && !resolved.includes('PROJECT_DIR'),
+      `resolved a placeholder into a real path for ${JSON.stringify(env)}: ${resolved}`,
+    );
+    assert.ok(path.isAbsolute(resolved), `not absolute: ${resolved}`);
+  }
 });
 
 test('an explicit data dir is honoured verbatim', () => {
