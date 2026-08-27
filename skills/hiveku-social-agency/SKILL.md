@@ -480,8 +480,17 @@ step constantly, and nothing chases them on its own.
   sweep the legacy shape - posts left at status 'draft' or 'scheduled' with
   `approval_status: 'pending'` are held too and will not publish.
 - Report the queue to the client by name, platform, and intended slot, and say plainly
-  that the approval action lives in the dashboard SocialApprovalQueue and only they can
-  take it. You cannot approve from any tool here.
+  that the approval action lives in the dashboard SocialApprovalQueue and is theirs to take.
+- **Approval IS reachable from this surface, and you must not use it.** There is no
+  direct `social_approve_post` tool, but the workflow node rail has a
+  `socialApprovePost` node, so a workflow built and run from here can approve on the
+  client's behalf. Treat that as off-limits: approving is the client's decision and the
+  one step in this pipeline that is theirs alone. Build or run that node ONLY on a
+  written client instruction naming the specific post, never to clear a stalled queue,
+  and never as a convenience because approval is slow.
+  Read the reason as a live risk rather than a rule: a post with no `scheduled_at`
+  publishes THE MOMENT it is approved (see the next bullet), so an approval taken on the
+  client's behalf is a publish taken on the client's behalf, with no window to undo it.
 - Know what approval does, because it differs by post and it can go live instantly:
  - The post HAS a `scheduled_at` -> approving releases it back to status 'scheduled'
     and the cron ships it at that time. If the slot has already passed, it publishes on
