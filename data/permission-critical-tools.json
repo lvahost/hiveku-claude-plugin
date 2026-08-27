@@ -1,0 +1,137 @@
+{
+  "_comment": "Tools the plugin's INSTALL.md names LITERALLY in a permissions ask rule. Claude Code ask rules do NOT accept wildcards, so these must be exact. If any is renamed or removed without updating INSTALL.md, the rule stops matching SILENTLY and the tool becomes blanket-allowed. Assert every name below still exists in the tool registry; fail the build if one does not.",
+  "consumed_by": "hiveku-claude-plugin/INSTALL.md -> permissions.ask",
+  "prefixes": [
+    "mcp__plugin_hiveku_hk__",
+    "mcp__hiveku__"
+  ],
+  "plugin_version": "0.5.2",
+  "count": 25,
+  "tools": [
+    {
+      "name": "deploy_site",
+      "method": "POST",
+      "why_gated": "publishes a site to a real domain"
+    },
+    {
+      "name": "deploy_run",
+      "method": "POST",
+      "why_gated": "runs a deploy"
+    },
+    {
+      "name": "project_files_bulk_save",
+      "method": "POST",
+      "why_gated": "overwrites project source"
+    },
+    {
+      "name": "project_vcs_commit",
+      "method": "POST",
+      "why_gated": "writes a commit"
+    },
+    {
+      "name": "project_vcs_merge",
+      "method": "POST",
+      "why_gated": "merges a branch"
+    },
+    {
+      "name": "site_delete",
+      "method": "DELETE",
+      "why_gated": "destroys a site"
+    },
+    {
+      "name": "content_publish_to_site",
+      "method": "POST",
+      "why_gated": "publishes content publicly"
+    },
+    {
+      "name": "content_schedule",
+      "method": "POST",
+      "why_gated": "queues a public publish"
+    },
+    {
+      "name": "email_campaign_send_now",
+      "method": "POST",
+      "why_gated": "sends email to real recipients"
+    },
+    {
+      "name": "email_campaign_schedule",
+      "method": "POST",
+      "why_gated": "queues a real send"
+    },
+    {
+      "name": "email_campaign_resend_non_openers",
+      "method": "POST",
+      "why_gated": "re-sends to real recipients"
+    },
+    {
+      "name": "crm_envelope_send",
+      "method": "POST",
+      "why_gated": "sends a signature request"
+    },
+    {
+      "name": "crm_estimate_send",
+      "method": "POST",
+      "why_gated": "sends an estimate to a client"
+    },
+    {
+      "name": "helpdesk_ticket_send_reply",
+      "method": "POST",
+      "why_gated": "replies to a customer"
+    },
+    {
+      "name": "marketing_report_send",
+      "method": "POST",
+      "why_gated": "emails a report to a client"
+    },
+    {
+      "name": "ppc_budget_update",
+      "method": "POST",
+      "why_gated": "changes ad spend"
+    },
+    {
+      "name": "ppc_platform_budget_update",
+      "method": "POST",
+      "why_gated": "changes ad spend"
+    },
+    {
+      "name": "ppc_bid_modifier_update",
+      "method": "POST",
+      "why_gated": "changes ad spend"
+    },
+    {
+      "name": "ppc_keyword_bid_update",
+      "method": "POST",
+      "why_gated": "changes ad spend"
+    },
+    {
+      "name": "ppc_platform_keyword_bid_update",
+      "method": "POST",
+      "why_gated": "changes ad spend"
+    },
+    {
+      "name": "ppc_bidding_strategy_update",
+      "method": "POST",
+      "why_gated": "changes how spend is allocated"
+    },
+    {
+      "name": "ppc_platform_bidding_strategy_update",
+      "method": "POST",
+      "why_gated": "changes how spend is allocated"
+    },
+    {
+      "name": "ppc_campaign_create",
+      "method": "POST",
+      "why_gated": "creates a spending campaign"
+    },
+    {
+      "name": "accounting_bill_record_payment",
+      "method": "POST",
+      "why_gated": "records money moving"
+    },
+    {
+      "name": "accounting_invoice_record_payment",
+      "method": "POST",
+      "why_gated": "records money moving"
+    }
+  ]
+}
