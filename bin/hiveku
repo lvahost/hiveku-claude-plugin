@@ -522,6 +522,55 @@ async function cmdStatus(flags) {
  * default, because this plugin is installed once at user scope and is therefore
  * present in every project on the machine.
  */
+/**
+ * Warn when this session's bridge is older than what is installed.
+ *
+ * A Claude session pins the plugin version it started with, so a long-lived
+ * session keeps running the bridge it spawned even after an update lands. Field
+ * testing found eight bridges alive at once across five versions, including one
+ * on 0.2.0 that had been serving a session for nearly sixteen hours, five
+ * versions behind. Nothing anywhere said so, and the symptom is not an error:
+ * it is missing tools and stale skills, which reads as "Hiveku cannot do that".
+ *
+ * Derived from CLAUDE_PLUGIN_ROOT rather than a hardcoded path, because the root
+ * IS the versioned cache directory, so its siblings are the other installed
+ * versions. Returns null on anything unexpected: a version notice is a courtesy
+ * and must never be the reason a session start fails.
+ */
+async function describeVersionSkew() {
+  try {
+    const root = process.env.CLAUDE_PLUGIN_ROOT;
+    if (!root) return null;
+    const manifest = JSON.parse(await fs.readFile(path.join(root, '.claude-plugin', 'plugin.json'), 'utf8'));
+    const running = String(manifest.version || '').trim();
+    if (!running) return null;
+
+    const entries = await fs.readdir(path.dirname(path.resolve(root)), { withFileTypes: true });
+    const cmp = (a, b) => {
+      const pa = a.split('.').map(Number), pb = b.split('.').map(Number);
+      for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+        const d = (pa[i] || 0) - (pb[i] || 0);
+        if (d) return d;
+      }
+      return 0;
+    };
+    const versions = entries
+      .filter((e) => e.isDirectory() && /^\d+(\.\d+)*$/.test(e.name))
+      .map((e) => e.name);
+    if (!versions.length) return null;
+    const newest = versions.reduce((a, b) => (cmp(a, b) >= 0 ? a : b));
+    if (cmp(newest, running) <= 0) return null;
+
+    return (
+      `Hiveku: this session is running plugin ${running}, but ${newest} is installed. A session keeps ` +
+      'the bridge it started with, so newer tools and skills are missing here until you start a new ' +
+      'session. Symptoms look like missing capability rather than an error.'
+    );
+  } catch {
+    return null;
+  }
+}
+
 async function cmdHook(positional) {
   const which = positional[0];
   const payload = await readHookStdin();
@@ -571,6 +620,14 @@ async function cmdHook(positional) {
   const detected = await detectExtensionServer(dir);
   const collision = describeCollision(detected, account?.label || null, creds.accounts);
   if (collision) lines.push(collision);
+
+  // Only when we already have a reason to speak. An unrelated folder that is
+  // unbound and has no Hiveku artifacts must stay completely silent, and a
+  // version notice is not worth breaking that for.
+  if (lines.length) {
+    const skew = await describeVersionSkew();
+    if (skew) lines.push(skew);
+  }
 
   if (lines.length) process.stdout.write(lines.join('\n') + '\n');
 }
