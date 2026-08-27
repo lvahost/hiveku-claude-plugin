@@ -9,7 +9,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { makePkcePair, safeEqual, buildConnectedParam, exchangeCode, keysToRotate } from '../lib/connect.mjs';
+import { makePkcePair, safeEqual, buildConnectedParam, exchangeCode, keysToRotate, isLoopbackHost } from '../lib/connect.mjs';
 
 function serverSideChallenge(verifier) {
   // Byte-identical to hiveku_builder's pkceMatches / RFC 7636 S256.
@@ -101,4 +101,37 @@ test('keysToRotate: only this device\'s replaced keys, never new or unchanged on
 test('keysToRotate: empty prior store rotates nothing', () => {
   assert.deepEqual(keysToRotate({}, [{ account_id: 'a', key: 'k' }]), []);
   assert.deepEqual(keysToRotate(undefined, [{ account_id: 'a', key: 'k' }]), []);
+});
+
+
+test('isLoopbackHost accepts every spelling of loopback on OUR port', () => {
+  // A completed consent died at "Bad host" because the listener pinned the single
+  // literal 127.0.0.1 while the browser arrived as localhost. The user had already
+  // approved and a real code had already been minted, so the failure landed at the
+  // last possible step.
+  for (const h of ['127.0.0.1:55703', 'localhost:55703', '[::1]:55703', 'LOCALHOST:55703']) {
+    assert.equal(isLoopbackHost(h, 55703), true, h);
+  }
+});
+
+test('isLoopbackHost rejects rebinding and lookalike hosts', () => {
+  // Exact host:port only. A substring or suffix match would pass the first three.
+  for (const h of [
+    'localhost.evil.tld:55703',
+    'evil.tld:55703',
+    'notlocalhost:55703',
+    '127.0.0.1.evil.tld:55703',
+    'localhost:1234',
+    '127.0.0.1',
+    'localhost',
+    '',
+  ]) {
+    assert.equal(isLoopbackHost(h, 55703), false, h);
+  }
+});
+
+test('isLoopbackHost does not throw on a missing or non-string Host header', () => {
+  assert.equal(isLoopbackHost(undefined, 55703), false);
+  assert.equal(isLoopbackHost(null, 55703), false);
+  assert.equal(isLoopbackHost(12345, 55703), false);
 });
