@@ -202,15 +202,22 @@ So either:
 - **Turn on auto-update once** (step 6 above, or the Marketplaces tab in `/plugin`). Claude Code
   then refreshes shortly after a session starts and picks up new versions on its own. This is
   what we recommend.
-- **Or update by hand** whenever you want the latest:
+- **Or update by hand** whenever you want the latest. The usual path: click the terminal icon
+  in the Claude app (it opens a shell in whatever folder you have open — which folder does not
+  matter, the plugin is installed for your whole user account) and run:
 
-  ```
-  /plugin marketplace update hiveku
-  /plugin update hiveku@hiveku
+  ```bash
+  claude plugin marketplace update hiveku
+  claude plugin update hiveku@hiveku
   ```
 
-Either way, an update may ask you to run `/reload-plugins` to load the new version into the
-session you already have open.
+  Two commands because they do different jobs: the first refreshes the catalog so your machine
+  knows a newer version exists; the second actually installs it. The update applies to NEW
+  sessions — a Claude session that is already open keeps the version it started with, so
+  restart the session (or run `/reload-plugins` inside it) to pick the new one up.
+
+  Already inside a Claude session instead? The same two steps work as slash commands:
+  `/plugin marketplace update hiveku` then `/plugin update hiveku@hiveku`.
 
 For a whole team, an admin can enable it for everyone by adding the marketplace to a project's
 `.claude/settings.json` with auto-update on:
