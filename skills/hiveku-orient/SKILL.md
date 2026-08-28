@@ -38,6 +38,22 @@ Tools this file relies on that NO scoped profile can see: `account_context_get`,
 
 ## Non-negotiables - these prevent real incidents
 
+- **NEVER call tools one at a time to find out what works.** A "sweep" of the tool surface is the
+  single most expensive thing you can do in a session and it destroys the session doing it: ~1,600
+  tools means a permission decision AND a transcript entry EACH, the transcript is re-sent on every
+  later turn, and the run dies partway through with "Prompt is too long" having produced no report.
+  This has happened; it is not hypothetical.
+  If someone genuinely needs coverage data, that is a script, not a conversation:
+  `node "${CLAUDE_PLUGIN_ROOT}/scripts/sweep-tools.mjs"` sweeps every read-only tool in one process
+  and writes `hiveku-sweep.json`. Read the report; do not re-run the tools.
+  ★ The same rule applies in miniature: do not call five list tools "to see what's there" before
+  answering. Ask what the person is trying to achieve, then call the two or three tools that
+  answer it.
+- **Work in CHAINS, not surveys.** Real questions are answered by a short sequence where each call
+  narrows the next - `ppc_connection_list` → `ppc_digest` → `campaign_list` → `conversion_tracking_status`
+  tells you whether the ads are healthy. Calling forty tools tells you only that the endpoints
+  respond. Bugs live in the chains: data that disagrees between two tools, a tool that returns
+  success but the wrong thing, a chain that breaks in the middle. A survey cannot see any of those.
 - **Verify identity before ANY write.** Call `get_account_info` and confirm it is the account you
   intend. This matters most when the VS Code extension is also installed: it registers its own
   Hiveku server, so a session can have two accounts live at once under different tool prefixes
