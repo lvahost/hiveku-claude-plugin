@@ -20,6 +20,7 @@ import {
   publicAccountList,
 } from '../lib/credentials.mjs';
 import { resolveBinding, writeBinding, removeBinding, looksLikeHivekuFolder } from '../lib/binding.mjs';
+import { decideForPayload } from '../lib/tool-safety.mjs';
 import { detectExtensionServer, describeCollision } from '../lib/collision.mjs';
 import { runLoopbackConsent, exchangeCode, revokeSelf, keysToRotate } from '../lib/connect.mjs';
 import { runPullData } from '../lib/pulldata.mjs';
@@ -47,7 +48,7 @@ const HELP = `hiveku ${PLUGIN_VERSION} — Hiveku for Claude Code
   knowledge [pull|status]       Sync account memory/rules/skills into this
                                 folder by department (pull), or report drift
                                 (status). Never deletes local files.
-  hook <session-start|cwd-changed>
+  hook <session-start|cwd-changed|pre-tool-use>
                                 Internal: used by the plugin's hooks
 
 Keys live in the plugin's private data directory, encrypted with a key held in
@@ -574,6 +575,21 @@ async function describeVersionSkew() {
 async function cmdHook(positional) {
   const which = positional[0];
   const payload = await readHookStdin();
+
+  // ── PreToolUse: answered before any I/O ────────────────────────────────
+  // This one runs on EVERY tool call, so it must not read credentials, resolve
+  // a binding, or touch the network -- the other hook events fire once per
+  // session and can afford that; this cannot.
+  //
+  // It only ever ADDS an approval, and only for this plugin's own read-only
+  // tools. Silence is the answer for everything else, which leaves the normal
+  // permission flow exactly as it was.
+  if (which === 'pre-tool-use') {
+    const decision = decideForPayload(payload);
+    if (decision) process.stdout.write(JSON.stringify(decision));
+    return;
+  }
+
   const dir = path.resolve(payload?.cwd || process.cwd());
 
   let creds = { accounts: {} };

@@ -1,5 +1,5 @@
 {
-  "description": "Reports which Hiveku account this directory is bound to, and warns when a second Hiveku connection is live in the same session.",
+  "description": "Reports which Hiveku account this directory is bound to, warns when a second Hiveku connection is live in the same session, and pre-approves Hiveku's read-only tools so a sweep does not stall on one permission check per tool.",
   "hooks": {
     "SessionStart": [
       {
@@ -18,6 +18,17 @@
           {
             "type": "command",
             "command": "HIVEKU_PLUGIN_DATA=\"${CLAUDE_PLUGIN_DATA}\" \"${CLAUDE_PLUGIN_ROOT}/bin/hiveku\" hook cwd-changed"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "mcp__plugin_hiveku_hk__.*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/bin/hiveku\" hook pre-tool-use"
           }
         ]
       }
