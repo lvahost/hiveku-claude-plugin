@@ -21,6 +21,7 @@
  */
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
+import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
@@ -51,6 +52,41 @@ function bumped(current, kind) {
   return `${maj}.${min}.${pat + 1}`;
 }
 
+/**
+ * The generated registries must track the MCP server, and nothing else notices
+ * when they stop.
+ *
+ * ★ These files are DERIVED from hiveku-mcp-api-server. Add a tool there and
+ * lib/tool-index.json no longer knows about it — so the assistant cannot FIND
+ * it, concludes the capability does not exist, and tells the user Hiveku cannot
+ * do the thing Hiveku just learned to do. That failure is silent and looks like
+ * a product gap rather than a stale file, which is exactly why it is gated here
+ * rather than left to memory.
+ *
+ * Not fatal when the server repo is absent (exit 2): a release from a machine
+ * without it is fine, it just cannot re-verify. Stale (exit 1) IS fatal.
+ */
+function checkGeneratedRegistries() {
+  const checks = [
+    ['tool index', 'gen-tool-index.mjs'],
+    ['read-only list', 'gen-readonly-tools.mjs'],
+  ];
+  let stale = false;
+  for (const [label, script] of checks) {
+    const r = spawnSync(process.execPath, [path.join(ROOT, 'scripts', script), '--check'], {
+      encoding: 'utf8',
+    });
+    if (r.status === 0) continue;
+    if (r.status === 2) {
+      console.warn(`  ${label}: cannot verify (hiveku-mcp-api-server not cloned beside this plugin)`);
+      continue;
+    }
+    console.error(`  ${label}: STALE — ${(r.stderr || '').trim()}`);
+    stale = true;
+  }
+  return !stale;
+}
+
 async function main() {
   const arg = process.argv[2];
   const v = await readVersions();
@@ -67,6 +103,12 @@ async function main() {
       );
       process.exit(1);
     }
+    console.log('\ngenerated registries:');
+    const fresh = checkGeneratedRegistries();
+    if (!fresh) {
+      console.error('\nRegenerate before releasing:\n  node scripts/gen-tool-index.mjs\n  node scripts/gen-readonly-tools.mjs');
+      process.exit(1);
+    }
     console.log('\nin sync. To release: node scripts/release.mjs <version|patch|minor|major>');
     return;
   }
@@ -78,6 +120,14 @@ async function main() {
       : null;
   if (!next) {
     console.error(`Expected a semver (1.2.3) or patch|minor|major, got "${arg}"`);
+    process.exit(1);
+  }
+
+  // Refuse to stamp a version onto a stale catalogue: the version string is the
+  // ONLY update signal installed users get, so shipping one with an out-of-date
+  // index bakes the staleness in until the next release.
+  if (!checkGeneratedRegistries()) {
+    console.error('\nRefusing to release with stale generated registries. Regenerate, commit, then retry.');
     process.exit(1);
   }
 
