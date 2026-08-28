@@ -1,0 +1,116 @@
+/**
+ * Tool focus trims what is ADVERTISED, and nothing else.
+ *
+ * The weight here is on two properties. First, that focus never removes a tool
+ * a session needs to orient itself — losing `get_account_info` would break the
+ * identity check every write depends on. Second, that it is opt-in: an existing
+ * directory with no `departments` must behave exactly as it did before.
+ */
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import {
+  ALWAYS_AVAILABLE,
+  departmentOf,
+  describeFocus,
+  filterTools,
+  parseFocus,
+} from '../lib/tool-focus.mjs';
+
+const tool = (name) => ({ name, description: 'x', inputSchema: { type: 'object' } });
+const NAMES = [
+  'ppc_campaign_list', 'ppc_digest', 'ppc_conversion_tracking_status',
+  'seo_rankings_list', 'seo_gsc_search_analytics',
+  'crm_contact_delete', 'crm_account_summary',
+  'accounting_bill_pay', 'voice_calls_list',
+  'get_account_info', 'account_context_get', 'connections_status',
+  'list_departments', 'talk_to_department', 'audit_query',
+  'deploy_site',
+];
+const TOOLS = NAMES.map(tool);
+
+test('no focus means no filtering at all', () => {
+  // Opt-in. Every directory bound before this existed must be unaffected.
+  for (const empty of [undefined, null, [], '', '   ']) {
+    assert.equal(filterTools(TOOLS, empty).length, TOOLS.length);
+  }
+});
+
+test('a focus keeps that department and drops the others', () => {
+  const kept = filterTools(TOOLS, ['ppc']).map((t) => t.name);
+  assert.ok(kept.includes('ppc_campaign_list'));
+  assert.ok(kept.includes('ppc_conversion_tracking_status'));
+  assert.ok(!kept.includes('seo_rankings_list'));
+  assert.ok(!kept.includes('accounting_bill_pay'));
+  assert.ok(!kept.includes('crm_contact_delete'));
+});
+
+test('★ orientation tools survive every focus', () => {
+  // get_account_info is how a session proves which tenant it is on before any
+  // write. Filtering it away to save tokens would trade context for a
+  // cross-account write, which is not a trade worth making.
+  const kept = filterTools(TOOLS, ['ppc']).map((t) => t.name);
+  for (const n of ['get_account_info', 'account_context_get', 'connections_status',
+                   'list_departments', 'talk_to_department', 'audit_query']) {
+    assert.ok(kept.includes(n), `${n} must survive focus`);
+  }
+});
+
+test('several departments compose', () => {
+  const kept = filterTools(TOOLS, ['ppc', 'seo']).map((t) => t.name);
+  assert.ok(kept.includes('ppc_digest'));
+  assert.ok(kept.includes('seo_rankings_list'));
+  assert.ok(!kept.includes('voice_calls_list'));
+});
+
+test('accepts the shapes a person actually types', () => {
+  assert.deepEqual(parseFocus('ppc, seo'), ['ppc', 'seo']);
+  assert.deepEqual(parseFocus('PPC  SEO'), ['ppc', 'seo']);
+  assert.deepEqual(parseFocus(['ppc', 'ppc', 'seo']), ['ppc', 'seo']);
+  // Junk is dropped rather than turned into a department that matches nothing.
+  assert.deepEqual(parseFocus(['ppc', '', '  ', '../etc', '9x', null]), ['ppc']);
+  assert.deepEqual(parseFocus(undefined), []);
+});
+
+test('department is the first token, and bare names have none', () => {
+  assert.equal(departmentOf('ppc_campaign_list'), 'ppc');
+  assert.equal(departmentOf('deploy_site'), 'deploy');
+  assert.equal(departmentOf('audit_query'), 'audit');
+  assert.equal(departmentOf('memory'), null);
+  assert.equal(departmentOf(''), null);
+  assert.equal(departmentOf(null), null);
+});
+
+test('a tool with no department is dropped unless always-available', () => {
+  // Conservative on purpose: an unrecognised name should not ride along just
+  // because it does not parse.
+  const kept = filterTools([tool('memory'), tool('audit_query')], ['ppc']).map((t) => t.name);
+  assert.deepEqual(kept, ['audit_query']);
+});
+
+test('never drops an entry it cannot understand', () => {
+  // A malformed tool entry is the server's business, not ours. Silently
+  // removing it would turn a server bug into a mystery on our side.
+  const weird = [{ description: 'no name' }, { name: 42 }, tool('ppc_digest')];
+  assert.equal(filterTools(weird, ['ppc']).length, 3);
+});
+
+test('non-array input passes through untouched', () => {
+  assert.equal(filterTools(undefined, ['ppc']), undefined);
+  assert.equal(filterTools('nonsense', ['ppc']), 'nonsense');
+});
+
+test('the banner speaks only when it has something to say', () => {
+  assert.equal(describeFocus(100, 100, ['ppc']), null, 'nothing filtered — stay quiet');
+  assert.equal(describeFocus(100, 20, []), null, 'no focus — stay quiet');
+  const msg = describeFocus(1531, 207, ['ppc', 'marketing']);
+  assert.match(msg, /207 of 1531/);
+  assert.match(msg, /ppc, marketing/);
+  // It must say what it is NOT, or someone will read it as access control.
+  assert.match(msg, /still reachable/i);
+});
+
+test('ALWAYS_AVAILABLE covers the five every key can call', () => {
+  for (const n of ['list_departments', 'talk_to_department', 'web_search', 'fetch_url', 'audit_query']) {
+    assert.ok(ALWAYS_AVAILABLE.has(n), `${n} is callable on every profile and must never be filtered`);
+  }
+});

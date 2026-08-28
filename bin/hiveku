@@ -21,6 +21,7 @@ import {
 } from '../lib/credentials.mjs';
 import { resolveBinding, writeBinding, removeBinding, looksLikeHivekuFolder } from '../lib/binding.mjs';
 import { decideForPayload } from '../lib/tool-safety.mjs';
+import { parseFocus } from '../lib/tool-focus.mjs';
 import { detectExtensionServer, describeCollision } from '../lib/collision.mjs';
 import { runLoopbackConsent, exchangeCode, revokeSelf, keysToRotate } from '../lib/connect.mjs';
 import { runPullData } from '../lib/pulldata.mjs';
@@ -48,6 +49,7 @@ const HELP = `hiveku ${PLUGIN_VERSION} — Hiveku for Claude Code
   knowledge [pull|status]       Sync account memory/rules/skills into this
                                 folder by department (pull), or report drift
                                 (status). Never deletes local files.
+  focus [<departments...>|--clear] [--json]
   hook <session-start|cwd-changed|pre-tool-use>
                                 Internal: used by the plugin's hooks
 
@@ -572,6 +574,50 @@ async function describeVersionSkew() {
   }
 }
 
+/**
+ * Choose which departments' tools this directory advertises.
+ *
+ * ★ A CONTEXT TRIM, NOT AN ACCESS CONTROL. Every tool remains reachable when
+ * named directly; this only shortens the advertised list, which is where ~255
+ * tokens per tool are spent before a session starts. The real boundary is a
+ * scoped key. See lib/tool-focus.mjs.
+ */
+async function cmdFocus(flags, positional) {
+  const dir = process.cwd();
+  const binding = await resolveBinding(dir);
+  if (!binding) {
+    process.stdout.write('This directory is not bound to a Hiveku account. Run /hiveku:bind first.\n');
+    process.exitCode = 1;
+    return;
+  }
+
+  const file = binding.file;
+  const parsed = JSON.parse(await fs.readFile(file, 'utf8'));
+
+  if (flags.clear) parsed.departments = [];
+  else if (positional.length) parsed.departments = parseFocus(positional);
+
+  if (flags.clear || positional.length) {
+    await writeFileAtomic(file, JSON.stringify(parsed, null, 2) + '\n');
+  }
+
+  const current = parseFocus(parsed.departments);
+  if (flags.json) {
+    process.stdout.write(JSON.stringify({ account: binding.label, departments: current }) + '\n');
+    return;
+  }
+  if (!current.length) {
+    process.stdout.write(
+      `${binding.label}: showing ALL tools (~1,500). That costs roughly 380k tokens of context ` +
+      `before you type anything.\nNarrow it with e.g.  /hiveku:focus ppc marketing\n`);
+  } else {
+    process.stdout.write(
+      `${binding.label}: focused on ${current.join(', ')}.\n` +
+      `Other tools are hidden from the list but still work if named directly.\n` +
+      `Restart the session for this to take effect. Clear it with /hiveku:focus --clear\n`);
+  }
+}
+
 async function cmdHook(positional) {
   const which = positional[0];
   const payload = await readHookStdin();
@@ -672,6 +718,7 @@ async function main() {
     case 'accounts': return cmdAccounts(flags, positional);
     case 'setup': return cmdSetup(flags);
     case 'bind': return cmdBind(flags);
+    case 'focus': return cmdFocus(flags, positional);
     case 'unbind': return cmdUnbind(flags);
     case 'status': return cmdStatus(flags);
     case 'pull': return cmdPull(flags, positional);
