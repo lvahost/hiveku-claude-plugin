@@ -24,12 +24,15 @@ Lane A dies on **missing click ids and missing value**; Lane B dies on **missing
 time**. Read Lane B with `marketing_call_attribution_breakdown` and `marketing_call_attribution_list`;
 read Lane A's form half with `marketing_form_conversion_audit`.
 
-Say this plainly rather than working around it: **the structured call-conversion doctor has no MCP
-tool.** The readout returning google_connection / conversion_action / tenant_opt_in /
-number_tracking / attribution_health / outbox_drain / reconciliation as
-healthy|degraded|broken|not_configured exists only in the dashboard UI. From tools you get it
-indirectly via `analytics_channel_scorecard`'s call reconciliation plus `voice_diagnose_setup`
-(`blocking_issues[]`). Do not claim you ran a doctor you cannot run.
+Lane B has its own doctor: **`voice_call_tracking_diagnose`** returns seven checks
+(`ok | warn | fail | unknown` each) plus an ORDERED `fix_first` list - read `fix_first`, and an
+`unknown` is NOT a pass. **`voice_call_tracking_outbox`** then shows the upload rows one at a time
+with each `error_code` translated (filter `status: 'failed'` first; an empty result means either
+nothing was ever enqueued - a tracking problem - or everything uploaded cleanly).
+`analytics_channel_scorecard`'s call reconciliation causes and `voice_diagnose_setup`
+(`blocking_issues[]`) remain the channel-level views. The calls reference, section 9, carries the
+family in depth, including `voice_call_tracking_setup`, the wiring tool whose `did_count` field
+spends money.
 
 ---
 
@@ -40,7 +43,10 @@ Nothing uploads unless BOTH are true. There is no implicit default anywhere in t
 **Gate 1 - the account opted in.** The offline-conversion setting must be enabled, a deliberate
 per-account switch. A new account is OFF, and every candidate then returns `not_opted_in` with zero
 API calls made. Not a bug and not a permissions error: somebody has to decide this account sends
-customer conversion data to an ad platform. No MCP tool flips it, it is a dashboard setting.
+customer conversion data to an ad platform. For Lane A (deals, forms, orders) no MCP tool flips it -
+it is a dashboard setting. For Lane B, the CALL lane's tenant opt-in
+(`voice_tenant_config.conversion_upload_enabled`) is one of the steps `voice_call_tracking_setup`
+wires - still a deliberate, confirmed decision, never a silent side effect of "fixing tracking".
 
 **Gate 2 - a designated conversion action the connection's own ad account owns.** A mapping row must
 exist for that (connection, source) pair with `enabled = true`, naming a conversion action an
@@ -91,7 +97,10 @@ email through this lane.
 
 **The 6-hour floor is a floor, not a suggestion.** A deal closed 40 minutes ago returns
 `TOO_RECENT_*` and does not go. Honest answer to "can Smart Bidding see this today": earliest six
-hours after the win, and you should be batching daily anyway.
+hours after the win, and you should be batching daily anyway. Daily batching is a standing job, not
+a habit: build it as a scheduled workflow (`workflow_` tools, or `/hiveku:automate`) so Meta's
+7-day window stops eating conversions the week someone is on vacation - the interactive two-step
+confirm below still governs any batch YOU run by hand.
 
 **Value above 1,000,000 is refused, not clamped.** A misplaced decimal, a value in cents, or a JPY
 amount uploaded as USD gets a hard refusal instead of a capped upload. Correct: a clamped 1,000,000
@@ -189,7 +198,7 @@ identity, dating, value. Reasoning for the gate and dating rows is in sections 2
 
 | Reason | Do this |
 |---|---|
-| `not_opted_in` | Account switch off. Explain the data-sharing decision, get a yes, enable in the dashboard. No tool does this. |
+| `not_opted_in` | Account switch off. Explain the data-sharing decision and get a yes FIRST. Lane A: enable in the dashboard (no tool). Call lane: `voice_call_tracking_setup` wires the tenant opt-in - dry_run first, and never as a workaround for the yes. |
 | `source_not_designated` | No mapping row for this (connection, source). Create it, designate an action. |
 | `mapping_disabled` | `enabled = false`. Find out who turned it off, then flip it on deliberately. |
 | `unsupported_platform` | No upload lane there. Do not retry. |
@@ -391,11 +400,3 @@ Give those three numbers separately. "We recovered 9, 4 have no click id because
 embed we are fixing this week, and 2 closed 71 days ago and are outside Google's import window" is a
 report worth paying for. "It is fixed" is not.
 
----
-
-## Coverage notes for the parent agent
-
-- All 25 refusal reasons from the grounding are present and verified by script, each with a remedy.
-- Every starred grounding fact in scope is stated with its consequence: `source_history` as the only dated source; the `created_at` fallback over-stating age so it refuses more than it should; `updated_at` rejected as a proxy; no `won_at` column and the three-step priority; "won" as the account's own `is_won` vocabulary yielding zero rather than guessing; value refused not clamped; the two-step confirm; Google-only returning a wrong-platform error not an empty result; the Upload-source requirement in the Ads UI; `always_use_default_value` flattening revenue; Bing `goal_category` required; `conversions` vs `all_conversions`; `conversions_last_30_days: null` not zero; `clicks_before_range: 0` with `click_dated: 0` meaning not measurable.
-- Capabilities with no tool are named as such with the fallback: the account opt-in switch (dashboard), the mapping designation (dashboard), the structured call-conversion doctor (dashboard UI only, indirectly via `analytics_channel_scorecard` and `voice_diagnose_setup`), and flipping an existing Google action's source (not possible, create a new Import-source action).
-- No YAML frontmatter, no emojis, no em dashes. Confirm-before-write doctrine is enforced in sections 9, 10 and step 6 of the worked play.

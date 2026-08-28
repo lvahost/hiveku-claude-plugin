@@ -58,7 +58,9 @@ Consequences:
 **"Call attribution quietly stopped after a redeploy" is almost always this tag dropping off the
 page** - the swap health monitor calls it `snippet_missing`, and nobody reports it on the day because
 the site looks fine. Re-check `voice_diagnose_setup` (`blocking_issues[]`) after any custom-code change
-on a DNI project; `?hkswaptest=<nonce>` forces test mode without burning a session.
+on a DNI project; `?hkswaptest=<nonce>` forces test mode without burning a session, and one
+`voice_call_tracking_live_probe` proves the swap end to end when you need certainty (it holds a real
+tracking DID for the sticky window - confirm fixes with it, never schedule it).
 
 ---
 
@@ -138,12 +140,15 @@ Verifying:
 - Ingest POSTs to `track.hiveku.com/v1/visitor-tracking/ga4-event` and returns **204** on success. A
   non-2xx means unauthorized or invalid; it never means "processed".
 - `analytics_probe_page` on one of their URLs. It refuses domains the account does not own, so register
-  the domain on the project first - also the fix for the reCAPTCHA hostname trap that silently files
-  real leads as spam.
+  the domain on the project first (`project_domains_add`, confirmed - surface the returned DNS records
+  to the client; `project_domain_verify` says when it is actually servable) - also the fix for the
+  reCAPTCHA hostname trap that silently files real leads as spam.
 - First traffic: `analytics_events_list` filtered to `event_name=form_submit`, then
   `analytics_overview` / `analytics_sessions` / `analytics_traffic_sources` for topline.
-- `analytics_diagnose_tracking` **requires a custom domain**: without one it returns 400 and nothing
-  is checked. On a staging subdomain you get no findings, and that is not a clean bill of health.
+- `analytics_diagnose_tracking` with an explicit `project_id` always runs, but on a project with no
+  custom domain it returns source-scan findings only (`browser_checked: false`, no runtime findings) -
+  its 400 fires only when `project_id` is omitted and no live project carries a custom domain. On a
+  staging subdomain, no runtime findings is not a clean bill of health.
 
 **No `project_custom_code_*` tool applies to an external site** - the client's CMS or developer owns
 the `<head>`. Your leverage is GTM, or a change request with the exact snippet attached.
@@ -291,8 +296,9 @@ Hiveku-hosted site, Google Ads and Bing running, forms plus phone calls.
    equalling one record with working notifications and nineteen records for a handful of forms. Ship it
    with `project_files_bulk_save` in ONE call and `project_vcs_commit`.
 3. Confirm `tracking_enabled` and a tracking token exist, so the injector ships analytics and not just
-   form capture. Register the production domain (and any proxy hostname): an unregistered hostname
-   scores the reCAPTCHA token 0 and the lead is **silently filed to spam**.
+   form capture. Register the production domain (and any proxy hostname) with `project_domains_add`
+   (read back with `project_domains_list`): an unregistered hostname scores the reCAPTCHA token 0 and
+   the lead is **silently filed to spam**.
 4. Decide the lane (section 0). If GTM: `seo_gtm_status`, `seo_gtm_install_status`, then
    `seo_gtm_install`. Confirm the container id with the client first; first use pins it.
 5. Identifiers: `ppc_google_conversion_actions` (get-tag) for `conversion_id` and `conversion_label`;

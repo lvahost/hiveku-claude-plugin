@@ -27,10 +27,12 @@ reimplementation, not a cache: every call is live. Use it when Lane A has no too
 the mirror looks stale.
 
 **Lane C: the Google-ops plumbing tools.** `ppc_google_targeting`, `ppc_google_conversion_actions`,
-`ppc_google_user_lists`, `ppc_google_shared_negatives`, `ppc_google_asset_upload`: functions below the CLI's own
+`ppc_google_user_lists`, `ppc_google_shared_negatives`, `ppc_google_asset_upload`, `ppc_google_pmax` (asset
+groups - see section 5), plus the read-only `ppc_google_pmax_performance`: functions below the CLI's own
 entry point, one tool per capability with an `operation` enum and a free-form `params` object. Their `*-list`
-operations are the only way to see geo criteria, language criteria, shared sets, user lists and stored assets at
-all. **None creates a spending entity or sets a budget or a bid**, which is why they exist here.
+operations are the only way to see geo criteria, language criteria, shared sets, user lists, stored assets
+and PMax asset groups at all. **None sets a budget or a bid**, and the one create among them that touches a
+serving surface (`ppc_google_pmax` asset-group-create) lands PAUSED by design.
 
 **There is no write door, on purpose.** `ppc_google_ads_read` refuses non-reads with
 `code: "action_not_allowed"` plus the supported list. Campaign, budget, bid and audience writes stay behind Lane
@@ -141,15 +143,27 @@ own: it needs all four of `period-a-start`, `period-a-end`, `period-b-start`, `p
    `campaign_type`: `performance_max`, and also `shopping`, `display`, `video`, `demand_gen`, which share the
    same reporting opacity.
 2. **Check servability.** A PMax campaign with no asset group can never serve; one missing a required slot
-   serves at a fraction of its potential. **There is no asset-group tool on this surface.** Read that state and
-   repair slots via `talk_to_department({ domain: "ppc", message })`, which reaches the department's own PMax
-   lane, or in the Google Ads UI. Do not invent a tool call for this gap; name the route you took.
+   serves at a fraction of its potential. `ppc_google_pmax` operation `asset-group-list` is the read: every
+   group with per-slot asset counts, signals, ad_strength, primary_status, and `missing_requirements`
+   naming exactly why an idle group cannot serve. Repair a missing slot with `asset-group-asset-add`
+   (assets uploaded first via `ppc_google_asset_upload`; CAUTION - on an ENABLED group in an ENABLED
+   campaign the new creative serves immediately, so confirm first). Net-new groups: `asset-group-create` is
+   ONE atomic write that refuses to build a group missing anything Google requires, and lands PAUSED;
+   enabling the group and the campaign are two separate approvals on the enable lane. Signals via
+   `asset-group-signal-add` are HINTS, not targeting fences - they never narrow delivery.
 3. **Test the brand fence.** This is the whole game. Compare brand-campaign impression share and conversions
    across the launch date with `ppc_google_ads_read({ action: "period-comparison", args: { "period-a-start":
    ..., "period-a-end": ..., "period-b-start": ..., "period-b-end": ..., scope: "campaign" } })`. The
    cannibalization signature: PMax cost and conversions rise while brand Search conversions fall by a similar
    count, its lost impression share does not explain the drop, and blended CPA looks flat. Nothing was created;
-   volume moved and got relabeled.
+   volume moved and got relabeled. `ppc_google_pmax_performance` makes the mechanism visible: it returns
+   per-asset-group metrics PLUS Google's per-channel split of where PMax delivery actually went
+   (segments.ad_network_type - SEARCH, SEARCH_PARTNERS, CONTENT/Display, YOUTUBE, GMAIL, DISCOVER, MAPS,
+   GOOGLE_TV; MIXED = cross-network), channels sorted by spend - a PMax campaign whose spend concentrates
+   in SEARCH while brand Search bleeds is the fence failing in one read. A non-PMax campaign_id is refused
+   with a pointer to `ppc_metrics`; asset groups with zero traffic in the window are absent (asset-group-list
+   shows every group); if the channel query fails on an old agent image, asset-group rows still return and
+   `channel_split_unavailable` says why.
 4. **Build the fence** with `ppc_google_shared_negatives`: `shared-set-create({ params: { name } })`, then
    `shared-set-keywords-add({ params: { shared_set_resource_name, keywords: [...], match_type: "phrase" } })`
    with the brand name and its misspellings, then

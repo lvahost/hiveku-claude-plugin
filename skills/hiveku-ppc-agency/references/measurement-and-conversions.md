@@ -102,6 +102,25 @@ is under-measurement, and it starves smart bidding of the campaigns that actuall
 Set the baseline gap once, write it to memory with the date, then report movement in the gap rather than the
 gap. A stable 18 percent gap is a constant. An 18 percent gap that became 44 percent Tuesday is an incident.
 
+**The Hiveku side of the triangle now has its own instruments** (visible to marketing keys via the
+`marketing_` prefix). `marketing_form_conversion_audit` explains a platform-vs-CRM gap for FORM fills:
+submissions with their source attribution, aggregated the way a platform aggregates, plus named
+discrepancy buckets that SUM TO THE TOTAL (deleted, duplicate, spam, archived, workflow_failed,
+no_attribution, unpaid_attribution, counted) - use `buckets.counted` as our number and explain the gap
+with the rest; `has_click_id` isolates paid-click submissions recovered from utm_params OR the
+landing-page URL, which catches real paid clicks the CRM recorded as organic.
+`marketing_call_attribution_breakdown` does the same for CALLS - by source/medium/campaign and day, plus
+the call-quality read the platform structurally cannot give (duration distribution against THIS
+account's configured threshold, disposition mix, missed/voicemail/abandoned: Google counts a 12-second
+wrong number as a conversion once it passes minimum duration). `marketing_call_attribution_list` adds a
+page of individual calls - each with its source, the tracking DID and pool session that credited it (DNI
+attributes through both), duration bucket, and whether it meets the account's conversion policy;
+breakdown percentages cover up to 5000 scanned calls, `totals.truncated` says when the window is larger,
+and it returns NO transcripts (use `marketing_call_transcript_get` for one call). ALWAYS read each
+response's caveats before reporting a discrepancy: this is OUR record, not the platform's - view-through
+conversions have no click and can never appear here, cross-device joins are invisible, and the platform
+dates by CLICK while we date by the event.
+
 ---
 
 ## 5. Framework D: is this number real yet?
@@ -143,9 +162,18 @@ Read-only, so no confirmation needed, but the verdict is a mandatory publish.
    Record with `pm_tasks_update` so the block is on the record, not just in chat.
 6. Non-Google: compare counts via `ppc_period_comparison` / `ppc_platform_period_comparison` against the
    platform's own goal configuration; route Microsoft UET and conversion-goal verification to
-   `paid-social-and-bing.md`. Meta, TikTok and LinkedIn pixel configuration has no tool in this reference's
-   surface: verify in each platform's Events Manager in the dashboard and record what you saw in the PM
-   task, since there is no callable read to repeat it.
+   `paid-social-and-bing.md`. Meta, TikTok and LinkedIn each have callable reads - repeat them, do not
+   trust a one-time dashboard glance. Meta: `ppc_meta_custom_conversions` (each Custom Conversion's name,
+   URL rule, custom_event_type, owning pixel, first/last_fired_time - per-conversion grain, which a
+   pixel-level check cannot give; an empty list means no CUSTOM conversions are defined while standard
+   pixel events still record, and a failed read reports readability/coverage_gap instead of an empty
+   list) and `ppc_meta_conversion_volume` (per-conversion attributed_conversions/value for the window
+   PLUS last_fired_time; attributed counts ONLY ad-attributed conversions while last_fired counts every
+   event - a recent fire with zero attributed is recording fine and was not ad-driven, a media finding,
+   not broken tracking; failed reads classify permission / token / api_error, never zeros). Also
+   `ppc_meta_pages_pixels` operation list-pixels for pixel ids. TikTok: `ppc_tiktok_pixels` event-stats
+   (max 10 pixels, 30-day window). LinkedIn: `ppc_linkedin_conversions` conversion-rules-list. Record
+   verdicts in the PM task.
 
 **Closes the loop:** tag repairs are website work, not ads work. Every SILENT action becomes a
 `pm_tasks_create` task naming the action, the page or event expected to fire it, the date it last fired, and
@@ -163,10 +191,15 @@ On any MISCONFIGURED or NOISE finding, and once per quarter regardless.
 2. Each change as a row: action, current setting, proposed setting, business reason, expected effect on
    reported volume. State the volume effect explicitly. Fixing a MANY_PER_CLICK form cuts reported
    conversions substantially and that must be predicted before it happens.
-3. **No tool in this reference's surface edits counting, primary flag, window or value.**
-   `ppc_google_conversion_actions` is the read. Edits are dashboard work in Google Ads under Goals, or the
-   Microsoft equivalent in `paid-social-and-bing.md`. Write it as a PM task with the exact click path and
-   settings, get confirmation on the table, record who applied it and when.
+3. **What is editable by tool, and what is not.** `ppc_google_conversion_actions` operation
+   conversion-action-update edits status (ENABLED | HIDDEN - REMOVED is refused on this lane by design,
+   use HIDDEN to retire from reporting), `include_in_conversions_optimization` (in/out of Smart Bidding -
+   change deliberately, this changes what bidding optimizes toward), value and `always_use_default_value`
+   (CAUTION: true flattens every conversion to the default value and destroys transaction-level revenue
+   reporting), and phone_call_duration_seconds. Counting (`count_type`) and the click-through lookback
+   window are CREATE-time parameters with no update op: fixing those is still dashboard work in Google
+   Ads under Goals, or the Microsoft equivalent in `paid-social-and-bing.md`. Either way: write the
+   change as a row, get confirmation on the table, record who applied it and when.
 4. After the change: mark the date in memory as a reporting discontinuity, freeze bidding-strategy changes
    on affected campaigns for 14 days while smart bidding relearns, re-baseline target CPA against
    post-change data rather than the old blended figure.
@@ -179,9 +212,11 @@ On any MISCONFIGURED or NOISE finding, and once per quarter regardless.
 
 The agency edge. It teaches smart bidding the difference between a form fill and a customer.
 
-**Preconditions, all four.** An Upload-source conversion action exists in the Ads account (created in the UI
-under Conversions, Import; no tool here creates it, so if it is missing that is a PM task with the click
-path, not a workaround). The site captures `gclid` on submit and carries it into the CRM record. The client
+**Preconditions, all four.** An Upload-source conversion action exists in the Ads account (if missing,
+create it with `ppc_google_conversion_actions` operation conversion-action-create with
+`type_: "UPLOAD_CLICKS"` - note the trailing underscore on `type_` - per `google-ads-advanced.md`
+section 8; confirm it first, since a new action changes what the account reports). The site captures
+`gclid` on submit and carries it into the CRM record. The client
 has a definition of the outcome (closed-won, booked job, qualified lead) and a value for it. Memory records
 the conversion action id you upload against: the wrong id silently trains the wrong thing.
 
@@ -300,13 +335,15 @@ to see one thing over time, including what a campaign did around the date you ch
 Ecommerce arrives with real revenue. Lead gen arrives with a value of zero, which makes ROAS meaningless and
 every lead look equally good to the algorithm.
 
-1. Two inputs, from memory or the client: average closed deal value, lead-to-close rate. `memory_create` if
-   absent.
+1. Two inputs, from memory or the client: average closed deal value, lead-to-close rate. If absent,
+   record them via the read-merge-write memory protocol (never a bare `memory_create` past first run).
 2. Expected lead value = deal value x close rate. Target CPA is the fraction of that which leaves the margin
    the client has named.
 3. Where lead types differ materially (demo request vs newsletter signup), give them different values rather
-   than one blend, so bidding stops treating them as interchangeable. Value settings are dashboard edits on
-   the conversion action; no tool here does it, so it is a PM task with the exact figures.
+   than one blend, so bidding stops treating them as interchangeable. The default value is editable by
+   tool: `ppc_google_conversion_actions` conversion-action-update `params.value` (avoid
+   `always_use_default_value: true` unless the client accepts losing transaction-level revenue) - one
+   confirmed change per action, with the figures in the PM task.
 4. Then run Play 3: offline import replaces the estimate with the actual.
 5. Report the derivation, not just the number. A client who understands why a lead is worth 340 argues with
    the assumption rather than with your CPA.
@@ -428,11 +465,13 @@ loop `ppc_sync` hoping for a different outcome.
   often than the model drifted.
 - **Protected and brand campaigns:** measure, report, propose, never write. Client urgency is not a reason
   to skip the batch confirmation on an upload; the confirmation is the record of what was approved.
-- **When a capability has no tool, say so and name the fallback.** Conversion-action editing, Upload-source
-  action creation, pixel and CAPI configuration, and analytics-side reconciliation are dashboard or web-team
-  work. For the account's own documentation, `hiveku_docs_search` and `hiveku_docs_get`; for external
-  platform behavior and policy changes, `web_search`, `web_scrape`, `web_extract`, `web_map`, `web_crawl`.
-  Never imply a tool exists because it would be convenient.
+- **When a capability has no tool, say so and name the fallback.** Count-type and lookback-window edits,
+  Meta pixel creation, CAPI engineering, and analytics-side reconciliation are dashboard or web-team
+  work. (Conversion-action create/update and Upload-source action creation ARE tools now - Play 2 and
+  Play 3 name them; do not send those to the dashboard.) For the account's own documentation,
+  `hiveku_docs_search` and `hiveku_docs_get`; for external platform behavior and policy changes,
+  `web_search`, `web_scrape`, `web_extract`, `web_map`, `web_crawl`. Never imply a tool exists because
+  it would be convenient.
 
 ---
 

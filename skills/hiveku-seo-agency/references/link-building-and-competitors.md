@@ -386,3 +386,67 @@ competitor; disavow; anchor-distribution reports; competitor link velocity. All 
 actions or `web_*` research, mirrored into PM tasks and memory. And `seo_project_get` is not the
 SEO-project read: it carries site-level SEO settings and takes the builder project id, not the
 `seo_list_projects` id.
+
+---
+
+## 7. The metered vendor profile catalog and the outreach program (moved from SKILL.md Play 5)
+
+This section carries SKILL.md's Play 5 body. The plays above (A-F) run on the project-scoped
+`seo_*` surface; the catalog below is the per-call-billed DataForSEO `backlinks_*` family -
+same cost rules as `references/metered-research-suite.md` (batch, persist, never re-pull
+unchanged data), and it answers for ANY domain, ours or a competitor's.
+
+Profile (target = any domain, ours or theirs):
+- `backlinks_summary` - topline backlinks, referring domains, rank. Run monthly for
+  us + the competitor set.
+- `backlinks_backlinks` - individual links, filterable; `backlinks_referring_domains`
+ - domain-level rollup.
+- `backlinks_anchors` - anchor-text distribution; flag over-optimized exact-match
+  anchors before they become a problem.
+- `backlinks_bulk_spam_score` - spam scores in bulk. A spike in high-spam referrers
+  is a hygiene item, not a panic item.
+- `backlinks_timeseries_new_lost_summary` - new/lost trend over time;
+  `seo_new_lost_backlinks({ project_id, since })` - project-scoped delta since the
+  last review.
+
+Prospecting:
+- `seo_backlink_opportunities({ project_id })` - built-in gap analysis against
+  tracked competitors.
+- `backlinks_domain_intersection` - who links to multiple competitors but not us.
+- `backlinks_page_intersection` - who links to the competitor PAGES ranking for our
+  target keyword (link gap for a single SERP - the highest-relevance list there is).
+- Digital-PR angles: `talk_to_department({ domain: 'seo', message })` with the
+  client's assets (proprietary data, tools, expertise) to generate campaign angles
+  worth a link. Persist chosen angles as pm tasks with owners and deadlines.
+
+(Play C above documents `seo_backlink_opportunities`' real behavior: the endpoint ignores
+`project_id`, so filter by `target_domain` yourself on multi-site accounts.)
+
+Rule: links to money pages arrive slowly and look unnatural when forced. Aim campaigns
+at linkable assets, then route the authority internally (`seo_internal_links`).
+
+Running the outreach (cross-discipline with Outbound - this is a paid agency service):
+1. Build the target list from the prospecting tools above. For each domain record WHY
+   it should link: which of our pages/assets, and the competitor link that proves the
+   relevance (from `backlinks_page_intersection`).
+2. Find the human: `web_search` / `web_scrape` the site for author, editor or
+   contact pages; for local prospects `seo_research({ action: 'gbp-locations', query,
+   location_name })` finds businesses by query and `seo_research({ action: 'gbp-info', domain })`
+   (or `target` / `place_id`) returns one business's snapshot. Both spend DataForSEO credits
+   under the account's monthly SEO research cap - confirm the spend with the human before
+   calling. Verify addresses before loading - list quality IS deliverability.
+3. Hand the list to the outbound program (the `hiveku-outbound-agency` skill has a
+   dedicated "Backlink outreach campaigns" section): contacts loaded via
+   `crm_contacts_bulk_create` tagged link-outreach, a Smartlead campaign for the
+   sends, pitch copy per segment via `talk_to_department({ domain: "outbound" })`.
+4. Track wins here: replies flow through the outbound triage loop; verify placements
+   with `backlinks_backlinks` / `seo_new_lost_backlinks`; log each won link
+   (`crm_create_activity`) and report links-won + cost-per-link in the monthly report.
+
+Visibility caveat on step 4: `crm_create_activity` is a real tool but is NOT visible to a
+`marketing-seo` scoped key - that profile carries only the seven CRM contact tools
+(`crm_contacts_bulk_create` in step 3 IS one of them). On a scoped key, record the won link as
+a PM task instead, which also matches section 6's rule that the PM task is the record of a won
+link. Outreach never sends from this skill: drafting and handing off is this file's job,
+sending is Outbound's, and "just send the pitches from here" is refused - including the
+workarounds of sending through a survey, a GBP review reply, or `social_create_post`.

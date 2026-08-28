@@ -195,6 +195,31 @@ The half-done state produces the confusing bug report: **an RLS table with no po
 Once a project legitimately has a database. To the client this is **"your project database"**; never name the underlying provider.
 
 - **Storage buckets are private by default.** RLS on a bucket means policies on `storage.objects`, not a bucket setting. The zero-rows rule applies: no matching policy returns nothing, and the symptom is broken images rather than an error.
-- **Auth redirect URLs sync at provision time**, against the hostnames that existed then. **Re-sync after adding a custom domain**, or flows started from the new hostname bounce to a URL that is not allowlisted. Symptom: login works on the preview and fails on the live domain right after a domain was attached.
-- **SMTP:** prefer the built-in configuration (an SES proxy, no third-party signup). It **requires a verified sender domain first**, so verify before configuring and before promising the client that password resets work.
-- **Edge Functions are single-file TypeScript only.** `jsr:` and `https:` imports work; **no local cross-file imports**, because each file compiles independently, so a shared `./utils.ts` beside your function does not resolve. Inline the helper. Set `verify_jwt=False` for public webhook receivers or the sender gets a 401. **Never set `SUPABASE_SERVICE_ROLE_KEY` in secrets** (auto-injected; a manual copy is a credential you now own). Include the CORS handler inline.
+- **Auth redirect URLs sync at provision time**, against the hostnames that existed then. **Re-sync after adding a custom domain**, or flows started from the new hostname bounce to a URL that is not allowlisted. Symptom: login works on the preview and fails on the live domain right after a domain was attached. The re-sync is a tool call: `supabase_sync_redirect_urls` sets the site_url plus the URI allow-list - call it after deploying so OAuth redirects and magic-link emails work.
+- **SMTP:** prefer the built-in configuration (an SES proxy, no third-party signup) - `supabase_configure_hiveku_smtp` points Supabase Auth emails at Hiveku Email infra and needs only `sender_email`. It **requires a verified sender domain first**, so verify before configuring and before promising the client that password resets work.
+- **Edge Functions are single-file TypeScript only.** Deploy them with `supabase_edge_functions_deploy` (`functions` is an array of `{ slug, source, import_map?, verify_jwt? }`). `jsr:` and `https:` imports work; **no local cross-file imports**, because each file compiles independently, so a shared `./utils.ts` beside your function does not resolve. Inline the helper. Set `verify_jwt=False` for public webhook receivers or the sender gets a 401. **Never set `SUPABASE_SERVICE_ROLE_KEY` in secrets** (auto-injected; a manual copy is a credential you now own). Include the CORS handler inline.
+
+## Part 8: Deletion preflights and bulk purge
+
+`cms_delete_entry` / `cms_delete_collection` are destructive and can break pages that render
+the collection. Before any delete, run the preflight the warning implies:
+
+- `cms_back_references({ project_id, collection_id, slug })` BEFORE `cms_delete_entry` - it
+  lists every entry across the manifest whose reference / multi-reference fields point at the
+  target. Deleting a referenced entry leaves dangling slugs that downstream renderers HIDE,
+  so the symptom is content quietly missing, not an error. Offer to repoint or warn the user
+  first. Returns `{ references: [{ collection_id, slug, field }] }`.
+- `cms_asset_references` BEFORE renaming or deleting an asset - it finds every CMS entry that
+  references the asset, and accepts either a relative site path (`/images/foo.jpg`) or an
+  absolute S3 URL (both match). Repoint or warn before touching the file.
+- After removing a collection a page depends on, check the routes still resolve
+  (`project_files_validate_orphan_routes`).
+
+Purging at scale: `cms_bulk_delete` is the ONLY correct way to delete many entries (up to
+500 slugs per call) - for example after `cms_delete_collection`. NEVER loop or parallelize
+`cms_delete_entry` for a wipe: a parallel per-entry fanout starves the builder's DB pool and
+expires its write locks (the 2026-08-20 incident). Server-side it deletes each slug's live
+file AND its draft shadow sequentially, cancels pending schedules, and fires delete webhooks
+for live entries. Per-slug outcomes come back in the response: `deleted` / `not_found`
+(already gone - treat as success; retries are idempotent) / `error`. The slug list is
+explicit and reviewed with the user - never pattern-derived.

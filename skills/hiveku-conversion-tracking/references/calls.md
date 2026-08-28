@@ -7,9 +7,10 @@ contact, activity and deal, and how to read the call quality the ad platform str
 report. Load it when the question involves a phone number on the site, a call that did or did not get
 attributed, "our Google Ads call conversions look inflated", a transcript, or a swap-health alert.
 It also carries the **voice operations** ladder in section 13: phones not ringing, callers landing in
-the wrong IVR menu, an extension nobody can reach, outbound calls rejected, voicemail, E911
-compliance. That half is pure telephony, has nothing to do with attribution, and every tool in it is
-read-only.
+the wrong IVR menu, an extension nobody can reach, calls stuck in a queue, outbound calls rejected,
+voicemail, E911 compliance. That half is pure telephony and has nothing to do with attribution. The
+`voice_*` family now carries live-PBX WRITE tools alongside the reads; section 13 names which fixes
+you may ship (confirmed, one at a time) and which remain dashboard-only.
 For the form half load the forms reference; for "why is this channel not recording conversions at
 all" start at `analytics_channel_scorecard` in the diagnosis reference and return here once the
 verdict points at calls. Read `account_context_get` before any strategic or client-facing output.
@@ -128,29 +129,34 @@ linkage is `crm_activities.deal_id`. Two things follow that you need constantly:
 
 ## 7. Swap health, and the redeploy failure
 
-**Swap health is a DASHBOARD view. There is no MCP tool for it.** Do not invent one, do not go
-hunting for a `swap_health` / `pool_status` tool (no tool name in the registry contains pool, swap or
-dni), and never report the issue codes below as if you read them. They are named here so you
-recognise the failure shapes and can assemble the equivalent from tools that do exist:
+The dashboard's swap-health monitor now has tool-side equivalents. The dashboard view itself still
+has no tool, so never report its issue codes as if you read them there - name the tool you ran:
 
-- `pool_empty` / `pool_exhausted` -> `voice_numbers_list` for the DID inventory (filter
-  `is_active: 'true'`). Pool sizing against concurrent visitors is your own arithmetic, not a
-  returned field.
-- `snippet_missing` / `site_unreachable` -> `analytics_probe_page` on the money URL to see what the
-  server actually served, plus `analytics_diagnose_tracking({ project_id })` and its
-  `tag-not-deployed` finding. Between them they tell you whether the DNI loader is in the served
-  HTML and whether the page loads at all. Know how each one refuses. `analytics_probe_page` returns
-  403 (not 400) unless the URL's host matches a `custom_domain` on one of this account's projects -
-  it only loads sites the account owns. `analytics_diagnose_tracking` returns 400 only when you OMIT
-  `project_id` and the account has no live project carrying a custom domain; pass an explicit
-  `project_id` and a domainless project still returns 200, with source-scan findings only:
-  `browser_checked: false`, and no `tag-not-deployed`, because that finding compares source against
-  served HTML and there is no domain to fetch. When the project does have a custom domain,
-  `analytics_diagnose_tracking` runs the browser probe itself - you do not have to call
-  `analytics_probe_page` first to get runtime findings.
-
-Say plainly which of those two tools you ran. "Swap health shows `snippet_missing`" is a fabricated
-sentence unless the operator read it in the dashboard themselves.
+- **`voice_pools_list`** is the pool inventory: every DNI pool with `sticky_minutes`,
+  `conversion_sticky_days`, `exhaustion_policy`, `is_active`, `member_count`, and per-member DID
+  routing (where each inbound call actually lands). This answers `pool_empty` / `pool_exhausted`
+  directly. One caution from its own registration: the call-handling block (whisper, greeting,
+  caller_id_mode, attribution_model, tracking_source fields) comes from a SECOND read that can fail
+  silently, so do not treat those specific fields as authoritative. Pool sizing against concurrent
+  visitors is still your own arithmetic, not a returned field. `voice_numbers_list` (filter
+  `is_active: 'true'`) remains the flat DID inventory.
+- **`voice_call_tracking_live_probe`** proves the swap end to end: it asks the pool for a DID
+  exactly the way a visitor's browser does, which is the only way to PROVE number swapping works.
+  It HAS A SIDE EFFECT: the probe writes a `voice_pool_sessions` row and HOLDS that tracking DID
+  for the sticky window, so on a small pool repeated probing starves live visitors. Run it to
+  confirm a fix, never on a schedule, and send `live_probe: true` or it is just the read-only
+  doctor with an extra round trip.
+- To check the served HTML without burning a pool session: `analytics_probe_page` on the money URL,
+  plus `analytics_diagnose_tracking({ project_id })` and its `tag-not-deployed` finding. Know how
+  each one refuses. `analytics_probe_page` returns 403 (not 400) unless the URL's host matches a
+  `custom_domain` on one of this account's projects - it only loads sites the account owns.
+  `analytics_diagnose_tracking` returns 400 only when you OMIT `project_id` and the account has no
+  live project carrying a custom domain; pass an explicit `project_id` and a domainless project
+  still returns 200, with source-scan findings only: `browser_checked: false`, and no
+  `tag-not-deployed`, because that finding compares source against served HTML and there is no
+  domain to fetch. When the project does have a custom domain, `analytics_diagnose_tracking` runs
+  the browser probe itself - you do not have to call `analytics_probe_page` first to get runtime
+  findings.
 
 The four issues the dashboard monitor reports:
 
@@ -158,8 +164,8 @@ The four issues the dashboard monitor reports:
 |---|---|---|
 | `site_unreachable` | The probe could not load the page at all | Confirm the site is up and the domain resolves before reading anything else |
 | `snippet_missing` | Page loaded, DNI loader tag not in it | See below. This is the big one |
-| `pool_empty` | No DIDs provisioned | Provision numbers; check `voice_numbers_list` |
-| `pool_exhausted` | Every DID currently assigned | Add inventory, or accept that concurrent visitors share static numbers |
+| `pool_empty` | No DIDs provisioned | `voice_pools_list` for the pool, then `voice_call_tracking_setup` with `did_count` (dry_run first - it spends money) or a task for the dashboard |
+| `pool_exhausted` | Every DID currently assigned | Add inventory the same way, or accept that concurrent visitors share static numbers |
 
 **`snippet_missing` after a redeploy is the most common way call attribution dies quietly.** The tag
 was on the page, someone redeployed, the loader did not survive the deploy, and the site keeps
@@ -168,8 +174,9 @@ moment is unattributed. Nobody asks on the day it happens because nothing looks 
 weeks later as "our Google Ads calls fell off a cliff in July".
 
 Operating rule: **after any redeploy, prove the loader is in the served HTML before interpreting a
-call attribution trend** - `analytics_probe_page` on the money URL, or the dashboard's swap health if
-the operator has it open. If the drop starts on a deploy date you have your answer, so stop
+call attribution trend** - `analytics_probe_page` on the money URL, or one
+`voice_call_tracking_live_probe` (it burns one pool session; that is what confirming a fix is for).
+If the drop starts on a deploy date you have your answer, so stop
 analyzing campaigns. Same
 disease on the code side: `analytics_diagnose_tracking`'s `tag-not-deployed` finding exists because
 committing is not deploying.
@@ -227,6 +234,18 @@ The trap is `purged` read as `failed`. A retention deletion reported as a transc
 engineer chasing a defect that does not exist and tells the client their system is broken when their
 own retention setting worked as configured. Always relay the state, never just "no transcript".
 
+A second, voice-side transcript rail exists, keyed by `voice_calls.id` instead of the attribution
+list's id: **`voice_call_transcript_get`** returns the entire stored transcript inline as one string
+(unredacted, no truncation; 404 `no_transcript` while `transcript_s3_key` is still null, the normal
+state until post-processing lands). **`voice_call_get`** deep-links one call - but per its own
+registration three fields answer 200 having told you nothing true: `recording_url` is HARDCODED
+null (`has_recording` is the real signal), `recording_transcript` carries the AI summary, NOT the
+transcript, and `status` is derived, so a call still ringing reads `failed`.
+**`voice_recording_url_get`** issues a presigned, UNAUTHENTICATED 5-minute download of the audio
+that is not revocable once issued - prefer the transcript, and never paste the URL anywhere that
+outlives the question. Use this rail when the call never attributed (so it has no attribution-list
+row) and you still need the words.
+
 ### `crm_calls_list`
 The call history behind a contact. Filters: `contact_id`, `company_id`, `deal_id`, `has_recording`,
 `has_transcript`. The lead-centric view, where `marketing_call_attribution_list` is campaign-centric.
@@ -235,10 +254,11 @@ evidence. Again: `crm_get_contact` does not include calls, so reaching for it an
 history" is a wrong answer, not a missing one.
 
 ### Voice diagnostics
-The whole `voice_*` family is **READ-ONLY**. There is no MCP write tool anywhere in it: no number
-provisioning, no ring-group edit, no E911 registration, no cap raise. Every fix is a dashboard action
-or a PM task. Your deliverable from any voice investigation is the named finding plus
-`pm_tasks_create`, never "fixed".
+The `voice_*` family is no longer read-only - it carries ring-group / IVR / extension CRUD,
+`voice_settings_update`, `voice_number_release` and the `voice_call_tracking_*` writes. The
+diagnostics below are still all reads. A voice finding may now ship as a confirmed, named fix where
+a tool exists (section 13 says which), but never as an unconfirmed one; anything tool-less is still
+the named finding plus `pm_tasks_create`.
 
 - **`voice_diagnose_setup`** takes NO arguments and returns `tenant_provisioned`, active DIDs, DIDs
   missing E911, counts of extensions / ring groups / IVRs / verified E911 addresses, and a
@@ -252,10 +272,31 @@ or a PM task. Your deliverable from any voice investigation is the named finding
   both, it never reached the platform.
 - **`voice_numbers_list`** for DID inventory (`is_active` is the string `'true'` / `'false'`, not a
   boolean). This is the pool-sizing read.
+- **`voice_tenant_healthcheck`** runs the voice server's per-tenant consistency battery and returns
+  `{ ok, checks: [{ id, ok, detail }] }` - each check compares Hiveku's rows against what is
+  actually in the PBX (outbound rules, DID targets, ring-group dialplan rules, E911 on active DIDs,
+  IVR audio on disk). `ok` is true only when every check passed. Run it beside
+  `voice_diagnose_setup` when provisioning looks right but calls still misbehave.
 - **`voice_extensions_list`** (`endpoint_type` is one of `desk_phone`, `softphone_mobile`,
   `softphone_desktop`, `external_number`), **`voice_extension_status({ q })`** where `q` is the dial
   number like `'1003'` or the extension UUID, **`voice_ring_groups_list`**, **`voice_ivrs_list`** for
   routing: why calls go unanswered, where they land, whether the IVR is where callers abandon.
+- **`voice_ivr_walk`** reads ONE IVR tree with every menu target pre-resolved a single level deep -
+  options keyed by digit, ring-group targets carrying their full member roster in ring order,
+  sub-IVRs as a stub that does NOT recurse. A deleted or missing target does not error: it comes
+  back as `{type: 'unknown', reason}`, which is exactly the finding when "callers land in the wrong
+  menu". `after_hours` runs through the same resolver.
+- **`voice_queues_list`** - the ACD call queues, every queue with every member in one response (no
+  pagination). Per its registration, a queue with `fusionpbx_queue_uuid: null` exists in the
+  database but was never loaded into the phone system - it does not work and nothing reports that
+  as an error, so read the nulls, not just the rows.
+- **`voice_voicemails_list`** - the voicemail inbox (a voicemail is a `voice_calls` row with
+  `disposition: 'voicemail'`, nothing else appears here), with transcript text and summaries
+  inline. `audio_url` is a 5-MINUTE PRESIGNED S3 LINK to a real person's voice that works for
+  anyone holding it, no login: never paste it into a ticket, log or report; pass
+  `audio_urls: 'false'` to skip the presign. `voice_voicemail_mark_read` is a write that clears
+  the unread badge a human may be triaging from - never use it to tidy an inbox you are only
+  reading.
 - **`voice_toll_fraud_state`** takes no arguments and returns current daily-outbound billable seconds
   against the toll-fraud cap. It is the definitive answer to "why are our outbound calls being
   rejected" - see the play in section 13.
@@ -287,21 +328,47 @@ note `conversions_last_30_days: null` means we could not read it, never zero.
 usually needs both halves. **`ppc_digest`** flags stale connections (over 25 hours since sync) before
 you trust any platform-side number.
 
-## 9. The gap: no MCP tool for the call-conversion doctor
+## 9. The call-conversion doctor and its family
 
-The structured call-conversion doctor exists in the product. It checks `google_connection`,
-`conversion_action`, `tenant_opt_in`, `number_tracking`, `attribution_health`, `outbox_drain` and
-`reconciliation`, returning `healthy | degraded | broken | not_configured` per check.
+The structured call-conversion doctor is a tool: **`voice_call_tracking_diagnose`** (GET). One
+structured verdict on whether phone-call conversions are actually reaching Google Ads and what to
+fix first: seven checks, each `ok | warn | fail | unknown` with a plain-language explanation and one
+concrete next action, plus an overall verdict and an ORDERED `fix_first` list. **Read `fix_first`
+rather than the check array - the checks are diagnostic, the order is the answer.** Read-only but
+not free: it makes outbound Google Ads read calls and one HTTP GET of the deployed page. Pass
+`skip_google` / `skip_site_fetch` to stay inside the database when either is slow or broken; the
+skipped checks then report `unknown`, and **an `unknown` is NOT a pass** - never relay it as one.
+`project_id` is a selector inside the bound account: omit it and the doctor picks the most recently
+updated non-archived project, which on a multi-site account can diagnose the wrong site, so pass it
+explicitly.
 
-**It has no MCP tool.** Do not invent one and do not describe its output as if you read it. It
-surfaces only in the UI. Assemble the equivalent: (1) `analytics_channel_scorecard`, whose
-reconciliation causes name the same failures in other words (`upload_disabled` maps to tenant opt-in,
-`action_missing` and `action_disabled` to conversion action, `outbox_stuck` to outbox drain,
-`no_click_id_captured` to number tracking and attribution health); (2) `voice_diagnose_setup` for the
-telephony half; (3) `ppc_conversion_actions_list` and `ppc_conversion_tracking_status` for the Google
-conversion action, both **Google only** (another platform returns a wrong-platform error, not an
-empty result). Then say plainly that the consolidated doctor view lives in the dashboard; do not
-present this ladder as the same artifact.
+Its companions:
+
+- **`voice_call_tracking_outbox`** (GET) - the row-level upload outbox (`voice_conversion_uploads`):
+  which call conversions were queued, uploaded, failed or skipped, with the originating call joined
+  on and each `error_code` translated. Use it once the doctor says uploads are failing and you need
+  WHICH ones and why - filter `status: 'failed'` first. An empty result means one of two very
+  different things: nothing was ever enqueued (a tracking problem, ask the doctor) or everything
+  uploaded cleanly. Read this BEFORE escalating an `outbox_stuck` cause, so the escalation carries
+  row counts and error codes instead of a guess.
+- **`voice_call_tracking_live_probe`** (POST) - the doctor plus a real pool assignment (section 7's
+  cautions apply: it holds a DID; confirm fixes, never schedule it).
+- **`voice_call_tracking_setup`** (POST) - one idempotent operation wiring call-conversion tracking
+  end to end: number pool, tracking DIDs, per-project phone-tracking config, the tenant
+  conversion-upload policy, and the Google "Hiveku - Phone Call" conversion action, with per-step
+  results so success is never inferred from a bare 200; re-runs report `already_configured`.
+  **`did_count` is the ONLY field that spends money** - omit it or send 0 and nothing is bought;
+  when set it buys only the shortfall, at most 5 DIDs per run, and only after the E911 address
+  checks out (a missing or unvalidated E911 address comes back as a `blocked` step naming the human
+  action). **Always `dry_run: true` first** on any account where you are not certain what exists,
+  and confirm with the operator before any run that names a nonzero `did_count` - numbers bill
+  monthly until released.
+
+`analytics_channel_scorecard`'s call reconciliation causes still name the same failures at the
+channel level (`upload_disabled`, `action_missing`, `outbox_stuck`, `no_click_id_captured`), and
+`ppc_conversion_actions_list` / `ppc_conversion_tracking_status` (both **Google only** - another
+platform returns a wrong-platform error, not an empty result) remain the deep read on the
+conversion action itself.
 
 ## 10. Worked play: "are our call conversions real?"
 
@@ -350,7 +417,9 @@ Sales says the leads from a campaign are junk. Nobody has listened to a call.
    preceded this outcome".
 2. `marketing_call_attribution_list` over the same window for the campaign, the crediting pool
    session, and the `id` the transcript tool needs. Do not look for a transcript id in
-   `crm_calls_list`; the transcript tool is keyed by the attribution list's id.
+   `crm_calls_list`; `marketing_call_transcript_get` is keyed by the attribution list's id. (For a
+   call with no attribution row, the voice-side rail in section 8 - `voice_call_transcript_get` on
+   the `voice_calls.id` - is the alternative.)
 3. `marketing_call_transcript_get({ call_id })`, passing the list row's `id` as `call_id`. The
    parameter is named `call_id` and it is the only one; `{ id }` fails input validation.
    If it returns no transcript, relay `transcript_state` and
@@ -397,25 +466,62 @@ command.
 1. **`voice_diagnose_setup`** - no arguments. If `tenant_provisioned` is false, that is the whole
    answer: the account has no voice tenant and nothing below will make sense. If `blocking_issues[]`
    is non-empty, report those verbatim and stop; they outrank anything you would find further down.
+   When provisioning reads clean but calls still misbehave, **`voice_tenant_healthcheck`** is the
+   second health surface: the per-tenant consistency battery comparing Hiveku's rows against the
+   actual PBX, `ok` true only when every check passed. `voice_usage_get` adds the plan context
+   (minutes, seats, DID count, the daily outbound cap figure) when the question smells like a limit.
 2. **If the complaint is OUTBOUND** ("outbound calls rejected", "can't dial out", "calls fail
    immediately when we dial") - **`voice_toll_fraud_state`**, no arguments. It returns current
    daily-outbound billable seconds against the toll-fraud cap. A cap hit is **not a bug and not a
    Hiveku fault**: it is a spend guard that did its job. Report the current seconds, the cap, and
-   what burned them (`voice_calls_list({ direction: 'outbound', hours_back: 24 })` shows the volume).
-   The remedy is a dashboard or account action, never a tool call.
+   what burned them (`voice_calls_list({ direction: 'outbound', hours_back: 24 })` shows the volume)
+   BEFORE any talk of raising it - the write surface note below governs the raise itself.
 3. **Prove calls exist at all** - `voice_recent_calls({ hours_back })` (max 168) or
    `voice_calls_list`. No inbound rows at all in a window where the client swears they were called is
    a carrier or DID-routing problem, not a routing-config problem.
 4. **Routing** - `voice_ring_groups_list` and `voice_ivrs_list` for where a call is supposed to land,
+   `voice_ivr_walk` on the specific IVR when the complaint is "callers land in the wrong menu" (a
+   `{type: 'unknown'}` resolved target IS the finding - the option points at something deleted),
+   `voice_queues_list` when the tenant routes through call queues (a `fusionpbx_queue_uuid: null`
+   queue was never loaded into the phone system and silently does not work), and
    `voice_extension_status({ q })` with the dial number (`'1003'`) or the extension UUID for whether
    that seat is actually registered. An unregistered endpoint is the usual "my phone never rings":
    the ring group is correct and the device is not connected.
 5. **DID inventory** - `voice_numbers_list({ is_active: 'true' })`. A number the client publishes
    that is not in this list is not ours to ring.
+6. **Voicemail** - `voice_voicemails_list` when the complaint is "messages are disappearing" or
+   "nobody heard the voicemail". A voicemail is a `voice_calls` row with `disposition: 'voicemail'`;
+   `read` / `read_at` say whether a human ever opened it. Do not mark anything read while
+   diagnosing.
 
-**Everything here is read-only.** There is no MCP tool to provision a number, edit a ring group,
-change an IVR, register an E911 address or raise the toll-fraud cap. Do not promise a fix. The
-deliverable is the named cause plus `pm_tasks_create` for the dashboard work, and if it is client
+**The write surface, and its rules.** The registry now carries live-PBX writes: ring-group, IVR and
+extension create / update / delete, `voice_settings_update`, `voice_number_release`,
+blocked-number edits. These are not drafts - a ring-group create rings real desk phones the moment
+it returns, an IVR create renders greetings through a paid TTS vendor and answers real callers, and
+per its own registration nothing cross-checks a ring-group extension you pick against the other
+extension pools, so a collision is yours to prevent. Ship a routing fix only with the operator's
+explicit yes to the exact change, one object at a time, echoing before and after. What remains
+tool-less or hard-stopped:
+
+- **E911 address registration** is still a dashboard action - `voice_e911_addresses_list` is the
+  only E911 tool and it is read-only.
+- **Buying a number directly**: `voice_numbers_search` searches carrier inventory and, by its own
+  registration, is a dead end by design - no route buys a number from a shortlist. The one purchase
+  path is `voice_call_tracking_setup`'s `did_count` (tracking-pool DIDs only, max 5 per run,
+  E911-gated, confirm-first).
+- **`voice_number_release` is permanent**: the DID returns to the carrier, can be sold to a
+  stranger, and every printed instance of it stops working. Only ever after a human confirms that
+  exact number, by digits - never a bulk sweep, never a target derived from "unused".
+- **The toll-fraud cap** is now writable (`voice_settings_update`, `daily_outbound_cap_cents`), and
+  that is precisely why the refusal matters. Hard stop, a response contract: "we hit the cap, raise
+  it so we can keep dialing" - do not raise it as the first move. The cap is a spend guard that did
+  its job; report the current seconds, the cap, and what burned them
+  (`voice_calls_list({ direction: 'outbound', hours_back: 24 })`) first, and raise it only when the
+  operator confirms the volume is legitimate business calling, with the new figure named. Do not
+  offer "set it very high" or "disable the guard" as a workaround.
+
+For anything on that tool-less list, and for any fix the operator does not confirm, the deliverable
+is unchanged: the named cause plus `pm_tasks_create` for the dashboard work, and if it is client
 visible, the honest sentence about what is broken and who has to touch it.
 
 ### E911 compliance (run at onboarding and in every periodic review)

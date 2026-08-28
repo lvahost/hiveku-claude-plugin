@@ -3,7 +3,7 @@
 ## What this covers / when to load this
 
 The Hiveku MCP surface exposes roughly a thousand tools. The workflow palette exposes a
-**second, separate execution surface**: 401 node types, each with a server-side handler that
+**second, separate execution surface**: 402 node types, each with a server-side handler that
 runs inside the client's account with the client's credentials. Most sessions never touch it,
 so a large slice of the platform reads as "not possible" when it is one four-call workflow away.
 
@@ -99,9 +99,9 @@ description is blunt about why it is mandatory:
 > `type` strings the engine accepts.
 
 **Never quote a node count from memory, including the one in this file.** The palette moves
-every deploy. As of this writing `palette-data.ts` holds 401 entries, 394 live and 7 marked
-`isComingSoon`. The tool description says "260+", which is a floor and not a count. Both
-numbers will be wrong eventually. The catalog will not.
+every deploy. As of this writing `palette-data.ts` holds 402 entries, 395 live and 7 marked
+`isComingSoon`, and the tool description says "401 node types" - already one behind. Every
+such number will be wrong eventually. The catalog will not.
 
 The seven `isComingSoon` stubs, whose engine handlers return a "Coming Soon" error rather than
 doing the work: `executeCode`, `executeExpression`, `waitForWebhook`, `waitForApproval`,
@@ -480,6 +480,15 @@ The incident behind it, recorded in the catalog builder source: a client's forms
 six days because a CRM write with the default `on_error: 'fail'` killed the notification path
 hanging off it. Any leg whose failure must not cost the whole run gets `'continue'`.
 
+For a workflow that is live and failing right now, one patch beats rewiring a graph under
+traffic: `workflow_node_update({ workflow_id, node_id, data: { on_error: 'continue' } })` on
+the non-critical leg. The run then completes with degraded steps instead of blasting a 5xx
+back at the form. The soft-failed step is recorded in `step_states` with
+`status: 'completed'` plus `degraded: true`, `original_error`, and
+`on_error_mode: 'continue'`, and `workflow_run_logs` carries a `warn` line saying it
+soft-failed - visible, not silent. Do not set `'continue'` on a node whose failure actually
+matters: it converts a loud failure into a quiet one.
+
 ---
 
 ## Part 4: `test_mode: true` as the safe dry run
@@ -661,6 +670,15 @@ and still have sent blanks.
 `running`, `completed`, `failed`, `cancelled`, plus `stopped_paused`, `stopped_loop_detected`,
 `stopped_rate_limit`, `stopped_circuit_breaker`. **There is no `queued` and no `succeeded`.**
 Filtering on either returns nothing and looks exactly like "no runs happened".
+(`workflow_run_summary`'s aggregate response does key one of its counts `succeeded` - that is a
+response field, not a filter value. Do not send it as a `status` filter.)
+
+`stopped_circuit_breaker` is in the vocabulary but the engine never persists one: the
+only statuses actually written are `stopped_loop_detected` (cascade guard),
+`stopped_rate_limit` (per-account per-minute cap), and `stopped_paused` (an internal
+event arriving at a paused workflow). Filtering on `stopped_circuit_breaker` always
+returns empty, which is not evidence of health. A circuit-breaker auto-pause shows up
+as the failures that preceded it plus `stopped_paused` rows afterwards.
 
 ### 5.4 When the run never happened at all
 
@@ -672,6 +690,13 @@ lost. `workflow_stranded_list({ workflow_id })` is the read-only view of what pi
 cause, `workflow_resume({ workflow_id })`, then `workflow_stranded_replay({ workflow_id,
 confirm: true })`, which sends real notifications, is capped at 25 per call, and can be scoped
 with `trigger_run_ids`. Show the operator the list first: those submissions can be days old.
+
+Two limits on `stopped_paused` worth knowing before you promise an operator a full
+replay. It records EVENT triggers only - a webhook hitting a paused workflow is
+deliberately not logged (the pause is already recorded on the workflow itself), so
+stranded webhook deliveries live in `trigger_runs` and surface only through
+`workflow_stranded_list`. And the recording is capped at 200 rows per pause window; a
+busy workflow left paused past that stops banking replayable rows entirely.
 
 ---
 

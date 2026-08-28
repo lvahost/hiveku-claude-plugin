@@ -49,8 +49,11 @@ then cosmetic tidying. The first two are weekly work; the last two are monthly a
 ## 2. Framework B: budget-constrained or rank-constrained
 
 The central diagnosis. `ppc_impression_share({ connection_id, days: 30 })` returns search impression share
-plus the two loss reasons, lost to budget and lost to rank. Google Ads only: no tool here reports IS for
-Microsoft (read it in the Microsoft UI, same matrix), and the concept does not exist on Meta or TikTok.
+plus the two loss reasons, lost to budget and lost to rank - Google Ads. Microsoft has its own:
+`ppc_bing_impression_share_report` (async) returns impression_share, lost_to_budget and lost_to_rank per
+campaign plus a `scaling_headroom` summary - budget_limited (>=10% lost to budget: raise-budget
+candidates) and rank_limited (>=20% lost to rank: bids or quality score, not budget) - and an
+impressions-weighted average IS. Same matrix below applies to both. The concept does not exist on Meta or TikTok.
 
 | Lost to budget | Lost to rank | CPA vs target | Lever |
 |---|---|---|---|

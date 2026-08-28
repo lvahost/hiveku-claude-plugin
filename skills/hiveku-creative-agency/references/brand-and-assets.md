@@ -1,5 +1,3 @@
----
-
 # The Brand System and the Media Library
 
 This is the manual for the two things every piece of creative work depends on before a pixel gets made: the account's brand system (the brand guide, the visual-system context, customer avatars, before/after grids) and the media library (folders, collections, items, and the usage graph that says whether an asset is safe to delete). Load it when you are standing up a new client, about to generate or source imagery, hunting for an asset that may already exist, staring at a template that came back off-brand, or asked to delete something. The design-canvas manual owns the layered editor; the video manual owns storyboards and the pipeline. This one owns what is upstream of both: what makes output on-brand, and where the pixels live.
@@ -14,7 +12,9 @@ Two facts shape the rest. `design_templates_list` returns its 52-template librar
 
 - **R1.** No `account_context_get({ domain: 'creative' })`. There is no `creative` domain; the visual-system domain is `branding`. An unlisted value is a server-side rejection, not a soft fallback.
 - **R2.** Do not generate before checking the library, and do not attach a design export or stock-photo URL by id - neither is in the library until you put it there (R14, Part 8).
-- **R3.** Do not call `media_delete` without running `media_usage_get` first. - **R4.** Do not call `brand_guide_purge` without an explicit instruction naming what is being purged. `brand_guide_delete` removes one guide; a purge is the wide blast radius, and there is no undo tool here.
+- **R3.** Do not call `media_delete` without running `media_usage_get` first, and NEVER pass `force=true` to get past its 409 `in_use` refusal on your own judgment - that refusal is the system telling you live content depends on the asset.
+- **R4.** Do not call `brand_guide_purge` without an explicit instruction naming what is being purged. `brand_guide_delete` SOFT-deletes one guide (flips `is_active`); `brand_guide_purge` hard-deletes an already-soft-deleted guide - it refuses 409 `still_active` on a live one and 409 `fk_constraint` while anything (typically custom fonts) still references it. The refusals are guardrails, not obstacles.
+- **R4b.** Deletion targets are never derived by pattern. "Delete everything untagged / older than X / unused this quarter" is a refusal with a reversible alternative (`media_bulk_move` to an archive folder, a review list) - deletion takes explicit ids the client named, one `media_usage_get` each.
 - **R5.** Do not use `stock_photos_download` to get an image into the Media Library. It cannot; it is the website-project lane only (Part 7).
 - **R6.** Do not invent brand values. No accent color, no secondary typeface, no tone rule means ask the client or read it off their site. A guessed hex ships across every template afterwards.
 - **R7.** Do not fabricate a logo. Not an SVG you drew, not a generated one, not a placeholder mark. A logo comes from the client.
@@ -37,13 +37,15 @@ Two facts shape the rest. `design_templates_list` returns its 52-template librar
 
 `creative` is not valid for either. Neither is `web`, `email`, `pm`, `accounting`, `voice`, or `knowledge`. When you need something the branding agent does not cover, load a valid context domain, draft directly with that hydration, and say plainly that is what you are doing; `agent_identity_get` is the other option, returning a department's full identity bundle so you can act as it without an upstream call - but it takes the SAME 15 domains as `account_context_get`, so it is not a way to reach `creative`, `web`, `email`, `pm`, `voice` or `knowledge`; pass it one of the valid domains or not at all. `list_departments` tells you which departments THIS account has enabled - a domain being in the enum is not entitlement.
 
+**Key-profile caveat.** `account_context_get` and `agent_identity_get` match no prefix or name in the `marketing-design` or `marketing` key profiles - on a department-scoped key both are tool-not-found, full-profile only. On a scoped key, hydrate through `talk_to_department` (always available on every profile) plus `brand_guide_get` and the `memory_` tools, and say which path you used.
+
 Re-read the `instructions` field `account_context_get` returns before every generative call. It is the account's standing orders, and it changes.
 
 ---
 
 ## Part 3. The brand guide, and what it actually drives
 
-Tools: `brand_guide_list`, `brand_guide_get`, `brand_guide_create`, `brand_guide_update`, `brand_guide_delete`, `brand_guide_purge`, `brand_guide_set_logo`.
+Tools: `brand_guide_list`, `brand_guide_get`, `brand_guide_create`, `brand_guide_update`, `brand_guide_delete`, `brand_guide_purge`, `brand_guide_set_logo`, plus the font family (`brand_guide_font_create` / `_get` / `_list` / `_update` / `_delete`) and the narration read (`brand_guide_voiceovers_get`).
 
 Treat the guide as a live configuration object with three consumers, not a PDF:
 
@@ -53,7 +55,17 @@ Treat the guide as a live configuration object with three consumers, not a PDF:
 
 **Read before writing.** `brand_guide_list`, then `brand_guide_get` on the one that matters. Do not assume the field shape from this manual - read the tool's own schema and an existing guide's payload. A field the schema does not declare is a silent no-op on mutating calls, not an error.
 
-**The logo is its own call**, because it is an asset reference, not a text field. Get the file into the library first (`media_upload`, or `media_library_register_external_url` for one already at a URL), then `brand_guide_set_logo`. R7 stands: the logo comes from the client.
+**The logo is its own call**, because it is an asset reference, not a text field. Get the file into the library first (`media_upload`, or `media_library_register_external_url` for one already at a URL), then `brand_guide_set_logo` - it names the slots explicitly (`logo_primary_url`, `logo_secondary_url`, `logo_wordmark_url`, `logo_icon_url`, `logo_dark_url`), updates only the fields supplied, and clearing a slot takes an explicit `null`, not an omission. URLs must be http(s) and should point at library assets. R7 stands: the logo comes from the client.
+
+**Custom fonts are toolable** - a five-tool family, with three silent traps worth knowing before the first call:
+
+- `brand_guide_font_create` requires `font_family` and `display_name`. THE SILENT FAILURE: only `css_font_face` is ever rendered - the generated brand stylesheet copies it verbatim and IGNORES the four `file_*_url` slots completely, so a row created from file URLs alone registers a font no page can load (and `upload_status` reads 'ready' regardless; it is hardcoded server-side). A numeric-looking `weight` goes through Number(), so "bold" becomes NaN and the create 500s - omit it for the default.
+- `brand_guide_font_update` whitelists display_name, the file URLs, css_font_face, is_variable, variable_axes, and upload_status - NOT font_family, weight, or style, and NOT is_active. A rename or weight change returns 200 having changed only `updated_at`; identity changes take a fresh create.
+- `brand_guide_font_delete` is a SOFT delete that is one-way from this surface: nothing here accepts `is_active`, so the font cannot be revived, and the tombstone keeps its (family, weight, style) unique slot forever - re-registering the identical font answers 409 while `brand_guide_font_list` (which filters `is_active=true`) shows an empty shelf. `brand_guide_font_get` by id is the only read that sees the tombstone; use it to explain a "mystery" 409. The only way back is a different weight or style.
+
+Font LICENSING is still a human matter: name the typeface in the guide, register the files, and raise licensing as a `pm_tasks_create` task.
+
+**Approved narration voices** live on the guide too: `brand_guide_voiceovers_get` returns the account's approved narrators with per-voice `usage_notes` and a `default_voice`. It is read-only BY DESIGN - approving a narrator is a human brand decision made in the brand UI, so an agent may choose from the set but can never widen it. The full picking-and-pricing flow is in the video reference.
 
 **Activation.** There is no `brand_guide_set_active` tool in the registry. With more than one guide, the empirical check for which is substituting is `design_templates_list`; the durable fix is dashboard-side, and tell the client that is where it lives. Do not guess, and do not create a third guide to route around it.
 
@@ -85,6 +97,8 @@ The first hour on a new account. Nothing downstream is worth doing until this is
 
 **Customer avatars** are who the creative talks to. They arrive in the `account_context_get({ domain: 'branding' })` bundle and have their own domain (`customer_avatar`) for context and department chat. Use them concretely: the avatar decides whether a photo is a person in workwear or in a boardroom, whether the type reads warm or clinical, and which transformation is worth showing. Creative made without one loaded is made for nobody in particular, and it looks it.
 
+They are also directly writable, so a new client's personas get built here, not just read: `customer_avatar_list` / `customer_avatar_get` to read, `customer_avatar_create` (name required; the full ICP spec flat or inside `avatar_data`, including a canonical `buying_behavior` shape the dashboard renders), `customer_avatar_update` to refine, and `customer_avatar_populate` to LLM-enrich a sparse one from GROUNDED context - it refuses with `context_insufficient` when the account has no brand guide and no urls/queries/notes were supplied, which is the honest answer, not an error to route around. Snapshot before a rewrite with `customer_avatar_version_create` (it snapshots the PERSISTED row; `change_message` is the only body field it reads). **`customer_avatar_version_restore` OVERWRITES the live avatar on the first call - no confirm parameter, no body.** It normally auto-snapshots current state first so restoring the returned `auto_snapshot_version` undoes it, but the auto-snapshot can be abandoned under contention while the restore proceeds anyway - treat restore as destructive, confirm with the human, and read `auto_snapshot_version` back before relying on it. `customer_avatar_delete` exists; same deletion doctrine as everything else here.
+
 **Before/after grids** are the transformation proof, and they are first-class objects: `before_after_grid_list`, `before_after_grid_get`, `before_after_grid_create`, `before_after_grid_update`, `before_after_grid_delete`, plus two that do the real work. `before_after_grid_populate` fills a grid instead of making you assemble it item by item. `before_after_grid_link_to_avatar` binds a grid to a customer avatar, so the transformation is attached to the persona it must convince instead of floating free. Read both schemas before the first call - this manual names them and what they are for, not their argument shapes. `talk_to_department({ domain: 'before_after_grid' })` is the agent for which transformations are worth building.
 
 A before/after grid is the highest-converting visual a service business owns and the one an image generator cannot fabricate honestly: both halves are real photographs of real work. Build the grid from the media library, link it to the avatar, then let the design canvas dramatize it. Never generate a "before".
@@ -103,9 +117,9 @@ Three levels, and they are not interchangeable.
 
 One item, many collections. People reach for folders to do a collection's job, and then the same photo is uploaded four times to sit in four campaigns.
 
-**A parallel naming exists.** `marketing_media_list`, `marketing_media_get`, `marketing_media_folders`, `marketing_media_register_external_url`, and `marketing_media_upload_base64` are a second surface over the same library, and the social skill's Play 4 uses those names. Both are real: verify which set this account exposes, then stay consistent in-session. `marketing_media_upload_base64` has no `media_*` equivalent - it takes content you hold as bytes.
+**A parallel naming exists.** `marketing_media_list`, `marketing_media_get`, `marketing_media_folders`, `marketing_media_register_external_url`, and `marketing_media_upload_base64` are a second surface over the same account-level library (media_assets - NOT the website builder-project `assets_*` files). Both sets are real; which a session sees is a key-profile question (the `marketing-design` profile grants both prefixes), so prefer `media_*` and stay consistent in-session. For bytes you hold locally, `media_upload` takes base64 `content` (up to 50MB) just as `marketing_media_upload_base64` does.
 
-**Moving an asset between folders** goes through `media_update` if the folder is a field on its schema; there is no `media_move`. If the field is not declared, the dashboard is the fallback - say so rather than deleting and re-uploading, which orphans every reference to the old id.
+**Moving assets between folders is toolable.** `media_update` accepts `folder_id` for one asset; `media_bulk_move` reassigns the folder of 1 to 200 assets in one call - the library-reorganization chore the monthly audit prescribes. Its contract has teeth: OMITTING `targetFolderId` is a 400 while an explicit `null` moves assets to the library root; nothing is written unless the whole input validates (a non-uuid, an empty array, or >200 ids is a 422); and a 200 can still be a PARTIAL move - ids that do not belong to this account come back in `skipped_asset_ids` while `updatedCount` covers only what moved, so ALWAYS read `skipped_asset_ids` and report a short count as partial, never as done. Never delete and re-upload to "move" - that orphans every reference to the old id.
 
 ---
 
@@ -117,11 +131,13 @@ One item, many collections. People reach for folders to do a collection's job, a
 
 **Lane 3 - Anything already at a URL.** `media_library_register_external_url` for one, `media_library_register_external_url_batch` for a set: the import path for photographer deliveries, agency footage, existing site imagery, and stock photos. Never describe a registered clip as generated.
 
-**Lane 4 - Stock photos, which split in two.** This is the trap.
+**Lane 4 - Stock, which splits three ways on search and two on destination.** This is the trap.
 
-- `stock_photos_search` returns `{ url, thumbnail, photographer, source, attribution }` and **saves nothing**. It is a search, not an acquisition: a URL on someone else's host, no id, no library record, nothing to attach.
-- `stock_photos_download` is the **website-project lane only**. It requires `{ url, project_id, save_path }` and writes into that project's S3 assets, putting **nothing** in the Media Library. Use it when the destination is a page on the client's site; get `project_id` from `list_projects` or `get_project`.
-- To get a stock photo into the Media Library, take the `url` from `stock_photos_search` and register it with `media_library_register_external_url`. That is the only path.
+- `stock_photos_search` searches **Unsplash + Pexels only** and returns `{ url, thumbnail, photographer, source, attribution }`. It **saves nothing**: a URL on someone else's host, no id, no library record, nothing to attach.
+- `stock_photos_pixabay_search` is the **only Pixabay source**, and the only one of the three that also carries illustrations and vectors. Each asset carries a `pixabay` block with a ready-to-paste attribution line. SILENT FAILURE: every error path ALSO returns `assets: []` with a populated pagination block, so an empty array is NOT "no photos matched" - branch on the HTTP status or the top-level `error` field, and a 412 `not_configured` means the API key is unset and no retry will clear it. Report a failed source as a FAILED source, never as an empty catalog.
+- `media_stock_video_search` is the **only stock FOOTAGE search** (free Pexels + Pixabay video); its provider-prefixed `id` is what a storyboard `stock` scene stores. Read `providerErrors` on every call - a failed provider contributes zero rows on a 200 `success: true`, so half a catalog looks like the whole catalog.
+- `stock_photos_download` is the **website-project lane only**. It requires `{ url, project_id, save_path }` and writes into that project's S3 assets, putting **nothing** in the Media Library. Use it when the destination is a page on the client's site. `project_id` here means a WEBSITE project: `sites_list` is the source of those ids - `list_projects` / `get_project` return pm_projects, NOT the buildable code projects, and an id from them is the wrong kind. Flag: the `marketing-design` key profile grants neither `sites_list` nor the website-project reads, so on a scoped key this lane needs a web-side session or a full-profile key - say so instead of guessing an id.
+- To get a stock photo into the Media Library, take the `url` from a search and register it with `media_library_register_external_url`. That is the only path.
 
 Carry `photographer`, `source`, and `attribution` into the registered asset's metadata. Some licenses require attribution at point of use, and losing the fields means re-finding the photo to publish it legally.
 
@@ -129,7 +145,7 @@ Carry `photographer`, `source`, and `attribution` into the registered asset's me
 
 Generated images and video clips auto-register. **Design exports and stock-photo URLs do NOT** - register those explicitly before attaching them anywhere.
 
-A `design_export_image` PNG and a `design_export_mp4` render are outputs, not library assets. If the export will be reused, register it first or the attachment has nothing to point at.
+A `design_export_image` PNG and a `design_export_mp4` render are outputs, not library assets. If the export will be reused, register it first or the attachment has nothing to point at. For a finished static design, `design_publish_to_library` renders and registers the PNG in one call - but it is CREATE, never sync: nothing dedupes, so a second publish or a retry after its 504 leaves two library entries. Once per finished design, and check `media_library_list` before retrying a timeout.
 
 ---
 
@@ -146,15 +162,17 @@ Order of preference:
 
 One more lever: a still can be animated rather than re-shot. `marketing_generate_video` takes an existing asset as `reference_media_asset_id`, and the design canvas animates a still per layer at no generation cost at all.
 
+When generation IS the right rung and the prompt matters, `media_ai_enhance_prompt` turns a rough post idea into one generation-ready prompt - but be honest about its price: it COSTS MONEY ON EVERY CALL (a full tool-enabled agent turn hydrated with the account's memory and brand voice, metered against AI spend, seconds to tens of seconds of latency) and WRITES NOTHING itself - no asset, no post. Use it before a batch or a high-stakes hero image, where one better prompt saves several paid re-generations; never reflexively in front of every `generate_image`.
+
 ---
 
 ## Part 9. Deleting safely
 
 **`media_usage_get` before `media_delete`. Always.**
 
-An asset here is referenced by id from places the library view does not show you: social posts, design canvases, brand guides, website projects, campaigns. `media_usage_get` tells you where. Run it, read the list back, and get an explicit yes before deleting anything with a non-empty usage list. A delete that breaks a live design does not fail at delete time; it fails later, in the client's dashboard, as a broken layer in a design they were about to send.
+An asset here is referenced by id from places the library view does not show you: social posts, design canvases, brand guides, website projects, campaigns. `media_usage_get` tells you where (`{ usage_count, usage: [...] }` from the usage-tracking table). Run it, read the list back, and get an explicit yes before deleting anything with a non-empty usage list. `media_delete` is a HARD delete (row plus S3 purge) with one guardrail: it refuses 409 `in_use` when tracked usage rows exist, and `force=true` overrides that and accepts the orphan. Never pass `force` on your own judgment - only on an explicit instruction that names the asset AND acknowledges what breaks. And do not treat the 409 as the whole safety net: usage tracking covers what it tracks, so a reference it missed still breaks later, in the client's dashboard, as a broken layer in a design they were about to send. Deletion is one asset per call, ids named by the client, never derived by pattern (R4b).
 
-Same for `media_folder_delete` and `media_collection_delete` - a collection is a view, not a container, but confirm that on this account's surface before using either as cleanup. `brand_guide_delete` and especially `brand_guide_purge` top the ladder (R4). Nothing here has an undo tool: the design canvas has version history via `design_version_create` and `design_versions_list`, the media library does not.
+Same for `media_folder_delete` and `media_collection_delete` - a collection is a view, not a container, but confirm that on this account's surface before using either as cleanup. `brand_guide_delete` and especially `brand_guide_purge` top the ladder (R4). Nothing here has an undo tool: the design canvas has version history via `design_version_create` and `design_versions_list`, the media library does not. `audit_query` (always available) is the after-the-fact record - which key deleted what, when - not a restore.
 
 ---
 
@@ -164,10 +182,10 @@ Say each of these plainly rather than routing around it silently.
 
 - **Which brand guide is active.** No `brand_guide_set_active`. Verify through `design_templates_list`; set it in the dashboard.
 - **Extracting a palette from a logo file.** No tool. Read the colors from `account_context_get({ domain: 'branding' })`, from the client's site, or ask.
-- **Hosting or licensing a font.** No tool. Name the typeface in the guide, get the file into the library like any other asset, raise licensing as a `pm_tasks_create` task.
-- **Moving an asset between folders.** No `media_move`. `media_update` if the field is on the schema, otherwise the dashboard. Never delete and re-upload.
-- **Bulk delete.** `media_delete` is one asset per call. Given R3, that is a feature.
-- **A brand-compliance check on finished creative.** Nothing scores a design against the guide. `design_state_get` returns an element-by-element read of position, size, style, text, and animation - compare fills and fonts yourself, report the diff.
+- **Licensing a font.** Registration is toolable now (`brand_guide_font_create`, Part 3) but licensing is not: raise it as a `pm_tasks_create` task.
+- **Widening the approved narrator set.** `brand_guide_voiceovers_get` is read-only by design; a new approved voice is a human decision in the brand UI.
+- **Bulk delete.** `media_delete` is one asset per call. Given R3 and R4b, that is a feature. (Bulk MOVE exists - `media_bulk_move`, Part 6 - which is the reversible alternative to offer.)
+- **A brand-compliance check on finished creative.** Nothing scores a design against the guide. `design_state_get` returns an element-by-element read of position, size, style, text, and animation - compare fills and fonts yourself, report the diff, and mark it as judgment, not a measured score.
 - **Approving anything.** No creative approval tool exists in this lane. "**THE AGENT CANNOT APPROVE: after creating, submit for approval and stop.**" That is written about storyboards and it is the rule everywhere here: you build, the human approves, in the dashboard.
 
 ---
@@ -178,26 +196,25 @@ Every trap here is silent.
 
 - **`stock_photos_search` saved nothing** - no asset, no id, nothing to attach - and **`stock_photos_download` did not put it in the Media Library** either; it wrote into a website project's S3 at `save_path`. Register the URL, or the design export, or you accomplished nothing, and carry `photographer`, `source`, `attribution` across when you do.
 - **Undeclared arguments are dropped on mutating calls** - 200, nothing changed. Read the schema; do not infer field names from this manual or a sibling tool.
-- **Two naming surfaces exist for the same library.** `media_*` and `marketing_media_*` are both real. Verify which this account exposes, then stay consistent in-session.
+- **Two naming surfaces exist for the same library.** `media_*` and `marketing_media_*` are both real, and which a session sees is a KEY-PROFILE question, not an account setting (the `marketing-design` profile grants both prefixes). Prefer `media_library_*` / `media_*`, stay consistent in-session, and treat a missing name as a profile question first.
+- **A search that returns empty is not proof of an empty catalog.** All three stock searches fail silently as partial or empty results (Part 7) - branch on status / `providerErrors` / `error`, and report failed sources as failed, not zero.
 - **A generic-looking template is a guide problem**, and guide presence is not guide activation.
 - **Confirm before anything billable or irreversible**, say so before a long render starts, and finish by handing back the dashboard URL.
 
 ---
 
-# Tool-name inventory (every name referenced, with provenance)
+# Tool index for this reference
 
-**Brand system** (grounding file, BRAND SYSTEM section): `brand_guide_list`, `brand_guide_get`, `brand_guide_create`, `brand_guide_update`, `brand_guide_delete`, `brand_guide_purge`, `brand_guide_set_logo`, `before_after_grid_list`, `before_after_grid_get`, `before_after_grid_create`, `before_after_grid_update`, `before_after_grid_delete`, `before_after_grid_populate`, `before_after_grid_link_to_avatar`.
+**Brand system:** `brand_guide_list`, `brand_guide_get`, `brand_guide_create`, `brand_guide_update`, `brand_guide_delete` (soft), `brand_guide_purge` (hard, tombstones only), `brand_guide_set_logo`, `brand_guide_font_create` / `_get` / `_list` / `_update` / `_delete`, `brand_guide_voiceovers_get`, `before_after_grid_list` / `_get` / `_create` / `_update` / `_delete` / `_populate` / `_link_to_avatar`.
 
-**Context and departments** (grounding + `domains-truth.md`): `account_context_get`, `talk_to_department`, `agent_identity_get`, `list_departments`. Domains cited: `branding`, `customer_avatar`, `before_after_grid`, `website_design`, `social`; named as invalid: `creative`, `web`, `email`, `pm`, `accounting`, `voice`, `knowledge`.
+**Avatars:** `customer_avatar_list` / `_get` / `_create` / `_update` / `_delete` / `_populate`, `customer_avatar_version_create` / `_list` / `_get` / `_restore`.
 
-**Media library** (grounding, MEDIA LIBRARY section): `media_library_list`, `media_library_get`, `media_upload`, `media_update`, `media_delete`, `media_usage_get`, `media_library_register_external_url`, `media_library_register_external_url_batch`, `media_folders_list`, `media_folder_create`, `media_folder_update`, `media_folder_delete`, `media_collections_list`, `media_collection_create`, `media_collection_get`, `media_collection_update`, `media_collection_delete`, `media_collection_add_item`, `media_collection_remove_item`, `marketing_media_list`, `marketing_media_get`, `marketing_media_folders`, `marketing_media_register_external_url`, `marketing_media_upload_base64`.
+**Context and departments:** `account_context_get`, `agent_identity_get` (both full-profile only - Part 2 caveat), `talk_to_department`, `list_departments` (always available). Valid domains used here: `branding`, `customer_avatar`, `before_after_grid`, `website_design`, `social`; invalid: `creative`, `web`, `email`, `pm`, `accounting`, `voice`, `knowledge`.
 
-**Images and stock** (grounding, IMAGES section): `generate_image`, `generate_image_set`, `stock_photos_search`, `stock_photos_download`.
+**Media library:** `media_library_list`, `media_library_get`, `media_upload`, `media_update`, `media_delete`, `media_usage_get`, `media_bulk_move`, `media_library_register_external_url`, `media_library_register_external_url_batch`, `media_folders_list`, `media_folder_create` / `_update` / `_delete`, `media_collections_list`, `media_collection_create` / `_get` / `_update` / `_delete` / `_add_item` / `_remove_item`; parallel surface `marketing_media_list` / `_get` / `_folders` / `_register_external_url` / `_upload_base64`.
 
-**Design canvas, referenced across the boundary** (grounding, DESIGN CANVAS section): `design_templates_list`, `design_create`, `design_state_get`, `design_version_create`, `design_versions_list`, `design_export_image`, `design_export_mp4`.
+**Images and stock:** `generate_image`, `generate_image_set`, `media_ai_enhance_prompt`, `stock_photos_search` (Unsplash + Pexels), `stock_photos_pixabay_search`, `media_stock_video_search`, `stock_photos_download` (website-project lane; `project_id` from `sites_list`).
 
-**Named as NOT existing, with the fallback stated:** `brand_guide_set_active` (verify via `design_templates_list`, activate in the dashboard), `media_move` (use `media_update`, else the dashboard), plus no bulk delete, no palette extraction, no font hosting, no brand-compliance scorer (use `design_state_get` and diff by hand), and no creative approval tool at all.
+**Design canvas, referenced across the boundary:** `design_templates_list`, `design_create`, `design_state_get`, `design_version_create`, `design_versions_list`, `design_export_image`, `design_export_mp4`, `design_publish_to_library`.
 
-**Cited from adjacent verified sources rather than the grounding file** (flagged here so you can confirm before shipping): `get_account_info`, `memory_create`, `pm_tasks_create`, `marketing_generate_video` (all from `hiveku-social-agency/SKILL.md`, which states every tool it names is real); `list_projects`, `get_project` (from the workspace `CLAUDE.md`, cited only as the source of `project_id` for `stock_photos_download`).
-
-**Star-marked rules preserved verbatim:** the auto-register rule ("Generated images and video clips auto-register. **Design exports and stock-photo URLs do NOT** - register those explicitly before attaching them anywhere.") appears twice, as R14 and again in Part 7; and "**THE AGENT CANNOT APPROVE: after creating, submit for approval and stop.**" appears in Part 10. `media_usage_get` before `media_delete` is star-marked in both R3 and Part 9.
+**Named as NOT existing, with the fallback stated:** `brand_guide_set_active` (verify via `design_templates_list`, activate in the dashboard), palette extraction (read the guide or ask), media bulk delete (one `media_delete` per named id), a brand-compliance scorer (diff by hand via `design_state_get`, mark as judgment), and any creative approval tool.

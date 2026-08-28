@@ -1,7 +1,3 @@
-Reference file written to `/private/tmp/claude-501/-Users-aberubarts-Documents-main-hiveku/30c385fb-6c1e-4ade-8eb0-b3167903d1e5/scratchpad/video.md` (20,467 bytes, no frontmatter, no em dashes, no emojis, all three star-marked rules verbatim). Intended destination: `/Users/aberubarts/Documents/main_hiveku/hiveku-claude-plugin/skills/hiveku-creative/references/video.md`.
-
----
-
 # Video: the three lanes, the approval gate, and what actually bills
 
 ## What this covers / when to load this
@@ -12,8 +8,8 @@ MP4 (lane 1), a multi-scene storyboard a human approves before anything is produ
 AI-generated clip (lane 3). They differ in cost, in whether a human gate stands in front of them, in how
 they fail, and in how the result gets registered. Load this whenever the ask is "make me a video", "animate
 this", "we need a Reel / TikTok / promo / explainer / testimonial / listing tour", a motion logo or brand
-card, a product demo clip, or a video cover for a post - and BEFORE picking a tool, because the most
-expensive mistake here is starting in the wrong lane.
+card, a product demo clip, a voiceover or narration, or a video cover for a post - and BEFORE picking a
+tool, because the most expensive mistake here is starting in the wrong lane.
 
 Still-image creative, the canvas as a static editor, brand guides, and the media library live in SKILL.md
 and its other references. House rules stay in force: `account_context_get` before anything generative,
@@ -42,9 +38,15 @@ type and does not already exist in the library?**
 **LANE 3, one generated clip**, `marketing_generate_video`. PAID, Premium-plan only, metered. Confirm before
 you spend.
 
-**Q4. None of the above - real people, real premises, real product footage, client-supplied video?**
-No lane generates that. Import instead: `media_library_register_external_url` for a hosted file,
-`media_upload` for a local one, and say plainly that the footage is client-supplied.
+**Q4. None of the above - real people, real premises, client-supplied video?**
+No lane generates that. GENERIC real footage, though, is searchable in-product:
+`media_stock_video_search` is the only stock FOOTAGE search here (free Pexels + Pixabay video), and a
+storyboard `stock` scene stores its provider-prefixed `id` (e.g. "pexels:13736675") as `stock_video_id`.
+Read `providerErrors` ON EVERY CALL: a provider whose key is unset or whose call failed contributes zero
+rows while the response is still 200 `success: true`, so half a catalog looks like the whole catalog -
+report it as PARTIAL, never as "no footage matched". Client-specific footage is import-only:
+`media_library_register_external_url` for a hosted file, `media_upload` for a local one, and say plainly
+that the footage is client-supplied.
 
 **The gate in front of all four:** reuse before generating. Run `media_library_list` (or
 `marketing_media_list`) and `media_folders_list` first - the account's real photos and prior clips beat AI
@@ -53,7 +55,7 @@ for products, team, premises, and location, are already on brand, and cost nothi
 | Lane | Tool that produces the file | Cost | Human approval | Editable after |
 |---|---|---|---|---|
 | 1. Motion design | `design_export_mp4` | none beyond render time | no (confirm the block) | yes, fully layered |
-| 2. Storyboard | `marketing_video_pipeline_start` after approval | priced at create, billed on approval | YES, and the agent cannot give it | scene-level via the board |
+| 2. Storyboard | approval itself starts the run | priced at create, billed on approval | YES, and the agent cannot give it | scene-level via the board |
 | 3. One clip | `marketing_generate_video` | about $1 per clip, metered | no, but confirm the spend | no, it is a flat file |
 
 ---
@@ -112,8 +114,8 @@ which makes it a second, separate call after the render, never a field tacked on
 
 Before any large or destructive edit, snapshot with `design_version_create({ id, versionName, changeSummary,
 isMilestone })`, using `isMilestone` for named save points such as "client-approved v1". The client can then
-roll back from the dashboard's Version History panel; `design_versions_list` shows every snapshot. It costs
-nothing.
+roll back from the dashboard's Version History panel; `design_versions_list` shows every snapshot and
+`design_version_get` returns one snapshot in full, frozen canvas included. It costs nothing.
 
 ### 2.4 Check frames before you render the movie
 
@@ -123,18 +125,23 @@ CanvasComposition the MP4 path uses, so `frame=0` matches what the dashboard edi
 opening, midpoint, last frame - catch a mistimed entrance, a text overflow, or a layer stuck off-artboard in
 seconds instead of after a four-minute block. It is the cheap dry run for lane 1.
 
-### 2.5 The render, and what to say while it blocks
+### 2.5 The render, what to say while it blocks, and what to do when it dies
 
 `design_export_mp4({ id, canvas_json, width, height, duration_seconds })` renders the design to MP4 (or GIF)
 via the Remotion worker. Pass the full canvas snapshot the user has been editing - layered Fabric JSON with
-the per-layer `animation` metadata. Two hard behaviors:
+the per-layer `animation` metadata. Three hard behaviors:
 
 - **SYNCHRONOUS, blocks up to 240 seconds.** Nothing else happens in the session while it runs. No progress
-  percentage, no status tool, no cancel tool (`marketing_video_pipeline_status` and
+  percentage mid-call and no cancel tool (`marketing_video_pipeline_status` and
   `marketing_video_pipeline_cancel` are lane 2 only and do nothing here).
 - **Refuses early if the canvas has no objects.** Usually a symptom, not the bug: you passed the wrong
   design id, or a `canvas_json` you built in memory and never saved. Run `design_state_get` and confirm the
   canvas holds the layers you think it does.
+- **Returns `mp4Url` plus a `jobId`, and the job outlives the call.** A 504 or a dropped connection loses
+  the RESPONSE, not the render. `design_render_job_get({ job_id })` polls that job and returns `{ status,
+  progress, progressMessage, url, assetId, ... }` - and calling it ADVANCES the job (same reconcile logic
+  the cron runs), so the file can finish and register through the poll itself. Only `completed`, `failed`,
+  and `abandoned` are terminal; keep checking in on anything else.
 
 Because it blocks, tell the user before you start, not after. Four things, one short message:
 
@@ -150,21 +157,60 @@ last cheap moment to catch "actually make it square, not vertical".
 
 Keep the render inside the window. Frames are `fps x duration_seconds`; 30 seconds at 30 fps is 900 frames
 and is where timeouts start. Past roughly 20 seconds or 1080p, shorten it, drop to 24 fps, or split it into
-two designs. A timeout leaves no partial output and no resume - say so up front rather than discovering it
-at 240 seconds.
+two designs.
+
+**The failure playbook - do not improvise at minute four.**
+
+1. On a timeout or dropped call, poll `design_render_job_get` with the `jobId` FIRST. A job still running,
+   or already `completed` with a `url`, means re-rendering now would duplicate work; ride the poll out.
+2. Only when the job reads `failed` or `abandoned` (or no jobId ever came back) do you get ONE re-render,
+   and only after changing something: shorter duration, 24 fps, smaller artboard, or a split.
+3. A second failure ends the session's retry budget. Stop, `pm_tasks_create` with the design id, the spec
+   attempted, and both failures, and tell the client the render is escalated - not "rendering".
 
 ### 2.6 Re-rendering a template clip inside a design
 
 `design_video_rerender({ id, template_id, props })` re-renders a single Remotion-template video clip with
 new prop values. It applies when a design contains a video element backed by a Remotion template: someone
 edits a slot, this re-runs the render, and the resulting MP4 swaps in place. It blocks up to 240 seconds,
-and the same pre-render message applies.
+and the same pre-render message and failure playbook apply.
 
 The trap: canvas position, scale, and rotation are preserved by the caller on update, not by the tool. Read
 `left`, `top`, `scaleX`, `scaleY`, and `angle` with `design_state_get` before the rerender and write them
 back in the `design_update` afterwards, or the clip returns at default position and size and the layout
 reads as broken. Use it for a one-slot change - new headline, new price, swapped product name - rather than
 rebuilding a working design.
+
+### 2.7 Voiceover on a design
+
+Narration is a real, billable capability - sell it, but price it first, every time.
+
+1. `brand_guide_voiceovers_get` FIRST: the account's APPROVED narrators, each with human `usage_notes`
+   ("warm, use for testimonials") and a `default_voice`. Send the matching `voice_id`, never a guessed
+   friendly name - that guess is what once produced a provider 400 retried every 32 seconds for an hour.
+   It is read-only BY DESIGN: approving a narrator is a human brand decision made in the brand UI, so you
+   may choose from the set but can never widen it. Its parser silently DROPS any stored entry whose
+   provider is unknown or whose voice_id is not syntactically valid, so a missing voice is a data problem
+   to raise, not an empty account.
+2. `design_voices_list` is the wider Design Studio catalog, server-scored shortlist on top, for
+   deliberately picking OUTSIDE the approved set - say so when you do. A Cartesia UUID from here is what
+   `design_voiceover_create` and a storyboard's `voice` block accept. NOT `voice_tts_voices_list` - that is
+   the IVR catalog behind the paid phone-plan gate and 402s for marketing-only accounts. HTTP 503 with
+   `voices: []` means the environment is broken (`not_configured` / `voices_unavailable`), never that the
+   account has no voices - report it as a failed source, not an empty one.
+3. `design_voiceover_estimate` prices the script and spends NOTHING: characters (normalized, 800 max),
+   `estimated_seconds` (a flat heuristic, not a measurement), `remaining_seconds`, `billable`,
+   `cost_cents`. `included_minutes: 0` means the plan has no voiceover allowance at all. Quote from this,
+   never from memory.
+4. `design_voiceover_create` SPENDS MONEY: renders through Cartesia, stores the MP3, writes a billing row,
+   and registers the clip in the Media Library. `cached: true` means an identical (script, voice) render
+   already existed - nothing new was spent. TRAP: `asset_id` can come back null while `url` is real audio
+   that has ALREADY been billed (the library row is best-effort) - never treat a null asset_id as a failed
+   render and never retry on it; register the `url` yourself instead. A non-UUID voice_id is a 400
+   `voice_not_recognised`.
+
+Estimate, confirm the cost and remaining allowance with the client, then create. Log seconds consumed to
+the monthly spend ledger (`memory_create`). Music and licensed tracks remain import-only - no tool.
 
 ---
 
@@ -183,29 +229,44 @@ Pass EXACTLY ONE of:
 
 - `template_id` - a server-rendered genre template: `social-short`, `product-promo`, `explainer`,
   `testimonial`, `listing-tour`, `event-promo`. Fill `substitutions` as `{ slot: value }`. Optionally add
-  `style_id` (`clean-professional`, `bold-social`, `premium-minimal`, `warm-documentary`) and `profile_id`
-  (`tiktok`, `instagram`, and the other platform profiles).
+  `style_id` (`clean-professional`, `bold-social`, `premium-minimal`, `warm-documentary`), `profile_id`
+  (`tiktok`, `instagram_reels`, `youtube_shorts`, `youtube_landscape`, `linkedin_feed`, `linkedin_square`,
+  `website_hero`), and `voice_id` (a Cartesia UUID - read `brand_guide_voiceovers_get` first, section 2.7).
 - `storyboard` - a full `hiveku.storyboard.v1` document you authored, for anything the templates do not fit.
 
 Both, or neither, is a create-time failure. Decide which before you build the call.
 
 A hand-authored storyboard may carry look fields inline: board-level `style_id`, `transition`
 (`none` | `fade` | `slide-left` | `slide-up`), `transition_ms`, `brand`, `captions.style`, and per-scene
-`camera`. A template-built board cannot - there is no `look` block on create. To restyle one, create it and
-then call `marketing_storyboard_set_look`. Do not smuggle look fields into `substitutions`; slots are
-content, not style.
+`camera`. A `stock` scene stores a `stock_video_id` from `media_stock_video_search` (section 1, Q4). Do not
+smuggle look fields into `substitutions`; slots are content, not style.
 
 Write the scenes with the brand loaded. `account_context_get({ domain: 'branding' })` is the visual-system
 domain and `talk_to_department({ domain: 'branding' })` is the visual department agent. There is NO
 `creative` domain on either tool - passing one is a server-side rejection, not a soft fallback. For script
 and on-screen copy, `talk_to_department({ domain: 'content' })` or `{ domain: 'social' }` fits better.
 
-### 3.2 Fix validation failures precisely
+### 3.2 Fix validation failures precisely - and know that every edit voids approval
 
 On validation failure the response carries `validation.errors` naming the exact bad field per scene. Fix
 that field with `marketing_storyboard_update`. Do not delete and re-create - you lose the priced structure
 and any look already set, and the same error usually comes straight back. `marketing_storyboard_get`
 re-reads current state whenever you are unsure what is stored.
+
+Two write tools, split by intent, both PRE-APPROVAL ONLY (a 409 `pipeline_already_started` means the board
+is past approval and can no longer be edited):
+
+- `marketing_storyboard_update` REPLACES the document wholesale - whatever the new document omits is gone.
+  Use it when the SCENES change: add, remove, reorder, rewrite a prompt or vo_line or duration.
+- `marketing_storyboard_set_look` edits appearance BY NAME - style, brand, captions, transition, music
+  slot, a scene's camera - so a field you did not restate cannot be silently dropped. Prefer it for any
+  appearance change.
+
+Neither is a lighter-weight write where approval is concerned: ANY edit - a one-color change included -
+bumps the version, recomputes the checksum, CLEARS EVERY APPROVAL STAMP, and re-prices. That is the gate
+working, not a bug to route around; the human must approve again. `submit` defaults true on both (the
+revision goes straight back to awaiting_approval); pass `submit: false` only to park a draft you are not
+ready to show.
 
 ### 3.3 Submit, then stop
 
@@ -220,26 +281,40 @@ needs is short and specific:
 - The dashboard URL where they approve.
 - A plain sentence that approval is theirs alone and nothing has been charged yet.
 
-Then stop. Do not fan out single `marketing_generate_video` clips to assemble the same video and route
-around the gate - it costs more, looks worse, and defeats a control the platform put there deliberately. If
-the client is impatient, the honest answer is that the board waits on their click.
+Then record the storyboard id to `memory_create` (or a `pm_tasks_create` item) - there is NO storyboard
+list tool, `marketing_storyboard_get` is by-id only, so an id you do not write down is a board the weekly
+sweep cannot find. Then stop. Do not fan out single `marketing_generate_video` clips to assemble the same
+video and route around the gate - it costs more, looks worse, and defeats a control the platform put there
+deliberately. If the client is impatient, the honest answer is that the board waits on their click.
 
-`marketing_storyboard_delete` destroys the board and is irreversible. Confirm explicitly, and never use it
-as tidy-up after a failed validation when `marketing_storyboard_update` fixes the field.
+`marketing_storyboard_delete` destroys a board that never ran and is irreversible - confirm explicitly, and
+never use it as tidy-up after a failed validation when `marketing_storyboard_update` fixes the field. Its
+refusals are not obstacles: 409 `pipeline_running` means cancel the run first; 409 `pipeline_has_render_jobs`
+means the board generated something, its render jobs carry the billing record, and that board is permanent.
 
 ### 3.4 After a human approves
 
-- `marketing_video_pipeline_start` enqueues the run. This is the billable moment; the price was quoted at
-  create.
-- `marketing_video_pipeline_status({ pipeline_id })` polls it - the pipeline id is the same id as the
-  storyboard. Unlike lane 1 this is asynchronous, so report progress instead of blocking.
-- `marketing_video_pipeline_retry_scene` re-runs one failed scene. Reach for it before restarting anything;
-  a whole-pipeline restart re-does work that already succeeded.
-- `marketing_video_pipeline_cancel` stops a running pipeline. Confirm first - scenes already produced are
-  still scenes the account paid for.
+- **Approval itself starts the run.** `marketing_video_pipeline_start` does NOT enqueue or approve
+  anything: it is a manual re-kick for the rare ALREADY-APPROVED run that went idle (a per-minute reconcile
+  cron is the automatic backstop). Against an unapproved board it returns 409 `storyboard_not_approved`,
+  which is the correct answer - submit and wait for the human.
+- `marketing_video_pipeline_status({ pipeline_id })` snapshots the run - the pipeline id is the storyboard
+  id. Per-scene state (static/pending/reserved/generating/completed/failed), quota pauses (`paused_until`
+  means the run resumes ITSELF - a pause is not a failure), and the final media asset once compositing
+  finishes. It returns immediately: check in, do NOT poll in a tight loop; a full board takes minutes and
+  the platform drives it on its own.
+- `marketing_video_pipeline_retry_scene` re-generates EXACTLY ONE failed clip scene (0-based index from
+  status). Only a scene whose latest attempt FAILED can be retried; completed scenes keep their paid-for
+  assets and are never regenerated. A 402 `monthly_cap_reached` means even the single retry clip will not
+  fit the remaining allowance. The retry reserves a durable render job - if the call dies, recover it with
+  `design_render_job_get`, do not re-retry blind.
+- `marketing_video_pipeline_cancel` stops a run. Unsubmitted clips release their monthly-cap slots; a clip
+  already generating was already paid for and is left to finalize - paid work is never discarded. Confirm
+  first. A finished/failed/canceled run returns 409 `pipeline_already_terminal`.
 
-If a scene keeps failing after a retry, the fix is in the board: `marketing_storyboard_update` that scene,
-or `marketing_storyboard_set_look` if the failure is style-driven.
+If a scene keeps failing after a retry, the fix is in the board - but the board is now post-approval, so
+`marketing_storyboard_update` will 409. Cancel, fix, re-create, and the human approves again; say the cost
+of what already generated.
 
 ---
 
@@ -248,12 +323,22 @@ or `marketing_storyboard_set_look` if the failure is style-driven.
 `marketing_generate_video({ prompt, aspect_ratio })` produces roughly ten seconds at 720p. PAID at about one
 dollar per clip, Premium-plan only, capped at 20 clips per account per month.
 
-1. **ALWAYS call with `dry_run: true` first** and tell the user the remaining quota before spending. A client
-   with three clips left this month deserves to know before you use one.
-2. Confirm the spend explicitly: prompt, aspect ratio, cost, remaining quota, then a yes.
-3. To animate an existing still - a product photo, a headshot, the premises - pass it as
+1. **Pre-flight with `design_video_capabilities_get`** - can this account generate a clip at all, right
+   now? It answers `{ videoEnabled, plan, used, limit, reason, message }`, and EVERY blocked outcome is
+   HTTP 200: read `videoEnabled`, never the status code. Triage the `reason` before narrating a cause:
+   `not_configured` and `render_service_unavailable` are environment problems, `plan_upgrade_required` and
+   `monthly_cap_reached` are real account limits, and `cap_check_unavailable` is a TRANSIENT database error
+   - retryable, and never grounds to tell anyone to upgrade or that they are out of clips.
+2. **ALWAYS call `marketing_generate_video` with `dry_run: true` first** and tell the user the remaining
+   quota before spending. A client with three clips left this month deserves to know before you use one.
+3. Confirm the spend explicitly: prompt, aspect ratio, cost, remaining quota, then a yes. NEVER retry a
+   generation that succeeded, and after an ambiguous timeout, check `design_render_job_get` (the call
+   reserves a durable render job) or `media_library_list` for the clip BEFORE any second spend.
+4. To animate an existing still - a product photo, a headshot, the premises - pass it as
    `reference_media_asset_id`. That is nearly always a better use of a paid clip than an invented scene: it
    is the client's real subject in motion. `aspect_ratio` follows the destination.
+5. Log the clip against the monthly ledger (`memory_create`): clips used, clips remaining, what each was
+   for. The 20-clip cap is managed from that ledger, not from whoever last remembered.
 
 Lane 3 is wrong whenever the content is type or layout, whenever it needs more than one shot, and whenever
 the library already has usable footage. There is no trim, crop, concatenate, or transition tool for
@@ -268,14 +353,17 @@ Generated images and video clips auto-register. **Design exports and stock-photo
 those explicitly before attaching them anywhere.
 
 **Lane 3** output auto-registers and returns a `media_asset_id`; nothing more is needed to make it
-attachable. `generate_image` and `generate_image_set` behave the same for stills.
+attachable. `generate_image` and `generate_image_set` behave the same for stills. So does
+`design_voiceover_create` for narration MP3s - except the null-asset_id trap in 2.7.
 
 **Lane 1** output does NOT auto-register. An unregistered `design_export_mp4` file cannot be attached by id,
 so it cannot go on a post, into a collection, or into a report. Register it with
 `media_library_register_external_url` (or `marketing_media_register_external_url`), then `media_update` for
 a real name and tags, `media_folders_list` / `media_folder_create` to file it, and `media_collections_list`
 / `media_collection_create` / `media_collection_add_item` to group a campaign's assets.
-`media_library_register_external_url_batch` covers several variants from one session.
+`media_library_register_external_url_batch` covers several variants from one session. (A static PNG can
+skip the dance: `design_publish_to_library` renders and registers in one call - but it is CREATE, never
+sync, so a retry duplicates; see the canvas reference.)
 
 Then close the loop on the design: call `design_update` a second time with `previewVideoUrl` set and
 `canvasData` omitted, so the design autoplays in the gallery instead of showing a still. A
@@ -296,28 +384,57 @@ nothing. Pick the asset before you create the post. The social lane's rules stil
 `scheduled_at` is publishing on a timer, and no tool can approve a post; cross-channel via `content_create`.
 Decisions worth keeping (aspect ratio, the animation style signed off, the storyboard template that worked)
 go to `memory_create`, production work items to `pm_tasks_create`. `media_usage_get` says where an asset is
-used; `media_delete` on one a live post depends on breaks that post silently, so confirm it.
+used; `media_delete` refuses 409 `in_use` when tracked usage exists - never force past it (see the
+brand-and-assets reference).
 
-Naming caution: `marketing_design_*` runs parallel to `design_*` (list, get, export_image, export_mp4) and
-`marketing_media_*` parallel to `media_library_*`. Prefer `design_*` and `media_library_*`, verify which set
-this account exposes, and use `list_departments` when a call might fail for entitlement reasons.
+Naming caution: `marketing_design_*` runs parallel to `design_*` (list, get, export_image, export_mp4,
+read-and-export only) and `marketing_media_*` parallel to `media_library_*`. Which set a session sees is a
+KEY-PROFILE question, not an account setting - the `marketing-design` profile grants both prefixes. Prefer
+`design_*` and `media_library_*`; a missing name means check the key's profile, and `list_departments` says
+which departments the ACCOUNT has enabled.
 
 ---
 
-## 6. Capability gaps - name the gap and the fallback, never improvise
+## 6. The testimonial polish play (approved clip -> branded clip, live everywhere)
+
+The one lane-1 play that ships straight to a PUBLIC surface, so it carries the sharpest warning here.
+
+1. `marketing_testimonials_list` - the moderation queue, and the ONLY way to obtain a testimonial id.
+   NO MEDIA URL FOR ANYTHING UNAPPROVED, EVER: only approved rows expose playable media.
+2. `design_from_testimonial({ testimonial_id })` opens a Creative Studio draft on the APPROVED clip: a
+   motion_graphic design whose canvas is one video layer, the recording registered by URL (no bytes
+   copied, nothing billed, no render queued). Idempotent - `created: false` means the draft already
+   existed and came back untouched. Hand back its `dashboard_url`.
+3. Trim, caption, and brand it on the canvas under the normal round-trip rules, then render with
+   `design_export_mp4` and keep the `jobId`.
+4. Confirm the render finished: `design_render_job_get` must read `completed`. An unfinished job, a still,
+   a non-mp4, or another account's job is a 400 `render_job_invalid` at the next step.
+5. `marketing_testimonial_media_replace({ testimonial_id, render_job_id })` is **OUTWARD FACING AND
+   IRREVERSIBLE**: on success the new video is live on every public surface - widgets, galleries, share
+   pages - instantly, with no staging step and no undo. Confirm with the human BEFORE this call, showing
+   the rendered clip. If the response carries `quote_needs_re_review: true`, the published quote was
+   lifted from an AI snippet of the OLD recording and the trim may have cut the quoted words - raise it
+   for human review, do not clear it yourself.
+
+---
+
+## 7. Capability gaps - name the gap and the fallback, never improvise
 
 - **No agent approval of a storyboard.** By design. Fallback: `marketing_storyboard_submit_for_approval`
   and stop, with the scene, runtime, and cost summary.
-- **No voiceover, music, or audio tool** in the registry. A custom VO or licensed track is a
-  produce-outside-and-import job via `media_library_register_external_url` or `media_upload`. Do not tell a
-  client the system will narrate their video.
+- **No music or licensed-track tool.** Voiceover IS toolable (section 2.7); a track is a
+  produce-outside-and-import job via `media_library_register_external_url` or `media_upload`. Do not tell
+  a client the system will score their video.
 - **No trim, crop, concatenate, or transition tool for arbitrary MP4s.** Sequencing and transitions exist
   only inside a lane 2 storyboard (`transition`, `transition_ms`, per-scene `camera`). A clip that needs
   recutting is rebuilt as a storyboard or a design, or handed back as a dashboard job.
 - **No keyframes or custom easing on the canvas.** The 17 presets plus `delay_ms` and `duration_ms` are all
   there is.
-- **No progress readout and no cancel** for `design_export_mp4` or `design_video_rerender`. Only lane 2 has
-  `marketing_video_pipeline_status` and `marketing_video_pipeline_cancel`.
+- **No cancel and no mid-call progress for `design_export_mp4` or `design_video_rerender`** - but the
+  returned `jobId` plus `design_render_job_get` is the after-the-fact status and recovery read (2.5), so a
+  dead call is no longer a lost render. Lane 2 has its own `marketing_video_pipeline_status` and
+  `marketing_video_pipeline_cancel`.
+- **No storyboard list tool.** `marketing_storyboard_get` is by-id only; record ids at submit time (3.3).
 - **No burned-in captions outside a storyboard.** `captions.style` is a storyboard field; animating your own
   text layers in a lane 1 design is not the same thing.
 - **No `creative` domain.** `branding` is the visual lane on both `account_context_get` and
@@ -326,42 +443,3 @@ this account exposes, and use `list_departments` when a call might fail for enti
 - **`stock_photos_search` saves nothing**, and `stock_photos_download` is the website-project lane only
   (`{ url, project_id, save_path }`, writing to that project's S3 assets, NOT the media library). A stock
   still bound for a video must be registered into the library explicitly.
-
----
-
-## Tool names referenced (all grounded in `creative-grounding.md`, `domains-truth.md`, or the verified `hiveku-social-agency/SKILL.md`)
-
-**Design canvas / lane 1:** `design_create`, `design_update`, `design_state_get`, `design_get`,
-`design_templates_list`, `design_version_create`, `design_versions_list`, `design_export_image`,
-`design_export_mp4`, `design_video_rerender`; parallel naming noted as `marketing_design_*` (list, get,
-export_image, export_mp4).
-
-**Storyboard and pipeline / lane 2:** `marketing_storyboard_create`, `marketing_storyboard_get`,
-`marketing_storyboard_update`, `marketing_storyboard_set_look`, `marketing_storyboard_submit_for_approval`,
-`marketing_storyboard_delete`, `marketing_video_pipeline_start`, `marketing_video_pipeline_status`,
-`marketing_video_pipeline_retry_scene`, `marketing_video_pipeline_cancel`.
-
-**Generation / lane 3 and images:** `marketing_generate_video`, `generate_image`, `generate_image_set`,
-`stock_photos_search`, `stock_photos_download`.
-
-**Media library:** `media_library_list`, `media_library_register_external_url`,
-`media_library_register_external_url_batch`, `media_upload`, `media_update`, `media_delete`,
-`media_usage_get`, `media_folders_list`, `media_folder_create`, `media_collections_list`,
-`media_collection_create`, `media_collection_add_item`; parallel `marketing_media_list`,
-`marketing_media_register_external_url`, `marketing_media_upload_base64`.
-
-**Context and departments:** `account_context_get`, `talk_to_department`, `list_departments`.
-
-**Downstream attach and persistence:** `social_create_post` (the only media attach point),
-`social_update_post` (copy, platforms, and schedule only), `social_list_accounts`, `content_create`,
-`memory_create`, `pm_tasks_create`.
-
-## Notes on constraints
-
-- The three star-marked rules are carried verbatim: the `design_state_get` round-trip rule (2.3), THE AGENT
-  CANNOT APPROVE (3.3), and the auto-register rule (5). The first is worded in the grounding file as "This
-  is the read half...", so the section heading names `design_state_get` and the star line is left untouched.
-- Capabilities with no tool are named as gaps with fallbacks (section 6): storyboard approval, audio/VO,
-  MP4 editing, keyframes, render progress/cancel, captions outside a storyboard, and the `creative` domain.
-- `marketing_generate_video` and its quota/dry_run behavior come from the verified social SKILL.md Play 4,
-  not from the grounding file, which does not cover lane 3; everything else traces to the grounding file.

@@ -8,6 +8,13 @@ replying is rung 2.** Every reader is a direct MCP tool. There is no MCP tool th
 reply. That asymmetry is not an oversight you can work around by finding the right tool name;
 it is the design, and the workflow node is the supported path.
 
+Profile note: the `crm_*` lane in this document (`crm_inbox_*`, `crm_thread_for_contact`,
+`crm_email_thread_search`, `crm_lead_triage`, `crm_list_email_connections`) is invisible to a
+communications-scoped key and resolves only under a broader profile such as `full`. The
+`gmail_*` family and every `email_*` tool here ARE in the communications profile. If a reader
+below fails to resolve, that is the reason - say "not visible to this key", not "does not
+exist".
+
 ## Part 1: The mailbox connection
 
 Everything here runs against rows in `email_connections`. One account can hold several: one per
@@ -129,10 +136,22 @@ memory under `domain='lead_intake_query'`, so check there before inventing one.
 ## Part 3: The `gmail_*` family
 
 Eight tools, Gmail-only, direct against the connected mailbox. Every one takes an optional
-`email` argument naming the mailbox and falls back to the account default.
+`email` argument naming the mailbox and falls back to the account default. The quick
+reference:
 
-The parent `SKILL.md` tables all eight under Play 4 with the same signatures. This section is the
-longer version: what each one returns, and where each one bites.
+| Tool | What it does |
+|---|---|
+| `gmail_search_messages({ q, max_results?, page_token? })` | Gmail query syntax search. Returns ID stubs only, so pair it with the next one |
+| `gmail_get_message({ message_id })` | One message parsed: from, to, cc, subject, body, bodyHtml, date, labels, snippet |
+| `gmail_get_thread({ thread_id })` | A complete thread with every message parsed |
+| `gmail_conversation_history({ contact_email, days?, max? })` | Recent history with one address, each touchpoint tagged inbound or outbound. Built as a duplicate-guard before sending |
+| `gmail_inbox_lead_replies({ newer_than?, unseen?, exclude?, auto_label? })` | Inbound prospect replies, pre-filtered |
+| `gmail_parse_forward({ message_id })` | Splits a forwarded email into alias info, prospect info, the reply text, and the original cold email |
+| `gmail_list_labels()` | Every label, system and user |
+| `gmail_modify_labels({ message_id, add?, remove?, create_missing? })` | Add or remove labels. Accepts label IDs or human names |
+
+The rest of this section is the longer version: what each one returns, and where each one
+bites.
 
 ### The read path
 

@@ -214,10 +214,16 @@ and no optimization saves it. Some MCCs have Planner API access disabled and the
 fallback is the dashboard's Keyword Planner (no tool) plus `web_search` and `web_scrape`, labelled
 directional and UI-sourced.
 
-### Play 7: Net-new keyword discovery (no ideas tool exists)
+### Play 7: Net-new keyword discovery
 
-**There is no keyword-ideas or search-volume-lookup tool in this surface.**
-`ppc_keyword_planner_forecast` scores a list you supply; it does not generate one. Say that plainly.
+**The curated `ppc_*` surface has no ideas generator** - `ppc_keyword_planner_forecast` scores a list you
+supply; it does not generate one. Two adjacent lanes do exist, each with a catch. The raw read lane
+(`ppc_google_ads_read`, see `google-ads-advanced.md`) exposes `keyword-ideas` and `keyword-metrics`
+actions, but its argument values cannot contain spaces, so multi-word seeds are refused - single tokens
+only. And the DataForSEO lane (visible to marketing keys - profiles.ts grants it to marketing-ads)
+carries `keywords_data_google_ads_search_volume`, `dataforseo_labs_google_keyword_ideas` and
+`dataforseo_labs_google_keyword_suggestions`; these are registry-verified names with no local manual -
+read each tool's own schema before the first call and label output with its source.
 Fallbacks, best first: (1) the account's own search terms, since your best ideas are queries that already
 converted, so mine `ppc_search_terms_report` at `days: 90` for PROMOTE rows; (2) the site's own language,
 via `web_map` for URL inventory then `web_scrape` or `web_extract` on service pages; (3) competitor

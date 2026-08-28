@@ -5,8 +5,11 @@ What `element_data` actually is, per element type, and what a malformed one does
 The agent-facing input you send is relaxed: `{ type, position, element_data, z_index, rotation,
 color, fill_color, stroke_width, font_size, locked, hidden }`. The server normalizes that into
 the COMPLETE typed element the dashboard renderer expects, synthesizing the fields you did not
-supply. That normalization only runs on CREATE. It does not run on
-`hiveboard_element_update`, which is why a patch has to send the whole typed object.
+supply. That full normalization only runs on CREATE. `hiveboard_elements_patch` merges into
+the stored object (safe for partial edits); `hiveboard_element_update` replaces
+`element_data` wholesale, which is why a patch through IT has to send the whole typed object.
+Both edit tools now mirror top-level style fields into `element_data`; neither synthesizes
+geometry.
 
 Source of truth: `hiveku_builder/src/lib/hiveboards/element-builder.ts`.
 
@@ -136,10 +139,11 @@ free-floating.
 }
 ```
 
-- Colour is a NAME (`'yellow'` by default), read from `element_data.color`. The top-level
-  `color` field is NOT used for sticky notes: the built element stores `color: null`. A hex
-  string in `element_data.color` is passed through unchanged and will not render as a note
-  colour.
+- Colour is a NAME (`'yellow'` by default), read from `element_data.color`, one of `yellow`,
+  `blue`, `green`, `pink`, `purple`, `orange`. The top-level `color` field is NOT used for
+  sticky notes: the built element stores `color: null`. Anything outside the six names — a
+  hex, most obviously — is coerced to yellow on create (the renderer looks the name up in a
+  table and used to crash the whole board on a miss).
 - Size comes from `element_data.size.width` / `.height`, falling back to
   `element_data.width` / `.height`, then to 200 x 200.
 - Content accepts `content` or `text`.
@@ -211,12 +215,21 @@ Route-level behaviour on top of that:
 
 ## Patching safely
 
-`hiveboard_element_update` writes the allow-listed columns raw. It does not run the builder and
-it does not merge JSON.
+**Default to `hiveboard_elements_patch`.** It MERGES into the stored `element_data` (a
+partial payload cannot strip geometry), `move: {dx, dy}` moves each type by its real
+position fields, its `text` field writes `label` on a shape and `content` on a text or
+sticky, and every bound connector attached to a moved element is translated by the same
+delta board-wide. Read the current data first with `hiveboard_elements_find` and
+`include_data: true`, then patch, then check `updated` / `connectors_repaired` / `skipped` /
+`not_found` in the return.
 
-The safe procedure for any patch:
+`hiveboard_element_update` writes the allow-listed columns raw. It does not run the builder
+and it does not merge JSON. Use it only to replace an element's ENTIRE `element_data`
+deliberately (a merge cannot remove keys) or to flip the raw `element_type` / `locked` /
+`hidden` columns (`hidden` is read by no renderer). The safe procedure on that path:
 
-1. `hiveboard_get({ board_id })` and find the element. Keep its ENTIRE `element_data`.
+1. `hiveboard_elements_find({ include_data: true })` (or `hiveboard_get`) and find the
+   element. Keep its ENTIRE `element_data`.
 2. Change the one field you care about in that object, preserving `id`, `type`, `shapeType`,
    `start`, `end`, and every other key already present.
 3. Send the whole object back as `element_data`. For a move, also compute new `start` / `end`
@@ -224,9 +237,11 @@ The safe procedure for any patch:
    `height = end.y - start.y`) and send the matching `position` so the redundant column stays
    consistent.
 4. If the element is a shape with connectors attached, patch each connector's
-   `element_data.start` / `.end` in the same pass. Connector endpoints are stored coordinates
-   and nothing recomputes them server-side.
+   `element_data.start` / `.end` in the same pass. On THIS path connector endpoints are
+   stored coordinates and nothing recomputes them server-side — only
+   `hiveboard_elements_patch` repairs them for you.
 
-Sending a partial `element_data` such as `{ "label": "New name" }` replaces the whole object,
-stripping `start` and `end`. A shape without those crashes the renderer on that element rather
-than degrading gracefully, which takes down the board view for everyone, not just you.
+Sending a partial `element_data` such as `{ "label": "New name" }` through
+`hiveboard_element_update` replaces the whole object, stripping `start` and `end`. A shape
+without those crashes the renderer on that element rather than degrading gracefully, which
+takes down the board view for everyone, not just you.

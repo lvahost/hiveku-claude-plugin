@@ -93,8 +93,9 @@ defect, and it decides which provenance you get at hop 8.
   2's consequences.
 
 **Operator read:** no `hiveku_visitor_id` means calls and web sessions cannot unify, so you see calls
-with no crediting pool session. Check `voice_diagnose_setup` for `blocking_issues[]`, and the swap
-health monitor in the UI for `site_unreachable | snippet_missing | pool_empty | pool_exhausted`.
+with no crediting pool session. Check `voice_diagnose_setup` for `blocking_issues[]`,
+`voice_pools_list` for the pool inventory, and `voice_call_tracking_live_probe` to prove the swap end
+to end (it holds a real tracking DID - confirm fixes with it, never schedule it).
 **"Attribution quietly stopped after a redeploy" almost always means `snippet_missing`: the DNI loader
 tag dropped off the page.** Nobody reports it on the day it happens, so line the deploy timeline up
 against the day attribution went flat.
@@ -307,10 +308,10 @@ From this page: `marketing_call_attribution_breakdown` for source/medium/campaig
 outbox_stuck | action_missing | action_disabled | action_not_counted | no_upload_lane |
 platform_unreadable`), plus `voice_recent_calls`, `voice_calls_list`, `voice_numbers_list`.
 
-**Gap to state plainly:** the structured call-conversion doctor (google_connection, conversion_action,
-tenant_opt_in, number_tracking, attribution_health, outbox_drain, reconciliation) has **no MCP tool**.
-It lives only in the dashboard UI and indirectly in `analytics_channel_scorecard`. Send the operator
-there rather than improvising it.
+The consolidated verdict is `voice_call_tracking_diagnose` - the call doctor: seven checks
+(`ok | warn | fail | unknown`) plus an ORDERED `fix_first` list, with `voice_call_tracking_outbox`
+for the row-level upload outbox. Read `fix_first` first; an `unknown` is not a pass. The calls
+reference, section 9, carries the detail.
 
 ---
 
@@ -340,11 +341,3 @@ bounds one. A `landing_page` recovery proves paid but not when. `created_at` bou
 refuses conservatively. A 204 proves receipt and nothing else. Attribution disputes are almost never a
 missing number; they are a number being asked to prove something it never promised.
 
----
-
-**File written to:** `/Users/aberubarts/Documents/main_hiveku/hiveku-claude-plugin/skills/hiveku-conversion-tracking/references/the-chain.md` (22,205 bytes, no frontmatter, no emojis, no em dashes).
-
-**Notes for the assembling agent:**
-- Every tool name is grounded in `conversion-grounding.md`; nothing invented. The one capability with no tool (the structured call-conversion doctor) is named as a gap with the dashboard UI as the fallback.
-- All starred grounding items are preserved and stated plainly with their consequence: first-touch-wins permanence, `attribution_captured_at` as a separate accessor, no click-id column in ClickHouse, `source_history` as the only dated store, the `gclid`-column-is-Google-only trap, the `first_touch_at` guarantee and dates-vs-bounds distinction, the `click_dated: 0` not-measurable trap, `created_at` over-stating age, most-embeds-are-stale, "saved is not live", the DNI `snippet_missing` post-redeploy pattern, and the two-step upload confirm.
-- Deliberately deferred to sibling references (so they do not double-document): the forms/`form_key`/spam material, the calls detail behind `transcript_state` and pool assignment, the offline-upload gates and refusal-reason catalogue beyond the ones cited, and the full diagnosis tool ladder. This file assumes those exist and points at them.

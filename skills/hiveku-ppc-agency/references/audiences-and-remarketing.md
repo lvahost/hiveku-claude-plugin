@@ -152,8 +152,9 @@ string. Where one is absent the fallback is the Ads UI Audience Manager or the r
 4. **The health test that catches the silent failure:** call `ppc_google_user_lists` again in 24 to 72
    hours and diff the sizes. A remarketing list on a trafficked site that does not grow is broken, and a
    single reading cannot tell you that.
-5. Close with `memory_create({ type: "memory", name: "ppc", content: <names, types, sizes, states, date> })`
-   plus a `pm_tasks_create` holding the inventory table.
+5. Close by persisting names, types, sizes, states and the date into the `ppc` memory via read-merge-write
+   (`memory_list` -> merge -> `memory_update`; bare `memory_create` only if the account has no `ppc`
+   document yet), plus a `pm_tasks_create` holding the inventory table.
 
 ### Play 2: Exclusions and suppression (the money play)
 
@@ -166,7 +167,9 @@ The only audience action that reliably cuts waste in week one. Before any prospe
    export, then bring back only the hashed result. There is no sales department agent -
    `talk_to_department({ domain: "sales" })` is refused with `Unknown domain 'sales'`. If you need the
    sales side's judgment on which segment to suppress, load `agent_identity_get({ domain: "sales" })`
-   and reason it out yourself, or ask the operator.
+   and reason it out yourself, or ask the operator. (Profile note: `agent_identity_get` is invisible on
+   a marketing-ads-scoped key - the `agent_` prefix is not granted in profiles.ts - so on that key the
+   operator is the fallback.)
 3. Apply with `ppc_audience_ops` in its exclusion operation, campaign level for "never on this offer," ad
    group level for surgical cases. Confirm each individually, naming the campaign and the traffic effect.
 4. Verify next day with `ppc_audience_performance({ connection_id, days: 7 })` plus impressions in

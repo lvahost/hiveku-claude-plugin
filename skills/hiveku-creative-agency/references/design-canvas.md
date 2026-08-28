@@ -147,11 +147,23 @@ putting a logo on an artboard means setting an image layer's `src`, registered f
 and `artboard` update independently of the canvas. A `design_update` omitting `canvasData` touches no
 layers, so it is how you retitle, retag, or restatus a design a human is actively editing.
 
-**Be honest about rollback.** `design_version_create` writes the snapshot and `design_versions_list` reads
-the index, but no grounded tool RESTORES one: restoring is a human action in the dashboard's Version
-History panel. Skip the snapshot and there is no rollback for anyone. Your fallback is keeping the
-pre-edit `design_get` payload in context so a second `design_update` can re-apply it. Likewise **no design
-DELETE tool appears in the grounded surface** - removing a design is a dashboard action.
+**Be honest about rollback.** `design_version_create` writes the snapshot, `design_versions_list` reads
+the index, and `design_version_get` returns one snapshot in full, frozen canvas blob included - but no
+tool RESTORES one server-side: restoring is a human action in the dashboard's Version History panel, or
+you read the snapshot with `design_version_get` and re-apply it yourself with `design_update` (which is a
+new write over the live canvas, so it follows the same round-trip rules). Skip the snapshot and there is
+no rollback for anyone. **No design DELETE tool exists** - removing a design is a dashboard action.
+
+**The client's revision requests live in comment threads, not in chat.** `design_comments_list` returns
+the review thread pinned to a design - every comment with its canvas `position`, `userId`, `isResolved`,
+and nested `replies`, oldest first, no pagination. RESOLVED COMMENTS ARE INCLUDED: the designer's canvas
+renders only unresolved pins, so filter on `isResolved` yourself or your count disagrees with the "N
+unresolved" badge the human is looking at. A 404 "Design project not found" is a wrong or other-tenant id,
+NOT an empty thread. Work the thread into the round-trip: read comments, fix what each one points at, then
+`design_comment_resolve` per thread you actually addressed. Resolve is ONE WAY - nothing un-resolves, and
+a comment resolved by mistake vanishes from the designer's view - so resolve only what is fixed, never to
+tidy a queue. Resolving a REPLY reports success and changes nothing observable: resolve the parent
+comment. It is a read-and-resolve surface only - no tool creates a comment.
 
 ## Part 5: Templates and artboard sizing
 
@@ -199,7 +211,10 @@ has been editing, with per-layer `animation` metadata; the worker uses the same 
 the editor, so the output matches the in-browser preview exactly. It is SYNCHRONOUS, blocks up to 240s,
 and refuses early if the canvas has no objects. The social lane's call shape is
 `design_export_mp4({ id, canvas_json, width, height, duration_seconds })`. Confirm first and say it takes
-up to four minutes. `design_video_rerender({ id, template_id, props })` re-renders one Remotion-template
+up to four minutes. It returns `mp4Url` plus a `jobId`, and the job outlives the call: on a timeout or
+dropped connection, poll `design_render_job_get({ job_id })` before re-rendering - the poll itself
+advances the job, and only `completed`, `failed`, and `abandoned` are terminal (full failure playbook in
+the video reference). `design_video_rerender({ id, template_id, props })` re-renders one Remotion-template
 clip inside a design and swaps the MP4 in place; it blocks 240s too.
 
 **Then register the output.** Generated images and video clips auto-register. Design exports and
@@ -207,6 +222,15 @@ stock-photo URLs do NOT - register those explicitly before attaching them anywhe
 `media_library_register_external_url` for one file or `media_library_register_external_url_batch` for a
 carousel's worth in one call. An unregistered export has no media asset id, cannot be attached by id
 downstream, and the URL in your hand is its only handle.
+
+**For a static PNG there is a one-call alternative:** `design_publish_to_library` reads the design's
+canvas STRAIGHT FROM THE DB (send no canvas_json), renders one settled frame, uploads the PNG to the
+account's S3 media path, and creates the library row (tagged creative-studio + published) - returning
+`fileUrl` and `mediaAssetId` in one shot. TREAT IT AS CREATE, NEVER AS SYNC: nothing dedupes, so
+publishing the same design twice leaves two S3 objects and two library entries, and a retry after its
+504 timeout duplicates the same way (the worker may still finish and orphan a still). One publish per
+finished design, and check `media_library_list` before retrying a timeout. It does not cover MP4s - a
+motion render still goes through export-then-register.
 
 ## Part 7: Failure modes
 
@@ -218,8 +242,10 @@ downstream, and the URL in your hand is its only handle.
 - **Exports do not auto-register** (Part 6). The most common way a finished asset becomes unattachable.
 - **`design_*` versus `marketing_design_*`.** A parallel naming exists (`marketing_design_list`,
   `marketing_design_get`, `marketing_design_export_image`, `marketing_design_export_mp4`, and
-  `marketing_media_list` / `_get` / `_folders` / `_register_external_url` / `_upload_base64`). Verify
-  which the account exposes; prefer `design_*`. The parallel design set is read and export only.
+  `marketing_media_list` / `_get` / `_folders` / `_register_external_url` / `_upload_base64`). Which set a
+  session sees is a KEY-PROFILE question, not an account setting - the `marketing-design` profile grants
+  both the `design_` and `marketing_` prefixes, so a missing name means check the key's profile. Prefer
+  `design_*`; the parallel design set is read and export only.
 - **`stock_photos_download` is the WEBSITE-PROJECT lane only** (`{ url, project_id, save_path }`, into that
   project's S3 assets, NOT the Media Library), so it cannot get a photo onto a canvas. `stock_photos_search`
   SAVES NOTHING. The canvas path is search, `media_library_register_external_url` on the returned `url`,
@@ -242,7 +268,8 @@ downstream, and the URL in your hand is its only handle.
    background): a carousel reads as a set only if the frame does not move. Slide 1 carries the hook alone
    and earns the swipe, slides 2 to 4 one idea each, slide 5 one CTA.
 6. `design_export_image({ id, frame: 0 })` per slide, look at all five together at thumbnail size, then
-   `media_library_register_external_url_batch` in slide order.
+   `media_library_register_external_url_batch` in slide order (or one `design_publish_to_library` per
+   finished slide - once each, it never dedupes).
 7. Hand back the five `dashboardUrl`s in slide order. Handoff to the social lane is `social_create_post`
    with `media_urls` in that order, under that lane's confirm rules.
 
@@ -293,16 +320,3 @@ downstream, and the URL in your hand is its only handle.
    `marketing_storyboard_update` on `validation.errors`, restyled with `marketing_storyboard_set_look`,
    then `marketing_storyboard_submit_for_approval`.
    THE AGENT CANNOT APPROVE: after creating, submit for approval and stop.
-
----
-
-## Notes for the assembling agent (not part of the reference file)
-
-File on disk: `/private/tmp/claude-501/-Users-aberubarts-Documents-main-hiveku/30c385fb-6c1e-4ade-8eb0-b3167903d1e5/scratchpad/layered-design-canvas.md`
-
-- **Size is 21.1KB, about 5 percent over the 12-20KB ceiling.** I cut it from an initial 27.6KB. Everything left is coverage the brief asked for by name. If you need it under 20KB, the two cheapest remaining cuts are the `design_*` vs `marketing_design_*` bullet in Part 7 (~600 bytes, a naming-verification note, not one of the three required failure modes) and the `stock_photos_download` bullet (~560 bytes, arguably belongs in a sibling images/media reference).
-- **Deliberately deferred to a sibling reference, not forgotten:** the "reuse before generating" doctrine (grounding doctrine 6) and the media-library housekeeping tools (`media_library_list`, `media_library_get`, `media_folders_list`, `media_collections_list`, `media_usage_get`, `media_delete`, `media_update`). I cut them for budget since this reference is the canvas, not the asset library. Re-add a one-line pointer if no images reference will carry them.
-- **Capabilities I flagged as having no tool, with the fallback named** (per your rule): no per-layer patch (full `canvasData` replacement only, merge in context); no version RESTORE tool (dashboard Version History; fallback is holding the pre-edit `design_get` payload); no design DELETE tool (dashboard action); no gradient/shadow/blur/mask in the Fabric styling set (stacked-rect scrim, duplicated offset text layer, `stroke` outline, or say it is a dashboard-editor job); no multi-page design object (one design per artboard, so a carousel is N designs).
-- **Star rules preserved verbatim**, each appearing in Part 1 and repeated at its point of use: D2 (state_get round-trip), D5 (auto-register, repeated in Part 6), D7 (agent cannot approve, repeated in Play C step 8). Five `` occurrences total.
-- Cross-checked against `domains-truth.md`: only `branding`, `social`, and `content` are used with `talk_to_department`, all three valid there; `branding` is valid for `account_context_get`. The reference states outright that there is no `creative` domain.
-- No frontmatter, no emojis, no em dashes. Opens with what it covers and when to load it, matching the house style of `hiveku-web-agency/references/forms.md`.

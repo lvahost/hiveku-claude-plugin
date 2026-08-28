@@ -534,3 +534,64 @@ USER. A good question beats a 50-turn spiral.** Asking is not a failure state. T
 A build is green when `project_test_build` says so. A deploy succeeds when smoke serves the real
 routes, not when artifacts upload. A file exists in production when it is in the right lane, not when
 it renders in the preview. Each pair has a real customer incident behind the wrong half.
+
+## 14. Bulk file deletion, and the asset-lane inventory tools
+
+Deleting MANY files: `project_files_bulk_delete` soft-deletes up to 500 files by EXPLICIT
+path list in ONE call, replacing N single `project_file_delete` calls that burn the rate
+limit. Soft-only: every byte stays in version history (revive via `project_file_restore`),
+and the same Fly-volume + S3 fan-out as the tree-replace runs, so stranded physical files
+cannot shadow new routes. A full pre-op checkpoint is taken by default (`checkpoint: false`
+skips it - do not); `dry_run` reports what would be deleted, and `not_found_paths` in the
+response lists requested paths that were not current files. The path list is explicit,
+reviewed with the user - never derived from a glob or a pattern.
+
+Inventorying the asset lane (section 8's other half):
+- `assets_list` - the project's binary assets (images, videos, fonts) on S3, NOT the
+  marketing Media Library. Filters: `path_prefix`, `mime_type`, `search`. PAGINATED
+  (default limit 100): ALWAYS check `pagination.total` against the rows returned before
+  concluding an asset does not exist - absence from page 1 is NOT absence. Filter
+  server-side instead of grepping one page.
+- `assets_info` - one binary asset by UUID or file_path. Binary-assets table only: it
+  returns 404 for paths that exist as TEXT files in `builder_code_versions` (e.g.
+  `public/icon.svg` saved via `project_file_save`) - if it 404s on a path that exists as a
+  project file, use `project_file_get` instead.
+- `assets_migrate_to_public` - moves legacy root-level `images/` and `videos/` paths into
+  `public/images/` and `public/videos/` (updates DB + copies S3 objects; idempotent).
+
+## 15. Deploy pre-flight, the diff tri-state, and watching a deploy land
+
+- `project_deploy_preflight({ project_id })` FIRST - it returns `ready`, `blockers[]`,
+  and `hints[]`. Surface `blockers[]` verbatim to the user; only they can fix those.
+  Read `hints[]` for `reserved_cdn_prefix_page_collision`, which means a shipping page
+  route sits under a reserved CDN asset prefix (videos/, media/, images/, ...) and WILL
+  403 on the deployed URL - rename the route before shipping.
+- `deploy_diff({ project_id, environment })` to see the file + route delta versus what is
+  live. Read `data.has_changes` as a TRI-STATE, not a boolean: `false` is a confident
+  all-clear (exact baseline, code and assets match - safe to skip the deploy); `true` is
+  a concrete change (never_deployed implies true); `null` means we CANNOT prove no-change
+  (approximate/timestamp basis, GitHub-source project, unknown asset baseline) - read
+  `data.confidence`, `data.basis`, `data.warnings` and deploy anyway. Never report an
+  empty diff as "nothing will change" without checking which of the three you got.
+  `deploy_diff` can also preview an unsaved push via `local: [{ path, sha256 }]`.
+  `deploy_changes` is the coarser "files changed since the last deploy of this tier".
+- Watch it land with `deploy_status`, or subscribe to live deploy + build-log events with
+  `deploy_subscribe` (Server-Sent Events read as long-poll; event types are `status` per
+  builder_deployments transition, `log` per build-log line when `include_log_lines=true`,
+  `ping` heartbeats, and `end`). Pinning `deployment_id` auto-closes the stream as soon as
+  the deployment reaches a terminal status; without it the stream covers all the project's
+  deployments until `max_seconds` (capped at 10 minutes) elapses. This replaces burning a
+  `deploy_status` poll every 15s. `deploy_get({ project_id, deployment_id })` for one
+  deploy's detail (project_id is required, and deployment_id accepts either the UUID
+  deploy_id or the string deployment_id form). Read `data.warnings[]` on the response.
+
+## 16. project_files_bulk_get completeness traps
+
+There is no `paths` parameter on bulk_get - the real knobs are `include_content`,
+`include_assets`, `max_file_bytes`, `max_total_bytes`, `cursor`. Read its completeness
+traps before you trust the payload: default scope is code + config only (binaries are
+excluded and listed in `excluded_asset_paths[]`), per-file cap is 1MB (oversized files
+come back marked `truncated` - refetch with `project_file_get`), and total payload is
+20MB, above which the response carries `partial: true` + `next_cursor` that you MUST
+follow. A partial you did not resume is the "my bulk_get returned 424 of 538 files"
+failure - it looks like a complete tree and is not. Read before you write.

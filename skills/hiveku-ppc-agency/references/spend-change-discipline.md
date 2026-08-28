@@ -378,6 +378,14 @@ Two things you need to know about it:
   strongest rail. Run `ppc_sync({ connection_id })` before a budget write so the step cap has
   something to compare against.
 
+There is also a per-connection MONTHLY guardrail, armed by configuration rather than always-on:
+`ppc_connection_update` with `settings.monthly_budget_target_cents` (integer cents) arms a daily budget
+sweep; `settings.guardrail.alert_at_pct` (default 85) files inbox alerts at that % of target, and
+`settings.guardrail.pause_at_pct` (opt-in) auto-pauses live campaigns at that % of target. Arm it at
+onboarding with the client's explicit consent - an auto-pause is a spend change the client must have
+pre-approved. The PATCH replaces the WHOLE `settings` object: read the connection first and merge, or
+every other settings key is silently lost.
+
 ### 4.2 Tools with a real two-step confirm gate (code, verified)
 
 These preview on the first call and execute only when the IDENTICAL call is repeated with
@@ -462,7 +470,8 @@ and a local mirror that will happily keep showing you the old value.
 | Customer match upload | The confirm-call response | `ppc_google_user_lists` operation `user-lists-list` for sizes and eligibility. The job runs async on Google's side and audience sizes take 24 to 48 hours |
 | Audience sync (any platform) | `processed_adds` / `processed_removes` / `remaining` from `ppc_audience_ops` `process-pending` | `ppc_audience_ops` operation `stats`, which returns `matched_count` where the platform reports one, else null |
 | Meta ad set targeting | Response payload | `ppc_sync` then `ppc_ad_group_list` - diff the ad set row's `targeting` JSON against what you sent, because omitted fields were dropped. `ad-set-audiences` is a partial check only: it confirms the audience lists and NAMES the surviving top-level keys, so it catches a dropped key but never a changed value |
-| Anything at all, on Google | - | `ppc_change_history` shows your own write with `client_type` GOOGLE_ADS_API. It is the closest thing to an independent audit log this surface has, and it only reaches 30 days back |
+| Anything at all, on Google | - | `ppc_change_history` shows your own write with `client_type` GOOGLE_ADS_API, and only reaches 30 days back |
+| Anything written from a Hiveku MCP session, any platform | - | `audit_query` (always-available on every key profile) reads the account's MCP audit log: every tool call with key preview (last 10 chars), tool name, sanitized args summary, status, duration. Filters compose with AND (`tool_name`, `tool_contains`, `args_contains`, `since`, `status`). It answers "which key did what" for disputed changes - but records only Hiveku-side calls, never edits made in a platform UI |
 
 ### 5.2 The ordering rule
 

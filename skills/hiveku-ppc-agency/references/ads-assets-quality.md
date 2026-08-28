@@ -218,8 +218,10 @@ Sequence: callouts (no destinations), sitelinks (need real URLs), structured sni
  - **call**: the verified number from `get_account_info`, never an unconfirmed tracking number.
  - **promotion / price**: strong, date-bound, a compliance liability the day they expire. Build only
      with an owner and an end date in a PM task.
-2. Record every returned `resource_name`. **There is no asset list tool**: the resource_names in your PM
-   task and the `ppc` memory are the only registry, and losing them means the Ads UI.
+2. Record every returned `resource_name` in the PM task and the `ppc` memory. To re-enumerate what the
+   account holds, `ppc_google_asset_upload` operation `assets-list` is the read-only inventory (filter
+   by asset_type - sitelink, callout, structured_snippet, call, promotion, price, business_name, text,
+   image, youtube_video; image rows carry pixel dimensions plus suggested_field_types).
 3. `ppc_asset_attach({ connection_id, asset_resource_name, campaign_id | ad_group_id })` at the Framework
    E level, complete sets only. Confirm the batch first: attachment is a structure change, not a spend
    change, so one confirmation covers it. Verify rendering in the dashboard, then log the names with
@@ -228,7 +230,9 @@ Sequence: callouts (no destinations), sitelinks (need real URLs), structured sni
    logos 1:1 from 128x128 and 4:1; under roughly 5MB). `ppc_google_asset_upload` puts the file in the
    account, `ppc_asset_attach` places it, and an unattached upload does nothing. Images get their own
    policy review and are the most rejected type (no text-heavy overlays, collages, blurry crops), so
-   re-check `ppc_disapprovals_list` next day. Video and YouTube have **no tool**: Ads UI.
+   re-check `ppc_disapprovals_list` next day. YouTube video ASSETS: `ppc_google_asset_upload` operation
+   `youtube-video-asset-create` takes the 11-char video id or a pasted watch URL - the video must
+   already be public or unlisted on YouTube, Google Ads never hosts video bytes.
 5. Prune quarterly or on any offer change. Google labels asset performance Low / Good / Best / Learning in
    the UI and **no tool exposes these**: read them in the dashboard, never inferring from ad-level metrics.
    Retire anything on an expired promotion, dead service, changed price, dead number or a URL that now
@@ -259,6 +263,24 @@ Sequence: callouts (no destinations), sitelinks (need real URLs), structured sni
    is right, raise it as a client-facing action naming the exact policy rather than rewriting around a
    wrong disapproval. Re-check `ppc_disapprovals_list` at 24 and 48 hours ("fixed" is a status you observe,
    not one you assert), and put repeat offences in the `ppc` memory as a prohibited-phrase list.
+5. **The same loop on the other platforms** - a rejected ad spends nothing and silently starves its
+   parent, so these run weekly alongside the Google read:
+ - **Meta** `ppc_meta_disapprovals_list`: ads with effective_status DISAPPROVED (refused to serve) or
+     WITH_ISSUES (serving restricted), with policy reasons from issues_info. Empty reasons means Graph
+     attached no detail, NOT that no reason exists. Same response shape as the Google tool
+     (disapproved_count + items with reasons and parent ids).
+ - **TikTok** `ppc_tiktok_disapprovals`: ads with secondary_status AD_STATUS_REJECT plus rejection
+     reasons. UNVALIDATED-LIVE; paginated one page per call (pagination.has_more / next_page); reasons
+     resolved for the first 300 rejected ads per call, beyond that items are status-only
+     (reasons_available=false); ads still IN review (AUDIT/REAUDIT) are deliberately absent - do not
+     report an in-review ad as approved or rejected.
+ - **LinkedIn** `ppc_linkedin_creative_disapprovals`: creatives whose review REJECTED them, detected
+     from the review object or REJECT-flavoured servingHoldReasons. UNVALIDATED-LIVE; rejection-reason
+     text is app-tier-dependent and may come back status-only (reasons_available=false) with the detail
+     living in Campaign Manager; LinkedIn creatives are unnamed (name is always null) - use
+     content_reference or `ppc_linkedin_creatives` detail for context; optional campaign_id scopes.
+   Remediation on all three follows the Meta/LinkedIn build lanes in `paid-social-and-bing.md` (replace
+   + pause, never edit-in-place where the platform forbids it), each write confirmed.
 
 ### Play 6: Competitive review
 

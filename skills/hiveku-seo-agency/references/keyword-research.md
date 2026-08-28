@@ -9,8 +9,9 @@ for net-new research, rebuilding a stale keyword set, planning a content roadmap
 cluster is winnable, forecasting traffic or revenue from rankings, or diagnosing keyword and ranking
 data that looks wrong. Not for rank reporting (`rankings-and-search-console.md`), briefs and refresh
 decisions (`content-strategy.md`), or competitor and link intelligence
-(`link-building-and-competitors.md`). SKILL.md owns the metered DataForSEO Labs expansion suite and the
-shared CTR and difficulty tables; this file does not repeat them.
+(`link-building-and-competitors.md`). The metered DataForSEO Labs expansion and qualification
+catalog AND the shared CTR and difficulty tables live in `metered-research-suite.md`.
+This file repeats neither.
 
 ---
 
@@ -23,9 +24,13 @@ shared CTR and difficulty tables; this file does not repeat them.
    competitor set, location code, seed vocabulary and rejected-terms list.
 3. Local snapshot before live calls: `hiveku-data/seo/keywords.json`, `rankings.json`, `projects.json`,
    `competitors.json`, plus `hiveku-data/localseo/*.json`. Free orientation, never decision-grade.
-4. Scope: `seo_list_projects` for `project_id`, `seo_project_get({ project_id })` for domain, location
-   and configured sources. Nearly every tool below needs `project_id`. No project or no data sources:
-   stop and follow the SETUP path in SKILL.md. `get_account_info` gives the account-level domain and
+4. Scope: `seo_list_projects` for `project_id` (its rows carry the tracked domain;
+   `seo_project_list_active` is the richer read, with is_active/search/page filters), and
+   `seo_connections_list` for which sources are configured. Do NOT reach for
+   `seo_project_get` here: it reads a WEBSITE project's site-level SEO settings and takes the
+   builder project id, a different id space entirely (see reporting-and-delivery.md, Play G).
+   Nearly every tool below needs `project_id`. No project or no data sources: stop and follow
+   the SETUP path in SKILL.md. `get_account_info` gives the account-level domain and
    timezone for report framing.
 
 Alias note: several reads ship under two names (`seo_list_keywords` / `seo_keywords_list`,
@@ -110,19 +115,29 @@ visible win, and steps 1 and 2 are where it lives.
 ### Play 1: Build the universe
 
 1. Pre-flight, then seeds per 1.2.
-2. `seo_research({ project_id, ... })` is the account-native entry point: it expands and qualifies
-   against the project's configured providers and persists into the project keyword store. Pass the full
-   batched seed list, the correct `location_code` and language, and a `limit` you can actually process.
-   One call with 25 seeds, never 25 calls with one seed. Metered, and the most expensive routine action
-   in this manual.
+2. Expand with the metered suite catalogued in `metered-research-suite.md` (keyword ideas,
+   suggestions, related keywords, keywords-for-site, bulk difficulty and intent, Ads-grade volume):
+   batch to the documented maximum at the correct location and language, dedupe the union before
+   qualifying, qualify in bulk. One call with 25 seeds, never 25 calls with one seed. Metered, and
+   the most expensive routine action in this manual. `seo_research` is an alternative surface over
+   some of the same endpoints: an action-router whose `action` argument is required and picks the
+   endpoint (`keyword-ideas`, `related-keywords`, `keyword-overview`, `keyword-gap` and the rest of
+   its catalog), fed by `keyword` / `keywords` / `domain` plus `location_code` and `language`. It
+   takes NO `project_id` - the proxy silently drops arguments a tool does not declare, so passing
+   one changes nothing - and it RETURNS results without persisting them anywhere you can read back
+   (its one persisting action is `aeo-audit`, which writes the SERP-feature tables, and the
+   dedicated `seo_aeo_audit_run` supersedes that).
 3. Read out keyword, volume, difficulty, intent, CPC. On first read look for **shape**, not individual
    keywords: volume concentrated in three heads or spread across a long tail, intent mix commercial or
    informational. That decides pillar-and-spoke build versus money-page tuning.
-4. `seo_list_keywords({ project_id })` to read back what actually persisted. Always read back. The gap
-   between what you asked for and what landed is where silent truncation and provider fallbacks hide.
-5. For the deeper metered expansion suite (keyword ideas, suggestions, related keywords,
-   keywords-for-site, bulk difficulty and intent, Ads-grade volume) use the tool names in SKILL.md Play
-   1: batch to the documented maximum, dedupe the union before qualifying, qualify in bulk.
+4. The universe you just built exists only in this session until you persist it yourself: memory for
+   the seed set and decisions (section 6), a deliverable sheet for the qualified matrix
+   (`reporting-and-delivery.md`), `seo_keyword_cluster_create` for committed clusters,
+   `seo_track_keyword` for the tracked list. `seo_list_keywords({ project_id })` does NOT read your
+   research back: it reads the project keyword store that the dashboard's domain analysis populates
+   with the domain's currently ranked keywords, and no tool in this manual writes to it. Read it as
+   a second orientation source - what the domain already ranks for - never as confirmation that a
+   research pass landed.
 
 **Decision**: whether the account has a real demand pool. Under roughly 150 qualified keywords with
 meaningful volume is a low-demand niche; say so, and pivot toward conversion, local and AEO rather than
@@ -131,9 +146,11 @@ codes, run date, universe size, and rejected terms with reasons.
 
 ### Play 2: Cluster the universe
 
-1. `seo_keyword_clusters({ project_id })` returns intent and semantic clusters over the project's
-   keywords, a free DB read once keywords exist. Read out label, member count, aggregate volume,
-   dominant intent, difficulty spread.
+1. `seo_keyword_clusters({ project_id })` is a free DB read of the cluster rows already stored for
+   the project (from prior `seo_keyword_cluster_create` calls, yours or the dashboard's). An empty
+   result means nothing has been stored yet, not that research failed; clustering a fresh universe
+   is your work, done on the Play 1 expansion output. Read out label, member count, aggregate
+   volume, dominant intent, difficulty spread.
 2. Audit before accepting. Three failure shapes: **mega-cluster** (200 keywords under one label; split
    by intent then modifier family), **singleton spray** (dozens of one-member clusters; merge by SERP
    overlap, not string similarity), **intent bleed** (transactional and informational together; always
@@ -246,8 +263,10 @@ by a local pack means the win is a Google Business Profile play, not a page.
 ### Play 9: Quarterly re-qualification
 
 Volume and difficulty do not move daily; weekly re-pulls waste metered budget. Once a quarter, re-run
-`seo_research` on the same seeds and location and diff against the stored universe for new keywords and
-any whose volume moved more than 40 percent; re-run `seo_keyword_clusters({ project_id })` against the
+the same metered expansion calls on the same seeds, location and language, and diff against the
+universe you recorded in memory and the deliverable sheet on the first pass (that record is the stored
+universe; nothing else holds it) for new keywords and any whose volume moved more than 40 percent;
+re-read `seo_keyword_clusters({ project_id })` against the
 committed clusters, adding new members via a confirmed `seo_keyword_cluster_create`; and read
 `seo_list_rankings` for which clusters are moving, because a shipped pillar with no movement after six
 months is a strategy failure, not a patience problem. Close with `memory_update`.
@@ -306,9 +325,9 @@ months. KD 60-plus head with a link campaign, 2 to 4 quarters. Put these in writ
 
 | Symptom | Cause, in check order | Action |
 |---|---|---|
-| `seo_research` returns few or no keywords | `location_code`/language invalid or mismatched; seeds too narrow or branded; `seo_project_get` shows no data sources; metered credit exhausted, which surfaces as an empty result, not an error | Test one broad seed, then one `seo_serp_get` on a keyword known to have volume. SERP works and research does not means the provider is at fault, not the account |
+| `seo_research` or a metered expansion returns few or no keywords | `action` wrong for the input shape (each action needs its own input: `keyword` vs `keywords[]` vs `domain`, and unknown extra arguments are silently dropped, not rejected); `location_code`/language invalid or mismatched; seeds too narrow or branded; metered credit exhausted, which surfaces as an empty result, not an error | Test one broad seed, then one `seo_serp_get` on a keyword known to have volume. SERP works and research does not means the provider is at fault, not the account |
 | Volumes uniform, round, or all zero | Provider fallback or a cached low-fidelity source | Spot-check two keywords against `seo_serp_get` result depth and ad density plus a `web_search` read. Not credible means unusable: say so and re-run, never forecast on it |
-| `seo_keyword_clusters` / `seo_topic_clusters` empty | Clustering runs on persisted keywords; nothing persisted | `seo_list_keywords({ project_id })`. Empty means the research pass never landed, whatever the response looked like |
+| `seo_keyword_clusters` / `seo_topic_clusters` empty | These read STORED cluster rows; none have been created for this project yet | Not a research failure. Build clusters from the Play 1 expansion output and persist the agreed ones via `seo_keyword_cluster_create` / `seo_topic_cluster_create` |
 | `seo_list_rankings` empty or thin | Nothing tracked, or nothing synced yet | `seo_tracked_keywords_list` to confirm. Rankings populate on a sync cadence; a keyword tracked an hour ago having no data is correct |
 | Rankings look wrong to the client | `location_code` mismatch (2840 on a non-US client); a personalized mobile SERP versus a clean desktop SERP at a set location; local pack read as organic; direction, where lower is better | Reproduce with `seo_serp_get({ keyword })` at the tracked location before conceding an error |
 | `seo_ranking_predictions` empty or absurd | Insufficient ranking history | Check the tracking start date, fall back to Play 6 Method B, say predictions arrive after a full quarter |
@@ -381,5 +400,7 @@ goes out without explicit confirmation.
 - **Bulk export of the universe**: none here. Use a deliverable sheet (`reporting-and-delivery.md`).
 - **Editing a tracked keyword's location**: no update tool. You would delete and re-track, destroying
   history. Set `location_code` correctly the first time.
-- **Historical volume by month**: none. Ask the client, or infer seasonality from the GSC time series
-  tooling in `rankings-and-search-console.md` on queries we already rank for.
+- **Historical volume by month**: `seo_research` with `action: 'historical-search-volume'` (multi-year
+  volume trend) or `action: 'keyword-trends'` (trend bands), both metered. Cross-check the seasonal
+  story against the GSC time series tooling in `rankings-and-search-console.md` on queries we already
+  rank for, which reflects this client rather than the market.

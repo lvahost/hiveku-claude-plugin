@@ -64,10 +64,11 @@ Two consequences worth internalising:
 
 ## 3. Where it bites in Hiveku
 
-Across the roughly 1300-tool surface there are **on the order of 100 tools exposing a `page`,
+Across the roughly 1,600-tool surface there are **on the order of 100 tools exposing a `page`,
 `offset`, `cursor` or `start_row` parameter**, and **close to 90 whose `limit`-style parameter
 carries no description at all**, so the server picks a number and never tells you which. Somewhere
-north of 110 do document theirs. Those three figures are approximate on purpose: independent
+north of 110 do document theirs. Those three figures were parsed before the 2026-08-27 expansion
+added roughly 230 tools, so read them as floors. They are approximate on purpose: independent
 parses of the same source land a few apart depending on whether `row_limit`, `scan_limit` and
 `page_size` count as limits and where you put the boundary between two adjacent tool objects. The
 proportion is the point, not the digits. If you call something in that undocumented middle group
@@ -151,24 +152,27 @@ Most of these routes do return an honest count. `seo_keywords_list`, `helpdesk_t
 `crm_list_contacts` returns `{ data, total, page, limit }` with `total` from a real
 `prisma.count()`. **That is your coverage sentence, already computed. Read it.**
 
-### 3d. `pm_tasks_list` is the trap, read this one twice
+### 3d. `pm_tasks_list` was the trap in this family; it is fixed, and the response proves which one you got
 
-`pm_tasks_list` declares a `page` parameter. **The route ignores it.** `/api/olympus/pm/tasks`
-does `take: limit` and there is no `skip`, no `offset`, no page arithmetic anywhere in the
-handler. So `page: 2` returns the same first 100 rows as `page: 1`.
+Until 2026-08-26, `pm_tasks_list` declared a `page` parameter the route never read (`take` with no
+`skip`), so `page: 2` returned the same first 100 rows as `page: 1`, and it returned
+`total: tasks.length` — the length of the page it just built, not a count. A session could
+"paginate through" 400 tasks, read the same 100 rows four times, see `total: 100` each time, and
+report 400 tasks with confidence. Nothing errored.
 
-It gets worse. The route returns `total: tasks.length`, which is the length of the page it just
-built, not a count of matching rows. Every other list route in this family runs a real
-`prisma.count()`. This one does not.
+Builder commit `f85150587` fixed the route (verified against the route source, 2026-08-28): `page`
+is honoured via `skip = (page - 1) * limit`, and `total` comes from a real
+`prisma.pm_tasks.count({ where })`, returned alongside `page`, `limit` and `total_pages`. So on a
+current deploy, paginate normally and use `total` as your coverage sentence, exactly like the rest
+of the family. The schema still documents nothing, so the route numbers in the 3c table (`limit`
+default 100, cap 200) remain the ones that run.
 
-The failure mode is exact and silent: a session "paginates through" 400 tasks by calling pages
-1 through 4, reads the same 100 rows four times, sees `total: 100` each time, and reports 400
-tasks with confidence. Nothing errors.
-
-**So: on `pm_tasks_list`, do not paginate and do not trust `total`.** Raise `limit` toward the
-200 cap in a single call, and if the project plausibly has more than 200 tasks, narrow with
-`project_id`, `status`, `section_id` or `milestone_id` and say which filters you used. If you
-need a true count, count the ids you actually received and label it as such.
+The response tells you which route you are talking to, so read it rather than trusting this
+paragraph's date: the fixed response carries `page`, `limit` and `total_pages`; the pre-fix
+response carried only `data` and `total`. If those three fields are absent, you are on a pre-fix
+deploy — do not paginate and do not trust `total`. Take one call at the 200 cap, narrow with
+`project_id`, `status`, `section_id` or `milestone_id` and say which filters you used, and count
+the ids you actually received, labelled as such.
 
 ### 3e. `fetch_url` hides two things you may be about to report on
 
@@ -208,9 +212,9 @@ Lift these. They are deliberately flat and short, and none of them are apologies
 > per-page checks. I can run the whole thing, or check the 50 highest-traffic pages first and
 > tell you whether the rest is worth it. Which do you want?
 
-> I can give you a real answer for the 200 tasks `pm_tasks_list` will return in one call, but
-> this board has more than that and the endpoint cannot page. Tell me which project or status to
-> scope to and the answer will be complete rather than partial.
+> `pm_tasks_list` came back with `total: 412, total_pages: 3` on the first call. I can read the
+> other two pages and answer over the whole board, or answer now over the newest 200 and label it
+> a sample. Which do you want?
 
 **Reporting what was skipped, and why:**
 

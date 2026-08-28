@@ -66,7 +66,7 @@ First session on a Microsoft connection, then quarterly.
 5. `ppc_bing_conversion_tracking_status`: `ready_for_conversion_bidding` plus per-tag install state. Anything but ready blocks Play 7 and every conversion-based bidding strategy.
 6. `ppc_bing_keyword_performance` with `ad_group_id` omitted sweeps all synced ad groups. The ONLY source of Bing keyword ids (keywords are not mirrored locally). Read editorial status: a disapproved keyword is a silent zero.
 7. `ppc_bing_ad_extension_list` and `ppc_bing_shared_negative_list_list` for coverage gaps.
-8. Baseline into `pm_tasks_create`; connection ids, currency, targets, protected campaigns into `memory_create`.
+8. Baseline into `pm_tasks_create`; connection ids, currency, targets, protected campaigns into memory via the read-merge-write protocol in section 21.
 
 Drives a defect list ranked by dollars: geo leak, dead tracking, waste, extensions, bids.
 
@@ -95,7 +95,13 @@ Fix immediately on local-service accounts. On national ecommerce `in_or_searchin
 
 ## 9. Play: Bing waste mining and shared negatives
 
-No Bing search-terms report exists in this set and the Google one refuses a Microsoft connection. Mine from `ppc_bing_keyword_performance`, `hiveku-data/ppc/search_terms.json` where the export covers this connection, and `ppc_metrics`. If neither carries query-level data, say so and read the query report in the Microsoft UI rather than inventing a number.
+The Google search-terms report refuses a Microsoft connection; the Bing one is its own tool:
+`ppc_bing_search_terms_report` - async submit/poll/download, per-query impressions/clicks/spend/
+conversions sorted by spend, plus a `wasted_spend` summary of zero-conversion queries (the
+negatives-mining feed; optional campaign_id scopes, days 1-365 default 30, limit caps returned rows
+while summaries cover the full report). Supplement with `ppc_bing_keyword_performance`,
+`hiveku-data/ppc/search_terms.json` where the export covers this connection, and `ppc_metrics`. If a
+pull fails, say so rather than inventing a number.
 
 1. Classify: converters at acceptable CPA; bleeders (spend at or above 1x target CPA, zero conversions); irrelevant (jobs, free, DIY, competitor brand the client may not bid on).
 2. Account-wide themes belong on a shared list: `ppc_bing_shared_negative_list_list` first, reuse rather than create a fourth.
@@ -112,7 +118,7 @@ Do not seed a Bing list with broad negatives copied from Google. Microsoft match
 - **Dayparting.** `ppc_bing_ad_schedule_add` restricts serving to the listed windows and **unlisted hours stop serving entirely**. A spend-shape change; propose only with hour-of-day evidence.
 - **Device.** `ppc_bing_device_criterion_set` requires the adjustment and `-100` removes the device class outright. Cap first moves at 20 to 30 percent, only on segments with 30+ clicks or 1x target CPA in cost.
 - **Demographics.** `ppc_bing_demographic_criterion_add` has no exclude flag: Microsoft expresses exclusion as `-100`. Never exclude the `unknown` bucket, usually a large share of impressions.
-- **Audiences.** `ppc_bing_audience_list` reads what the account can target plus the audience_type the attach lane needs; creation and upload are deliberately not exposed on Microsoft for PII reasons, so a new remarketing list is a UI task. `ppc_bing_audience_criterion_add` attaches one, but whether that RESTRICTS reach depends on the entity's target-and-bid mode, which no tool here reads or flips: check it in the Microsoft UI before assuming an attachment is observation-only. `ppc_bing_audience_criterion_remove` detaches and refuses non-audience ids (geo, schedule, device, demographic go through `ppc_bing_criterion_delete`). Removing an exclusion WIDENS reach: a spend change.
+- **Audiences.** `ppc_bing_audience_list` reads what the account can target plus the audience_type the attach lane needs; creation and upload are deliberately not exposed on Microsoft for PII reasons, so a new remarketing list is a UI task. `ppc_bing_audience_criterion_add` attaches one, but whether that RESTRICTS reach depends on the entity's target-and-bid mode. Read it with `ppc_bing_audience_associations_list` (every audience attached to one campaign or ad group, split targeted vs excluded, with the entity's audience_mode and the criterion_ids the remove tool takes); flip it with `ppc_bing_audience_target_setting_set` - `bid_only` is Microsoft's default (audiences adjust bids, reach unchanged - the SAFE fix for an accidentally narrowed entity), `target_and_bid` serves ONLY to the targeted audiences and collapses reach to their size, so flipping TO it is a spend-shape change needing its own confirmation. Both need a prior `ppc_sync`. `ppc_bing_audience_criterion_remove` detaches and refuses non-audience ids (geo, schedule, device, demographic go through `ppc_bing_criterion_delete`). Removing an exclusion WIDENS reach: a spend change.
 - **New structure.** `ppc_bing_push_campaign`, then `ppc_platform_ad_group_create`, `ppc_platform_keyword_add`, `ppc_platform_responsive_search_ad_create` (Bing needs 3+ headlines, 2+ descriptions), then geo per Play 8, then `ppc_platform_enable_resource` last, with confirmation.
 
 ## 11. Play: Meta weekly read
@@ -123,7 +129,7 @@ Do not seed a Bing list with broad negatives copied from Google. Microsoft match
 4. Fatigue: frequency climbing while CTR falls and CPM rises. Rebrief, do not rebid; the write that closes the loop is new creative, not a budget cut.
 5. `ppc_meta_advantage_status` on top spenders: manual buy or v25 unified Advantage+? Diagnosing an Advantage+ campaign as if its audience were hand-picked wastes a week.
 6. `ppc_meta_leadgen` (forms, then leads with `since_unix`) to pull captured leads into the CRM the same session.
-7. Disapprovals: no Meta disapproval read in this set. Check Ads Manager, or the lane in `ads-assets-quality.md` if the account exposes one. A rejected ad spends nothing and silently starves its ad set.
+7. Disapprovals: `ppc_meta_disapprovals_list` - ads with effective_status DISAPPROVED or WITH_ISSUES, with policy reasons from issues_info (empty reasons means Graph attached no detail, not that no reason exists; same response shape as Google's `ppc_disapprovals_list`). A rejected ad spends nothing and silently starves its ad set, so run it in the weekly read, not just on incident.
 
 ## 12. Play: Meta build (creative, ad set, ad)
 
@@ -166,6 +172,7 @@ Suppression is the most under-used first-party move: upload existing customers a
 - `ppc_tiktok_pixels` event-stats (max 10 pixels, 30-day window). A pixel with no recent events is TikTok's dead UET tag: stop optimising and fix it.
 - `ppc_tiktok_conversions` defines custom conversions over pixel or app event sources and creates CRM event sets for offline revenue.
 - `ppc_tiktok_leads` download-leads creates an async export polled by task id. Route leads into the CRM the same session; a lead sitting in an export is not a lead.
+- `ppc_tiktok_disapprovals` lists ads rejected by review (secondary_status AD_STATUS_REJECT) with the platform's rejection reasons. UNVALIDATED-LIVE; one page per call (pagination.has_more), reasons resolved for the first 300 rejected ads per call (beyond that, and where TikTok returns no record, items are status-only with reasons_available=false); ads still IN review are deliberately absent. Weekly, and first on any delivery stall.
 - `ppc_tiktok_brand_safety` diagnosis-get whenever delivery stalls: it surfaces delivery and rejection issues no metric shows. Inventory and exclusion changes affect reach: confirmed changes.
 - `ppc_tiktok_comments` and `ppc_tiktok_mentions` cover moderation and listening; every mentions operation needs a Business Center business_id. Public replies: draft, show the client, post only on approval.
 - `ppc_tiktok_search_ads` manages Search Ads negatives at advertiser, campaign or ad group scope.
@@ -176,7 +183,7 @@ Suppression is the most under-used first-party move: upload existing customers a
 2. **Research.** `ppc_linkedin_targeting` lists facets, searches within one facet, and forecasts audience size before you commit budget.
 3. **Build.** `ppc_linkedin_campaign_groups_list` first: groups are NOT covered by the standard sync, so this is how group ids are discovered. New objectives get their own container via `ppc_linkedin_campaign_group_create`, always DRAFT, budgets guardrailed and hard-capped at 100,000. `ppc_linkedin_campaign_push` pushes a LOCAL draft row into a group; LinkedIn hard-requires a budget AND at least one `urn:li:geo:*` facet at create time, and missing pieces come back as a named list rather than guessed values.
 4. **Creative.** `ppc_linkedin_media_image_upload`, then `ppc_linkedin_creative_create`. That lane covers single-image Sponsored Content with a click-through link ONLY: not video, carousel, document, text, spotlight, message ads or lead-gen-form creatives. Do not tell the client otherwise. The post is direct sponsored content (a dark post) and never hits the organic feed. `ppc_linkedin_boost_post` wraps an existing organic post as a DRAFT creative: the cheapest way to test a message before commissioning creative. `ppc_linkedin_creatives` runs the ad layer and can enrich its list with previews and per-creative stats; LinkedIn creatives are unnamed, so `name` is always null.
-5. **Handoff.** Everything above is DRAFT and no tool can activate it. End by naming which drafts exist, in which group, and that a human must launch them in Campaign Manager. Log it in the PM task.
+5. **Handoff.** Everything above is DRAFT and no tool can activate it. End by naming which drafts exist, in which group, and that a human must launch them in Campaign Manager. Log it in the PM task. AFTER human launch, `ppc_linkedin_creative_disapprovals` becomes the watch: it lists creatives whose review REJECTED them (UNVALIDATED-LIVE; rejection-reason text is app-tier-dependent and may come back status-only with reasons_available=false, the detail then living in Campaign Manager; LinkedIn creatives are unnamed so name is always null - use content_reference for context; optional campaign_id scopes). Without this step a post-launch rejection is invisible to the cadence.
 6. **Close the loop.** `ppc_linkedin_conversions` lists rules, creates them, and sends CAPI or offline events. Match the click and view windows to the sales cycle: a 90-day post-click window on a long B2B cycle is the difference between LinkedIn looking dead and looking profitable. Push real revenue back (pre-hashed, max 500 events per call), preview, read totals to the operator, confirm, send. A partial response is NOT success: failed events must be resent.
 7. `ppc_linkedin_leadgen` retrieves forms and responses for CRM ingestion.
 8. `ppc_linkedin_campaign_update` covers name and run dates; `ppc_linkedin_campaign_group_update` covers those plus group budgets, which live ONLY there. Archive on either is irreversible and previews first.
@@ -185,7 +192,7 @@ Suppression is the most under-used first-party move: upload existing customers a
 
 1. `ppc_digest({ days: 30 })`, then `ppc_platform_period_comparison` per connection. Microsoft's reporting API is async-only, so that response may tell you to diff cached `ppc_metrics` client-side: do that rather than reporting a gap.
 2. Normalise before comparing: currency, conversion definition, attribution window, per platform. Write the assumptions into the report; an unstated assumption is how a reallocation argument becomes a lie.
-3. Rank by marginal efficiency, not average CPA. The question is what the NEXT dollar buys, which is why a Bing campaign at 60 percent impression share and target CPA beats a saturated Meta campaign at the same CPA.
+3. Rank by marginal efficiency, not average CPA. The question is what the NEXT dollar buys, which is why a Bing campaign at 60 percent impression share and target CPA beats a saturated Meta campaign at the same CPA. Read Bing headroom directly: `ppc_bing_impression_share_report` (async) returns per-campaign impression_share, lost_to_budget and lost_to_rank plus a `scaling_headroom` summary - budget_limited (>=10% lost to budget: raise-budget candidates) and rank_limited (>=20% lost to rank: bids or quality, not budget).
 4. Propose moves netting to zero against the client ceiling, cap any single move at roughly 25 percent of that connection's monthly target, apply one at a time with `ppc_platform_budget_update`, each separately confirmed. Never move budget out of a protected or brand campaign.
 5. `ppc_anomaly_check` for the daily watch where supported, and `ppc_sync` after the write batch.
 
@@ -210,7 +217,7 @@ Defaults only; account memory overrides every line.
 
 ## 19. Diagnosis
 
-**Zero conversions.** Tracking before bidding, always. Bing: `ppc_bing_uet_tag_list` for a non-recording tag, then `ppc_bing_conversion_goal_list` for a wrong url expression or an `exclude_from_bidding` flag nobody remembers setting. TikTok: `ppc_tiktok_pixels` event-stats. LinkedIn: `ppc_linkedin_conversions` rules list, checking attribution windows against the sales cycle. Meta: confirm the pixel via `ppc_meta_pages_pixels` and that the ad set carries a `promoted_object`. Only after tracking clears do you look at the ads.
+**Zero conversions.** Tracking before bidding, always. Bing: `ppc_bing_uet_tag_list` for a non-recording tag, then `ppc_bing_conversion_goal_list` for a wrong url expression or an `exclude_from_bidding` flag nobody remembers setting. TikTok: `ppc_tiktok_pixels` event-stats. LinkedIn: `ppc_linkedin_conversions` rules list, checking attribution windows against the sales cycle. Meta: `ppc_meta_custom_conversions` for what a conversion IS (the URL rule, owning pixel, and per-conversion first/last_fired_time - one pixel serves every conversion, so a pixel-grain check cannot tell a dead LEAD from a live PURCHASE; an empty list means no CUSTOM conversions are defined, standard pixel events still record, and a failed read says so in readability/coverage_gap rather than returning empty), then `ppc_meta_conversion_volume` for per-conversion attributed volume AND last_fired_time - attributed counts only ad-attributed conversions while last_fired counts every event, so a conversion that fired an hour ago with zero attributed is recording fine and simply was not ad-driven: a media finding, never reported as broken tracking. Also confirm the pixel via `ppc_meta_pages_pixels` and that the ad set carries a `promoted_object`. Only after tracking clears do you look at the ads.
 
 **Ownership or permission error on Bing.** Almost always a cold mirror: `ppc_sync`, `ppc_bing_pull_ad_groups`, `ppc_bing_pull_ads`, retry. The live fallback refuses accounts over 50 campaigns, so it presents as an access failure on exactly the large accounts where it matters most.
 
@@ -220,7 +227,7 @@ Defaults only; account memory overrides every line.
 
 **An integration looks dead.** `ppc_connection_list`, then `ppc_connection_get`. A disconnected connection or stale token is a client reconnect task; retrying does not fix it. Open a PM task, name the platform, and state that reporting for that channel is unavailable for the period rather than reporting zero spend.
 
-**A campaign changed and nobody here touched it.** No change-history tool covers these platforms in this set. Say so, pull what the UI shows, and log every change in the PM task from now on so the next dispute is answerable.
+**A campaign changed and nobody here touched it.** No platform-side change-history tool covers these platforms in this set, but `audit_query` (always-available) reads the account's Hiveku MCP audit log - every tool call with key preview, tool name, sanitized args summary and status - so it answers whether ANOTHER Hiveku key made the change (e.g. `{tool_contains: "budget", since}`). A change made directly in the platform UI stays invisible to it: for those, say so, pull what the UI shows, and log every change in the PM task so the next dispute is answerable.
 
 **No tool at all** (a new platform feature, a policy change, a competitor's approach): `web_search` and `web_scrape`, or `hiveku_docs_search` / `hiveku_docs_get` for Hiveku's own documentation. Cite what you found; never present a guess as a platform fact.
 

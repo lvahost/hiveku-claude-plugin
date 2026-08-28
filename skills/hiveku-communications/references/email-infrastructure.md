@@ -8,6 +8,12 @@ for the whole lifecycle. The difficulty is not reachability, it is that **severa
 systems share the word "email"** and picking the wrong one wastes an hour and produces a template
 nothing can use.
 
+Profile note: every `email_*` tool here is in the communications profile. The
+`marketing_template_*` family and everything `crm_*`-prefixed (the CRM templates, the sales
+sequences, `crm_email_send_queue_list` and the batch tools, `crm_list_email_suppressions`,
+`crm_set_dnc`) resolve only under a broader profile such as `full` - if one fails to resolve,
+that is the reason.
+
 ## Part 1: The three template families
 
 Read this before creating any template. The families are not interchangeable and the mistake is
@@ -33,9 +39,18 @@ Rules of thumb:
 
 ### Transactional template shape
 
-`email_template_create({ name, subject, html, text?, category?, from_name?, from_email? })`.
-`name`, `subject` and `html` are required. `email_template_update` is a partial update: only the
-fields you pass change, and it also accepts `status`.
+`email_template_create({ name, subject, html_content?, text_content?, description?, variables?,
+default_from_email?, default_from_name?, default_reply_to? })`. Only `name` and `subject` are
+required, and `name` is unique per account - a duplicate is a 409. The body fields are
+`html_content` and `text_content`, NOT `html`/`text`, and the From defaults are
+`default_from_email`/`default_from_name`, not `from_email`/`from_name`. The route's `bodyParams`
+allowlist silently drops any key it does not declare, so the old spellings used to store an
+EMPTY-body template on a 201 (and return 200 having changed nothing on update) - if a template
+renders blank, this is why. There is no `category` field on this table at all.
+
+`email_template_update` is a partial update: only the fields you pass change. It has no `status`
+and no `category` field either; `is_active` is the enable/disable switch, and editing the subject
+or either body bumps the template's version.
 
 ### CRM template shape
 
@@ -51,6 +66,15 @@ Templates created over MCP default to `is_shared: true`, visible account-wide, b
 service-key caller has no human user to own them.
 
 ## Part 2: Campaigns
+
+### Finding
+
+`email_campaign_list` lists campaigns, filterable by
+`status=draft|scheduled|sending|sent|paused|cancelled|failed` and by `audience_id`.
+`email_campaign_get` fetches one, including its inline HTML/text bodies. Resolve the campaign
+this way before pausing, cancelling, duplicating or reporting on anything - never operate on a
+guessed id, and when asked "what is scheduled to go out", answer from
+`email_campaign_list({ status: 'scheduled' })`, not from memory.
 
 ### Creating
 
@@ -107,6 +131,23 @@ before the real call.
   about to schedule is a second send to people who already ignored one.
 - `email_campaign_duplicate` to clone a proven campaign rather than rebuilding it.
 - `email_campaign_update` and `email_campaign_delete` for the rest.
+
+### Stopping queued CRM email: the send queue
+
+The CRM side queues one-to-one and batch sends separately from campaigns, and it has its own
+recovery lane (full-profile key - all three are `crm_`-prefixed):
+
+- **`crm_email_send_queue_list`** lists scheduled / sent / cancelled send-queue rows,
+  filterable by `status`, `batch_id` or `contact_id`. This is how you see what is about to go
+  out and find the batch id.
+- **`crm_email_batch_cancel`** cancels all still-queued rows in a batch - **already-sent rows
+  are untouched**, so after cancelling, report both numbers: what was stopped and what had
+  already left.
+- **`crm_email_batch_reschedule`** shifts the fire time of every still-queued row in the batch.
+
+When someone says "stop that email before it sends", speed beats ceremony: identify the batch,
+cancel, THEN report what was and was not caught. A campaign is stopped with
+`email_campaign_cancel` / `email_campaign_pause` instead; this lane is for the CRM queue.
 
 ### The `emailMarketingSendCampaign` node
 
@@ -327,6 +368,7 @@ scheduled.
 
 | Symptom | First move |
 |---|---|
+| "Stop that email before it sends" | Campaign: `email_campaign_cancel` / `_pause`. CRM batch: `crm_email_send_queue_list` then `crm_email_batch_cancel`. Report what had already left |
 | Campaign refuses the template | Wrong family. Campaigns need `marketing_template_*` |
 | "Hi ," in a live send | Merge tag with no fallback. Use `{{first_name\|there}}` |
 | Sequence enrolled, nothing sends | `email_sequence_activate` was never called |

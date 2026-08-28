@@ -9,6 +9,13 @@ Every tool name below was extracted from the MCP server source
 description or the builder route behind it. Where a tool's description and its route disagree,
 this file says so and the route wins.
 
+Profile visibility: `connections_status` and every `integration_*` / `oauth_*` tool in this file
+are full-key surface - no scoped profile grants those prefixes. The per-department readers
+(`seo_connections_list`, `ppc_connection_list`, `email_connections_list`, `social_list_accounts`,
+`shopify_connection_status`, `voice_diagnose_setup`) do reach their departments' scoped keys. On a
+scoped key, diagnose with the department reader and say plainly that the disabled-connection check
+in Part 2 needs a full key - a soft-deleted connection is invisible to the department readers.
+
 ---
 
 ## 1. The rule

@@ -254,6 +254,20 @@ That last call SENDS REAL NOTIFICATIONS through the workflow's CURRENT definitio
 | A React form captures nothing. | Controlled inputs with no native `name`, `id`, `aria-label`, or `placeholder`. | Add native `name` attributes. React need not use them. |
 | A customer cannot enter their phone number. | A mask, a `maxLength`, or a validating onChange. | Strip all of it. Any format in, normalize at submit. |
 
+**"The platform says 40 conversions, the CRM shows 22 - where did the other 18 go?"** is a
+tool call, not archaeology: `marketing_form_conversion_audit` returns form submissions with
+their source attribution (UTMs, click ids, channel, landing page), aggregated the way a
+platform aggregates, plus named discrepancy buckets that SUM TO THE TOTAL - deleted,
+duplicate, spam, archived, workflow_failed, no_attribution, unpaid_attribution, counted.
+Use `buckets.counted` as OUR number and explain the gap with the rest; unlike the dashboard
+Forms tab it INCLUDES spam, deleted and duplicate rows and labels them, because they ARE
+the answer. ALWAYS read the caveats in the response before reporting a discrepancy (this is
+our record, not the platform's: view-through conversions can never appear here, the
+platform dates by CLICK while we date by the event), and read `click_window` before quoting
+click timing - if `click_dated` is 0, then `clicks_before_range: 0` means NOT MEASURABLE,
+not zero. It is `marketing_`-prefixed (invisible to a `dev`-scoped key; plugin sessions see
+it). Deeper attribution disputes belong to the conversion-tracking skill.
+
 Three more, briefly. Spam getting through is not yours to code: point the owner at Form spam protection under Hosting, Site Features, and check for a second captcha. "I can't see the change I made" is usually that files edited this turn reach the preview only at END of turn: do not restart the preview, and screenshot the exact page they are on before replying. And an empty client-errors result is not proof the page is clean, so check `capture_installed`.
 
 ### The two silences to fear

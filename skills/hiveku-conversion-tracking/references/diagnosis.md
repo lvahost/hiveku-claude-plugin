@@ -12,9 +12,11 @@ platform number below it is a snapshot of an unknown yesterday and "conversions 
 Tuesday" from a connection that last synced Monday is a sync finding, not a tracking finding. Then
 `analytics_channel_scorecard` (which channel, how short), `analytics_diagnose_tracking` (the cause
 in code) and `analytics_probe_page` (one URL), the per-platform rungs, the form and call gap audits,
-then the saved-container check. Rungs 1 and 2 need a **custom domain**; without one
-`analytics_diagnose_tracking` returns 400 and checks nothing, which is a setup finding, not a
-tracking finding.
+then the saved-container check. Rungs 1 and 2 resolve their project the same way: a 400 fires only
+when `project_id` is OMITTED and the account has no live project carrying a custom domain (a setup
+finding, not a tracking finding). Pass an explicit `project_id` and a domainless project still
+returns 200 - source-scan findings only, `browser_checked: false`, and no `tag-not-deployed`,
+because that finding needs a served page to compare against.
 
 ---
 
@@ -50,8 +52,10 @@ Call reconciliation causes (why observed calls did not become platform conversio
 
 `upload_disabled` (setting off) needs the account opt-in, confirmed with the client first;
 `no_click_id_captured` (no gclid/msclkid on pool sessions) goes to rung 8 plus
-`voice_diagnose_setup`; `outbox_stuck` (queued, not draining) is infrastructure, escalate rather
-than reconfigure; `action_missing` needs an action designated for that source; `action_disabled`
+`voice_diagnose_setup`; `outbox_stuck` (queued, not draining) is infrastructure - read
+`voice_call_tracking_outbox` first (filter `status: 'failed'`) so the escalation, a
+`pm_tasks_create` with the row counts and error codes, quantifies the stuck rows instead of
+guessing; `action_missing` needs an action designated for that source; `action_disabled`
 needs enabling in the ad account; `action_not_counted` means it fires but sits outside the
 Conversions column, which is fine if deliberate; `no_upload_lane` means no (connection, source)
 mapping row exists; `platform_unreadable` is not a failure, recheck the connection.
@@ -193,7 +197,19 @@ conversion, so a pixel-grain check cannot tell a dead LEAD from a live PURCHASE.
 failed read returns `readability` / `coverage_gap` and **never** an empty list. Cannot see standard
 events that are not custom conversions, or why Meta attribution differs - its offline lane sends
 only `fbc` and refuses enhanced match mode (`policy_no_pii`), so matching is structurally weaker.
-Other platforms: `ppc_linkedin_conversions`, `ppc_tiktok_conversions`.
+To see the PIXEL layer beneath the conversions - which pixels the ad account actually has, and
+which pages - `ppc_meta_pages_pixels` with `operation: 'list-pixels'` (or `'list-pages'`)
+enumerates them; use it when the question is "which pixel is installed vs connected" before
+debugging a custom conversion built on the wrong one.
+Other platforms: `ppc_linkedin_conversions`; for TikTok, `ppc_tiktok_conversions` reads configured
+conversions and `ppc_tiktok_pixels` manages the pixels themselves (`operation: 'list' | 'get' |
+'create' | 'event-stats'`, event-stats capped at 10 pixel ids and a 30-day range).
+GA4 is a conversion surface of its own - consent suppression skips google/microsoft/meta but NOT
+GA4, and a misconfigured key event skews every GA4-sourced comparison. `seo_ga4_conversion_audit`
+and `seo_ga4_key_events_list` (plus the `seo_ga4_key_event_create/update/delete` writes,
+confirm-first) exist for exactly that; they carry no registered description beyond their method, so
+read their output conservatively, and note they are `seo_`-prefixed - invisible on a
+`marketing-ads` key.
 
 ---
 
@@ -250,17 +266,23 @@ not attributed at all; also `voice_recent_calls`, `voice_calls_list`, `voice_num
 `crm_calls_list` for per-contact history (filters `contact_id`, `company_id`, `deal_id`,
 `has_recording`, `has_transcript`) - **`crm_get_contact` does NOT include calls**.
 
-Swap health issues, which come from the DASHBOARD monitor and NO MCP tool (never report these codes
-as if you read them; substitute `voice_numbers_list` for the pool half and `analytics_probe_page` for
-the snippet half): `site_unreachable | snippet_missing | pool_empty | pool_exhausted`, and
+Swap health: `voice_pools_list` reads the pool inventory (answers `pool_empty` / `pool_exhausted`),
+and `voice_call_tracking_live_probe` proves the swap end to end - it holds a real tracking DID for
+the sticky window, so confirm fixes with it, never schedule it. `analytics_probe_page` covers the
+snippet half without burning a pool session. The dashboard monitor's codes
+(`site_unreachable | snippet_missing | pool_empty | pool_exhausted`) still only appear in the
+dashboard - name the tool you ran instead of quoting them - and
 **"attribution quietly stopped after a redeploy" is almost always `snippet_missing`** - the DNI
 loader tag dropped off the page and nobody asks on the day it happens.
 
-**GAP - no MCP tool.** The structured call-conversion doctor (google_connection, conversion_action,
-tenant_opt_in, number_tracking, attribution_health, outbox_drain, reconciliation, each
-`healthy | degraded | broken | not_configured`) surfaces only in the Hiveku UI and indirectly via
-`analytics_channel_scorecard`'s call reconciliation causes. Use those causes plus
-`voice_diagnose_setup`, say the rest lives in the dashboard, and do not invent a tool name for it.
+**The call doctor.** `voice_call_tracking_diagnose` returns seven checks
+(`ok | warn | fail | unknown` each) plus an ORDERED `fix_first` list - read `fix_first`, and an
+`unknown` (including one produced by `skip_google` / `skip_site_fetch`) is NOT a pass. Pass
+`project_id` explicitly on multi-site accounts. `voice_call_tracking_outbox` shows the upload rows
+one at a time (filter `status: 'failed'` first); `voice_call_tracking_setup` wires the lane end to
+end (idempotent; `did_count` is the only field that spends money - `dry_run: true` first).
+`analytics_channel_scorecard`'s call reconciliation causes name the same failures at channel level.
+Full detail in the calls reference, section 9.
 
 ---
 
@@ -393,21 +415,3 @@ source **Upload** in the Ads UI (Conversions, New conversion, Import); creating 
 `ppc_google_conversion_actions` with `type_` (TRAILING UNDERSCORE) `UPLOAD_CLICKS` or
 `UPLOAD_CALLS`, confirmed first.
 
----
----
-
-## NOTES FOR THE PARENT AGENT (strip before shipping the file)
-
-File on disk: `/private/tmp/claude-501/-Users-aberubarts-Documents-main-hiveku/30c385fb-6c1e-4ade-8eb0-b3167903d1e5/scratchpad/DIAGNOSIS.md`
-
-1. **Size: 25.5KB, over the 12-22KB budget.** I made five compression passes (37KB to 25.5KB) and this is the honest floor with every mandated element present: 15 tools each with question / fields to read / verdict meanings / blind spots / next step, every starred trap with its reasoning, the three-mode symptom table, and the worked triage. Getting under 22KB from here means deleting content the brief mandates. If you want it in range, the cheapest ~3.5KB with the least damage, in order: (a) the "Supporting reads" and "Swap health issues" paragraphs in rung 8 and the "Other form-side reads" list in rung 7 (~700B, they duplicate the forms/calls sibling files); (b) rung 6's Meta section trimmed to the two-bullet read plus the empty-list trap (~500B); (c) the SYMPTOM deploy/consent pointer bullets that restate rung 2 verbatim (~600B); (d) triage steps 3-6 reduced to tool name plus decisive field (~800B); (e) rung 4's `ppc_conversion_actions_list` bullet list cut to counting type and `always_use_default_value` only (~700B). Tell me which and I will apply them.
-
-2. **One tool name is not in the grounding file: `deploy_site`** (rung 2's `tag-not-deployed` fix, and referenced in SYMPTOM). It is a real Hiveku tool named in the workspace `CLAUDE.md` ("`deploy_site` to ship", "Commit is not live"), and the grounding's own `tag-not-deployed` trap requires naming the deploy action. Swap it for prose ("deploy the tier") if you want strict grounding-file-only sourcing. Every other one of the 43 tool names verifies against the grounding file.
-
-3. **Structural choice:** `ppc_digest` has no standalone section. Its content (the 25h staleness rule and the sync-vs-tracking distinction) is folded into the opening "Order" paragraph and it is step 1 of the worked triage, so the numbered rungs run 1-9. If you would rather it be rung 0 with its own heading, that costs ~300B.
-
-4. **Deliberately omitted as out of scope for the diagnosis file** (they live in the site-instrumentation and forms parts): `site_create_external` and the external-site verification symptom, the GTM tag/trigger/variable CRUD family, and `analytics_events_list` beyond the one-line pointer.
-
-5. **The GAP is stated as a gap, not papered over:** the structured call-conversion doctor has no MCP tool, and the file says so explicitly, names the UI plus `analytics_channel_scorecard`'s reconciliation causes plus `voice_diagnose_setup` as the fallback, and instructs not to invent a tool name for it.
-
-6. Verified mechanically: 0 em dashes, 0 emoji, no YAML frontmatter, opens with the required one-paragraph "what this covers / when to load this". Both two-step upload lanes (`ppc_offline_conversion_upload`, `ppc_customer_match_upload`) are documented dry-run-first, and every write-capable tool mentioned (`project_custom_code_set_tier`, `ppc_bing_uet_tag_create`, `ppc_bing_conversion_goal_create`, `ppc_google_conversion_actions`, `deploy_site`) carries a confirm-first instruction.

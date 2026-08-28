@@ -6,26 +6,33 @@ turn a list of things and the relationships between them into rectangles at comp
 coordinates plus arrows in the gutters between them. Get the arithmetic right once and
 every board after it is a loop.
 
-The whole surface is twelve tools:
+The surface is 21 tools; this file covers the manual-build subset. The five one-call
+scaffolds (sitemap, funnel, flow, grid, sequence) and the structural read/edit tools
+(`hiveboard_outline`, `hiveboard_elements_find`, `hiveboard_connect`,
+`hiveboard_elements_patch`, `hiveboard_elements_prune`) are in
+`references/scaffold-reference.md` and `references/manual-layout.md` — rule those out
+before hand-computing anything below.
 
 | Tool | Use it for |
 |---|---|
 | `hiveboard_create` | Make the canvas. Returns the `board_id` every other call needs. |
-| `hiveboard_list` | Find an existing board, or read `element_count` without pulling elements. |
-| `hiveboard_get` | Read a board back: metadata plus EVERY element, z-index ascending. |
-| `hiveboard_update` | Rename, change background, flip `is_public`. Metadata only, never elements. |
+| `hiveboard_list` | Find an existing board (`search` matches names server-side), or read `element_count` without pulling elements. |
+| `hiveboard_get` | Read a board back: metadata plus EVERY element, z-index ascending. Expensive — prefer `hiveboard_outline` / `hiveboard_elements_find`. |
+| `hiveboard_update` | Rename, change background, flip `is_public` (account-visible, not internet), attach/detach `project_id`. Metadata only, never elements. |
 | `hiveboard_delete` | Delete the board. Cascades to every element. |
 | `hiveboard_duplicate` | Clone a board and all its elements. Use it as a "save point" before a risky pass. |
 | `hiveboard_element_create` | One element. Use for a fix-up, never for a build. |
 | `hiveboard_elements_bulk_create` | Up to 5000 elements in one call. This is the build path. |
-| `hiveboard_element_update` | Patch one element. Read the trap in Part 6 first. |
-| `hiveboard_element_delete` | Remove one element by id. |
+| `hiveboard_element_update` | Raw patch of one element. Read the traps in Part 10 first; `hiveboard_elements_patch` is the safer default. |
+| `hiveboard_element_delete` | Remove one element by id. For many, `hiveboard_elements_prune`. |
 | `hiveboard_sitemap_scaffold` | Auto-place a page tree as frames plus arrows. Up to 500 pages. |
 | `hiveboard_import_miro` | Ingest a raw Miro `GET /v2/boards/<id>/items` export. |
 
 `hiveboard_import_miro` is listed for completeness and is out of scope here, with one fact
 worth carrying: Miro's items endpoint does not include connectors, so an imported board has
-content and no arrows. You wire them yourself afterwards, or re-scaffold if it was a sitemap.
+content and no arrows. Re-wire with `hiveboard_outline` (to enumerate orphans) plus
+`hiveboard_connect` (bound arrows by id, anchors solved server-side), or re-scaffold if it
+was a sitemap.
 
 ---
 
@@ -42,9 +49,10 @@ connector arrow pointing at corners instead of edges.
 
 **2. `element_data` is the only thing the canvas renders.**
 The `position`, `color`, `fill_color`, `z_index`, `stroke_width`, and `font_size` DB columns
-exist for query ergonomics. The renderer parses `element_data` and nothing else. When you
-create an element the server copies your top-level fields INTO `element_data` for you, so
-creation behaves as you expect. Updating does not. See Part 6.
+exist for query ergonomics. The renderer parses `element_data` and nothing else. On create,
+and on both edit tools, the server mirrors your top-level STYLE fields into `element_data`
+for you. What no update path synthesizes is GEOMETRY: only create derives `start`/`end` from
+`position` + `width`/`height`. See Part 10.
 
 **3. Default sizes, when you omit `width`/`height`.**
 
@@ -178,7 +186,8 @@ with whatever is up there.
 
 `hiveboard_sitemap_scaffold` does the whole tree in one call. Parameters:
 `board_id`, `pages`, `layout` (`'vertical'` default, root at top, or `'horizontal'`),
-`spacing_x` (default 240), `spacing_y` (default 160), `origin` (default `{x: 0, y: 0}`).
+`spacing_x` (default 240), `spacing_y` (default 160), `pack_subtrees` (see below),
+`origin` (default `{x: 0, y: 0}`).
 
 `pages` accepts EITHER shape and the server detects which you sent:
 
@@ -229,14 +238,16 @@ About    (-330, 115)   Services (-90, 115)   Contact (150, 115)
 Team     (-90, 275)
 ```
 
-### Two defects in the fast path you must plan around
+### Two hazards in the fast path you must plan around
 
-**Rows are centred on the origin, not under their parent.** Team is a child of About at
-x = -240, but depth 2 has one member so it centres on x = 0, landing directly under
-Services. Its arrow then runs diagonally from About's bottom edge across the Services frame.
-Any tree that is not a balanced pyramid comes out visually wrong. For an unbalanced sitemap,
-build it manually with Part 2's centring formula applied per PARENT subtree rather than per
-depth row.
+**The DEFAULT layout centres rows on the origin, not under their parent.** Team is a child
+of About at x = -240, but depth 2 has one member so it centres on x = 0, landing directly
+under Services. Its arrow then runs diagonally from About's bottom edge across the Services
+frame. Any tree that is not a balanced pyramid comes out visually wrong THAT WAY. The fix is
+now built in: pass `pack_subtrees: true` and every subtree gets a contiguous band with the
+parent centred over its own children (off by default only so existing boards do not change
+shape). Fall back to the manual path with Part 2's centring formula per PARENT subtree only
+when you need custom card sizes on top.
 
 **The curved arrows bulge up and to the right.** The scaffold sets `lineStyle: 'curved'` and
 no `controlPoint`, and the renderer's fallback control point is
@@ -267,9 +278,14 @@ site that actually exists, not the one in someone's head.
 
 ## Part 4: Recipe B, marketing funnel
 
-A funnel is one centred column, top to bottom, with metrics beside each stage and callouts
-outside the column. Narrowing the cards to suggest a funnel shape is optional and costs you
-the fixed-width arithmetic, so only do it if asked.
+**Fast path first:** `hiveboard_funnel_scaffold` builds all of this in one call — cards,
+rates on the connectors, drop-off callouts, biggest-leak highlight, proportional widths —
+from stage counts alone (`references/scaffold-reference.md`). Use the manual recipe below
+only for geometry it cannot express.
+
+A manual funnel is one centred column, top to bottom, with metrics beside each stage and
+callouts outside the column. Narrowing the cards to suggest a funnel shape is optional and
+costs you the fixed-width arithmetic, so only do it if asked.
 
 **Elements**
 - One `rectangle` per stage, `label` = stage name, `labelSize: 16`.
@@ -316,8 +332,13 @@ a funnel board with invented percentages is worse than no board.
 
 ## Part 5: Recipe C, sales sequence
 
-A sequence runs left to right, one column per touch, with a decision diamond wherever the
-path forks on a reply.
+**Fast path first:** `hiveboard_sequence_scaffold` builds the cadence in one call — a card
+per touch stamped with its absolute day offset, waits on the connectors, `on_reply` fork
+diamonds, a goal terminator (`references/scaffold-reference.md`). Use the manual recipe
+below only for geometry it cannot express.
+
+A manual sequence runs left to right, one column per touch, with a decision diamond wherever
+the path forks on a reply.
 
 **Elements**
 - `rectangle` per touch: `label` = "Day 0 email", "Day 3 LinkedIn", "Day 7 call".
@@ -380,6 +401,12 @@ sequence that is live, not a redesign of it, unless the redesign is the delivera
 ---
 
 ## Part 6: Recipe D, org and process map
+
+**Fast paths first:** an org chart is `hiveboard_sitemap_scaffold` with `pack_subtrees: true`;
+a process, user-flow, or swimlane map is `hiveboard_flow_scaffold` (nodes + edges + optional
+`lanes`, cycles drawn dashed, multi-parent nodes supported —
+`references/scaffold-reference.md`). Use the manual recipes below only for geometry those
+cannot express.
 
 Two layouts share one set of primitives.
 
@@ -580,9 +607,10 @@ the order: every layer of cards before the arrows that reference them.
    ordering them against each other.
 
 **Take a save point before a risky pass.** `hiveboard_duplicate({ board_id, name })` clones
-the board and every element. There is no bulk delete and no "replace board contents" tool, so
-if a 2000-element pass comes out wrong your options are 2000 `hiveboard_element_delete`
-calls, or `hiveboard_delete` and rebuild. Duplicating first turns that into a rename.
+the board and every element. If a 2000-element pass comes out wrong, the recovery is
+`hiveboard_elements_prune` on the bad pass's region or ids (`confirm: true`; it snapshots to
+version history first and returns `snapshot_version_id` — NULL means NOT recoverable, say
+so). Duplicating first still turns the worst case into a rename.
 
 **Growing the grid.** Every number in Part 2 derives from `CARD_W`, `CARD_H`, and `GUTTER`.
 To fit more on screen, shrink `CARD_W` and re-derive `maxChars = floor(CARD_W / (labelSize *
@@ -591,8 +619,9 @@ label pill is `labelSize + 8` tall and `chars * labelSize * 0.6 + 8` wide, and i
 overlapping cards.
 
 **Multiple boards beat one enormous board.** `hiveboard_get` returns EVERY element with no
-pagination, so a 3000-element board is a very large payload every time you verify it. Split
-by phase or department and cross-reference by name.
+pagination, so a 3000-element board is a very large payload every time you verify it — and
+`hiveboard_outline` caps at 2000 nodes. Split by phase or department and cross-reference by
+name.
 
 ---
 
@@ -608,9 +637,15 @@ increments it by the created count, single delete decrements by one, and the das
 save path overwrites it wholesale. The length of the `elements` array from `hiveboard_get` is
 the real count.
 
-**Full check.** `hiveboard_get({ board_id })` returns metadata plus every element ordered by
-`z_index` ascending, each as `{ id, element_type, element_data, position, z_index, rotation,
-color, fill_color, stroke_width, font_size, locked, hidden }`.
+**Structural check second.** `hiveboard_outline({ board_id })` returns the node list, the
+edge list, `unbound_connectors` (arrows with no bindings — they do not survive a human drag),
+`orphan_count`, and the board extent, at a fraction of the token cost of a full pull. It
+answers "is everything connected to what I meant" directly. For one element,
+`hiveboard_elements_find` by type, text, or region.
+
+**Full check, last resort.** `hiveboard_get({ board_id })` returns metadata plus every
+element ordered by `z_index` ascending, each as `{ id, element_type, element_data, position,
+z_index, rotation, color, fill_color, stroke_width, font_size, locked, hidden }`.
 
 Assertions worth running over that array:
 
@@ -639,27 +674,31 @@ tab before a large build, and re-read afterwards to confirm your elements surviv
 
 ## Part 10: Pitfalls, ranked by how much they cost
 
-**1. Patching `element_data` destroys the element.**
-`hiveboard_element_update` writes each allow-listed field verbatim into its column. It does
-NOT merge `element_data`, and it does NOT run the builder that synthesizes `start`/`end`.
-Sending `element_data: { label: "New name" }` replaces the whole object, dropping `id`,
-`type`, `shapeType`, `start`, and `end`, and the renderer then crashes on that board with
+**1. Patching `element_data` through `hiveboard_element_update` destroys the element.**
+That tool writes each allow-listed field verbatim into its column. It does NOT merge
+`element_data`, and it does NOT run the builder that synthesizes `start`/`end`. Sending
+`element_data: { label: "New name" }` replaces the whole object, dropping `id`, `type`,
+`shapeType`, `start`, and `end`, and the renderer then crashes on that board with
 "Cannot read properties of undefined (reading 'x')".
 
-The correct patch is read-modify-write: `hiveboard_get`, find the element, copy its ENTIRE
-`element_data`, change the one key, send the whole object back.
+The default fix is to not use it: `hiveboard_elements_patch` MERGES `element_data`, so a
+label change cannot strip geometry. When you must replace wholesale, the procedure is
+read-modify-write: `hiveboard_elements_find` with `include_data: true` (or `hiveboard_get`),
+copy the ENTIRE `element_data`, change the one key, send the whole object back.
 
-**2. `hiveboard_element_update({ position })` does not move anything on screen.**
-The renderer reads `element_data.start` and `element_data.end`. The `position` column is a
-mirror. To move a shape you must update `element_data.start` and `element_data.end` together
-(preserving width and height), and update `position` to match so the two stay consistent.
+**2. Patching `position` alone does not move anything on screen.**
+The renderer reads `element_data.start` and `element_data.end` for shapes; the `position`
+column is a mirror. A real move is `hiveboard_elements_patch` with `move: {dx, dy}` — it
+shifts each element by its correct per-type fields AND translates every bound connector by
+the same delta. Moving through `hiveboard_element_update` requires updating `start`, `end`,
+and `position` together yourself, and still strands the attached arrows.
 
-**3. Sticky note colour is a NAME, not a hex, and a hex crashes the renderer.**
+**3. Sticky note colour is a NAME, not a hex.**
 `element_data.color` for a `sticky-note` must be one of `yellow`, `blue`, `green`, `pink`,
-`purple`, `orange`. The renderer looks the value up in a six-key map and reads properties off
-the result, so a hex yields `undefined` and throws while rendering the board. The row saves
-fine. The board breaks on open. Note also that the TOP-LEVEL `color` and `fill_color` are
-ignored for sticky notes entirely; only `element_data.color` is read.
+`purple`, `orange`. Anything else — a hex, most obviously — is coerced to yellow: the
+renderer looks the value up in a six-key table, and a miss used to crash the whole board on
+open, so the create path now coerces instead. Note also that the TOP-LEVEL `color` and
+`fill_color` are ignored for sticky notes entirely; only `element_data.color` is read.
 
 **4. `font_size` is ignored on shapes.** For a shape, label size comes from
 `element_data.labelSize` (default 16) and label colour from `element_data.labelColor`
@@ -688,13 +727,17 @@ the failure that silently produces a board where every arrow points at the wrong
 **9. Nothing here is idempotent by content.** Re-running a bulk create makes a second copy of
 every element, stacked exactly on the first, which is nearly invisible on screen and doubles
 `element_count`. If a call times out and you do not know whether it landed, READ THE BOARD
-before you retry.
+(`hiveboard_outline`, or `audit_query` for what your calls actually wrote) before you retry.
 
-**10. `hiveboard_get` has no pagination.** Every element, every time. Budget for it, and
-prefer several themed boards over one giant one.
+**10. `hiveboard_get` has no pagination.** Every element, every time. Use `hiveboard_outline`
+and `hiveboard_elements_find` for routine reads, and prefer several themed boards over one
+giant one.
 
-**11. Element deletion is one call per element.** There is no bulk delete. On a bad large
-pass, `hiveboard_delete` and rebuild is usually cheaper than unwinding.
+**11. Bulk cleanup goes through `hiveboard_elements_prune`, not board deletion.** It removes
+by ids, type, region, or `all: true`, requires `confirm: true`, refuses an empty filter as
+"everything", and snapshots to version history first (`snapshot_version_id` NULL = not
+recoverable — report it). A bad large pass is one prune of that pass's region, not
+`hiveboard_delete` and a rebuild.
 
 ---
 
@@ -717,8 +760,10 @@ type strings plus each node's required `data` fields (it returns the same static
 every account, so treat it as documentation, not a per-tenant capability check),
 then `workflow_create`, then `workflow_node_add` and `workflow_edge_add` per node and edge,
 then `workflow_run`. `workflow_run` accepts `test_mode: true` for a dry run that returns
-`would_have` payloads instead of writing, and `workflow_run_get` returns per-node
-`step_states` with input, output, and error. Dry-run any board-building workflow first: a
+`would_have` payloads instead of writing — but a dry run persists NO run row, so its sync
+response (status, output, error, `run_id: null`) is the whole record. `workflow_run_get`
+returns per-node `step_states` with input, output, and error for REAL runs only — pass it
+the `run_id` a wet `workflow_run` returned. Dry-run any board-building workflow first: a
 wet run that misplaces 200 elements is 200 delete calls.
 
 Two behaviours differ from the MCP path and will surprise you:
@@ -739,6 +784,12 @@ Two behaviours differ from the MCP path and will surprise you:
   `crm_list_pipelines` and `crm_pipeline_stage_summary` for a funnel, `email_sequence_list`
   plus `email_sequence_get({ id, include: 'steps' })` for a sequence (`id` is required and
   comes from the list call), `customer_journey_get` for a journey map. Draw what exists.
+- **Key-scope flag:** every sourcing tool in the two bullets above, plus `hiveku_docs_*`, is
+  INVISIBLE to a hiveboards-scoped department key (profiles.ts grants only `hiveboard_`,
+  `workflow_`, `memory_`, `kb_`, `pm_`, `room_`, `discussion_`, the task/project names, and
+  the always-on set). On such a key, get the data via `talk_to_department` (always
+  available) or from the human, and state the provenance in your reply. Never invent the
+  numbers to keep moving.
 - Strategic content, meaning the stage narrative, the insight stickies, the recommendations,
   goes through `talk_to_department({ domain, message })` and then gets placed. Coordinates
   are your job; the words are the department agent's.
@@ -747,4 +798,4 @@ Two behaviours differ from the MCP path and will surprise you:
 - Record the board id and its grid constants with `memory_create` or `memory_update` so the
   next session extends the board instead of rebuilding it on a different pitch.
 - When a tool's argument shape is not in this file, `hiveku_docs_search` and `hiveku_docs_get`
-  rather than guessing.
+  (full key only) rather than guessing.
