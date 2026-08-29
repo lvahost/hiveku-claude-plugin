@@ -62,6 +62,12 @@ under a new current version. Before saving, ALWAYS:
      recent versions, merge the foreign change into your local file, and re-run
      `project_files_status` until the diff is only yours. Tell the user whose work you merged and
      what conflicted before saving anything.
+ - ★ ABOVE A HANDFUL OF FILES, PULL THEM IN ONE CALL. `project_file_get` and `project_file_diff` are
+     per-file; at 76 drifting files that is 76 round trips, and a session that reached this point
+     reasonably decided to hand-write its own diff script instead. Use
+     `project_files_bulk_get({ project_id })` - the same call step 2 uses to pull - and diff the
+     returned tree against your local copies in memory. Reach for the singular tools when you want
+     ONE file's version history, not to reconcile a set.
  - Keep the check→save window SHORT - the race is still open between check and save. If reconciling
      took more than a couple of minutes, re-run `project_version_log` immediately before the save.
  - This gate matters MOST on the tarball lane with `delete_missing: true`: a file someone else added
