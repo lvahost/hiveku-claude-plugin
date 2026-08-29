@@ -206,9 +206,14 @@ const tools = raw
     name: t.name,
     dept: t.name.includes('_') ? t.name.slice(0, t.name.indexOf('_')) : null,
     method: t.method,
-    // Trimmed for the index. The full text lives on the server; this is enough
-    // to FIND a tool, and the real description arrives when the tool is offered.
-    description: t.description.length > 400 ? t.description.slice(0, 400) + '…' : t.description,
+    // ★ FULL description, not trimmed. This file is read from disk and searched
+    // locally; it is NEVER sent to a model, so trimming it buys nothing and
+    // costs everything. A 400-char cap truncated 628 of 1,656 descriptions and
+    // cut the exact keywords people search by — `project_get` lost
+    // `dev_preview_url`, so "development environment url" could not find the
+    // one tool that returns it, and a session fell back to a memory file.
+    // Trimming happens at RENDER time instead, where context actually matters.
+    description: t.description,
   }))
   .sort((a, b) => a.name.localeCompare(b.name));
 

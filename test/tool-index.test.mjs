@@ -160,3 +160,41 @@ test('renderResults promises promotion, not direct-call magic', () => {
   assert.match(text, /added to your tool list/);
   assert.doesNotMatch(text, /do not need to appear/);
 });
+
+test('★ naming a tool exactly returns THAT tool, not its near-anagram', () => {
+  // `project_get` and `get_project` split to the same token set. With `get`
+  // treated as a stopword the query reduced to ["project"], scored them
+  // identically, and the alphabetical tiebreak returned the WRONG one. A
+  // session asked for a website project's URLs, got the PM-projects tool, and
+  // fell back to a memory file for an answer one call would have given.
+  assert.equal(searchTools('project_get', { limit: 3 })[0].name, 'project_get');
+  assert.equal(searchTools('get_project', { limit: 3 })[0].name, 'get_project');
+  assert.equal(searchTools('deploy_status', { limit: 3 })[0].name, 'deploy_status');
+});
+
+test('`get` and `all` are searchable words in a tool catalogue', () => {
+  // Ordinary stopwords, but core verbs here.
+  assert.ok(searchTools('get account info', { limit: 5 }).some((t) => t.name === 'get_account_info'));
+});
+
+test('★ a field name in the description is findable', () => {
+  // Descriptions were truncated at 400 chars in the index, which cut
+  // `dev_preview_url` out of `project_get` — so the one tool that returns the
+  // development URL could not be found by searching for it.
+  const hit = searchTools('dev preview url', { limit: 5 });
+  assert.equal(hit[0].name, 'project_get', `got ${hit.map((t) => t.name).join(', ')}`);
+});
+
+test('descriptions are stored in full, and trimmed only when rendered', () => {
+  const pg = loadIndex().find((t) => t.name === 'project_get');
+  assert.ok(!pg.description.endsWith('…'), 'index must keep the full text');
+  assert.ok(pg.description.includes('dev_preview_url'));
+  // Rendering is where context costs money, so it trims there.
+  const rendered = renderResults([pg], 'dev preview url');
+  assert.ok(rendered.length < pg.description.length + 400);
+});
+
+test('no description in the index is truncated', () => {
+  const truncated = loadIndex().filter((t) => t.description.endsWith('…'));
+  assert.deepEqual(truncated.map((t) => t.name), [], 'truncation destroys searchability');
+});
