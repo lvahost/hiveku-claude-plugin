@@ -116,6 +116,17 @@ Nothing approves a storyboard. Nothing attaches a design to a post by itself. No
 sources MUSIC or a licensed track - voiceover is toolable now, but a track is still
 produce-outside-and-import. Nothing trims, crops, or concatenates an arbitrary MP4.
 
+**Replacement ad creative has a rung zero: the performance read.** When the ask is new ads
+because the old ones stopped working - "our ads are tired", "CPMs are up and clicks are down" -
+do not start on this ladder. Start at /hiveku:ad-refresh: it reads the creative scoreboard per
+platform (Meta frequency against CTR and CPM, TikTok hook and hold rates, Google RSA build
+against the standard), classifies each loser as weak_hook, weak_hold, fatigue, offer_or_lp, or
+structure, and hands this skill one rebrief per loser naming the angle to retire and the number
+that condemned it. That classification decides the brief - a weak hook is a first-two-seconds
+problem and a fatigued ad needs a new angle, not a prettier version of the old one - and an
+offer_or_lp verdict never reaches production at all. Production without a performance read is
+guessing with the client's money.
+
 ## Round-trip discipline
 
 The human edits the same canvas you write to. `design_update` overwrites `canvasData`

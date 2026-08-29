@@ -10,6 +10,8 @@ id exists. Design exports and stock-photo URLs do NOT auto-register: register th
 REUSE FIRST. `marketing_media_list` / `stock_photos_search` before generating - the user's real photos
 beat AI for authenticity (products, team, location shots), and generation costs money.
 
+REPLACING UNDERPERFORMING AD CREATIVE starts at /hiveku:ad-refresh, not here - the performance read (fatigue, hook, hold, structure) decides the brief this command then produces.
+
 IMAGES - cheap, iterate freely:
 - One image: `generate_image({ prompt, ... })` - brand-aware by default, auto-registers a media_asset
   and returns `media_asset_id`. Use that id; do NOT re-upload the result.
