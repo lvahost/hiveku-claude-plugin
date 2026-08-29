@@ -211,6 +211,10 @@ sanity-checked against the tracking-health verdict.
 - **Play 7 - Voice of customer (surveys + support CSAT).** Lifecycle, the send gate and its
   workaround closures, post-send reconciliation, verbatims as untrusted data. Depth:
   references/surveys.md.
+- **Play 8 - CRO experiments.** "Page converts poorly", "improve the landing page", "should we
+  test X": money pages, the `seo_cro_audit` page audit (yours and a competitor's), form truth,
+  ICE-ranked experiments run as pm_tasks. The play command is /hiveku:cro. Depth:
+  references/cro-experiments.md.
 
 ## Weekly cadence (every week, ~20 minutes of tool time)
 
@@ -299,3 +303,7 @@ partial status.
 - `references/monthly-report.md` - load before any client report or dashboard: the
   marketing_report_* rail and its gotchas, assembly order, section template, comparability
   gate and timezone table, benchmarks and decision rules.
+- `references/cro-experiments.md` - load when a page converts poorly, the ask is "improve the
+  landing page" or "should we test X", or before any `seo_cro_audit` / `ice_score` /
+  experiment-backlog work: the CRO loop, form truth, ICE discipline, the pm_tasks backlog, and
+  what this surface cannot do (full Play 8).
