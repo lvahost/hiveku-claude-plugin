@@ -1,5 +1,5 @@
 ---
-description: Seed a new client account's department memory in one call, instead of 20 sequential writes.
+description: Seed a new client account's department memory in one call, instead of 20 sequential writes. Just signed a new client? The order is - create the account at app.hiveku.com, /hiveku:connect (tick it), /hiveku:setup, then this.
 argument-hint: "[what the account does, or the intake notes to seed from]"
 ---
 

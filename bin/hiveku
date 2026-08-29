@@ -170,8 +170,9 @@ async function cmdConnect(flags) {
 
   // ── start half, explicitly requested: `connect --paste` ──────────────────
   if (flags.paste) {
-    const { url } = await startPasteConsent({ appUrl, alreadyConnected: Object.keys(existing.accounts), dataDir });
-    out(flags.json, { paste_url: url }, [
+    const { url, voidedPrevious } = await startPasteConsent({ appUrl, alreadyConnected: Object.keys(existing.accounts), dataDir });
+    out(flags.json, { paste_url: url, voided_previous: voidedPrevious }, [
+      ...(voidedPrevious ? ['NOTE: a previous attempt was still waiting for a code. That code is now void - only the NEW page below works.', ''] : []),
       'Open this page, pick the accounts to connect, and approve:',
       `  ${url}`,
       '',
@@ -196,8 +197,9 @@ async function cmdConnect(flags) {
     // This is what turns a dead end into a one-message detour for the
     // non-technical user the error used to strand.
     if (err?.code !== 'ELOOPBACKBLOCKED') throw err;
-    const { url } = await startPasteConsent({ appUrl, alreadyConnected: Object.keys(existing.accounts), dataDir });
-    out(flags.json, { paste_url: url, loopback_blocked: true }, [
+    const { url, voidedPrevious } = await startPasteConsent({ appUrl, alreadyConnected: Object.keys(existing.accounts), dataDir });
+    out(flags.json, { paste_url: url, loopback_blocked: true, voided_previous: voidedPrevious }, [
+      ...(voidedPrevious ? ['NOTE: a previous attempt was still waiting for a code. That code is now void - only the NEW page below works.', ''] : []),
       'This session cannot receive the browser redirect (sandbox blocks the callback port),',
       'so we will do it by code instead — no terminal needed:',
       '',
@@ -901,6 +903,36 @@ async function cmdUpdate(flags) {
   );
 }
 
+const DISMISS_FILE = 'onboarding-dismissed';
+
+async function onboardingDismissed(dataDir) {
+  try { await fs.access(path.join(dataDir, DISMISS_FILE)); return true; } catch { return false; }
+}
+
+/** Does ANY bound client folder exist under ~/Hiveku-Accounts? */
+async function anyBoundFolderExists(homeDir = os.homedir()) {
+  try {
+    const root = path.join(homeDir, DEFAULT_ROOT_NAME);
+    for (const e of await fs.readdir(root, { withFileTypes: true })) {
+      if (!e.isDirectory()) continue;
+      try { await fs.access(path.join(root, e.name, '.hiveku', 'account.json')); return true; } catch { /* next */ }
+    }
+  } catch { /* no root yet */ }
+  return false;
+}
+
+/** `hiveku onboarding --dismiss` — the user said no; stop offering. */
+async function cmdOnboarding(flags) {
+  const dataDir = resolveDataDir();
+  if (flags.dismiss) {
+    await fs.mkdir(dataDir, { recursive: true });
+    await fs.writeFile(path.join(dataDir, DISMISS_FILE), new Date().toISOString() + '\n', { mode: 0o600 });
+    out(flags.json, { dismissed: true }, ['Understood - the setup offer will not appear again on this machine.']);
+    return;
+  }
+  out(flags.json, { dismissed: await onboardingDismissed(dataDir) }, ['Pass --dismiss to silence the first-run setup offer.']);
+}
+
 async function cmdHook(positional) {
   const which = positional[0];
   const payload = await readHookStdin();
@@ -966,11 +998,55 @@ async function cmdHook(positional) {
           'the hard stops and the rules that are not inferable from tool names. For plain conversation, ' +
           'greetings, or non-Hiveku tasks there is nothing to load and nothing to verify — just respond. ' +
           'Only a handful of tools are advertised: hiveku_find_tools searches the other ~1,650, so search ' +
-          'before concluding a capability does not exist.',
+          'before concluding a capability does not exist. If the user seems unsure what to do on this ' +
+          'account, offer /hiveku:start - it reads what is actually connected and names a few things ' +
+          'worth doing this week.',
       );
     } else if (binding && !account) {
       lines.push(
         `Hiveku: this directory is bound to ${binding.label} but no key for it is stored here. Run /hiveku:connect.`,
+      );
+    } else if (Object.keys(creds.accounts).length === 0 && !(await onboardingDismissed(resolveDataDir()))) {
+      // ★ THE ZERO STATE MUST SPEAK. The silence rule below (unrelated folder,
+      // say nothing) is right for a machine that is set up — but on a machine
+      // with the plugin installed and NO accounts connected, silence means the
+      // user who does not know the vocabulary meets a session that was told
+      // nothing. That pairing is how a staff member stares at a working
+      // installation and concludes Hiveku is broken. One line, and it deletes
+      // itself the moment the first account connects.
+      // Every walk of a simulated onboarding audit broke at the same seam: the
+      // old ending said "then /hiveku:start in one of them", the current
+      // session's folder is never one of them, and start's unbound gate then
+      // scripted "run /hiveku:bind" at a non-technical user, aimed at a
+      // scratch folder. The chain must END IN A HANDOFF, not a command.
+      lines.push(
+        'Hiveku: installed, but no accounts are connected on this machine yet. If the user brings up ' +
+        'Hiveku, their clients, or seems unsure where to begin with their agency or client work, ' +
+        'OFFER to set it up and drive it end to end yourself: run /hiveku:connect (relay the page ' +
+        'link it prints; they tick accounts in the browser and paste back a code), then ' +
+        '/hiveku:setup to create a bound folder per account. Then HAND OFF - tell them to open one ' +
+        'of the new folders from the Code tab folder picker and simply ask "where should I start?" ' +
+        'there. Do NOT run /hiveku:start or /hiveku:bind in THIS session; this folder stays ' +
+        'unbound and Hiveku tools only wake in a new session inside a bound folder. Assume no ' +
+        'technical vocabulary and never send them to a terminal - every step runs here in the ' +
+        'conversation. Never volunteer any of this during unrelated technical work, and if they ' +
+        'decline once, drop it: run "${CLAUDE_PLUGIN_ROOT}/bin/hiveku" onboarding --dismiss and ' +
+        'do not raise Hiveku again.',
+      );
+    } else if (
+      Object.keys(creds.accounts).length > 0 &&
+      !(await anyBoundFolderExists())
+    ) {
+      // ★ The orphaned middle of onboarding: connect succeeded, then the chat
+      // was closed before setup ran. The next session used to say NOTHING —
+      // accounts silently connected, no workspace anywhere, and a user with
+      // no vocabulary to ask. One line resumes the chain where it stopped;
+      // it deletes itself as soon as setup creates the first bound folder.
+      lines.push(
+        `Hiveku: ${Object.keys(creds.accounts).length} account(s) are connected on this machine but ` +
+        'no client folders exist yet - setup never finished. Offer to complete it: run ' +
+        '/hiveku:setup (one ready folder per account under ~/Hiveku-Accounts), then hand off to ' +
+        'the folder picker. Do not bind THIS folder unless the user chose it for a client.',
       );
     } else if (await looksLikeHivekuFolder(dir)) {
       lines.push('Hiveku: this looks like a Hiveku account folder but is not bound. Run /hiveku:bind.');
@@ -1026,6 +1102,7 @@ async function main() {
     case 'knowledge': return cmdKnowledge(flags, positional);
     case 'hook': return cmdHook(positional);
     case 'update': return cmdUpdate(flags);
+    case 'onboarding': return cmdOnboarding(flags);
     case 'version': case '--version': process.stdout.write(PLUGIN_VERSION + '\n'); return;
     default:
       process.stdout.write(HELP + '\n');

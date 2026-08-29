@@ -25,5 +25,9 @@ A brand-new account has no memory at all, so every department agent runs unhydra
 If /hiveku:knowledge comes back empty for a folder, point the user at /hiveku:seed, which drafts the
 department memory set and writes it in one `memory_bulk_create` call.
 
+In each folder, `/hiveku:start` answers "where should I begin with this client?" — say so, in
+those words. When several accounts were just bound, also mention `/hiveku:fleet`: the one
+cross-client view ("how are all my clients doing?") that works from anywhere.
+
 Folder names match the Hiveku VS Code extension's (`<label-slug>-<id8>`), so a machine running
 both tools shares one folder per client.

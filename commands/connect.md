@@ -22,8 +22,17 @@ headless), show that URL to the user and keep waiting - they can open it from an
 same machine.
 
 When it finishes, tell the user which accounts connected and what access each has. Never print a
-full key. Then tell them the next step: `cd` into the folder they use for an account and run
-`/hiveku:bind`.
+full key. Then provision — same ending on EVERY path, sandbox or not: offer to run
+`/hiveku:setup` (one ready, bound folder per account under `~/Hiveku-Accounts`) as the default.
+`/hiveku:bind` is the alternative for a folder they already use. Never tell the user to `cd`.
+
+Two facts worth stating when they fit, one line each:
+
+- Connect grants access to accounts that already EXIST. A brand-new client is created at
+  app.hiveku.com first, then connected here. "Set up our new client" usually means both steps.
+- A wrong access level is fixed by connecting again: re-run the consent and approve that account
+  with the level you meant — the new key replaces the old one automatically. Nobody needs to
+  revoke anything by hand.
 
 ## If the sandbox blocks the callback port (Claude Desktop)
 

@@ -18,7 +18,13 @@ week**, each phrased as a sentence they can say back to you.
 "${CLAUDE_PLUGIN_ROOT}/bin/hiveku" status --json
 ```
 
-If `bound` is false, stop and say to run `/hiveku:bind`. Nothing below works unbound.
+If `bound` is false, stop — nothing below works unbound. But do NOT reflexively say "run
+/hiveku:bind": when bound client folders already exist under `~/Hiveku-Accounts` (they do right
+after /hiveku:setup — `"${CLAUDE_PLUGIN_ROOT}/bin/hiveku" accounts` lists what is connected),
+the right answer is a handoff in plain words: "open the <client> folder from the Code tab's
+folder picker and ask me this again there — that whole workspace is wired to their account."
+Suggest `/hiveku:bind` only when this folder is genuinely the one they want wired and no
+per-client folders exist.
 
 **2. Find out what this account actually has.** Three calls, no more:
 
