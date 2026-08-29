@@ -79,7 +79,11 @@ function liveTools(dir) {
         if (!Array.isArray(tools) || !tools.length) {
           reject(new Error(`server returned no tools${err ? ` — ${err.trim()}` : ''}`));
         } else {
-          resolve({ names: tools.map((t) => t.name), stamp: msg?.result?._meta?.hiveku?.registry_version ?? null });
+          resolve({
+            names: tools.map((t) => t.name),
+            descriptions: new Map(tools.map((t) => [t.name, String(t.description ?? '')])),
+            stamp: msg?.result?._meta?.hiveku?.registry_version ?? null,
+          });
         }
       }
     });
@@ -104,12 +108,42 @@ const readJson = (p) => { try { return JSON.parse(fs.readFileSync(p, 'utf8')); }
  * registry is meant to be complete. Flagging a deliberate subset as broken
  * would train everyone to ignore this.
  */
-function compare(label, names, live, { completeness }) {
+function compare(label, names, live, { completeness, descriptions = null, liveDescriptions = null }) {
   const liveSet = new Set(live);
   const set = new Set(names);
   const missing = live.filter((n) => !set.has(n));
   const stale = names.filter((n) => !liveSet.has(n));
-  return { label, count: names.length, missing, stale, completeness, drift: (completeness === 'complete' && missing.length > 0) || stale.length > 0 };
+
+  // ★ NAMES ARE NOT ENOUGH, and the registry stamp cannot help here.
+  //
+  // `_meta.hiveku.registry_version` is a hash of sorted tool NAMES, on purpose —
+  // so a deploy that changes no tools raises no "new tools available" banner.
+  // The cost is that it is blind to an edited description or schema, and a
+  // description is not cosmetic: it is what `hiveku_find_tools` RENDERS, so a
+  // stale one is the model reading last month's text about a tool it is about
+  // to call. That is not hypothetical — project_get advertised four response
+  // fields that did not exist, and correcting it moved no name and no stamp.
+  //
+  // So a registry that is meant to be COMPLETE is also diffed on text.
+  // ★ COMPARE NORMALISED TEXT, never bytes. The stored index and the wire
+  // disagree on whitespace for most tools — the generator collapses runs that
+  // the transport emits verbatim. Measured on the first real run: 337 byte
+  // differences, of which 334 were a double space against a single one and
+  // exactly 3 were genuine. A gate that reports 334 phantom problems is a gate
+  // everybody learns to skip, which is the same way the two older ones went
+  // unnoticed. Whitespace carries no meaning to the model reading this text.
+  const norm = (t) => t.replace(/\s+/g, ' ').trim();
+  const reworded = [];
+  if (descriptions && liveDescriptions) {
+    for (const [name, desc] of descriptions) {
+      const liveDesc = liveDescriptions.get(name);
+      if (liveDesc !== undefined && norm(liveDesc) !== norm(desc)) reworded.push(name);
+    }
+  }
+  return {
+    label, count: names.length, missing, stale, reworded, completeness,
+    drift: (completeness === 'complete' && (missing.length > 0 || reworded.length > 0)) || stale.length > 0,
+  };
 }
 
 const live = await liveTools(DIR).catch((e) => {
@@ -123,8 +157,12 @@ const reports = [];
 // 1. The plugin's search index — must be COMPLETE or tools become unfindable.
 const idx = readJson(path.join(PLUGIN_ROOT, 'lib', 'tool-index.json'));
 reports.push(idx
-  ? compare('plugin tool-index.json', idx.tools.map((t) => t.name), live.names, { completeness: 'complete' })
-  : { label: 'plugin tool-index.json', count: 0, missing: live.names, stale: [], completeness: 'complete', drift: true });
+  ? compare('plugin tool-index.json', idx.tools.map((t) => t.name), live.names, {
+      completeness: 'complete',
+      descriptions: new Map(idx.tools.map((t) => [t.name, String(t.description ?? '')])),
+      liveDescriptions: live.descriptions,
+    })
+  : { label: 'plugin tool-index.json', count: 0, missing: live.names, stale: [], reworded: [], completeness: 'complete', drift: true });
 
 // 2. The read-only list — a deliberate SUBSET (GET only). Only stale names are drift.
 const ro = readJson(path.join(PLUGIN_ROOT, 'lib', 'readonly-tools.json'));
@@ -153,8 +191,10 @@ if (JSON_OUT) {
     console.log(`  ${verdict}  ${r.label.padEnd(30)} ${String(r.count).padStart(5)} names` +
       `${r.missing.length ? `  missing ${r.missing.length}` : ''}` +
       `${r.stale.length ? `  STALE ${r.stale.length}` : ''}` +
+      `${r.reworded?.length ? `  REWORDED ${r.reworded.length}` : ''}` +
       `${r.completeness === 'subset' ? '   (subset by design)' : ''}`);
     if (r.stale.length) console.log(`         gone from the server: ${r.stale.slice(0, 8).join(', ')}${r.stale.length > 8 ? ` … +${r.stale.length - 8}` : ''}`);
+    if (r.reworded?.length) console.log(`         description changed upstream: ${r.reworded.slice(0, 8).join(', ')}${r.reworded.length > 8 ? ` … +${r.reworded.length - 8}` : ''}`);
     if (r.drift && r.completeness === 'complete' && r.missing.length) {
       console.log(`         not indexed: ${r.missing.slice(0, 8).join(', ')}${r.missing.length > 8 ? ` … +${r.missing.length - 8}` : ''}`);
     }
