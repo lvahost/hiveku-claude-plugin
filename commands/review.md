@@ -3,7 +3,12 @@ description: Resolve a visual review - the LOCAL on-disk annotations (boxes/pins
 ---
 
 Work on one of the account's Hiveku website projects. Resolve the `project_id` first with `sites_list` (every buildable website_project with its dev/staging/prod URLs, canonical GitHub state and container status) or `project_get({ project_id })` for one, or take it from what the user names. Do NOT use `list_projects` / `get_project` here: those return pm_projects rows, a different id space, and a website UUID 404s against them.
-Resolve a LOCAL visual review for THIS project. This project's id is `<the project_id>`. Everything lives on disk under `.hiveku/review/` - no app chat, no annotation server, and it is gitignored so it never leaves the machine.
+PICK THE RAIL FIRST - there are two annotation stores and neither ever shows the other's annotations:
+- `.hiveku/review/` present on disk → LOCAL RAIL (STEP 0-7 below).
+- The user names a PM task or a client annotation, or nothing exists under `.hiveku/review/` → SERVER RAIL (the section after STEP 7) - the client's annotations live in Hiveku on a PM task.
+- If both apply, run both rails; resolve each annotation in the store it lives in.
+
+LOCAL RAIL - resolve a LOCAL visual review for THIS project. This project's id is `<the project_id>`. Everything lives on disk under `.hiveku/review/` - no app chat, no annotation server, and it is gitignored so it never leaves the machine.
 
 STEP 0 - CAPTURE (only if the user asks to "capture <path>", or `.hiveku/review/` has no screenshots yet):
 1. Get the live preview URL: `preview_overview({ project_id: <the project_id> })` → `preview_url`. If it is not ready, `preview_sync({ project_id: <the project_id> })` then re-poll.
@@ -39,13 +44,27 @@ STEP 7 - Commit only if asked (branch first, never `main` directly), then `/hive
 
 ---
 
-SERVER-SIDE BRANCH - annotations the CLIENT left in Hiveku, not on this disk.
+SERVER RAIL - annotations the CLIENT left in Hiveku, on a PM task.
 
-Everything above is the LOCAL review loop. A client reviewing the live preview through Hiveku leaves their annotations on a PM TASK instead, and nothing under `.hiveku/review/` will ever show them. Run this branch too when the operator says "the client left feedback" or when the local folder is empty.
+A client reviewing the live preview through Hiveku leaves annotations on a PM TASK, not on this disk. Annotations ride ON pm_tasks - there are NO `annotation_*` tools, and an annotation's resolved state IS its `resolved_at` (there is no status column). Since the 2026-08-25 two-way sync, `browser_annotations.task_id` links to `pm_tasks.id` and task status + comments flow both ways - completing the task is the resolve path.
 
-A. Find the PM project: `pm_projects_list` (it filters only by `status`, so scan the returned list for the `website` project_type yourself). Note this is a pm_projects id, NOT the website_projects id you used above; `pm_projects_create` links the two through `website_project_id`.
-B. `pm_tasks_list({ project_id, status })` for the open review tasks.
-C. `pm_tasks_get({ id })` on each. Its `data` carries an `annotations` array plus `annotation_count`. Per annotation: `{ id, annotation_type, priority, annotation_text, page_url, page_title, coordinates, screenshot_url, screenshot_key, screenshot_status, capture_method, viewport_size, created_by_name, created_by_email, created_at, resolved_at }`.
-D. Process only annotations with `resolved_at` null. `screenshot_url` is a directly-fetchable public PNG - view it for the WHERE, read `annotation_text` for the WHAT, and use `page_url` + `coordinates` to locate the element. If `screenshot_status` is `capturing` and `screenshot_url` is null the async capture is still running: re-fetch `pm_tasks_get` shortly rather than working blind. `failed` or `none` means there is no image at all - work from `annotation_text` + `page_url` and say the screenshot was unavailable.
-E. Locate and fix exactly as in STEP 3 / STEP 4 (`project_files_search` / Grep over the local tree), then verify per STEP 5.
-F. Record the resolution with `pm_tasks_comment({ id, content })`, naming the annotation and the file changed. There is no MCP tool that flips an individual annotation's `resolved_at` - do not claim you marked one resolved. The comment plus `pm_tasks_complete({ id, summary })` when the whole task's feedback is addressed is the record.
+S1 - FIND the tasks carrying open annotations:
+  - Task or annotation named by the user → `pm_tasks_get({ id })` (or `get_task`) directly; both return the `annotations` array plus `annotation_count`.
+  - Otherwise find the PM project with `pm_projects_list` (it filters only by `status` - scan the list for the `website` project_type yourself; this is a pm_projects id, NOT the website_projects id used above, linked through `website_project_id`), then `pm_tasks_list({ project_id, status })` for the open review tasks and `pm_tasks_get` on each.
+  Per annotation: `{ id, annotation_type, priority, annotation_text, page_url, page_title, coordinates, screenshot_url, screenshot_key, screenshot_status, capture_method, viewport_size, created_by_name, created_by_email, created_at, resolved_at }`. Process ONLY annotations whose `resolved_at` is null.
+
+S2 - CLAIM before starting: `pm_task_claim({ task_id, agent_codename })` - BOTH required (verified against the tool schema; `{ id }` alone 400s). Use a stable codename like `claude-review`. A 409 means another agent already holds it (or it is not in a claimable status) - respect the claim, STOP and report; do not work a task you could not claim. If you claimed it and cannot finish, `pm_task_release` it.
+
+S3 - SEE each open annotation: `screenshot_url` is per-annotation and a directly-fetchable public PNG. Bash `curl -s <screenshot_url> -o <scratchpad>/annotation-<id>.png`, then Read that file - Read renders PNGs, so the session is LOOKING at the client's actual screenshot. If `screenshot_status` is `capturing` (screenshot still pending, `screenshot_url` null) say so, then either re-fetch `pm_tasks_get` shortly or work from `annotation_text` + `coordinates` + `page_url`. `failed` / `none` means no image exists at all - work from those same three fields and say the screenshot was unavailable.
+
+S4 - LOCATE: server annotations carry `page_url` + `coordinates` + `viewport_size` but NO `hivekuSource` and no dom.json, so the ladder is:
+  a. match `page_url` to the route/page file in the project;
+  b. use the screenshot region at `coordinates` plus `annotation_text` to grep the rendered text/classes (`project_files_search` / Grep over the local tree);
+  c. confirm the match renders what the screenshot shows BEFORE editing - the same discipline as STEP 3 of the local rail.
+
+S5 - FIX + VERIFY: make the minimal edit that addresses each annotation, then `verify_typecheck` / `verify_lint` - never ship unverified. To SEE the fix, `preview_sync` then `preview_screenshot({ path })` - its result includes the image inline, no URL fetching needed.
+
+S6 - CLOSE THE LOOP:
+  1. `pm_tasks_comment({ id, content })` per annotation: annotation-id → file changed → what was done.
+  2. `pm_task_submit_for_review({ task_id, agent_codename, summary? })` is the DEFAULT close - it sets status to qa and a human confirms (it stamps `completed_at` even though the task is not complete, so judge by status, never by `completed_at`). Use `pm_tasks_complete({ id, summary })` ONLY when the user says the work is done-done. VERIFIED against builder source (lib/annotations/task-sync.ts): the annotation's `resolved_at` flips exactly when the task enters a done status (`done|completed|resolved|closed`) - so submit_for_review (qa) leaves the annotation OPEN by design, and completion resolves it.
+  3. Tell the user the task's status flows back to the client's annotation through the two-way sync - completing the task is what resolves it; there is no per-annotation resolve tool. On FIRST use against an account, VERIFY THE SYNC: after completing, re-fetch `pm_tasks_get` and confirm the annotations' `resolved_at` actually flipped - legacy rows predate the 2026-08-25 link and will not sync; report that instead of claiming they resolved.
