@@ -165,6 +165,15 @@ function collectFromSource() {
 
 let raw;
 let source;
+if (CHECK && !DIR_ARG && !FROM_SOURCE) {
+  // ★ CANNOT VERIFY is not the same as STALE. A source parse undercounts by 125
+  // runtime-registered tools, so comparing it against a live-generated index
+  // would report every healthy release as stale — a gate that cries wolf gets
+  // switched off, and then it protects nothing.
+  console.error('[gen-tool-index] cannot verify without --dir <bound-account>: a source parse undercounts by design.');
+  process.exit(2);
+}
+
 if (FROM_SOURCE || !DIR_ARG) {
   if (!FROM_SOURCE) {
     console.error('[gen-tool-index] no --dir given, falling back to source parsing.');
