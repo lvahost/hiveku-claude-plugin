@@ -10,6 +10,31 @@
  * surface. The interesting property is what it CANNOT do — it resolves one key
  * for one directory and has no code path that reaches any other tenant.
  */
+import { spawnSync } from 'node:child_process';
+
+/**
+ * ★ Node's fetch IGNORES HTTPS_PROXY unless NODE_USE_ENV_PROXY is set BEFORE
+ * the process starts — setting it in-process is silently ignored (measured).
+ *
+ * Sandboxed sessions reach the network only through a proxy, so without this
+ * every Hiveku call from inside one fails while `curl` to the same host works.
+ * That mismatch cost a real session an afternoon: it concluded the bridge was
+ * broken and hand-rolled a curl-based MCP client to get around it.
+ *
+ * Re-exec once, with the flag, keeping stdio wired through — this is an MCP
+ * stdio server, so the child must own the same streams. The guard variable
+ * makes a loop impossible even if the flag is somehow dropped again.
+ */
+const proxy = process.env.HTTPS_PROXY || process.env.https_proxy ||
+              process.env.HTTP_PROXY || process.env.http_proxy;
+if (proxy && !process.env.NODE_USE_ENV_PROXY && !process.env.HIVEKU_PROXY_REEXEC) {
+  const r = spawnSync(process.execPath, process.argv.slice(1), {
+    stdio: 'inherit',
+    env: { ...process.env, NODE_USE_ENV_PROXY: '1', HIVEKU_PROXY_REEXEC: '1' },
+  });
+  process.exit(r.status ?? 1);
+}
+
 import { runShim } from '../lib/shim.mjs';
 import { resolveDataDir } from '../lib/credentials.mjs';
 
