@@ -28,6 +28,7 @@ import { runLoopbackConsent, exchangeCode, revokeSelf, keysToRotate, startPasteC
 import { runPullData } from '../lib/pulldata.mjs';
 import { pullKnowledge, knowledgeStatus } from '../lib/knowledge.mjs';
 import { runSetup, DEFAULT_ROOT_NAME } from '../lib/setup.mjs';
+import { provisionSettings, planProvision, settingsPath } from '../lib/provision.mjs';
 import { Upstream } from '../lib/upstream.mjs';
 import { HIVEKU_APP_URL, HIVEKU_MCP_URL, CLIENT_ID, PLUGIN_VERSION, keyPreview, isUuid, mapLimit } from '../lib/util.mjs';
 
@@ -55,6 +56,7 @@ const HELP = `hiveku ${PLUGIN_VERSION} — Hiveku for Claude Code
   fleet                 read-only portfolio sweep across every connected account
   hook <session-start|cwd-changed|pre-tool-use>
   update                        Refresh the marketplace and apply the plugin update
+  doctor [--fix]                Check (and repair) the Claude settings Hiveku needs on this machine
                                 Internal: used by the plugin's hooks
 
 Keys live in the plugin's private data directory, encrypted with a key held in
@@ -943,11 +945,9 @@ async function dataDirWritable(dataDir) {
 }
 
 const SANDBOX_WRITE_FIX =
-  'Add this to ~/.claude/settings.json (or push it in managed settings for the whole team), then ' +
-  'start a NEW session:\n' +
-  '  { "sandbox": { "filesystem": { "allowWrite": ["~/.claude/plugins"] },\n' +
-  '                "network": { "allowedDomains": ["app.hiveku.com", "core.hiveku.com"] } } }\n' +
-  'The same block also permits the key exchange (app.hiveku.com) and plugin updates.';
+  'The plugin repairs this itself: it is applied automatically the next time a session starts, or ' +
+  'now with "hiveku doctor --fix" (run from a terminal if this session is sandboxed). Then start a ' +
+  'NEW session. Admins can push the same settings to every machine via managed settings.';
 
 
 
@@ -965,6 +965,36 @@ async function anyBoundFolderExists(homeDir = os.homedir()) {
     }
   } catch { /* no root yet */ }
   return false;
+}
+
+/**
+ * `hiveku doctor [--fix]` — is this machine able to run Hiveku, and repair it.
+ *
+ * Every check here is a real failure seen in production this week, each of
+ * which previously surfaced as a late, misleading error somewhere else.
+ */
+async function cmdDoctor(flags) {
+  const dataDir = resolveDataDir();
+  const writable = await dataDirWritable(dataDir);
+  let settings = {};
+  try { settings = JSON.parse(await fs.readFile(settingsPath(), 'utf8')); } catch { /* absent or invalid */ }
+  const plan = planProvision(settings);
+  const missing = plan.changes;
+
+  let fixed = null;
+  if (flags.fix && missing.length) fixed = await provisionSettings();
+
+  const rows = [
+    `plugin            ${PLUGIN_VERSION}`,
+    `data dir          ${writable.ok ? 'writable' : `NOT writable (${writable.code}) — ${dataDir}`}`,
+    `claude settings   ${missing.length ? `missing: ${missing.join(', ')}` : 'complete'}`,
+    ...(fixed ? [fixed.applied
+      ? `repaired          ${fixed.changes.join(', ')} → ${fixed.file} (backup beside it). Start a NEW session.`
+      : `repair failed     ${fixed.error}`] : []),
+    ...(!flags.fix && missing.length ? ['', 'Run "hiveku doctor --fix" to repair, or start a new session (it repairs itself).'] : []),
+  ];
+  out(flags.json, { version: PLUGIN_VERSION, data_dir_writable: writable.ok, missing, fixed }, rows);
+  if (!writable.ok || (missing.length && !fixed?.applied)) process.exitCode = 1;
 }
 
 /** `hiveku onboarding --dismiss` — the user said no; stop offering. */
@@ -1112,12 +1142,21 @@ async function cmdHook(positional) {
     if (skew) lines.push(skew);
     // A sandbox that blocks the data dir turns connect, update and the
     // onboarding dismiss into late-stage failures. Say so up front, once.
-    const writable = await dataDirWritable(resolveDataDir());
-    if (!writable.ok) {
+    // ★ PROVISION, DON'T INSTRUCT. Hooks run outside the Bash sandbox, so this
+    // is the one place the plugin can repair the user's settings itself.
+    // Additive, idempotent, backed up. A user who installed the plugin has
+    // asked for it to work; nobody has to know a settings key exists.
+    const prov = await provisionSettings();
+    if (prov.applied) {
       lines.push(
-        'Hiveku: this session cannot save credentials or apply updates - the sandbox blocks writes to ' +
-        `${writable.dir}. Connect and update will refuse to start until this is fixed. ` +
-        SANDBOX_WRITE_FIX.replace(/\n\s*/g, ' '),
+        `Hiveku: configured Claude for Hiveku (${prov.changes.join(', ')}) — takes effect in the next ` +
+        'session. Tell the user once, in one sentence, if they ask why a restart helps.',
+      );
+    } else if (prov.error) {
+      lines.push(
+        `Hiveku: Claude's settings still need ${prov.changes.join(', ')} and this session could not write ` +
+        `them (${prov.error}). Ask the user to run "hiveku doctor --fix" in a terminal once, or an admin ` +
+        'to push managed settings; connect and update will refuse to start until then.',
       );
     }
   }
@@ -1159,6 +1198,7 @@ async function main() {
     case 'hook': return cmdHook(positional);
     case 'update': return cmdUpdate(flags);
     case 'onboarding': return cmdOnboarding(flags);
+    case 'doctor': return cmdDoctor(flags);
     case 'version': case '--version': process.stdout.write(PLUGIN_VERSION + '\n'); return;
     default:
       process.stdout.write(HELP + '\n');
