@@ -790,10 +790,25 @@ async function cmdHook(positional) {
     }
   } else {
     if (binding && account) {
+      // ★ This is the ONLY channel that reaches every session unconditionally,
+      // and until now it spent all of itself on one rule.
+      //
+      // The plugin holds ~2.5 MB of operating knowledge — more than the Python
+      // agent servers carry — but theirs is PUSHED into every turn while all
+      // of the plugin's past ~26 KB must be PULLED: the model has to decide to
+      // open a skill, from a one-line description, before it knows it needs
+      // the rule. Every observed failure so far has been a pull-path failure
+      // on knowledge the plugin already had. So spend the one guaranteed
+      // channel on the pointer, not on a single rule: name the read-first
+      // skill, and name the tool that makes the other ~1,650 findable.
       lines.push(
         `Hiveku: bound to ${account.label} (${binding.accountId}, ${scopeLabel(account.scope)} access). ` +
           'Before any write: confirm with get_account_info, and check project_version_log / project_files_status ' +
-          'because you are not the only writer.',
+          'because you are not the only writer. ' +
+          'Read the hiveku-orient skill before your first Hiveku action — it carries the hard stops, ' +
+          'the two project-id spaces, and the department rules that are not inferable from tool names. ' +
+          'Only a handful of tools are advertised: hiveku_find_tools searches the other ~1,650, so search ' +
+          'before concluding a capability does not exist.',
       );
     } else if (binding && !account) {
       lines.push(

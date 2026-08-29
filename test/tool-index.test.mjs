@@ -177,21 +177,51 @@ test('`get` and `all` are searchable words in a tool catalogue', () => {
   assert.ok(searchTools('get account info', { limit: 5 }).some((t) => t.name === 'get_account_info'));
 });
 
-test('★ a field name in the description is findable', () => {
-  // Descriptions were truncated at 400 chars in the index, which cut
-  // `dev_preview_url` out of `project_get` — so the one tool that returns the
+test('★ the tool that returns the development URL is findable', () => {
+  // Descriptions were truncated at 400 chars in the index, which cut the
+  // response shape out of `project_get` — so the one tool that returns the
   // development URL could not be found by searching for it.
+  //
+  // Deliberately NOT asserting a field name: `dev_preview_url` was in this
+  // description for months and never existed in the response. Pin the tool, not
+  // the vocabulary.
   const hit = searchTools('dev preview url', { limit: 5 });
-  assert.equal(hit[0].name, 'project_get', `got ${hit.map((t) => t.name).join(', ')}`);
+  assert.ok(hit.some((t) => t.name === 'project_get'), `got ${hit.map((t) => t.name).join(', ')}`);
 });
 
 test('descriptions are stored in full, and trimmed only when rendered', () => {
   const pg = loadIndex().find((t) => t.name === 'project_get');
   assert.ok(!pg.description.endsWith('…'), 'index must keep the full text');
-  assert.ok(pg.description.includes('dev_preview_url'));
-  // Rendering is where context costs money, so it trims there.
   const rendered = renderResults([pg], 'dev preview url');
   assert.ok(rendered.length < pg.description.length + 400);
+});
+
+test('★ RENDERING PRESERVES WHAT A DESCRIPTION MARKS AS LOAD-BEARING', () => {
+  // The bug this pins: the index kept the full text, a test asserted it did,
+  // and the RENDERER then cut the response shape off the end anyway. Both
+  // halves passed; the fact never reached the model. Asserting "the index has
+  // it" and "the render is shorter" is not the same as asserting the render
+  // still has it.
+  //
+  // Every description that marks a fact with ★ or `Response shape:` puts it
+  // LAST, so a head-only trim is guaranteed to be the one that loses it.
+  // Only 5 descriptions currently use the convention — it is rare, not dead,
+  // and the rare ones are the expensive ones to get wrong.
+  const marked = loadIndex().filter(
+    (t) => t.description.length > 500 && /★|Response shape/.test(t.description),
+  );
+  assert.ok(marked.length >= 1, `expected marked descriptions, found ${marked.length}`);
+
+  const lost = [];
+  for (const t of marked.slice(0, 60)) {
+    const rendered = renderResults([t], t.name);
+    const hasStar = t.description.includes('★') ? rendered.includes('★') : true;
+    const hasShape = t.description.includes('Response shape')
+      ? rendered.includes('Response shape')
+      : true;
+    if (!hasStar || !hasShape) lost.push(t.name);
+  }
+  assert.deepEqual(lost, [], 'the renderer dropped a marked fact');
 });
 
 test('no description in the index is truncated', () => {
