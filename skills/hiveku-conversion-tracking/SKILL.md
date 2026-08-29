@@ -58,7 +58,7 @@ carries the number that makes the problem undeniable), `hiveku_recorded` vs
 | Meta looks quiet | `ppc_meta_custom_conversions` + `ppc_meta_conversion_volume` | diagnosis |
 | Forms missing, duplicated, or spammy; leads the platform never got | `marketing_form_conversion_audit` | forms |
 | Calls unattributed, or "stopped after a redeploy" | `voice_call_tracking_diagnose` (the call doctor - read its ordered `fix_first`), then `marketing_call_attribution_breakdown`, `marketing_call_attribution_list`, `voice_diagnose_setup` | calls |
-| Real leads the platform cannot optimise on | the two-step offline upload lane | offline-conversions |
+| Real leads the platform cannot optimise on; "push CRM sales back to Google / Meta", "close the loop on click to sale" | `marketing_offline_conversions_status` FIRST, then the declared lane (google / microsoft / meta; opt-in lands in validate-only, go-live is a human dashboard flip); rows you assembled yourself go by the two-step `ppc_offline_conversion_upload` (Google only) | offline-conversions |
 | GTM or a pasted tag involved | `seo_gtm_install_status` / `seo_gtm_status`, `project_custom_code_get` | site-instrumentation |
 | The PHONE SYSTEM itself: not ringing, wrong IVR, extension unreachable, outbound rejected, E911 | `voice_diagnose_setup` (no args) FIRST, then the section 13 ladder or `/hiveku:phone-check`. Not an attribution question - do not start at the scorecard | calls (§13) |
 
@@ -143,6 +143,14 @@ tools or `/hiveku:automate`, dry-run first.
   the human never saw, do not re-preview with refused rows silently dropped and call it the
   same batch, and never work around a refusal reason by substituting `updated_at` as a click
   date or `null` consent as granted - the refusals are the safety model, not friction.
+- The declared `marketing_offline_conversions_*` lane (deals, form leads, Shopify orders to
+  google / microsoft / meta) is safe by construction until a human decides otherwise: `opt_in`
+  ALWAYS lands in validate-only (payloads proven, NOTHING recorded), the go-live flip is a 403 for
+  agents and a dashboard action for an owner, `validate_only` only ever moves toward safe, and on
+  a LIVE account `run` records conversions that reach Smart Bidding and cannot be un-sent -
+  `status` first, `preview` before `run`, run once, read the tallies, never loop. Hiveku never
+  creates a conversion action; `designate` points at an existing one. Reference:
+  offline-conversions, section 13.
 - The call-conversion doctor IS a tool family now: `voice_call_tracking_diagnose` (seven
   checks, each `ok | warn | fail | unknown`, plus an ORDERED `fix_first` list - read
   `fix_first`, and an `unknown` is NOT a pass), `voice_call_tracking_outbox` (row-level
@@ -173,8 +181,10 @@ tools or `/hiveku:automate`, dry-run first.
   the operator named. Offer the reversible path: the inventory (`voice_numbers_list`,
   `voice_pools_list`, `voice_ring_groups_list`), what routes where, then one confirmed
   release at a time, by digits. The same contract covers "raise the toll-fraud cap and keep
-  dialing" (the cap is a spend guard that did its job - report what burned it first) and
-  "skip the preview, just upload everything".
+  dialing" (the cap is a spend guard that did its job - report what burned it first),
+  "skip the preview, just upload everything", and "flip offline conversions live so the numbers
+  move" (no tool can; the flip is the owner's, in the dashboard, after reviewing a validate-only
+  run).
 
 ## Which key can run which rung
 
@@ -205,5 +215,5 @@ invisible to every marketing profile.
 | `references/diagnosis.md` | Any live investigation: finding codes, per-platform status tools. |
 | `references/forms.md` | Missing, duplicate, or spam leads: `form_key`, sources, reCAPTCHA. |
 | `references/calls.md` | Call tracking and DNI: pools, matchers, the call doctor, transcripts. §13 is voice operations: phone system health, routing, queues, voicemail, toll fraud, E911 - reads plus a live-PBX write surface with its refusal rules. |
-| `references/offline-conversions.md` | Uploading deals and calls: gates, dating, consent, refusals. |
+| `references/offline-conversions.md` | "Push CRM sales back to Google / Meta", "offline conversions", "close the loop on click to sale": the declared `marketing_offline_conversions_*` lane and its validate-only doctrine, the hand-upload tool, gates, dating, consent, refusals. |
 | `references/site-instrumentation.md` | Getting tags onto the page: code tiers, consent, GTM CRUD. |

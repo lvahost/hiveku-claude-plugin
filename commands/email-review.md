@@ -1,37 +1,36 @@
 ---
 description: Email program review - stats, winners/losers, next test.
 ---
-Email review. Know what the tools can and cannot tell you before you write a word of this - for a
-campaign with no variant data, the per-campaign engagement numbers a client expects are NOT
-reachable from these tools on any list over 500 recipients, and inventing them is the failure mode
-this play exists to prevent. Variant-carrying campaigns are the exception now: `by_variant` makes
-per-variant opens and clicks reportable at any list size (steps 1 and 3).
+Email review. Know what the tools can and cannot tell you before you write a word of this -
+`email_campaign_metrics` now carries a campaign-level `engagement` block on EVERY campaign (open
+and click rate against delivered, at any list size), so the failure mode this play exists to
+prevent has moved: it is no longer inventing a rate, it is quoting one before anything delivered
+(the block is `null` then) or reporting an unsubscribe figure, which no tool returns.
 
 1. `email_stats` (account-wide send volume: sent_today / sent_week / sent_month, by_status across all
    email_messages, domain_count, api_key_count - NOT per campaign) + `email_campaign_list`, then
    `email_campaign_metrics({ id })` per recent send. Metrics returns
-   `{ campaign_id, status, by_status, total, by_variant? }` - the send rows counted by status
-   (queued / sending / sent / failed / skipped_suppressed / skipped_unsubscribed /
-   skipped_frequency_cap), plus, ONLY on campaigns that carry variant data (an N-way `variants`
-   test or the legacy ab_test_enabled pair), `by_variant: [{ variant, subject, sent, skipped,
-   opened, clicked }]` with per-variant opens/clicks derived from email_events. Campaigns without
-   variant data return no by_variant and still have NO open, click, delivery, bounce, complaint or
-   unsubscribe figure in this tool, and there is no campaign-level delivered/bounced/complained
-   breakdown in either case.
+   `{ campaign_id, status, by_status, total, engagement, by_variant? }` - the send rows counted by
+   status (queued / sending / sent / failed / skipped_suppressed / skipped_unsubscribed /
+   skipped_frequency_cap); `engagement: { delivered, opened, clicked, bounced, complained,
+   open_rate, click_rate }` on every campaign - distinct recipients, rates as percentages with one
+   decimal against delivered, `null` until anything has delivered; plus, ONLY on campaigns that
+   carry variant data (an N-way `variants` test or the legacy ab_test_enabled pair),
+   `by_variant: [{ variant, subject, sent, skipped, opened, clicked }]`. Unsubscribe counts are
+   still absent from this tool.
 2. **Delivery review** (what the tools DO support): per campaign, sent vs the skipped_* buckets. A
    large skipped_frequency_cap means the 7-day per-contact cap ate the send
    (`marketing_frequency_cap_get`); skipped_suppressed / skipped_unsubscribed mean list health.
    Cross-check the account's sending health with `email_service_status` (read `sending_enabled` first
  - a suspension blocks everything) and list hygiene with `email_suppression_list({ type })`.
-3. **Engagement**, only where it is real. Variant-carrying campaigns first: `by_variant` from
-   step 1 supports a true per-variant open and click rate at any list size - report those, name the
-   winner by CLICKS (Apple MPP inflates opens), and disclose each variant's N (its `sent`). For
-   campaigns without variant data: `email_logs_list({ limit: 500 })` returns per-message open_count,
-   click_count, delivered_at, bounced_at, complained_at. It has NO campaign filter and caps at 500
-   rows. On any send under 500 recipients you can attribute rows by subject and report a rate; above
-   that you CANNOT compute a true campaign open or click rate from tools - say so plainly and point
-   the client at the dashboard. Never estimate a rate, and never call opens a win on their own -
-   clicks are the signal.
+3. **Engagement.** `engagement` from step 1 is the campaign read: open_rate and click_rate
+   against `delivered`, at any list size - name the winner by CLICKS (Apple MPP inflates opens)
+   and quote `delivered` as the N. A `null` block means nothing has delivered yet: say so, do not
+   write 0%. Variant-carrying campaigns: `by_variant` splits the same figures per variant, with
+   each variant's `sent` as its N. Per-message drill-down: `email_logs_list({ campaign_id,
+   limit: 500 })` returns that campaign's rows newest first (open_count, click_count,
+   delivered_at, bounced_at, complained_at); still capped at 500 rows, so it is a sample on a
+   larger send, never the denominator. Never call opens a win on their own - clicks are the signal.
 4. ONE next A/B test recommendation with rationale, and cite the per-variant numbers from step 3:
    "variant B out-clicked A 2.1% to 1.4% on 4,000 sends, so next we test the CTA" beats "we should
    test subjects". Running it: `variants` on `email_campaign_create` / `email_campaign_update` -

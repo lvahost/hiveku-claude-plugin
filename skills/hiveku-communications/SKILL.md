@@ -309,8 +309,10 @@ template.
 `email_campaign_get` (includes inline bodies) - never guess an id. Create as a draft,
 `email_audience_preview` before EVERY send, `email_campaign_test_send`, then schedule or
 `email_campaign_send_now` - with `dry_run: true` first, sent for real only after reading the
-queued/skipped numbers. `email_campaign_metrics` returns send-row counts ONLY - never report
-an open or click rate from it.
+queued/skipped numbers. `email_campaign_metrics` returns the send-row counts by status plus an
+`engagement` block on every campaign (delivered / opened / clicked / bounced / complained and
+open_rate / click_rate against delivered, `null` until anything delivered) - report the rate from
+that block, never from counting `email_logs_list` rows; unsubscribe counts are absent from it.
 
 **Stopping a scheduled send is the highest-leverage recovery here.** A scheduled campaign:
 `email_campaign_cancel` (`_pause` once sending). A queued CRM batch: `crm_email_send_queue_list`

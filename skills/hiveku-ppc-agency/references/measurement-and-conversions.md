@@ -212,6 +212,18 @@ On any MISCONFIGURED or NOISE finding, and once per quarter regardless.
 
 The agency edge. It teaches smart bidding the difference between a form fill and a customer.
 
+**Two ways to run it, and they are not interchangeable.** The declared discovery lane -
+`marketing_offline_conversions_*` (status, opt_in, designate, preview, run, queue, requeue,
+validate_only, remove_mapping, plus `marketing_offline_conversion_actions_list`) - pulls closed-won
+deals, form leads and Shopify orders itself and pushes them to google_ads, microsoft_ads or
+meta_ads; opting in ALWAYS lands in validate-only (payloads proven, nothing recorded), the go-live
+flip is a human dashboard action (403 to agents), and on a live account a run is a money write that
+cannot be un-sent - the doctrine lives in
+`hiveku-conversion-tracking/references/offline-conversions.md` (section 13) and is not repeated here. The steps below are the
+hand-upload path, `ppc_offline_conversion_upload`: rows you assemble yourself, Google Ads only,
+two-step confirm. Use the lane where the account runs it; use the hand-upload for a one-off batch
+from a client export.
+
 **Preconditions, all four.** An Upload-source conversion action exists in the Ads account (if missing,
 create it with `ppc_google_conversion_actions` operation conversion-action-create with
 `type_: "UPLOAD_CLICKS"` - note the trailing underscore on `type_` - per `google-ads-advanced.md`
@@ -258,8 +270,10 @@ the conversion action id you upload against: the wrong id silently trains the wr
 **Cadence:** weekly. **Volume gate:** smart bidding needs roughly 30 conversions per 30 days to use a signal
 meaningfully. If the offline action produces 4 closed deals a month, do not make it the primary bidding
 target; keep it secondary, bid on a qualified-lead action, and let offline import prove the qualified-lead
-rate. **Meta, TikTok and LinkedIn offline import is not covered by `ppc_offline_conversion_upload`:** those
-platforms have their own conversion-ingest tools in `paid-social-and-bing.md`, or it is dashboard and CAPI
+rate. **`ppc_offline_conversion_upload` is Google-only. Microsoft and Meta offline import run through the
+declared `marketing_offline_conversions_*` lane** (Meta on the `fbc` click parameter only - `enhanced`
+matching is refused there - and its click window is 7 days, so batch daily); **TikTok and LinkedIn** have
+their own conversion-ingest operations in `paid-social-and-bing.md`, or it is dashboard and CAPI
 engineering. Say which, rather than implying the Google loop covers everything.
 
 ---
