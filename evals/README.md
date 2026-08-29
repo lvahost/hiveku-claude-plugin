@@ -124,7 +124,7 @@ shapes - and run `grade.mjs`.
 
 ## What v1 covers, and what it does not
 
-Covered: **2 of the plugin's 84 commands** - `/hiveku:ap-screen` and
+Covered: **2 of the plugin's 90+ commands** - `/hiveku:ap-screen` and
 `/hiveku:support-sweep` - chosen because each has a crisp defect model. That
 exercises slices of 2 of the 18 skills' disciplines (books, helpdesk).
 

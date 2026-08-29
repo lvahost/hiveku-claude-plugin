@@ -44,7 +44,9 @@ operator should DO, not a data dump.
    pull the specific department you need before briefing on it.
 5. **Scan for what moved**, from the local `hiveku-data/<dept>/` files and, where a number must be current,
    the live tools:
- - CRM: new leads, deals advancing or stalling, follow-ups due today.
+ - CRM: new leads, deals advancing or stalling, follow-ups due today. (A rep who wants their
+     OWN ranked queue - reminders, meetings, waiting replies, triage - runs `/hiveku:my-day`;
+     this brief stays account-wide.)
  - SEO: ranking movements, new content gaps, anything decaying.
  - PPC: spend pace vs budget, anomalies, search terms worth a negative.
  - Helpdesk: open tickets, anything breaching.

@@ -66,6 +66,32 @@ reported), and unavailable is never zero.
   `crm_calls_list({ contact_id, has_transcript: true })` (also filterable by deal_id or free-text
   `search`). Coach the specific questioning gap, not the aggregate.
 
+## Quota and attainment (memory-backed - no quota field exists)
+
+There is no quota storage anywhere in the product: no field on a user, no target on a pipeline, no
+attainment tool. Do not invent one, and do not silently skip the question when the owner asks "are
+we on pace?" - run the honest substitute:
+
+- **The quota lives in sales department memory.** Store it as a structured line the next session
+  can parse - e.g. `QUOTA 2026-Q3: team $150,000; sarah $60,000; period = calendar quarter` - via
+  the read-merge-write discipline (`memory_list({ domain: "sales" })` → merge → `memory_update`).
+  No quota line in memory = ask the owner for the number and save it before reporting attainment;
+  never back into a target from past performance and present it as the quota.
+- **Attainment** = closed-won value in the window vs the stored quota. Pull the won roster with
+  `crm_list_deals({ status: "won" })` walked page-by-page, or `crm_rep_win_leaderboard` for the
+  by-rep cut - and attach the three caveats EVERY time attainment is quoted:
+  1. Won dollars date by `updated_at` (no closed_at exists) - a won deal edited later moves
+     between periods.
+  2. The leaderboard uses the same proxy - treat per-rep totals as directional.
+  3. Per-rep attribution runs through the CONTACT owner (deals have no owner), so a mid-deal
+     handoff moves the credit with it.
+- **Pacing** = attainment so far + `crm_forecast_weighted` on what remains, vs the days left in
+  the period. Sanity-strip the forecast first (top of this file); a pacing claim built on stale
+  close dates is a lie with extra arithmetic.
+- Say the mechanism out loud in the report ("quota from department memory; won dollars by
+  updated_at") - the reader deserves to know these are proxy numbers. A real quota field with a
+  real closed_at is a product ask worth raising to Hiveku, not something to fake locally.
+
 ## Monthly report (deliverable)
 
 Structure, in markdown, saved to reports/ in the workspace AND persisted with `memory_create`

@@ -6565,13 +6565,13 @@
       "name": "project_annotation_settings_get",
       "dept": "project",
       "method": "GET",
-      "description": "Read the visual-review (annotation) overlay flags for a website project, per tier: {annotations_enabled_dev, annotations_enabled_staging, annotations_enabled_production, has_auth_token}. ★ annotations_enabled_dev DEFAULTS TRUE — a fresh project needs no toggle, just a deploy and the share link (project_review_link_get). ★ Injection is DEPLOY-TIME: a flag only affects the live site after the next deploy of that tier."
+      "description": "Read the visual-review (annotation) overlay flags for a website project, per tier: {annotations_enabled_dev, annotations_enabled_staging, annotations_enabled_production, has_auth_token} — production is READ-ONLY legacy state and can no longer be set. ★ annotations_enabled_dev DEFAULTS TRUE — a fresh project needs no toggle, just a deploy and the share link (project_review_link_get). ★ Injection is DEPLOY-TIME: a flag only affects the live site after the next deploy of that tier."
     },
     {
       "name": "project_annotation_settings_set",
       "dept": "project",
       "method": "PATCH",
-      "description": "Enable/disable the visual-review (annotation) overlay per tier. Pass any of annotations_enabled_dev / annotations_enabled_staging / annotations_enabled_production as booleans; mints the project's annotation auth token automatically on first enable. ★ Response includes redeploy_required — when true you MUST redeploy the changed tier(s) with deploy_site or the toggle has NO effect on the live site (injection happens at deploy time; this is the flow's #1 silent failure). ★ The overlay only functions through the review SHARE page (project_review_link_get) — the raw tier URL renders without any annotation UI by design."
+      "description": "Enable/disable the visual-review (annotation) overlay per tier. Pass annotations_enabled_dev and/or annotations_enabled_staging as booleans (production is NOT a reviewable tier and is rejected with 400); mints the project's annotation auth token automatically on first enable. ★ Response includes redeploy_required — when true you MUST redeploy the changed tier(s) with deploy_site or the toggle has NO effect on the live site (injection happens at deploy time; this is the flow's #1 silent failure). ★ The overlay only functions through the review SHARE page (project_review_link_get) — the raw tier URL renders without any annotation UI by design."
     },
     {
       "name": "project_annotations_list",
@@ -8821,7 +8821,7 @@
       "name": "social_comments_list",
       "dept": "social",
       "method": "GET",
-      "description": "List social comments received across all published posts, with status, sentiment, requires-response, and text-search filters. READ-ONLY for now — replying to comments via this surface is not yet supported; reply/dismiss actions live in the dashboard."
+      "description": "List social comments received across all published posts, with status, sentiment, requires-response, and text-search filters. This tool is read-only, but replying IS supported beside it: social_comment_reply publishes a reply to a comment on your OWN post on Facebook, Instagram and LinkedIn (X, TikTok and GBP comment replies return 400 — no platform API). Dismiss/triage status changes still live in the dashboard."
     },
     {
       "name": "social_create_post",

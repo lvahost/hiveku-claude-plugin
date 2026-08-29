@@ -129,7 +129,16 @@ Put this in `.claude/settings.json` (per project) or `~/.claude/settings.json` (
       "mcp__plugin_hiveku_hk__ppc_platform_bidding_strategy_update",
       "mcp__plugin_hiveku_hk__ppc_campaign_create",
       "mcp__plugin_hiveku_hk__accounting_bill_record_payment",
-      "mcp__plugin_hiveku_hk__accounting_invoice_record_payment"
+      "mcp__plugin_hiveku_hk__accounting_invoice_record_payment",
+      "mcp__plugin_hiveku_hk__crm_contact_email_send",
+      "mcp__plugin_hiveku_hk__crm_enroll_sequence",
+      "mcp__plugin_hiveku_hk__crm_sequence_enroll_bulk",
+      "mcp__plugin_hiveku_hk__email_sequence_enroll",
+      "mcp__plugin_hiveku_hk__email_sequence_activate",
+      "mcp__plugin_hiveku_hk__voice_sms_send",
+      "mcp__plugin_hiveku_hk__voice_sms_send_to_contact",
+      "mcp__plugin_hiveku_hk__voice_sms_thread_reply",
+      "mcp__plugin_hiveku_hk__crm_remove_dnc"
     ]
   }
 }

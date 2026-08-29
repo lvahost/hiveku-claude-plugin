@@ -71,7 +71,8 @@ Beyond the core commands above, the plugin ships the plays an agency runs every 
 - **PPC** — `ppc-optimize` (search terms → negatives, pacing, disapprovals), `ppc-report` (period-over-period)
 - **Content / social** — `campaign` (plan + draft + schedule), `social-plan`, `social-report`, `media` (brand-aware images + AI video)
 - **Email** — `email` (build + launch through the send gates), `sequence` (nurture sequences, in the order that actually fires), `email-review`
-- **Sales / outbound** — `pipeline`, `followups`, `replies`, `outbound-health`, `outbound-launch` (pre-launch go/no-go gate)
+- **Sales** — `my-day` (the rep's ranked morning queue), `pipeline`, `deal` (one deal with the stage-UUID + loss-code discipline), `estimate` + `contract` (create and send the paper), `followups`, `sales-sequence` (the CRM follow-up rail; `sequence` is the marketing drip), `call-prep` / `call-capture`, `win-loss` (period review with quoted transcript evidence)
+- **Outbound** — `prospect` (list building with verification honesty), `outbound-campaign` (campaign + chunked lead load; steps authored provider-side), `replies`, `outbound-health`, `outbound-launch` (pre-launch go/no-go gate)
 - **Helpdesk** — `tickets`, `kb-gaps`
 - **Voice** — `phone-check` (phone system health: provisioning + blocking issues, toll-fraud cap on outbound, routing, DID inventory, E911 exposure — read-only, every fix is a dashboard action)
 - **PM** — `standup`, `triage`
@@ -169,7 +170,7 @@ defects, traced every report number to a tool result, and synthesized rather
 than restated. Deterministic layer: `node --test 'evals/self-test/*.test.mjs'`
 (no model, CI-safe). Model-in-the-loop: `bash evals/bin/run-eval.sh <case>` -
 it works against any gateway the environment points at, so the same evals run
-on non-Claude models. Honest scope: 2 of 84 commands, 0 of 9 agents - this
+on non-Claude models. Honest scope: 2 of 90+ commands, 0 of 9 agents - this
 proves the pattern, it does not claim coverage. `claude plugin eval` is
 early-access/org-gated and unavailable here, so the harness is plain
 executable fixtures; see `evals/README.md` for the design and migration path.

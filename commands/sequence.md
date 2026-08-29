@@ -4,6 +4,10 @@ argument-hint: "[what the sequence should do]"
 ---
 Build an email nurture sequence: $ARGUMENTS.
 
+This is the MARKETING drip rail (`email_sequence_*`). A rep's 1:1 sales follow-up sequence (the
+`crm_*_sequence` rail, sent from the connected inbox) is `/hiveku:sales-sequence` - the two rails
+share nothing, not even template stores.
+
 **The order below is mandatory, and getting it wrong fails silently.** `email_sequence_enroll`
 refuses only on ARCHIVED sequences, not inactive ones - so enrolling into a sequence you never
 activated SUCCEEDS, writes enrollment rows, and then the tick EXITS every one of them with

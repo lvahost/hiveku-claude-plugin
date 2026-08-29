@@ -7,19 +7,24 @@ before reporting a tool as broken.
 
 ## Always available on EVERY profile
 
-`talk_to_department`, `list_departments`, `web_search`, `fetch_url`, `audit_query`. And
-`get_account_info` is name-listed on all the outbound-carrying profiles.
+`talk_to_department`, `list_departments`, `web_search`, `fetch_url`, `audit_query`, and
+`account_context_get` (context loading works on every profile - the context-first rule has no
+scoped-key exception anymore). And `get_account_info` is name-listed on all the
+outbound-carrying profiles.
 
 ## sales (the BDR persona)
 
-Prefixes: `crm_` (ALL of it - DNC, reminders, sequences, deals, reports, imports, activities),
-`gmail_`, `calendar_`, `outbound_`, `memory_`, `kb_`, `brand_`, `avatar_`, `discussion_`; plus
-task and project names (create_task, list_tasks, get_account_info, ...).
+Prefixes: `crm_` (ALL of it - DNC, reminders, sequences, deals, reports, imports, activities,
+and the 1:1 email pair `crm_contact_emails_list` / `crm_contact_email_send`), `gmail_`,
+`calendar_`, `outbound_` (all 27, the new detail/config reads included), `memory_`, `kb_`,
+`brand_`, `avatar_`, `discussion_`; plus task and project names (create_task, list_tasks,
+get_account_info, ...); plus `voice_call_transcript_get` by NAME (call prep/capture are sales
+plays - the rest of `voice_*` stays invisible).
 
 NOT visible: `email_*` (suppression add/list/remove, domains, deliverability check, stats),
 `seo_` and all DataForSEO modules (includeDataForSEO false - `backlinks_*` included),
 `analytics_`, `workflow_`, `customer_avatar_*` (the `avatar_` grant does NOT match the
-`customer_` prefix), `integration_`, `account_context_get`.
+`customer_` prefix), `integration_`, `voice_*` beyond the one transcript name.
 
 ## marketing (catch-all) and marketing-email
 
@@ -34,7 +39,7 @@ NOT visible on either: `crm_set_dnc` / `crm_get_dnc_status` / `crm_remove_dnc`,
 `crm_create_activity`, `crm_reminder_*`, the CRM sequences rail, `crm_list_deals` /
 `crm_create_deal` / crm reports, `crm_import_preflight`, `crm_list_email_suppressions`,
 `crm_thread_for_contact` / `crm_email_thread_search`, `crm_lead_triage`,
-`crm_contacts_gone_cold`, `calendar_`, `gmail_`, `integration_`, `account_context_get`.
+`crm_contacts_gone_cold`, `calendar_`, `gmail_`, `integration_`.
 
 marketing additionally has `customer_` (so `customer_avatar_*` works), `seo_`, and DataForSEO
 (includeDataForSEO true - the `backlinks_*` modules). marketing-email has NONE of those three.

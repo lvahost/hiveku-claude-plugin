@@ -75,13 +75,14 @@ fire by luck.
   `crm_envelope_add_signer` returns) only when you are hand-delivering a signing link outside the
   invite email - they are not derivable from the stored hash afterwards. The `signer_tokens`
   argument on send is legacy; omit it.
-- **Pre-flight: invites send from the from_email on the account's payment-integrations settings
-  page in the dashboard.** (The server's own `crm_envelope_send` description names that setting
+- **Pre-flight: the from_email on the account's payment-integrations settings page is a BRANDING
+  choice, not a blocker.** (The server's own `crm_envelope_send` description names that setting
   `crm_payment_integrations` - it is a settings surface, NOT a callable tool; do not attempt the
-  call.) If that setting is unset the send fails, and the failure looks like a
-  signing problem rather than a config problem. No MCP tool reads or writes it, so on a new account
-  have the owner confirm it is set in the dashboard before the first envelope - the same pre-flight
-  discipline as checking `crm_inbox_connections` before a sequence.
+  call.) Verified against the send route: with the setting UNSET, invites send from the platform
+  sender `agreements@notifications.hiveku.com` via Resend; SET and domain-verified, they send from
+  the client's own domain. The send does not fail either way. No MCP tool reads or writes it, so
+  the pre-flight is one sentence to the owner on a new account: "signature invites will carry the
+  Hiveku sender until from_email is set in the dashboard - fine to proceed?"
 - **Signer order matters.** For sequential envelopes put the EXTERNAL counterparty first and your
   team's countersigner last. `crm_envelope_add_signer` appends at order max+1 and only works on drafts
   (409 otherwise) - add signers in the order you want them to sign.
@@ -103,5 +104,7 @@ fire by luck.
 - **`crm_contract_template_update` cannot change the document body.** Name, description and
   is_archived only; a layout_json passed to it succeeds and does nothing. New terms = new template.
 - **Money is in cents** on estimates/invoices (unit_cents). A $1,500 line item is 150000.
-- **Envelope invites need the from_email on the payment-integrations settings page.** Unset = the
-  send fails and reads like a signing bug. Confirm it before the first envelope on a new account.
+- **Envelope from_email is branding, not a gate.** Unset, invites carry the platform sender
+  (`agreements@notifications.hiveku.com` via Resend) - the send succeeds either way. Flag the
+  sender identity to the owner before the first envelope on a new account; never report an unset
+  from_email as a send blocker.

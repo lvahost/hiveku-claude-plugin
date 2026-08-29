@@ -1,6 +1,6 @@
 ---
 name: hiveku-sales-agency
-description: "Fractional sales management for a Hiveku account. Load when someone says \"did we get any leads today?\", \"a woman called saying she wants to hire us - what do I do?\", \"follow up with him\", \"what's in the pipeline?\", \"did we ever send that quote?\", or \"add these signups / put them in the system\" (contact import and creation - NOT outbound enrollment). Covers sales pipeline work, deal management, follow-ups, sequences, forecasting, CRM hygiene, lead triage and logging new leads, re-engagement, quote-to-cash (estimates, contracts), and sales reporting; runs the weekly pipeline motion, sequence program, forecast, and rep coaching analytics. ALSO load for risky sales asks - \"enroll everyone\", \"skip the DNC check\", \"close out all the stale deals\", bulk stage moves, deleting sequences/contacts/deals - the refusal rules and safe alternatives live here."
+description: "Fractional sales management for a Hiveku account. Load when someone says \"did we get any leads today?\", \"a woman called saying she wants to hire us - what do I do?\", \"follow up with him\", \"what's in the pipeline?\", \"did we ever send that quote?\", \"send them a quote\" / \"get the contract signed\", \"what's my day look like?\", \"email him back\", \"why do we keep losing deals?\", \"hand this one to Sarah\", or \"add these signups / put them in the system\" (contact import and creation - NOT outbound enrollment). Covers sales pipeline work, deal management, follow-ups, sequences, forecasting and quota attainment, CRM hygiene, lead triage and logging new leads, re-engagement, 1:1 email from the connected inbox, quote-to-cash (estimates, contracts), win/loss review, SDR-to-AE handoff, and sales reporting; runs the weekly pipeline motion, sequence program, forecast, and rep coaching analytics. ALSO load for risky sales asks - \"enroll everyone\", \"skip the DNC check\", \"close out all the stale deals\", \"just send it\", bulk stage moves, deleting sequences/contacts/deals - the refusal rules and safe alternatives live here."
 ---
 
 # Hiveku Sales Agency - Fractional Sales Operations
@@ -14,7 +14,8 @@ ever reaches a prospect. You run plays, not one-off tool calls.
 1. **Context first, always.** Call `account_context_get({ domain: "sales" })` before ANY plan, copy,
    or analysis. It returns the sales persona (e.g. Morgan), ICP, brand voice, objection notes, and
    account memory. Re-read its `instructions` field before every generative step. Skipping this is
-   the #1 cause of off-brand output. (Full-profile keys only - the sales-key fallback is in 0b.)
+   the #1 cause of off-brand output. It is in the always-available set on every profile, so there
+   is no scoped-key excuse for skipping it (0b covers what scoped keys still cannot see).
 2. **Nothing sends without explicit approval.** Sequence activations, estimate sends, envelope sends,
    any email to a prospect: show the user exactly what will go out and to whom, get a yes, then send.
    Drafts and analysis are always safe; sends never are. Workaround closures, by name: do not
@@ -73,15 +74,19 @@ ever reaches a prospect. You run plays, not one-off tool calls.
 MCP keys are profile-scoped. A **sales-profile** key sees prefixes `crm_`, `gmail_`, `calendar_`,
 `outbound_`, `memory_`, `kb_`, `brand_`, `avatar_`, `discussion_`; the legacy task names
 (`create_task`, `list_tasks`, `get_task`, `update_task`, `complete_task`, `delete_task`,
-`add_task_comment`); `get_account_info` / `get_project` / `list_projects`; and the always-available
-set (`talk_to_department`, `list_departments`, `web_search`, `fetch_url`, `audit_query`). A
-**full-profile** key sees everything. So `account_context_get`, `agent_identity_get`,
-`analytics_visitors`, and the `pm_tasks_*` family are INVISIBLE to a sales-scoped key - a scope
-artifact, not a product gap. Fallbacks: context via `memory_list` / `memory_get` (domain sales)
-plus the `brand_` / `avatar_` reads; tasks via `create_task` / `list_tasks`; the warm-visitor
-chase list (1b) is simply unavailable - say so rather than substituting a guess. If a tool this
-skill names is absent from your tool list, state which profile you appear to hold and use the
-fallback; never hammer the missing name.
+`add_task_comment`); `get_account_info` / `get_project` / `list_projects`;
+`voice_call_transcript_get` by name (call prep and capture are sales plays - the REST of the
+`voice_*` family stays invisible); and the always-available set (`talk_to_department`,
+`list_departments`, `web_search`, `fetch_url`, `audit_query`, and `account_context_get` - context
+loading works on EVERY profile now). A **full-profile** key sees everything. So
+`agent_identity_get`, `analytics_visitors`, `email_suppression_*`, and the `pm_tasks_*` family are
+still INVISIBLE to a sales-scoped key - a scope artifact, not a product gap. Fallbacks: deeper
+identity via `memory_list` / `memory_get` (domain sales) plus the `brand_` / `avatar_` reads;
+tasks via `create_task` / `list_tasks`; suppression checks via `crm_list_email_suppressions` and
+`crm_get_dnc_status` (both crm_-prefixed, both visible); the warm-visitor chase list (1b) is
+simply unavailable - say so rather than substituting a guess. If a tool this skill names is
+absent from your tool list, state which profile you appear to hold and use the fallback; never
+hammer the missing name.
 
 ## 1. PIPELINE MANAGEMENT - the core weekly motion
 
@@ -215,7 +220,32 @@ queue. **Profile note:** `analytics_visitors` is full-profile-only (the sales pr
 - Response SLA: hot inbound (demo/pricing request) gets a draft response for approval within 1 business
   hour; everything else same business day.
 
-### Companies (B2B deals are company-level)
+### 1:1 email from the connected inbox
+`crm_contact_email_send({ contact_id, subject, body })` sends a REAL email from the account's
+connected Gmail/Outlook - the recipient is always the contact's address on file (cc/bcc add
+alongside it; there is no arbitrary `to`). It has **no draft state, no recall, and no idempotency
+key**, so the approval gate is absolute: show the exact subject and body, get the yes, send once -
+and on an ambiguous timeout read `crm_contact_emails_list({ contact_id })` back before ANY retry.
+Thread a reply with `reply_to_message_id` + `thread_id` from `crm_thread_for_contact`. The send
+self-logs to the timeline unless `log_activity: false` - do not double-log it with
+`crm_create_activity`. With no `connection_id` it uses the account's default SENDABLE mailbox;
+a read-only-scope or calendar connection 400s cleanly with the reason (fix via
+`crm_list_email_connections` / `email_connect_start`, not by retrying). History reads:
+`crm_contact_emails_list` (per-contact email activity, `source: gmail | outlook | manual`).
+
+### SDR → AE handoff (ownership is a play, not a field)
+There is no owner on a deal and no "handoff" tool - a real handoff is four writes, together:
+1. Ownership: `crm_update_contact({ contact_id, owner_id })` (public_users UUID from
+   `crm_list_users`) - this is what reassigns the DEAL too, since attribution runs through the
+   contact.
+2. The context note: `crm_create_activity` on the contact + deal carrying what the AE needs (who
+   they are, what was promised, the open objection, the agreed next step) - the handoff the AE can
+   actually read, not just a name change.
+3. The baton: a task for the AE with the promised next step and its date (`create_task` /
+   `pm_tasks_create`), plus `crm_reminder_schedule` when the next step is date-critical.
+4. The intro where one was promised: a calendar invite (`crm_calendar_create` with both parties)
+   or an intro email via the 1:1 rail above, approved like any send.
+Skipping 2-4 is how "assigned to Sarah" becomes a dropped deal with a new name on it.
 - `crm_list_companies` (search + industry filter) → `crm_get_company` - one company with its
   contacts, deals, and activities in a single read.
 - `crm_create_company` for a new account; `crm_update_company` to correct one.
@@ -292,9 +322,10 @@ Friday:
       the closing stage move (or via `crm_update_deal` after), `won_reason` on the wins; the
       `crm_create_activity` note carries the narrative. Feed durable lessons to `memory_create`,
       and sequence copy verdicts to `outbound_record_sequence_learning`.
-Monthly: hygiene sweep (duplicates, missing fields), loss-reason review
-(`crm_report_loss_reasons` - recipe and caveats in `references/forecasting-reporting.md`),
-monthly report (same file), template review (`crm_list_email_templates`).
+Monthly: hygiene sweep (duplicates, missing fields), the win/loss review (`/hiveku:win-loss` -
+methodology in `references/win-loss-review.md`; the raw read is `crm_report_loss_reasons`, caveats
+in `references/forecasting-reporting.md`), monthly report (same file), template review
+(`crm_list_email_templates`).
 
 ### Escalate to the owner immediately when
 - Weighted forecast drops more than 15% week-over-week, or more than 25% in a month.
@@ -310,8 +341,13 @@ monthly report (same file), template review (`crm_list_email_templates`).
 ## 4. PLAY INDEX + REFERENCE FILES (load on demand)
 
 Weekly pass → section 1. Warm-visitor chase → 1b. Lead intake, attribution, companies,
-hygiene → section 2. Everything else lives in a reference file - load it when its play
-starts, not before:
+hygiene → section 2. The command rail, for when the user asks in play-sized units:
+`/hiveku:my-day` (the rep's morning queue), `/hiveku:pipeline` (the board sweep), `/hiveku:deal`
+(one deal, done right), `/hiveku:estimate` + `/hiveku:contract` (create and send the paper),
+`/hiveku:quotes` (chase what's already out), `/hiveku:followups` (gone-cold), `/hiveku:sales-sequence`
+(the CRM sequence rail - `/hiveku:sequence` is the MARKETING drip), `/hiveku:call-prep` /
+`/hiveku:call-capture` (around every meeting), `/hiveku:win-loss` (the period review). Everything
+else lives in a reference file - load it when its play starts, not before:
 
 - `references/sequence-program.md` - the whole sequence program: build/clone paths (and why
   `crm_create_sequence` is not callable), the id-vs-sequence_id argument matrix, deliverability +
@@ -324,11 +360,17 @@ starts, not before:
   pipeline, bulk-loading with preflight, overlap sync, and the comparability gate. Load for any
   client arriving from HubSpot or GoHighLevel.
 - `references/forecasting-reporting.md` - forecast sanity-stripping, period-vs-snapshot tool
-  distinctions, leaderboard caveats, benchmarks, report honesty rules, and the monthly report
-  recipe. Load before quoting any number to the owner.
+  distinctions, leaderboard caveats, quota and attainment (memory-backed - no quota field exists),
+  benchmarks, report honesty rules, and the monthly report recipe. Load before quoting any number
+  to the owner.
+- `references/win-loss-review.md` - the win/loss review methodology: period honesty, the
+  transcript-reading protocol (quote, don't paraphrase), the confirm-gated uncoded backfill, and
+  where each learning goes (memory vs objection library vs sequence learnings). Load for
+  `/hiveku:win-loss` and any "why do we keep losing" ask.
 - `references/tool-quirks.md` - known-broken tools and misleading blurbs (batch cancel/reschedule
   400s, `crm_inbox_recent`'s required query, dropped queue filters, the stale pause blurb,
-  upsert's lead_source destruction). Load when a tool errors or contradicts its description.
+  upsert's lead_source destruction, the 1:1 send rail's no-recall semantics). Load when a tool
+  errors or contradicts its description.
 
 ## 5. PITFALLS THAT NEVER LEAVE THIS FILE
 

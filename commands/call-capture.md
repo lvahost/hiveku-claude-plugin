@@ -37,9 +37,12 @@ this command exists so the write-up stops being six manual tool decisions reps s
      response_outcome })` (types: price | timing | authority | competitor | no-need | trust).
      Duplicate text within a type increments its seen-count, so log repeats too - the count IS the
      signal.
-   - Lost? Status flip via `crm_update_deal` AND the reason spelled out in the activity body - deals
-     have no lost_reason field, so that free-text note is the only record a win/loss review will
-     ever find.
+   - Lost? Close it CODED: `crm_update_deal({ deal_id, status, lost_reason_code, lost_reason })` -
+     the code vocabulary is no_decision | price | competitor | timing | no_budget | bad_fit |
+     ghosted | other (unknown codes 400 listing it), `lost_reason` is the free-text why (max 500
+     chars), and the activity body still carries the narrative. The code is what
+     `crm_report_loss_reasons` and `/hiveku:win-loss` can aggregate; a close without one is
+     tomorrow's uncoded bucket.
 5. Apply on a single approval of the set - not six sequential prompts. Anything the user strikes,
    drop without argument. Report each write's result; a failed write is reported and re-proposed,
    never retried silently. If the follow-up needs a drafted email, draft it and show it - nothing

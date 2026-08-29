@@ -58,3 +58,14 @@ routes on 2026-08-28. A tool blurb is marketing until the route agrees with it.
 - **`crm_estimate_convert_to_invoice` cannot be repeated** (409 if already converted) and revokes
   the portal tokens; **`crm_envelope_send` is one-way** (sent envelopes can only be voided). Both
   flows: `references/quote-to-cash.md`.
+- **`crm_contact_email_send` has no draft, no recall, no idempotency key.** Two identical calls are
+  two emails in the prospect's inbox. Approval binds to the exact subject + body shown; on an
+  ambiguous timeout read `crm_contact_emails_list({ contact_id })` back before ANY retry. The
+  recipient is ALWAYS the contact's address on file (cc/bcc add alongside; there is no `to`
+  argument), and the send SELF-LOGS to the timeline unless `log_activity: false` - writing
+  `crm_create_activity` for the same send double-logs it and corrupts the touch analytics.
+- **`crm_contact_email_send`'s default-connection fallback is per platform.** With no
+  `connection_id` it picks the account's default SENDABLE mailbox - `is_default` is assigned per
+  platform, so a default google_calendar row can never be picked, and a mailbox connected with a
+  read-only OAuth scope 400s cleanly with the reason instead of sending. A 400 here is a
+  connection problem (`crm_list_email_connections` / `email_connect_start`), never a retry case.

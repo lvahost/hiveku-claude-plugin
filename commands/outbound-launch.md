@@ -13,11 +13,12 @@ dashboard/provider-side. Context: `account_context_get({ domain: "outbound" })`.
 2. Suppression sweep against the loaded list: `email_suppression_list`, `crm_get_dnc_status` per
    flagged address, and `crm_search_contacts` for existing customers. A DNC'd address or a current
    client in the list is a STOP, not a warning - remove them before anything sends.
-3. Confirm the SmartLead campaign has REAL sequence steps upstream. `outbound_create_campaign`
-   creates the campaign with the NAME ONLY; `sequences` are mirrored as local JSON and the
-   SmartLead campaign comes back EMPTY. A Hiveku-side read cannot prove the steps exist - check
-   SmartLead (dashboard or REST). An active campaign with no steps sends nothing and burns the
-   list slot.
+3. Identify the campaign with `outbound_get_campaign({ campaign_id })` (name, status, integration,
+   lead/thread/draft counts) - then confirm it has REAL sequence steps upstream.
+   `outbound_create_campaign` creates the campaign with the NAME ONLY; `sequences` are mirrored as
+   local JSON and the SmartLead campaign comes back EMPTY - the detail read's `sequences` are that
+   same local mirror, so NO Hiveku-side read can prove the steps exist. Check SmartLead (dashboard
+   or REST). An active campaign with no steps sends nothing and burns the list slot.
 4. `outbound_list_leads({ campaign_id })` - verify the list actually loaded, and count rows with
    `status: "pending_sync"` and a `pending-*` external_id. That state is NORMAL after a fresh load
    (SmartLead's add-lead response has no lead id; the next sync reconciles). Do not report it as a

@@ -7,11 +7,18 @@ contact_id })` on the shortlist rather than ranking off blanks.
 2. Gate the list before writing a word: `crm_get_dnc_status({ contact_id })` per contact plus
 `crm_list_email_suppressions` for the batch. Drop anyone DNC'd or suppressed on either, and say who
 you dropped and why. No exceptions, not even for "just a re-engagement".
-3. Read before drafting: `crm_thread_for_contact({ contact_id })` for what was actually said, and
+3. Read before drafting: `crm_thread_for_contact({ contact_id })` for what was actually said (plus
+`crm_contact_emails_list({ contact_id })` for the synced 1:1 history), and
 `crm_calls_list({ contact_id })` if the relationship was phone-led. Then draft a personal,
 context-aware touch per contact via `talk_to_department({ domain: "outbound", message })` - gone-cold
 contacts reference the last real conversation; they do not get a cold cadence.
-4. Show drafts. Only on explicit approval, send via the connected inbox. Sequence enrollment
+4. Show drafts. Only on explicit approval, send via the connected inbox:
+`crm_contact_email_send({ contact_id, subject, body, reply_to_message_id?, thread_id? })` - it
+sends to the contact's address on file with NO draft state, recall, or idempotency key, threads
+via the ids from `crm_thread_for_contact`, and self-logs the activity (do not double-log). On an
+ambiguous timeout, read `crm_contact_emails_list` back before ANY retry. If that tool is not on
+your key, hand the finished draft to the user - never route it through another send rail.
+Sequence enrollment
 (`crm_enroll_sequence({ id, contact_id })`) is the stale/never-engaged play, not this one - and if
 you do enroll, re-check DNC and suppression at enroll time and make sure every merge tag the steps
 use already has a value (`crm_set_custom_field_value`), or enrollment is refused with a 422.
