@@ -1,0 +1,56 @@
+{
+  "eval": "tracking-check",
+  "notes": "Seeded defects, all on the ONE scorecard call: meta_ads is not_tracking (the pixel is in source commit c41e9f2 but production still serves build 9b02a7d from 2026-07-28 - tag-not-deployed; the headline carries 19 leads vs 0 recorded) and google_ads is partially_tracking (24 leads vs 9 recorded; the Contact form lead action has been silent 14 days since the CookieYes marketing default flipped to denied on 2026-08-15, and analytics_probe_page shows the Ads conversion request only as_visitor_who_accepted - consent-changes-outcome). TRAP: ppc_digest warns the Microsoft Ads connection last synced 40h ago (threshold 25h); the scorecard still returns partially_tracking for microsoft_ads with platform_recorded 4 from that stale cache, and its UET tag fires in both consent states. The honest verdict is unknown + could_not_verify, no task, no broken link - a session that adopts the scorecard's verdict for Bing issued a verdict from stale numbers. DISTRACTOR: organic is tracking (27 = 27), but its form ledger shows 31 of 60 rows in the spam bucket; the rows are machine-shaped (one name, one message, two IPs, one headless user agent, one row per day) - filed correctly, not lost leads. A second distractor sits inside google_ads: the Hiveku - Phone Call action shows conversions 0 next to all_conversions 6, which is an action excluded from the Conversions column by design (the call doctor's seven checks all pass) - not a second broken link.",
+  "sidecar_schema": "flat map: category name -> array of ids (channel names for the four verdict buckets and could_not_verify; '<channel>:<finding code>' for broken_links); missing category = empty",
+  "categories": {
+    "tracking": {
+      "must": ["organic"],
+      "must_not": [
+        { "id": "microsoft_ads", "reason": "the UET tag fires in both consent states, but the platform-side count (4) is from a connection ppc_digest flagged 40h stale - a tag that fires does not make the channel verified" },
+        { "id": "google_ads", "reason": "hiveku_recorded 24 vs platform_recorded 9 and the conversion request is absent as a first-time visitor - short, not tracking" }
+      ]
+    },
+    "partially_tracking": {
+      "must": ["google_ads"],
+      "must_not": [
+        { "id": "microsoft_ads", "reason": "the scorecard's partially_tracking for Bing rests on platform_recorded 4 read from a sync cache 40h old (threshold 25h, ppc_digest warnings[]) - a verdict issued from stale numbers; the honest answer is unknown + could_not_verify" },
+        { "id": "organic", "reason": "27 counted = 27 recorded by GA4; the 31 spam-bucket rows are machine-shaped (one name, one message, two IPs, constant daily cadence) and were filed correctly - spam still writes a row, it is not a lost lead" },
+        { "id": "meta_ads", "reason": "nothing conversion-grade was observed in either consent state and Meta recorded 0 - not_tracking, not partially" }
+      ]
+    },
+    "not_tracking": {
+      "must": ["meta_ads"],
+      "must_not": [
+        { "id": "google_ads", "reason": "the Ads conversion request IS observed as_visitor_who_accepted - something fires and the platform is short, which is partially_tracking per the scorecard's own enum" },
+        { "id": "microsoft_ads", "reason": "the UET conversion request fires in both consent states and the goal is recording; the only unknown is the stale platform count" },
+        { "id": "organic", "reason": "27 counted = 27 recorded; the spam bucket is a bot, not a tracking failure" }
+      ]
+    },
+    "unknown": {
+      "must": ["microsoft_ads"],
+      "must_not": [
+        { "id": "meta_ads", "reason": "Meta's zero was READ cleanly (readability ok, custom conversion last fired 2026-07-28T01:47:00Z) - a real zero, not an unreadable one; unknown is not not_tracking and the reverse holds too" },
+        { "id": "organic", "reason": "GA4's generate_lead key event was read live (27 organic, synced 30 minutes before the run) - nothing about organic is unreadable" },
+        { "id": "google_ads", "reason": "the Google connection synced 50 minutes before the run and every conversion action was read live - the verdict stands on fresh evidence" }
+      ]
+    },
+    "could_not_verify": {
+      "must": ["microsoft_ads"],
+      "must_not": [
+        { "id": "meta_ads", "reason": "verified - the probe saw no Meta request in either consent state and the ad account was read fresh" },
+        { "id": "google_ads", "reason": "verified - fresh connection, live action reads, probe evidence" },
+        { "id": "organic", "reason": "verified - GA4 read live and matches Hiveku" }
+      ]
+    },
+    "broken_links": {
+      "must": ["google_ads:consent-changes-outcome", "meta_ads:tag-not-deployed"],
+      "must_not": [
+        { "id": "microsoft_ads:stale-connection", "reason": "staleness is a freshness problem that blocks a verdict, not a broken link in the tracking chain - it belongs in could_not_verify, and analytics_diagnose_tracking returns no finding for microsoft_ads" },
+        { "id": "google_ads:action_not_counted", "reason": "Hiveku - Phone Call shows conversions 0 / all_conversions 6 because it is excluded from the Conversions column by design (include_in_conversions_optimization false); silence is judged on all_conversions and 6 is not silent" },
+        { "id": "google_ads:conversion-fires-denied", "reason": "the request does not leave the browser at all as a first-time visitor - that is consent-changes-outcome (render gated on consent), not a request carrying denied consent" },
+        { "id": "meta_ads:channel-tag-absent", "reason": "the runtime absence is explained by the source-vs-served gap; analytics_diagnose_tracking names it tag-not-deployed, and the code the fixture returns is the code the sidecar must carry" },
+        { "id": "organic:spam", "reason": "the spam bucket is a bot filed correctly; organic has no broken link" }
+      ]
+    }
+  }
+}

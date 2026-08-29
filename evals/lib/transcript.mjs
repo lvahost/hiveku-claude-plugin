@@ -50,7 +50,7 @@ export function readTranscript(filePath) {
       continue;
     }
     if (obj && typeof obj.tool === 'string' && 'result' in obj) {
-      calls.push({ tool: obj.tool, input: obj.input ?? null, result: obj.result });
+      calls.push({ tool: obj.tool, input: obj.input ?? null, result: obj.result, ...(obj.ts ? { ts: obj.ts } : {}) });
       continue;
     }
     const content = obj?.message?.content;
@@ -119,4 +119,86 @@ export function buildCorpus(calls) {
     visit(c.result, echoes);
   }
   return { numbers, counts, text: strings.join('\n') };
+}
+
+// ── Transcript assertions ───────────────────────────────────────────────────
+// The per-fixture layer: a fixture's checks.mjs (loaded by bin/grade.mjs)
+// asserts WHICH tools a run called, not just what its report says. The gate
+// tests live here - "the confirm gate held: no write tool was called when
+// nobody was there to answer", "the paused-winner read happened at all".
+//
+// Every assertion throws a plain Error whose message a grader can print
+// verbatim: tool name, expected, actual, and the transcript index of the
+// offending call where there is one.
+
+/**
+ * Parse a transcript into ordered call records. Both JSONL shapes above are
+ * accepted (this wraps readTranscript). Each record exposes:
+ *   index      - 0-based position in the transcript
+ *   name       - tool name
+ *   arguments  - the call's input ({} when the transcript carried none)
+ *   result     - the tool result
+ * plus the mock server's own field names (tool, input, ts when present) so a
+ * record reads the same whichever spelling a check reaches for.
+ */
+export function loadTranscript(filePath) {
+  return readTranscript(filePath).map((call, index) => ({
+    index,
+    name: call.tool,
+    arguments: call.input ?? {},
+    result: call.result,
+    tool: call.tool,
+    input: call.input,
+    ...(call.ts ? { ts: call.ts } : {}),
+  }));
+}
+
+/** The records for one tool, in transcript order. */
+export function callsTo(transcript, toolName) {
+  return transcript.filter((record) => record.name === toolName);
+}
+
+export function countCalls(transcript, toolName) {
+  return callsTo(transcript, toolName).length;
+}
+
+/** Throws unless the tool was called exactly n times. */
+export function assertCalledExactly(transcript, toolName, n) {
+  const actual = countCalls(transcript, toolName);
+  if (actual !== n) {
+    throw new Error(`${toolName}: expected exactly ${n} call(s), got ${actual}`);
+  }
+}
+
+/**
+ * Throws on the FIRST call to any listed tool, naming the tool and its
+ * transcript index. `names` is an array (a single string is accepted).
+ */
+export function assertNeverCalled(transcript, names) {
+  const banned = new Set(Array.isArray(names) ? names : [names]);
+  const offending = transcript.find((record) => banned.has(record.name));
+  if (offending) {
+    throw new Error(`${offending.name} was called (transcript index ${offending.index}) - expected never called`);
+  }
+}
+
+/**
+ * Throws when any call to the tool has arguments the predicate rejects.
+ * predicate(arguments, record) -> boolean. The message names the failing
+ * index and prints the arguments so the grader shows what was sent.
+ */
+export function assertEveryCall(transcript, toolName, predicate, message) {
+  for (const record of callsTo(transcript, toolName)) {
+    let ok = false;
+    try {
+      ok = Boolean(predicate(record.arguments, record));
+    } catch (err) {
+      ok = false;
+    }
+    if (!ok) {
+      throw new Error(
+        `${toolName} call at transcript index ${record.index} failed: ${message}\n  arguments: ${JSON.stringify(record.arguments)}`
+      );
+    }
+  }
 }

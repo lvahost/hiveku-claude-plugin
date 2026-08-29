@@ -1,0 +1,41 @@
+{
+  "identity": {
+    "domain": "social",
+    "persona": "Brightside social - plain-spoken and craft-proud, first person plural, no exclamation marks, no emojis"
+  },
+  "memory": {
+    "entries": [
+      {
+        "memory_id": "mem_social_1",
+        "type": "memory",
+        "name": "social",
+        "content": "Social notes for Brightside Fixtures: pillar targets agreed in June are Educate 40 / Authority 25 / Connection 20 / Promotion 15. Cadence is ten posts a week across LinkedIn, Instagram and Facebook. Branded tag #BrightsideBuilt. Showroom open Saturdays. Slots are defined Mon/Wed/Fri morning, Tue/Thu lunch, Sat showroom, all in America/Chicago."
+      }
+    ]
+  },
+  "pm": {
+    "projects": [
+      { "id": "proj_fixture_ops", "name": "Fixture Ops", "status": "active", "project_type": "marketing" }
+    ]
+  },
+  "department": {
+    "session_id": "sess_fixture_social_1",
+    "preamble": "Brightside social here. Concept bank for the week, in our voice: plain words, hook first, one pillar each, no exclamation marks, no emojis. The mix is yours to set from the pillar targets and what last week actually shipped; pick from the bank or write your own on the same frame.",
+    "concepts": [
+      { "pillar": "pil_educate", "hook": "The hinge, not the door: which adjustment screw fixes a droop", "angle": "Follow-on to the week's best post; a second screw-by-screw walkthrough.", "platform_note": "LinkedIn as a short text post; Instagram as a two-frame carousel." },
+      { "pillar": "pil_educate", "hook": "Lacquer or oil: which finish survives a working kitchen", "angle": "One trade-off per finish, then who should pick which.", "platform_note": "Facebook copy can run longer; keep the Instagram version to the verdict." },
+      { "pillar": "pil_educate", "hook": "Soft-close hinges fail one way, and it is not the spring", "angle": "The damper, how to spot it, when to swap it.", "platform_note": "LinkedIn." },
+      { "pillar": "pil_educate", "hook": "Brass pulls: clean them without stripping the patina", "angle": "Warm water and a cloth, never the cleaner under the sink.", "platform_note": "Instagram, close-up image." },
+      { "pillar": "pil_educate", "hook": "Why we sand between coats (the trade-school question)", "angle": "Pays off the promise made in last week's workshop-tour post.", "platform_note": "Any platform; LinkedIn fits the promise." },
+      { "pillar": "pil_educate", "hook": "Inset versus overlay doors, in one picture", "angle": "What each costs you in tolerance and what it gives you in look.", "platform_note": "Instagram or Facebook." },
+      { "pillar": "pil_authority", "hook": "Harlow Street, before and after", "angle": "The vanity and the heating pipe nobody drew; show the clearance.", "platform_note": "Facebook with both images." },
+      { "pillar": "pil_authority", "hook": "How a door gets finished here, in four passes", "angle": "Process, not superlatives.", "platform_note": "LinkedIn." },
+      { "pillar": "pil_authority", "hook": "What the award judges wrote about the inset doors", "angle": "Quote the judging note, then the family's line.", "platform_note": "Instagram." },
+      { "pillar": "pil_connection", "hook": "The bench on a Saturday, part two", "angle": "Showroom open, doors being hung, people welcome.", "platform_note": "Instagram." },
+      { "pillar": "pil_connection", "hook": "Meet the person who answers the phone", "angle": "Team spotlight with permission.", "platform_note": "LinkedIn or Facebook." },
+      { "pillar": "pil_connection", "hook": "A thank-you to the trade school class", "angle": "Community, with a nod to the sanding question.", "platform_note": "LinkedIn." },
+      { "pillar": "pil_promotion", "hook": "Showroom open Saturday: the fall hardware run is on the wall", "angle": "One ask, hours stated, no urgency words.", "platform_note": "Facebook." },
+      { "pillar": "pil_promotion", "hook": "Last floor models from the summer sale", "angle": "Plain inventory note.", "platform_note": "Instagram." }
+    ]
+  }
+}

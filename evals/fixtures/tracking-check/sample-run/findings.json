@@ -1,0 +1,8 @@
+{
+  "tracking": ["organic"],
+  "partially_tracking": ["google_ads"],
+  "not_tracking": ["meta_ads"],
+  "unknown": ["microsoft_ads"],
+  "could_not_verify": ["microsoft_ads"],
+  "broken_links": ["google_ads:consent-changes-outcome", "meta_ads:tag-not-deployed"]
+}

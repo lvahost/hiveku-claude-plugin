@@ -1,0 +1,88 @@
+{
+  "project_id": "site_brightside_main",
+  "domain": "brightside.example",
+  "days": 30,
+  "window": { "from": "2026-07-30", "to": "2026-08-29" },
+  "conversion_actions_window_days": 30,
+  "probed": {
+    "urls": ["https://brightside.example/contact", "https://brightside.example/thank-you"],
+    "consent_states": ["first_time_visitor", "visitor_who_accepted"]
+  },
+  "web_conversion_events": ["form_submit", "cta_click", "outbound_click", "file_download"],
+  "channels": [
+    {
+      "channel": "google_ads",
+      "platform": "google_ads",
+      "connection_id": "conn_google_1",
+      "verdict": "partially_tracking",
+      "headline": "24 form leads arrived from Google Ads clicks in the last 30 days and Google Ads recorded 9 of them.",
+      "hiveku_recorded": 24,
+      "platform_recorded": 9,
+      "missing": 15,
+      "how_we_know": "24 form-lead rows in the window carry a gclid and a CRM contact. On /thank-you the Google Ads conversion request was observed only in the visitor-who-accepted load; the first-time-visitor load sent nothing to googleads.g.doubleclick.net. The ad account's Contact form lead action last recorded on 2026-08-15.",
+      "how_to_fix": "Stop rendering the Ads conversion snippet behind the marketing-consent condition on /thank-you and let Consent Mode carry the consent state, then redeploy production. analytics_diagnose_tracking has the file and line.",
+      "agent_task": "In src/app/thank-you/page.tsx remove the consent.marketing render condition around the gtag conversion event for AW-8123456789/AbCdEfGhIj and rely on the Consent Mode v2 defaults set in layout; redeploy production; confirm with analytics_probe_page that the conversion request appears as a first-time visitor.",
+      "how_deeply_we_can_see": { "depth": "platform", "note": "site probe plus ad-account conversion actions read live" },
+      "in_the_ad_account": { "connection_id": "conn_google_1", "last_synced_at": "2026-08-29T14:10:00Z", "conversions_last_30_days": 9 },
+      "conversion_actions": [
+        { "id": "cact_form_lead", "name": "Contact form lead", "status": "ENABLED", "conversions": 9, "all_conversions": 9, "last_conversion_at": "2026-08-15T09:22:00Z" },
+        { "id": "cact_phone_call", "name": "Hiveku - Phone Call", "status": "ENABLED", "conversions": 0, "all_conversions": 6, "last_conversion_at": "2026-08-27T15:41:00Z" }
+      ],
+      "call_reconciliation": { "qualifying_calls": 6, "uploaded": 6, "causes": [] }
+    },
+    {
+      "channel": "meta_ads",
+      "platform": "meta_ads",
+      "connection_id": "conn_meta_1",
+      "verdict": "not_tracking",
+      "headline": "19 form leads arrived from Meta ad clicks in the last 30 days and Meta recorded 0.",
+      "hiveku_recorded": 19,
+      "platform_recorded": 0,
+      "missing": 19,
+      "how_we_know": "19 form-lead rows carry an fbclid and a CRM contact. Neither /contact nor /thank-you made a request to connect.facebook.net or facebook.com/tr in either consent state, so no pixel is present in the HTML production serves. The Lead - contact form custom conversion last fired 2026-07-28T01:47:00Z.",
+      "how_to_fix": "The pixel is in the project source but production has not been deployed since 2026-07-28; deploy production. analytics_diagnose_tracking confirms the source-versus-served gap.",
+      "agent_task": "Run deploy_site for site_brightside_main to production so the fbq('init','778812345') snippet in src/app/layout.tsx (commit c41e9f2) reaches served HTML; then confirm with analytics_probe_page that facebook.com/tr is requested on /thank-you.",
+      "how_deeply_we_can_see": { "depth": "platform", "note": "site probe plus custom-conversion catalogue read live (readability ok)" },
+      "in_the_ad_account": { "connection_id": "conn_meta_1", "last_synced_at": "2026-08-29T13:40:00Z", "conversions_last_30_days": 0 },
+      "conversion_actions": [
+        { "id": "cc_lead", "name": "Lead - contact form", "pixel_id": "778812345", "last_fired_time": "2026-07-28T01:47:00Z", "attributed_conversions": 0 }
+      ]
+    },
+    {
+      "channel": "microsoft_ads",
+      "platform": "microsoft_ads",
+      "connection_id": "conn_bing_1",
+      "verdict": "partially_tracking",
+      "headline": "11 form leads arrived from Microsoft Ads clicks in the last 30 days and Microsoft Ads recorded 4.",
+      "hiveku_recorded": 11,
+      "platform_recorded": 4,
+      "missing": 7,
+      "how_we_know": "11 form-lead rows carry an msclkid and a CRM contact. The UET conversion request to bat.bing.com was observed on /thank-you in both consent states. platform_recorded is read from the connection's sync cache.",
+      "how_to_fix": "Compare goal conversions against Hiveku over the same window once the platform side is current; the tag itself fired in both consent states.",
+      "agent_task": null,
+      "how_deeply_we_can_see": { "depth": "platform_cached", "note": "site probe live; ad-account numbers from the local sync cache" },
+      "in_the_ad_account": { "connection_id": "conn_bing_1", "last_synced_at": "2026-08-27T23:00:00Z", "conversions_last_30_days": 4 },
+      "conversion_actions": [
+        { "id": "goal_5510", "name": "Contact form lead", "type": "destination_url", "conversions": 4 }
+      ]
+    },
+    {
+      "channel": "organic",
+      "platform": "ga4",
+      "connection_id": "conn_ga4_1",
+      "verdict": "tracking",
+      "headline": "27 form leads arrived from organic search in the last 30 days and GA4 recorded 27.",
+      "hiveku_recorded": 27,
+      "platform_recorded": 27,
+      "missing": 0,
+      "how_we_know": "27 form-lead rows with an organic search first touch and a CRM contact; GA4's generate_lead key event counts 27 with default channel group Organic Search. The form ledger holds 60 organic rows in the window; 31 sit in the spam bucket (marketing_form_conversion_audit has the split and the rows).",
+      "how_to_fix": null,
+      "agent_task": null,
+      "how_deeply_we_can_see": { "depth": "platform", "note": "GA4 key events read live" },
+      "in_the_ad_account": { "connection_id": "conn_ga4_1", "last_synced_at": "2026-08-29T14:30:00Z", "conversions_last_30_days": 27 },
+      "conversion_actions": [
+        { "id": "ke_generate_lead", "name": "generate_lead", "status": "ENABLED", "events_in_window": 81, "organic_search": 27 }
+      ]
+    }
+  ]
+}

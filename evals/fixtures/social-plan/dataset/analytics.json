@@ -1,0 +1,48 @@
+{
+  "summary": {
+    "period": "7d",
+    "date_range": { "start": "2026-08-22T15:00:00.000Z", "end": "2026-08-29T15:00:00.000Z" },
+    "metrics": {
+      "total_posts": 10,
+      "impressions": 48200,
+      "reach": 39100,
+      "engagements": 2170,
+      "likes": 1640,
+      "comments": 312,
+      "shares": 218,
+      "engagement_rate": 4.5
+    },
+    "changes": {
+      "impressions": 6.2,
+      "engagements": -3.1,
+      "engagement_rate": -8.8
+    },
+    "best_post": {
+      "id": "post_lw_07",
+      "content_preview": "A cabinet door that droops on one side is nearly always a hinge, not the door. One screwdriver, two adjustment screws, five minutes. Here is",
+      "published_at": "2026-08-26T17:00:09Z",
+      "engagement": 486,
+      "impressions": 9800
+    },
+    "worst_post": {
+      "id": "post_lw_03",
+      "content_preview": "Floor models and last-of-run pulls are marked down through Sunday. Showroom hours as usual. #BrightsideBuilt",
+      "published_at": "2026-08-24T14:00:08Z",
+      "engagement": 41,
+      "impressions": 2100
+    },
+    "accounts": [
+      { "id": "sacc_linkedin_01", "platform": "linkedin", "display_name": "Brightside Fixtures", "follower_count": 2140 },
+      { "id": "sacc_instagram_01", "platform": "instagram", "display_name": "Brightside Fixtures", "follower_count": 3875 },
+      { "id": "sacc_facebook_01", "platform": "facebook", "display_name": "Brightside Fixtures", "follower_count": 1560 },
+      { "id": "sacc_twitter_01", "platform": "twitter", "display_name": "Brightside Fixtures", "follower_count": 980 }
+    ]
+  },
+  "best_times": [
+    { "label": "Tue 9:00 AM", "scheduledAt": "2026-09-01T14:00:00.000Z" },
+    { "label": "Wed 12:00 PM", "scheduledAt": "2026-09-02T17:00:00.000Z" },
+    { "label": "Thu 9:00 AM", "scheduledAt": "2026-09-03T14:00:00.000Z" },
+    { "label": "Fri 4:00 PM", "scheduledAt": "2026-09-04T21:00:00.000Z" },
+    { "label": "Mon 8:00 AM", "scheduledAt": "2026-08-31T13:00:00.000Z" }
+  ]
+}

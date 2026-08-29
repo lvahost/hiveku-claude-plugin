@@ -1,0 +1,72 @@
+{
+  "consent": { "cmp": "CookieYes", "default_state": "denied", "accepted_state": "granted", "policy_changed_at": "2026-08-15T00:00:00Z" },
+  "blind_spots": [
+    "Resource timing only: request bodies and response status codes are not visible.",
+    "A request observed is a request sent, not a request the platform accepted."
+  ],
+  "pages": {
+    "https://brightside.example/thank-you": {
+      "as_first_time_visitor": {
+        "consent": "denied",
+        "observed": [
+          { "vendor": "google_tag", "role": "container", "request": "https://www.googletagmanager.com/gtag/js?id=AW-8123456789" },
+          { "vendor": "ga4", "role": "pageview", "request": "https://www.google-analytics.com/g/collect?v=2&tid=G-BRS8K2Q1&en=page_view" },
+          { "vendor": "ga4", "role": "conversion", "event": "generate_lead", "request": "https://www.google-analytics.com/g/collect?v=2&tid=G-BRS8K2Q1&en=generate_lead" },
+          { "vendor": "hiveku", "role": "conversion", "event": "form_submit", "request": "https://track.hiveku.com/v1/visitor-tracking/ga4-event" },
+          { "vendor": "microsoft_uet", "role": "conversion", "request": "https://bat.bing.com/action/0?ti=2291&evt=pageLoad&p=https%3A%2F%2Fbrightside.example%2Fthank-you" }
+        ]
+      },
+      "as_visitor_who_accepted": {
+        "consent": "granted",
+        "observed": [
+          { "vendor": "google_tag", "role": "container", "request": "https://www.googletagmanager.com/gtag/js?id=AW-8123456789" },
+          { "vendor": "ga4", "role": "pageview", "request": "https://www.google-analytics.com/g/collect?v=2&tid=G-BRS8K2Q1&en=page_view" },
+          { "vendor": "ga4", "role": "conversion", "event": "generate_lead", "request": "https://www.google-analytics.com/g/collect?v=2&tid=G-BRS8K2Q1&en=generate_lead" },
+          { "vendor": "hiveku", "role": "conversion", "event": "form_submit", "request": "https://track.hiveku.com/v1/visitor-tracking/ga4-event" },
+          { "vendor": "microsoft_uet", "role": "conversion", "request": "https://bat.bing.com/action/0?ti=2291&evt=pageLoad&p=https%3A%2F%2Fbrightside.example%2Fthank-you" },
+          { "vendor": "google_ads", "role": "conversion", "request": "https://googleads.g.doubleclick.net/pagead/viewthroughconversion/8123456789/?label=AbCdEfGhIj" }
+        ]
+      }
+    },
+    "https://brightside.example/contact": {
+      "as_first_time_visitor": {
+        "consent": "denied",
+        "observed": [
+          { "vendor": "google_tag", "role": "container", "request": "https://www.googletagmanager.com/gtag/js?id=AW-8123456789" },
+          { "vendor": "ga4", "role": "pageview", "request": "https://www.google-analytics.com/g/collect?v=2&tid=G-BRS8K2Q1&en=page_view" },
+          { "vendor": "hiveku", "role": "pageview", "request": "https://track.hiveku.com/v1/visitor-tracking/ga4-event" },
+          { "vendor": "microsoft_uet", "role": "pageview", "request": "https://bat.bing.com/action/0?ti=2291&evt=pageLoad&p=https%3A%2F%2Fbrightside.example%2Fcontact" }
+        ]
+      },
+      "as_visitor_who_accepted": {
+        "consent": "granted",
+        "observed": [
+          { "vendor": "google_tag", "role": "container", "request": "https://www.googletagmanager.com/gtag/js?id=AW-8123456789" },
+          { "vendor": "ga4", "role": "pageview", "request": "https://www.google-analytics.com/g/collect?v=2&tid=G-BRS8K2Q1&en=page_view" },
+          { "vendor": "hiveku", "role": "pageview", "request": "https://track.hiveku.com/v1/visitor-tracking/ga4-event" },
+          { "vendor": "microsoft_uet", "role": "pageview", "request": "https://bat.bing.com/action/0?ti=2291&evt=pageLoad&p=https%3A%2F%2Fbrightside.example%2Fcontact" }
+        ]
+      }
+    }
+  },
+  "generic_page": {
+    "as_first_time_visitor": {
+      "consent": "denied",
+      "observed": [
+        { "vendor": "google_tag", "role": "container", "request": "https://www.googletagmanager.com/gtag/js?id=AW-8123456789" },
+        { "vendor": "ga4", "role": "pageview", "request": "https://www.google-analytics.com/g/collect?v=2&tid=G-BRS8K2Q1&en=page_view" },
+        { "vendor": "hiveku", "role": "pageview", "request": "https://track.hiveku.com/v1/visitor-tracking/ga4-event" },
+        { "vendor": "microsoft_uet", "role": "pageview", "request": "https://bat.bing.com/action/0?ti=2291&evt=pageLoad" }
+      ]
+    },
+    "as_visitor_who_accepted": {
+      "consent": "granted",
+      "observed": [
+        { "vendor": "google_tag", "role": "container", "request": "https://www.googletagmanager.com/gtag/js?id=AW-8123456789" },
+        { "vendor": "ga4", "role": "pageview", "request": "https://www.google-analytics.com/g/collect?v=2&tid=G-BRS8K2Q1&en=page_view" },
+        { "vendor": "hiveku", "role": "pageview", "request": "https://track.hiveku.com/v1/visitor-tracking/ga4-event" },
+        { "vendor": "microsoft_uet", "role": "pageview", "request": "https://bat.bing.com/action/0?ti=2291&evt=pageLoad" }
+      ]
+    }
+  }
+}

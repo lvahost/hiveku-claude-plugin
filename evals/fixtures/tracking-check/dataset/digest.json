@@ -1,0 +1,122 @@
+{
+  "stale_threshold_hours": 25,
+  "connections": [
+    {
+      "id": "conn_google_1",
+      "platform": "google_ads",
+      "name": "Brightside - Google Ads",
+      "external_account_id": "812-345-6789",
+      "status": "connected",
+      "last_synced_at": "2026-08-29T14:10:00Z",
+      "token_status": "valid",
+      "currency": "USD"
+    },
+    {
+      "id": "conn_meta_1",
+      "platform": "meta_ads",
+      "name": "Brightside - Meta Ads",
+      "external_account_id": "act_4471120",
+      "status": "connected",
+      "last_synced_at": "2026-08-29T13:40:00Z",
+      "token_status": "valid",
+      "currency": "USD"
+    },
+    {
+      "id": "conn_bing_1",
+      "platform": "microsoft_ads",
+      "name": "Brightside - Microsoft Ads",
+      "external_account_id": "176204431",
+      "status": "connected",
+      "last_synced_at": "2026-08-27T23:00:00Z",
+      "token_status": "valid",
+      "currency": "USD"
+    }
+  ],
+  "digest": {
+    "days": 30,
+    "window": { "from": "2026-07-30", "to": "2026-08-29" },
+    "generated_at": "2026-08-29T15:00:00Z",
+    "by_platform": {
+      "google_ads": {
+        "connection_count": 1,
+        "connections": ["conn_google_1"],
+        "last_synced_at": "2026-08-29T14:10:00Z",
+        "has_stale": false,
+        "spend_cents": 412600,
+        "clicks": 1188,
+        "impressions": 46210,
+        "conversions": 9,
+        "active_campaigns": 3,
+        "paused_campaigns": 1,
+        "currency": "USD",
+        "pacing": {
+          "mtd_spend": 398000,
+          "monthly_target": 450000,
+          "target_source": "connection_target",
+          "target_mtd": 420968,
+          "pace_ratio": 0.95,
+          "projected_eom_spend": 425448,
+          "flag": false,
+          "days_elapsed": 29,
+          "days_in_month": 31,
+          "mixed_currency": false
+        }
+      },
+      "meta_ads": {
+        "connection_count": 1,
+        "connections": ["conn_meta_1"],
+        "last_synced_at": "2026-08-29T13:40:00Z",
+        "has_stale": false,
+        "spend_cents": 236900,
+        "clicks": 2044,
+        "impressions": 188420,
+        "conversions": 0,
+        "active_campaigns": 2,
+        "paused_campaigns": 0,
+        "currency": "USD",
+        "pacing": {
+          "mtd_spend": 229000,
+          "monthly_target": 250000,
+          "target_source": "connection_target",
+          "target_mtd": 233871,
+          "pace_ratio": 0.98,
+          "projected_eom_spend": 244793,
+          "flag": false,
+          "days_elapsed": 29,
+          "days_in_month": 31,
+          "mixed_currency": false
+        }
+      },
+      "microsoft_ads": {
+        "connection_count": 1,
+        "connections": ["conn_bing_1"],
+        "last_synced_at": "2026-08-27T23:00:00Z",
+        "has_stale": true,
+        "spend_cents": 98700,
+        "clicks": 412,
+        "impressions": 15980,
+        "conversions": 4,
+        "active_campaigns": 2,
+        "paused_campaigns": 0,
+        "currency": "USD",
+        "pacing": {
+          "mtd_spend": 95500,
+          "monthly_target": 120000,
+          "target_source": "connection_target",
+          "target_mtd": 112258,
+          "pace_ratio": 0.85,
+          "projected_eom_spend": 102086,
+          "flag": false,
+          "days_elapsed": 29,
+          "days_in_month": 31,
+          "mixed_currency": false
+        }
+      }
+    },
+    "totals": { "spend_cents": 748200, "clicks": 3644, "impressions": 250610, "conversions": 13, "currency": "USD" },
+    "warnings": [
+      "microsoft_ads: connection conn_bing_1 (Brightside - Microsoft Ads) last synced 2026-08-27T23:00:00Z, 40h ago against the 25h threshold - window numbers and pacing for this platform read low until a sync completes",
+      "microsoft_ads: pacing reads low because of the stale sync (the two most recent days are missing from the cache)"
+    ]
+  }
+}

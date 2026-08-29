@@ -1,0 +1,27 @@
+{
+  "threshold_pct": 50,
+  "yesterday": "2026-08-28",
+  "baseline_window": { "start": "2026-08-21", "end": "2026-08-27" },
+  "campaigns": [
+    {
+      "id": "cmp_101",
+      "name": "Non-Brand - CRM Software",
+      "cost_yesterday": 91.1,
+      "cost_avg_7d": 108.7,
+      "clicks_yesterday": 84,
+      "clicks_avg_7d": 99,
+      "conversions_yesterday": 1,
+      "conversions_avg_7d": 1.6
+    },
+    {
+      "id": "cmp_102",
+      "name": "Brand - Brightside",
+      "cost_yesterday": 10.4,
+      "cost_avg_7d": 10.6,
+      "clicks_yesterday": 21,
+      "clicks_avg_7d": 22,
+      "conversions_yesterday": 1,
+      "conversions_avg_7d": 0.9
+    }
+  ]
+}

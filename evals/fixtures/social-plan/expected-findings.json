@@ -1,0 +1,43 @@
+{
+  "eval": "social-plan",
+  "notes": "Seeded defects: ONE connected-but-erroring account (sacc_twitter_01: connection_status 'connected', is_active true, but can_post false and last_error set since 2026-08-26 - a filter on connection_status alone keeps it, and a draft aimed at it lands as a failed version at the cron with nothing surfacing) and ONE underweight pillar (pil_educate: target_percentage 40, but 1 of the last window's 10 published posts = 10%; Authority ran 3 = 30% against 25, Connection 4 = 40% against 20, Promotion 2 = 20% against 15). Distractors: the over-target pillars must NOT be cut to zero - a strict two-week catch-up (round(target x 20) minus last window) puts Connection at exactly 0, and a pillar or platform with zero posts in a week is a service failure per the skill's cadence rule. Two Educate posts sit just outside the window (created 08-19 and 08-21) so an unfiltered social_list_posts reads Educate as 3 of 12 - still the only underweight pillar, but a different number, and the report must say which window it used. The killer assertions live in the tool ARGUMENTS (checks.mjs): social_create_post must omit scheduled_at (it writes status 'scheduled' and the cron publishes), must carry target_accounts that never include the erroring id, social_publish_post must never be called, social_update_post must never carry scheduled_at, and memory_update must resend the prior document, not just the new note.",
+  "sidecar_schema": "categories: flat map -> id arrays, graded by findings-check.mjs (it unwraps a top-level `categories` key); week / excluded_accounts / pillar_rebalance sit beside it at top level and are graded by this fixture's checks.mjs",
+  "categories": {
+    "excluded_accounts": {
+      "must": ["sacc_twitter_01"],
+      "must_not": [
+        { "id": "sacc_linkedin_01", "reason": "connected, is_active true, can_post true, last_error null - healthy" },
+        { "id": "sacc_instagram_01", "reason": "connected, is_active true, can_post true, last_error null - healthy" },
+        { "id": "sacc_facebook_01", "reason": "connected, is_active true, can_post true, last_error null - healthy" }
+      ]
+    },
+    "underweight_pillars": {
+      "must": ["pil_educate"],
+      "must_not": [
+        { "id": "pil_authority", "reason": "3 of 10 last-window posts = 30% against a 25% target - over, not under" },
+        { "id": "pil_connection", "reason": "4 of 10 = 40% against a 20% target - well over, not under" },
+        { "id": "pil_promotion", "reason": "2 of 10 = 20% against a 15% target - slightly over, not under" }
+      ]
+    },
+    "pillars_cut_to_zero": {
+      "must": [],
+      "must_not": [
+        { "id": "pil_connection", "reason": "40% last window against a 20% target, but a strict catch-up that zeroes it breaks the cadence rule - any pillar or platform at zero for a week is a service failure; keep it to its floor, do not cut it" },
+        { "id": "pil_promotion", "reason": "slightly over target (20% against 15%), and its own target_posts_per_week is 1 - zero is a miss against the pillar's own floor, not a rebalance" },
+        { "id": "pil_authority", "reason": "on target - no reason to drop it" },
+        { "id": "pil_educate", "reason": "the underweight pillar - the plan tilts toward it, never away" }
+      ]
+    }
+  },
+  "plan_bounds": {
+    "erroring_account": "sacc_twitter_01",
+    "healthy_accounts": ["sacc_linkedin_01", "sacc_instagram_01", "sacc_facebook_01"],
+    "min_drafts": 5,
+    "min_per_pillar": 1,
+    "underweight_pillar": "pil_educate",
+    "underweight_min_share": 0.4,
+    "underweight_last_window_count": 1,
+    "promotion_pillar": "pil_promotion",
+    "promotion_max_share": 0.25
+  }
+}

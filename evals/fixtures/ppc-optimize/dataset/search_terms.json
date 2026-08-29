@@ -1,0 +1,17 @@
+{
+  "_comment": "Raw search_term_view rows, shaped like the real ppc_search_terms_report source (hiveku_agent_marketing_server/app/tools/ppc_google_ads.py search_terms_report): there is NO row id - a row's natural key is (search_term, keyword, match_type, ad_group_id) and every search_term here is unique. cost_micros is micros of the account currency (dollars = cost_micros / 1000000). conversions_value assumes one conversion action valued at $149.00. status is the search_term_view.status enum: ADDED when the query is itself a keyword, NONE otherwise.",
+  "window": { "start": "2026-08-01", "end": "2026-08-28", "days": 28 },
+  "currency": "USD",
+  "rows": [
+    { "search_term": "crm software free download", "status": "NONE", "campaign_id": "cmp_101", "ad_group_id": "ag_1001", "keyword": "crm software", "match_type": "BROAD", "impressions": 1910, "clicks": 104, "cost_micros": 124800000, "conversions": 0, "conversions_value": 0 },
+    { "search_term": "crm comparison spreadsheet", "status": "NONE", "campaign_id": "cmp_101", "ad_group_id": "ag_1001", "keyword": "crm software", "match_type": "BROAD", "impressions": 1340, "clicks": 76, "cost_micros": 91200000, "conversions": 0, "conversions_value": 0 },
+    { "search_term": "small business crm", "status": "ADDED", "campaign_id": "cmp_101", "ad_group_id": "ag_1002", "keyword": "small business crm", "match_type": "PHRASE", "impressions": 6120, "clicks": 471, "cost_micros": 612300000, "conversions": 12, "conversions_value": 1788 },
+    { "search_term": "crm software for contractors", "status": "NONE", "campaign_id": "cmp_101", "ad_group_id": "ag_1001", "keyword": "crm software", "match_type": "BROAD", "impressions": 640, "clicks": 41, "cost_micros": 52750000, "conversions": 0, "conversions_value": 0 },
+    { "search_term": "brightside crm login", "status": "NONE", "campaign_id": "cmp_102", "ad_group_id": "ag_1003", "keyword": "brightside crm", "match_type": "EXACT", "impressions": 2230, "clicks": 244, "cost_micros": 97600000, "conversions": 0, "conversions_value": 0 },
+    { "search_term": "crm pricing", "status": "NONE", "campaign_id": "cmp_101", "ad_group_id": "ag_1001", "keyword": "crm software", "match_type": "BROAD", "impressions": 380, "clicks": 21, "cost_micros": 23100000, "conversions": 0, "conversions_value": 0 },
+    { "search_term": "brightside crm", "status": "ADDED", "campaign_id": "cmp_102", "ad_group_id": "ag_1003", "keyword": "brightside crm", "match_type": "EXACT", "impressions": 3050, "clicks": 384, "cost_micros": 199900000, "conversions": 14, "conversions_value": 2086 },
+    { "search_term": "crm for small business", "status": "NONE", "campaign_id": "cmp_101", "ad_group_id": "ag_1002", "keyword": "small business crm", "match_type": "PHRASE", "impressions": 2870, "clicks": 232, "cost_micros": 301100000, "conversions": 6, "conversions_value": 894 },
+    { "search_term": "crm software", "status": "ADDED", "campaign_id": "cmp_101", "ad_group_id": "ag_1001", "keyword": "crm software", "match_type": "BROAD", "impressions": 14600, "clicks": 1192, "cost_micros": 1548700000, "conversions": 12, "conversions_value": 1788 },
+    { "search_term": "enterprise crm platform", "status": "NONE", "campaign_id": "cmp_101", "ad_group_id": "ag_1004", "keyword": "enterprise crm", "match_type": "PHRASE", "impressions": 1730, "clicks": 134, "cost_micros": 402100000, "conversions": 1, "conversions_value": 149 }
+  ]
+}

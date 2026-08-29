@@ -1,0 +1,48 @@
+{
+  "pacing": { "month": "2026-08", "days_elapsed": 29, "days_in_month": 31 },
+  "campaigns": [
+    {
+      "id": "cmp_101",
+      "connection_id": "conn_g_7f3a",
+      "name": "Non-Brand - CRM Software",
+      "status": "ENABLED",
+      "channel": "SEARCH",
+      "daily_budget": 70.0,
+      "explicitly_shared_budget": false,
+      "bidding_strategy": "TARGET_CPA",
+      "target_cpa": 80.0,
+      "actual_mtd": 3248.0
+    },
+    {
+      "id": "cmp_102",
+      "connection_id": "conn_g_7f3a",
+      "name": "Brand - Brightside",
+      "status": "ENABLED",
+      "channel": "SEARCH",
+      "daily_budget": 10.0,
+      "explicitly_shared_budget": false,
+      "bidding_strategy": "MANUAL_CPC",
+      "target_cpa": null,
+      "actual_mtd": 304.5
+    },
+    {
+      "id": "cmp_099",
+      "connection_id": "conn_g_7f3a",
+      "name": "Summer Promo 2025",
+      "status": "REMOVED",
+      "channel": "SEARCH",
+      "daily_budget": 0,
+      "explicitly_shared_budget": false,
+      "bidding_strategy": "MANUAL_CPC",
+      "target_cpa": null,
+      "actual_mtd": 0
+    }
+  ],
+  "ad_groups": [
+    { "id": "ag_1001", "campaign_id": "cmp_101", "name": "CRM Software - General", "status": "ENABLED" },
+    { "id": "ag_1002", "campaign_id": "cmp_101", "name": "Small Business CRM", "status": "PAUSED" },
+    { "id": "ag_1003", "campaign_id": "cmp_102", "name": "Brand - Exact", "status": "ENABLED" },
+    { "id": "ag_1004", "campaign_id": "cmp_101", "name": "Enterprise CRM", "status": "PAUSED" },
+    { "id": "ag_0990", "campaign_id": "cmp_099", "name": "Summer Promo", "status": "REMOVED" }
+  ]
+}

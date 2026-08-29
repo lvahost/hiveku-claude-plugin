@@ -1,0 +1,48 @@
+{
+  "google": [
+    {
+      "ad_id": "ad_5001",
+      "ad_name": "RSA - CRM Software - General",
+      "ad_type": "RESPONSIVE_SEARCH_AD",
+      "approval_status": "DISAPPROVED",
+      "review_status": "REVIEWED",
+      "ad_status": "ENABLED",
+      "ad_group_id": "ag_1001",
+      "ad_group_name": "CRM Software - General",
+      "ad_group_status": "ENABLED",
+      "campaign_id": "cmp_101",
+      "campaign_name": "Non-Brand - CRM Software",
+      "campaign_status": "ENABLED",
+      "final_url": "https://brightside.example/crm-2025",
+      "policy_topic_entries": [
+        {
+          "topic": "DESTINATION_NOT_WORKING",
+          "type": "PROHIBITED",
+          "evidence": "Final URL returned HTTP 404 on crawl"
+        }
+      ]
+    },
+    {
+      "ad_id": "ad_4001",
+      "ad_name": "RSA - Summer Promo",
+      "ad_type": "RESPONSIVE_SEARCH_AD",
+      "approval_status": "DISAPPROVED",
+      "review_status": "REVIEWED",
+      "ad_status": "ENABLED",
+      "ad_group_id": "ag_0990",
+      "ad_group_name": "Summer Promo",
+      "ad_group_status": "REMOVED",
+      "campaign_id": "cmp_099",
+      "campaign_name": "Summer Promo 2025",
+      "campaign_status": "REMOVED",
+      "final_url": "https://brightside.example/summer",
+      "policy_topic_entries": [
+        {
+          "topic": "UNAVAILABLE_OFFER",
+          "type": "PROHIBITED",
+          "evidence": "Promoted offer no longer available on the landing page"
+        }
+      ]
+    }
+  ]
+}

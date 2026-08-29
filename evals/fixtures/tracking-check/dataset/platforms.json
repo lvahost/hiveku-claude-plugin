@@ -1,0 +1,70 @@
+{
+  "bing": {
+    "connection_id": "conn_bing_1",
+    "account_id": "176204431",
+    "read_at": "2026-08-29T15:00:00Z",
+    "uet_tags": [
+      { "id": "uet_2291", "name": "Brightside UET", "tracking_status": "recording", "install_state": "installed", "last_hit_at": "2026-08-29T13:50:00Z", "uet_auto_spa_tracking": true }
+    ],
+    "goals": [
+      { "id": "goal_5510", "name": "Contact form lead", "type": "destination_url", "url_match": "/thank-you", "status": "active", "recording": true, "counts_toward_bidding": true }
+    ],
+    "ready_for_conversion_bidding": true,
+    "verdict": "The UET tag is installed and recording and the Contact form lead destination goal is receiving hits. Conversion counts for the window come from the connection's sync cache, not from this read."
+  },
+  "meta": {
+    "connection_id": "conn_meta_1",
+    "ad_account_id": "act_4471120",
+    "readability": "ok",
+    "coverage_gap": null,
+    "pixels": [
+      { "id": "778812345", "name": "Brightside Pixel", "last_fired_time": "2026-07-28T01:47:00Z" }
+    ],
+    "custom_conversions": [
+      {
+        "id": "cc_lead",
+        "name": "Lead - contact form",
+        "pixel_id": "778812345",
+        "custom_event_type": "LEAD",
+        "rule": "URL contains /thank-you",
+        "aggregation": "count",
+        "default_value": null,
+        "retention_days": 30,
+        "archived": false,
+        "first_fired_time": "2026-03-04T18:22:00Z",
+        "last_fired_time": "2026-07-28T01:47:00Z"
+      }
+    ],
+    "volume": {
+      "window": { "from": "2026-07-30", "to": "2026-08-29" },
+      "rows": [
+        {
+          "custom_conversion_id": "cc_lead",
+          "name": "Lead - contact form",
+          "attributed_conversions": 0,
+          "attributed_value": 0,
+          "last_fired_time": "2026-07-28T01:47:00Z",
+          "field_provenance": { "attributed_conversions": "insights.actions[offsite_conversion.custom.cc_lead]", "last_fired_time": "customconversion.last_fired_time" }
+        }
+      ]
+    }
+  },
+  "ga4": {
+    "connection_id": "conn_ga4_1",
+    "property_id": "512345678",
+    "window": { "from": "2026-07-30", "to": "2026-08-29" },
+    "key_events": [
+      {
+        "name": "generate_lead",
+        "counting_method": "ONCE_PER_EVENT",
+        "default_value": null,
+        "url_rules": [{ "event": "generate_lead", "condition": "page_location contains /thank-you" }],
+        "events_in_window": 81,
+        "by_default_channel_group": { "Paid Search": 35, "Paid Social": 19, "Organic Search": 27 },
+        "last_event_at": "2026-08-29T13:58:00Z"
+      }
+    ],
+    "zero_event_key_events": [],
+    "note": "Paid Search groups Google Ads and Microsoft Ads sessions together in GA4's default channel grouping."
+  }
+}

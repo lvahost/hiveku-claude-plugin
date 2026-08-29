@@ -1,0 +1,30 @@
+{
+  "project_id": "site_brightside_main",
+  "days": 30,
+  "verdict": "ok",
+  "summary": "Call conversions are reaching Google Ads. 6 qualifying calls in the window, 6 uploaded and accepted, 0 failed, 0 queued.",
+  "checks": [
+    { "id": "number_pool", "status": "ok", "explanation": "Pool pool_bright_1 has 4 active tracking DIDs and no exhaustion events in the window.", "next_action": null },
+    { "id": "tracking_dids", "status": "ok", "explanation": "All 4 DIDs route to the showroom ring group and carry a validated E911 address.", "next_action": null },
+    { "id": "snippet_served", "status": "ok", "explanation": "The DNI loader tag was present in the served HTML of https://brightside.example/contact on the last fetch.", "next_action": null },
+    { "id": "click_id_capture", "status": "ok", "explanation": "5 of 6 qualifying calls had a pool session carrying a gclid; the sixth was a direct dial with no session, uploaded by caller id match.", "next_action": null },
+    { "id": "upload_policy", "status": "ok", "explanation": "Tenant policy uploads calls of 60 seconds or longer; the threshold matches the Google action's phone_call_duration_seconds.", "next_action": null },
+    { "id": "conversion_action", "status": "ok", "explanation": "Hiveku - Phone Call (cact_phone_call) is ENABLED with source Upload. It is excluded from the Conversions column by design (include_in_conversions_optimization false), which is why the ad account shows conversions 0 next to all_conversions 6.", "next_action": null },
+    { "id": "outbox", "status": "ok", "explanation": "6 rows uploaded, 0 failed, 0 queued older than one hour.", "next_action": null }
+  ],
+  "fix_first": [],
+  "outbox": {
+    "uploaded": 6,
+    "failed": 0,
+    "queued": 0,
+    "skipped": 0,
+    "rows": [
+      { "id": "vcu_301", "call_id": "call_9011", "status": "uploaded", "conversion_action_id": "cact_phone_call", "created_at": "2026-08-01T14:02:00Z", "error_code": null },
+      { "id": "vcu_302", "call_id": "call_9036", "status": "uploaded", "conversion_action_id": "cact_phone_call", "created_at": "2026-08-07T10:48:00Z", "error_code": null },
+      { "id": "vcu_303", "call_id": "call_9058", "status": "uploaded", "conversion_action_id": "cact_phone_call", "created_at": "2026-08-12T17:31:00Z", "error_code": null },
+      { "id": "vcu_304", "call_id": "call_9090", "status": "uploaded", "conversion_action_id": "cact_phone_call", "created_at": "2026-08-19T09:05:00Z", "error_code": null },
+      { "id": "vcu_305", "call_id": "call_9117", "status": "uploaded", "conversion_action_id": "cact_phone_call", "created_at": "2026-08-24T15:56:00Z", "error_code": null },
+      { "id": "vcu_306", "call_id": "call_9133", "status": "uploaded", "conversion_action_id": "cact_phone_call", "created_at": "2026-08-27T15:41:00Z", "error_code": null }
+    ]
+  }
+}

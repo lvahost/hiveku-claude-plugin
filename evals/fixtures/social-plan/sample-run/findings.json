@@ -1,0 +1,31 @@
+{
+  "categories": {
+    "excluded_accounts": ["sacc_twitter_01"],
+    "underweight_pillars": ["pil_educate"],
+    "pillars_cut_to_zero": []
+  },
+  "week": [
+    { "day": "Mon", "platform": "linkedin", "pillar": "pil_educate", "account_id": "sacc_linkedin_01", "title": "The hinge, not the door: the second screw" },
+    { "day": "Mon", "platform": "instagram", "pillar": "pil_educate", "account_id": "sacc_instagram_01", "title": "Two screws, one even gap" },
+    { "day": "Tue", "platform": "facebook", "pillar": "pil_educate", "account_id": "sacc_facebook_01", "title": "Lacquer or oil for a working kitchen" },
+    { "day": "Tue", "platform": "linkedin", "pillar": "pil_authority", "account_id": "sacc_linkedin_01", "title": "Harlow Street: the pipe that was not on the drawing" },
+    { "day": "Wed", "platform": "instagram", "pillar": "pil_connection", "account_id": "sacc_instagram_01", "title": "Saturday, second bench" },
+    { "day": "Wed", "platform": "linkedin", "pillar": "pil_educate", "account_id": "sacc_linkedin_01", "title": "Soft-close hinges fail at the damper" },
+    { "day": "Thu", "platform": "facebook", "pillar": "pil_authority", "account_id": "sacc_facebook_01", "title": "How a door gets finished here" },
+    { "day": "Thu", "platform": "instagram", "pillar": "pil_educate", "account_id": "sacc_instagram_01", "title": "Brass pulls: clean, do not strip" },
+    { "day": "Fri", "platform": "linkedin", "pillar": "pil_connection", "account_id": "sacc_linkedin_01", "title": "The person who answers the phone" },
+    { "day": "Fri", "platform": "facebook", "pillar": "pil_promotion", "account_id": "sacc_facebook_01", "title": "Showroom open Saturday: fall hardware on the wall" }
+  ],
+  "excluded_accounts": [
+    {
+      "account_id": "sacc_twitter_01",
+      "reason": "can_post is false and last_error records an OAuth refresh failure on 2026-08-26 while connection_status still reads connected - a draft aimed here fails silently at the cron, so nothing targets it until it is reconnected"
+    }
+  ],
+  "pillar_rebalance": {
+    "pil_educate": 5,
+    "pil_authority": 2,
+    "pil_connection": 2,
+    "pil_promotion": 1
+  }
+}

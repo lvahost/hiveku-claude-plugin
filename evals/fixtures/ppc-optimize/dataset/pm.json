@@ -1,0 +1,6 @@
+{
+  "projects": [
+    { "id": "proj_fixture_ops", "name": "Fixture Ops", "status": "active", "project_type": "marketing" },
+    { "id": "proj_fixture_ppc", "name": "Brightside Paid Search", "status": "active", "project_type": "ppc" }
+  ]
+}

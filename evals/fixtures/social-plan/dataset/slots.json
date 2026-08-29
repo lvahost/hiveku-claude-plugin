@@ -1,0 +1,25 @@
+{
+  "timezone": "America/Chicago",
+  "slots": [
+    { "id": "slot_mon_am", "weekday": 1, "minute_of_day": 540, "timezone": "America/Chicago", "label": "Monday morning", "social_account_id": null, "is_active": true },
+    { "id": "slot_tue_noon", "weekday": 2, "minute_of_day": 720, "timezone": "America/Chicago", "label": "Tuesday lunch", "social_account_id": null, "is_active": true },
+    { "id": "slot_wed_am", "weekday": 3, "minute_of_day": 540, "timezone": "America/Chicago", "label": "Wednesday morning", "social_account_id": null, "is_active": true },
+    { "id": "slot_thu_noon", "weekday": 4, "minute_of_day": 720, "timezone": "America/Chicago", "label": "Thursday lunch", "social_account_id": null, "is_active": true },
+    { "id": "slot_fri_am", "weekday": 5, "minute_of_day": 540, "timezone": "America/Chicago", "label": "Friday morning", "social_account_id": null, "is_active": true },
+    { "id": "slot_sat_am", "weekday": 6, "minute_of_day": 600, "timezone": "America/Chicago", "label": "Saturday showroom", "social_account_id": null, "is_active": true }
+  ],
+  "next_open": [
+    { "slotId": "slot_mon_am", "scheduledAt": "2026-08-31T14:00:00.000Z", "label": "Monday morning" },
+    { "slotId": "slot_tue_noon", "scheduledAt": "2026-09-01T17:00:00.000Z", "label": "Tuesday lunch" },
+    { "slotId": "slot_wed_am", "scheduledAt": "2026-09-02T14:00:00.000Z", "label": "Wednesday morning" },
+    { "slotId": "slot_thu_noon", "scheduledAt": "2026-09-03T17:00:00.000Z", "label": "Thursday lunch" },
+    { "slotId": "slot_fri_am", "scheduledAt": "2026-09-04T14:00:00.000Z", "label": "Friday morning" },
+    { "slotId": "slot_sat_am", "scheduledAt": "2026-09-05T15:00:00.000Z", "label": "Saturday showroom" },
+    { "slotId": "slot_mon_am", "scheduledAt": "2026-09-07T14:00:00.000Z", "label": "Monday morning" },
+    { "slotId": "slot_tue_noon", "scheduledAt": "2026-09-08T17:00:00.000Z", "label": "Tuesday lunch" },
+    { "slotId": "slot_wed_am", "scheduledAt": "2026-09-09T14:00:00.000Z", "label": "Wednesday morning" },
+    { "slotId": "slot_thu_noon", "scheduledAt": "2026-09-10T17:00:00.000Z", "label": "Thursday lunch" },
+    { "slotId": "slot_fri_am", "scheduledAt": "2026-09-11T14:00:00.000Z", "label": "Friday morning" },
+    { "slotId": "slot_sat_am", "scheduledAt": "2026-09-12T15:00:00.000Z", "label": "Saturday showroom" }
+  ]
+}

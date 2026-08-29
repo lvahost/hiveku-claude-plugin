@@ -1,0 +1,14 @@
+{
+  "account": "Brightside Fixtures",
+  "domain": "marketing",
+  "identity": "Brightside Fixtures - a regional lighting showroom running Google Ads, Meta and Microsoft Ads to a contact form",
+  "brand_voice": "plain-spoken, specific, no hype, no exclamation marks",
+  "instructions": "Report per channel. Name the tool that proved each verdict. A number you could not read is unreadable, never zero.",
+  "rules": [
+    "Money pages are /contact (the form) and /thank-you (where the conversion fires).",
+    "Never edit site code, tags, or containers from a diagnosis pass - file the fix as a PM task with the coding brief attached.",
+    "Offline conversion uploads stay validate-only until the owner flips them live in the dashboard."
+  ],
+  "memory_notes": "Consent banner is CookieYes with Consent Mode v2. Ad platforms connected: Google Ads, Meta Ads, Microsoft Ads. GA4 property 512345678 is connected for organic baselines.",
+  "invalid_domains": ["analytics"]
+}

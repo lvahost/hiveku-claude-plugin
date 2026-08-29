@@ -1,0 +1,28 @@
+{
+  "memory": {
+    "entries": [
+      {
+        "memory_id": "mem_marketing_1",
+        "type": "memory",
+        "name": "marketing",
+        "content": "Marketing notes for Brightside Fixtures: money pages are /contact (form) and /thank-you (conversion). Consent banner is CookieYes with Consent Mode v2. Ad platforms: Google Ads, Meta Ads, Microsoft Ads. The offline-conversion lane is not opted in."
+      }
+    ]
+  },
+  "pm": {
+    "projects": [
+      { "id": "proj_fixture_ops", "name": "Fixture Ops", "status": "active", "project_type": "marketing" }
+    ]
+  },
+  "offline_conversions": {
+    "opted_in": false,
+    "validate_only": true,
+    "designations": [],
+    "outbox": { "queued": 0, "validated": 0, "uploaded": 0, "failed": 0, "skipped": 0 }
+  },
+  "gtm": {
+    "container": null,
+    "installed": false,
+    "note": "No GTM container is configured on this project; every tag is hardcoded in the site source (gtag.js, Meta pixel, UET). analytics_diagnose_tracking is the read for hardcoded tags."
+  }
+}

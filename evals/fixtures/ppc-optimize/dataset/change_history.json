@@ -1,0 +1,64 @@
+{
+  "changes": [
+    {
+      "id": "chg_9012",
+      "timestamp": "2026-08-23T14:12:07Z",
+      "user_email": "ops@partneragency.example",
+      "client_type": "GOOGLE_ADS_UI",
+      "resource_type": "AD_GROUP",
+      "operation": "UPDATE",
+      "campaign_id": "cmp_101",
+      "campaign_name": "Non-Brand - CRM Software",
+      "ad_group_id": "ag_1002",
+      "ad_group_name": "Small Business CRM",
+      "field": "status",
+      "old_value": "ENABLED",
+      "new_value": "PAUSED"
+    },
+    {
+      "id": "chg_9008",
+      "timestamp": "2026-08-12T10:03:44Z",
+      "user_email": "ops@partneragency.example",
+      "client_type": "GOOGLE_ADS_UI",
+      "resource_type": "CAMPAIGN_CRITERION",
+      "operation": "CREATE",
+      "campaign_id": "cmp_101",
+      "campaign_name": "Non-Brand - CRM Software",
+      "ad_group_id": null,
+      "ad_group_name": null,
+      "field": "negative_keyword",
+      "old_value": null,
+      "new_value": "jobs (PHRASE)"
+    },
+    {
+      "id": "chg_9005",
+      "timestamp": "2026-08-09T16:30:12Z",
+      "user_email": "owner@brightside.example",
+      "client_type": "GOOGLE_ADS_UI",
+      "resource_type": "AD_GROUP",
+      "operation": "UPDATE",
+      "campaign_id": "cmp_101",
+      "campaign_name": "Non-Brand - CRM Software",
+      "ad_group_id": "ag_1004",
+      "ad_group_name": "Enterprise CRM",
+      "field": "status",
+      "old_value": "ENABLED",
+      "new_value": "PAUSED"
+    },
+    {
+      "id": "chg_9003",
+      "timestamp": "2026-08-05T11:20:55Z",
+      "user_email": "owner@brightside.example",
+      "client_type": "GOOGLE_ADS_UI",
+      "resource_type": "AD",
+      "operation": "UPDATE",
+      "campaign_id": "cmp_101",
+      "campaign_name": "Non-Brand - CRM Software",
+      "ad_group_id": "ag_1001",
+      "ad_group_name": "CRM Software - General",
+      "field": "final_urls",
+      "old_value": "https://brightside.example/crm",
+      "new_value": "https://brightside.example/crm-2025"
+    }
+  ]
+}

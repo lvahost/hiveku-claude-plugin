@@ -1,0 +1,27 @@
+{
+  "owned_domains": ["brightside.example"],
+  "projects": [
+    {
+      "id": "site_brightside_main",
+      "name": "Brightside showroom site",
+      "project_type": "nextjs",
+      "custom_domain": "brightside.example",
+      "environments": {
+        "development": { "url": null, "status": "not deployed", "deployment_type": "serverless" },
+        "staging": { "url": null, "status": "not deployed", "deployment_type": "serverless" },
+        "production": {
+          "url": "https://brightside.example",
+          "status": "deployed",
+          "deployment_type": "serverless",
+          "last_deployed_at": "2026-07-28T02:10:00Z",
+          "deployed_commit": "9b02a7d"
+        }
+      },
+      "live_preview": { "url": "https://preview.hiveku.com/site_brightside_main", "container_status": "stopped", "last_activity_at": "2026-08-20T16:12:00Z" },
+      "vcs": { "head_commit": "c41e9f2", "head_committed_at": "2026-08-20T16:05:00Z", "branch": "main" },
+      "github": { "connected": false, "connection_type": "none" },
+      "staging_enabled": false
+    }
+  ],
+  "summary": { "total": 1, "with_github": 0, "with_production": 1, "by_project_type": { "nextjs": 1 } }
+}

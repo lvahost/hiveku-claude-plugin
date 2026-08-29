@@ -1,0 +1,17 @@
+{
+  "connections": [
+    {
+      "id": "conn_g_7f3a",
+      "platform": "google_ads",
+      "name": "Brightside - Google Ads",
+      "status": "active",
+      "is_active": true,
+      "customer_id": "412-889-1023",
+      "currency": "USD",
+      "campaign_count": 2,
+      "last_synced_at": "2026-08-29T13:40:00Z",
+      "settings": {}
+    }
+  ],
+  "not_connected": ["microsoft_ads", "meta_ads", "tiktok_ads", "linkedin_ads"]
+}

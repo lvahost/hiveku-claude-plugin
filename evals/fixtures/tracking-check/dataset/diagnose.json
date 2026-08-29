@@ -1,0 +1,34 @@
+{
+  "project_id": "site_brightside_main",
+  "domain": "brightside.example",
+  "browser_checked": true,
+  "probed_urls": ["https://brightside.example/contact", "https://brightside.example/thank-you"],
+  "caveats": [],
+  "channels_held_to_account": ["google_ads", "meta_ads", "microsoft_ads"],
+  "source": { "head_commit": "c41e9f2", "head_committed_at": "2026-08-20T16:05:00Z", "deployed_commit": "9b02a7d", "deployed_at": "2026-07-28T02:10:00Z" },
+  "findings": [
+    {
+      "code": "consent-changes-outcome",
+      "severity": "critical",
+      "kind": "runtime",
+      "channel": "google_ads",
+      "url": "https://brightside.example/thank-you",
+      "what_is_wrong": "The Google Ads conversion snippet on /thank-you is rendered only when marketing consent is already granted. Consent Mode v2 defaults are denied and the CookieYes policy has defaulted marketing storage to denied since 2026-08-15, so a first-time visitor's conversion never leaves the browser.",
+      "how_we_know": "Source: src/app/thank-you/page.tsx line 41 wraps gtag('event','conversion',{send_to:'AW-8123456789/AbCdEfGhIj'}) in an if (consent.marketing) render condition. Runtime: no request to googleads.g.doubleclick.net as a first-time visitor; one request as a visitor who accepted.",
+      "how_to_fix": "Render the conversion event unconditionally and let Consent Mode carry the consent state (it degrades to cookieless pings when denied) instead of gating the render on consent; then redeploy production.",
+      "agent_task": "Edit src/app/thank-you/page.tsx: remove the if (consent.marketing) condition around the gtag conversion call for AW-8123456789/AbCdEfGhIj so the event fires on every /thank-you load. Keep the Consent Mode v2 default block in src/app/layout.tsx untouched. Redeploy production. Verify with analytics_probe_page({ url: 'https://brightside.example/thank-you' }) that the googleads.g.doubleclick.net request appears in as_first_time_visitor."
+    },
+    {
+      "code": "tag-not-deployed",
+      "severity": "high",
+      "kind": "source",
+      "channel": "meta_ads",
+      "url": "https://brightside.example/",
+      "what_is_wrong": "The Meta base pixel (778812345) is present in the project source but absent from the HTML production serves.",
+      "how_we_know": "Source commit c41e9f2 (2026-08-20T16:05:00Z) adds fbq('init','778812345') to src/app/layout.tsx. Production serves build 9b02a7d, deployed 2026-07-28T02:10:00Z, and neither /contact nor /thank-you made a request to connect.facebook.net or facebook.com/tr in either consent state.",
+      "how_to_fix": "Deploy production (deploy_site) so the pixel in the source reaches served HTML. The source needs no change.",
+      "agent_task": "Run deploy_site({ project_id: 'site_brightside_main', environment: 'production' }) after operator confirmation. No code change. Verify with analytics_probe_page({ url: 'https://brightside.example/thank-you' }) that a facebook.com/tr request appears in both consent states."
+    }
+  ],
+  "coding_agent_brief": "Project site_brightside_main (Next.js, brightside.example). Two conversion-tracking defects. (1) google_ads, critical, consent-changes-outcome: src/app/thank-you/page.tsx line 41 renders the Google Ads conversion event for AW-8123456789/AbCdEfGhIj only inside if (consent.marketing); remove that condition so the event fires on every /thank-you load and let the Consent Mode v2 defaults in src/app/layout.tsx carry consent state. (2) meta_ads, high, tag-not-deployed: commit c41e9f2 already contains fbq('init','778812345') in src/app/layout.tsx but production still serves build 9b02a7d from 2026-07-28; no code change, production needs a deploy. Both fixes ship in one production deploy. Verify afterwards with analytics_probe_page on https://brightside.example/thank-you: expect googleads.g.doubleclick.net in as_first_time_visitor and facebook.com/tr in both consent states."
+}
