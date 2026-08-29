@@ -11,7 +11,7 @@
     {
       "name": "hiveku",
       "source": "./",
-      "version": "0.11.2",
+      "version": "0.11.3",
       "description": "Operate your Hiveku accounts from Claude Code. One directory, one account, no cross-tenant surprises.",
       "category": "productivity"
     }
