@@ -21,10 +21,26 @@
  * real tool, which invents a phantom tool AND acts as a false boundary that
  * steals the following method from the tool above it.
  *
- * Usage:  node scripts/gen-tool-index.mjs [--check]
+ * ★ GENERATED FROM THE LIVE SERVER, not from source. Static parsing of
+ * src/tools/*.ts finds 1,531 tools and the server actually serves 1,656: the
+ * other 125 (all DataForSEO — backlinks_*, dataforseo_labs_*, content_analysis_*,
+ * crawl) are registered at RUNTIME by modules whose getTools() returns them from
+ * a class method. No amount of regex over the source can see those, and the
+ * symptom is silent: hiveku_find_tools simply cannot find a quarter of the SEO
+ * surface, and the assistant reports the capability as missing.
+ *
+ * So the default is to ask a bound account's MCP bridge what it actually serves.
+ * --from-source keeps the old parser as a fallback for a machine with no binding,
+ * and says loudly that it will undercount.
+ *
+ * Usage:
+ *   node scripts/gen-tool-index.mjs --dir <bound-account-dir>   (live, preferred)
+ *   node scripts/gen-tool-index.mjs --from-source               (fallback)
+ *   node scripts/gen-tool-index.mjs --check [--dir …]           (CI / prepublish)
  */
 import fs from 'node:fs';
 import path from 'node:path';
+import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -62,6 +78,50 @@ function unquote(literal) {
     .trim();
 }
 
+/**
+ * Ask a bound account's MCP bridge for the real list.
+ *
+ * Uses the plugin's own bin/hiveku-mcp so it exercises the same path a session
+ * does, with HIVEKU_TOOL_MODE=all so index mode cannot narrow what we see —
+ * generating the index from an already-indexed list would freeze it at 13.
+ */
+function collectLive(dir) {
+  return new Promise((resolve, reject) => {
+    const proc = spawn(path.join(PLUGIN_ROOT, 'bin', 'hiveku-mcp'), [], {
+      cwd: dir,
+      stdio: ['pipe', 'pipe', 'pipe'],
+      env: { ...process.env, HIVEKU_PROJECT_DIR: dir, HIVEKU_TOOL_MODE: 'all' },
+    });
+    let buf = '', err = '';
+    const timer = setTimeout(() => { proc.kill(); reject(new Error('timed out after 60s')); }, 60_000);
+    proc.stderr.on('data', (d) => { err += d.toString(); });
+    proc.stdout.on('data', (d) => {
+      buf += d.toString();
+      let nl;
+      while ((nl = buf.indexOf('\n')) !== -1) {
+        const line = buf.slice(0, nl).trim();
+        buf = buf.slice(nl + 1);
+        if (!line) continue;
+        let msg; try { msg = JSON.parse(line); } catch { continue; }
+        if (msg.id === 2) {
+          clearTimeout(timer);
+          proc.kill();
+          const tools = msg?.result?.tools;
+          if (!Array.isArray(tools) || !tools.length) {
+            reject(new Error(`server returned no tools${err ? ` — ${err.trim()}` : ''}`));
+          } else resolve(tools);
+        }
+      }
+    });
+    proc.on('error', (e) => { clearTimeout(timer); reject(e); });
+    for (const m of [
+      { jsonrpc: '2.0', id: 1, method: 'initialize', params: { protocolVersion: '2024-11-05', capabilities: {}, clientInfo: { name: 'gen-tool-index', version: '1' } } },
+      { jsonrpc: '2.0', method: 'notifications/initialized' },
+      { jsonrpc: '2.0', id: 2, method: 'tools/list', params: {} },
+    ]) proc.stdin.write(JSON.stringify(m) + '\n');
+  });
+}
+
 function extract(source) {
   const names = [...source.matchAll(NAME_LINE)];
   const out = [];
@@ -83,19 +143,56 @@ function extract(source) {
   return out;
 }
 
-if (!fs.existsSync(SERVER_SRC)) {
-  console.error(`[gen-tool-index] ${SERVER_SRC} not found — clone hiveku-mcp-api-server beside this plugin.`);
-  process.exit(2);
-}
+const ARGV = process.argv.slice(2);
+const CHECK = ARGV.includes('--check');
+const FROM_SOURCE = ARGV.includes('--from-source');
+const DIR_ARG = (() => { const i = ARGV.indexOf('--dir'); return i !== -1 ? ARGV[i + 1] : null; })();
 
-const byName = new Map();
-for (const f of fs.readdirSync(SERVER_SRC).filter((x) => x.endsWith('.ts') && !x.includes('.test.'))) {
-  for (const t of extract(fs.readFileSync(path.join(SERVER_SRC, f), 'utf8'))) {
-    if (!byName.has(t.name)) byName.set(t.name, t);
+/** Parse from source. Undercounts by design; see the header. */
+function collectFromSource() {
+  if (!fs.existsSync(SERVER_SRC)) {
+    console.error(`[gen-tool-index] ${SERVER_SRC} not found — clone hiveku-mcp-api-server beside this plugin, or use --dir <bound-account>.`);
+    process.exit(2);
   }
+  const byName = new Map();
+  for (const f of fs.readdirSync(SERVER_SRC).filter((x) => x.endsWith('.ts') && !x.includes('.test.'))) {
+    for (const t of extract(fs.readFileSync(path.join(SERVER_SRC, f), 'utf8'))) {
+      if (!byName.has(t.name)) byName.set(t.name, t);
+    }
+  }
+  return [...byName.values()];
 }
 
-const tools = [...byName.values()]
+let raw;
+let source;
+if (FROM_SOURCE || !DIR_ARG) {
+  if (!FROM_SOURCE) {
+    console.error('[gen-tool-index] no --dir given, falling back to source parsing.');
+    console.error('  ★ This UNDERCOUNTS: DataForSEO tools are registered at runtime and are invisible to the parser.');
+    console.error('  Prefer: node scripts/gen-tool-index.mjs --dir <a bound account folder>');
+  }
+  raw = collectFromSource();
+  source = 'hiveku-mcp-api-server/src/tools/*.ts (static parse — undercounts runtime-registered tools)';
+} else {
+  const live = await collectLive(path.resolve(DIR_ARG)).catch((e) => {
+    console.error(`[gen-tool-index] live collection failed: ${e.message}`);
+    process.exit(2);
+  });
+  // The live list has no HTTP method — that only exists in source. Merge it in
+  // where we have it, so the read-only classification keeps working.
+  const methods = new Map();
+  if (fs.existsSync(SERVER_SRC)) {
+    for (const t of collectFromSource()) if (t.method) methods.set(t.name, t.method);
+  }
+  raw = live.map((t) => ({
+    name: t.name,
+    description: String(t.description ?? '').replace(/\s+/g, ' ').trim(),
+    method: methods.get(t.name) ?? null,
+  }));
+  source = 'live MCP tools/list (authoritative — includes runtime-registered tools)';
+}
+
+const tools = raw
   .map((t) => ({
     name: t.name,
     dept: t.name.includes('_') ? t.name.slice(0, t.name.indexOf('_')) : null,
@@ -109,13 +206,13 @@ const tools = [...byName.values()]
 const missingDesc = tools.filter((t) => !t.description).length;
 
 // Gates. A silently tiny or description-less index is worse than a hard failure:
-// search would return nothing and the tools would look like they do not exist.
+// search returns nothing and the tools look like they do not exist.
 if (tools.length < 1000) {
-  console.error(`[gen-tool-index] only ${tools.length} tools — extraction is broken`);
+  console.error(`[gen-tool-index] only ${tools.length} tools — collection is broken`);
   process.exit(3);
 }
 if (missingDesc > tools.length * 0.05) {
-  console.error(`[gen-tool-index] ${missingDesc} tools have no description — pairing is broken`);
+  console.error(`[gen-tool-index] ${missingDesc} tools have no description — collection is broken`);
   process.exit(4);
 }
 
@@ -123,16 +220,16 @@ const payload = {
   _comment:
     'GENERATED by scripts/gen-tool-index.mjs. Do not edit. Searched locally by the plugin so the ' +
     'full tool surface stays discoverable without advertising ~1,500 tool definitions per session.',
-  generatedFrom: 'hiveku-mcp-api-server/src/tools/*.ts',
+  generatedFrom: source,
   toolCount: tools.length,
   tools,
 };
 const next = JSON.stringify(payload, null, 2) + '\n';
 
-if (process.argv.includes('--check')) {
+if (CHECK) {
   const current = fs.existsSync(OUT) ? fs.readFileSync(OUT, 'utf8') : '';
   if (current !== next) {
-    console.error('[gen-tool-index] lib/tool-index.json is STALE. Run: node scripts/gen-tool-index.mjs');
+    console.error('[gen-tool-index] lib/tool-index.json is STALE. Run: node scripts/gen-tool-index.mjs --dir <bound-account>');
     process.exit(1);
   }
   console.log(`[gen-tool-index] up to date (${tools.length} tools)`);
