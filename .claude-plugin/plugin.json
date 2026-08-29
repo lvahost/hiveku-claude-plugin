@@ -1,6 +1,6 @@
 {
   "name": "hiveku",
-  "version": "0.10.7",
+  "version": "0.10.8",
   "description": "Operate your Hiveku accounts from Claude Code. Binds each working directory to one account, then serves that account's Hiveku tools (CRM, SEO, PPC, content, email, social, websites, analytics) over a local stdio bridge. Run /hiveku:connect to get started.",
   "author": {
     "name": "Hiveku",
