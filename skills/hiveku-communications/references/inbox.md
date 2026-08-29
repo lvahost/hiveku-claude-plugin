@@ -3,10 +3,12 @@
 The manual behind Plays 1 through 4 of the communications skill. Load it before you read a
 mailbox, before you send a reply on a customer's behalf, and before you debug a connection.
 
-The shape of this surface is unusual and worth stating up front: **reading is rung 1 and
-replying is rung 2.** Every reader is a direct MCP tool. There is no MCP tool that sends a
-reply. That asymmetry is not an oversight you can work around by finding the right tool name;
-it is the design, and the workflow node is the supported path.
+The shape of this surface, stated up front: **reading is rung 1; replying is rung 1 for an
+interactive 1:1 reply to a CRM contact (`crm_contact_email_send`, a `crm_` tool) and rung 2 for
+anything automated (the `gmailReply` node).** Every reader is a direct MCP tool. The older claim
+that no MCP tool sends from a connected mailbox is retired - it went stale when
+`crm_contact_email_send` shipped; the node remains the supported path for triggered or scheduled
+replies, and the only path on a key that cannot see `crm_`.
 
 Profile note: the `crm_*` lane in this document (`crm_inbox_*`, `crm_thread_for_contact`,
 `crm_email_thread_search`, `crm_lead_triage`, `crm_list_email_connections`) is invisible to a
@@ -110,7 +112,9 @@ account has both, either scope to one `connection_id` or keep the query to bare 
   thread for one CRM contact, across every email address on file for them. This is the correct
   answer to "what have we said to this person", because it follows the contact rather than a
   single address. Those two arguments are the whole schema: there is no `connection_id`, and the
-  mailbox it reads is the contact owner's, falling back to the account default.
+  mailbox it reads is the contact owner's, falling back to the account default. Its message and
+  thread ids are what `crm_contact_email_send` takes as `reply_to_message_id` and `thread_id` to
+  keep an interactive reply in the thread (Part 4).
 - **`crm_email_thread_search({ q, contact_id?, limit? })`** searches CRM-STORED email activities
   by subject or body substring. `limit` defaults to 20 and caps at 100.
 
@@ -229,21 +233,40 @@ What IS still worth knowing, because it produces the same symptom without any er
 Also note it caps at 50 messages per call and fetches and parses them in batches of ten to stay
 within Gmail's rate limits, so a wide `newer_than` window is slow rather than truncated.
 
-## Part 4: Replying (rung 2)
+## Part 4: Replying (rung 1 interactive, rung 2 automation)
 
-**No MCP tool sends mail from a connected mailbox.** Not a reply, not a new message, not a one-off
-to a contact. The Olympus route for contact email exists
-(`POST /api/olympus/crm/contacts/[contactId]/emails`) and is documented in the codebase, but no MCP
-tool maps to it. On this lane, replying is a workflow node.
+### The interactive path: `crm_contact_email_send`
 
-Scope that claim carefully, because one MCP tool does put mail on the wire:
+**One MCP tool sends mail from a connected mailbox: `crm_contact_email_send({ contact_id,
+subject, body, reply_to_message_id?, thread_id?, cc?, bcc?, connection_id?, log_activity? })`.**
+It sends a REAL email from the account's connected Gmail or Outlook mailbox; the recipient is
+always the contact's address on file (cc/bcc add alongside it - there is no arbitrary `to`).
+Threading: pass `reply_to_message_id` and `thread_id` taken from `crm_thread_for_contact` and the
+reply lands in the customer's thread; omit them and it is a new message. It self-logs to the
+contact's timeline unless `log_activity: false` - writing `crm_create_activity` for the same send
+double-logs it. With no `connection_id` it uses the account's default SENDABLE mailbox; a
+read-only-scope or calendar connection 400s cleanly with the reason (a connection problem -
+`crm_list_email_connections` / `email_connect_start` - never a retry case). It has **no draft
+state, no recall, and no idempotency key**: two identical calls are two emails. The approval gate
+binds to the exact subject and body shown; on an ambiguous timeout read
+`crm_contact_emails_list({ contact_id })` back before ANY retry. It is a `crm_` tool - invisible to
+a communications-scoped key, where the node below is the path.
+
+Two other MCP tools put mail on the wire and neither is a substitute:
 **`email_send_test({ to, subject?, body?, html_body?, from?, dry_run? })`** performs a REAL send of
 an arbitrary subject and body to up to 10 recipients, and **`dry_run` defaults to FALSE.** It is a
 different lane, the account's transactional and marketing sender covered in Part 5, not an
 `email_connections` mailbox. That means it does not thread, does not appear in the customer's Sent
 folder, and comes from a verified domain rather than a person. It exists to verify sending config,
-so pass `dry_run: true` unless a live send is the point, and never reach for it as a substitute for
-`gmailReply` when a human is expecting a reply in a thread.
+so pass `dry_run: true` unless a live send is the point, and never reach for it when a human is
+expecting a reply in a thread. The second is `outbound_reply_draft_send` - the cold-email
+program's confirm-gated reply sender, which answers a cold-campaign thread through that program's
+provider, not a mailbox thread; it belongs to the outbound skill.
+
+### The automation path
+
+When a trigger, schedule or workflow sends the reply - or when your key cannot see
+`crm_contact_email_send` - replying is a workflow node.
 
 ### The `gmailReply` node
 
@@ -289,7 +312,8 @@ the context, not your config.
 
 ### Carrying the thread id from reader to node
 
-The pattern is the same whichever reader you used:
+The pattern is the same whichever reader you used (and the same two identifiers feed
+`crm_contact_email_send` as `reply_to_message_id` / `thread_id` on the interactive path):
 
 1. Read: `crm_inbox_recent({ query })`, `crm_thread_for_contact({ contact_id })`,
    `gmail_search_messages({ q })` then `gmail_get_thread({ thread_id })`, or
@@ -315,7 +339,8 @@ so you template real key names instead of guessing.
   advertised, because the handler resolves the connection before it branches on the action.
 - `gmail` is a generic action node that sends or labels.
 - `crmSendContactEmail` sends to a CRM contact through the user's Gmail or Outlook and auto-logs
-  a timeline activity. This is the node that covers the missing contact-email tool.
+  a timeline activity. It is the automation twin of `crm_contact_email_send` - same lane, same
+  self-logging - for when the send belongs inside a workflow.
 - `crmSyncContactEmails` pulls fresh mail for a contact and upserts activities;
   `crmGetContactEmails` reads the synced history.
 
@@ -420,6 +445,8 @@ mail, which runs on a different lane entirely.
 | A known email is missing from search | Live vs synced | `crm_email_thread_search` reads CRM copies; use `crm_thread_for_contact` for live |
 | Reply "sent" but not threaded | The node's `threadId` key | Catalog says `thread_id`; handler reads `threadId` |
 | Reply node fails immediately | `connectionId`, `to`, `subject` | All required, none advertised by the catalog |
+| `crm_contact_email_send` not in the catalog | Your key's profile | It is a `crm_` tool; a communications-scoped key builds the `gmailReply` node instead |
+| `crm_contact_email_send` returns 400 | `crm_list_email_connections` | The default sendable mailbox is a read-only-scope or calendar row - reconnect with a sending scope, do not retry |
 | Internal team mail appearing as lead replies | The membership resolver | It failed open to noise-only, or a `+` address was dropped |
 | Labels appearing on a customer's mailbox | `auto_label` | Defaults TRUE on `gmail_inbox_lead_replies` |
 | Reconnect link does not work | Elapsed time | The `setup_url` is valid for five minutes |

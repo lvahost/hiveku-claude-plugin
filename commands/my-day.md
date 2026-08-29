@@ -16,7 +16,14 @@ by owner (gone-cold does; reminders, inboxes, and triage are account-wide - labe
      `crm_inbox_list({ folder: "inbox" })` for the connected-mailbox tail (last N, no search).
  - Cold: `outbound_list_inbox({ thread_status: "needs_reply" })`, positives first, plus
      `outbound_list_reply_drafts({ status: "pending" })` - an unapproved draft is an unanswered
-     prospect. Working these is `/hiveku:replies`; here they are counted and ranked.
+     prospect. Working these is `/hiveku:replies`; here they are counted and ranked. An
+     already-drafted reply CAN go out from here, but only on an explicit yes: call
+     `outbound_reply_draft_send({ draft_id })` WITHOUT `confirm` first (a preview - the draft, the
+     recipient, `in_reply_to`, warnings; it sends nothing), show it, and only on the user's yes to
+     that preview `outbound_reply_draft_send({ draft_id, confirm: true })`. Never automatically,
+     never in bulk - one shown preview, one yes, one send; a 409 `not_sendable` means the draft
+     is no longer sendable (already sent, discarded, or mid-send) - read
+     `outbound_list_reply_drafts({ status: "sent" })` before claiming it went out.
 4. New leads: `crm_lead_triage({ query })` - saved query patterns live in memory under
    `domain='lead_intake_query'` (`memory_list` first; no saved pattern → ask what the intake inbox
    looks like and save the query back). Hot inbound gets drafted within the hour, ahead of

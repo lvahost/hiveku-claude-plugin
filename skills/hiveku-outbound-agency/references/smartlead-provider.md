@@ -5,7 +5,14 @@ SmartLead's own REST surface.
 
 ## SmartLead = the email sending engine
 
-Mailboxes, warmup, sequences, sending schedules, and suppression live there. REST:
+Mailboxes, warmup, sending schedules, and suppression live there and are configured in the
+SmartLead dashboard - no Hiveku tool sets a mailbox, a warmup setting, or a sending schedule.
+Campaign sequence steps also live there, but they are now READ and WRITTEN by tool
+(`outbound_campaign_sequences_get` / `outbound_campaign_sequences_save`, full replace,
+preview-gated); campaign pause / start / stop is `outbound_campaign_status_set`; the provider's
+own analytics are `outbound_campaign_analytics_get`; and a saved reply draft is sent through
+the provider by `outbound_reply_draft_send`. Signatures, previews, and refusal tables:
+`references/tool-traps.md`. REST:
 `https://server.smartlead.ai/api/v1/...?api_key=...` - campaigns, leads, sequences,
 email-accounts, analytics, webhooks (fire on reply/bounce/unsubscribe). Example documented in
 the worker template: `GET /api/v1/campaigns/{id}/leads?api_key=...&reply_received=true`.
@@ -13,13 +20,24 @@ Any endpoint beyond these: (verify against current provider docs) - do not inven
 
 **SmartLead is the ONLY Hiveku cold-email provider.** The dashboard connect form hardcodes
 `provider: 'smartlead'`, and `cold_email_integrations` is unique on (account, provider) with
-SmartLead the only writer. The CREATE tools are the ones that 412 `unsupported_provider` on
-anything else - `outbound_create_campaign` and `outbound_create_lead` carry that gate
-(verified), and `outbound_leads_bulk_create` is likewise SmartLead-only by design (its
-100-lead cap IS SmartLead's batch cap), though its exact refusal code on a non-SmartLead
-campaign is unverified. `outbound_update_lead` has NO provider gate (it applies the local
-update and returns 200 with a `warning`), and the drafts, objections, sales-asset and
-sequence-learning tools are pure Hiveku-side tables with no provider check at all.
+SmartLead the only writer. Provider-gate census - which tools 412 `unsupported_provider` on
+anything else:
+
+- The CREATE tools: `outbound_create_campaign` and `outbound_create_lead` carry the gate
+  (verified); `outbound_leads_bulk_create` is likewise SmartLead-only by design (its 100-lead
+  cap IS SmartLead's batch cap), though its exact refusal code on a non-SmartLead campaign is
+  unverified.
+- The five sales-controls tools, every one of which hits SmartLead:
+  `outbound_campaign_status_set` (412 `unsupported_provider` and 412 `integration_missing_key`
+  verified, plus 422 `campaign_not_synced` when the campaign has no numeric provider id),
+  `outbound_campaign_sequences_get`, `outbound_campaign_sequences_save`,
+  `outbound_campaign_analytics_get`, and `outbound_reply_draft_send`. All five answer 412
+  `unsupported_provider` on a non-SmartLead campaign and 412 `integration_missing_key` when the
+  SmartLead integration is inactive or has no key (one shared loader behind the five routes).
+- `outbound_update_lead` has NO provider gate (it applies the local update and returns 200 with
+  a `warning`), and the draft SAVE, objections, sales-asset and sequence-learning tools are pure
+  Hiveku-side tables with no provider check at all - `outbound_save_reply_draft` writes a row,
+  `outbound_reply_draft_send` is the one draft tool that touches the provider.
 
 ## First-run wiring (once per account)
 
@@ -100,4 +118,6 @@ declared ceiling, these defaults ARE the ceiling - "no configured cap" never mea
 
 Recipient-timezone business hours (roughly 8am-5pm local, Tue-Thu strongest), randomized
 intervals between sends - Smartlead handles the humanized spacing; configure the schedule per
-campaign.
+campaign in the SmartLead dashboard. Sending schedules stay provider-side: no outbound tool
+reads or sets one, and `outbound_campaign_status_set` starts or stops the campaign, it does not
+change when it sends.

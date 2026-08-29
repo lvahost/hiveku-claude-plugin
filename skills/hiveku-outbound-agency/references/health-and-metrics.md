@@ -35,20 +35,32 @@ have a clean score and still be one bounce spike from a burned domain.
 
 Agency standards are TIGHTER than the server's blocker line - hold to them regardless of score:
 
-- Bounce rate > 3% on any campaign -> PAUSE the campaign (provider-side), re-verify the
-  remaining list, investigate before resuming.
-- Spam complaint rate > 0.1% -> PAUSE and rework the copy/targeting. Complaints compound.
-  (Complaint rate is NOT in `metrics` - read it from SmartLead's own analytics.)
+- Bounce rate > 3% on any campaign -> PAUSE the campaign with
+  `outbound_campaign_status_set({ campaign_id, status: "PAUSED" })` (executes immediately, no
+  confirm - it is the emergency brake), re-verify the remaining list, investigate, and resume
+  only with `outbound_campaign_status_set({ campaign_id, status: "START" })` after its preview
+  and an explicit yes (`confirm: true` on the second call).
+- Spam complaint rate > 0.1% -> PAUSE the same way and rework the copy/targeting. Complaints
+  compound. (Complaint rate is NOT in `metrics` and NOT in `outbound_campaign_analytics_get`
+  either - read it from SmartLead's own dashboard analytics.)
 - Reply rate collapsing on a previously-working campaign -> suspect inbox placement, not copy;
   rotate mailboxes and cut volume 50% while testing placement.
+
+An agent-driven pause causes the artifact described above: the moment the campaign leaves
+ACTIVE, its lifetime volume drops out of `totalSent` / `bounceRate` / `unsubRate` retroactively.
+Say so in the same message as the pause, and source any period figure from
+`outbound_campaign_analytics_get({ campaign_id, start_date, end_date })` - the one date-windowed
+sending read - never from the health metrics.
 
 ## Measurement-artifact-first triage
 
 Before any causal story ("copy fatigue", "deliverability collapse", "the list went bad"), rule
 out measurement artifacts - the data pipeline moves more often than the audience does:
 
-- `totalSent`/`bounceRate` dropped -> was a campaign paused? (ACTIVE-only summing makes history
-  vanish.) Check `outbound_list_campaigns` statuses first.
+- `totalSent`/`bounceRate` dropped -> was a campaign paused, in the dashboard or by this
+  session's own `outbound_campaign_status_set`? (ACTIVE-only summing makes history vanish.)
+  Check `outbound_list_campaigns` statuses first, and `audit_query({ tool_contains:
+  "outbound_campaign_status_set" })` for a tool-driven pause.
 - Reply counts flat -> is the inbox sync running and are replies landing out-of-band in the
   connected mailbox instead? (`gmail_inbox_lead_replies` on a sales-profile key.)
 - Open rate moved -> did open tracking get toggled, or a tracking domain change? Pixel-based
@@ -67,30 +79,44 @@ under ~30% as a placement problem.
 
 ## Reporting windows - the monthly report's accounting rules
 
-**No outbound MCP tool returns a date-windowed sending figure. Do not present one as monthly.**
+**Exactly one outbound MCP tool returns a date-windowed sending figure:
+`outbound_campaign_analytics_get` with BOTH `start_date` and `end_date`. Every other outbound
+number is lifetime-to-date - do not present one as monthly.**
 
 - `outbound_health_status` metrics are lifetime totals over ACTIVE campaigns only - wrong on both
-  axes for a month, and they shrink retroactively when a campaign is paused. Never source a
-  monthly number from them.
+  axes for a month, and they shrink retroactively when a campaign is paused (including a pause
+  this session made with `outbound_campaign_status_set`). Never source a monthly number from
+  them.
 - `outbound_list_campaigns` counters (`sent_count`, `reply_count`, `positive_reply_count`,
   `bounce_count`, `unsubscribe_count`, `total_leads`) cover EVERY status, which fixes the
-  active-only bias, but they are still lifetime-to-date per campaign, not a month.
-- Two honest ways to report a month: (a) take the counters across all statuses and diff them
-  against the same counters saved in last month's `reports/outbound-YYYY-MM.md` - state plainly
-  that it is a month-over-month delta of cumulative counters; or (b) pull a real date range from
-  SmartLead's own analytics (provider REST or dashboard) and label it as provider-sourced. If
-  neither is available, report the lifetime figure and LABEL it lifetime. Do not silently retitle
-  a lifetime number as this month's.
+  active-only bias, but they are still lifetime-to-date per campaign, not a month. Hiveku's
+  mirrored counters stay lifetime totals - the new analytics read does not change that.
+- `outbound_campaign_analytics_get({ campaign_id, start_date?, end_date?, timezone? })` - the
+  provider's own numbers, read-only. `lifetime` (`sent_count`, `unique_sent_count`,
+  `open_count`, `unique_open_count`, `click_count`, `unique_click_count`, `reply_count`,
+  `bounce_count`, `unsubscribe_count`, `total_lead_count`) is still lifetime;
+  `window.sequence_analytics`, returned only when both YYYY-MM-DD dates are given, is the
+  per-step breakdown inside those dates. It is per campaign - a month across campaigns is one
+  call per campaign, and the results are summed only after the comparability gate below.
+  Complaint rate is not in it.
+- Two honest ways to report a month: (a) pull `window.sequence_analytics` per campaign for the
+  month's dates and label it provider-sourced, per step, per campaign; or (b) take the
+  `outbound_list_campaigns` counters across all statuses and diff them against the same counters
+  saved in last month's `reports/outbound-YYYY-MM.md` - state plainly that it is a month-over-month
+  delta of cumulative counters. If neither is available, report the lifetime figure and LABEL it
+  lifetime. Do not silently retitle a lifetime number as this month's.
 - NOT from `email_stats`: it covers Hiveku's own transactional/marketing email and has zero
   visibility into cold sending. Never sum the two channels.
 
 ## The comparability gate
 
-Do not aggregate numbers across sources (Hiveku counters, SmartLead analytics, HeyReach exports,
-CRM reports) until they share the same window, the same event definition (a "reply" that excludes
-out-of-office vs one that counts it), and the same population. Until then, report the values side
-by side, each labeled with its source and window - do not compute a total. The same rule inside
-one source: never sum ACTIVE-only health metrics with all-status campaign counters.
+Do not aggregate numbers across sources (Hiveku counters, `outbound_campaign_analytics_get`,
+SmartLead dashboard analytics, HeyReach exports, CRM reports) until they share the same window,
+the same event definition (a "reply" that excludes out-of-office vs one that counts it), and the
+same population. Until then, report the values side by side, each labeled with its source and
+window - do not compute a total. The same rule inside one source: never sum ACTIVE-only health
+metrics with all-status campaign counters, and never sum the analytics read's `lifetime` block
+with its `window` block.
 
 ## Honest verdicts (closed vocabulary)
 

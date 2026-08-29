@@ -33,17 +33,25 @@ ever reaches a prospect. You run plays, not one-off tool calls.
    write), then log the request with `crm_create_activity`. Reverse only on explicit user instruction
    via `crm_remove_dnc({ contact_id, reason })`, which un-suppresses but does NOT restore
    lifecycle_stage or lead_status - set those explicitly if you are genuinely re-engaging.
-5. **Generative work goes through the department.** Sequence copy, call scripts, objection handling:
-   draft via `talk_to_department({ domain: "outbound", message })` (it runs with full hydrated
-   memory/brand/avatar context), then persist with the direct CRM tools. Direct tools are for CRUD,
-   reads, and analytics. **There is no sales department agent:** `domain: "sales"` is valid for
-   `account_context_get` but is REJECTED by `talk_to_department` (its set is seo, social, content,
-   marketing, branding, outbound, ppc, analytics, customer_avatar, customer_journey,
-   before_after_grid, website_design, knowledge_base, workflow). For sales-specific copy with no
-   outbound angle, load the context with `account_context_get({ domain: "sales" })` or pull the full
-   identity bundle with `agent_identity_get` (both full-profile-only; see 0b), then draft it
-   yourself and say that is what you did. `list_departments` shows which departments this account
-   actually has enabled.
+5. **Generative work goes through the department.** Sales copy, call scripts, follow-up drafts,
+   plans, deal analysis, objection handling: draft via `talk_to_department({ domain: "sales",
+   message })` - it runs the sales department agent (Morgan, the account's `_identity:sales`)
+   hydrated with sales memory, skills, rules, brand, and avatars - then persist with the direct
+   CRM tools. Cold-outreach copy (sequence steps for the cold program) still goes to
+   `talk_to_department({ domain: "outbound", message })`. Direct tools are for CRUD, reads, and
+   analytics. **The staged-approval caveat:** through this rail nobody can click an approval card,
+   so the sales agent's own gated writes (its `crm_email_send`, `crm_sequence_enroll`,
+   `crm_deal_close`) come back as "staged, awaiting approval" - never treat that as done. Use the
+   rail for drafts, plans, and analysis, then make the writes yourself with the direct `crm_*`
+   tools, exactly as the other departments work. Account gates carry through: 403
+   `sales_agent_disabled` means the owner turned the sales agent off (Settings → AI) - do not
+   route around it through another domain; 402 `session_cost_cap_reached` is the per-session cost
+   cap. The `talk_to_department` enum is 15 domains (seo, social, content, marketing, branding,
+   outbound, ppc, analytics, customer_avatar, customer_journey, before_after_grid, website_design,
+   knowledge_base, workflow, sales); `list_departments` returns `sales` and shows which departments
+   this account actually has enabled. `account_context_get({ domain: "sales" })` (every profile)
+   and `agent_identity_get` (full-profile-only; see 0b) remain the no-streaming way to load the
+   same context and draft yourself - say that is what you did when you do.
 6. **Close dates and stages tell the truth.** A stage means its exit criteria were met. A close date
    is a real commitment, not "end of quarter" by default. Fix lies the moment you see them.
 7. **Numbers come from tools, not priors.** Every figure you report traces to a tool call in this
@@ -123,8 +131,6 @@ For each deal on the list:
    to send, or a disqualify). "Follow up" is not a next step; "send pricing recap referencing their
    security question, ask for Thursday call" is.
 6. Booked a meeting? Propose times with `calendar_free_slots` - it walks the window in
-
-**Before and after every booked call:** `/hiveku:call-prep` assembles the story (contact, deal, last thread, open tickets) before the meeting; `/hiveku:call-capture` turns raw notes or a transcript into confirmed CRM writes after it. Neither sends anything.
    duration_minutes increments, dropping any candidate that overlaps a busy interval, falls outside
    business hours, or lands on a weekend (when weekdays_only=true) - or check a specific slot with
    `crm_calendar_list({ time_min, time_max, q })`. Then `crm_calendar_create({ summary, starts_at,
@@ -135,6 +141,9 @@ For each deal on the list:
    Reschedule or cancel with `crm_calendar_update({ event_id, starts_at, ends_at })` /
    `crm_calendar_delete({ event_id })`, and log the meeting with
    `crm_create_activity({ type: "meeting", subject, body, contact_id, deal_id })`.
+   **Before and after every booked call:** `/hiveku:call-prep` assembles the story (contact,
+   deal, last thread, open tickets) before the meeting; `/hiveku:call-capture` turns raw notes
+   or a transcript into confirmed CRM writes after it. Neither sends anything.
 7. Persist honestly:
  - `crm_update_deal({ deal_id, stage_id, close_date, status, value })` - correct the stage if exit
      criteria were not actually met; move close_date to a real date (past-due close dates are
@@ -144,8 +153,14 @@ For each deal on the list:
      `lost_reason` / `won_reason` are free-text prose (max 500 chars; 400 above, never
      truncated; pass null to clear any of the three).
      `stage_id` is a stage UUID from `crm_list_pipelines`, never a stage name.
-     There is no owner field on a deal: reassignment happens on the contact
-     (`crm_update_contact({ contact_id, owner_id })`, a public_users UUID from `crm_list_users`).
+     Flipping `status` to won/lost stamps `closed_at` (the actual close timestamp the reports
+     date on); flipping it back to open clears it.
+     Reassignment is a deal write: `crm_update_deal({ deal_id, owner_id })` (a public_users UUID
+     from `crm_list_users`; `assigned_to_id` defaults to the owner when only owner is given;
+     `unowned: true` clears both). Rep credit in the leaderboard and attainment reads runs on
+     `deal.owner_id`. The contact owner still matters for contact-level attribution, so a real
+     handoff also writes `crm_update_contact({ contact_id, owner_id })` - see the handoff play
+     in section 2.
  - `crm_create_activity` - log the review and the decided next step.
  - `create_task` - a task with owner + due date so the next step survives the session (under a
      full-profile key `pm_tasks_create` is the preferred modern name; `create_task` is the one a
@@ -233,11 +248,14 @@ a read-only-scope or calendar connection 400s cleanly with the reason (fix via
 `crm_list_email_connections` / `email_connect_start`, not by retrying). History reads:
 `crm_contact_emails_list` (per-contact email activity, `source: gmail | outlook | manual`).
 
-### SDR → AE handoff (ownership is a play, not a field)
-There is no owner on a deal and no "handoff" tool - a real handoff is four writes, together:
-1. Ownership: `crm_update_contact({ contact_id, owner_id })` (public_users UUID from
-   `crm_list_users`) - this is what reassigns the DEAL too, since attribution runs through the
-   contact.
+### SDR → AE handoff (ownership is a field AND a play)
+There is no "handoff" tool - a real handoff is four writes, together:
+1. Ownership, on the deal: `crm_update_deal({ deal_id, owner_id })` (public_users UUID from
+   `crm_list_users`; `assigned_to_id` follows the owner unless you set it). This is what moves
+   rep credit - `crm_rep_win_leaderboard` and `crm_report_attainment` attribute on
+   `deal.owner_id`. Then the contact: `crm_update_contact({ contact_id, owner_id })` so
+   contact-level attribution follows the AE too. A contact-owner change alone no longer moves
+   the deal's credit.
 2. The context note: `crm_create_activity` on the contact + deal carrying what the AE needs (who
    they are, what was promised, the open objection, the agreed next step) - the handoff the AE can
    actually read, not just a name change.
@@ -301,6 +319,9 @@ Monday (pipeline day):
 - [ ] `crm_account_summary`, then the warm-visitor check (1b, full-profile keys).
 - [ ] Section 1 full pass: stage summary, velocity, at-risk + stuck union, work top 10-15 deals.
 - [ ] Weighted forecast + WoW delta; sanity-strip stale deals (`references/forecasting-reporting.md`).
+- [ ] Pacing: `crm_report_attainment` (defaults to the current calendar quarter) - won vs quota,
+      `pacing.on_pace`, and the `unattributed` line; quote `dating.fallback_updated_at_rows` with
+      it. No quota row = ask the owner, `crm_quota_set`, then report.
 - [ ] `crm_lead_triage` sweep; score and rank new leads.
 Midweek:
 - [ ] Reply sweep (`crm_inbox_list({ folder: "inbox", limit: 50 })`; `crm_inbox_recent({ query })`
@@ -319,7 +340,8 @@ Friday:
       closed or dead deals (`crm_reminder_cancel`).
 - [ ] Gone-cold sweep (`crm_contacts_gone_cold`) - queue next week's re-engagement drafts.
 - [ ] Close-out check: every deal closed this week carries its code - `lost_reason_code` set at
-      the closing stage move (or via `crm_update_deal` after), `won_reason` on the wins; the
+      the closing stage move (or via `crm_update_deal` after), `won_reason` on the wins, and an
+      `owner_id` so the win is attributed rather than landing on the `unattributed` line; the
       `crm_create_activity` note carries the narrative. Feed durable lessons to `memory_create`,
       and sequence copy verdicts to `outbound_record_sequence_learning`.
 Monthly: hygiene sweep (duplicates, missing fields), the win/loss review (`/hiveku:win-loss` -
@@ -360,7 +382,8 @@ else lives in a reference file - load it when its play starts, not before:
   pipeline, bulk-loading with preflight, overlap sync, and the comparability gate. Load for any
   client arriving from HubSpot or GoHighLevel.
 - `references/forecasting-reporting.md` - forecast sanity-stripping, period-vs-snapshot tool
-  distinctions, leaderboard caveats, quota and attainment (memory-backed - no quota field exists),
+  distinctions, leaderboard caveats (closed_at dating, the unattributed line), quota records
+  (`crm_quota_set` / `crm_quotas_list` / `crm_quota_delete`) and `crm_report_attainment`,
   benchmarks, report honesty rules, and the monthly report recipe. Load before quoting any number
   to the owner.
 - `references/win-loss-review.md` - the win/loss review methodology: period honesty, the
@@ -369,15 +392,17 @@ else lives in a reference file - load it when its play starts, not before:
   `/hiveku:win-loss` and any "why do we keep losing" ask.
 - `references/tool-quirks.md` - known-broken tools and misleading blurbs (batch cancel/reschedule
   400s, `crm_inbox_recent`'s required query, dropped queue filters, the stale pause blurb,
-  upsert's lead_source destruction, the 1:1 send rail's no-recall semantics). Load when a tool
-  errors or contradicts its description.
+  upsert's lead_source destruction, the 1:1 send rail's no-recall semantics, and the
+  2026-08-29 repairs - `crm_update_deal` silently dropped loss codes and had no owner args until
+  then). Load when a tool errors or contradicts its description.
 
 ## 5. PITFALLS THAT NEVER LEAVE THIS FILE
 
 - **Never bulk-update deals without listing them first.** Show the exact deal list (name, stage, value)
-  and get confirmation before any batch stage or close-date change. Same rule for bulk enrollment
-  and for bulk pause/unenroll. Deal ownership is not a deal field -
-  `crm_update_deal` has no owner argument; reassign on the contact via `crm_update_contact`.
+  and get confirmation before any batch stage or close-date change. Same rule for bulk enrollment,
+  bulk pause/unenroll, and bulk reassignment - deal ownership IS a deal field now
+  (`crm_update_deal({ deal_id, owner_id })`), which makes "give Sarah all of Tom's deals" a
+  listed, confirmed batch, never a sweep.
 - **Suppression + DNC before every enrollment**, not just at sequence design time. The list changes
   between design and launch: `crm_list_email_suppressions` + `crm_get_dnc_status` at enroll time.
 - **Prefer deactivate over delete.** `crm_delete_sequence` cascades steps AND enrollments; is_active

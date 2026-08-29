@@ -30,7 +30,8 @@ The server ships 15 profiles: `full` (the default) plus `sales`, `marketing`, `m
 workspaces whose own `.mcp.json` requests one. Every key, scoped or not, can always call exactly
 five tools: `list_departments`, `talk_to_department`, `web_search`, `fetch_url`, `audit_query`.
 
-Tools this file relies on that NO scoped profile can see: `account_context_get`,
+Tools this file relies on that NO scoped profile can see (`account_context_get` is NOT one of
+them any more - it is always available on every profile):
 `agent_identity_get` / `agent_identity_domains_list`, `hiveku_docs_*` / `hiveku_playbook*`,
 `connections_status`, `account_entitlements`, and `checkpoint_create` / `checkpoint_restore`
 (only the `project_checkpoint_*` variants reach `dev` keys). `sites_list` is visible to `full` and
@@ -171,22 +172,31 @@ domain list out of a skill file.
 |---|---|---|
 | content, marketing, seo, social, ppc, branding, outbound | yes | yes |
 | customer_avatar, customer_journey, before_after_grid, website_design, knowledge_base, workflow | yes | yes |
-| sales | yes | NO - there is no sales department agent |
+| sales | yes | YES - the sales department agent (Morgan, the account's `_identity:sales`), with the caveat below |
 | helpdesk | yes | NO - there is no helpdesk department agent |
 | analytics | NO - use `marketing` | yes |
 
-That is 15 values for `account_context_get` (default `content` when omitted) and 14 for
-`talk_to_department`. There is no `web`, `commerce`, `email`, `pm`, `accounting`, `creative`,
-`voice` or `knowledge` domain on either tool. Map them: web -> `website_design`, commerce ->
-`sales` for context and `content` for customer-facing copy, email -> `marketing`, knowledge ->
-`knowledge_base`.
+That is 15 values for `account_context_get` (default `content` when omitted) and 15 for
+`talk_to_department` - the same size, not the same set (`helpdesk` only on the first,
+`analytics` only on the second). There is no `web`, `commerce`, `email`, `pm`, `accounting`,
+`creative`, `voice` or `knowledge` domain on either tool. Map them: web -> `website_design`,
+commerce -> `sales` for context and `content` for customer-facing copy, email -> `marketing`,
+knowledge -> `knowledge_base`.
 
-For `sales` and `helpdesk`, load `agent_identity_get({ domain: 'sales' | 'helpdesk' })` and act as
-that department yourself. Say that is what you are doing; do not silently route the ask to an
-unrelated department. On a scoped key this fallback is unavailable - `agent_identity_*` is excluded
-from every scoped profile, including sales and helpdesk themselves - so hydrate from
-`memory_list({ domain })` and `kb_search` (both granted there) and say that is the thinner
-substitute you used.
+The `sales` caveat: `talk_to_department({ domain: 'sales', message })` runs the sales agent
+hydrated with sales memory, skills, rules, brand and avatars, but through this rail nobody can
+click an approval card, so the agent's own gated writes (its `crm_email_send`,
+`crm_sequence_enroll`, `crm_deal_close`) come back as "staged, awaiting approval" - not done.
+Use it for generative and strategic work (drafts, plans, analysis), then persist with the direct
+`crm_*` tools yourself, exactly as the other departments work. Two account gates carry through:
+403 `sales_agent_disabled` (the owner turned the sales agent off in Settings → AI - do not route
+around it) and 402 `session_cost_cap_reached` (the per-session cost cap).
+
+For `helpdesk`, load `agent_identity_get({ domain: 'helpdesk' })` and act as that department
+yourself. Say that is what you are doing; do not silently route the ask to an unrelated
+department. On a scoped key this fallback is unavailable - `agent_identity_*` is excluded from
+every scoped profile, including helpdesk itself - so hydrate from `memory_list({ domain })` and
+`kb_search` (both granted there) and say that is the thinner substitute you used.
 
 ## Acting as a department: `agent_identity_get`
 
@@ -196,8 +206,9 @@ skill/rule/command/sub-agent tagged for that domain, avatars, journeys, KB index
 content, and cross-domain memory from related departments. It accepts the same 15 domains as
 `account_context_get`.
 
-Use it when you want to act AS the department with no upstream call and no streaming wait - which
-is the only option for `sales` and `helpdesk`. `format: 'markdown'` returns a ready-assembled
+Use it when you want to act AS the department with no upstream call and no streaming wait - the
+only option for `helpdesk`, and the no-streaming alternative for `sales` when the department rail
+is gated off. `format: 'markdown'` returns a ready-assembled
 CLAUDE.md under `data.content`; write that to the workspace's `CLAUDE.md` and the session picks up
 the persona, voice, rules and skills automatically. Default `format: 'json'` returns the structured
 payload with the same markdown under `data.claude_md`. Set `include_cross_domain: false` to slim it.
@@ -278,7 +289,7 @@ Note the `helpdesk_kb_*` tools are a DIFFERENT family - public support articles,
 
 ## When `talk_to_department` refuses
 
-Four distinct causes, and they need different responses:
+Five distinct causes, and they need different responses:
 
 - **Read-only key.** Those keys refuse every write, including `talk_to_department` - which reads
   like a chat tool but runs a department agent with its own full toolset. Structural: say so plainly
@@ -292,6 +303,11 @@ Four distinct causes, and they need different responses:
   the per-section access map (`page_access`, `entitled_features`, `lock_reason` of `"plan"` or
   `"tier"`) behind those refusals - but it is full-key surface; `list_departments` runs on every
   key.
+- **Sales account gates** (`domain: 'sales'` only). 403 `sales_agent_disabled` means the account
+  has the sales agent switched off in Settings → AI - an owner decision, so say so and stop; do
+  not re-route the ask through `outbound` or another domain to get the same effect. 402
+  `session_cost_cap_reached` is the per-session cost cap - a smaller ask or a fresh session, not
+  a retry loop.
 - **Transient.** "Department '<x>' did not respond within Ns... may be cold-starting or overloaded."
   Wait 30s and retry once, or break the request into a smaller ask. A mid-stream stall returns a
   partial answer in `response` alongside the message - salvage the partial rather than re-running

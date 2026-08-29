@@ -25,10 +25,18 @@ When it runs: read `classification` off the thread rather than recomputing it, k
 `saveSeen` for anything it pulls from a provider REST endpoint, and route drafts into
 `outbound_save_reply_draft` so approval stays in one place instead of scattering across CRM notes.
 
-**The worker never sends.** Its output is PENDING drafts and CRM mirror writes, exactly like the
-interactive loop. Coding a worker that calls a provider send endpoint, or that approves its own
-drafts, is a bypass of the approval gate - do not build one, even if asked to "make it fully
-autonomous"; offer the draft-only worker plus a faster human approval cadence instead.
+**The worker never sends.** Its output is PENDING drafts and CRM mirror writes - and it stops
+there. The interactive loop can go one step further: it shows a saved draft, takes the
+operator's yes, and calls `outbound_reply_draft_send({ draft_id, confirm: true })`. Nobody is
+present to say yes to a cron job, so the worker has no send step at all. `lib.mjs`'s
+`hiveku(tool, args)` helper can reach every MCP tool the key can see, so the worker code must
+bar these three by name and never call them: `outbound_reply_draft_send`,
+`outbound_campaign_status_set`, `outbound_campaign_sequences_save`. (`PAUSED` executes without
+a confirm, which is exactly why the status tool stays off the worker too - an unattended pause
+is a silent campaign outage nobody approved.) Coding a worker that calls any of those, a
+provider send endpoint, or that approves its own drafts, is a bypass of the approval gate - do
+not build one, even if asked to "make it fully autonomous"; offer the draft-only worker plus a
+faster human approval cadence instead.
 
 ## Keys and hygiene
 

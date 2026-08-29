@@ -38,7 +38,8 @@ this command exists so the write-up stops being six manual tool decisions reps s
      Duplicate text within a type increments its seen-count, so log repeats too - the count IS the
      signal.
    - Lost? Close it CODED: `crm_update_deal({ deal_id, status, lost_reason_code, lost_reason })` -
-     the code vocabulary is no_decision | price | competitor | timing | no_budget | bad_fit |
+     the status flip stamps `closed_at`, the close timestamp `/hiveku:win-loss` now dates on; the
+     code vocabulary is no_decision | price | competitor | timing | no_budget | bad_fit |
      ghosted | other (unknown codes 400 listing it), `lost_reason` is the free-text why (max 500
      chars), and the activity body still carries the narrative. The code is what
      `crm_report_loss_reasons` and `/hiveku:win-loss` can aggregate; a close without one is

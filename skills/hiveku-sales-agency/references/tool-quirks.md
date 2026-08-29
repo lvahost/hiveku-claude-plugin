@@ -1,8 +1,9 @@
-# Tool quirks — known-broken tools and misleading blurbs
+# Tool quirks - known-broken tools and misleading blurbs
 
 Load this file when a tool errors, a result contradicts its own description, or before you lean
 on one of the tools named here. Every entry was verified against the MCP server and builder
-routes on 2026-08-28. A tool blurb is marketing until the route agrees with it.
+routes on 2026-08-28; the "Repaired" section records the 2026-08-29 sales-controls wave from
+its shipped contracts. A tool blurb is marketing until the route agrees with it.
 
 ## Broken today (do not call expecting success)
 
@@ -11,6 +12,28 @@ routes on 2026-08-28. A tool blurb is marketing until the route agrees with it.
   move a sequence send, pause or unenroll the enrollment (the dispatcher cancels the queued row at
   dispatch time) or shift the step delay; for a stray one-off row, have the operator cancel it in
   the CRM UI - there is no working MCP cancel for it. Full flow: `references/sequence-program.md`.
+
+## Repaired on 2026-08-29 (the old behaviour left debt in the data)
+
+- **`crm_update_deal` silently DROPPED `lost_reason_code`, `lost_reason` and `won_reason` until
+  2026-08-29.** Its input schema lacked all three (and its description was a corrupted code
+  block), so the proxy stripped them and the write returned 200 with the code unset. Every close
+  made through this tool before that date sits in the `uncoded` bucket of
+  `crm_report_loss_reasons` regardless of what the rep passed - backfill them through the
+  win/loss review's listed, confirmed batch (`references/win-loss-review.md`), never by pattern.
+  Repaired: the three reason fields are declared and written; `owner_id` and `assigned_to_id`
+  (user UUIDs on this account - `assigned_to_id` defaults to the owner when only owner is given)
+  and `unowned: true` (clears both) are accepted, so "hand this deal to Sarah" is a deal write;
+  and flipping `status` to won/lost stamps `closed_at` while flipping back to open clears it.
+- **`crm_rep_win_leaderboard` returned EMPTY for every account until 2026-08-29.** It filtered
+  on a `closed_won` status nothing writes. It no longer does; it dates on `closed_at` (fallback
+  updated_at, counted in `dating.fallback_updated_at_rows`) and reports ownerless wins as an
+  `unattributed` line. Do not cite a pre-08-29 empty result as "no wins".
+- **"Deals have no closed_at / no owner field" is RETIRED.** `crm_deals.closed_at` exists and is
+  stamped by every close writer (pre-existing closes were backfilled from close_date, else
+  updated_at - the pre-2026-08-29 rows are the residual proxy); `owner_id` / `assigned_to_id`
+  always existed on the row and are now exposed through `crm_update_deal`. Attribution in the
+  leaderboard and `crm_report_attainment` is `deal.owner_id`, not the contact owner.
 
 ## Misleading blurbs (the tool works, its description lies)
 

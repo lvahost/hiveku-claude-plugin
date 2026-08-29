@@ -6,7 +6,7 @@
     "mcp__hiveku__"
   ],
   "plugin_version": "0.12.0",
-  "count": 34,
+  "count": 37,
   "tools": [
     {
       "name": "deploy_site",
@@ -177,6 +177,21 @@
       "name": "crm_remove_dnc",
       "method": "DELETE",
       "why_gated": "reverses a do-not-contact suppression"
+    },
+    {
+      "name": "outbound_campaign_status_set",
+      "method": "POST",
+      "why_gated": "starts or stops cold-email sending for a whole campaign (PAUSED executes with no confirm step)"
+    },
+    {
+      "name": "outbound_campaign_sequences_save",
+      "method": "PUT",
+      "why_gated": "full-replaces the campaign's steps on the provider - on an ACTIVE campaign that is the live sending copy"
+    },
+    {
+      "name": "outbound_reply_draft_send",
+      "method": "POST",
+      "why_gated": "emails a prospect - sends a saved draft as a real reply through the provider"
     }
   ]
 }

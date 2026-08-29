@@ -28,11 +28,13 @@ day. Verify against the live catalog before repeating one, including the ones in
 
 Work the rungs in order and never stop at rung 1. **Worked examples, verified against the
 current registry:** sending a text is rung 1 since 2026-08-27 (`voice_sms_send`,
-`voice_sms_send_to_contact`). Sending from a connected Gmail/Outlook mailbox is still rung 2
-(`gmailReply`, `crmSendContactEmail` nodes - no MCP tool does it). Reading the shared inbox is
-rung 1 (`crm_inbox_list`) on a key whose profile can see it. Buying a phone number is rung 3 by
-design: `voice_numbers_search` shortlists carrier inventory but reserves nothing, and no route
-on this surface places the order.
+`voice_sms_send_to_contact`). Sending 1:1 from a connected Gmail/Outlook mailbox is rung 1 too,
+on a key that can see `crm_` (`crm_contact_email_send` - the interactive path); the `gmailReply`
+and `crmSendContactEmail` nodes are the AUTOMATION path (rung 2), and the node is the only path
+under a communications-scoped key. Reading the shared inbox is rung 1 (`crm_inbox_list`) on a
+key whose profile can see it. Buying a phone number is rung 3 by design: `voice_numbers_search`
+shortlists carrier inventory but reserves nothing, and no route on this surface places the
+order.
 
 The corollary: do not invent a tool name to fill a gap. If a name does not resolve, it does not
 exist. Check the node catalog before concluding anything, and prefer `hiveku_docs_search` /
@@ -50,10 +52,11 @@ bulk_create), the task and project name lists, and the always-available `list_de
 Several tools this skill teaches are therefore **invisible to a communications-scoped key** and
 resolve only under a broader profile such as `full`: the `crm_inbox_*` readers,
 `crm_thread_for_contact`, `crm_email_thread_search`, `crm_lead_triage`,
-`crm_list_email_connections`, the DNC tools (`crm_get_dnc_status`, `crm_set_dnc`,
+`crm_list_email_connections`, the 1:1 mailbox sender `crm_contact_email_send` (and its history
+read `crm_contact_emails_list`), the DNC tools (`crm_get_dnc_status`, `crm_set_dnc`,
 `crm_remove_dnc`, `crm_list_email_suppressions`), everything `helpdesk_` and `marketing_`
-(including `marketing_call_transcript_get`), `survey_send`, the CRM sequence/template tools,
-and `account_context_get` itself.
+(including `marketing_call_transcript_get`), `survey_send`, and the CRM sequence/template
+tools. `account_context_get` is always available on every profile, communications included.
 
 **If a documented tool is missing from your catalog, check the profile before declaring rung 2
 or 3** - say "not visible to this key", not "does not exist". In-profile fallbacks under a
@@ -151,11 +154,21 @@ present in the live read), `crm_lead_triage` (one-shot lead intake sweep). All `
 so full-profile key. Load `references/inbox.md` for the mailbox-selector table and
 default-mailbox resolution.
 
-## Play 2 - Reply inside an existing thread (rung 2)
+## Play 2 - Reply inside an existing thread (rung 1 interactive, rung 2 automation)
 
-No MCP tool sends a reply from a connected mailbox. Replying is the `gmailReply` node (despite
-the name, any connected mailbox, Gmail or Outlook). Read with Play 1 or 4, carry the thread id
-into the node.
+**The interactive path is a direct tool:** `crm_contact_email_send({ contact_id, subject, body,
+reply_to_message_id, thread_id })` sends a real email from the account's connected Gmail/Outlook
+mailbox to the contact's address on file, threaded when you carry `reply_to_message_id` and
+`thread_id` over from `crm_thread_for_contact`. It self-logs to the contact timeline (do not
+double-log it with `crm_create_activity`) and has no draft state and no recall - show the exact
+subject and body, get the yes, send once; on an ambiguous timeout read
+`crm_contact_emails_list({ contact_id })` back before any retry. It is a `crm_` tool, so a
+communications-scoped key cannot see it. Full signature and traps: `references/inbox.md` Part 4
+and the sales skill's 1:1 email section.
+
+**The automation path is the `gmailReply` node** (despite the name, any connected mailbox,
+Gmail or Outlook) - the rail when a trigger or schedule sends the reply, or when your key
+cannot see `crm_contact_email_send`. Read with Play 1 or 4, carry the thread id into the node.
 
 **This node has the worst authoring trap in the department.** The catalog advertises two
 fields; the handler requires `connectionId`, `to` and `subject` (none advertised) and reads
@@ -315,19 +328,25 @@ template, scheduling a campaign, or answering "why is our email not arriving".
 
 `talk_to_department`'s domain enum is `seo`, `social`, `content`, `marketing`, `branding`,
 `outbound`, `ppc`, `analytics`, `customer_avatar`, `customer_journey`, `before_after_grid`,
-`website_design`, `knowledge_base`, `workflow`. Fourteen values, none of them communications,
-voice, sms, helpdesk or sales. An unlisted value is rejected server-side, not silently
-defaulted. `list_departments` reports which domains this tenant has enabled.
+`website_design`, `knowledge_base`, `workflow`, `sales`. Fifteen values, none of them
+communications, voice, sms or helpdesk. `sales` joined on 2026-08-29 and runs the sales
+department agent (Morgan, the account's `_identity:sales`); its own gated writes come back as
+"staged, awaiting approval" through this rail, so use it for drafts and plans and persist with
+the direct tools yourself. An unlisted value is rejected server-side, not silently defaulted.
+`list_departments` reports which domains this tenant has enabled.
 
 `account_context_get` has no communications domain either. Its enum is `content`, `marketing`,
 `seo`, `social`, `ppc`, `sales`, `helpdesk`, `branding`, `customer_avatar`, `customer_journey`,
 `before_after_grid`, `website_design`, `knowledge_base`, `workflow`, `outbound`. (`helpdesk` is
-valid HERE and not in `talk_to_department` - that asymmetry is the source of the confusion.)
+valid HERE and not in `talk_to_department`; `analytics` is the reverse - those asymmetries are
+the source of the confusion.)
 
 Route generative work: customer-facing reply copy via `account_context_get({ domain:
 'helpdesk' })` then draft yourself and persist with the direct tool; prospect-facing copy via
-`{ domain: 'sales' }`; campaign strategy via `talk_to_department({ domain: 'marketing' })`;
-workflow design via `{ domain: 'workflow' }`. Neighbouring skills own adjacent ground
+`talk_to_department({ domain: 'sales' })` (or `account_context_get({ domain: 'sales' })` and
+draft yourself when the sales agent is gated off - 403 `sales_agent_disabled`); campaign
+strategy via `talk_to_department({ domain: 'marketing' })`; workflow design via
+`{ domain: 'workflow' }`. Neighbouring skills own adjacent ground
 (`hiveku-helpdesk-agency`, `hiveku-sales-agency`, `hiveku-outbound-agency`,
 `hiveku-automation-agency`); this skill owns the plumbing underneath all of them.
 
@@ -336,8 +355,9 @@ workflow design via `{ domain: 'workflow' }`. Neighbouring skills own adjacent g
 - **Reporting a missing tool name as a missing capability.** Work all three rungs, then check
   the key's profile - say "not visible to this key", never "does not exist". Never invent a
   name to fill a gap.
-- **Repeating a stale negative-existence claim.** The registry grew ~230 tools on 2026-08-27.
-  Verify "there is no X" against the live catalog first.
+- **Repeating a stale negative-existence claim.** The registry grew ~230 tools on 2026-08-27,
+  and "no MCP tool sends from a connected mailbox" went stale when `crm_contact_email_send`
+  shipped. Verify "there is no X" against the live catalog first.
 - **Calling `crm_inbox_recent` for recent mail.** It is the search tool; `query` is required.
 - **Omitting `connection_id` on a multi-inbox account.** You silently read the default mailbox.
 - **Building `gmailReply` from the node catalog alone.** `connectionId`, `to`, `subject` are
@@ -376,7 +396,7 @@ incidents behind each rule. Load the relevant one BEFORE building, not after a s
 
 | Reference | Load it when |
 |---|---|
-| `references/inbox.md` | Reading or searching any mailbox; replying in a thread; `gmail_*` signatures and traps; connecting or repairing a Gmail/Outlook connection; `no_oauth_app`; "no active Gmail connection found". |
+| `references/inbox.md` | Reading or searching any mailbox; replying in a thread (`crm_contact_email_send` interactively, the `gmailReply` node for automation); `gmail_*` signatures and traps; connecting or repairing a Gmail/Outlook connection; `no_oauth_app`; "no active Gmail connection found". |
 | `references/sms.md` | Any text-message work: the `voice_sms_*` send/read/reply tools, the `sms` node, inbound triggers, STOP and opt-out compliance, DNC, caps and the reputation governor, quiet hours, SMS templates, 10DLC and toll-free registration, scheduled sends, the helpdesk projection. |
 | `references/telephony.md` | Calls, the voicemail queue, recordings, transcripts and `transcript_state`; attribution; numbers, porting, blocked callers, extensions, IVRs, ring groups, queues, settings, E911; toll-fraud rejections; any voice WRITE. |
 | `references/email-infrastructure.md` | Campaigns (finding, creating, cancelling a scheduled send), audiences, the three template families, both sequence engines, the CRM send queue, sending domains, suppression, deliverability, send-log diagnosis. |

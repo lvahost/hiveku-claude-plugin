@@ -9,8 +9,10 @@ Pipeline pass. Context: `account_context_get({ domain: "sales" })`.
    task with the due date.
 3. Correct the record, not just the notes: `crm_update_deal({ deal_id, stage_id, close_date, status
    })` for any past-due close date or stage whose exit criteria were never actually met. `stage_id`
-   is a stage UUID from `crm_list_pipelines`, not a stage name; there is no owner field on a deal
-   (reassign on the contact with `crm_update_contact({ contact_id, owner_id })`). List every change
+   is a stage UUID from `crm_list_pipelines`, not a stage name; ownership lives on the deal -
+   reassign with `crm_update_deal({ deal_id, owner_id, assigned_to_id? })` (user UUIDs from
+   `crm_list_users`; `assigned_to_id` defaults to the owner when only `owner_id` is given;
+   `unowned: true` clears both), not with a contact write. List every change
    you intend to make and get confirmation before applying more than one or two - an uncorrected
    close date is a forecast lie that survives every future run of this command.
 4. Dead deals close CODED. A stuck deal with no path forward is closed-lost with its
@@ -21,6 +23,7 @@ Pipeline pass. Context: `account_context_get({ domain: "sales" })`.
    recorded no reason; use `crm_update_deal` (lost_reason_code + free-text `lost_reason`, max 500
    chars) after the real close. Deals that die from this pass mostly die of no_decision - code
    them that way, and check the aggregate with `crm_report_loss_reasons` (its `uncoded` bucket is
-   migration debt to surface as its own line, never folded into 'other'; the window filters
-   updated_at, since deals have no closed_at).
+   migration debt to surface as its own line, never folded into 'other'; the window dates on
+   `closed_at` - the status flip to lost stamps it - with rows still lacking one falling back to
+   `updated_at` and counted in `dating.fallback_updated_at_rows`, which you quote with the figure).
 5. Finish every session of work the same way: persist notable learnings to department memory - read the department's current document with `memory_list({ domain: "<dept>" })`, append your note to the `content` it returns, and send the WHOLE merged document to `memory_update({ memory_id, content })`, which REPLACES it (sending only the new note destroys everything that department had accumulated); use `memory_create({ type: "memory", name: "<dept>", content })` only when no entry exists, and keep `<dept>` to a canonical department name (see hiveku-orient), and reflect the work in Hiveku PM: `pm_projects_list` to find the project (it filters only by `status`; `project_type` is named in its description but is NOT in its schema, so the proxy drops it and you filter the returned list yourself), or `pm_projects_create({ name, project_type })` where project_type is one of seo | ppc | marketing | website | app_dev, then `pm_tasks_create({ project_id, title })` (the field is `title`, not `name`), `pm_tasks_update` as it moves, `pm_tasks_complete({ id, summary })` when the loop is closed. Reopen a task closed too early with `pm_tasks_uncomplete`, never `pm_tasks_update`. Hiveku, not this folder, is the source of truth.

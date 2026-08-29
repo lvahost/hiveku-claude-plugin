@@ -16,7 +16,10 @@ outbound-carrying profiles.
 
 Prefixes: `crm_` (ALL of it - DNC, reminders, sequences, deals, reports, imports, activities,
 and the 1:1 email pair `crm_contact_emails_list` / `crm_contact_email_send`), `gmail_`,
-`calendar_`, `outbound_` (all 27, the new detail/config reads included), `memory_`, `kb_`,
+`calendar_`, `outbound_` (all 32 - the 27 prior tools plus the five sales-controls tools
+`outbound_campaign_status_set`, `outbound_campaign_sequences_get`,
+`outbound_campaign_sequences_save`, `outbound_campaign_analytics_get`,
+`outbound_reply_draft_send`, which ride the prefix grant like the rest), `memory_`, `kb_`,
 `brand_`, `avatar_`, `discussion_`; plus task and project names (create_task, list_tasks,
 get_account_info, ...); plus `voice_call_transcript_get` by NAME (call prep/capture are sales
 plays - the rest of `voice_*` stays invisible).
@@ -28,7 +31,9 @@ NOT visible: `email_*` (suppression add/list/remove, domains, deliverability che
 
 ## marketing (catch-all) and marketing-email
 
-Both carry: `email_`, `outbound_`, `avatar_`, `brand_`, plus the marketing shared prefixes -
+Both carry: `email_`, `outbound_` (the full 32 by prefix, the five new controls / send tools
+included - no per-name exclusion is recorded for them; not verified against the profile
+source), `avatar_`, `brand_`, plus the marketing shared prefixes -
 `memory_`, `workflow_`, `analytics_`, `kb_`, `knowledge_`, `content_`, `pm_`, `survey_`,
 `media_`, and more - plus ONLY seven crm contact tools by name: crm_list_contacts,
 crm_get_contact, crm_search_contacts, crm_create_contact, crm_update_contact,
@@ -53,7 +58,13 @@ marketing additionally has `customer_` (so `customer_avatar_*` works), `seo_`, a
   crm_list_email_suppressions, thread checks (sales/full). Only full sees every source; on any
   other key name the sources you could not read and mark the sweep partial.
 - **ICP -> enrollment -> booking in one session:** needs customer_avatar_* (marketing),
-  outbound_ (all three), calendar_ (sales) - full only.
+  outbound_ (any outbound-carrying profile: sales, marketing, marketing-email), calendar_
+  (sales) - full only.
+- **Campaign controls and the reply send:** `outbound_campaign_status_set`,
+  `outbound_campaign_sequences_save`, `outbound_reply_draft_send` ride the `outbound_` prefix,
+  so every outbound-carrying profile can call them. Key scope is not the approval gate: the
+  preview -> shown to the operator -> yes -> `confirm: true` sequence applies on every key
+  (`references/tool-traps.md`), and the three sit on the plugin's permission ask-list.
 - **Backlink outreach target pull:** DataForSEO + seo_ - marketing or full.
 - **Warm visitors:** `analytics_` - marketing profiles, not sales.
 - **Out-of-band reply sweep:** `gmail_inbox_lead_replies` - sales or full.

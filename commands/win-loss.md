@@ -8,11 +8,33 @@ methodology and the reporting honesty rules.
 1. The numbers, with their caveats attached every time they're quoted:
  - `crm_report_loss_reasons({ from, to })` - closed-lost bucketed by `lost_reason_code`. The
      `uncoded` bucket is migration debt and coding-discipline debt: report it as ITS OWN line,
-     never folded into 'other'. The window filters `updated_at` - deals have no closed_at - so say
-     "deals last touched in <period>", not "deals closed in <period>".
+     never folded into 'other'. The window dates on `closed_at` (the actual close timestamp) now,
+     so "deals closed in <period>" is the honest phrase - with two caveats attached every time:
+     rows still carrying no `closed_at` fall back to `updated_at` and are counted in the
+     response's `dating.fallback_updated_at_rows` (quote it: "N of these are dated by last touch,
+     not by close"), and closes from before 2026-08-29 carry a backfilled `closed_at` (the rep-typed
+     `close_date` where one existed, else `updated_at`), so for those the close date is a proxy,
+     not the moment the deal died.
  - `crm_list_deals({ status: "won" })` and `({ status: "lost" })` for the rosters, walked
-     page-by-page; `crm_rep_win_leaderboard` for by-rep totals (same updated_at proxy, and rep
-     attribution runs through the CONTACT owner - deals have no owner field).
+     page-by-page; `crm_rep_win_leaderboard` for by-rep totals - same `closed_at` dating with the
+     same `dating.fallback_updated_at_rows` count, and rep attribution is `deal.owner_id` (the
+     contact owner no longer drives it); ownerless wins land on its `unattributed` line - report
+     that line, never drop it. It also stopped filtering on a 'closed_won' status nothing writes,
+     so an empty leaderboard is a real zero now, not the old bug.
+ - When the review is "vs quota": `crm_report_attainment({ period_start?, period_end?, user_id?,
+     pipeline_id? })` (default window = the current calendar quarter). Won = deals in a won status
+     (the account's is_won slugs ∪ 'won' ∪ 'closed_won') dated by `closed_at`, attributed by
+     `deal.owner_id`, with `won.unattributed` and the same `dating.fallback_updated_at_rows`.
+     Read `quotas.team` / `quotas.by_user[]` (each `period_match: "exact" | "overlap"` - an
+     overlapping quota is prorated by days into `prorated_amount_cents`, say so), then
+     `attainment.team` (quota_cents, quota_basis, won_cents, attainment_pct, gap_cents, and
+     projected_pct, which adds the open weighted forecast - value x stage probability - for open
+     deals whose close_date falls in the window) and `attainment.by_user[]`, and `pacing`
+     (days_elapsed, days_total, expected_share_pct, on_pace, weighted_open_forecast_cents,
+     open_deals_due_in_window, note). `attainment.team` can be null - report "not available", never
+     0%. Quotas on file: `crm_quotas_list({ user_id?, active_on? })` (`user_id: "team"` for the team
+     row); setting one is `crm_quota_set({ user_id?, period_start, period_end, amount_cents })` in
+     CENTS ($150,000 = 15000000), which upserts by scope + period - an internal record, no send gate.
 2. The stories behind the top deals (by value, both columns): `crm_get_deal({ deal_id })` →
    `crm_calls_list({ deal_id, has_transcript: true })` → `voice_call_transcript_get` on the closing
    calls. QUOTE what was said for every load-bearing claim - "they said the price was fine, the

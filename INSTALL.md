@@ -138,7 +138,10 @@ Put this in `.claude/settings.json` (per project) or `~/.claude/settings.json` (
       "mcp__plugin_hiveku_hk__voice_sms_send",
       "mcp__plugin_hiveku_hk__voice_sms_send_to_contact",
       "mcp__plugin_hiveku_hk__voice_sms_thread_reply",
-      "mcp__plugin_hiveku_hk__crm_remove_dnc"
+      "mcp__plugin_hiveku_hk__crm_remove_dnc",
+      "mcp__plugin_hiveku_hk__outbound_campaign_status_set",
+      "mcp__plugin_hiveku_hk__outbound_campaign_sequences_save",
+      "mcp__plugin_hiveku_hk__outbound_reply_draft_send"
     ]
   }
 }

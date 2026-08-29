@@ -13,14 +13,25 @@ with the account's full hydration (persona, brand voice, memory, skills), which 
    Its enum is 15 values and is NOT the same list as step 2: `content` (the default), `marketing`,
    `seo`, `social`, `ppc`, `sales`, `helpdesk`, `branding`, `customer_avatar`, `customer_journey`,
    `before_after_grid`, `website_design`, `knowledge_base`, `workflow`, `outbound`.
-2. **Delegate:** `talk_to_department({ domain, message })`. Exactly 14 domains are accepted: `seo`,
+2. **Delegate:** `talk_to_department({ domain, message })`. Exactly 15 domains are accepted: `seo`,
    `social`, `content`, `marketing`, `branding`, `outbound`, `ppc`, `analytics`, `customer_avatar`,
-   `customer_journey`, `before_after_grid`, `website_design`, `knowledge_base`, `workflow`. Anything
-   else is refused server-side with `Unknown domain '<x>'` - there is no soft fallback to a default
-   department. Give it the real objective and the constraints, not a thin prompt.
+   `customer_journey`, `before_after_grid`, `website_design`, `knowledge_base`, `workflow`, `sales`.
+   Anything else is refused server-side with `Unknown domain '<x>'` - there is no soft fallback to
+   a default department. Give it the real objective and the constraints, not a thin prompt.
 
-   The two enums differ in both directions: `sales` and `helpdesk` are valid contexts but are NOT
-   department agents, and `analytics` is a department agent but is NOT a valid context domain (use
+   `sales` routes to the sales department agent (Morgan, the account's `_identity:sales`),
+   hydrated with sales memory, skills, rules, brand and avatars; `list_departments` returns it.
+   Three account gates ride along: the sales agent kill switch (403 `sales_agent_disabled` when
+   the account has it off in Settings → AI), the per-session cost cap (402
+   `session_cost_cap_reached`), and the account's sales model tier. Staged-approval caveat: through
+   this rail nobody can click an approval card, so the sales agent's own gated writes
+   (`crm_email_send`, `crm_sequence_enroll`, `crm_deal_close`) come back "staged, awaiting
+   approval" and do NOT execute - use it for generative and strategic work (drafts, plans,
+   analysis), then persist with the direct `crm_*` tools yourself, exactly as with every other
+   department.
+
+   The two enums still differ in both directions: `helpdesk` is a valid context but is NOT a
+   department agent, and `analytics` is a department agent but is NOT a valid context domain (use
    `marketing` there). There is no agent at all behind accounting, PM, voice, creative or email.
    For those, load context with the nearest valid domain, then draft directly yourself and say that
    is what you did. `agent_identity_get` is no reliable way around that: its `domain` enum is the
