@@ -63,9 +63,11 @@ test('results tell the model the found tools are now callable', () => {
   // dispatches tool_use for REGISTERED tools, so that promise was false and
   // this test enshrined it. The true mechanism is promotion: the shim adds
   // found tools to the advertised list and emits tools/list_changed, so the
-  // honest message is "added to your tool list".
+  // honest message says added to the session tool list AND warns some clients
+  // surface them deferred (the "can be called now" claim was false on Claude Code).
   const text = renderResults(searchTools('rankings', { limit: 2 }), 'rankings');
-  assert.match(text, /added to your tool list/i);
+  assert.match(text, /added to this session's tool list/i);
+  assert.match(text, /DEFERRED/);
 });
 
 test('index mode advertises the core plus the search tool, and nothing else', () => {
@@ -157,7 +159,7 @@ test('a read-only key gets annotations, never hidden results', () => {
 
 test('renderResults promises promotion, not direct-call magic', () => {
   const text = renderResults([{ name: 'crm_list_contacts', method: 'GET', description: 'x' }], 'contacts');
-  assert.match(text, /added to your tool list/);
+  assert.match(text, /added to this session's tool list/);
   assert.doesNotMatch(text, /do not need to appear/);
 });
 
