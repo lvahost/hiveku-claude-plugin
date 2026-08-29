@@ -15,8 +15,10 @@ hook. Context first: `account_context_get({ domain: "marketing" })`.
    this step never starts blind again.
 2. **Gather actuals, with the caveats stated out loud** (scope every read to the flight window):
    - Email: `email_campaign_list` to find the campaign's sends, then `email_campaign_metrics({ id })`
-     per send - it returns ONLY send-row counts by status (sent / failed / skipped_*); there is NO
-     open, click, delivery or bounce figure in it and no A/B variant breakdown. Engagement only
+     per send - for a campaign with NO variants it returns ONLY send-row counts by status (sent /
+     failed / skipped_*), with no open, click, delivery or bounce figure. A campaign carrying
+     variants (or the legacy A/B pair) ALSO returns `by_variant` with per-variant opens and
+     clicks, so a per-variant rate IS reportable there. Otherwise engagement only
      where it is real: `email_logs_list({ limit: 500 })` carries per-message open_count /
      click_count / delivered_at / bounced_at but has NO campaign filter and caps at 500 rows - on
      a send under 500 recipients attribute rows by subject and report a rate; above that the true

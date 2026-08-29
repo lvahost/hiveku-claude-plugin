@@ -121,9 +121,12 @@ before the real call.
   that is already sending: `email_campaign_pause` is the in-flight control.
 - `email_campaign_metrics` returns SEND-ROW counts only: `{ campaign_id, status, by_status, total }`,
   where `by_status` groups the send rows into queued / sending / sent / failed /
-  skipped_suppressed / skipped_unsubscribed / skipped_frequency_cap. **There is NO open, click,
-  delivery, bounce, complaint or unsubscribe data here, and no A/B variant breakdown. Never report
-  an open or click rate from this tool.** Per-message `open_count`, `click_count`, `delivered_at`
+  skipped_suppressed / skipped_unsubscribed / skipped_frequency_cap. A campaign carrying variants
+  (or the legacy A/B pair) ALSO returns `by_variant` — per-variant sent/skipped plus opens and
+  clicks — so per-variant rates ARE reportable. **For a campaign with no variant data there is NO
+  open, click, delivery, bounce, complaint or unsubscribe figure here; never report an engagement
+  rate for those from this tool.** Delivery, bounce, complaint and unsubscribe are absent either
+  way. Per-message `open_count`, `click_count`, `delivered_at`
   and `bounced_at` live on `email_logs_list`, which has no campaign filter and caps at 500 rows.
 - `email_campaign_resend_non_openers` CLONES a sent campaign as a new DRAFT scoped to the contacts
   who did not open the original. The call itself dispatches nothing: you adjust subject and body,
