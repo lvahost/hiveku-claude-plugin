@@ -1,0 +1,52 @@
+{
+  "contacts": {
+    "contact_priya": {
+      "id": "contact_priya", "name": "Priya Raman", "email": "priya@ashforddental.example",
+      "company": "Ashford Dental", "title": "Practice Manager"
+    },
+    "contact_owen": {
+      "id": "contact_owen", "name": "Owen Ferris", "email": "owen@ferrisplumbing.example",
+      "company": "Ferris Plumbing", "title": "Owner"
+    },
+    "contact_mei": {
+      "id": "contact_mei", "name": "Mei Tan", "email": "mei@ashforddental.example",
+      "company": "Ashford Dental", "title": "Front Desk Lead"
+    },
+    "contact_ruth": {
+      "id": "contact_ruth", "name": "Ruth Calder", "email": "ruth@calderroofing.example",
+      "company": "Calder Roofing", "title": "Office Manager"
+    }
+  },
+  "contact_tickets": {
+    "contact_priya": [
+      { "id": "tick_1042", "number": 1042, "subject": "CSV export stuck at 0 rows", "status": "open", "created_at": "2026-08-28T09:12:00Z" },
+      { "id": "tick_0871", "number": 871, "subject": "Lead export timing out", "status": "resolved", "created_at": "2026-06-09T14:30:00Z", "resolved_at": "2026-06-11T10:15:00Z" },
+      { "id": "tick_0790", "number": 790, "subject": "Widget install help", "status": "resolved", "created_at": "2026-03-02T09:00:00Z", "resolved_at": "2026-03-02T16:40:00Z" }
+    ],
+    "contact_owen": [
+      { "id": "tick_1038", "number": 1038, "subject": "Invoice PDF shows old logo", "status": "open", "created_at": "2026-08-29T08:15:00Z" },
+      { "id": "tick_1029", "number": 1029, "subject": "Waiting on customer: domain verification", "status": "pending", "created_at": "2026-08-14T10:30:00Z" }
+    ],
+    "contact_mei": [
+      { "id": "tick_1041", "number": 1041, "subject": "Password reset email not arriving", "status": "open", "created_at": "2026-08-29T13:40:00Z" }
+    ],
+    "contact_ruth": [
+      { "id": "tick_1043", "number": 1043, "subject": "Question about annual plan pricing", "status": "open", "created_at": "2026-08-29T14:20:00Z" },
+      { "id": "tick_1035", "number": 1035, "subject": "Follow-up: onboarding call scheduling", "status": "pending", "created_at": "2026-08-26T12:00:00Z" }
+    ]
+  },
+  "touch_history": {
+    "contact_priya": [
+      { "type": "ticket", "at": "2026-08-28T09:12:00Z", "summary": "Opened ticket 1042 - CSV export stuck at 0 rows" },
+      { "type": "email", "at": "2026-08-15T10:30:00Z", "summary": "Monthly account review email sent" },
+      { "type": "ticket", "at": "2026-06-09T14:30:00Z", "summary": "Opened ticket 871 - Lead export timing out" }
+    ]
+  },
+  "engagement_summary": {
+    "contact_priya": {
+      "lifetime_value_cents": 460000, "open_deals": 0,
+      "last_inbound_at": "2026-08-28T09:12:00Z", "last_outbound_at": "2026-08-15T10:30:00Z",
+      "customer_since": "2025-10-01"
+    }
+  }
+}

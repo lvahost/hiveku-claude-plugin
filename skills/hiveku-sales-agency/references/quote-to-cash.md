@@ -19,8 +19,14 @@ the SKILL.md approval rule applies to every send, with the exact document and ro
   fresh one.
 - On acceptance: `crm_estimate_mark_accepted({ estimate_id, signer_name })` (signer_name is required
  - the name the customer agreed under) → `crm_estimate_convert_to_invoice({ estimate_id })`, which
-  revokes the portal tokens and cannot be repeated (409 if already converted). Then advance the
-  linked deal stage and log the milestone with `crm_create_activity`.
+  revokes the portal tokens and cannot be repeated (409 if already converted). The chain no longer
+  ends there: proof the draft invoice with `accounting_invoice_get` (the only read returning its
+  line items) and send it with `accounting_invoice_send` - preview without `confirm: true` first
+  (it sends NOTHING and returns the resolved recipient/from/subject/channel legs), show the user,
+  explicit yes, then the SAME call with `confirm: true`. Then advance the linked deal stage - and
+  when that move IS the close, record the why: `won_reason` via `crm_update_deal` on a win
+  (`crm_deal_move_stage` takes `lost_reason_code` on a move whose destination is a closing stage) - and
+  log the milestone with `crm_create_activity`.
 
 ## Finding and aging estimates and envelopes
 
@@ -37,7 +43,10 @@ the SKILL.md approval rule applies to every send, with the exact document and ro
 ### The accepted-but-unpaid sweep (weekly - this is what fires the SKILL.md escalation trigger)
 
 1. `crm_estimate_list({ status: "accepted" })` - any row accepted 7+ days ago that has not been
-   converted is the escalation: name the estimate, its total, its age, and the linked deal.
+   converted is the escalation: name the estimate, its total, its age, and the linked deal. For
+   rows already converted, follow the `converted_invoice_id` into `accounting_invoice_get` -
+   an invoice still in `draft` means the bill never went out, the same escalation with a
+   different fix (send it via `accounting_invoice_send`, preview first, confirmed yes).
 2. `crm_envelope_list({ status: "sent" })` - envelopes sent 7+ days ago with pending signers.
    Before nudging anyone, `crm_envelope_list_signers` to see whose turn it actually is - on a
    sequential envelope only the current signer has been invited, and nudging the wrong person

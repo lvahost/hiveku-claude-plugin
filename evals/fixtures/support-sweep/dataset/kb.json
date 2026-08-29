@@ -1,0 +1,6 @@
+{
+  "articles": [
+    { "id": "kb_17", "title": "Troubleshooting CSV exports", "visibility": "public", "url": "https://help.brightside.example/kb/17" },
+    { "id": "kb_23", "title": "Password reset emails: delivery checklist", "visibility": "public", "url": "https://help.brightside.example/kb/23" }
+  ]
+}

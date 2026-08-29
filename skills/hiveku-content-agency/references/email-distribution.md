@@ -59,24 +59,32 @@ campaign CANNOT use those rows. The names invite the mix-up; the stores are diff
 
 ## Metrics - the canonical limitation (stated once, here)
 
-`email_campaign_metrics` per send returns ONLY a by_status breakdown of
-the send rows - sent / failed / skipped_suppressed / skipped_unsubscribed /
-skipped_frequency_cap. It has NO open, click, delivery, bounce or conversion data, despite what
-its own tool description claims. NEVER report an open or click rate from it. Use it for DELIVERY
-review: sent vs the skipped_* buckets is why a send under-delivered. For engagement,
-`email_logs_list({ limit: 500 })` carries per-message open_count / click_count / delivered_at /
-bounced_at / complained_at - but it has NO campaign filter and caps at 500 rows, so above 500
-recipients a true campaign open or click rate is not obtainable from tools: say so and point the
-client at the dashboard rather than estimating. Where clicks ARE measurable, judge by clicks, not
-opens (Apple MPP inflates opens).
+`email_campaign_metrics` per send returns `{ campaign_id, status, by_status, total,
+by_variant? }`. by_status is the DELIVERY review - sent vs the skipped_* buckets is why a send
+under-delivered. `by_variant` appears ONLY on campaigns that carry variant data (an N-way
+`variants` test, or the legacy ab_test_enabled pair): `[{ variant, subject, sent, skipped,
+opened, clicked }]`, per-variant opens/clicks derived from email_events - so a per-variant open
+or click rate CAN be reported from this tool now. What has NOT changed: a campaign WITHOUT
+variant data returns no by_variant and still has NO open, click, delivery, bounce, complaint or
+unsubscribe numbers here - never report an engagement rate for one from this tool - and there
+is no campaign-level delivered/bounced/complained breakdown in either case. For a non-variant
+campaign's engagement, `email_logs_list({ limit: 500 })` carries per-message open_count /
+click_count / delivered_at / bounced_at / complained_at - but it has NO campaign filter and
+caps at 500 rows, so above 500 recipients a true campaign open or click rate is not obtainable
+from tools: say so and point the client at the dashboard rather than estimating. Where clicks
+ARE measurable, judge by clicks, not opens (Apple MPP inflates opens). And variants are NOT
+copied by `email_campaign_duplicate` - re-attach the split on any clone before it re-enters the
+ladder.
 
 ## Health floors
 
 Click rate 1-3 percent is normal, unsubscribes under 0.3 percent, spam complaints under 0.1
-percent. These come from the dashboard or from `email_logs_list` (open_count / click_count /
-complained_at, 500-row cap, no campaign filter) - not from `email_campaign_metrics`, which
-carries none of them. Breach the floors -> pause volume, fix segmentation (`email_audience_list`
-review, `email_suppression_list` for who is already burned) before sending more.
+percent. These come from the dashboard, from `email_logs_list` (open_count / click_count /
+complained_at, 500-row cap, no campaign filter), or - opens and clicks only, and only on a
+variant-carrying campaign - from `email_campaign_metrics` by_variant; complaint and
+unsubscribe rates are never in metrics. Breach the floors -> pause volume, fix segmentation
+(`email_audience_list` review, `email_suppression_list` for who is already burned) before
+sending more.
 
 ## Client report delivery (marketing_report_*)
 

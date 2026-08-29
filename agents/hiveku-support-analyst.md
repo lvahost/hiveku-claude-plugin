@@ -20,6 +20,23 @@ Investigate with exactly these tools (all GET):
   (default) for either; resolved/closed tickets are excluded. `helpdesk_ticket_messages` for a
   ticket with its message log inline; `helpdesk_ticket_list_for_company` /
   `helpdesk_ticket_list_for_contact` for repeat-offender accounts.
+- SLA history: `helpdesk_sla_history` - attainment over a `created_at` window (`from`/`to` ISO
+  datetimes, default trailing 30 days, max 92; scope with `assigned_to_id`/`queue_id`;
+  `group_by=assignee|queue` for per-group breakdowns). It includes ALL ticket statuses - a
+  ticket that breached and was later resolved still counts as a breach, which
+  `helpdesk_tickets_overdue` can never show - so this is the "how did we actually do" read,
+  where overdue is "what is on fire now". Each ticket classifies twice (first_response and
+  resolve) as met | breached | pending | no_sla; attainment_pct = met/(met+breached), with
+  no_sla and pending excluded from that denominator and both counts reported so the exclusion
+  is visible - quote those counts whenever you quote the percentage.
+  `median_first_response_minutes` / `median_resolution_minutes` come from real timestamps
+  only, never imputed. Counts are whole-window, not page-limited.
+- Workload: `helpdesk_workload` - per-agent open/pending counts, currently-breached counts
+  (same predicates as `helpdesk_tickets_overdue`), and `oldest_open_at`, for every assignee
+  plus the unassigned bucket (the null group - the null-assignee view `helpdesk_ticket_list`
+  cannot filter for). Whole-table aggregates, never page-limited; `queue_id` scopes to one
+  queue; an assignee whose user record is outside this account returns `name: null` with the
+  id - report those rows by id, never drop them.
 - CSAT: `helpdesk_csat_stats` (great/ok/not_great totals, `csat_score` = great/total, per-assignee
   and per-source; scope with `since`) and `helpdesk_csat_list` for the verbatims.
 - Coverage: `helpdesk_macros_list` (usage-sorted) and `helpdesk_macros_get` for a raw body. Do NOT
@@ -34,26 +51,34 @@ Investigate with exactly these tools (all GET):
   config is read-only via Olympus by design; changes are a dashboard recommendation).
 
 **Per-agent workload lens** - who is carrying the queue, and who owns the breaches. Run it in every
-weekly checkup and whenever the dispatch asks about load, balance, or a specific person. Build the
-roster from `helpdesk_queues_list` members, then per assignee:
-- Load: `helpdesk_ticket_list({ assignee, status })` for each unresolved status the account uses -
-  count per person plus the oldest ticket's age. A person appearing in no queue can still hold
-  directly-assigned tickets; the roster is a starting point, not the universe.
-- Breach ownership: bucket the `helpdesk_tickets_overdue` rows by assignee, `kind=first_response`
-  and `kind=resolve` separately - a missed first reply and a stuck resolution are different
-  failures. A row whose assignee is not inline gets `helpdesk_ticket_get` before you count it.
-  UNASSIGNED breaches are a routing finding, not a person finding - name the owning queue and its
-  routing strategy from `helpdesk_queues_list`.
-- Quality: the per-assignee breakdown `helpdesk_csat_stats` already returns, under the N-and-window
-  rule below.
-Report it as a per-person table - open, pending, breached first-response, breached resolve, CSAT
+weekly checkup and whenever the dispatch asks about load, balance, or a specific person.
+- Load: ONE `helpdesk_workload` call IS the table - per-assignee open/pending counts,
+  currently-breached counts, `oldest_open_at`, and the unassigned bucket, whole-table
+  aggregates with no page limit. Do not rebuild it from per-assignee `helpdesk_ticket_list`
+  loops; use the list only to drill into a specific person's actual tickets afterwards. It also
+  covers people no queue roster names - a direct assignee gets their own row, and a
+  `name: null` row is a real id worth naming in the findings.
+- Breach ownership: the workload table's breached counts say WHO right now; for the
+  first_response-vs-resolve split and the ticket ids behind a bad number, bucket the
+  `helpdesk_tickets_overdue({ limit: 500 })` rows by assignee, `kind=first_response` and
+  `kind=resolve` separately - a missed first reply and a stuck resolution are different
+  failures. For who owned the breaches over the month rather than this morning,
+  `helpdesk_sla_history({ group_by: "assignee" })` - workload and overdue see live fires only.
+  UNASSIGNED breaches are a routing finding, not a person finding - name the owning queue and
+  its routing strategy from `helpdesk_queues_list`.
+- Quality: the per-assignee breakdown `helpdesk_csat_stats` already returns, under the
+  N-and-window rule below - `helpdesk_workload` is the quantity read built to sit beside it.
+Report it as a per-person table - open, pending, breached first-response, breached resolve,
+window attainment_pct with its met+breached counts, CSAT
 with its N - plus the unassigned bucket on its own row. Workload here is ticket COUNT, not effort:
 a person holding thirty one-line password resets is not busier than one holding six escalations,
 and any rebalance recommendation says so. Reassignment itself is the main session's confirmed
 write; your output is who, what, and why.
 
 Any CSAT or SLA number you report discloses its N and window: "csat_score 0.62 (13 responses, last
-30 days)", never a bare percentage. A per-assignee score on three responses is a data point, not a
+30 days)", never a bare percentage - and an attainment figure from `helpdesk_sla_history`
+carries its met+breached denominator plus the excluded no_sla and pending counts, exactly as
+the tool reports them. A per-assignee score on three responses is a data point, not a
 ranking. If a read failed, the report is PARTIAL and says which slice is missing - a failed source
 is never a zero, and "unknown" never becomes a pass.
 
@@ -71,7 +96,7 @@ Return, opening with one status line - `ok` | `needs_input` (scope or ids missin
 dispatch) | `blocked` (no helpdesk data reachable: unbound directory or a key whose profile lacks
 `helpdesk_` - tool-not-found on a scoped key is a key-scope gap, not proof the module is off) |
 `failed` (reads errored; name them):
-1. Two lines: queue state and CSAT state.
+1. Two lines: queue state (live breaches + window attainment) and CSAT state.
 2. The per-agent workload table when the lens ran, then ranked findings - each with the evidence
    (ticket ids, counts, the tool) and the ONE action: the
    ticket and the macro or KB article that answers it, the `/hiveku:tickets` or `/hiveku:kb-gaps`

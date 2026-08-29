@@ -3,7 +3,8 @@ description: AP duplicate/fraud screen - same-vendor same-amount pairs, schedule
 ---
 AP screen. **All accounting money is integer CENTS**; echo both forms on every flagged row:
 "$1,200.00 = amount_cents: 120000". This command is READ-ONLY by contract: it flags, it never
-fixes. **Never approve, void, delete, or pay a bill from this pass** - a false positive "cleaned
+fixes. **Never approve, void, delete, pay, or reverse a bill or payment from this pass - and never
+attach or delete a bill attachment from it either** - a false positive "cleaned
 up" with `accounting_bill_delete` is gone for good (soft-delete with no un-delete route anywhere,
 no status guard, refused only once `amount_paid_cents` is above 0), and a real duplicate still
 needs a human to rule on which twin is the fake. Resolution runs through `/hiveku:books-close` and
@@ -15,13 +16,17 @@ needs a human to rule on which twin is the fake. Resolution runs through `/hivek
    `draft` / `submitted` / `open` / `partially_paid` are the live screen targets; `paid` history is
    the per-vendor baseline; `void` is out. Reconcile the live-status sum of `balance_due_cents`
    against `accounting_ap_aging.total_cents` (aging counts `open`, `partially_paid`, `submitted`,
-   `approved`) - flag nothing until the pull is provably complete.
+   `approved`) - flag nothing until the pull is provably complete. Keep each row's
+   `attachment_count` (every list/get row carries it now) - it feeds the weighting below.
 2. **Flag A - duplicate-shaped pairs.** Group by vendor. Flag any two bills from the same vendor
    with the same `total_cents` and due dates within 14 days of each other - **including pairs where
    one side is already `paid`**; a duplicate that got paid once is exactly the catch that matters.
    An identical `bill_number` upgrades the pair to near-certain; a different `bill_number` clears
    nothing (a re-keyed bill gets a fresh number). Before raising, cross-check against step 3's
    schedules: identical amounts on a live weekly cadence are the schedule doing its job, not fraud.
+   Where statements have been imported, `accounting_bank_transactions_list({ matched:
+   "bill_payment" })` can show whether BOTH twins' payments actually cleared the bank - two cleared
+   lines turns a duplicate-shaped pair into money out the door twice; put that in the evidence.
 3. **Flag B - schedule shadows.** `accounting_bill_schedules_list`, then
    `accounting_bill_schedule_get` per schedule (by UUID) for the resolved vendor, cadence,
    `next_run_at` / `last_run_at`, and the line template amount. Schedule-generated bills are born
@@ -37,7 +42,10 @@ needs a human to rule on which twin is the fake. Resolution runs through `/hivek
    only bill is the classic fake-invoice shape - a vendor this account has never once paid, asking
    for money. Weight it up when the amount sits just under the approval cap the account keeps in
    department memory (`memory_list` - the cap is a client-side convention; nothing server-side
-   enforces it, which is why this screen exists). Note the rollup's own blind spot: drafts and
+   enforces it, which is why this screen exists), and again when `attachment_count` is 0 - a first
+   bill with no source document attached is the full fake-invoice silhouette.
+   `accounting_bill_attachment_list` shows what evidence a flagged bill does carry (`file_name`,
+   `file_size`, `cdn_url` to eyeball the document) - a read, which is all this pass makes. Note the rollup's own blind spot: drafts and
    voids are invisible to `open_bill_count`.
 5. **Flag D - out-of-pattern amount.** Per vendor, take the median `total_cents` of `paid` +
    `partially_paid` history and flag any live bill above 2x that median. **Fewer than 3 historical

@@ -1,0 +1,32 @@
+{
+  "vend_meridian": {
+    "id": "vend_meridian",
+    "name": "Meridian Office Supply",
+    "created_at": "2025-11-03T10:00:00Z",
+    "stats": { "open_balance_cents": 368000, "open_bill_count": 2, "lifetime_paid_cents": 905000 }
+  },
+  "vend_crestline": {
+    "id": "vend_crestline",
+    "name": "Crestline Janitorial",
+    "created_at": "2026-04-10T10:00:00Z",
+    "stats": { "open_balance_cents": 135000, "open_bill_count": 1, "lifetime_paid_cents": 160000 }
+  },
+  "vend_lakeview": {
+    "id": "vend_lakeview",
+    "name": "Lakeview Grounds Care",
+    "created_at": "2026-06-20T10:00:00Z",
+    "stats": { "open_balance_cents": 190000, "open_bill_count": 2, "lifetime_paid_cents": 570000 }
+  },
+  "vend_bright": {
+    "id": "vend_bright",
+    "name": "Bright Signal Media",
+    "created_at": "2026-05-28T10:00:00Z",
+    "stats": { "open_balance_cents": 210000, "open_bill_count": 1, "lifetime_paid_cents": 125000 }
+  },
+  "vend_hargrove": {
+    "id": "vend_hargrove",
+    "name": "Hargrove IT Services",
+    "created_at": "2026-01-15T10:00:00Z",
+    "stats": { "open_balance_cents": 72000, "open_bill_count": 1, "lifetime_paid_cents": 432000 }
+  }
+}

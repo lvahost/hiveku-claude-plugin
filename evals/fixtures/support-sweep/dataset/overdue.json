@@ -1,0 +1,12 @@
+{
+  "first_response": [
+    {
+      "id": "tick_1042", "number": 1042, "subject": "CSV export stuck at 0 rows",
+      "status": "open", "priority": "normal", "assigned_to_id": "agent_dana",
+      "contact_id": "contact_priya", "company": "Ashford Dental",
+      "created_at": "2026-08-28T09:12:00Z", "first_response_due_at": "2026-08-28T13:12:00Z",
+      "sla_minutes": 240, "minutes_overdue": 1548
+    }
+  ],
+  "resolve": []
+}

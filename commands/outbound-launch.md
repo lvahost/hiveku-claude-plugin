@@ -21,8 +21,12 @@ dashboard/provider-side. Context: `account_context_get({ domain: "outbound" })`.
 4. `outbound_list_leads({ campaign_id })` - verify the list actually loaded, and count rows with
    `status: "pending_sync"` and a `pending-*` external_id. That state is NORMAL after a fresh load
    (SmartLead's add-lead response has no lead id; the next sync reconciles). Do not report it as a
-   failed load. Separately count 409 `upstream_rejected` skips from the load: those are duplicates
-   or blocklisted prospects and are correct to skip.
+   failed load. Reconcile the load's own numbers honestly: a bulk load
+   (`outbound_leads_bulk_create`, up to 100 leads/call) returns COUNTS ONLY - { uploaded,
+   not_uploaded }, no per-lead outcomes - so report the not_uploaded count without naming which
+   leads it covers (the next stats sync reconciles that; never guess). A single-lead load
+   (`outbound_create_lead`) counts its 409 `upstream_rejected` skips: duplicates or blocklisted
+   prospects, correct to skip.
 5. Copy check: plain text, under ~120 words, one CTA, every merge tag has a fallback, no link
    shorteners, no ALL CAPS or "free/guarantee/act now" clusters. Confirm the sending domain is a
    secondary lookalike domain with SPF + DKIM + DMARC, not the client's primary.

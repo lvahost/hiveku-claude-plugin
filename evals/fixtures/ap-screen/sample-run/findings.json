@@ -1,0 +1,7 @@
+{
+  "rule_A_duplicate_pair": ["bill_mer_open_1", "bill_mer_open_2"],
+  "rule_B_schedule_shadow": [],
+  "rule_C_never_paid_vendor": [],
+  "rule_D_out_of_pattern": ["bill_cre_open_1"],
+  "rule_E_unfamiliar_writer": []
+}

@@ -6,7 +6,7 @@ description: "Full outbound/BDR agency methodology for a Hiveku account. Load wh
 # Hiveku Outbound Agency - run outbound like a retainer agency
 
 You are operating a full outbound/BDR program: cold email through Smartlead, Hiveku as the
-system of record AND the reply loop (18 outbound tools), LinkedIn through HeyReach as an
+system of record AND the reply loop (19 outbound tools), LinkedIn through HeyReach as an
 out-of-band channel, and the local automations worker as an optional 24/7 backstop. The bar is
 an agency charging thousands per month: tight ICP, disciplined deliverability, same-day reply
 handling, honest metrics.
@@ -87,8 +87,9 @@ handling, honest metrics.
 
 ## 2. Program architecture - who owns what
 
-- **Hiveku = system of record.** If it is not mirrored into Hiveku, it did not happen. 18
-  tools on six rails: campaigns + leads (list/create x2 + `outbound_update_lead`); inbox +
+- **Hiveku = system of record.** If it is not mirrored into Hiveku, it did not happen. 19
+  tools on six rails: campaigns + leads (list/create x2 + `outbound_leads_bulk_create` -
+  the list loader, up to 100/call - + `outbound_update_lead`); inbox +
   drafts (`outbound_list_inbox` - the pre-classified BDR reply queue,
   `outbound_save_reply_draft` - PENDING draft, never sends, `outbound_list_reply_drafts`);
   health (`outbound_health_status`); CRM handoff (`outbound_push_lead_to_crm`); objections
@@ -167,12 +168,16 @@ verify connection state (`integration_list` on a full key; else read `integratio
    Gmail/Outlook thread for a contact) or `crm_email_thread_search` (subject/body search over
    synced email activities) - cold-enrolling someone mid-discussion with the account is a
    reputation incident no suppression list catches.
-7. **Mirror everything:** each approved lead -> `outbound_create_lead({ campaign_id, email,
-   ... })` + `crm_contact_upsert_by_email`. One call = one lead (no bulk path); 409
-   `upstream_rejected` = skip, never retry; a wall of `pending_sync` rows is a HEALTHY load.
-   Pace ~1 call/sec and checkpoint progress locally so a crashed loader resumes instead of
-   re-walking the list - full procedure + refusal table: `references/tool-traps.md`. Load it
-   BEFORE the first call.
+7. **Mirror everything:** the approved list loads in batches via
+   `outbound_leads_bulk_create({ campaign_id, leads })` - up to 100 leads per call (the
+   SmartLead batch cap; 400 above it), emails deduped case-insensitively within the batch -
+   plus `crm_contact_upsert_by_email` per contact; `outbound_create_lead` stays for one-off
+   adds only. Bulk results are COUNTS-ONLY: SmartLead returns { uploaded, not_uploaded } with
+   no per-lead outcomes, so never report WHICH leads were rejected until the next stats sync
+   reconciles the `pending_sync` placeholders - and a wall of `pending_sync` rows is a HEALTHY
+   load. Checkpoint each batch locally so a crashed loader resumes instead of re-walking the
+   list - full procedure + refusal table: `references/tool-traps.md`. Load it BEFORE the first
+   call.
 
 ## 4. Campaign design
 
@@ -385,6 +390,8 @@ belong in `outbound_record_sequence_learning`, not memory.
 - **Never re-process seen replies** - principle 4 / `references/local-worker.md`.
 - **`outbound_create_campaign` creates an EMPTY upstream campaign** - 4.4.
 - **`outbound_create_lead` 412s on any non-SmartLead campaign** - section 2.
+- **`outbound_leads_bulk_create` reports COUNTS ONLY** ({ uploaded, not_uploaded }) - which
+  leads were rejected is unknowable until the next stats sync - 3.7.
 - **`outbound_update_lead` cannot edit profile fields; warnings inside 200s** - 6.2.
 - **`outbound_push_lead_to_crm` fails by RESOLVING** - 6.2.
 - **Manual `crm_create_deal` next to a configured Interested stage = DUPLICATE deal** - 6.3.

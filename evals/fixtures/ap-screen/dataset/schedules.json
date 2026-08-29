@@ -1,0 +1,28 @@
+{
+  "list": [
+    { "id": "sched_lakeview", "vendor_id": "vend_lakeview", "name": "Weekly grounds care", "is_active": true },
+    { "id": "sched_hargrove", "vendor_id": "vend_hargrove", "name": "Monthly IT retainer", "is_active": true }
+  ],
+  "detail": {
+    "sched_lakeview": {
+      "id": "sched_lakeview",
+      "vendor_id": "vend_lakeview",
+      "vendor_name": "Lakeview Grounds Care",
+      "cadence": "weekly",
+      "is_active": true,
+      "next_run_at": "2026-08-29T06:00:00Z",
+      "last_run_at": "2026-08-22T06:00:00Z",
+      "line_template": { "description": "Weekly grounds service", "amount_cents": 95000 }
+    },
+    "sched_hargrove": {
+      "id": "sched_hargrove",
+      "vendor_id": "vend_hargrove",
+      "vendor_name": "Hargrove IT Services",
+      "cadence": "monthly",
+      "is_active": true,
+      "next_run_at": null,
+      "last_run_at": "2026-06-28T06:00:00Z",
+      "line_template": { "description": "Managed IT retainer (contract term ended 2026-07-31)", "amount_cents": 72000 }
+    }
+  }
+}

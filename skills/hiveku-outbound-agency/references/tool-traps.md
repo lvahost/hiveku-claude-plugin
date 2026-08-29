@@ -3,15 +3,30 @@
 Read this before loading a list, creating a campaign, updating a lead, or pushing to the CRM.
 Every trap here was learned from the routes themselves, not from the tool names.
 
-## Loading leads (`outbound_create_lead`)
+## Loading leads (`outbound_leads_bulk_create`, `outbound_create_lead`)
 
-Required: `campaign_id`, `email`. Know the real behavior before loading a list:
+Required: `campaign_id`, `email` per lead. Know the real behavior before loading a list:
 
-- **One call = one lead.** There is no bulk path. A 500-lead list is 500 calls - space them and
-  expect it to take a while, or load the list in SmartLead directly and let the sync mirror it.
-- **409 `upstream_rejected` = SKIP, not retry.** "SmartLead rejected the lead (possibly a
-  duplicate or on the global block list)" - the prospect is already enrolled or suppressed.
-  Retrying will never succeed. Count it and move on.
+- **The one-call-per-lead loop is RETIRED.** `outbound_leads_bulk_create` enrolls up to 100
+  leads per call (the SmartLead batch cap; 101+ is a 400 - chunk the list yourself). A 500-lead
+  list is 5 calls, not 500. Keep `outbound_create_lead` for one-off adds (a warm visitor, a
+  hand-vetted prospect), not lists. Emails are deduped case-insensitively WITHIN the batch.
+  `settings` supports `ignore_global_block_list`, `ignore_unsubscribe_list`,
+  `ignore_duplicate_leads_in_other_campaign` - every one of those widens who receives cold
+  email, so none is ever set unless the user asks for it by name and hears what it skips.
+- **Bulk results are COUNTS-ONLY - carry that honestly.** SmartLead returns
+  `{ uploaded, not_uploaded }` with no per-lead outcomes: WHICH leads were rejected
+  (duplicates, block list) is unknowable until the next stats sync reconciles the
+  `pending_sync` placeholder rows. Report the two counts and say the per-lead breakdown
+  arrives at the next sync - never present per-lead status as known, never guess which N were
+  rejected.
+- **Local rows are written only after SmartLead accepts; an upstream failure records
+  nothing** - a batch that failed upstream left no partial state and is re-sent whole, once,
+  per the retry discipline below.
+- **409 `upstream_rejected` = SKIP, not retry** (single-lead path). "SmartLead rejected the
+  lead (possibly a duplicate or on the global block list)" - the prospect is already enrolled
+  or suppressed. Retrying will never succeed. Count it and move on. On the bulk path the same
+  rejects surface only inside the `not_uploaded` count, namelessly, until the sync.
 - **`status: 'pending_sync'` with a `pending-<timestamp>` external_id is the NORMAL result.**
   SmartLead's add-lead response has no lead id, so Hiveku inserts a placeholder that the next
   sync reconciles. A wall of `pending_sync` rows after a bulk load is a healthy load, not a
@@ -24,18 +39,22 @@ Required: `campaign_id`, `email`. Know the real behavior before loading a list:
   `unsupported_provider` (non-SmartLead campaign), 412 `integration_missing_key`, 502
   `upstream_failed`.
 
-### Bulk-load procedure (pacing + checkpoint + restart)
+### Bulk-load procedure (chunk + checkpoint + restart)
 
-A crashed loader that re-walks the list from row 0 relies on upstream 409s to save it - do not
-run one. Instead:
+A crashed loader that re-walks the list from row 0 relies on upstream dedupe to save it - do
+not run one. Instead:
 
-1. Pace at roughly 1 call/second (a 500-lead list is ~10 minutes; say so up front).
-2. Checkpoint locally: append each successfully loaded email to
-   `automations/state/load-<campaign_id>.json` (or any local file) as you go.
-3. On restart, skip every email already in the checkpoint file, then resume. 409s still count
-   as loaded - record them in the checkpoint too, with the reason.
-4. At the end report: attempted / created / skipped-409 / failed, and reconcile the created
-   count against `outbound_list_leads({ campaign_id })`.
+1. Chunk the approved, suppression-swept list into batches of 100 or fewer and load each with
+   `outbound_leads_bulk_create` (a 500-lead list is 5 calls; say the plan up front).
+2. Checkpoint locally per BATCH: append the batch's emails plus the returned
+   `{ uploaded, not_uploaded }` counts to `automations/state/load-<campaign_id>.json` (or any
+   local file) as you go.
+3. On restart, skip every batch already in the checkpoint file, then resume. Local rows exist
+   only for what SmartLead accepted, so a batch that failed upstream recorded nothing and is
+   re-sent whole.
+4. At the end report: attempted / uploaded / not_uploaded totals, and reconcile against
+   `outbound_list_leads({ campaign_id })` - remembering the not_uploaded rows have no names
+   until the next stats sync fills them in.
 
 ### Retry and ambiguous-write discipline (all outbound writes)
 

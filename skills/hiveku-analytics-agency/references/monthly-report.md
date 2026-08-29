@@ -57,7 +57,17 @@ hand-assembling a document, and keep the decisions behind it in memory.
    LinkedIn/TikTok list operations for those platforms, `seo_ga4_conversion_audit` for the GA4
    lane, `marketing_form_conversion_audit` for the form reconciliation and
    `marketing_call_attribution_breakdown` for calls - plus `analytics_visitors` for the
-   account-wide ICP-matched list. If a platform has no readable source this month, state that
+   account-wide ICP-matched list. Two marketing-side reads complete the reconciliation:
+   `content_comments_recent` is the feedback-loop read - what the client actually said about
+   shared drafts since the last report (`since` is a strict greater-than on created_at, so the
+   last processed comment's own timestamp is the cursor; `source: 'share-link'` rows are the
+   client), each row carrying its content_item so the work-log names the draft, not a UUID.
+   And per email campaign, `email_campaign_metrics` - by_status delivery counts plus, on
+   variant-carrying campaigns only (an N-way `variants` test or the legacy ab_test_enabled
+   pair), `by_variant` with per-variant sent / skipped / opened / clicked, so a per-variant
+   open or click rate is reportable; a campaign without variant data has NO engagement numbers
+   from that tool - report it delivery-only, never estimate.
+   If a platform has no readable source this month, state that
    as `not_applicable` (no connection) or `partial` (connected but the read failed) - never
    omit the section silently and never write a zero for a failed read.
    Run `analytics_diagnose_tracking({ project_id })` so the report can state the data is
@@ -84,6 +94,12 @@ hand-assembling a document, and keep the decisions behind it in memory.
      and the last-touch caveat stated plainly.
    - Content - top pages (`analytics_pages`) and top landing pages (`analytics_overview`),
      biggest movers.
+   - Email - per-campaign delivery from `email_campaign_metrics` (sent vs the skipped_*
+     buckets); where a campaign carried variants, `by_variant` gives per-variant opens and
+     clicks - report the split and name the winner by clicks, with each variant's N. A campaign
+     without variant data gets delivery numbers only from tools - label it so rather than
+     estimating engagement. Fold the month's client feedback (`content_comments_recent`) into
+     the work-log narrative: what the client flagged, what changed because of it.
    - Conversions - status + actions + relevant events: conversions by action, rate vs prior
      period, measurement caveats, the form-audit reconciliation and the call-quality read. If a
      KPI is not yet measurable, say so and point to the task.

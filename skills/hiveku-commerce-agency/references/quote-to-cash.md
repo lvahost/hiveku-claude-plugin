@@ -1,8 +1,10 @@
 # Quote-to-cash - estimates, quotes, contracts, and e-signature envelopes (Plays 5-6 depth)
 
 The CRM revenue engine, and the fastest ROI in most engagements is working the pipeline
-that already exists. Flow: draft -> send -> accepted -> (contract) -> invoice. For the
-invoice half, load `references/invoicing-receivables.md`.
+that already exists. Flow: draft -> send -> accepted -> (contract) -> invoice -> invoice
+SENT. For the invoice half - including the `accounting_invoice_get` read-back and the
+confirm-gated `accounting_invoice_send` that completes the chain - load
+`references/invoicing-receivables.md`.
 
 UNITS, before anything else: `unit_cents`, `discount_cents`, and `amount_cents` are
 integer CENTS. `tax_bps` is BASIS POINTS (825 = 8.25%). $199.99 is `unit_cents: 19999`.

@@ -3,7 +3,9 @@ description: Work the overdue ticket queue with macro-based drafts. Nothing send
 ---
 Ticket pass. 1. `helpdesk_tickets_overdue({ kind: "first_response", limit: 500 })` then
    `({ kind: "resolve", limit: 500 })` → queue by priority/age. The default limit is 100 and the
-   truncation is silent, so a capped list reads as a healthy queue.
+   truncation is silent, so a capped list reads as a healthy queue. This is the LIVE-breach queue
+   only - last week's or last month's attainment number is `helpdesk_sla_history` (resolved
+   tickets included, whole-window counts), the weekly checkup's read, not this pass's.
 2. Per ticket: `helpdesk_ticket_get` + `helpdesk_ticket_messages` for context; find a fitting macro
    (`helpdesk_macros_list` → `helpdesk_macros_get({ id })` to see its `{{placeholders}}` →
    `helpdesk_macros_render({ id, variables })` - YOU build the variables map from the ticket, the

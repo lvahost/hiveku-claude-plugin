@@ -45,12 +45,15 @@ real shoppers immediately - so the discipline below is the skill.
   The full gate, the platform's `confirm: true` gates, and the per-tool traps are in
   `references/shopify-catalog-writes.md` - load it before your first Shopify write of a
   session. Batch the ANALYSIS, never the CONSENT.
-- Client-facing sends are the other irreversible class. `crm_estimate_send` and
-  `crm_envelope_send` put a document in front of a paying client, and
-  `crm_estimate_convert_to_invoice` flips the estimate to 'converted' and revokes the
-  client's live estimate link, which cannot be undone. Summarize exactly what you are
-  about to send or change, and get a yes. Draft and send are always two steps; there is
-  no "test send" to a real customer.
+- Client-facing sends are the other irreversible class. `crm_estimate_send`,
+  `crm_envelope_send`, and `accounting_invoice_send` put a document in front of a paying
+  client, and `crm_estimate_convert_to_invoice` flips the estimate to 'converted' and
+  revokes the client's live estimate link, which cannot be undone. Summarize exactly what
+  you are about to send or change, and get a yes. Draft and send are always two steps;
+  there is no "test send" to a real customer - the closest thing is
+  `accounting_invoice_send` WITHOUT `confirm: true`, which sends nothing and returns the
+  exact preview (resolved recipient and its source, from address, subject, channel legs)
+  to put in front of the human before the confirmed call.
 - ALL money on the CRM side is integer CENTS (`unit_cents`, `discount_cents`,
   `amount_cents`) and ALL tax is BASIS POINTS (`tax_bps`: 825 = 8.25%). Dollars x 100,
   percent x 100, every single write. `unit_cents: 199.99` quotes a client two dollars;
@@ -170,8 +173,10 @@ full-profile session or the dashboard - do not report a platform outage.
    `crm_estimate_template_list` / `crm_invoice_template_list` /
    `crm_contract_template_list`, `accounting_invoice_list({ status: 'all' })` (paged) and
    `accounting_ar_aging`. The money hiding here is sent-but-never-accepted quotes,
-   sent-but-never-signed contracts, sent-but-never-paid invoices - and DRAFT quotes
-   built and never sent.
+   sent-but-never-signed contracts, sent-but-never-paid invoices - and the two draft
+   leaks: quotes built and never sent, and invoices converted and never sent
+   (`accounting_invoice_list({ status: 'draft' })`, proofed with
+   `accounting_invoice_get`).
 6. Storefront reality: native Shopify theme or headless Hiveku project?
    `shopify_scaffold_compat` reports the project surface without writing;
    `shopify_theme_list` shows the native themes. See
@@ -223,8 +228,10 @@ send a quote without an approved plan behind it.
   sequential vs parallel sends, partially-signed derivation, void as the fix for a bad
   send. Same reference.
 - Play 7 - Invoicing and receivables. Convert-to-invoice side effects and its three
-  409s, the dashboard-only invoice send, AR aging, recording payments without
-  double-booking. Load `references/invoicing-receivables.md`.
+  409s, the invoice read-back (`accounting_invoice_get` - the only line-item-level
+  read), the confirm-gated `accounting_invoice_send` (preview without `confirm: true`
+  first, explicit yes, then the same call confirmed), AR aging, recording payments
+  without double-booking. Load `references/invoicing-receivables.md`.
 
 ## Weekly cadence (every week, both engines)
 
@@ -257,7 +264,11 @@ Run it as `/hiveku:store` (steps 0-3) and `/hiveku:quotes` (steps 5-7), or by ha
    (some `signed_at` set, some null). Those and long-sent-untouched envelopes get a nudge
    task. Pick up `declined` as a real outcome.
 7. Receivables: `accounting_ar_aging` plus `accounting_invoice_list({ status: 'sent' })`
-   (paged) -> anything past due gets a chase. `/hiveku:books-chase` runs this end to end.
+   (paged) -> anything past due gets a chase (`/hiveku:books-chase` runs that end to
+   end). Sweep `{ status: 'draft' }` too: an accepted quote converted and then never sent
+   is the quietest leak in the chain - proof it with `accounting_invoice_get`, then send
+   it with `accounting_invoice_send` (preview first, `confirm: true` only on an explicit
+   yes) or close it out deliberately.
 8. Pipeline hygiene: `pm_tasks_update` on everything in flight. Stalled and
    waiting-on-client are different; label them honestly and escalate the ones actually
    stuck. A stockout on a watchlist seller or a quote total that looks wrong gets a
@@ -267,7 +278,8 @@ Run it as `/hiveku:store` (steps 0-3) and `/hiveku:quotes` (steps 5-7), or by ha
 
 - Do not invent tool names. The registry carries 85 `shopify_*` tools - wide, but exact:
   there is no `shopify_segment_get`, no `shopify_inventory_set`, no order write of any
-  kind, no `crm_invoice_send`. A name absent from the registry does not exist; check
+  kind, no `crm_invoice_send` (the invoice send is `accounting_invoice_send`, on the
+  accounting side of the seam). A name absent from the registry does not exist; check
   before building a plan on it.
 - `project_id`: required by the original seven project tools (`shopify_status`,
   `shopify_admin`, `shopify_catalog_list`, `shopify_inventory_get`,
@@ -282,9 +294,11 @@ Run it as `/hiveku:store` (steps 0-3) and `/hiveku:quotes` (steps 5-7), or by ha
   `crm_estimate_delete` and `crm_estimate_convert_to_invoice` both revoke them
   immediately - the client's link dies the moment you run either.
 - `crm_estimate_convert_to_invoice` does NOT bill anyone: it makes a DRAFT invoice with
-  NO due_date, and sending an invoice is a dashboard action with no MCP tool. It 409s
-  three ways; know which one you got (`references/invoicing-receivables.md`) and never
-  mark-accept to get past one.
+  NO due_date. The chain now completes from here: `accounting_invoice_get` to proof the
+  draft (the only line-item read), then `accounting_invoice_send` - preview without
+  `confirm: true` first (it sends nothing), explicit yes, then the SAME call with
+  `confirm: true`. Convert still 409s three ways; know which one you got
+  (`references/invoicing-receivables.md`) and never mark-accept to get past one.
 - "Partially signed" is not an envelope status - derive it from the signer read, or the
   weekly chase finds zero and the report carries a number nobody can reproduce.
 - Job-returning Shopify mutations report ACCEPTED, not done - empty `userErrors` proves

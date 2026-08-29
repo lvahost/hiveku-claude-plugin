@@ -1,0 +1,43 @@
+{
+  "eval": "ap-screen",
+  "notes": "Seeded defects: ONE duplicate-shaped pair (Meridian - same 184000-cent amount, due 7 days apart, DIFFERENT bill numbers, no schedule to explain it) and ONE out-of-pattern amount (Crestline - 135000 cents against a 39750-cent paid median, 3.4x). Distractors that must survive unflagged: Lakeview's schedule twins, Hargrove's hand-keyed bill on an exhausted schedule, Bright's 2-bill no-baseline vendor, one void, one draft. Every vendor has lifetime_paid > 0 and one long-standing writer key, so rules C and E must come back empty.",
+  "sidecar_schema": "flat map: category name -> array of bill ids (missing category = empty)",
+  "categories": {
+    "rule_A_duplicate_pair": {
+      "must": ["bill_mer_open_1", "bill_mer_open_2"],
+      "must_not": [
+        { "id": "bill_lak_open_1", "reason": "same amount twice within 14 days, but a live weekly schedule at the 95000-cent template amount explains it (step 2 cross-check against step 3)" },
+        { "id": "bill_lak_open_2", "reason": "see bill_lak_open_1" }
+      ]
+    },
+    "rule_B_schedule_shadow": {
+      "must": [],
+      "must_not": [
+        { "id": "bill_har_sub_1", "reason": "manual bill on an EXHAUSTED schedule (is_active true, next_run_at null will never fire) - manual billing there is expected, per step 3" },
+        { "id": "bill_lak_open_1", "reason": "one schedule-born bill per cadence period - the schedule doing its job" },
+        { "id": "bill_lak_open_2", "reason": "one schedule-born bill per cadence period" }
+      ]
+    },
+    "rule_C_never_paid_vendor": {
+      "must": [],
+      "must_not": [
+        { "id": "bill_bri_open_1", "reason": "vendor lifetime_paid_cents is 125000, not 0 - newish vendor, but not never-paid" }
+      ]
+    },
+    "rule_D_out_of_pattern": {
+      "must": ["bill_cre_open_1"],
+      "must_not": [
+        { "id": "bill_bri_open_1", "reason": "only 2 historical bills - fewer than 3 is no pattern, say 'no baseline' (step 5)" },
+        { "id": "bill_mer_open_1", "reason": "184000 sits inside the vendor's 170000-195000 paid band" },
+        { "id": "bill_mer_open_2", "reason": "184000 sits inside the vendor's 170000-195000 paid band" },
+        { "id": "bill_cre_v1", "reason": "void bills are out of scope entirely" }
+      ]
+    },
+    "rule_E_unfamiliar_writer": {
+      "must": [],
+      "must_not": [
+        { "id": "bill_har_sub_1", "reason": "hand-keyed by the same long-standing key (hk_live_****ops7) that writes all manual AP" }
+      ]
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "identity": {
+    "domain": "helpdesk",
+    "persona": "Brightside support - warm, concise, first person plural, sign as 'The Brightside team'"
+  },
+  "queues": [
+    { "id": "queue_general", "name": "General Support", "strategy": "round_robin", "member_count": 2 }
+  ],
+  "memory": {
+    "entries": [
+      {
+        "memory_id": "mem_helpdesk_1",
+        "type": "memory",
+        "name": "helpdesk",
+        "content": "Helpdesk notes for Brightside Fixtures: SLA is 4h first response / 48h resolve, pending pauses the clock. Ashford Dental is a reference customer. Close-if-quiet window for pending is 5 business days."
+      }
+    ]
+  },
+  "pm": {
+    "projects": [
+      { "id": "proj_fixture_ops", "name": "Fixture Ops", "status": "active", "project_type": "marketing" }
+    ]
+  }
+}

@@ -4,13 +4,18 @@ argument-hint: "[optional question - e.g. 'can we afford a $12k hire in October?
 ---
 Cash-flow forecast. **All accounting money is integer CENTS.** Convert for the human, keep the
 integer in the math. This command is PURE READS - it records nothing, approves nothing, pays
-nothing. Its output is a 13-week table where every line names the tool call it came from and every
-assumption is written down, because **the platform holds no bank data at all**: no balance, no
-transactions, no reconciliation. A recorded payment is self-attestation that money moved, not proof.
+nothing, imports nothing, matches nothing. Its output is a 13-week table where every line names the
+tool call it came from and every assumption is written down, because **the platform holds no live
+bank connection and no balance**: imported statement lines exist where statements have been
+uploaded (`accounting_bank_transactions_list` - signed cents, negative = money out), but a
+statement is history, never a balance. A recorded payment is self-attestation that money moved
+unless a matched bank line (`matched: "bill_payment"` / `"crm_payment"`) corroborates it.
 
-1. **Anchor cash.** Ask the owner for today's actual bank balance - no tool can fetch it. If they
-   cannot give one, still build the table but label it **"FLOWS ONLY - no starting balance"** and
-   answer affordability questions as net-flow deltas, never as "you will have $X."
+1. **Anchor cash.** Ask the owner for today's actual bank balance - no tool can fetch it. The most
+   recent imported statement lines can corroborate the owner's number against recent flows, but
+   never substitute for it. If they cannot give one, still build the table but label it
+   **"FLOWS ONLY - no starting balance"** and answer affordability questions as net-flow deltas,
+   never as "you will have $X."
 2. **Money out - the payable, paginated and reconciled.** Loop
    `accounting_bill_list({ status: "all", limit: 200, offset: N })` until you have seen `total` rows
    (default limit is 50 - one unpaged call on a real book hides the rest). Partition locally, then

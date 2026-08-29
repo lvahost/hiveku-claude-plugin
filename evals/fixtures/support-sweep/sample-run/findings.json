@@ -1,0 +1,5 @@
+{
+  "sla_breaches": ["tick_1042"],
+  "unassigned_open": ["tick_1041", "tick_1043"],
+  "aging_pending": ["tick_1029"]
+}

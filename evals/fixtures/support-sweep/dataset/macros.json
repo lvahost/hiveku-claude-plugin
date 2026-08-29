@@ -1,0 +1,21 @@
+{
+  "list": [
+    { "id": "mac_ack", "name": "Acknowledge + investigating" },
+    { "id": "mac_pending_chase", "name": "Pending check-in" },
+    { "id": "mac_password_reset", "name": "Password reset walkthrough" }
+  ],
+  "detail": {
+    "mac_ack": {
+      "id": "mac_ack", "name": "Acknowledge + investigating",
+      "body": "Hi {{first_name}}, thanks for flagging {{issue_summary}}. We're on it - expect an update from us by {{eta}}."
+    },
+    "mac_pending_chase": {
+      "id": "mac_pending_chase", "name": "Pending check-in",
+      "body": "Hi {{first_name}}, just checking in on {{subject}} - are you still seeing this on your side? If we don't hear back by {{close_date}} we'll close the ticket, and you can always reopen it."
+    },
+    "mac_password_reset": {
+      "id": "mac_password_reset", "name": "Password reset walkthrough",
+      "body": "Hi {{first_name}}, sorry the reset email is playing hide and seek. We've triggered a fresh one from {{sender_address}} - if it isn't there in 10 minutes, ask your IT folks to allowlist that address and we'll send another."
+    }
+  }
+}

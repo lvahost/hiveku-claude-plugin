@@ -1,0 +1,12 @@
+{
+  "as_of": "2026-08-29",
+  "total_cents": 975000,
+  "buckets": {
+    "current": 417000,
+    "days_1_30": 558000,
+    "days_31_60": 0,
+    "days_61_90": 0,
+    "days_90_plus": 0
+  },
+  "statuses_counted": ["open", "partially_paid", "submitted", "approved"]
+}

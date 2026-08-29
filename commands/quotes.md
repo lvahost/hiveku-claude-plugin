@@ -11,7 +11,15 @@ Quote-to-cash sweep. Context: `account_context_get({ domain: "sales" })` (there 
    on each → partially signed is derived (some `signed_at` set, some null); there is no such status to
    filter. Also pull `{ status: "declined" }` - a decline is an outcome to work, not a stalled item.
 3. Receivables: `accounting_ar_aging` + `accounting_invoice_list({ status: "sent" })` → the unpaid tail
-   by bucket. Deeper chase with drafted reminders: `/hiveku:books-chase`.
+   by bucket - and `{ status: "draft" }` → invoices converted from accepted quotes and never sent,
+   the quietest leak in the chain. Proof any one invoice with `accounting_invoice_get` (the ONLY
+   read returning its line items; balance fields come back as stored - never recompute them from
+   the payment applications). Send an unsent one with `accounting_invoice_send`: WITHOUT
+   `confirm: true` it sends NOTHING and returns the exact preview (resolved recipient with its
+   source, from address, subject, attach_pdf, channel legs) - show that, get an explicit yes,
+   then repeat the SAME call with `confirm: true`. It 409s on void/fully-paid, 400s on zero line
+   items or no reachable recipient; a success flips draft→sent and writes its own crm_activities
+   note. Deeper chase with drafted reminders: `/hiveku:books-chase`.
 4. Per item: the ONE next step. Draft the follow-up yourself off the loaded context, or use
    `talk_to_department({ domain: "content", message })` for client-facing copy. Show drafts - send
    NOTHING without approval. `crm_estimate_send` requires `channel` ('email'|'sms'|'both') and should

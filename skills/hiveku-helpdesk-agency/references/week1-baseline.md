@@ -10,14 +10,22 @@ lifecycle summary in SKILL.md: the 7-step week-1 baseline and the week-2 operati
 2. Map the queues: `helpdesk_queues_list` - how many queues, who is a member of each, how work
    is currently split (by channel, product, tier, or nothing). A single undifferentiated queue
    is the most common thing you will find and the first thing to fix.
-3. Size the backlog: `helpdesk_ticket_list({ status })` once per status (`open`, `pending`) to
-   count each, and count the unassigned by filtering the `open` rows client-side for a null
-   assignee - there is NO unassigned filter on the tool. `helpdesk_ticket_list` is paged
-   (`page` / `limit`), so page until a short page comes back and report the count you actually
+3. Size the backlog: `helpdesk_workload` first - per-assignee open/pending counts,
+   currently-breached counts, `oldest_open_at`, and the unassigned bucket (the null-assignee
+   group), all whole-table aggregates no page limit can truncate. That one call is the staffing
+   map AND the honest unassigned count - do not rebuild it by paging `helpdesk_ticket_list` and
+   filtering client-side; the client-side null-assignee filter survives only for enumerating
+   specific tickets later. Then `helpdesk_ticket_list({ status })` once per status (`open`,
+   `pending`) for the actual rows - it is paged (`page` / `limit`), so page until a short page
+   comes back and report the count you actually
    enumerated, never a page size. Then `helpdesk_tickets_overdue({ kind: 'first_response',
    limit: 500 })` and `({ kind: 'resolve', limit: 500 })` for anything already past SLA - the
    default limit is 100 and a truncated list looks like a healthy queue. The gap between "open"
-   and "overdue" is the honest starting health of the account.
+   and "overdue" is the live starting health; the historical health is `helpdesk_sla_history`
+   (default trailing 30 days, max 92) - attainment including tickets already resolved, with the
+   excluded no_sla count telling you how much of the queue had no SLA policy applied at all (a
+   large one means the ladder you are about to propose is the account's first real promise, not
+   a tune-up).
 4. Read the shape of demand: sample `helpdesk_ticket_get` +
    `helpdesk_ticket_messages` on 20-30 recent tickets to learn the top contact reasons, the
    tone customers arrive in, and how the client has been replying. This sample IS your macro
@@ -48,8 +56,10 @@ lifecycle summary in SKILL.md: the 7-step week-1 baseline and the week-2 operati
 7. Record the baseline with `memory_create({ type: 'memory', name: 'helpdesk-baseline-<yyyy-mm>',
    content })` - there is no `baseline` type; that is an archival entry, so also merge the two or
    three numbers you will actually hold yourself to into the `helpdesk` document, which is the one
-   department agents hydrate. Capture: ticket volume per week, current median first-response and
-   resolution times if derivable from the sample, CSAT, queue structure, top 5 contact reasons,
+   department agents hydrate. Capture: ticket volume per week, `median_first_response_minutes` /
+   `median_resolution_minutes` and attainment from `helpdesk_sla_history` (quote the
+   met+breached denominator and the excluded no_sla/pending counts with it), CSAT, queue
+   structure, top 5 contact reasons,
    and the honest constraints (coverage hours, staffing, missing macros). Everything you promise
    later is measured against this. Know the failure mode: `memory_create` returns 409 when the
    (domain, project_id) pair already exists. That is not an error to route around with a new
@@ -62,7 +72,9 @@ Turn the baseline into an operating design and get sign-off:
 - SLA targets by priority. Propose concrete numbers, do not leave them vague. A defensible
   default ladder: urgent first-response 1 hour / resolution 4 hours; high 4h / 1 business day;
   normal 8 business hours / 2 business days; low 2 business days / 5 business days. Adjust to
-  the client's coverage hours - an SLA you cannot staff is a liability, not a promise. Once
+  the client's coverage hours - an SLA you cannot staff is a liability, not a promise, and the
+  `helpdesk_workload` snapshot from step 3 is the staffing evidence a proposed ladder must
+  survive. Once
   agreed, the ladder in memory is the contract; the weekly cadence diffs
   `helpdesk_automations_get.sla` against it so dashboard drift cannot silently change what
   "attainment" measures.

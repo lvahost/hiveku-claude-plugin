@@ -9,9 +9,14 @@ for the full morning triage.
    persist it), plus `helpdesk_automations_get` for the config this sweep must respect: `sla`,
    `auto_assign`, `auto_close`, `auto_acknowledge`. That config is read-only via Olympus by design -
    a rule change is a pm_task routed to the dashboard, never a tool call. Demand that arrived
-   outside the widget (a call, a forwarded email) gets ticketed FIRST so the sweep works the real
-   queue: `crm_search_contacts({ search })` before `helpdesk_ticket_create` (an unknown
-   `contact_email` lazy-creates a duplicate contact; there is no `contact_phone` at all), and
+   outside the widget (a call, a text, a forwarded email) gets ticketed FIRST so the sweep works
+   the real queue: `crm_search_contacts({ search })` before `helpdesk_ticket_create` (an unknown
+   `contact_email` OR `contact_phone` lazy-creates a duplicate contact - resolution precedence is
+   `crm_contact_id` → `contact_email` → `contact_phone`, one required; phones normalize to E.164
+   before lookup, and an ambiguous phone match resolves to the OLDEST contact and says so via
+   `contact_resolution { matched_by: "phone", ambiguous: true }` in the 201 body → propose
+   `crm_contact_merge`, never ignore the flag; pass `channel: "sms"` for a texter, because
+   channel defaults to email even on a phone-resolved ticket), and
    confirm with the user before creating - the create fires the account's auto-acknowledge/
    auto-assign/SLA automations and can email the customer on its own.
 2. Breaches first: `helpdesk_tickets_overdue({ kind: "first_response", limit: 500 })` then
@@ -19,14 +24,22 @@ for the full morning triage.
    is silent - a capped list reads as a healthy queue, so flag any list that returns at exactly its
    limit. Missed reply windows are the breaches customers feel; nothing else matters until every
    ticket here has a reply drafted (step 6) or an owner. This tool excludes resolved/closed - it
-   shows current fires only and cannot compute last month's attainment number.
-3. New and unassigned: `helpdesk_ticket_list({ status: "open", sort: "created" })`, paged with
-   `page`/`limit` until a short page returns - report the count you enumerated, never a page size.
-   Filter client-side for a null assignee: there is NO unassigned filter, and an invented
-   `unassigned: true` is silently dropped, so the call succeeds and hands you the whole open list,
-   which you then misreport as the unassigned queue. Set priority against the rubric
+   shows current fires only; the attainment number (resolved tickets included, whole-window
+   counts, met/(met+breached) with the excluded no_sla and pending counts reported beside it) is
+   `helpdesk_sla_history` - the weekly-checkup and monthly-report read, not part of this sweep.
+3. New and unassigned: `helpdesk_workload` first - per-assignee open/pending and
+   currently-breached counts plus `oldest_open_at`, with the null group as the unassigned bucket
+   (the count the list API cannot filter for; whole-table aggregates, never page-limited;
+   `queue_id` scopes to one queue). That is the staffing picture the routing below leans on, and
+   it retires counting the unassigned by hand. To enumerate WHICH tickets to route:
+   `helpdesk_ticket_list({ status: "open", sort: "created" })`, paged with
+   `page`/`limit` until a short page returns - report the count you enumerated, never a page size -
+   filtered client-side for a null assignee (there is NO unassigned filter, and an invented
+   `unassigned: true` is silently dropped, so the call succeeds and hands you the whole open
+   list), then reconciled against the workload bucket count. Set priority against the rubric
    (`helpdesk_ticket_set_priority`), then route: `helpdesk_ticket_assign({ id, assigned_to_id })`
-   for a human or `({ id, queue_id })` for a queue, whose strategy picks the agent
+   for a human - the workload table shows who already carries the most before you add to a pile -
+   or `({ id, queue_id })` for a queue, whose strategy picks the agent
    (`helpdesk_queues_list` shows strategy and member counts). The same misroute two mornings
    running is an automation gap - log it in step 8, do not keep hand-fixing it.
 4. Aging `pending`: `helpdesk_ticket_list({ status: "pending", sort: "last_activity" })`. Check

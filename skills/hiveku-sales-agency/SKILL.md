@@ -133,7 +133,12 @@ For each deal on the list:
 7. Persist honestly:
  - `crm_update_deal({ deal_id, stage_id, close_date, status, value })` - correct the stage if exit
      criteria were not actually met; move close_date to a real date (past-due close dates are
-     forecast lies). `stage_id` is a stage UUID from `crm_list_pipelines`, never a stage name.
+     forecast lies). When the update IS the close, it also carries the why: `lost_reason_code`
+     is the aggregatable enum (no_decision | price | competitor | timing | no_budget | bad_fit |
+     ghosted | other - an unknown code is a 400 listing the vocabulary, never clamped), and
+     `lost_reason` / `won_reason` are free-text prose (max 500 chars; 400 above, never
+     truncated; pass null to clear any of the three).
+     `stage_id` is a stage UUID from `crm_list_pipelines`, never a stage name.
      There is no owner field on a deal: reassignment happens on the contact
      (`crm_update_contact({ contact_id, owner_id })`, a public_users UUID from `crm_list_users`).
  - `crm_create_activity` - log the review and the decided next step.
@@ -155,9 +160,18 @@ For each deal on the list:
   intervention or a downgrade - never silence.
 - Close-date discipline: no close date more than 90 days out on an active deal without justification;
   any past-due close date is corrected the day it is noticed; three consecutive close-date pushes on
-  one deal = flag to the owner as a probable no-decision.
-- Dead is dead: deals with no path forward get closed-lost with a reason logged via
-  `crm_create_activity`, not parked in stage 1. Clean losses make the funnel report meaningful.
+  one deal = flag to the owner as a probable no-decision - and when it dies that way, close it
+  with `lost_reason_code: "no_decision"`, the code the loss report exists to make visible.
+- Dead is dead: deals with no path forward get closed-lost WITH THE CODE, not parked in
+  stage 1. The close-out discipline is no longer a free-text activity note: set
+  `lost_reason_code` in the closing call itself - `crm_deal_move_stage` accepts
+  `lost_reason_code` and free-text `lost_reason` when the DESTINATION is a closing stage, the
+  moment the rep actually knows; on a non-closing move the loss fields are NOT written and the
+  response says `loss_fields_ignored: true`, so a "reason" attached to an early-stage move
+  recorded nothing - set it via `crm_update_deal` after the deal actually closes. The
+  free-text prose and the `crm_create_activity` note still carry the story; the CODE is what
+  `crm_report_loss_reasons` can aggregate, and a close without one is tomorrow's uncoded
+  bucket. Clean, coded losses make the funnel report meaningful.
 
 ## 1b. WARM WEBSITE VISITORS (highest-intent leads in the building)
 `analytics_visitors({ has_icp_match: "true", sort_by: "icp_confidence" })` - visitors on the
@@ -274,10 +288,13 @@ Friday:
 - [ ] Reminder audit: `crm_reminder_list({ status: "scheduled" })` - cancel any pointing at
       closed or dead deals (`crm_reminder_cancel`).
 - [ ] Gone-cold sweep (`crm_contacts_gone_cold`) - queue next week's re-engagement drafts.
-- [ ] Note wins/losses + reasons via `crm_create_activity`; feed durable lessons to `memory_create`,
+- [ ] Close-out check: every deal closed this week carries its code - `lost_reason_code` set at
+      the closing stage move (or via `crm_update_deal` after), `won_reason` on the wins; the
+      `crm_create_activity` note carries the narrative. Feed durable lessons to `memory_create`,
       and sequence copy verdicts to `outbound_record_sequence_learning`.
-Monthly: hygiene sweep (duplicates, missing fields), monthly report
-(`references/forecasting-reporting.md`), template review (`crm_list_email_templates`).
+Monthly: hygiene sweep (duplicates, missing fields), loss-reason review
+(`crm_report_loss_reasons` - recipe and caveats in `references/forecasting-reporting.md`),
+monthly report (same file), template review (`crm_list_email_templates`).
 
 ### Escalate to the owner immediately when
 - Weighted forecast drops more than 15% week-over-week, or more than 25% in a month.

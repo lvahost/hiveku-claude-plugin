@@ -66,11 +66,12 @@ artifacts; no production without a calendar slot and brief)?
 - `references/brand-foundation-api.md` - before creating, enriching, or purging any brand
   guide, avatar, journey, or grid (seed call, populate grounding, field traps).
 - `references/site-publishing.md` - before publishing to a site, taking a page down, refreshing
-  a live piece, importing CMS entries, minting a client share link, or category/content-template
-  work (the content->CMS bridge, versions, the content_schedule truth).
+  a live piece, importing CMS entries, minting a client share link, reading or answering client
+  comments on a shared draft, or category/content-template work (the content->CMS bridge,
+  versions, the content_schedule truth, the review thread).
 - `references/email-distribution.md` - before building, sending, cancelling, or reporting on
   any email campaign, and before the client-report rail (gates, ladder, CAN-SPAM, template
-  stores, metrics limitation, marketing_report_* mechanics).
+  stores, the metrics/by_variant contract, marketing_report_* mechanics).
 - `references/media-and-visuals.md` - before generating, registering, attaching, or deleting
   media, and before any video work (registration tree, Creative Studio, video gates).
 
@@ -184,7 +185,13 @@ Per piece, in order:
    review, not just a verbal yes in this chat. `content_share_link_create` mints a PUBLIC
    no-login review URL exposing the full body - mint it only when the user wants the draft to
    leave the building; `content_share_links_list` first (creation silently reuses an existing
-   link). Traps in `references/site-publishing.md`.
+   link). Feedback comes BACK through the same artifact: share-link reviewers leave comments on
+   the item's review thread - sweep them account-wide with `content_comments_recent` - and that
+   feedback can reach an automation: a workflow on the `content.comment_created` trigger
+   notifies however it says, so offer `/hiveku:automate` to wire one. Two warnings ride along:
+   commenting itself notifies NOBODY unless such a workflow exists (the comment otherwise waits
+   for a human to open the Collaboration panel), and the thread is CLIENT-VISIBLE - never an
+   internal note. Traps and the full loop in `references/site-publishing.md`.
 
 ## Play 4 - Distribution (one pillar, many surfaces)
 
@@ -238,8 +245,8 @@ Monthly at minimum; weekly glance during active campaigns.
 4. **Social performance:** `social_post_sync_analytics` for fresh numbers, then
    `social_analytics_summary` for the rollup. The top 10 percent of posts - those angles reuse.
 5. **Email performance:** delivery review via `email_campaign_metrics` (sent vs skipped_*
-   buckets ONLY - no opens or clicks in it); engagement only where `email_logs_list` covers the
-   send. The canonical limitation statement is in `references/email-distribution.md` - load it
+   buckets; on a variant-carrying campaign `by_variant` adds per-variant opens and clicks);
+   engagement elsewhere only where `email_logs_list` covers the send. The canonical limitation statement is in `references/email-distribution.md` - load it
    before reporting any email number.
 6. **Refresh cycle:** `seo_content_decay` finds previously-ranking pages losing clicks. For
    decayed winners, UPDATE IN PLACE - the same URL keeps the authority; a new URL starts from
@@ -261,7 +268,8 @@ Monthly at minimum; weekly glance during active campaigns.
 
 1. Pipeline counts: `content_list` by status vs plan. Flag anything stuck in draft 7+ days past
    its calendar slot; a second week stuck escalates into a PM task via `content_link_tasks`
-   instead of re-flagging forever.
+   instead of re-flagging forever. Sweep `content_comments_recent` since last week's review - a
+   draft stuck WITH an unanswered client comment is stuck on you, not the client.
 2. Next week's calendar: `content_schedule_list` shows RECORDED intent only (a pending row past
    its date was never picked up, not failed); confirm each piece has a finished draft, visuals,
    derivatives queued, and someone running the Play 4 publish on the day.
@@ -281,7 +289,7 @@ trap (keep the report id or you cannot address the report again) are there.
 
 Content: (1) published inventory with type, avatar, stage, cluster; (2) performance per piece -
 `content_page_views_get` + `analytics_pages` traffic, social reach/engagement, email delivery
-numbers, engagement only where the log covers the send - disclosing the sample on every
+numbers, engagement only where the log or a by_variant split covers the send - disclosing the sample on every
 aggregate (N of M, how chosen, what was excluded: "engagement reported for 14 of 22 sends");
 a fabricated open rate in a client report is worse than a missing one; (3) the updated coverage
 matrix; (4) refresh and consolidation actions; (5) next month's calendar with the reasoning.

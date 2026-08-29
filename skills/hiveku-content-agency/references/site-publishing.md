@@ -1,7 +1,8 @@
 # On-site publishing, versions, categories, and share links
 
 Load this file before publishing content to a Hiveku site, taking a page down, refreshing a live
-piece, importing existing CMS entries, minting a client share link, or working with categories.
+piece, importing existing CMS entries, minting a client share link, reading or answering client
+feedback on a shared draft, or working with categories.
 
 ## The content -> CMS bridge (the canonical publish lane)
 
@@ -114,3 +115,37 @@ previous token STAYS LIVE until you revoke it. `content_share_link_revoke` kills
 SHARE-LINK id (not the content id); a 404 means nothing was revoked - re-read the listing.
 Expired links are still listed (the filter is revoked-only) - check `expires_at` yourself before
 telling anyone a link works.
+
+## The review thread (feedback comes back through the share link)
+
+A reviewer holding the share link can leave comments; they land on the item's review thread and
+close the loop the sign-off artifact opens.
+
+- **`content_comments_recent`** - the cross-item digest read ("what feedback landed since I
+  last looked"): every comment across ALL of the account's marketing content items, newest
+  first, each row carrying its joined `content_item` (id, title, content_type) so a digest can
+  say WHICH draft got the comment. `since` filters `created_at` with a STRICT greater-than -
+  passing the created_at of the last comment you processed will not return it again (the
+  resume cursor); an unparseable `since` is a 400, never silently ignored. `source` is derived
+  ONLY from `share_link_id`: `'share-link'` = a public share-link reviewer (the client-feedback
+  path), `'in-app'` = a team member OR an API-key agent - `user_name` is the only signal which.
+  `user_email` is OMITTED from the object entirely when absent (not null) - read it
+  defensively. An unknown or other-tenant `content_item_id` filter matches zero rows and
+  answers 200 with an empty array, NOT a 404. `content_comments_list` is the one-item thread
+  read, oldest first.
+- **`content_comment_create`** appends one comment to an item's thread. The byline is the fixed
+  literal 'Olympus Agent' and cannot be supplied (a caller-chosen byline on a client-visible
+  thread is an impersonation primitive); comment_text is trimmed, required, max 4000 chars;
+  every row is created 'open', and there is NO edit, resolve, or delete verb - a comment cannot
+  be corrected or withdrawn, so draft it like the client copy it is.
+- **Notification truth: commenting itself notifies NOBODY.** After the row is written, a
+  `content.comment_created` workflow trigger fires fire-and-forget
+  (`contentCommentCreatedTrigger` nodes, filterable by source) - an account with an enabled
+  workflow on that trigger is notified however that workflow says, and an account WITHOUT one
+  is notified of nothing: the comment sits until a human next opens the Collaboration panel on
+  that item. Never report that a comment alerted anyone unless such a workflow is known to
+  exist - and offer `/hiveku:automate` to wire one, so client feedback stops being a silent
+  letterbox.
+- **THE THREAD IS CLIENT-VISIBLE.** Every row renders to anyone holding a live share link on
+  the item - nothing here is an internal note. Internal production notes go to PM tasks or
+  memory, never into the thread.

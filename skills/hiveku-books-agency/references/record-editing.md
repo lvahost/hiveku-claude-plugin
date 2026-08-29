@@ -1,7 +1,7 @@
 # Record editing and deletion - field-level semantics
 
-Load this before editing or deleting a vendor, payroll member, bill, expense category or time
-entry. Every claim below is from the tools' registered descriptions. Two house rules recur:
+Load this before editing or deleting a vendor, payroll member, bill, bill attachment, expense
+category or time entry. Every claim below is from the tools' registered descriptions. Two house rules recur:
 unknown keys are silently stripped by the Zod parse (200 with nothing changed - re-read the row
 to verify a field moved), and no delete takes a confirm field (the route writes on the first
 call, so the confirmation is yours to run).
@@ -85,7 +85,11 @@ call, so the confirmation is yours to run).
   (-> open; `approve: false` rejects back to draft; the route accepts **both** `draft` and
   `submitted`, so a draft can be approved without ever being submitted - do that only on the
   owner's word; any other status returns 409 `Cannot approve a bill in status "<x>"`);
-  `accounting_bill_void({ bill_id, reason })` - only while `amount_paid_cents` is 0.
+  `accounting_bill_void({ bill_id, reason })` - only while `amount_paid_cents` is 0;
+  `accounting_payment_reverse` can walk a paid bill back to that state one payment at a time
+  (each reversal writes an offsetting negative row, restores balance and status in the same
+  transaction, requires a `reason`, and works exactly once per payment - a second attempt is
+  a 409).
 - `accounting_bill_update({ bill_id, ... })` - editable ONLY while status is
   draft/submitted/approved/open AND `amount_paid_cents` is 0; anything else 409s telling you
   to duplicate the bill. **`line_items` REPLACES the whole set in one transaction**: every
@@ -104,11 +108,38 @@ call, so the confirmation is yours to run).
   200, nothing changed); status moves only through submit/approve/void. Payments are not in
   this response - `accounting_bill_get` for those.
 - `accounting_bill_delete({ bill_id })` - SOFT-delete, refused 409 once `amount_paid_cents` is
-  above 0 (void a paid bill's fix path does not exist; nothing removes a paid bill). NO status
+  above 0 (a paid bill's fix path is now `accounting_payment_reverse` per payment until the
+  paid total is zero, then void - delete still never touches a paid bill). NO status
   guard otherwise: draft, approved and already-voided delete the same way. Effectively
   irreversible: no route sets `deleted_at` back. Afterwards the bill leaves list/get and stops
   counting toward AP aging (a draft never counted). The consumed `bill_number` is never
   reused. P&L unaffected (cash basis; a deletable bill has no payments).
+
+## Bill attachments (receipts / source documents)
+
+- `attachment_count` rides every `accounting_bill_list` and `accounting_bill_get` row, so the
+  no-source-doc-no-approval gate reads for free; `accounting_bill_attachment_list` is only
+  needed to see the documents themselves. It returns them newest first: id, `bill_id`,
+  `file_name`, `file_type`, `file_size` (bytes), `cdn_url` (the download link),
+  `uploaded_by_user_id` (null for agent uploads) and `created_at`. An unknown or deleted
+  bill id is a 404.
+- `accounting_bill_attachment_create({ bill_id, file_name, content })` - `content` is base64
+  (a data-URI prefix is stripped), max 15MB. PDF and image receipts ONLY: application/pdf,
+  image/jpeg, image/png, image/webp, image/heic; `file_type` is inferred from the file_name
+  extension when omitted, and anything else is a 400. Works on any non-deleted bill
+  REGARDLESS of status - a paid bill can still receive its receipt after the fact. The file
+  lands in S3 under `accounting/bills/<bill_id>/` with a timestamp+uuid uniquifier, so
+  uploading the same file twice stores TWO attachments rather than overwriting (only literal
+  retries of the same call are deduped by the idempotency layer) - list first when unsure
+  what is already there. `uploaded_by_user_id` is null in the service-key context. Returns
+  the created row with its `cdn_url`.
+- `accounting_bill_attachment_delete` - removes ONE attachment, by explicit attachment id
+  from the list; there is no bulk or pattern form. The DB row is deleted first, then the S3
+  object best-effort, so the worst failure mode is an orphaned file in storage, never a
+  dangling row in the books. Destructive and IRREVERSIBLE - no undelete route exists - and
+  the tool's own contract says confirm with the human first, especially where the close
+  discipline treats the receipt as the approval evidence. An id that does not belong to this
+  bill and account is a 404.
 
 ## Expense categories
 

@@ -15,7 +15,11 @@ Investigate with the read surface below - note that `email_audience_preview` and
 `email_campaign_metrics` are POST in the registry (reports that compute server-side); they are
 reads all the same, and nothing outside this list is:
 - Content: existing content, calendar, and gaps - what is decaying or missing for the target
-  keywords/topics.
+  keywords/topics - plus the feedback loop: `content_comments_recent` for client comments on
+  shared drafts (`source: 'share-link'` is the client path; `since` is a strict greater-than on
+  created_at). An unanswered client comment is a plan item, and if new comments notify nobody
+  (they don't, unless a workflow on the `content.comment_created` trigger exists), the plan
+  names `/hiveku:automate` to wire one - you do not build it.
 - Social: `social_list_accounts` (connection health per platform), scheduled vs published, and
   performance reads - cadence gaps and top/bottom posts.
 - Email: `marketing_setup_status` (marketing enabled, not paused, SES provisioned, verified domain,
@@ -26,10 +30,13 @@ reads all the same, and nothing outside this list is:
   first and true on the second. Suspension is the one gate they share, so they cannot disagree about
   it. Report the `suspension` block when either is false, since only Hiveku staff can lift one. Then audiences
   (`email_audience_list`, `email_audience_preview` for real deliverable sizes) and delivery review
-  from `email_campaign_metrics` - that tool returns ONLY a by_status count of send rows (sent /
-  failed / skipped_*); it has NO open, click, delivery or conversion data. Do not report an open or
-  click rate from it. Engagement, where it exists at all, is `email_logs_list` (no campaign filter,
-  500-row cap) or the dashboard - say which, or say the number is unavailable.
+  from `email_campaign_metrics` - a by_status count of send rows (sent / failed / skipped_*),
+  plus `by_variant` (per-variant sent / skipped / opened / clicked) ONLY on campaigns carrying
+  variant data (an N-way `variants` test or the legacy ab_test_enabled pair) - so a per-variant
+  open or click rate IS reportable there, and a finished split test belongs in the plan's
+  evidence. A campaign without variant data still has NO open, click, delivery or conversion
+  numbers in that tool; its engagement, where it exists at all, is `email_logs_list` (no campaign
+  filter, 500-row cap) or the dashboard - say which, or say the number is unavailable.
 
 Before proposing new content, check it against what already ranks - a plan drafted blind to
 existing rankings cannibalizes the pages already winning; flag the overlap for `hiveku-seo-analyst`

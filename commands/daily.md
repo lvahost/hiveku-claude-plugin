@@ -14,7 +14,7 @@ operator should DO, not a data dump.
    webhook-health / scope-drift / compliance alerts, voice/billing/deploy-health warnings, and
    briefing suggestions. One call, no arguments: the default status filter `new,seen` IS the open
    queue. Severity vocabulary is `info | suggestion | urgent` - nothing else exists, and if you
-   filter on it, pass one value per call. `urgent` rows lead the brief - the platform already
+   filter on it, pass one value per call. `urgent` rows go right below any fresh client comments (step 3) - the platform already
    decided they can't wait; `suggestion` rows fold into the department bullet they belong to
    (a pacing suggestion goes in the PPC bullet); `info` is skimmable. Before acting on an item,
    `agent_inbox_get` it - the full item carries the markdown body and machine metadata (connection
@@ -24,11 +24,25 @@ operator should DO, not a data dump.
    Resolving never executes the item's action and never fixes the cause, and deduped producers
    re-file an alert closed unfixed. An empty queue is worth one line ("no staged alerts"), not
    silence.
-3. **Check the signals are fresh.** Read `hiveku-data/STATUS.json` - its `fetched_at` tells you how old the
+3. **Sweep client feedback since the last brief - and LEAD with it.** `content_comments_recent({
+   since })` - one call, every marketing content item on the account, newest first, each row
+   carrying its joined `content_item` (id, title, content_type) so the brief names the draft, not
+   a UUID: "the client left 3 comments on the March draft" is a lead bullet, not a footnote.
+   `since` is a STRICT greater-than on `created_at` - passing the created_at of the last comment
+   the previous brief processed will not return it again, so that timestamp is the resume cursor;
+   an unparseable `since` is a 400, never silently ignored. `source: 'share-link'` is the
+   client-feedback path (a public share-link reviewer); `'in-app'` is a team member OR an API-key
+   agent - `user_name` is the only signal which. `user_email` is OMITTED from the object entirely
+   when absent (not null) - read it defensively. The thread is CLIENT-VISIBLE - anyone holding a
+   live share link sees every row - so a reply is client copy, never an internal note. A comment
+   nobody answered since the last brief is an action item, and if new comments notify nobody
+   (they don't, unless a workflow on the `content.comment_created` trigger exists), offer to wire
+   one via `/hiveku:automate`.
+4. **Check the signals are fresh.** Read `hiveku-data/STATUS.json` - its `fetched_at` tells you how old the
    local data is, and anything under `failed` was NOT retrieved (say so; don't read an empty file as
    "nothing there"). If it's stale or missing, tell the operator to run `/hiveku:pull --stale 12` first, or
    pull the specific department you need before briefing on it.
-4. **Scan for what moved**, from the local `hiveku-data/<dept>/` files and, where a number must be current,
+5. **Scan for what moved**, from the local `hiveku-data/<dept>/` files and, where a number must be current,
    the live tools:
  - CRM: new leads, deals advancing or stalling, follow-ups due today.
  - SEO: ranking movements, new content gaps, anything decaying.
@@ -59,10 +73,10 @@ operator should DO, not a data dump.
      `workflow_stranded_list({ workflow_id })` is the only surface for that, and it takes ONE workflow
      id, so run it against a workflow you already have reason to suspect. There is no account-wide
      stranded sweep.
-5. **Write the brief:** 3–7 bullets of "here's what matters and why," each with the ONE next action. Put
-   any `urgent` inbox alert from step 2 and anything time-sensitive (a deal, a breach, a pacing miss)
-   first.
-6. **Offer to act.** For each action, name the tool or the `/hiveku:*` command that does it. Do not take a
+6. **Write the brief:** 3–7 bullets of "here's what matters and why," each with the ONE next action. Client
+   comments from step 3 lead, then any `urgent` inbox alert from step 2 and anything
+   time-sensitive (a deal, a breach, a pacing miss).
+7. **Offer to act.** For each action, name the tool or the `/hiveku:*` command that does it. Do not take a
    write action without confirming.
 
 Keep it short enough to read with coffee. This is a standup, not a report.

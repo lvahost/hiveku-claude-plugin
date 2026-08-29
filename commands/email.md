@@ -101,10 +101,17 @@ verbatim; never claim something sent without checking.
    stays editable in the visual builder, which pasted `compiled_html` does not.
 4. **Draft:** `email_campaign_create({ name, subject, from_email, audience_id, ... })` - those four
    are required - then read back with `email_campaign_get`.
- - Subject split test: `ab_test_enabled: true` + `ab_subject_b` (on create or update). Assignment is
-     a flat 50/50 at materialization and it tests the SUBJECT ONLY - no body split, no auto-promotion
-     of a winner, and `email_campaign_metrics` does NOT break results out by variant. Plan to read the
-     result in the dashboard and tell the client that up front; never promise a tool-side readout.
+ - Split test - offer it on any send with a real hypothesis. Two mechanisms, MUTUALLY EXCLUSIVE:
+     pass one, never both on the same campaign.
+     - `variants` (v2 - prefer it): 2-5 weighted variants on create or update, each with its own
+       subject and an optional from_name, assigned deterministically per recipient. Results are
+       tool-readable now: `email_campaign_metrics` returns `by_variant` for variant-carrying
+       campaigns (step 8) - per-variant opens and clicks CAN be reported.
+     - Legacy `ab_test_enabled: true` + `ab_subject_b`: flat 50/50 at materialization, SUBJECT
+       ONLY. It also gets `by_variant` in metrics.
+     Neither does a body split or auto-promotes a winner - promotion is a decision you bring back
+     to the user. And variants are NOT copied by `email_campaign_duplicate`: a cloned winner needs
+     its split re-attached (or deliberately dropped) before it goes back through the ladder.
  - `send_in_recipient_tz: true` delivers at the scheduled wall-clock time in each recipient's own
      timezone (contacts with no timezone on file fall back to the campaign's scheduled_for). Offer it
      on any send where local time-of-day matters.
@@ -127,18 +134,25 @@ verbatim; never claim something sent without checking.
    returns status but NOT total_sent - that field is not in the response, do not look for it. Verify
    the send landed with `email_campaign_metrics({ id })`: status must be 'sent' AND `by_status.sent`
    must be > 0. A 'sent' campaign with `by_status.sent: 0` reached NOBODY.
-8. **After:** `email_campaign_metrics({ id })` returns ONLY `{ campaign_id, status, by_status, total }`
- - a count of the send rows per status (queued / sending / sent / failed / skipped_suppressed /
-   skipped_unsubscribed / skipped_frequency_cap). It has NO open, click, delivery, bounce or
-   conversion data - older builds of the tool description promise those counters, and they do not
-   exist. NEVER report an open or click rate from it, and never break it out by A/B variant.
+8. **After:** `email_campaign_metrics({ id })` returns `{ campaign_id, status, by_status, total,
+   by_variant? }` - by_status counts the send rows per status (queued / sending / sent / failed /
+   skipped_suppressed / skipped_unsubscribed / skipped_frequency_cap). Campaigns that carry
+   variant data (an N-way `variants` test, or the legacy ab_test_enabled pair) ALSO return
+   `by_variant: [{ variant, subject, sent, skipped, opened, clicked }]` - per-variant opens and
+   clicks derived from email_events, so a per-variant open or click rate CAN be reported from
+   this tool. The limits that remain: campaigns WITHOUT variant data return no by_variant and
+   still have NO open, click, delivery, bounce, complaint or unsubscribe numbers here - do not
+   report engagement rates for those from this tool - and there is no campaign-level
+   delivered/bounced/complained breakdown in either case.
  - Under-delivered? The skipped_* buckets are the answer. A large skipped_frequency_cap means the
      7-day cap ate the difference (`marketing_frequency_cap_get`); skipped_suppressed /
      skipped_unsubscribed mean the list, not the send, is the problem.
- - Engagement: `email_logs_list({ limit: 500 })` returns per-message open_count, click_count,
-     delivered_at, bounced_at, complained_at. It has NO campaign filter and caps at 500 rows, so on a
-     send larger than 500 recipients you CANNOT compute a true campaign open or click rate from tools.
-     Say that and point the user at the dashboard - do not estimate.
+ - Engagement: on a variant-carrying campaign, `by_variant` above IS the engagement read -
+     per-variant opens and clicks at any list size, and judge by clicks (Apple MPP inflates opens).
+     On a campaign without variant data: `email_logs_list({ limit: 500 })` returns per-message
+     open_count, click_count, delivered_at, bounced_at, complained_at. It has NO campaign filter and
+     caps at 500 rows, so on a send larger than 500 recipients you CANNOT compute a true campaign
+     open or click rate from tools. Say that and point the user at the dashboard - do not estimate.
  - Why one specific person didn't get it: `email_suppression_list({ type })` names the individual
      addresses (bounce | complaint | manual | unsubscribe). `email_suppression_remove` REFUSES on
      sticky suppressions (hard bounces and spam complaints) - deliberate, and there is no way around

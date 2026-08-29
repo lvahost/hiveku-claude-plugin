@@ -1,0 +1,11 @@
+{
+  "account": "Brightside Fixtures",
+  "domain": "helpdesk",
+  "brand_voice": "warm, plain-spoken, no jargon, no exclamation marks",
+  "priority_rubric": "urgent = outage or data loss for the customer; high = a broken feature blocking daily work; normal = questions, requests, cosmetic issues",
+  "team": [
+    { "id": "agent_dana", "name": "Dana Whitfield" },
+    { "id": "agent_marco", "name": "Marco Ellis" }
+  ],
+  "memory_notes": "Ashford Dental is a reference customer - handle with extra care. Close-if-quiet window for pending tickets is 5 business days."
+}

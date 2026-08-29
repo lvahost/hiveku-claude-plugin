@@ -58,3 +58,16 @@ Close the loop in both systems, or the handoff evaporates:
 - On the CRM: `crm_create_activity` (type call) linked to the contact, so the relationship
   timeline the sales side reads shows the support call. A ticket-only trail leaves the account
   team blind to an angry customer they are about to upsell.
+
+## The other direction - a caller who needs a ticket
+
+A missed call or voicemail that needs follow-up becomes a ticket via
+`helpdesk_ticket_create({ contact_phone, channel: 'voice', ... })`. Resolution precedence is
+`crm_contact_id` -> `contact_email` -> `contact_phone`; phones are normalized to E.164 before
+lookup, and an unknown phone lazy-creates a contact with no email. Shared lines are real
+(there is deliberately NO unique index on phone), so a multi-match resolves to the OLDEST
+contact and the 201 body flags it with `contact_resolution { matched_by: 'phone', ambiguous:
+true }` - heal that with `crm_contact_merge` rather than leaving the caller's support history
+split across twin contacts. Pass `channel` explicitly: it defaults to `email` even on a
+phone-resolved ticket. The usual create cautions apply unchanged (confirm first; the create
+can auto-acknowledge on its own - see SKILL.md Play 1 step 0).

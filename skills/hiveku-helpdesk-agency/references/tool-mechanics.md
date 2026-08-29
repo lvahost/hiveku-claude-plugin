@@ -15,13 +15,22 @@ nothing, which reads as an empty queue on an account that is drowning. `set_stat
 `resolved_at` / `closed_at` on the flip, so never try to write those timestamps yourself.
 
 ## helpdesk_ticket_create
-`helpdesk_ticket_create({ subject, contact_email | crm_contact_id, channel, priority,
-first_message, queue_id, tags, source_meta })`. Pass exactly ONE of `crm_contact_id` /
-`contact_email` - an unknown email lazy-creates a contact with `lead_source='helpdesk'`, so
-search CRM contacts first (`crm_search_contacts({ search })` - full-text over first_name,
-last_name, email) or you duplicate a known customer. `first_message` attaches the customer's
-opening message in the same call (`first_message_direction` defaults to `inbound`). `channel`
-defaults to email, `priority` to normal. `source_meta` holds provider/thread_id for deduping
+`helpdesk_ticket_create({ subject, crm_contact_id | contact_email | contact_phone, channel,
+priority, first_message, queue_id, tags, source_meta })`. Contact resolution precedence:
+`crm_contact_id` -> `contact_email` -> `contact_phone` (one is required). An email or phone
+that isn't on file lazy-creates a contact with `lead_source='helpdesk'` (a phone-created
+contact has no email), so search CRM contacts first (`crm_search_contacts({ search })` -
+full-text over first_name, last_name, email) or you duplicate a known customer. The phone
+boundary is cross-channel identity: phones are normalized to E.164 before lookup, and multiple
+contacts can legitimately share a phone (shared office lines - there is deliberately NO unique
+index), so a multi-match resolves to the OLDEST contact and the 201 body includes
+`contact_resolution { matched_by: 'phone', ambiguous: true }` - use `crm_contact_merge` to heal
+the split rather than ignoring it. Two simultaneous tickets from the same unknown phone can
+race into twin contacts (same race the email branch has). `first_message` attaches the
+customer's opening message in the same call (`first_message_direction` defaults to `inbound`).
+`channel` defaults to email EVEN when resolving by `contact_phone` - pass `channel: 'sms'` when
+ticketing a texter (`'voice'` for a caller). `priority` defaults to normal; `tags` are
+free-form labels. `source_meta` holds provider/thread_id for deduping
 against an inbox. CONFIRM BEFORE CREATING: the create fires the `helpdesk_ticket_created`
 workflow trigger and runs the account's auto-acknowledge / auto-assign / SLA automations, so it
 can email the customer on its own. Read `helpdesk_automations_get` before back-filling anything
@@ -49,13 +58,45 @@ matching actual timestamp is missing; resolved and closed tickets are excluded. 
 to `both`; `limit` defaults to 100 and maxes at 500, and a truncated list looks like a healthy
 queue - always pass `limit: 500` and check whether the list came back at exactly its limit.
 Run `kind: 'first_response'` before `kind: 'resolve'`: missed reply windows are the breaches
-customers actually feel, and the two failures have different fixes.
+customers actually feel, and the two failures have different fixes. This tool shows LIVE
+breaches only - historical attainment, resolved tickets included, is `helpdesk_sla_history`
+below.
+
+## helpdesk_sla_history
+SLA attainment over a window - the historical complement to `helpdesk_tickets_overdue`.
+Includes ALL ticket statuses: a ticket that breached and was later resolved still counts as a
+breach, where overdue only shows live breaches - this is what makes last month's attainment
+provable instead of a dashboard rumor. The window is over `created_at`: `from`/`to` ISO
+datetimes, default trailing 30 days, max 92 days per call. Optional scoping by `assigned_to_id`
+or `queue_id`; `group_by: 'assignee' | 'queue'` adds per-group breakdowns. Each ticket is
+classified twice - first_response (`first_response_at` vs `first_response_due_at`) and resolve
+(`resolved_at` vs `resolve_due_at`) - as `met | breached | pending | no_sla`. HONESTY CONTRACT:
+attainment_pct = met/(met+breached); no_sla tickets (no SLA policy applied) and pending tickets
+(deadline not yet expired) are EXCLUDED from that denominator, and both counts are reported
+alongside the percentage so the exclusion is visible, never silent - quote them with every
+figure. `median_first_response_minutes` / `median_resolution_minutes` are computed only from
+tickets carrying the real timestamps - never imputed. Counts are whole-window, not
+page-limited, so the truncation trap does not apply here.
+
+## helpdesk_workload
+Per-agent staffing snapshot - the quantity read beside `helpdesk_csat_stats` (quality per
+assignee). For every assignee plus the unassigned bucket: open/pending counts,
+currently-breached SLA counts (same predicates as `helpdesk_tickets_overdue`: due date passed,
+actual timestamp missing, ticket still open/pending), and `oldest_open_at`. Counts are
+whole-table grouped aggregates, never page-limited. The unassigned bucket is the null-assignee
+view the ticket-list API cannot filter for - it retires the count-by-hand workaround of paging
+the open list and filtering client-side (that filter survives only to enumerate WHICH tickets
+to route; reconcile it against this bucket's count). Assignees whose user record is outside
+this account return `name: null` with the id - report those rows by id, do not drop them.
+Optional `queue_id` scopes every count to one queue.
 
 ## helpdesk_ticket_list
 Filters: status, priority, channel, `queue_id`, `assigned_to_id`, contact, company. `sort`
-accepts `last_activity` or `created` only. There is NO unassigned filter - filter client-side
-for a null assignee; an invented `unassigned: true` is silently dropped, so the call succeeds
-and hands you the whole open list which you then misreport as the unassigned queue. The list is
+accepts `last_activity` or `created` only. There is NO unassigned filter - an invented
+`unassigned: true` is silently dropped, so the call succeeds and hands you the whole open list
+which you then misreport as the unassigned queue. The unassigned COUNT comes from
+`helpdesk_workload` (its null group is the unassigned bucket); filter client-side for a null
+assignee only to enumerate which tickets to route, and reconcile against that count. The list is
 paged (`page` / `limit`): page until a short page comes back and report the count you actually
 enumerated, never a page size.
 

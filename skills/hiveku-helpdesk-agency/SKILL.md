@@ -96,10 +96,19 @@ approval of a description of the draft in place of the draft.
 ## Play 1 - Triage and the daily queue sweep (the core service)
 The play you run most. Order matters: protect SLA first, then reduce backlog.
 
-0. Log demand that arrived outside the widget first (a call, a forwarded email, a client
-   meeting), so the sweep works the real queue. `crm_search_contacts({ search })` BEFORE
+0. Log demand that arrived outside the widget first (a call, a text, a forwarded email, a
+   client meeting), so the sweep works the real queue. `crm_search_contacts({ search })` BEFORE
    creating - `helpdesk_ticket_create` with an unknown `contact_email` lazy-creates a duplicate
-   contact (remediation: `crm_contact_merge`, destructive, confirm both ids first). For a
+   contact (remediation: `crm_contact_merge`, destructive, confirm both ids first). Identity
+   resolves in precedence order `crm_contact_id` -> `contact_email` -> `contact_phone` (one is
+   required), so a texter or caller is ticketed by phone alone: the number is normalized to
+   E.164 before lookup, an unknown phone lazy-creates a contact with no email, and because
+   phones are legitimately shared (office lines - there is deliberately NO unique index) a
+   multi-match resolves to the OLDEST contact and says so in the 201 body via
+   `contact_resolution { matched_by: 'phone', ambiguous: true }` - heal that split with
+   `crm_contact_merge`, never ignore the flag. Channel still defaults to `email` even on a
+   phone-resolved ticket: pass `channel: 'sms'` for a texter, `channel: 'voice'` for a caller.
+   For a
    forwarded email get the real thread first (`gmail_parse_forward`,
    `gmail_search_messages({ q })` -> `gmail_get_thread`), store the thread id in `source_meta`,
    and dedupe by hand via `helpdesk_ticket_list_for_contact` - `helpdesk_ticket_list` has NO
@@ -112,11 +121,18 @@ The play you run most. Order matters: protect SLA first, then reduce backlog.
    The default limit is 100 and a truncated list looks like a healthy queue. Open each and
    either reply now (Play 2) or escalate (Play 5). Nothing else matters until this list is
    handled or has an owner.
-2. New and unassigned: `helpdesk_ticket_list({ status: 'open', sort: 'created' })`, filter
-   client-side for a null assignee - there is NO unassigned filter, and an invented
-   `unassigned: true` is silently dropped: the call succeeds and hands you the whole open list,
-   which you then misreport as the unassigned queue. Set priority against the rubric
-   (`helpdesk_ticket_set_priority`), then route (`helpdesk_ticket_assign`). A ticket in the
+2. New and unassigned: `helpdesk_workload` first - per-assignee open/pending and
+   currently-breached counts plus `oldest_open_at`, and its null group IS the unassigned
+   bucket, the null-assignee count the ticket-list API cannot filter for (whole-table
+   aggregates, never page-limited; `queue_id` scopes to one queue). That retires the old
+   count-by-hand workaround. To enumerate WHICH tickets to route you still pull
+   `helpdesk_ticket_list({ status: 'open', sort: 'created' })` and filter client-side for a
+   null assignee - there is NO unassigned filter on the list, and an invented
+   `unassigned: true` is silently dropped: the call succeeds and hands you the whole open list.
+   Reconcile what you enumerated against the workload bucket count before quoting it. Set
+   priority against the rubric (`helpdesk_ticket_set_priority`), then route
+   (`helpdesk_ticket_assign`) - the workload table shows who is already carrying the queue
+   before you add to anyone's pile. A ticket in the
    wrong queue is an automation gap - note it for Play 6.
 3. Aging `pending` tickets: quiet ones get a polite follow-up (Play 2) then a close - but check
    `auto_close` in `helpdesk_automations_get` first; the account may already sweep these on a
@@ -263,8 +279,9 @@ The structure that routes work is itself a deliverable you maintain.
 1. `helpdesk_tickets_overdue({ kind: 'first_response', limit: 500 })` then
    `({ kind: 'resolve', limit: 500 })` - clear or assign every breach before anything else.
    Never run it bare: the default limit is 100 and the truncation is invisible.
-2. `helpdesk_ticket_list({ status: 'open' })`, filter client-side for a null assignee -
-   prioritize and route.
+2. `helpdesk_workload` for the staffing picture and the unassigned-bucket count, then
+   `helpdesk_ticket_list({ status: 'open' })` filtered client-side for a null assignee to
+   enumerate the actual tickets - prioritize and route.
 3. Reply to what you own (Play 2): macro-first, brand-voice always, one confirmed send each,
    each verified in the thread. Always `helpdesk_ticket_send_reply`, never an outbound
    `add_message`.
@@ -280,17 +297,25 @@ The structure that routes work is itself a deliverable you maintain.
    or mistimed survey is a config problem, not customer sentiment.
 2. Backlog trend: `helpdesk_ticket_list` counts by status vs last week (page through; a single
    page is not a count) and the `helpdesk_tickets_overdue({ limit: 500 })` count. A rising
-   overdue count is a staffing or automation problem to name now, not at month end.
-3. SLA-config reconciliation: diff `sla` from `helpdesk_automations_get` against the agreed
+   overdue count is a staffing or automation problem to name now, not at month end - and
+   `helpdesk_workload` names WHO: per-assignee open/pending and currently-breached counts plus
+   the unassigned bucket, so "staffing problem" arrives with a person or a routing gap attached.
+3. SLA attainment, provably: `helpdesk_sla_history` (default trailing 30 days, `group_by:
+   'assignee'`) - the historical complement to `helpdesk_tickets_overdue`. It includes ALL
+   ticket statuses, so a ticket that breached and was later resolved still counts as a breach,
+   where overdue only ever shows live fires. Quote attainment_pct with its met+breached counts
+   AND the excluded no_sla/pending counts (the honesty contract - full wording in
+   `references/monthly-report.md`), week over week and per assignee.
+4. SLA-config reconciliation: diff `sla` from `helpdesk_automations_get` against the agreed
    ladder in the `helpdesk` memory document. Drift means every subsequent attainment figure
    measures the wrong promise - flag it the week it appears, reconcile via dashboard +
    `pm_tasks_create`, and record the change date so month-over-month attainment is never
    compared across two ladders (comparability gate, `references/monthly-report.md`).
-4. Contact-reason review: a new recurring reason with no macro or KB article = write one
+5. Contact-reason review: a new recurring reason with no macro or KB article = write one
    (Plays 3-4); a recurring product bug = `pm_tasks_create` with ticket ids as evidence.
-5. Macro and KB hygiene: anything made wrong by a product change gets updated before it
+6. Macro and KB hygiene: anything made wrong by a product change gets updated before it
    misinforms at scale.
-6. Pipeline: update/complete open support tasks; record durable decisions on the standing
+7. Pipeline: update/complete open support tasks; record durable decisions on the standing
    support memory (read-merge-`memory_update`, whole document).
 
 ## Monthly report (the artifact the retainer pays for)
@@ -299,8 +324,11 @@ the closed metric vocabulary (measured | partial | unknown | not_applicable), sa
 transparency, the comparability gate, the measurement-artifact checklist. Non-negotiables even
 without the reference loaded: every figure traces to a named tool call; a list at exactly its
 limit is a floor and is reported as one; a disabled `csat_survey` makes CSAT unknown - never
-zero, never a pass; no median-response-time, handle-time, KB-views, or survey-response-rate
-tool exists in this family, so those are dashboard numbers or absent, never invented. Persist
+zero, never a pass; SLA attainment and median first-response/resolution times come from
+`helpdesk_sla_history` (whole-window counts, resolved tickets included), quoted with the
+excluded no_sla/pending counts beside the percentage; no handle-time, KB-views, or
+survey-response-rate tool exists in this family, so those are dashboard numbers or absent,
+never invented. Persist
 as `memory_create({ type: 'memory', name: 'helpdesk-monthly-<yyyy-mm>' })`.
 
 ## Benchmarks and decision rules
@@ -329,7 +357,10 @@ as `memory_create({ type: 'memory', name: 'helpdesk-monthly-<yyyy-mm>' })`.
   anywhere) is dropped by the mapping layer - the call SUCCEEDS and returns something plausible
   and wrong. And `helpdesk_tickets_overdue` returns 100 by default while `helpdesk_ticket_list`
   pages - a capped list looks exactly like a healthy queue. Pass `limit: 500`, page to the end,
-  and check whether a list came back at exactly its limit before you quote it.
+  and check whether a list came back at exactly its limit before you quote it. The two
+  aggregate reads are exempt: `helpdesk_sla_history` counts the whole window and
+  `helpdesk_workload` the whole table, never page-limited - prefer them for any count you will
+  quote.
 - Log every material decision (an SLA change, a new escalation trigger, a retired queue) with
   `memory_create` (409 means it exists) or read-merge-`memory_update` - never a bare note, the
   full merged body. Recovery: `memory_list_versions` + `memory_restore_version`.

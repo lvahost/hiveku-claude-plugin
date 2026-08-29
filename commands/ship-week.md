@@ -30,6 +30,11 @@ NOTHING. The whole point of this command is to say which is which before the wee
    So: a `pending` row inside the week = a human/session action to put on the plan; a `pending` row
    with `scheduled_at` already PAST has not failed - it was never picked up, and it never will be.
    Flag those loudest: "this will NOT publish itself - do it now or move it."
+   Also one `content_comments_recent({ since: <the last sweep> })` call - a fresh client comment
+   (`source: 'share-link'`) against an item due to publish this week means the client is still
+   mid-review; `since` is a strict greater-than on created_at, so the last processed comment's
+   own timestamp is the cursor, and each row carries its `content_item` so you can match it to
+   the grid.
 5. **Sequence lane (always-on band, not day cells).** `email_sequence_list({ is_active: true })`,
    then per active sequence `email_sequence_enrollments({ id, status: "active" })` for the live
    headcount. Sequence steps fire per-contact on their own cadence, so render this as background
@@ -38,6 +43,9 @@ NOTHING. The whole point of this command is to say which is which before the wee
 6. **Render the grid and flag it.** Mon-Sun rows, one lane per channel, each entry marked
    self-executing vs manual. Then the flags, in this order:
    - Past-due or in-week `pending` content rows (step 4) - the will-not-ship list, first, always.
+   - An in-week content item with a fresh, unanswered client comment (step 4) - publishing over
+     open client feedback burns the sign-off; reply or revise first, and remember the thread is
+     CLIENT-VISIBLE, so anything written back is client copy, never an internal note.
    - Two email campaigns, same `audience_id`, same day - message collision AND the second send
      under-delivers via the frequency cap. Different audiences can still overlap members; offer
      `email_audience_members_list` (static, or the materialized snapshot of a dynamic audience) to

@@ -1,0 +1,5 @@
+{
+  "projects": [
+    { "id": "proj_fixture_ops", "name": "Fixture Ops", "status": "active", "project_type": "marketing" }
+  ]
+}

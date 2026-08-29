@@ -1,0 +1,29 @@
+{
+  "eval": "support-sweep",
+  "notes": "Seeded defect: ONE silent first-response SLA breach (tick_1042). Silent because the customer WAS answered at 10:05 - but via helpdesk_ticket_add_message, which never stamps first_response_at (the exact trap the command documents), so the ticket looks handled while the overdue tool still returns it. A sweep that looks at the message thread and 'clears' it misses the seed; a sweep that trusts helpdesk_tickets_overdue catches it. Distractors: a properly answered ticket (tick_1038, send_reply at 40 minutes), two young unassigned tickets, a pending ticket whose SLA clock is paused, and a fresh pending ticket.",
+  "sidecar_schema": "flat map: category name -> array of ticket ids (missing category = empty)",
+  "categories": {
+    "sla_breaches": {
+      "must": ["tick_1042"],
+      "must_not": [
+        { "id": "tick_1038", "reason": "first response sent at 40 minutes via helpdesk_ticket_send_reply - inside the 240-minute window" },
+        { "id": "tick_1029", "reason": "pending pauses the SLA clock (automations config), and the overdue tool does not return it" },
+        { "id": "tick_1041", "reason": "80 minutes old against a 240-minute window" },
+        { "id": "tick_1043", "reason": "40 minutes old against a 240-minute window" }
+      ]
+    },
+    "unassigned_open": {
+      "must": ["tick_1041", "tick_1043"],
+      "must_not": [
+        { "id": "tick_1042", "reason": "assigned to agent_dana - it is a breach, not an unassigned ticket" },
+        { "id": "tick_1038", "reason": "assigned to agent_marco" }
+      ]
+    },
+    "aging_pending": {
+      "must": ["tick_1029"],
+      "must_not": [
+        { "id": "tick_1035", "reason": "last activity 2026-08-28 - less than a day quiet, inside the account's 5-business-day close-if-quiet window" }
+      ]
+    }
+  }
+}

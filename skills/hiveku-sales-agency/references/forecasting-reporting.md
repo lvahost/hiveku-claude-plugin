@@ -28,6 +28,20 @@ reported), and unavailable is never zero.
   a date range. All three arguments are optional; omit pipeline_id to span every pipeline. This is
   the ONLY period-scoped movement source, so it is what verifies a bottleneck hypothesis (lots of
   entries into Proposal, few exits) and what you cite for load-bearing claims.
+- `crm_report_loss_reasons` - closed-lost deals over a window bucketed by `lost_reason_code`:
+  `rows` of { code, count, total_value } sorted count-desc, an `uncoded` bucket with its own
+  count and total_value, totals, and `lost_statuses_counted` (the account's is_lost-flagged
+  statuses plus the literal 'lost' / 'closed_lost' slugs - the echo tells you exactly what was
+  counted). This is where no-decision death becomes visible in AGGREGATE: one ghosted deal is
+  an anecdote; "no_decision + ghosted is 40% of lost dollars this quarter" is a coaching
+  agenda, and usually a bigger one than any competitor. Two honesty rules. First, the
+  `uncoded` bucket is MIGRATION DEBT - deals closed before the code existed, or closed
+  sloppily since - so report it as its own line ("N lost deals / $X carry no code"), never
+  fold it into 'other' and never omit it; a shrinking uncoded bucket is itself a
+  close-out-discipline metric worth tracking month over month. Second, the same dating caveat
+  as the win leaderboard: deals have no closed_at column, so the window filters updated_at - a
+  lost deal edited later re-enters newer windows; stage_history is the audit trail for exact
+  dates.
 - **Measurement artifacts before narratives.** Before any causal story (rep slump, market
   softening, ICP drift), rule out the instrument: unlogged activities make a worked pipeline read
   as a dead one (principle 3 discipline gap, not a market signal); `crm_rep_win_leaderboard` dates
@@ -56,7 +70,9 @@ reported), and unavailable is never zero.
 
 Structure, in markdown, saved to reports/ in the workspace AND persisted with `memory_create`
 (domain sales) so next month's report can cite the trend:
-1. Headline: pipeline created / advanced / won / lost this month (dollars and count). **Say which
+1. Headline: pipeline created / advanced / won / lost this month (dollars and count), and lost
+   dollars get their WHY: `crm_report_loss_reasons` by code, with the uncoded bucket as its own
+   line (updated_at-dated, like the leaderboard - say so). **Say which
    call produced each number.** Advanced comes from `crm_report_stage_transitions({ date_from,
    date_to })` - the only period-scoped movement read. Created / won / lost have no period-filtered
    endpoint: pull `crm_list_deals({ status, pipeline_id, limit })` and bucket the rows by their own

@@ -45,6 +45,23 @@ than the whole string - AP and AR word several of them differently and some carr
 - 409 `Duplicate idempotency key`. Match on exactly that prefix. AR returns it bare with no
   suffix; AP appends an EM DASH and "this payment was already recorded." Treat as already done,
   then re-read the record to confirm what is actually booked.
+- 409 on a second `accounting_payment_reverse` of the same payment - a payment reverses
+  exactly once, and the 409 means the offsetting row is already there. Re-read the bill; never
+  retry.
+
+## Reversing a booked AP payment
+
+`accounting_payment_reverse` (the explicit payment id plus a REQUIRED `reason`) is the
+correction rail for a wrong `accounting_bill_record_payment`: it writes an OFFSETTING negative
+payment row pointing at the original via `reversal_of_payment_id` - the original row is never
+edited or deleted and stays visible in the ledger, and the two rows net to zero in every SUM.
+It restores the bill's balance and status in the same transaction; when the paid total returns
+to zero the bill becomes voidable again. The `reason` is kept on the reversal row. A payment
+reverses exactly ONCE - a second attempt is a 409 (see the catalog). Treat the reversal as
+payment-grade: a named human's yes on that exact payment id, with the reason, one at a time,
+and re-read the bill afterwards to confirm the balance moved. There is NO AR equivalent -
+nothing in this surface reverses `accounting_invoice_record_payment`; a wrong AR payment is
+still a dashboard/database fix, and you say so.
 
 ## Retry doctrine
 

@@ -160,6 +160,20 @@ if they differ. Confirm with `get_account_info` before writing.
 
 Node 20 or newer. The plugin has **no dependencies** — nothing is installed when you add it.
 
+## Evals
+
+`evals/` holds v1 of the behavioral eval harness: two planted-defect fixtures
+(`/hiveku:ap-screen` books, `/hiveku:support-sweep` helpdesk) served by a mock
+MCP server, plus checkers that verify a run surfaced exactly the seeded
+defects, traced every report number to a tool result, and synthesized rather
+than restated. Deterministic layer: `node --test 'evals/self-test/*.test.mjs'`
+(no model, CI-safe). Model-in-the-loop: `bash evals/bin/run-eval.sh <case>` -
+it works against any gateway the environment points at, so the same evals run
+on non-Claude models. Honest scope: 2 of 84 commands, 0 of 9 agents - this
+proves the pattern, it does not claim coverage. `claude plugin eval` is
+early-access/org-gated and unavailable here, so the harness is plain
+executable fixtures; see `evals/README.md` for the design and migration path.
+
 ## License
 
 MIT — see [LICENSE](./LICENSE).

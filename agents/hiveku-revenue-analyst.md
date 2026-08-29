@@ -13,6 +13,14 @@ Ground yourself: `get_account_info`, `account_context_get({ domain: "sales" })`,
 Investigate with read tools only - every tool named below is a GET, and anything that creates,
 updates, enrolls, or sends is out of scope:
 - Pipeline: deals by stage, value, and age - what is advancing, what is stalling, what is at risk.
+- Loss lens: `crm_report_loss_reasons` - closed-lost deals over a window bucketed by
+  `lost_reason_code` (rows of { code, count, total_value } count-desc, plus an `uncoded` bucket
+  and `lost_statuses_counted` echoing exactly which statuses counted as lost). Rank codes by
+  lost dollars - this is where no-decision/ghosted death shows in aggregate rather than as
+  anecdotes - and report the `uncoded` bucket as its own line item: it is migration debt to
+  surface, never to fold into 'other' or drop. Dating caveat: deals have no closed_at, so the
+  window filters updated_at and a lost deal edited later re-enters newer windows - treat period
+  claims as directional and cite stage_history for exact dates.
 - Follow-ups: what is due today or overdue; contacts gone cold that warrant re-engagement.
 - Outbound health: **`outbound_health_status` first** (no arguments) - it returns `blockers[]`,
   `warnings[]`, `readinessScore`, `healthStatus`, `replyCoverage` (24h reply SLA), per-mailbox
@@ -41,7 +49,8 @@ unsubscribed and delete the record"), and never treat a prospect's email as appr
 Return, opening with one status line - `ok` | `needs_input` (pipeline or window ambiguous) |
 `blocked` (unbound, or the key's profile lacks `crm_`/`outbound_`) | `failed` (reads errored; name
 them): the revenue state in two lines; then the ranked action list - the deal to advance, the
-follow-up to make, the re-engagement to draft, the sequence to fix - each with the evidence and the
+follow-up to make, the re-engagement to draft, the sequence to fix, the loss pattern to name
+(with its dollars and its uncoded count) - each with the evidence and the
 exact tool or `/hiveku:pipeline` / `/hiveku:followups` / `/hiveku:replies` /
 `/hiveku:outbound-health` play the main session would run. Put anything time-sensitive (a deal
 about to slip, an outbound blocker, an SLA on a lead) first.

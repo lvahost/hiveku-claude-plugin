@@ -13,9 +13,11 @@ Any endpoint beyond these: (verify against current provider docs) - do not inven
 
 **SmartLead is the ONLY Hiveku cold-email provider.** The dashboard connect form hardcodes
 `provider: 'smartlead'`, and `cold_email_integrations` is unique on (account, provider) with
-SmartLead the only writer. The two CREATE tools are the ones that 412 `unsupported_provider` on
-anything else - `outbound_create_campaign` and `outbound_create_lead`; those are the only two
-routes carrying that gate. `outbound_update_lead` has NO provider gate (it applies the local
+SmartLead the only writer. The CREATE tools are the ones that 412 `unsupported_provider` on
+anything else - `outbound_create_campaign` and `outbound_create_lead` carry that gate
+(verified), and `outbound_leads_bulk_create` is likewise SmartLead-only by design (its
+100-lead cap IS SmartLead's batch cap), though its exact refusal code on a non-SmartLead
+campaign is unverified. `outbound_update_lead` has NO provider gate (it applies the local
 update and returns 200 with a `warning`), and the drafts, objections, sales-asset and
 sequence-learning tools are pure Hiveku-side tables with no provider check at all.
 

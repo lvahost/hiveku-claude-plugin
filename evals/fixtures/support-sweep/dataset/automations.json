@@ -1,0 +1,10 @@
+{
+  "sla": {
+    "first_response_minutes": 240,
+    "resolve_minutes": 2880,
+    "pending_pauses_clock": true
+  },
+  "auto_assign": false,
+  "auto_close": false,
+  "auto_acknowledge": true
+}
