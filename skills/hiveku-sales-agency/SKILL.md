@@ -118,6 +118,8 @@ For each deal on the list:
    to send, or a disqualify). "Follow up" is not a next step; "send pricing recap referencing their
    security question, ask for Thursday call" is.
 6. Booked a meeting? Propose times with `calendar_free_slots` - it walks the window in
+
+**Before and after every booked call:** `/hiveku:call-prep` assembles the story (contact, deal, last thread, open tickets) before the meeting; `/hiveku:call-capture` turns raw notes or a transcript into confirmed CRM writes after it. Neither sends anything.
    duration_minutes increments, dropping any candidate that overlaps a busy interval, falls outside
    business hours, or lands on a weekend (when weekdays_only=true) - or check a specific slot with
    `crm_calendar_list({ time_min, time_max, q })`. Then `crm_calendar_create({ summary, starts_at,

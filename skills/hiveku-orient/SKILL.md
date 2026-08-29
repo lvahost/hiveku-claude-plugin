@@ -1,6 +1,6 @@
 ---
 name: hiveku-orient
-description: "How to operate a Hiveku account safely from Claude Code - read this FIRST before any Hiveku work. Covers which account you are on, profile-scoped keys, the you-are-not-the-only-writer rule, scratch and secrets hygiene, department agents, PM tasks, the approval and escalation rails, and the Owner update. Also load this for any risky ask before touching a tool: wipe / reset / clear out a department's memory, delete memory entries, skip the dry run, force or blind-overwrite a tree-replace push (delete_missing), approve or reject everything pending in the approval queue, restore a checkpoint over current work, or ship to a client's live site without checks."
+description: "How to operate a Hiveku account safely from Claude Code - read this FIRST before any Hiveku work. Covers which account you are on, profile-scoped keys, the you-are-not-the-only-writer rule, scratch and secrets hygiene, department agents, PM tasks, the approval and escalation rails, the Owner update, and the end-of-session memory write-back. Also load this for any risky ask before touching a tool: wipe / reset / clear out a department's memory, delete memory entries, skip the dry run, force or blind-overwrite a tree-replace push (delete_missing), approve or reject everything pending in the approval queue, restore a checkpoint over current work, or ship to a client's live site without checks."
 ---
 
 Read and follow this before using any Hiveku tool.
@@ -377,6 +377,33 @@ off the pm_projects field.
 single-call health snapshot with counts and last-activity timestamps for memory, Mission Control,
 PM tasks, sites, MCP keys and CRM contacts, plus derived `drift_flags[]` - it tells you which of
 the surfaces above is being neglected before you build on it.
+
+## Ending a session - write back what outlives it
+
+The report-shaped commands close with a memory step; ad-hoc sessions (`/hiveku:code`,
+`/hiveku:tickets`, a one-off question) are where learnings die - the terminal closes and the next
+session pays again for everything this one found out. Before ending any session that touched a
+Hiveku account, run one test over what happened:
+
+**Would the next session re-derive this?** If a fresh session with no transcript would have to
+rediscover it - or repeat the mistake - it goes to memory before you end. Passes the test: a client
+preference stated in passing ("no emojis", "invoices go out Tuesdays", "never text the owner
+directly"), a correction the operator made to your output, a decision and the reason behind it
+("the abandoned-cart flow is disabled on purpose"), an account quirk that cost time today ("the
+Denver location's GBP is the one that matters"). Fails the test: transcript narration, numbers that
+expire (today's spend, this week's rankings - one tool call re-answers those), anything the
+department memory already says, and secrets of any kind. Memory is read wholesale at hydration, so
+every byte you add is a tax on every future agent turn - write directives, not diaries.
+
+The mechanics are `/hiveku:remember`, or directly: the read-modify-write loop above
+(`memory_list({ domain })`, append to the FULL returned content, `memory_update` with the whole
+merged document, canonical domain only). One extra case the loop does not spell out: when today's
+session PROVED an existing memory line wrong, fix that line in the same read-modify-write instead
+of appending a contradiction under it - two disagreeing lines hydrate as noise and the next agent
+picks one at random.
+
+A read-only session that learned nothing durable ends clean. This is a ritual for sessions that
+learned something, not a tollbooth on every exit.
 
 ## Related
 

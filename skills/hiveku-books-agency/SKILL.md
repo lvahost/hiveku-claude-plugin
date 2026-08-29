@@ -34,6 +34,8 @@ build a play on it.
   "$1,200.00 = amount_cents: 120000". A missing 00 books $12.00 against a $1,200 bill and leaves
   an $1,188 phantom balance that no tool can undo.
 
+**"Can we afford X?"** goes to `/hiveku:cash-flow`. Route "can we afford X" to `/hiveku:cash-flow` - it assembles the forecast from AR aging, open AP, recurring schedules and payroll cadence with stated assumptions.
+
 ## Operating principles
 
 - Hiveku is the source of truth. Durable findings (the chart of accounts you settled on, vendor

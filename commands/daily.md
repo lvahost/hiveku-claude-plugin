@@ -8,11 +8,27 @@ operator should DO, not a data dump.
 
 1. **Frame it.** `account_context_get({ domain })` for the persona, brand voice, and priorities - so the
    brief is in this account's terms.
-2. **Check the signals are fresh.** Read `hiveku-data/STATUS.json` - its `fetched_at` tells you how old the
+2. **Sweep the staged alert queue before you scan anything yourself.** `agent_inbox_list` - the
+   platform's agent-ops inbox, where the daily guardrail sweep files budget-pacing alerts (armed by
+   `settings.guardrail.alert_at_pct` on a PPC connection, default 85%), alongside Shopify
+   webhook-health / scope-drift / compliance alerts, voice/billing/deploy-health warnings, and
+   briefing suggestions. One call, no arguments: the default status filter `new,seen` IS the open
+   queue. Severity vocabulary is `info | suggestion | urgent` - nothing else exists, and if you
+   filter on it, pass one value per call. `urgent` rows lead the brief - the platform already
+   decided they can't wait; `suggestion` rows fold into the department bullet they belong to
+   (a pacing suggestion goes in the PPC bullet); `info` is skimmable. Before acting on an item,
+   `agent_inbox_get` it - the full item carries the markdown body and machine metadata (connection
+   ids, thresholds) the list row does not. Close only what you actually fixed:
+   `agent_inbox_resolve` with `resolution: 'resolved'` after the underlying problem is handled
+   (`'dismissed'` only for a deliberate won't-fix - it is a tuning signal to the producer).
+   Resolving never executes the item's action and never fixes the cause, and deduped producers
+   re-file an alert closed unfixed. An empty queue is worth one line ("no staged alerts"), not
+   silence.
+3. **Check the signals are fresh.** Read `hiveku-data/STATUS.json` - its `fetched_at` tells you how old the
    local data is, and anything under `failed` was NOT retrieved (say so; don't read an empty file as
    "nothing there"). If it's stale or missing, tell the operator to run `/hiveku:pull --stale 12` first, or
    pull the specific department you need before briefing on it.
-3. **Scan for what moved**, from the local `hiveku-data/<dept>/` files and, where a number must be current,
+4. **Scan for what moved**, from the local `hiveku-data/<dept>/` files and, where a number must be current,
    the live tools:
  - CRM: new leads, deals advancing or stalling, follow-ups due today.
  - SEO: ranking movements, new content gaps, anything decaying.
@@ -43,9 +59,10 @@ operator should DO, not a data dump.
      `workflow_stranded_list({ workflow_id })` is the only surface for that, and it takes ONE workflow
      id, so run it against a workflow you already have reason to suspect. There is no account-wide
      stranded sweep.
-4. **Write the brief:** 3–7 bullets of "here's what matters and why," each with the ONE next action. Put
-   anything time-sensitive (a deal, a breach, a pacing miss) first.
-5. **Offer to act.** For each action, name the tool or the `/hiveku:*` command that does it. Do not take a
+5. **Write the brief:** 3–7 bullets of "here's what matters and why," each with the ONE next action. Put
+   any `urgent` inbox alert from step 2 and anything time-sensitive (a deal, a breach, a pacing miss)
+   first.
+6. **Offer to act.** For each action, name the tool or the `/hiveku:*` command that does it. Do not take a
    write action without confirming.
 
 Keep it short enough to read with coffee. This is a standup, not a report.

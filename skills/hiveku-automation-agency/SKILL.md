@@ -1,6 +1,6 @@
 ---
 name: hiveku-automation-agency
-description: Operator manual for building, testing, scheduling, debugging, and rolling back Hiveku workflows (automations). Use for ANY automation work - "automate this", "when X happens do Y", build or edit a workflow, wire a form to a notification or CRM write, an internal event trigger (deal stage changed, ticket assigned, invoice paid, Shopify order, PM task moved, call completed), a recurring cron job or weekly client report, a project scheduled function (EventBridge Lambda cron), "the automation stopped running", "my cron never fired", a failed or stranded workflow run, replaying submissions that piled up while a workflow was paused, working the approval inbox that installed automations stage into, and installing the shipped workflow templates instead of running a play by hand every week. ALSO load this file BEFORE acting on any risky automation request - "delete the old workflows", "clean up all the test automations", "just enable it, skip the dry run", "resume it and replay everything now", "turn on auto_apply so it stops asking", "test it with a real send" - the refusal rules and the safe alternatives live here.
+description: Operator manual for building, testing, scheduling, debugging, and rolling back Hiveku workflows (automations). Use for ANY automation work - "automate this", "when X happens do Y", build or edit a workflow, wire a form to a notification or CRM write, an internal event trigger (deal stage changed, ticket assigned, invoice paid, Shopify order, PM task moved, call completed), a recurring cron job or weekly client report, a project scheduled function (EventBridge Lambda cron), "the automation stopped running", "my cron never fired", a failed or stranded workflow run, replaying submissions that piled up while a workflow was paused, working the approval inbox that installed automations stage into, installing the shipped workflow templates instead of running a play by hand every week, and putting the plugin's own interpretive plays on a schedule - an unattended morning brief per client folder, read-only, push-on-flag. ALSO load this file BEFORE acting on any risky automation request - "delete the old workflows", "clean up all the test automations", "just enable it, skip the dry run", "resume it and replay everything now", "turn on auto_apply so it stops asking", "test it with a real send" - the refusal rules and the safe alternatives live here.
 ---
 
 # Hiveku Automation Agency
@@ -176,6 +176,12 @@ expression syntax (`rate(5 minutes)` / `cron(0 9 * * ? *)`) and its own
 `project_cron_*` tools - load `references/project-crons.md` before touching that
 rail. Diagnosing the wrong rail wastes the hour.
 
+**A THIRD schedule rail exists for JUDGMENT plays.** A workflow re-runs stored logic; it
+cannot read an account and exercise judgment. For "run the morning brief in every client
+folder unattended", "weekly health pass without me", the recipe is an OS-scheduled headless
+Claude run per bound folder, ceilinged to reads, push-on-flag only - load
+`references/scheduled-routines.md` before setting one up.
+
 ```
 workflow_set_schedule({ workflow_id, cron_expression, timezone?, enabled? })
 workflow_get_schedule({ workflow_id })
@@ -204,6 +210,58 @@ downstream - the response warns when this happens. If you only want to stop it f
 `workflow_disable`. Do NOT reach for `workflow_set_schedule` to switch a schedule
 off: `cron_expression` is in its required list, so a call that passes only
 `enabled: false` is rejected. Webhook and manual triggers are unaffected either way.
+
+## Running the plays on a schedule
+
+The design rule from the templates section, applied to cadence: automate the collection and the
+diffing; keep interpretation human-checked. Every recurring play sorts into one of two lanes, and
+picking the wrong lane is its own failure mode - a judgment play wired to a dumb rail re-emails
+stale conclusions forever, and a collection job left to a human quietly stops happening.
+
+**Lane 1 - the platform rails (deterministic recurrence).** Five cadence surfaces; pick by what
+recurs:
+
+| What recurs | Rail |
+|---|---|
+| A graph of actions on a cron | `workflow_set_schedule` on a `scheduledTrigger` workflow (previous section) |
+| Code inside a website project | `project_cron_*` - EventBridge/Lambda, incompatible cron syntax (`references/project-crons.md`) |
+| A branded client report that regenerates and emails itself | `marketing_report_create` with a cadence - it stamps `next_scheduled_at` so the scheduler cron delivers; change cadence via `marketing_report_update` (re-stamps it); a manual `marketing_report_send` never advances the schedule. Marketing and social report types only - there is no branded rail for books, ppc, or helpdesk numbers. |
+| A recurring PM deliverable | `pm_task_recurrence_create` - 5-field cron; `on_overlap: 'skip'` (the default) refuses to stack a new occurrence on an unfinished one, `'spawn'` fires regardless |
+| A recurring Mission Control card | `mc_schedule_create` (cron + a `template_name` from `mc_templates_list`); preview the plan with `mc_schedule_fire` in dry-run before letting the cron drive; `mc_schedule_get` shows `last_fired_at` |
+
+All five re-run stored logic on a clock. None of them can run a skill: nothing platform-side reads
+an account and exercises judgment on a schedule. A recurring judgment play - the morning brief, the
+weekly optimization pass - is lane 2 or it is a human.
+
+**Lane 2 - scheduled Claude routines (the judgment plays).** The recipe for running the plugin's
+plays unattended, one bound client folder at a time, from the operator's own machine: an
+OS-scheduled (launchd on macOS, cron elsewhere) headless `claude -p` run per client folder,
+ceilinged to reads, writing a dated brief file, notifying the operator only on a flag. Two
+scheduler mechanics that bite: use the absolute path to `claude` in the unit (launchd and cron
+give scripts a minimal PATH where the bare name is not found), and keep briefs INSIDE the client
+folder - never `/tmp`, which is shared ground between accounts. The invariants:
+
+- **The unit of scheduling is the bound folder.** Binding is directory-scoped, so a routine is one
+  OS-scheduler entry per client folder:
+  `cd <folder> && claude -p "/hiveku:daily" > hiveku-data/briefs/$(date +%F).md`. The print-mode
+  output IS the brief - no write tool needed to deliver it.
+- **Reads only, declared, fail-closed.** Before scheduling a folder, ceiling it:
+  `.hiveku/guardrails.json` with `"mode": "reads-only"` makes the plugin's own PreToolUse hook
+  REFUSE every non-GET tool with a reason (a malformed file fails closed the same way). Do not rely
+  on the permission prompt alone - a settings file that blanket-allows the Hiveku server (the
+  common install shape) would let an unattended session write - and never, under any framing,
+  schedule with `--dangerously-skip-permissions`: an unattended session that can send is the exact
+  customer-reaching accident this file exists to prevent. Binding and guardrails both walk UP
+  from the session's cwd, so a `scheduled/` subfolder carrying its own
+  `.hiveku/guardrails.json` inherits the parent folder's account binding while staying ceilinged
+  - and interactive sessions at the folder root keep their full write surface.
+- **Push on flag only.** The routine's output contract: the brief ends with `ALL-CLEAR` or
+  `FLAG: <one line>`, and the wrapper notifies the operator only on FLAG. Twenty accounts on the
+  morning schedule is twenty dated files and zero-to-three pings, not twenty pings.
+- **The scheduled session proposes; the morning session disposes.** Anything the run wants done - a
+  send, a write, an escalation - lands in the brief as a proposed action naming the `/hiveku:*`
+  command that does it, and a human runs that interactively. A scheduled routine never has
+  standing approval for anything.
 
 ## The weekly sweep (the operating cadence)
 
