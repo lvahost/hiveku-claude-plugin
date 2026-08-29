@@ -5,8 +5,8 @@
     "mcp__plugin_hiveku_hk__",
     "mcp__hiveku__"
   ],
-  "plugin_version": "0.5.2",
-  "count": 25,
+  "plugin_version": "0.12.0",
+  "count": 34,
   "tools": [
     {
       "name": "deploy_site",
@@ -132,6 +132,51 @@
       "name": "accounting_invoice_record_payment",
       "method": "POST",
       "why_gated": "records money moving"
+    },
+    {
+      "name": "crm_contact_email_send",
+      "method": "POST",
+      "why_gated": "sends a real email from the connected inbox, no draft or recall"
+    },
+    {
+      "name": "crm_enroll_sequence",
+      "method": "POST",
+      "why_gated": "enrolling into an active sequence queues real email"
+    },
+    {
+      "name": "crm_sequence_enroll_bulk",
+      "method": "POST",
+      "why_gated": "bulk-enrolls into an active sequence - real email at batch scale"
+    },
+    {
+      "name": "email_sequence_enroll",
+      "method": "POST",
+      "why_gated": "enrolls real recipients into a drip that sends on a schedule"
+    },
+    {
+      "name": "email_sequence_activate",
+      "method": "POST",
+      "why_gated": "turns a drip on - every enrollment starts sending"
+    },
+    {
+      "name": "voice_sms_send",
+      "method": "POST",
+      "why_gated": "sends a real SMS, no draft or recall"
+    },
+    {
+      "name": "voice_sms_send_to_contact",
+      "method": "POST",
+      "why_gated": "sends a real SMS to a CRM contact"
+    },
+    {
+      "name": "voice_sms_thread_reply",
+      "method": "POST",
+      "why_gated": "sends a real SMS reply into a live thread"
+    },
+    {
+      "name": "crm_remove_dnc",
+      "method": "DELETE",
+      "why_gated": "reverses a do-not-contact suppression"
     }
   ]
 }
