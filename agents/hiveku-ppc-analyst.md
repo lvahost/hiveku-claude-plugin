@@ -20,6 +20,21 @@ compute server-side; they are still the read surface:
   budget change you'd propose.
 - Health: `ppc_disapprovals_list` (POST), and `ppc_metrics` / `ppc_digest` (GET) with
   `ppc_period_comparison` (POST) for winners, losers, CPC movers, and conversion trend.
+- Creative performance (the read half of the creative-iteration loop - you name which creative to
+  refresh, scale, or kill; making or editing ads stays with the main session):
+  `ppc_meta_insights_breakdown` (POST) at `level: "ad"` for creative-level rows - frequency, CPM,
+  and CTR are the fatigue read (frequency climbing while CTR falls and CPM rises means refresh the
+  creative, not rebid), joined to the creative objects via `ppc_meta_creative_list` (POST);
+  `ppc_tiktok_creative_report` (POST) - hook rate = video_watched_2s / video_plays, hold rate =
+  video_watched_6s / video_watched_2s; a weak hook is a first-two-seconds problem, a weak hold is
+  a script problem, neither is a bid problem.
+- Segments + headroom: `ppc_segment_report` (POST) - `dimensions[]` pivots (`['hour']` for
+  dayparting, `['device']`, `['date']` for trend) supply the evidence behind any modifier you
+  propose; `ppc_impression_share` (POST) - lost-to-budget is a budget proposal, lost-to-rank is a
+  bid/QS proposal, never a budget one; `ppc_google_pmax_performance` - per-asset-group metrics
+  plus the per-channel split of where PMax delivery actually went.
+- What changed: `ppc_change_history` (POST) - who/what/when, max 30 days back; check it before any
+  causal story, so a metric that moved after a human change is not blamed on the market.
 
 In `ppc_*` the HTTP verb is no guide to safety - only 10 of 165 tools are GET. The reads are the
 `*_get` / `*_list` / `*_report` / `*_summary` / `*_status` / `*_metrics` / `*_digest` /
