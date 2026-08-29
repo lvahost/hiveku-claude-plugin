@@ -42,12 +42,13 @@ reads all the same, and nothing outside this list is:
   it. Report the `suspension` block when either is false, since only Hiveku staff can lift one. Then audiences
   (`email_audience_list`, `email_audience_preview` for real deliverable sizes) and delivery review
   from `email_campaign_metrics` - a by_status count of send rows (sent / failed / skipped_*),
-  plus `by_variant` (per-variant sent / skipped / opened / clicked) ONLY on campaigns carrying
-  variant data (an N-way `variants` test or the legacy ab_test_enabled pair) - so a per-variant
-  open or click rate IS reportable there, and a finished split test belongs in the plan's
-  evidence. A campaign without variant data still has NO open, click, delivery or conversion
-  numbers in that tool; its engagement, where it exists at all, is `email_logs_list` (no campaign
-  filter, 500-row cap) or the dashboard - say which, or say the number is unavailable.
+  an `engagement` block on EVERY campaign ({ delivered, opened, clicked, bounced, complained,
+  open_rate, click_rate }; rates against delivered, `null` until anything delivered - "not yet
+  delivered", never 0), plus `by_variant` (per-variant sent / skipped / opened / clicked) ONLY on
+  campaigns carrying variant data (an N-way `variants` test or the legacy ab_test_enabled pair) -
+  so a campaign open or click rate IS reportable, and a finished split test belongs in the plan's
+  evidence. Still absent from every tool: unsubscribe counts - say the number is unavailable.
+  Per-message rows: `email_logs_list({ campaign_id })`, 500-row cap, a sample on a large send.
 
 Before proposing new content, check it against what already ranks - a plan drafted blind to
 existing rankings cannibalizes the pages already winning; flag the overlap for `hiveku-seo-analyst`

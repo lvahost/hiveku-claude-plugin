@@ -57,32 +57,35 @@ server-side, stays editable in the builder) in preference to raw `compiled_html`
 `email_template_list` is the TRANSACTIONAL template store for the /api/v1 send API - a marketing
 campaign CANNOT use those rows. The names invite the mix-up; the stores are different tables.
 
-## Metrics - the canonical limitation (stated once, here)
+## Metrics - the canonical contract (stated once, here)
 
-`email_campaign_metrics` per send returns `{ campaign_id, status, by_status, total,
+`email_campaign_metrics` per send returns `{ campaign_id, status, by_status, total, engagement,
 by_variant? }`. by_status is the DELIVERY review - sent vs the skipped_* buckets is why a send
-under-delivered. `by_variant` appears ONLY on campaigns that carry variant data (an N-way
-`variants` test, or the legacy ab_test_enabled pair): `[{ variant, subject, sent, skipped,
-opened, clicked }]`, per-variant opens/clicks derived from email_events - so a per-variant open
-or click rate CAN be reported from this tool now. What has NOT changed: a campaign WITHOUT
-variant data returns no by_variant and still has NO open, click, delivery, bounce, complaint or
-unsubscribe numbers here - never report an engagement rate for one from this tool - and there
-is no campaign-level delivered/bounced/complained breakdown in either case. For a non-variant
-campaign's engagement, `email_logs_list({ limit: 500 })` carries per-message open_count /
-click_count / delivered_at / bounced_at / complained_at - but it has NO campaign filter and
-caps at 500 rows, so above 500 recipients a true campaign open or click rate is not obtainable
-from tools: say so and point the client at the dashboard rather than estimating. Where clicks
-ARE measurable, judge by clicks, not opens (Apple MPP inflates opens). And variants are NOT
-copied by `email_campaign_duplicate` - re-attach the split on any clone before it re-enters the
-ladder.
+under-delivered. `engagement` is on EVERY campaign, not only variant ones: `{ delivered, opened,
+clicked, bounced, complained, open_rate, click_rate }` - distinct recipients, the rates
+percentages with one decimal against `delivered`, and the whole block is `null` until anything
+has delivered (report "not yet delivered", never 0%). So a campaign open or click rate IS
+reportable from this tool at any list size. `by_variant` appears ONLY on campaigns that carry
+variant data (an N-way `variants` test, or the legacy ab_test_enabled pair): `[{ variant,
+subject, sent, skipped, opened, clicked }]`, per-variant opens/clicks derived from email_events,
+splitting the campaign figure per variant. What is STILL absent: unsubscribe counts - no tool
+returns them, omit rather than estimate. Per-message detail lives on
+`email_logs_list({ campaign_id, limit: 500 })` - open_count / click_count / delivered_at /
+bounced_at / complained_at, that campaign's rows newest first (`campaign_id` is a UUID: malformed
+= 400, another account's campaign = empty list) - still capped at 500 rows, so on a larger send it
+is a sample of the newest rows and never the denominator: the rate comes from `engagement`, never
+from counting log rows. Judge by clicks, not opens (Apple MPP inflates opens). And variants are
+NOT copied by `email_campaign_duplicate` - re-attach the split on any clone before it re-enters
+the ladder.
 
 ## Health floors
 
 Click rate 1-3 percent is normal, unsubscribes under 0.3 percent, spam complaints under 0.1
-percent. These come from the dashboard, from `email_logs_list` (open_count / click_count /
-complained_at, 500-row cap, no campaign filter), or - opens and clicks only, and only on a
-variant-carrying campaign - from `email_campaign_metrics` by_variant; complaint and
-unsubscribe rates are never in metrics. Breach the floors -> pause volume, fix segmentation
+percent. Click rate comes from `email_campaign_metrics` `engagement.click_rate` (and per variant
+from by_variant); the complaint side from `engagement.complained` against `delivered`, or per
+message from `email_logs_list({ campaign_id })` (complained_at, 500-row cap); the unsubscribe
+floor is dashboard-only - no tool returns unsubscribe counts, say so rather than estimate.
+Breach the floors -> pause volume, fix segmentation
 (`email_audience_list` review, `email_suppression_list` for who is already burned) before
 sending more.
 

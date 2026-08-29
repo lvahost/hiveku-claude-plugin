@@ -76,6 +76,7 @@ as a hypothesis, scored with `ice_score`, persisted as a pm_task in the backlog.
     of the experiment. At the review date, read out before-vs-after over identical windows and
     `pm_tasks_complete({ id, summary })` with the observed result - "no detectable change" is a
     valid result.
+    - When the KPI is a sale rather than a form fill, the sale reaches the ad platform through the declared offline-conversions lane (`marketing_offline_conversions_status` first; opting in lands in validate-only, nothing recorded until a human goes live in the dashboard) - doctrine in `hiveku-conversion-tracking/references/offline-conversions.md`, never run from this pass.
 11. Honesty close, said to the client unprompted: this surface has no A/B platform, no traffic
     splitter, no heatmaps, and no session recordings. Experiments are sequential before/after
     comparisons over named equal windows with the confounds stated (seasonality, traffic-mix

@@ -15,16 +15,14 @@ hook. Context first: `account_context_get({ domain: "marketing" })`.
    this step never starts blind again.
 2. **Gather actuals, with the caveats stated out loud** (scope every read to the flight window):
    - Email: `email_campaign_list` to find the campaign's sends, then `email_campaign_metrics({ id })`
-     per send - for a campaign with NO variants it returns ONLY send-row counts by status (sent /
-     failed / skipped_*), with no open, click, delivery or bounce figure. A campaign carrying
-     variants (or the legacy A/B pair) ALSO returns `by_variant` with per-variant opens and
-     clicks, so a per-variant rate IS reportable there. Otherwise engagement only
-     where it is real: `email_logs_list({ limit: 500 })` carries per-message open_count /
-     click_count / delivered_at / bounced_at but has NO campaign filter and caps at 500 rows - on
-     a send under 500 recipients attribute rows by subject and report a rate; above that the true
-     campaign rate is dashboard-only, say so plainly. Clicks are the signal (Apple MPP inflates
-     opens). If the campaign ran the subject A/B (`ab_test_enabled`), the variant result is also
-     dashboard-only - read it there, never estimate it.
+     per send - `by_status` is the delivery review (sent / failed / skipped_*), and `engagement`
+     ({ delivered, opened, clicked, bounced, complained, open_rate, click_rate }) is the campaign
+     engagement read on EVERY send, at any list size - rates are percentages against delivered,
+     `null` until anything delivered (say "not yet delivered", never 0%). A campaign carrying
+     variants (or the legacy ab_test_enabled pair) ALSO returns `by_variant`, so the split-test
+     winner is read here too - by clicks (Apple MPP inflates opens). Per-message detail:
+     `email_logs_list({ campaign_id, limit: 500 })`, newest first, still capped at 500 rows, so it
+     is a sample, not the denominator. What no tool returns: unsubscribe counts.
    - Social: `social_list_posts({ status: "published", from_date, to_date })` to enumerate the
      campaign's posts (its date filter is on `created_at`, not `published_at`, and it returns NO
      metrics), then `social_post_sync_analytics({ post_id })` followed by
@@ -44,8 +42,8 @@ hook. Context first: `account_context_get({ domain: "marketing" })`.
 3. **Verdict vs goal.** Hit or miss, with the number and the source call named. Then the learning
    table: WINNERS (kept - which hook/offer/audience/channel earned its spend), LOSERS (killed -
    and why, with the number), TRY-NEXT (one or two testable bets). Every line backed by a tool
-   call from step 2, no vibes - and state what you CANNOT know (uncollected metrics, >500-recipient
-   rates) as explicitly as what you can.
+   call from step 2, no vibes - and state what you CANNOT know (uncollected metrics, unsubscribe
+   counts, per-message detail past the 500-row log cap) as explicitly as what you can.
 4. **Close the loop in PM:** `pm_tasks_complete({ id, summary })` on the campaign's tasks with a
    one-line result each; create one follow-up task per TRY-NEXT bet (confirm before creating).
 5. Finish every session of work the same way: persist notable learnings to department memory - read the department's current document with `memory_list({ domain: "<dept>" })`, append your note to the `content` it returns, and send the WHOLE merged document to `memory_update({ memory_id, content })`, which REPLACES it (sending only the new note destroys everything that department had accumulated); use `memory_create({ type: "memory", name: "<dept>", content })` only when no entry exists, and keep `<dept>` to a canonical department name (see hiveku-orient), and reflect the work in Hiveku PM: `pm_projects_list` to find the project (it filters only by `status`; `project_type` is named in its description but is NOT in its schema, so the proxy drops it and you filter the returned list yourself), or `pm_projects_create({ name, project_type })` where project_type is one of seo | ppc | marketing | website | app_dev, then `pm_tasks_create({ project_id, title })` (the field is `title`, not `name`), `pm_tasks_update` as it moves, `pm_tasks_complete({ id, summary })` when the loop is closed. Reopen a task closed too early with `pm_tasks_uncomplete`, never `pm_tasks_update`. Hiveku, not this folder, is the source of truth. The memory note here is the whole point of this command: write it like a sequence learning - hook/offer/audience verdicts the next /hiveku:campaign can act on, not a status update.

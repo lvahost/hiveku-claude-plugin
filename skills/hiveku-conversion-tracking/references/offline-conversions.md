@@ -3,11 +3,21 @@
 This file covers the lane that takes a closed deal, a won call, or a commerce order in Hiveku and
 pushes it back to the ad platform as an offline conversion, so Smart Bidding optimises toward
 revenue instead of toward form fills. Load it when a client says "we closed real money from Google
-Ads and the platform does not show it", when you are asked to turn offline conversions on, when you
-are wiring or auditing a conversion action or a Bing goal, or when a batch came back `skipped` or
-`failed`. It assumes you already ran `account_context_get` and know the click-side chain (embed,
-form ledger, DNI) from the main skill. This is a refusal-first system: the pipeline returns reasons,
-it does not throw, and the job is almost always to read a reason and clear it, not to retry.
+Ads and the platform does not show it", "push our CRM sales back to Google / Meta", "close the loop
+on click to sale", when you are asked to turn offline conversions on, when you are wiring or
+auditing a conversion action or a Bing goal, or when a batch came back `skipped` or `failed`. It
+assumes you already ran `account_context_get` and know the click-side chain (embed, form ledger,
+DNI) from the main skill. This is a refusal-first system: the pipeline returns reasons, it does not
+throw, and the job is almost always to read a reason and clear it, not to retry.
+
+Two different tool surfaces reach the platforms, and confusing them is the newest setup error:
+
+- **The declared lane** - ten `marketing_offline_conversions_*` tools (section 13). It DISCOVERS
+  conversions from the CRM, forms and Shopify, dates and validates them, and pushes them to
+  google_ads, microsoft_ads or meta_ads. Enabling it always lands in validate-only; going live is a
+  human dashboard flip that no tool performs.
+- **The hand-upload tool** - `ppc_offline_conversion_upload` (section 10). Rows YOU supply, Google
+  Ads only, two-step confirm. It never discovers anything.
 
 ---
 
@@ -43,8 +53,13 @@ Nothing uploads unless BOTH are true. There is no implicit default anywhere in t
 **Gate 1 - the account opted in.** The offline-conversion setting must be enabled, a deliberate
 per-account switch. A new account is OFF, and every candidate then returns `not_opted_in` with zero
 API calls made. Not a bug and not a permissions error: somebody has to decide this account sends
-customer conversion data to an ad platform. For Lane A (deals, forms, orders) no MCP tool flips it -
-it is a dashboard setting. For Lane B, the CALL lane's tenant opt-in
+customer conversion data to an ad platform. For Lane A (deals, forms, orders)
+`marketing_offline_conversions_opt_in({ enabled: true, lookback_days?, note? })` flips it - and it
+ALWAYS lands in validate-only mode: payloads are proven against the platform and NOTHING is
+recorded until a human goes live in the dashboard. The go-live flip is withheld from agents
+(`validate_only: false` is a 403). Opting in on an account a human already took live preserves live
+mode - it never silently un-arms - and the response `note` states the actual mode: read it back to
+the user verbatim. For Lane B, the CALL lane's tenant opt-in
 (`voice_tenant_config.conversion_upload_enabled`) is one of the steps `voice_call_tracking_setup`
 wires - still a deliberate, confirmed decision, never a silent side effect of "fixing tracking".
 
@@ -52,7 +67,9 @@ wires - still a deliberate, confirmed decision, never a silent side effect of "f
 exist for that (connection, source) pair with `enabled = true`, naming a conversion action an
 operator explicitly designated, and that action must belong to the ad account behind that connection.
 Ownership is verified, not assumed: borrowing an action from a sibling MCC account or the agency's
-own account fails.
+own account fails. The mapping is written with `marketing_offline_conversions_designate` after
+reading candidates from `marketing_offline_conversion_actions_list({ connection_id })`; Hiveku
+NEVER creates a conversion action - designation points at one that already exists on the platform.
 
 Both gates are per (account, connection, source). Turning on `crm_deal_won` for Google does **not**
 turn on `form_lead` for Google and turns on nothing for Microsoft. Each pair is its own decision and
@@ -88,8 +105,9 @@ email through this lane.
 
 | Guard | Value | On violation |
 |---|---|---|
-| Click window: google 90d, microsoft 90d, linkedin 90d | 90 days | `stale_click` |
-| Click window: meta 7d, tiktok 7d | 7 days | `stale_click`, plus `meta_stale` on Meta |
+| Click window: google 90d, microsoft 90d | 90 days | `stale_click` |
+| Click window: meta 7d | 7 days | `stale_click`, plus `meta_stale` on Meta |
+| Platform not in the lane (linkedin_ads, tiktok_ads) | refused at designate, before any window check | no upload path exists; their conversion ingest is their own (section 11) |
 | Import max age (conversion age) | 63 days, Google's horizon | `conversion_too_old` |
 | Minimum upload delay | 6 hours after the conversion | `TOO_RECENT_*` |
 | Maximum conversion value | 1,000,000 | `value_above_max`, **REFUSED, never clamped** |
@@ -108,6 +126,9 @@ conversion would poison tROAS for weeks. Look for a unit error before assuming a
 
 Row statuses: `queued | validated | uploaded | failed | skipped`. `skipped` carries a refusal reason
 and is where you spend your time. `failed` is a platform-side error on a row that passed our gates.
+`validated` is a validate-only outcome: the payload was proven against the platform and NOT recorded;
+those rows upload for real only after a human goes live and `marketing_offline_conversions_requeue`
+re-arms them.
 
 ---
 
@@ -198,10 +219,10 @@ identity, dating, value. Reasoning for the gate and dating rows is in sections 2
 
 | Reason | Do this |
 |---|---|
-| `not_opted_in` | Account switch off. Explain the data-sharing decision and get a yes FIRST. Lane A: enable in the dashboard (no tool). Call lane: `voice_call_tracking_setup` wires the tenant opt-in - dry_run first, and never as a workaround for the yes. |
-| `source_not_designated` | No mapping row for this (connection, source). Create it, designate an action. |
-| `mapping_disabled` | `enabled = false`. Find out who turned it off, then flip it on deliberately. |
-| `unsupported_platform` | No upload lane there. Do not retry. |
+| `not_opted_in` | Account switch off. Explain the data-sharing decision and get a yes FIRST. Lane A: `marketing_offline_conversions_opt_in({ enabled: true })` - lands in validate-only, nothing recorded; going live is a human dashboard step. Call lane: `voice_call_tracking_setup` wires the tenant opt-in - dry_run first, and never as a workaround for the yes. |
+| `source_not_designated` | No mapping row for this (connection, source). `marketing_offline_conversion_actions_list({ connection_id })`, then `marketing_offline_conversions_designate` against an EXISTING action, confirmed. |
+| `mapping_disabled` | `enabled = false`. Find out who turned it off, then re-designate with `enabled: true` deliberately. |
+| `unsupported_platform` | No upload lane there (the declared lane covers google_ads, microsoft_ads, meta_ads). Do not retry. |
 | `no_connection` | Reconnect, then `ppc_digest` for sync freshness. |
 | `conversion_action_not_owned` | Belongs to another ad account. On Google check it is a resource name, not a display name. Re-pick from `ppc_conversion_actions_list`. |
 | `conversion_action_changed` | Renamed, deleted or swapped platform-side. Re-designate. On Microsoft, usually a goal rename. |
@@ -244,9 +265,10 @@ another path can enqueue the same conversion.
 
 ## 10. `ppc_offline_conversion_upload` in depth
 
-**Google Ads only.** Against a Microsoft, Meta, LinkedIn or TikTok connection it returns a
-wrong-platform error, **not an empty result**. An empty-looking response on the wrong platform is
-never "nothing matched": read the error.
+The hand-upload tool: rows YOU assemble, not rows the lane discovered. **Google Ads only.** Against
+a Microsoft, Meta, LinkedIn or TikTok connection it returns a wrong-platform error, **not an empty
+result** - Microsoft and Meta are reached by the declared lane (section 13), never by this tool. An
+empty-looking response on the wrong platform is never "nothing matched": read the error.
 
 **The two-step confirm is the entire safety model.**
 1. **First call, no `confirm`.** Returns a dry-run preview with `requires_confirm: true` and
@@ -337,7 +359,10 @@ show, confirm.
   `last_fired_time`: fired recently with zero attributed is a **media finding**, not a tracking
   failure, and merging them would hide that.
 - **`ppc_linkedin_conversions`** / **`ppc_tiktok_conversions`** read configured conversions. Neither
-  has an offline upload lane: `ppc_offline_conversion_upload` is Google-only.
+  is covered by the declared lane (google_ads, microsoft_ads, meta_ads only), and
+  `ppc_offline_conversion_upload` is Google-only; LinkedIn and TikTok conversion ingest is their
+  own `ppc_linkedin_conversions` / `ppc_tiktok_conversions` operations, per the PPC skill's
+  `paid-social-and-bing.md`.
 - **`ppc_digest`** before trusting any platform number: it warns on connections stale by more than 25
   hours. "The platform shows 3" against a connection that synced two days ago is not yet a finding.
 
@@ -365,15 +390,21 @@ no_upload_lane | platform_unreadable`. Web-side means this is not an offline-upl
 `conversion-never-fires`, `conversion-fires-denied`, `duplicate-conversion-paths`. Committing is not
 deploying. For `upload_disabled` / `action_missing` / `action_disabled`, continue here.
 
-**3. The two gates.** Account opted in? Enabled mapping for `crm_deal_won` on the Google connection
-naming an owned action? Confirm with `ppc_conversion_actions_list` (status ENABLED, resource name
-matches the mapping) and `ppc_conversion_tracking_status` (silent?, judged on **`all_conversions`**).
+**3. The two gates.** `marketing_offline_conversions_status` (no params) FIRST: opted in? which
+mode - `validate_only: true` means nothing has ever been recorded, so "the platform shows 3" is
+expected; enabled mapping for `crm_deal_won` on the Google connection naming an owned action? Then
+confirm the action itself with `ppc_conversion_actions_list` (status ENABLED, resource name
+matches the mapping) and `ppc_conversion_tracking_status` (silent?, judged on
+**`all_conversions`**).
 
 **4. The vocabulary.** Any deal status flagged `is_won`? If not, the pipeline has yielded zero
 candidates all along and no connection work changes that. Five-minute fix, and frequently the answer.
 
-**5. Dry run, then read the reasons.** `ppc_offline_conversion_upload` with **no `confirm`** gives a
-per-row truth table for the 15. Bucket the refusals:
+**5. Dry run, then read the reasons.** `marketing_offline_conversions_preview({ source:
+'crm_deal_won', lookback_days })` - a dry run pinned server-side, writes nothing - gives the
+per-reason skip counts and a sample of up to 10 rows for the 15 (for rows you assembled by hand,
+`ppc_offline_conversion_upload` with **no `confirm`** is the equivalent truth table). Bucket the
+refusals:
 - Mostly `no_click_id`: a capture problem, not an upload problem. Cross-check
   `marketing_form_conversion_audit` (trap: **`clicks_before_range: 0` when `click_dated` is 0 means
   NOT MEASURABLE, not zero**) and, for calls, `marketing_call_attribution_list`. Fix the embed,
@@ -385,18 +416,117 @@ per-row truth table for the 15. Bucket the refusals:
 - `conversion_too_old`: past 63 days, gone forever. Move to a daily or weekly cadence.
 - Gate reasons: clear per section 8, then preview again.
 
-**6. Confirm and upload.** Present eligible count, total value, currency, the conversion action
-resource name being written to, and the refusal breakdown. Get an explicit yes. Repeat the
-**identical** call with `confirm: true`. Report per-row outcomes: uploaded, skipped, failed.
+**6. Confirm and run.** Present eligible count, total value, currency, the conversion action
+resource name being written to, the refusal breakdown, AND the mode from step 3. Get an explicit
+yes. In validate-only, `marketing_offline_conversions_run({ source: 'crm_deal_won' })` proves the
+payloads and records nothing - rows finish `validated`, and that run is what the human reviews
+before flipping live in the dashboard (a flip no tool performs). On a LIVE account the same call
+records real conversions that reach Smart Bidding and cannot be un-sent: preview first, run ONCE,
+read the dispatch tallies back (`outcome: clean` or `partial`), never retry in a loop.
+Hand-assembled rows instead: repeat the **identical** `ppc_offline_conversion_upload` call with
+`confirm: true`. Report per-row outcomes from `marketing_offline_conversions_queue({ source,
+status })`: uploaded, validated, skipped, failed.
 
 **7. Expectations and close-out.** The 6-hour floor plus platform processing means "check tomorrow",
-not "refresh now". Verify next day with `ppc_conversion_tracking_status` on that action, judged on
-`all_conversions`. Record the decision (action, mapping, cadence) with `memory_create`, and file the
-cadence and upstream capture fixes as `pm_tasks_create` items.
+not "refresh now". Once a human has gone live, `marketing_offline_conversions_requeue` re-arms the
+`validated` rows (409 until then) and one more confirmed run uploads them. Verify next day with
+`ppc_conversion_tracking_status` on that action, judged on `all_conversions`. Record the decision
+(action, mapping, mode, cadence) with `memory_create`, and file the cadence and upstream capture
+fixes as `pm_tasks_create` items.
 
 **The honest answer this play usually produces:** of 15 deals, some never had a click id and can
 never be uploaded, some are past the 63-day horizon and are gone, and the rest are recoverable now.
-Give those three numbers separately. "We recovered 9, 4 have no click id because of a consent-gated
+Give those three numbers separately - and while the account is validate-only, a fourth: validated
+but not yet recorded, waiting on the human go-live. "We recovered 9, 4 have no click id because of a consent-gated
 embed we are fixing this week, and 2 closed 71 days ago and are outside Google's import window" is a
 report worth paying for. "It is fixed" is not.
 
+---
+
+## 13. The declared lane: ten `marketing_offline_conversions_*` tools
+
+The Lane A pipeline is declared to MCP. These are the tools (verified against the plugin's
+`lib/tool-index.json` on 2026-08-29; all `marketing_`-prefixed, so a `marketing-ads` key sees
+them). They DISCOVER conversions from the CRM, forms and Shopify and push them to the platform -
+the opposite of `ppc_offline_conversion_upload`, where you supply the rows.
+
+Vocabulary, fixed: sources `crm_deal_won | form_lead | shopify_order`; platforms `google_ads |
+microsoft_ads | meta_ads`; row statuses `queued | validated | uploaded | failed | skipped`.
+
+| Tool | Args | What it does |
+|---|---|---|
+| `marketing_offline_conversions_status` | none (GET) | Opt-in state, `validate_only` mode, designated actions per connection/source, outbox tallies by status. **Read it FIRST, before any other call here.** |
+| `marketing_offline_conversion_actions_list` | `connection_id` | The EXISTING conversion actions the lane could be designated to. Hiveku never creates one. |
+| `marketing_offline_conversions_opt_in` | `enabled`, `lookback_days` 1-90 (default 30), `note` | Enables (or disables) the lane. Enabling from off ALWAYS lands in validate-only; on an already-live account it preserves live mode. The response `note` states the real mode - relay it verbatim. `validate_only: false` here is a 403. |
+| `marketing_offline_conversions_validate_only` | `validate_only` (must be `true`) | Puts a LIVE account back into validate-only. The SAFE direction only: anything else is a 403; 409 `not_opted_in` if never enabled; `changed: false` if already there. Does not retract conversions already uploaded. |
+| `marketing_offline_conversions_designate` | `connection_id`, `source`, `conversion_action`, `conversion_action_name`, `value_mode` (`source_value` or `fixed_value`), `fixed_value`, `max_value`, `currency_code`, `match_mode` (`click` or `enhanced`), `enabled` | Maps a source to an EXISTING action. `enabled: true` arms it; a designation with `enabled: false` exists but does not run. |
+| `marketing_offline_conversions_remove_mapping` | `connection_id`, `source` | Returns `{ removed, cancelled_rows }`: queued rows are cancelled, not uploaded. Rows already uploaded are NOT retracted. |
+| `marketing_offline_conversions_preview` | `source`, `lookback_days` | Dry-run discovery: what WOULD be enqueued, with up to 10 sample rows and per-reason skip counts. The dry-run flag is pinned server-side - it writes nothing and sends nothing, ever. |
+| `marketing_offline_conversions_queue` | `source`, `status`, `limit` 1-100 (default 25) | The outbox, newest first. Read-only. `click_id` and email/phone hashes come back MASKED. |
+| `marketing_offline_conversions_run` | `source`, `limit` 1-500 (default 500) | Discover AND dispatch: enqueue new rows, then work the outbox. 409 `not_opted_in` / 409 `source_not_designated` when a gate is shut. Returns `outcome` (`clean` or `partial`) and dispatch tallies. |
+| `marketing_offline_conversions_requeue` | none | Re-arms `validated` rows so the next run uploads them for real. Only meaningful AFTER a human took the account live - 409 with the reason otherwise. Returns `{ requeued }`. |
+
+### The doctrine, exactly
+
+- **Enabling always lands in validate-only.** Every payload is proven against the ad platform and
+  NOTHING is recorded. Rows finish `validated`, which is proof the mapping and the data work, not a
+  conversion.
+- **The go-live flip is withheld from agents.** `validate_only: false` returns 403 from every tool
+  here. An account owner or admin flips it in the dashboard after reviewing a validate-only run.
+  Your deliverable is that reviewable run plus a `pm_tasks_create` naming the flip; never "I turned
+  it on".
+- **Opt-in never un-arms a live account.** Calling `opt_in` on an account a human already took live
+  preserves live mode; read the response `note` back to the user verbatim so nobody assumes the
+  account is safe when it is not.
+- **`validate_only` only ever makes it safer.** It takes the account from live back to validate-only
+  and nothing else; conversions already uploaded stay on the ad account and keep influencing bidding.
+- **Hiveku never creates a conversion action.** Designation points at one that already exists:
+  Google, the ConversionAction resource name; Microsoft, the OfflineConversionGoal NAME (exact);
+  Meta, the CAPI event name (`Lead`, `Purchase`) - section 3. If no Upload-source action exists on
+  Google, the operator creates one with `ppc_google_conversion_actions` (`type_: 'UPLOAD_CLICKS'`,
+  confirmed), then designates; the lane itself never will.
+- **`match_mode`.** `click` matches on the stored gclid/gbraid/wbraid/msclkid/fbclid. `enhanced`
+  sends hashed email/phone for Google enhanced-conversions-for-leads and is REFUSED for meta_ads -
+  that lane sends only the `fbc` click parameter, never PII (`policy_no_pii`, section 3).
+- **Windows are enforced at enqueue:** google/microsoft 90 days, meta 7 days; a conversion older
+  than 63 days is refused rather than queued. A refusal for age is not an error - it is the lane
+  declining an upload that could only fail (section 4).
+- **Value.** `source_value` uses the deal or order amount; `fixed_value` a per-lead figure you set.
+  A single value above 1,000,000 in the mapping currency is REFUSED, never clamped; `max_value`
+  lowers that ceiling per mapping.
+- **A live run is a money write.** On a LIVE account `run` records real conversions that reach the
+  client's Smart Bidding and cannot be un-sent - `remove_mapping` and `validate_only` do not retract
+  them. Preview first, run ONCE, read the dispatch tallies back; `partial` means some rows failed
+  permanently or a connection errored - read the counts, do not retry in a loop.
+- **Identifiers come back masked** from `queue`: per-visitor tokens and platform match keys are not
+  data to copy into a report, a task, or memory.
+
+### The order that works
+
+1. `marketing_offline_conversions_status` - opted in? which mode? what is designated? what sits in
+   the outbox?
+2. `marketing_offline_conversion_actions_list({ connection_id })` per connection - pick the existing
+   action; check the shape per platform (section 3).
+3. `marketing_offline_conversions_opt_in({ enabled: true, lookback_days })` - after the operator's
+   explicit yes to sharing conversion data with the platform. Relay the `note`.
+4. `marketing_offline_conversions_designate({ ..., enabled: true })` per (connection, source), each
+   confirmed. Confirm the `is_won` vocabulary exists first (section 6) or `crm_deal_won` yields zero.
+5. `marketing_offline_conversions_preview({ source, lookback_days })` - relay the skip reasons per
+   section 8.
+6. `marketing_offline_conversions_run({ source })` - in validate-only this proves the payloads and
+   records nothing. Read `queue({ source, status: 'validated' })` and `status` back.
+7. Hand the human the reviewable result and the go-live task. When they flip it live:
+   `marketing_offline_conversions_requeue`, then one more confirmed run, then read the tallies.
+8. Cadence: daily (Meta's 7-day window) as a workflow job, dry-run first (`/hiveku:automate`).
+
+### Hard stops, response contracts
+
+- *"Skip validate-only, just take it live so the numbers move."* Refuse: no tool can, and a 403 is
+  the answer even if you tried. Offer the validate-only run to review and the dashboard flip for the
+  owner.
+- *"The platform shows zero - run it until something uploads."* Refuse the loop. One run, tallies,
+  reasons. A `partial` outcome is read, not retried.
+- *"Match Meta on email so more of them stick."* Refuse: `enhanced` is a `policy_no_pii` refusal on
+  meta_ads by design; Meta gets `fbc` only.
+- *"Remove the mapping to undo last week's upload."* It cancels queued rows only; uploaded
+  conversions stay. Say so before the call.

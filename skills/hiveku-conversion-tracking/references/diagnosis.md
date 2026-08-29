@@ -404,7 +404,10 @@ Reconcile in writing:
 X, Y, Z, A, B, C and D each come from a named call above. If you cannot source a number, write "not
 measurable" - never fill the gap with a plausible figure.
 
-Then the fixes, all writes, all confirmed. Real conversions the platform never received, with dated
+Then the fixes, all writes, all confirmed. Deals, form leads and Shopify orders the platform never
+received go up through the declared `marketing_offline_conversions_*` lane (google / microsoft /
+meta; `status` first, `preview` before `run`, validate-only until a human flips live in the
+dashboard - the offline-conversions reference, section 13). Rows you assembled yourself, with dated
 click ids, go up via `ppc_offline_conversion_upload`: **GOOGLE ONLY** (another platform's connection
 returns a wrong-platform error, not an empty result) and **strictly two-step - the first call with
 no `confirm` returns a dry-run preview with `requires_confirm: true` and uploads NOTHING.** Read

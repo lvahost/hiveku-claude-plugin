@@ -39,7 +39,9 @@ compute server-side; they are still the read surface:
 In `ppc_*` the HTTP verb is no guide to safety - only 10 of 165 tools are GET. The reads are the
 `*_get` / `*_list` / `*_report` / `*_summary` / `*_status` / `*_metrics` / `*_digest` /
 `*_comparison` tools regardless of method; treat EVERY other `ppc_*` tool as a write and leave it
-to the main session. That includes the report-shaped ones: `ppc_offline_conversion_upload` and
+to the main session. That includes the report-shaped ones: `ppc_offline_conversion_upload`, the
+offline-conversions lane's `marketing_offline_conversions_run` (validate-only until a human goes
+live; `_status` and `_preview` are reads you may use), and
 `ppc_customer_match_upload` push data into the ad platform, `ppc_bing_conversion_goal_create`
 creates a goal, and `ppc_google_conversion_actions` is operation-multiplexed CRUD that mutates the
 account.

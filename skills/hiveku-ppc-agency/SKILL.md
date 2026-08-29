@@ -12,8 +12,9 @@ audited before touched, measured before optimized, every spend change confirmed,
 (verified against profiles.ts) four calls named below are INVISIBLE: `account_context_get`,
 `job_status_get`, `crm_list_deals`, `agent_identity_get`. Fallbacks: `memory_list` still works,
 `talk_to_department` and `audit_query` are always-available, avoid `ppc_sync_async` on that key (its
-`job_status_get` poll is unreachable - use blocking `ppc_sync`), and the CRM won-deals pull for offline
-conversions needs the operator, a full key, or a client export.
+`job_status_get` poll is unreachable - use blocking `ppc_sync`), and the CRM won-deals pull for a hand
+`ppc_offline_conversion_upload` batch needs the operator, a full key, or a client export (the declared
+`marketing_offline_conversions_*` lane discovers deals server-side and IS visible on that key).
 
 ## 0. Operating principles (non-negotiable)
 
@@ -199,13 +200,19 @@ ICP; wrong seniority = targeting fix, not creative fix). Pause/enable anywhere:
 
 ## 6. Play: Measurement (close the loop)
 
-1. **Offline conversions (the agency edge):** weekly, pull closed-won from CRM - `crm_list_deals` since
-   last upload (invisible on a marketing-ads key: operator, full key, or client export - never invent
-   rows) - and push real revenue back via `ppc_offline_conversion_upload`. Needs an Upload-source
-   conversion action: if missing, create it with `ppc_google_conversion_actions`
-   conversion-action-create, `type_: "UPLOAD_CLICKS"` (trailing underscore). Partial-failure is on -
-   read `results[]` for ok:false rows, never the HTTP status. This lets smart bidding optimize to
-   REVENUE, not form fills. Payload validation, match-rate scoring: `references/measurement-and-conversions.md`.
+1. **Offline conversions (the agency edge):** two paths. The declared lane
+   `marketing_offline_conversions_*` (visible to a marketing-ads key) discovers closed-won deals,
+   form leads and Shopify orders itself and pushes them to Google, Microsoft or Meta - `status`
+   first, `preview` before `run`; opting in ALWAYS lands in validate-only (nothing recorded) and
+   the go-live flip is the owner's, in the dashboard - doctrine in
+   `hiveku-conversion-tracking/references/offline-conversions.md`. The hand path: weekly, pull closed-won from CRM -
+   `crm_list_deals` since last upload (invisible on a marketing-ads key: operator, full key, or
+   client export - never invent rows) - and push real revenue back via
+   `ppc_offline_conversion_upload` (Google only). Needs an Upload-source conversion action: if
+   missing, create it with `ppc_google_conversion_actions` conversion-action-create,
+   `type_: "UPLOAD_CLICKS"` (trailing underscore). Partial-failure is on - read `results[]` for
+   ok:false rows, never the HTTP status. This lets smart bidding optimize to REVENUE, not form
+   fills. Payload validation, match-rate scoring: `references/measurement-and-conversions.md`.
 2. **Hiveku-side reconciliation (lead-gen):** `marketing_form_conversion_audit` answers "the platform
    says 40, the CRM shows 22" for form fills - submissions with attribution plus discrepancy buckets
    (spam, duplicate, deleted, no_attribution...) that sum to the total. Phone-heavy clients:
@@ -235,7 +242,8 @@ ICP; wrong seniority = targeting fix, not creative fix). Pause/enable anywhere:
 6. Disapprovals on every connected platform (section 4 names the four tools) + QS spot-check on top spenders.
 7. Platform reads where connected: Meta breakdown, TikTok creative report, LinkedIn demographics (section 5).
 8. `ppc_recommendations_list` triage (6.4).
-9. Offline-conversion upload if the CRM loop is live (6.1).
+9. Offline-conversion run or upload if the CRM loop is wired (6.1) - read the lane's mode from
+   `marketing_offline_conversions_status` first; validate-only records nothing.
 10. Log everything: pm_tasks_comment on the weekly task - changes made (with confirmations), changes
     proposed, tests running and their end dates.
 

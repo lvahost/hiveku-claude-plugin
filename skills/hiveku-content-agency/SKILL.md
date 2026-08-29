@@ -245,8 +245,10 @@ Monthly at minimum; weekly glance during active campaigns.
 4. **Social performance:** `social_post_sync_analytics` for fresh numbers, then
    `social_analytics_summary` for the rollup. The top 10 percent of posts - those angles reuse.
 5. **Email performance:** delivery review via `email_campaign_metrics` (sent vs skipped_*
-   buckets; on a variant-carrying campaign `by_variant` adds per-variant opens and clicks);
-   engagement elsewhere only where `email_logs_list` covers the send. The canonical limitation statement is in `references/email-distribution.md` - load it
+   buckets) and engagement from its `engagement` block on every campaign (open_rate / click_rate
+   against delivered, `null` until anything delivered; `by_variant` splits it on a
+   variant-carrying campaign). The canonical contract, including what is still absent
+   (unsubscribes), is in `references/email-distribution.md` - load it
    before reporting any email number.
 6. **Refresh cycle:** `seo_content_decay` finds previously-ranking pages losing clicks. For
    decayed winners, UPDATE IN PLACE - the same URL keeps the authority; a new URL starts from
@@ -289,9 +291,11 @@ trap (keep the report id or you cannot address the report again) are there.
 
 Content: (1) published inventory with type, avatar, stage, cluster; (2) performance per piece -
 `content_page_views_get` + `analytics_pages` traffic, social reach/engagement, email delivery
-numbers, engagement only where the log or a by_variant split covers the send - disclosing the sample on every
-aggregate (N of M, how chosen, what was excluded: "engagement reported for 14 of 22 sends");
-a fabricated open rate in a client report is worse than a missing one; (3) the updated coverage
+numbers and the `engagement` block's open and click rates per campaign (delivered as the N; a
+`null` block is "not yet delivered", excluded from any aggregate and said so: "engagement
+reported for 21 of 22 sends, one not yet delivered"); unsubscribe counts are absent from every
+tool, so omit them rather than estimate - a fabricated number in a client report is worse than a
+missing one; (3) the updated coverage
 matrix; (4) refresh and consolidation actions; (5) next month's calendar with the reasoning.
 Comparability: never sum page views, social impressions, and email opens into one "total reach"
 number - different events over different windows; report channels side by side with their

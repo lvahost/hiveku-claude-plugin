@@ -119,15 +119,17 @@ before the real call.
 - `email_campaign_pause` and `email_campaign_resume` for a send in progress.
 - `email_campaign_cancel` for a scheduled, draft, or paused campaign. It does NOT take a campaign
   that is already sending: `email_campaign_pause` is the in-flight control.
-- `email_campaign_metrics` returns SEND-ROW counts only: `{ campaign_id, status, by_status, total }`,
-  where `by_status` groups the send rows into queued / sending / sent / failed /
-  skipped_suppressed / skipped_unsubscribed / skipped_frequency_cap. A campaign carrying variants
-  (or the legacy A/B pair) ALSO returns `by_variant` — per-variant sent/skipped plus opens and
-  clicks — so per-variant rates ARE reportable. **For a campaign with no variant data there is NO
-  open, click, delivery, bounce, complaint or unsubscribe figure here; never report an engagement
-  rate for those from this tool.** Delivery, bounce, complaint and unsubscribe are absent either
-  way. Per-message `open_count`, `click_count`, `delivered_at`
-  and `bounced_at` live on `email_logs_list`, which has no campaign filter and caps at 500 rows.
+- `email_campaign_metrics` returns `{ campaign_id, status, by_status, total, engagement,
+  by_variant? }`. `by_status` groups the send rows into queued / sending / sent / failed /
+  skipped_suppressed / skipped_unsubscribed / skipped_frequency_cap. `engagement` is on EVERY
+  campaign: `{ delivered, opened, clicked, bounced, complained, open_rate, click_rate }`,
+  distinct recipients, the rates percentages with one decimal against `delivered`, and the block
+  is `null` until anything has delivered - report "not yet delivered", never 0%. A campaign
+  carrying variants (or the legacy A/B pair) ALSO returns `by_variant` - per-variant sent/skipped
+  plus opens and clicks. **Unsubscribe counts are absent either way.** Per-message `open_count`,
+  `click_count`, `delivered_at` and `bounced_at` live on `email_logs_list`, which now takes
+  `campaign_id` (UUID; malformed = 400, another account's campaign = empty list) and still caps
+  at 500 rows, newest first - a sample on a large send, so the rate comes from `engagement`.
 - `email_campaign_resend_non_openers` CLONES a sent campaign as a new DRAFT scoped to the contacts
   who did not open the original. The call itself dispatches nothing: you adjust subject and body,
   then schedule it. Weigh the deliverability cost at that scheduling step, because what you are
@@ -314,9 +316,10 @@ test address.** Test sends to example.com addresses caused a real account suspen
 A verdict of `sent_but_no_delivery_event` means the send path works and the event webhook pipeline
 is broken. That is a different fix and it makes every downstream metric look wrong.
 
-**3. What happened to specific messages?** `email_logs_list({ limit?, status? })` where status is
-`queued | sent | delivered | bounced | complained`. Default limit 50, max 500. `email_stats` for
-the aggregate view.
+**3. What happened to specific messages?** `email_logs_list({ limit?, status?, campaign_id? })`
+where status is `queued | sent | delivered | bounced | complained` and `campaign_id` (a UUID;
+malformed = 400, another account's campaign = empty list) narrows to one campaign's rows, newest
+first. Default limit 50, max 500. `email_stats` for the aggregate view.
 
 Read the statuses as a funnel. `queued` and `sent` are not `delivered`. When a user says mail is
 not arriving, look for the absence of a `delivered` event rather than the presence of a `sent`
@@ -384,7 +387,7 @@ scheduled.
 | Verify fails right after DNS edit | Propagation. Re-check rather than re-editing |
 | Audience bigger or smaller than expected | `email_audience_preview` before the send |
 | Audience filter saved fine but excludes nobody | Unknown `filter_json` key: stored, ignored, never rejected |
-| Asked for a campaign open or click rate | `email_campaign_metrics` has none. Per-message data is on `email_logs_list` |
+| Asked for a campaign open or click rate | `email_campaign_metrics` `engagement` (`null` until anything delivered). Per-message rows: `email_logs_list({ campaign_id })`. Unsubscribe counts: no tool |
 | Suppression will not clear | Bounces and complaints are sticky. `email_suppression_remove` refuses |
 | Paused a sequence, enrollments gone | `email_sequence_pause` exits them permanently. It is not a hold |
 | A send succeeded but nothing happened | `queued` and `sent` are not `delivered` |

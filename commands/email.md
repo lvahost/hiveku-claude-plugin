@@ -135,24 +135,27 @@ verbatim; never claim something sent without checking.
    the send landed with `email_campaign_metrics({ id })`: status must be 'sent' AND `by_status.sent`
    must be > 0. A 'sent' campaign with `by_status.sent: 0` reached NOBODY.
 8. **After:** `email_campaign_metrics({ id })` returns `{ campaign_id, status, by_status, total,
-   by_variant? }` - by_status counts the send rows per status (queued / sending / sent / failed /
-   skipped_suppressed / skipped_unsubscribed / skipped_frequency_cap). Campaigns that carry
-   variant data (an N-way `variants` test, or the legacy ab_test_enabled pair) ALSO return
-   `by_variant: [{ variant, subject, sent, skipped, opened, clicked }]` - per-variant opens and
-   clicks derived from email_events, so a per-variant open or click rate CAN be reported from
-   this tool. The limits that remain: campaigns WITHOUT variant data return no by_variant and
-   still have NO open, click, delivery, bounce, complaint or unsubscribe numbers here - do not
-   report engagement rates for those from this tool - and there is no campaign-level
-   delivered/bounced/complained breakdown in either case.
+   engagement, by_variant? }` - by_status counts the send rows per status (queued / sending / sent /
+   failed / skipped_suppressed / skipped_unsubscribed / skipped_frequency_cap). `engagement` is
+   on EVERY campaign, not only variant ones: `{ delivered, opened, clicked, bounced, complained,
+   open_rate, click_rate }` - distinct recipients, the rates percentages with one decimal against
+   `delivered`, and the whole block `null` until anything has delivered (null is "nothing
+   delivered yet", never zero). Campaigns that carry variant data (an N-way `variants` test, or
+   the legacy ab_test_enabled pair) ALSO return `by_variant: [{ variant, subject, sent, skipped,
+   opened, clicked }]`, so a per-variant rate splits the campaign figure. The limits that remain:
+   unsubscribe counts are absent from metrics entirely, and by_variant appears only on
+   variant-carrying campaigns.
  - Under-delivered? The skipped_* buckets are the answer. A large skipped_frequency_cap means the
      7-day cap ate the difference (`marketing_frequency_cap_get`); skipped_suppressed /
      skipped_unsubscribed mean the list, not the send, is the problem.
- - Engagement: on a variant-carrying campaign, `by_variant` above IS the engagement read -
-     per-variant opens and clicks at any list size, and judge by clicks (Apple MPP inflates opens).
-     On a campaign without variant data: `email_logs_list({ limit: 500 })` returns per-message
-     open_count, click_count, delivered_at, bounced_at, complained_at. It has NO campaign filter and
-     caps at 500 rows, so on a send larger than 500 recipients you CANNOT compute a true campaign
-     open or click rate from tools. Say that and point the user at the dashboard - do not estimate.
+ - Engagement: `engagement` above IS the campaign open and click rate - report open_rate and
+     click_rate against `delivered` at any list size, and judge by clicks (Apple MPP inflates
+     opens); on a variant-carrying campaign `by_variant` splits it per variant. Per-message
+     detail: `email_logs_list({ campaign_id, limit: 500 })` returns that campaign's rows newest
+     first with open_count, click_count, delivered_at, bounced_at, complained_at. `campaign_id` is
+     a UUID (malformed = 400; another account's campaign = empty list) and the 500-row cap still
+     applies, so on a larger send the log is a sample of the newest rows, not the denominator -
+     the rate comes from `engagement`, never from counting log rows.
  - Why one specific person didn't get it: `email_suppression_list({ type })` names the individual
      addresses (bounce | complaint | manual | unsubscribe). `email_suppression_remove` REFUSES on
      sticky suppressions (hard bounces and spam complaints) - deliberate, and there is no way around
