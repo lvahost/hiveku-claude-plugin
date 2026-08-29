@@ -61,7 +61,11 @@ class McpClient {
     this.proc = spawn(path.join(PLUGIN_ROOT, 'bin', 'hiveku-mcp'), [], {
       cwd,
       stdio: ['pipe', 'pipe', 'pipe'],
-      env: { ...process.env, HIVEKU_PROJECT_DIR: cwd },
+      // ★ Ask for the FULL surface. The plugin advertises a core set plus a
+      // search tool by default, which is right for a session and wrong here:
+      // a sweep that only sees 13 tools reports "9/9 ok" and has checked
+      // almost nothing. Caught by running this against a real account.
+      env: { ...process.env, HIVEKU_PROJECT_DIR: cwd, HIVEKU_TOOL_MODE: 'all' },
     });
     this.nextId = 1;
     this.pending = new Map();
@@ -178,6 +182,12 @@ async function main() {
 
   console.log(`${all.length} tools exposed, ${targets.length} read-only selected` +
     (ARGS.only ? ` (filtered by "${ARGS.only}")` : '') + `\n`);
+  if (all.length < 100 && !ARGS.only) {
+    console.warn(
+      `  WARNING: only ${all.length} tools were advertised. A full account exposes ~1,500, so this\n` +
+      `  sweep is checking a fraction of the surface. Is an older plugin pinning the tool list?\n`,
+    );
+  }
 
   const results = [];
   let done = 0;
