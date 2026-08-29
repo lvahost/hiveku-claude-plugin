@@ -191,16 +191,64 @@ async function main() {
 
   const results = [];
   let done = 0;
+  let throttled = 0;
   const queue = [...targets];
+
+  /**
+   * ★ THE SERVER RATE-LIMITS AT 100 REQUESTS PER 60 SECONDS, and this script
+   * used to walk straight through it.
+   *
+   * Measured on a full sweep: 608 tools, 61 ok, and 547 "ERRORS" that were
+   * every one of them "Rate limit exceeded. Maximum 100 requests per 60
+   * seconds." Zero were real. A staff member running the command the runbook
+   * recommends would have been shown 547 failures on a perfectly healthy
+   * server, which is worse than not sweeping at all -- it manufactures an
+   * incident.
+   *
+   * A sliding window is used rather than a fixed delay because the limit is
+   * itself a sliding window: pacing by average rate still bursts through the
+   * first 100 and then fails for the rest of the minute.
+   */
+  const WINDOW_MS = 60_000;
+  const MAX_PER_WINDOW = 90;      // 100, less headroom for anything else on this key
+  const stamps = [];
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+  async function takeSlot() {
+    for (;;) {
+      const now = Date.now();
+      while (stamps.length && now - stamps[0] >= WINDOW_MS) stamps.shift();
+      if (stamps.length < MAX_PER_WINDOW) { stamps.push(now); return; }
+      await sleep(Math.max(50, WINDOW_MS - (now - stamps[0]) + 25));
+    }
+  }
+
+  const RETRY_AFTER = /retry after (\d+)/i;
+
+  /** One call, with a bounded retry when the server says to wait. */
+  async function callOnce(name) {
+    for (let attempt = 0; attempt < 3; attempt++) {
+      await takeSlot();
+      let msg;
+      try { msg = await mcp.send('tools/call', { name, arguments: {} }); }
+      catch (e) { msg = { error: { message: String(e.message || e) } }; }
+      const c = classify(msg);
+      const text = `${c.detail ?? ''}`;
+      if (!/rate limit/i.test(text)) return c;
+      throttled++;
+      // Honour the server's own number; it knows when the window rolls.
+      const secs = Number(RETRY_AFTER.exec(text)?.[1] ?? 5);
+      await sleep(Math.min(65, Math.max(1, secs)) * 1000 + 250);
+    }
+    return { status: 'error', detail: 'rate limited after 3 attempts' };
+  }
+
   const worker = async () => {
     for (;;) {
       const name = queue.shift();
       if (!name) return;
       const t0 = Date.now();
-      let msg;
-      try { msg = await mcp.send('tools/call', { name, arguments: {} }); }
-      catch (e) { msg = { error: { message: String(e.message || e) } }; }
-      const c = classify(msg);
+      const c = await callOnce(name);
       results.push({ tool: name, ...c, ms: Date.now() - t0 });
       done++;
       if (done % 25 === 0 || done === targets.length) {
@@ -223,6 +271,7 @@ async function main() {
     ok: ok.length,
     needs_params: needs.length,
     errors: err.length,
+    rate_limit_waits: throttled,
     results,
   };
   fs.writeFileSync(ARGS.out, JSON.stringify(report, null, 2) + '\n');
@@ -230,6 +279,9 @@ async function main() {
   console.log(`\n  ok            ${ok.length}`);
   console.log(`  needs params  ${needs.length}   (not a failure — the tool wants arguments)`);
   console.log(`  ERRORS        ${err.length}`);
+  if (throttled) {
+    console.log(`  (paced ${throttled}x for the server's 100-per-60s limit — a full sweep takes ~7 min)`);
+  }
   if (err.length) {
     console.log('\n  failures:');
     for (const r of err) console.log(`    ${r.tool.padEnd(46)} ${r.detail}`);
