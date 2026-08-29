@@ -190,6 +190,29 @@ read-only for accounts somebody should look at but never touch.
 
 ---
 
+## Claude Desktop: two sandbox settings the plugin needs
+
+The Desktop app runs shell commands in a sandbox that blocks **writes outside your working
+folder** and **network access to unlisted hosts**. The plugin keeps your account keys under
+`~/.claude/plugins`, and the connect flow talks to `app.hiveku.com` - both blocked by default.
+The symptom is a connect that gets all the way to the browser and then fails with
+`EPERM ... pending-connect.json`, or a session-start line saying it cannot save credentials.
+
+Add this once to `~/.claude/settings.json` (an admin can push it to every machine via managed
+settings), then start a new session:
+
+```json
+{
+  "sandbox": {
+    "filesystem": { "allowWrite": ["~/.claude/plugins"] },
+    "network": { "allowedDomains": ["app.hiveku.com", "core.hiveku.com"] }
+  }
+}
+```
+
+The plugin checks for this at session start and before `connect`, and names this exact block
+when it is missing - so a session will tell you rather than fail halfway.
+
 ## Staying up to date
 
 **Read this part.** Claude Code enables auto-update by default for Anthropic's own

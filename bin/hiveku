@@ -148,6 +148,21 @@ async function storeConnectPayload(dataDir, existing, payload, flags) {
 
 async function cmdConnect(flags) {
   const dataDir = resolveDataDir();
+  // ★ Refuse to START a consent flow that cannot FINISH. Sending someone to
+  // the browser, having them tick accounts and paste a code, and then failing
+  // on the credential save is the worst order of operations available.
+  const writable = await dataDirWritable(dataDir);
+  if (!writable.ok) {
+    fail(
+      `This session cannot save Hiveku credentials: the sandbox blocks writes to ${writable.dir} ` +
+        `(${writable.code}). Connecting here would fail at the last step, so nothing was started.\n\n` +
+        SANDBOX_WRITE_FIX + '\n\n' +
+        'No settings access? A technical user can instead run this once in a terminal outside Claude ' +
+        '(it is not sandboxed there) and every session on this machine will then see the accounts:\n' +
+        `  ${process.argv[1] || 'hiveku'} connect`,
+      3,
+    );
+  }
   const existing = await readCredentials(dataDir);
   const appUrl = flags['app-url'] || HIVEKU_APP_URL;
 
@@ -905,6 +920,37 @@ async function cmdUpdate(flags) {
 
 const DISMISS_FILE = 'onboarding-dismissed';
 
+/**
+ * ★ CAN THIS PROCESS WRITE ITS OWN DATA DIRECTORY? Claude Desktop's sandbox
+ * blocks every write outside the working folder and the session temp dir --
+ * the plugin's credential store, the paste-flow verifier, the dismiss marker
+ * and the update cache all live outside both. The first production run of the
+ * paste-back flow died on `EPERM ... pending-connect.json` AFTER the user had
+ * already been told to approve in the browser; the credential save at the end
+ * would have failed the same way. Probe with a real open-for-write, because
+ * fs.access() can pass under a sandbox that denies the write itself.
+ */
+async function dataDirWritable(dataDir) {
+  const probe = path.join(dataDir, '.write-probe');
+  try {
+    await fs.mkdir(dataDir, { recursive: true });
+    await fs.writeFile(probe, '', { mode: 0o600 });
+    await fs.rm(probe, { force: true });
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, code: e?.code || 'unknown', dir: dataDir };
+  }
+}
+
+const SANDBOX_WRITE_FIX =
+  'Add this to ~/.claude/settings.json (or push it in managed settings for the whole team), then ' +
+  'start a NEW session:\n' +
+  '  { "sandbox": { "filesystem": { "allowWrite": ["~/.claude/plugins"] },\n' +
+  '                "network": { "allowedDomains": ["app.hiveku.com", "core.hiveku.com"] } } }\n' +
+  'The same block also permits the key exchange (app.hiveku.com) and plugin updates.';
+
+
+
 async function onboardingDismissed(dataDir) {
   try { await fs.access(path.join(dataDir, DISMISS_FILE)); return true; } catch { return false; }
 }
@@ -1064,6 +1110,16 @@ async function cmdHook(positional) {
   if (lines.length) {
     const skew = await describeVersionSkew();
     if (skew) lines.push(skew);
+    // A sandbox that blocks the data dir turns connect, update and the
+    // onboarding dismiss into late-stage failures. Say so up front, once.
+    const writable = await dataDirWritable(resolveDataDir());
+    if (!writable.ok) {
+      lines.push(
+        'Hiveku: this session cannot save credentials or apply updates - the sandbox blocks writes to ' +
+        `${writable.dir}. Connect and update will refuse to start until this is fixed. ` +
+        SANDBOX_WRITE_FIX.replace(/\n\s*/g, ' '),
+      );
+    }
   }
 
   if (lines.length) process.stdout.write(lines.join('\n') + '\n');
