@@ -23,7 +23,7 @@ import { resolveBinding, writeBinding, removeBinding, looksLikeHivekuFolder } fr
 import { decideWithGuardrails } from '../lib/tool-safety.mjs';
 import { parseFocus } from '../lib/tool-focus.mjs';
 import { detectExtensionServer, describeCollision } from '../lib/collision.mjs';
-import { runLoopbackConsent, exchangeCode, revokeSelf, keysToRotate } from '../lib/connect.mjs';
+import { runLoopbackConsent, exchangeCode, revokeSelf, keysToRotate, startPasteConsent, finishPasteConsent } from '../lib/connect.mjs';
 import { runPullData } from '../lib/pulldata.mjs';
 import { pullKnowledge, knowledgeStatus } from '../lib/knowledge.mjs';
 import { runSetup, DEFAULT_ROOT_NAME } from '../lib/setup.mjs';
@@ -61,7 +61,7 @@ your OS keychain. They are never written into a project.`;
 function parseFlags(argv) {
   const flags = {};
   const positional = [];
-  const valued = new Set(['account', 'dir', 'app-url', 'root']);
+  const valued = new Set(['account', 'dir', 'app-url', 'root', 'code']);
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a.startsWith('--')) {
@@ -87,28 +87,14 @@ function fail(message, code = 1) {
 
 /* ── connect ─────────────────────────────────────────────────────────────── */
 
-async function cmdConnect(flags) {
-  const dataDir = resolveDataDir();
-  const existing = await readCredentials(dataDir);
-  const appUrl = flags['app-url'] || HIVEKU_APP_URL;
-
-  let payload;
-  if (flags.manual) {
-    fail(
-      'Manual connection: create a key at app.hiveku.com (Settings > LLM Connectors) on any ' +
-        'device, then on this machine run: hiveku accounts add <key>. The key is validated ' +
-        'against the live server before anything is stored.',
-      2,
-    );
-  }
-
-  process.stderr.write('hiveku: opening your browser to approve access...\n');
-  payload = await runLoopbackConsent({
-    appUrl,
-    alreadyConnected: Object.keys(existing.accounts),
-    onUrl: (url) => process.stderr.write(`hiveku: if the browser did not open, visit:\n${url}\n`),
-  });
-
+/**
+ * Store a consent payload: map, rotate, upsert, revoke, report. One
+ * implementation for every return path — loopback, paste-back, and whatever
+ * comes next — because the rotation ordering here is load-bearing (compute
+ * rotations BEFORE the upsert, revoke only AFTER the store succeeds) and a
+ * second copy of it would drift.
+ */
+async function storeConnectPayload(dataDir, existing, payload, flags) {
   const incoming = payload.accounts.map((a) => ({
     account_id: a.account_id,
     key: a.api_key,
@@ -118,9 +104,6 @@ async function cmdConnect(flags) {
     departments: payload.departments || [],
   }));
 
-  // Rotation targets are computed BEFORE the upsert overwrites the old keys,
-  // and revoked only AFTER the new keys are safely stored — a failed store must
-  // never leave this device with zero working keys.
   const rotations = keysToRotate(existing.accounts, incoming);
   await upsertAccounts(dataDir, incoming);
 
@@ -159,6 +142,75 @@ async function cmdConnect(flags) {
       'Next: run "hiveku setup" to create + bind a folder per account (or /hiveku:bind in a folder of your own).',
     ],
   );
+}
+
+async function cmdConnect(flags) {
+  const dataDir = resolveDataDir();
+  const existing = await readCredentials(dataDir);
+  const appUrl = flags['app-url'] || HIVEKU_APP_URL;
+
+  let payload;
+  if (flags.manual) {
+    fail(
+      'Manual connection: create a key at app.hiveku.com (Settings > LLM Connectors) on any ' +
+        'device, then on this machine run: hiveku accounts add <key>. The key is validated ' +
+        'against the live server before anything is stored.',
+      2,
+    );
+  }
+
+  // ── finish half of the paste-back flow: `connect --code <code>` ──────────
+  if (flags.code) {
+    payload = await finishPasteConsent({ dataDir, code: String(flags.code) });
+    await storeConnectPayload(dataDir, existing, payload, flags);
+    return;
+  }
+
+  // ── start half, explicitly requested: `connect --paste` ──────────────────
+  if (flags.paste) {
+    const { url } = await startPasteConsent({ appUrl, alreadyConnected: Object.keys(existing.accounts), dataDir });
+    out(flags.json, { paste_url: url }, [
+      'Open this page, pick the accounts to connect, and approve:',
+      `  ${url}`,
+      '',
+      'The page will show a one-time code. Paste it back and run:',
+      '  hiveku connect --code <code>',
+      'The code expires in 10 minutes and only works on this machine.',
+    ]);
+    return;
+  }
+
+  process.stderr.write('hiveku: opening your browser to approve access...\n');
+  try {
+    payload = await runLoopbackConsent({
+      appUrl,
+      alreadyConnected: Object.keys(existing.accounts),
+      onUrl: (url) => process.stderr.write(`hiveku: if the browser did not open, visit:\n${url}\n`),
+    });
+  } catch (err) {
+    // ★ The sandbox cannot listen — fall THROUGH to the paste flow instead of
+    // failing with instructions. Same consent page, same cherry-picking; the
+    // return trip becomes a code the page displays and the user pastes back.
+    // This is what turns a dead end into a one-message detour for the
+    // non-technical user the error used to strand.
+    if (err?.code !== 'ELOOPBACKBLOCKED') throw err;
+    const { url } = await startPasteConsent({ appUrl, alreadyConnected: Object.keys(existing.accounts), dataDir });
+    out(flags.json, { paste_url: url, loopback_blocked: true }, [
+      'This session cannot receive the browser redirect (sandbox blocks the callback port),',
+      'so we will do it by code instead — no terminal needed:',
+      '',
+      '  1. Open this page, pick the accounts to connect, choose read-only where it fits, approve:',
+      `       ${url}`,
+      '  2. The page will show a one-time code. Paste it back here.',
+      '  3. Then run:  hiveku connect --code <code>',
+      '',
+      'The code expires in 10 minutes, works once, and is useless off this machine.',
+    ]);
+    return;
+  }
+  await storeConnectPayload(dataDir, existing, payload, flags);
+  return;
+
 }
 
 /* ── accounts ────────────────────────────────────────────────────────────── */

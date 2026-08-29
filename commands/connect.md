@@ -25,26 +25,23 @@ When it finishes, tell the user which accounts connected and what access each ha
 full key. Then tell them the next step: `cd` into the folder they use for an account and run
 `/hiveku:bind`.
 
-## If connect fails because the sandbox blocks the callback port
+## If the sandbox blocks the callback port (Claude Desktop)
 
-The error names itself ("sandboxed and is not allowed to open a local callback port"). Do NOT
-tell a non-technical user to open a terminal as your first answer — that is where they stop.
-Walk them through the in-chat path instead, which needs no terminal and works in the sandbox:
+`connect` handles this itself: when it cannot open the local callback port it prints the SAME
+consent page URL plus instructions, instead of failing. Your job is to relay, wait, finish:
 
-1. Say: "Open **app.hiveku.com**, go to **Settings > LLM Connectors**, click to create a key for
-   the account you want to connect, and paste the key here." One account at a time. If they only
-   need reporting on this account, tell them to pick **read-only** when creating it.
-2. When the key arrives, run `"${CLAUDE_PLUGIN_ROOT}/bin/hiveku" accounts add <key>`. It
-   validates against the live server and reports which account it belongs to and its access
-   level — confirm that back to the user in plain words ("Connected **Acme Dental**, full
-   access"). **Never repeat the key itself in your reply.**
-3. Ask "any more accounts?" and repeat. Then continue to the normal next step below (a folder
-   per account + `/hiveku:bind`).
-4. Mention once, casually, that a pasted key passes through the conversation, so if they ever
-   want to re-issue it the consent page (`/hiveku:connect` from a terminal session) rotates keys
-   cleanly.
+1. Give the user the printed link and say: "Open this, tick the accounts you want to connect
+   (choose read-only where someone only needs reporting), and approve. The page will then show
+   a one-time code - paste it here."
+2. When the code arrives, run `"${CLAUDE_PLUGIN_ROOT}/bin/hiveku" connect --code <code>`.
+3. Confirm what connected in plain words ("Connected **Acme Dental**, full access - and 2
+   more"). The code is one-time, PKCE-bound to this machine and expires in 10 minutes, so it
+   passing through the chat is fine; there is nothing secret to avoid echoing. If the exchange
+   says the code was invalid, the attempt is NOT lost - ask them to re-copy and paste again.
+4. Then provision: run `"${CLAUDE_PLUGIN_ROOT}/bin/hiveku" setup` to create and bind a folder
+   per account, or `/hiveku:bind` in a folder they already use.
 
-A user who says they are comfortable in a terminal can instead run the printed `connect` command
-outside Claude — one run grants every account they tick — then come back here.
+Do not send a non-technical user to a terminal for any of this - the whole flow runs in the
+conversation.
 
 If the user has no browser at all, the same `accounts add <key>` path is the fallback.
