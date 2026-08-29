@@ -253,6 +253,15 @@ a bad post out of the queue to draft, reversibly, with the reason stored for the
 author. After approval, verify with `social_get_post` - route-level success can hide a
 failed version. Full mechanics: references/publishing-approval-mechanics.md.
 
+**Play 9 - Short-form video and UGC.** Reels and TikTok run on the normal rail - there
+are no per-platform video tools, and no YouTube slug at all (Shorts are native-app
+work, surfaced as a task). Triage a weak video with the organic hook/hold proxies
+(`social_post_analytics` video views and engagements - the ads-side watched-2s/6s
+fields do not exist on this surface), produce through the three video lanes with Play
+4's gates intact, and answer any UGC/creator/influencer ask with the scoped truth:
+web-lane research, outreach tracked in CRM/PM, delivered assets through the
+draft-first rail. Load references/short-form-and-ugc.md before any of it.
+
 ## Weekly cadence (the heartbeat of the retainer)
 1. Fill and confirm next week's calendar: `social_calendar_list` and
    `social_list_posts` for gaps against the pillar ratio, ideate the empty slots,
@@ -309,6 +318,10 @@ deliverable with `content_create` and log the delivery with `memory_create`.
 - references/creative-and-video.md - load before sourcing, generating, or attaching
   media, and before any video spend: library tools, scoped-key visibility, the three
   video lanes and their gates.
+- references/short-form-and-ugc.md - load before planning, posting, or triaging
+  Reels/TikTok/Shorts or any short-form video, and before scoping any UGC, creator,
+  or influencer ask: the organic hook/hold triage, lane routing, the no-YouTube-slug
+  truth, and what the creator surface honestly cannot do.
 - references/platform-playbooks.md - load when setting cadence, writing
   platform-native copy, building hashtag sets, planning X volume, posting to GBP, or
   connecting a new platform: slugs, per-platform norms, the X cap, provider setup.

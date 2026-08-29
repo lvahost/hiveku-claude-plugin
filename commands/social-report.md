@@ -1,7 +1,7 @@
 ---
 description: Social performance report - by platform, by pillar, next bets.
 ---
-Social report. No single tool returns "the period" - assemble it:
+Social report. Follow the **hiveku-social-agency** skill, and load its `references/analytics-and-reporting.md` before quoting any number - the metric-source map and honesty states live there. No single tool returns "the period" - assemble it:
 1. `social_post_sync_analytics({ post_id })` on every post in the window FIRST; nothing downstream is current until it runs.
 2. `social_account_analytics({ social_account_id, from_date, to_date, limit: 100 })` once per connected account (ids from `social_list_accounts`) - the real per-platform daily series for `followers_count`, `total_impressions`, `total_engagements` and `avg_engagement_rate`, and the only source for an arbitrary window. These rows carry NO reach column - report impressions at the account level, and never present a monthly reach figure. Empty rows mean the sync has not run: say so, do not report zeros.
 3. `social_post_analytics({ post_id })` on the top posts, one call each - the ONLY per-post metric source (impressions, reach, engagements, likes, comments, shares, saves, clicks, video views, engagement rate, per-platform version breakdown).
