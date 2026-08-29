@@ -172,6 +172,21 @@ test('★ naming a tool exactly returns THAT tool, not its near-anagram', () => 
   assert.equal(searchTools('deploy_status', { limit: 3 })[0].name, 'deploy_status');
 });
 
+test('★ a query in the CLIENT\'S tool syntax still finds the tool', () => {
+  // Observed verbatim in a production Desktop session: the model pasted the
+  // harness's "select:" form plus the client-side MCP prefix into this search,
+  // got noise back, and went off to invoke the tool through an unrelated
+  // internal tool instead. The wrapper is not the intent.
+  for (const q of [
+    'select:mcp__plugin_hiveku_hk__get_account_info',
+    'mcp__hiveku__get_account_info',
+    'select:get_account_info',
+  ]) {
+    const hit = searchTools(q, { limit: 3 });
+    assert.equal(hit[0]?.name, 'get_account_info', `${q} -> ${hit.map((t) => t.name).join(', ')}`);
+  }
+});
+
 test('`get` and `all` are searchable words in a tool catalogue', () => {
   // Ordinary stopwords, but core verbs here.
   assert.ok(searchTools('get account info', { limit: 5 }).some((t) => t.name === 'get_account_info'));

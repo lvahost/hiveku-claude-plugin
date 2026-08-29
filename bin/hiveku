@@ -857,8 +857,9 @@ async function cmdHook(positional) {
         `Hiveku: bound to ${account.label} (${binding.accountId}, ${scopeLabel(account.scope)} access). ` +
           'Before any write: confirm with get_account_info, and check project_version_log / project_files_status ' +
           'because you are not the only writer. ' +
-          'Read the hiveku-orient skill before your first Hiveku action — it carries the hard stops, ' +
-          'the two project-id spaces, and the department rules that are not inferable from tool names. ' +
+          'When the user asks for Hiveku work, read the hiveku-orient skill before acting — it carries ' +
+          'the hard stops and the rules that are not inferable from tool names. For plain conversation, ' +
+          'greetings, or non-Hiveku tasks there is nothing to load and nothing to verify — just respond. ' +
           'Only a handful of tools are advertised: hiveku_find_tools searches the other ~1,650, so search ' +
           'before concluding a capability does not exist.',
       );
