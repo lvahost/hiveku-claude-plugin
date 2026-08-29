@@ -771,7 +771,7 @@ async function describeVersionSkew() {
     if (avail) {
       return (
         `Hiveku: plugin ${avail.available} is available (this machine has ${newest}). ` +
-        'Run /hiveku:update, then /reload-plugins to apply it in this session.'
+        'Run /hiveku:update; it takes effect in the next new chat.'
       );
     }
 
@@ -910,8 +910,8 @@ async function cmdUpdate(flags) {
     ok
       ? [
           `Updated${now ? ` to ${now}` : ''}.`,
-          '★ This session still runs the old version. Run /reload-plugins to apply it here without',
-          'restarting (one-time prompt-cache cost), or just start the next session normally.',
+          '★ This chat still runs the old version. Start a NEW chat and it takes effect (in terminal',
+          'Claude Code, /reload-plugins also works; the Desktop app does not have that command).',
         ]
       : [
           `Update did not complete: ${(up.stderr || up.stdout || 'unknown error').trim().slice(0, 300)}`,

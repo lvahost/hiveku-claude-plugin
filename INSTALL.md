@@ -224,7 +224,7 @@ or fixes, with nothing telling you that you are behind.
 
 From 0.10.5 the plugin also tells you itself: when a newer version has already arrived on your
 machine but is not applied, every new session starts with a one-line notice naming it, and
-`/hiveku:update` applies it — then `/reload-plugins` picks it up without restarting anything.
+`/hiveku:update` applies it — it takes effect in your next new chat (terminal Claude Code can also run `/reload-plugins`; the Desktop app has no such command).
 
 So either:
 
@@ -257,7 +257,7 @@ So either:
   Two commands because they do different jobs: the first refreshes the catalog so your machine
   knows a newer version exists; the second actually installs it. The update applies to NEW
   sessions — a Claude session that is already open keeps the version it started with, so
-  restart the session (or run `/reload-plugins` inside it) to pick the new one up.
+  start a new chat to pick the new one up (terminal Claude Code can also run `/reload-plugins`).
 
   Already inside a Claude session instead? The same two steps work as slash commands:
   `/plugin marketplace update hiveku` then `/plugin update hiveku@hiveku`.
