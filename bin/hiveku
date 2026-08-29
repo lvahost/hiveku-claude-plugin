@@ -20,7 +20,7 @@ import {
   publicAccountList,
 } from '../lib/credentials.mjs';
 import { resolveBinding, writeBinding, removeBinding, looksLikeHivekuFolder } from '../lib/binding.mjs';
-import { decideForPayload } from '../lib/tool-safety.mjs';
+import { decideWithGuardrails } from '../lib/tool-safety.mjs';
 import { parseFocus } from '../lib/tool-focus.mjs';
 import { detectExtensionServer, describeCollision } from '../lib/collision.mjs';
 import { runLoopbackConsent, exchangeCode, revokeSelf, keysToRotate } from '../lib/connect.mjs';
@@ -50,6 +50,8 @@ const HELP = `hiveku ${PLUGIN_VERSION} — Hiveku for Claude Code
                                 folder by department (pull), or report drift
                                 (status). Never deletes local files.
   focus [<departments...>|--clear] [--json]
+  env pull <project_id> write .env.local for local dev (values never printed)
+  fleet                 read-only portfolio sweep across every connected account
   hook <session-start|cwd-changed|pre-tool-use>
                                 Internal: used by the plugin's hooks
 
@@ -466,6 +468,130 @@ async function cmdKnowledge(flags, positional) {
   ]);
 }
 
+/**
+ * `hiveku fleet` - the portfolio view the one-folder-one-account model cannot
+ * give from inside a single session.
+ *
+ * READ-ONLY BY CONSTRUCTION: for each stored account it makes exactly two
+ * calls - get_account_info (liveness + identity) and agent_inbox_list
+ * (urgent items) - with THAT account's own key. It never mixes keys, never
+ * writes, and a dead key is a row in the report rather than an abort. This is
+ * the Monday-morning sweep; deep dives stay per-folder where the binding
+ * pins the tenant.
+ */
+/**
+ * `hiveku env pull <project_id>` - materialize .env.local for local dev
+ * WITHOUT the secret values ever entering a model's context.
+ *
+ * The VS Code extension's "Pull Env" was the only way to get this file, which
+ * gated plain-terminal local dev on installing the extension. Same contract
+ * here: values go straight from the API into the file (0600), and this
+ * process prints ONLY key names and counts. Transform rules match the
+ * extension and the platform docs: _PROD/_PRODUCTION/_STAGING keys are
+ * deploy-only and SKIPPED; a _DEV key overrides its base name locally.
+ * Server-side sensitive keys never arrive at all (write-only by design) -
+ * their names land in the file as comments so the dev knows what is missing
+ * rather than debugging a mystery.
+ */
+async function cmdEnv(flags, positional) {
+  if (positional[0] !== 'pull') fail('Usage: hiveku env pull <project_id> [--dir <folder>]');
+  const projectId = positional[1];
+  if (!isUuid(projectId)) fail('Pass the website project UUID (from sites_list).');
+  const dir = path.resolve(flags.dir || process.cwd());
+  const binding = await resolveBinding(dir);
+  if (!binding) fail(`${dir} is not bound to a Hiveku account. Run /hiveku:bind first.`);
+  const creds = await readCredentials(resolveDataDir());
+  const account = creds.accounts[binding.accountId];
+  if (!account) fail(`Bound to ${binding.label} but no key stored. Run /hiveku:connect.`);
+
+  const up = new Upstream({ key: account.key, accountId: binding.accountId, label: account.label });
+  const res = await up.forward({ jsonrpc: '2.0', id: 1, method: 'tools/call',
+    params: { name: 'project_secrets_list', arguments: { project_id: projectId } } });
+  const body = parseToolJson(res);
+  if (!body || typeof body !== 'object' || body.error) {
+    fail(`Could not read project secrets: ${body?.error || 'unexpected response shape'}`);
+  }
+  const secrets = body.secrets || {};
+  const sensitive = Array.isArray(body.sensitive_keys) ? body.sensitive_keys : [];
+
+  const out = {};
+  const skipped = [];
+  for (const [k, v] of Object.entries(secrets)) {
+    if (/_(PROD|PRODUCTION|STAGING)$/.test(k)) { skipped.push(k); continue; }
+    if (/_DEV$/.test(k)) { out[k.replace(/_DEV$/, '')] = v; continue; }
+    if (!(k in out)) out[k] = v; // a _DEV override that arrived first wins
+  }
+  const lines = [
+    '# Written by `hiveku env pull` - gitignore this file.',
+    ...Object.entries(out).map(([k, v]) => `${k}=${v}`),
+    ...(sensitive.length
+      ? ['', '# These keys exist but are write-only server-side (marked sensitive);',
+         '# set them by hand if local dev needs them:',
+         ...sensitive.map((k) => `# ${k}=`)]
+      : []),
+    '',
+  ];
+  const target = path.join(dir, '.env.local');
+  await fs.writeFile(target, lines.join('\n'), { mode: 0o600 });
+  process.stdout.write(
+    `Wrote ${Object.keys(out).length} keys to .env.local (values not shown): ` +
+    `${Object.keys(out).sort().join(', ')}\n` +
+    (skipped.length ? `Skipped ${skipped.length} deploy-only: ${skipped.sort().join(', ')}\n` : '') +
+    (sensitive.length ? `Sensitive (set by hand if needed): ${sensitive.sort().join(', ')}\n` : ''),
+  );
+}
+
+async function cmdFleet(flags) {
+  const dataDir = resolveDataDir();
+  const creds = await readCredentials(dataDir);
+  const ids = Object.keys(creds.accounts || {});
+  if (!ids.length) fail('No accounts connected. Run /hiveku:connect first.');
+
+  const rows = [];
+  for (const accountId of ids) {
+    const acct = creds.accounts[accountId];
+    const up = new Upstream({ key: acct.key, accountId, label: acct.label });
+    const row = { account_id: accountId, label: acct.label, scope: acct.scope || 'full' };
+    try {
+      const res = await up.forward({ jsonrpc: '2.0', id: 1, method: 'tools/call',
+        params: { name: 'get_account_info', arguments: {} } });
+      const info = parseToolJson(res);
+      row.reachable = true;
+      row.account_name = info?.name || info?.account_name || acct.label;
+    } catch (err) {
+      row.reachable = false;
+      row.error = String(err?.message || err).slice(0, 140);
+      rows.push(row);
+      continue; // an unreachable account gets no second call
+    }
+    try {
+      const inbox = await up.forward({ jsonrpc: '2.0', id: 2, method: 'tools/call',
+        params: { name: 'agent_inbox_list', arguments: { status: 'open', limit: 50 } } });
+      const items = parseToolJson(inbox);
+      const list = Array.isArray(items) ? items : items?.items || items?.data || [];
+      row.open_inbox_items = Array.isArray(list) ? list.length : null;
+      row.urgent = Array.isArray(list)
+        ? list.filter((i) => i?.severity === 'urgent').map((i) => String(i?.title || '').slice(0, 90))
+        : [];
+    } catch {
+      row.open_inbox_items = null; // reported as unknown, never as zero
+    }
+    rows.push(row);
+  }
+
+  if (flags.json) {
+    process.stdout.write(JSON.stringify({ accounts: rows }, null, 2) + '\n');
+    return;
+  }
+  for (const r of rows) {
+    const flag = !r.reachable ? 'UNREACHABLE' : r.urgent?.length ? `${r.urgent.length} URGENT` : 'ok';
+    process.stdout.write(`${flag.padEnd(12)} ${r.label} (${r.account_id.slice(0, 8)}, ${r.scope})` +
+      `${r.open_inbox_items != null ? ` - ${r.open_inbox_items} open inbox items` : ''}` +
+      `${r.error ? ` - ${r.error}` : ''}\n`);
+    for (const u of r.urgent || []) process.stdout.write(`             ! ${u}\n`);
+  }
+}
+
 async function cmdStatus(flags) {
   const dir = path.resolve(flags.dir || process.cwd());
   let dataDir = null;
@@ -631,7 +757,7 @@ async function cmdHook(positional) {
   // tools. Silence is the answer for everything else, which leaves the normal
   // permission flow exactly as it was.
   if (which === 'pre-tool-use') {
-    const decision = decideForPayload(payload);
+    const decision = decideWithGuardrails(payload);
     if (decision) process.stdout.write(JSON.stringify(decision));
     return;
   }
@@ -721,6 +847,8 @@ async function main() {
     case 'focus': return cmdFocus(flags, positional);
     case 'unbind': return cmdUnbind(flags);
     case 'status': return cmdStatus(flags);
+    case 'fleet': return cmdFleet(flags);
+    case 'env': return cmdEnv(flags, positional);
     case 'pull': return cmdPull(flags, positional);
     case 'knowledge': return cmdKnowledge(flags, positional);
     case 'hook': return cmdHook(positional);

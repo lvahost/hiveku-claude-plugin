@@ -13,9 +13,11 @@ Lambdas + Fly preview.
 learn what the app expects; do NOT fetch values you don't need.
 
 **Get the site RUNNING locally:** the app reads `.env.local`; you don't need to read the values, just
-have the file. Tell the user to run **"Hiveku: Pull Env to .env.local"** (Command Palette or the Source
-Control menu) - it writes the dev-appropriate secrets to `.env.local` (gitignored, skips _PROD/_STAGING,
-applies _DEV overrides). Then `npm install` + `npm run dev` and the app has its config. `.env.local` is
+have the file. Two ways to write it, same contract (gitignored, skips _PROD/_STAGING, applies _DEV
+overrides, values never shown to you):
+- Terminal (no extension needed): `"${CLAUDE_PLUGIN_ROOT}/bin/hiveku" env pull <project_id>` - prints
+  key NAMES only; sensitive write-only keys land as comments so a missing one is visible, not a mystery.
+- VS Code extension: **"Hiveku: Pull Env to .env.local"** (Command Palette or Source Control menu). Then `npm install` + `npm run dev` and the app has its config. `.env.local` is
 READ-DENIED to you on purpose - you can run the server without seeing the secret values.
 
 **Add or change a secret ("$ARGUMENTS"):** either edit `.env.local` and have the user run **"Hiveku:

@@ -151,3 +151,49 @@ test('a name that merely looks like a read is not enough', () => {
   assert.equal(isReadOnlyTool('totally_plausible_list'), false);
   assert.equal(isReadOnlyTool('blocklist_add'), false);
 });
+
+// ── Guardrail ceilings (0.10.0) ────────────────────────────────────────────
+import { decideWithGuardrails } from '../lib/tool-safety.mjs';
+import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
+function folderWith(guardrails) {
+  const dir = mkdtempSync(join(tmpdir(), 'hk-guard-'));
+  if (guardrails !== undefined) {
+    mkdirSync(join(dir, '.hiveku'), { recursive: true });
+    writeFileSync(join(dir, '.hiveku', 'guardrails.json'),
+      typeof guardrails === 'string' ? guardrails : JSON.stringify(guardrails));
+  }
+  return dir;
+}
+const payload = (tool, cwd) => ({ tool_name: `mcp__plugin_hiveku_hk__${tool}`, cwd });
+const decision = (r) => r?.hookSpecificOutput?.permissionDecision;
+
+test('reads-only folder refuses a write and says who set the ceiling', () => {
+  const cwd = folderWith({ version: 1, mode: 'reads-only' });
+  assert.equal(decision(decideWithGuardrails(payload('ppc_budget_update', cwd))), 'deny');
+  // reads still auto-approve straight through the ceiling
+  assert.equal(decision(decideWithGuardrails(payload('crm_list_contacts', cwd))), 'allow');
+});
+
+test('deny_tools beats everything, ask_tools forces the prompt', () => {
+  const cwd = folderWith({ version: 1, mode: 'full',
+    deny_tools: ['site_delete'], ask_tools: ['email_campaign_send_now'] });
+  assert.equal(decision(decideWithGuardrails(payload('site_delete', cwd))), 'deny');
+  assert.equal(decision(decideWithGuardrails(payload('email_campaign_send_now', cwd))), 'ask');
+});
+
+test('a MALFORMED guardrails file fails CLOSED for writes, open for reads', () => {
+  // A broken ceiling that silently vanishes is how a cap stops existing
+  // without anyone deciding that.
+  const cwd = folderWith('{not json');
+  assert.equal(decision(decideWithGuardrails(payload('ppc_budget_update', cwd))), 'deny');
+  assert.equal(decision(decideWithGuardrails(payload('crm_list_contacts', cwd))), 'allow');
+});
+
+test('no guardrails file changes nothing', () => {
+  const cwd = folderWith(undefined);
+  assert.equal(decision(decideWithGuardrails(payload('crm_list_contacts', cwd))), 'allow');
+  assert.equal(decideWithGuardrails(payload('ppc_budget_update', cwd)), null);
+});
