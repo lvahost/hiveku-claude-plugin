@@ -42,6 +42,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { resolveDirArg } from './lib/bound-dir.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const PLUGIN_ROOT = path.resolve(HERE, '..');
@@ -146,7 +147,10 @@ function extract(source) {
 const ARGV = process.argv.slice(2);
 const CHECK = ARGV.includes('--check');
 const FROM_SOURCE = ARGV.includes('--from-source');
-const DIR_ARG = (() => { const i = ARGV.indexOf('--dir'); return i !== -1 ? ARGV[i + 1] : null; })();
+// ★ Falls back to a discovered bound account. Before this, --check with no
+// --dir exited 2 ("cannot verify") on every machine, so the release gate
+// reported a skip as a pass and the index went 125 tools stale behind it.
+const DIR_ARG = resolveDirArg(ARGV);
 
 /** Parse from source. Undercounts by design; see the header. */
 function collectFromSource() {

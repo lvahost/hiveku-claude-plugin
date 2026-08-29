@@ -68,20 +68,32 @@ function bumped(current, kind) {
  */
 function checkGeneratedRegistries() {
   const checks = [
-    ['tool index', 'gen-tool-index.mjs'],
-    ['read-only list', 'gen-readonly-tools.mjs'],
+    ['tool index', 'gen-tool-index.mjs', ['--check']],
+    ['read-only list', 'gen-readonly-tools.mjs', ['--check']],
+    // ★ The two above compare a file against a SOURCE PARSE, which cannot see
+    // the ~125 tools registered at runtime from external microservices. They
+    // agree with each other and are both wrong together. check-drift asks the
+    // running server instead, so it is the only one of the three that can catch
+    // a missing DataForSEO surface — the exact failure that shipped.
+    ['live catalogue', 'check-drift.mjs', []],
   ];
   let stale = false;
-  for (const [label, script] of checks) {
-    const r = spawnSync(process.execPath, [path.join(ROOT, 'scripts', script), '--check'], {
+  for (const [label, script, args] of checks) {
+    const r = spawnSync(process.execPath, [path.join(ROOT, 'scripts', script), ...args], {
       encoding: 'utf8',
     });
-    if (r.status === 0) continue;
-    if (r.status === 2) {
-      console.warn(`  ${label}: cannot verify (hiveku-mcp-api-server not cloned beside this plugin)`);
+    // ★ Print the PASSES too. This gate spent a release cycle silently
+    // reporting "cannot verify" as success, and an invisible check is
+    // indistinguishable from one that never ran.
+    if (r.status === 0) {
+      console.log(`  ${label}: ok${r.stdout?.trim() ? ` — ${r.stdout.trim().split('\n')[0]}` : ''}`);
       continue;
     }
-    console.error(`  ${label}: STALE — ${(r.stderr || '').trim()}`);
+    if (r.status === 2) {
+      console.warn(`  ${label}: cannot verify — ${(r.stderr || '').trim().split('\n')[0] || 'prerequisite missing'}`);
+      continue;
+    }
+    console.error(`  ${label}: STALE — ${(r.stderr || r.stdout || '').trim()}`);
     stale = true;
   }
   return !stale;
@@ -106,7 +118,7 @@ async function main() {
     console.log('\ngenerated registries:');
     const fresh = checkGeneratedRegistries();
     if (!fresh) {
-      console.error('\nRegenerate before releasing:\n  node scripts/gen-tool-index.mjs\n  node scripts/gen-readonly-tools.mjs');
+      console.error('\nRegenerate before releasing:\n  node scripts/gen-tool-index.mjs --dir <bound-account>\n  node scripts/gen-readonly-tools.mjs');
       process.exit(1);
     }
     console.log('\nin sync. To release: node scripts/release.mjs <version|patch|minor|major>');
