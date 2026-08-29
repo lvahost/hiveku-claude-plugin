@@ -1,5 +1,5 @@
 ---
-description: Full helpdesk queue triage - breaches, new/unassigned, aging pending, customer history per flagged ticket, macro drafts. Nothing sends without approval.
+description: "Customers waiting too long? Full helpdesk queue triage - SLA breaches, new/unassigned, aging pending, each flagged ticket with the customer's history and a macro-based draft reply. Nothing sends without approval."
 ---
 Queue sweep - the **hiveku-helpdesk-agency** skill's Play 1 end-to-end. Order matters: protect SLA
 first, then reduce backlog. `/hiveku:tickets` is the overdue-reply half of this pass; run this one

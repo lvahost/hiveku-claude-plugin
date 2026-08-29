@@ -1,5 +1,5 @@
 ---
-description: Weekly GBP review sweep - triage, draft, human approval, one confirmed reply at a time.
+description: "Answer Google reviews (\"someone left us a bad review\") - weekly Google Business Profile (GBP) review sweep: triage, draft replies, human approval, one confirmed reply at a time."
 ---
 Google review sweep. Load `references/local-seo.md` from the **hiveku-seo-agency** skill (Play L4) before running this. SLA: 24h on 1-2 star, 72h otherwise.
 1. Context: `account_context_get({ domain: "seo" })` - brand voice, escalation contact, and any rule about who speaks publicly. Then `seo_connections_list` for the GBP `connection_id`s.

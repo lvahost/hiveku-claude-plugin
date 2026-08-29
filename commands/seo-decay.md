@@ -1,5 +1,5 @@
 ---
-description: Find decaying + cannibalizing content and produce a refresh plan.
+description: "For \"our old posts don't get traffic anymore\" or pages fighting each other for the same search - find decaying + cannibalizing content and produce a refresh plan."
 ---
 Content decay sweep. Context: `account_context_get({ domain: "seo" })`.
 1. `seo_content_decay` + `seo_cannibalization` → pages losing traffic or competing with themselves.

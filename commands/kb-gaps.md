@@ -1,5 +1,5 @@
 ---
-description: Find knowledge-base gaps from ticket themes + CSAT, draft the missing articles.
+description: "Find the questions customers keep asking that we have no written answer for - mine ticket themes + CSAT, then draft the missing knowledge-base articles."
 ---
 KB gap sweep. 1. `helpdesk_csat_stats({ since })` (it also returns a per-assignee breakdown - an
 outlier agent is a coaching problem, not a KB gap) + recent `helpdesk_ticket_list({ status })`,

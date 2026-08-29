@@ -1,5 +1,5 @@
 ---
-description: Version this project's changes in Hiveku's native VCS - status, build gate, then commit on a branch.
+description: "Save a named version of this project's changes in Hiveku's native VCS - status, build gate, then commit on a branch. A commit is NOT live; putting it live is /hiveku:deploy."
 argument-hint: "[commit message, optional]"
 ---
 

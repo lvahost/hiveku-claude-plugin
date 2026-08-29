@@ -1,5 +1,5 @@
 ---
-description: Phone system health for the bound account - provisioning, blocking issues, outbound cap, routing, DID inventory, E911.
+description: "Phones acting up? Diagnose the phone system - \"phones aren't ringing\", \"customers can't get through\", can't dial out - plus provisioning, routing, outbound cap, the phone numbers you own (DID inventory), and emergency-address (E911) registration. Read-only: names the cause and files the dashboard fix as a task."
 argument-hint: "[optional symptom - e.g. 'phones not ringing' or 'extension 1003' or 'outbound rejected']"
 ---
 Diagnose the phone system for the account this directory is bound to$ARGUMENTS. This is TELEPHONY,

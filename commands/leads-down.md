@@ -1,5 +1,5 @@
 ---
-description: Diagnose "why are leads down?" - measurement artifacts first, then per-channel deltas, then a client-ready answer.
+description: "Diagnose \"why are leads down?\" - first checks whether the tracking broke (measurement artifacts, so a counting bug isn't blamed on the market), then per-channel deltas, then a client-ready answer."
 argument-hint: "[period, default last 28 days vs the prior 28]"
 ---
 The client asked why leads are down ($ARGUMENTS - default: last 28 days vs the prior 28). The first

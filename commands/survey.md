@@ -1,5 +1,5 @@
 ---
-description: NPS/CSAT survey - list, create, activate, send (real sends, 200/call cap), read verbatims.
+description: "Ask customers how we're doing - NPS/CSAT satisfaction surveys: list, create, activate, send (real emails, 200/call cap, confirmed first), and read what they wrote back (verbatims)."
 ---
 Voice-of-customer survey. See Play 7 of the **hiveku-analytics-agency** skill.
 1. Context: `account_context_get({ domain: "marketing" })` for voice and any rule about contacting customers. (`analytics` is not a valid context domain.)

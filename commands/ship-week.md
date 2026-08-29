@@ -1,5 +1,5 @@
 ---
-description: Cross-channel week view - social, email, content, sequences in one Mon-Sun grid, with collisions, empty days, and the rows that will NOT ship themselves.
+description: "What's going out this week (\"the client wants to see everything before it goes out\") - social, email, content, and sequences in one Mon-Sun grid, with collisions, empty days, and the rows that will NOT ship themselves."
 argument-hint: "[optional week - e.g. 'next week' or a Monday date]"
 ---
 What ships this week$ARGUMENTS. Context: `account_context_get({ domain: "marketing" })`. One grid

@@ -1,5 +1,5 @@
 ---
-description: Triage Mission Control intake - classify, route, raise decisions, spawn the PM work.
+description: "Requests piling up or falling through the cracks? Triage the Mission Control intake inbox (Slack/email/webhooks) - classify, route, raise decisions to a human, spawn the PM work. NOT for customer-support tickets - that's /hiveku:support-sweep."
 ---
 Triage pass over the account's Mission Control board. MC is the intake and decision surface; PM is where
 the work is tracked. They are separate systems joined by a bridge (see the `hiveku-pm-mission-control` skill).

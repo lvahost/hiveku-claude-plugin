@@ -1,5 +1,5 @@
 ---
-description: Build, activate and run an email nurture sequence - steps, activation order, enrollment, monitoring.
+description: "Set up an automatic email series that drips out over days to the contacts you enroll (a nurture sequence) - build, activation order, enrollment, monitoring."
 argument-hint: "[what the sequence should do]"
 ---
 Build an email nurture sequence: $ARGUMENTS.

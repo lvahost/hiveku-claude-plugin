@@ -1,5 +1,5 @@
 ---
-description: Outbound program health - readiness score, blockers, mailbox health, reply SLA, next actions.
+description: "Cold email not working, or nobody responding? Health check on the whole outbound program - readiness score, blockers, mailbox health, reply SLA, and what to fix first."
 ---
 Outbound health.
 1. `outbound_health_status` FIRST (no arguments). Report in this order: `blockers[]` →

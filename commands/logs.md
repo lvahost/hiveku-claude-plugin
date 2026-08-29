@@ -1,5 +1,5 @@
 ---
-description: Triage logs for an environment of this project - live-site incidents (runtime errors + broken serving path), failed builds, and the preview.
+description: "When the live site is down or erroring, or a build failed - triage that environment's logs and find the cause: live-site incidents (runtime errors + broken serving path), failed builds, and the preview."
 argument-hint: "[preview|development|staging|production]"
 ---
 

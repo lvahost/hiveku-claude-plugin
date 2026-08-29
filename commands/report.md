@@ -1,5 +1,5 @@
 ---
-description: Monthly client-grade report - the SEO deliverable plus the branded client report the client actually opens (share link, PDF, confirm-gated send).
+description: "\"The client's monthly report is due\" / \"what did we actually get this month?\" - the monthly client-grade SEO deliverable plus the branded report page the client actually opens: regenerates fresh numbers first, then share link or PDF, confirm-gated send."
 argument-hint: "[month, default last month]"
 ---
 Produce this account's monthly report for $ARGUMENTS (default: last full month). Follow the

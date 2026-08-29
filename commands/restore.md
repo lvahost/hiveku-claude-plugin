@@ -1,5 +1,5 @@
 ---
-description: Restore this project - one file, a whole checkpoint, or a point in time. Preview first, always.
+description: "Undo - put the site back how it was: one file, a saved snapshot (checkpoint), or a point in time (\"how it looked Tuesday\"). Preview first, always."
 argument-hint: "[what to restore - a file path, a checkpoint hash, or a time]"
 ---
 

@@ -1,5 +1,5 @@
 ---
-description: Work the Hiveku cold-email reply queue - pre-classified inbox, grounded drafts, CRM push. Nothing sends.
+description: "People wrote back to our cold (sales prospecting) emails - work the pre-classified reply queue, draft a grounded answer for each, push the interested ones to the CRM. Nothing sends without approval. Customer-support tickets are /hiveku:tickets instead."
 ---
 Reply triage. Context: `account_context_get({ domain: "outbound" })`.
 1. Read the queue: `outbound_list_inbox({ thread_status: "needs_reply" })`. Work

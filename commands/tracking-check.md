@@ -1,5 +1,5 @@
 ---
-description: Conversion-tracking verdict per ad channel - is Hiveku recording what the platforms are not?
+description: "\"Are leads and sales from the ads being counted?\" / \"Google Ads shows zero\" - per-ad-channel conversion-tracking verdict: is Hiveku recording what the platforms are not, with the exact broken link named and a fix task drafted."
 ---
 Conversion-tracking check. Follow the **hiveku-conversion-tracking** skill's triage ladder.
 1. Context: `account_context_get({ domain: "marketing" })`. (`analytics` is NOT a valid context domain - it returns 400. It is only valid on `talk_to_department`.) Then `sites_list` for the `project_id` this check runs against.

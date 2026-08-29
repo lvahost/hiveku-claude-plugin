@@ -1,5 +1,5 @@
 ---
-description: Capacity and margin per client - timesheets vs rates vs invoiced revenue, from the reads that exist. Honest about what is not recorded.
+description: "\"Do we have the hours to take this on?\" / \"are we actually making money on this client?\" - capacity and margin per client: timesheets vs rates vs invoiced revenue, from the reads that exist. Honest about what is not recorded."
 argument-hint: "[period - e.g. 'this week' or '2026-08-01..2026-08-31']"
 ---
 Capacity and margin$ARGUMENTS. Run this in the AGENCY's own bound folder - the account holding the

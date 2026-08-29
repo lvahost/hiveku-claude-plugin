@@ -1,5 +1,5 @@
 ---
-description: Weekly optimization pass (role: SEO Specialist) - the agency cadence, not just a status check.
+description: "The weekly \"how are our rankings and search traffic, and what should we do about it?\" pass (role: SEO Specialist) - rank movements, Search Console anomalies, new/lost links, this week's fixes and content moves; the agency cadence, not just a status check."
 ---
 Run this account's weekly pass. Follow the **hiveku-seo-agency** skill's weekly cadence.
 1. Context first: `account_context_get({ domain: "seo" })`.

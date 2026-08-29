@@ -1,5 +1,5 @@
 ---
-description: Standup - account health, what's blocked on a human, what's next, breached, stalled, milestones.
+description: "The \"what is everyone working on?\" check - standup for this account: health, what's blocked on a human, what's overdue (breached) or stalled, what's next, and upcoming milestones."
 ---
 Standup.
 
