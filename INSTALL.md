@@ -197,11 +197,29 @@ marketplaces, but **third-party marketplaces like this one start with auto-updat
 leave it off, you keep the exact version you installed and never receive new skills, commands,
 or fixes, with nothing telling you that you are behind.
 
+From 0.10.5 the plugin also tells you itself: when a newer version has already arrived on your
+machine but is not applied, every new session starts with a one-line notice naming it, and
+`/hiveku:update` applies it — then `/reload-plugins` picks it up without restarting anything.
+
 So either:
 
 - **Turn on auto-update once** (step 6 above, or the Marketplaces tab in `/plugin`). Claude Code
   then refreshes shortly after a session starts and picks up new versions on its own. This is
-  what we recommend.
+  what we recommend. Scriptable/pushable form — the same thing as a settings block, useful for
+  provisioning a whole team's machines at once:
+
+  ```json
+  {
+    "extraKnownMarketplaces": {
+      "hiveku": {
+        "source": { "source": "git", "url": "https://github.com/lvahost/hiveku-claude-plugin.git" },
+        "autoUpdate": true
+      }
+    }
+  }
+  ```
+
+  in `~/.claude/settings.json` (per user) or managed settings (org-wide, users cannot turn it off).
 - **Or update by hand** whenever you want the latest. The usual path: click the terminal icon
   in the Claude app (it opens a shell in whatever folder you have open — which folder does not
   matter, the plugin is installed for your whole user account) and run:

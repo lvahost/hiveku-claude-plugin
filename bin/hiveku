@@ -11,7 +11,8 @@
  */
 import path from 'node:path';
 import os from 'node:os';
-import { promises as fs } from 'node:fs';
+import { promises as fs, readFileSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
 import {
   resolveDataDir,
   readCredentials,
@@ -53,6 +54,7 @@ const HELP = `hiveku ${PLUGIN_VERSION} — Hiveku for Claude Code
   env pull <project_id> write .env.local for local dev (values never printed)
   fleet                 read-only portfolio sweep across every connected account
   hook <session-start|cwd-changed|pre-tool-use>
+  update                        Refresh the marketplace and apply the plugin update
                                 Internal: used by the plugin's hooks
 
 Keys live in the plugin's private data directory, encrypted with a key held in
@@ -740,6 +742,20 @@ async function describeVersionSkew() {
       .map((e) => e.name);
     if (!versions.length) return null;
     const newest = versions.reduce((a, b) => (cmp(a, b) >= 0 ? a : b));
+
+    // ★ The case that stranded a user on 0.9.1 for three releases: the
+    // marketplace clone has already PULLED a newer version — the pipeline
+    // worked — but nobody pressed Update, so every fixed bug still looks
+    // broken. Detect it here, where it costs one local file read, and name
+    // the command that finishes the job.
+    const avail = availablePluginUpdate(newest);
+    if (avail) {
+      return (
+        `Hiveku: plugin ${avail.available} is available (this machine has ${newest}). ` +
+        'Run /hiveku:update, then /reload-plugins to apply it in this session.'
+      );
+    }
+
     if (cmp(newest, running) <= 0) return null;
 
     return (
@@ -794,6 +810,95 @@ async function cmdFocus(flags, positional) {
       `Other tools are hidden from the list but still work if named directly.\n` +
       `Restart the session for this to take effect. Clear it with /hiveku:focus --clear\n`);
   }
+}
+
+/* ── self-update ─────────────────────────────────────────────────────────── */
+
+/**
+ * What version does the LOCAL marketplace clone advertise, vs what is running?
+ *
+ * ★ LOCAL FILE READS ONLY — this is called from the session-start hook, which
+ * must never wait on the network. The clone is what the app's own updater
+ * pulls in the background, so comparing against it answers "has an update
+ * already ARRIVED that the user simply has not applied", which is the common
+ * case: the pipeline works, the last click does not happen. A user sat on
+ * 0.9.1 for three releases this way and read every fixed bug as still broken.
+ */
+function availablePluginUpdate(baseline = PLUGIN_VERSION, homeDir = os.homedir()) {
+  try {
+    const raw = readFileSync(
+      path.join(homeDir, '.claude', 'plugins', 'marketplaces', 'hiveku', '.claude-plugin', 'marketplace.json'),
+      'utf8',
+    );
+    const advertised = JSON.parse(raw)?.plugins?.find?.((pl) => pl?.name === 'hiveku')?.version;
+    if (!advertised || typeof advertised !== 'string') return null;
+    const num = (v) => v.split('.').map((n) => parseInt(n, 10) || 0);
+    const [a, b] = [num(advertised), num(baseline)];
+    for (let i = 0; i < 3; i++) {
+      if ((a[i] ?? 0) > (b[i] ?? 0)) return { installed: baseline, available: advertised };
+      if ((a[i] ?? 0) < (b[i] ?? 0)) return null;
+    }
+    return null;
+  } catch {
+    return null; // no clone, unreadable JSON — never break session start over this
+  }
+}
+
+/**
+ * `hiveku update` — refresh the marketplace and apply the plugin update.
+ *
+ * Wraps the app's own commands rather than reimplementing them: `claude plugin
+ * marketplace update` is the same fast-forward the background updater does,
+ * and `claude plugin update` is the same install the /plugin UI button runs.
+ * If the `claude` binary is not reachable (some Desktop sandboxes), fall back
+ * to fast-forwarding the clone directly and point at the UI for the last step.
+ */
+async function cmdUpdate(flags) {
+  const before = PLUGIN_VERSION;
+  const run = (args) => spawnSync('claude', args, { encoding: 'utf8', timeout: 120_000 });
+
+  const mk = run(['plugin', 'marketplace', 'update', 'hiveku']);
+  if (mk.error?.code === 'ENOENT') {
+    // No claude CLI here. The clone is a plain git checkout; do its fast-forward.
+    const clone = path.join(os.homedir(), '.claude', 'plugins', 'marketplaces', 'hiveku');
+    const pull = spawnSync('git', ['-C', clone, 'pull', 'origin', 'HEAD'], { encoding: 'utf8', timeout: 120_000 });
+    const avail = availablePluginUpdate(PLUGIN_VERSION);
+    out(flags.json, { installed: before, available: avail?.available ?? before, applied: false, pulled: pull.status === 0 }, [
+      pull.status === 0 ? 'Marketplace refreshed.' : `Could not refresh the marketplace: ${(pull.stderr || '').trim().slice(0, 200)}`,
+      avail
+        ? `Version ${avail.available} is ready (you are on ${before}). Apply it in /plugin > hiveku > Update, then restart the session.`
+        : `You are on the newest version (${before}).`,
+    ]);
+    return;
+  }
+
+  const up = run(['plugin', 'update', 'hiveku@hiveku']);
+  const ok = up.status === 0;
+  // Report what the marketplace now advertises, not a diff against whichever
+  // copy of this script happens to be executing — run from a repo checkout the
+  // baseline lies.
+  let now = null;
+  try {
+    const raw = readFileSync(
+      path.join(os.homedir(), '.claude', 'plugins', 'marketplaces', 'hiveku', '.claude-plugin', 'marketplace.json'),
+      'utf8',
+    );
+    now = JSON.parse(raw)?.plugins?.find?.((pl) => pl?.name === 'hiveku')?.version ?? null;
+  } catch { /* fine — the human line degrades gracefully */ }
+  out(
+    flags.json,
+    { applied: ok, now_installed: now, detail: (up.stdout || up.stderr || '').trim().slice(0, 300) },
+    ok
+      ? [
+          `Updated${now ? ` to ${now}` : ''}.`,
+          '★ This session still runs the old version. Run /reload-plugins to apply it here without',
+          'restarting (one-time prompt-cache cost), or just start the next session normally.',
+        ]
+      : [
+          `Update did not complete: ${(up.stderr || up.stdout || 'unknown error').trim().slice(0, 300)}`,
+          'Fallback: open /plugin, pick hiveku, press Update, restart the session.',
+        ],
+  );
 }
 
 async function cmdHook(positional) {
@@ -920,6 +1025,7 @@ async function main() {
     case 'pull': return cmdPull(flags, positional);
     case 'knowledge': return cmdKnowledge(flags, positional);
     case 'hook': return cmdHook(positional);
+    case 'update': return cmdUpdate(flags);
     case 'version': case '--version': process.stdout.write(PLUGIN_VERSION + '\n'); return;
     default:
       process.stdout.write(HELP + '\n');
