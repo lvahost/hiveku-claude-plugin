@@ -6577,7 +6577,7 @@
       "name": "project_annotations_list",
       "dept": "project",
       "method": "GET",
-      "description": "List a website project's visual-review annotations in ONE call (replaces the pm_tasks_get-per-task N+1). Filters: branch (dev|staging|production — the share page's names, NOT deploy_site's 'development'), page_url substring, state (open|resolved|all; default open), limit (≤1000). Each row: id, page_url/title, deployment_branch, annotation_type, priority, annotation_text, coordinates, screenshot_url, task_id (the 2-way PM link), task_count, all_tasks_completed, resolved_at, created_by_name, created_at. ★ coordinates is a POINT {xPct,yPct} as percent FRACTIONS 0..1 (render at left: xPct*100%) — not a rect, not 0..100. ★ There is no per-annotation resolve: completing the linked PM task (pm_tasks_complete on task_id) flips resolved_at — that is the designed loop."
+      "description": "List a website project's visual-review annotations in ONE call (replaces the pm_tasks_get-per-task N+1). Filters: branch (dev|staging — the share page's names, NOT deploy_site's 'development'; production was retired as a review tier, though legacy production-branch rows are still returned when you do not filter), page_url substring, state (open|resolved|all; default open), limit (≤1000). Each row: id, page_url/title, deployment_branch, annotation_type, priority, annotation_text, coordinates, screenshot_url, task_id (the 2-way PM link), task_count, all_tasks_completed, resolved_at, created_by_name, created_at. ★ coordinates is a POINT {xPct,yPct} as percent FRACTIONS 0..1 (render at left: xPct*100%) — not a rect, not 0..100. ★ There is no per-annotation resolve: completing the linked PM task (pm_tasks_complete on task_id) flips resolved_at — that is the designed loop."
     },
     {
       "name": "project_assets_orphan_sweep",
@@ -7015,7 +7015,7 @@
       "name": "project_review_link_get",
       "dept": "project",
       "method": "GET",
-      "description": "Get the client review share link for a website project — THE ONLY URL WHERE ANNOTATING WORKS. The injected bridge is deliberately inert outside an iframe, so handing someone the raw dev URL yields a page where nothing can be pinned; the annotate page is app.hiveku.com/review/share/<token>?branch=… which iframes the tier and hosts the overlay UI. Returns share_url plus ready-made annotate_urls for development/staging/production (the share page's branch values are dev|staging|production — the development→dev mapping is already done). Strictly read-only: if no token exists yet it says so — mint one with project_review_link_set {enabled:true}."
+      "description": "Get the client review share link for a website project — THE ONLY URL WHERE ANNOTATING WORKS. The injected bridge is deliberately inert outside an iframe, so handing someone the raw dev URL yields a page where nothing can be pinned; the annotate page is app.hiveku.com/review/share/<token>?branch=… which iframes the tier and hosts the overlay UI. Returns share_url plus ready-made annotate_urls for development/staging (the share page's branch values are dev|staging — the development→dev mapping is already done). Production is NOT a reviewable tier and gets no annotate URL. Strictly read-only: if no token exists yet it says so — mint one with project_review_link_set {enabled:true}."
     },
     {
       "name": "project_review_link_set",
