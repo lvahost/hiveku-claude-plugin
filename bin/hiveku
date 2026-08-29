@@ -492,7 +492,24 @@ async function cmdPull(flags, positional) {
     log: (line) => process.stdout.write(line + '\n'),
   });
   if (!result.ok) {
-    fail('Every dataset failed — the stored key may be dead. Run /hiveku:status, then /hiveku:connect to re-mint.');
+    // ★ "Every dataset failed" proves nothing about the KEY when "every" means
+    // one: a single broken endpoint produced this exact message and sent a
+    // healthy session toward re-minting. Ask the server about the key before
+    // accusing it — one cheap authoritative call settles it.
+    const probe = new Upstream({ key: account.key, accountId: binding.accountId, label: binding.label });
+    let keyHealthy = false;
+    try {
+      await probe.forward({ jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name: 'get_account_info', arguments: {} } });
+      keyHealthy = true;
+    } catch { /* the fail() below says what this means */ }
+    if (keyHealthy) {
+      fail(
+        `All ${result.requested ?? ''} requested dataset(s) failed, but the key is HEALTHY (verified ` +
+          'with get_account_info just now). These are endpoint errors — read the per-dataset messages ' +
+          'above and report the failing endpoint(s); do NOT re-mint the key.',
+      );
+    }
+    fail('Every dataset failed AND the key was refused by the server. Run /hiveku:connect to re-mint, then start a new session.');
   }
 }
 
@@ -521,7 +538,13 @@ async function cmdKnowledge(flags, positional) {
             `  in sync: ${status.in_sync}`,
             `  changed upstream: ${status.changed_remote.length ? status.changed_remote.join(', ') : 'none'}`,
             `  new upstream: ${status.new_remote.length ? status.new_remote.join(', ') : 'none'}`,
-            `  deleted upstream (still on disk): ${status.deleted_remote.length ? status.deleted_remote.join(', ') : 'none'}`,
+            ...(status.verify_failed
+              ? ['  VERIFY FAILED: upstream listing returned nothing for a manifest with entries — no deletion is being claimed. Re-run in a minute (rate limits) or re-pull to confirm.']
+              : [`  deleted upstream (still on disk): ${status.deleted_remote.length ? status.deleted_remote.join(', ') : 'none'}`]),
+            ...(status.unverifiable?.length && !status.verify_failed
+              ? [`  unverifiable (listing failed for their type — NOT deleted): ${status.unverifiable.length}`]
+              : []),
+            ...(status.failed_types?.length ? [`  WARNING: could not list: ${status.failed_types.join(', ')}`] : []),
             `  locally modified: ${status.locally_modified.length ? status.locally_modified.join(', ') : 'none'}`,
           ]
         : []),
