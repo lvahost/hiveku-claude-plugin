@@ -92,9 +92,23 @@ function collect() {
   return byName;
 }
 
+// GET is necessary but NOT sufficient. A read that RETURNS SECRET MATERIAL
+// must never be silently pre-approved, because the PreToolUse hook's approval
+// bypasses the user's own permission rules (a hook decision does not consult
+// settings.json, so a user's ask rule for one of these would be neutralized).
+// Each exclusion names its reason; add here only after reading the tool's
+// registered description, and never remove one without re-reading it.
+const SENSITIVE_READ_EXCLUSIONS = new Map([
+  ['project_secrets_list',
+    'returns { secrets: { KEY: value } } - PLAINTEXT env values for everything not ' +
+    'opt-in flagged sensitive. Reading credentials silently is not a read-only act.'],
+]);
+
 const byName = collect();
 const total = byName.size;
-const readOnly = [...byName.entries()].filter(([, m]) => m === 'GET').map(([n]) => n).sort();
+const readOnly = [...byName.entries()]
+  .filter(([n, m]) => m === 'GET' && !SENSITIVE_READ_EXCLUSIONS.has(n))
+  .map(([n]) => n).sort();
 const unmapped = [...byName.entries()].filter(([, m]) => m === null).map(([n]) => n);
 
 // Sanity gates. A generator that silently produces a tiny or enormous list is

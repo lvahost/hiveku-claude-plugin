@@ -325,6 +325,22 @@ keys, put the question in the PM task thread and wait there. Full mechanics live
 surface scoped to an agent room, granted on most scoped profiles. `room_note_write` REPLACES the
 note, so read before writing - the same one-document discipline as memory.
 
+## When the network looks broken - two cages, one of them yours
+
+The Bash sandbox and the Hiveku bridge have SEPARATE network paths. A sandboxed `curl` to
+core.hiveku.com being denied proves nothing about MCP tools: the bridge is spawned by the
+Claude app outside your shell's cage and usually has network when Bash does not. The reverse
+holds too - the bridge erroring does not mean your shell is blocked.
+
+So never infer one from the other. The two-second test that settles it is calling
+`get_account_info`: if it answers, every Hiveku tool path works regardless of what curl said,
+and "I cannot execute this until the sandbox is fixed" would be a false blocker. If the bridge
+itself is down, its error now says so explicitly ("This request came from the Hiveku bridge
+process itself...") with the underlying network code - trust that text over any shell probe.
+
+A sandbox-settings change (egress rules, allowed domains) applies to NEW sessions only. If the
+user just changed settings, the fix is restarting the session, not retrying in this one.
+
 ## Finding the right tool
 
 Do not guess tool names - there are over a thousand. On a full key, discover them with

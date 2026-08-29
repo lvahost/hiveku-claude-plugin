@@ -90,7 +90,7 @@ Prefer your own folder layout? Skip `setup`, open a folder you already use, and 
 
 ## Which tools to approve once, and which to keep approving
 
-Hiveku exposes about 1,350 tools. Roughly 500 of them only read, and the rest can change
+Hiveku exposes about 1,650 tools. Roughly 590 of them only read, and the rest can change
 something. Approving each read individually gets old fast, and approving everything means the
 one call that publishes a campaign goes through as quietly as a list query.
 
@@ -265,8 +265,12 @@ hiveku accounts add <key>
 ```
 
 **"Tools are missing in a folder."**
-That folder is not bound to an account. Run `/hiveku:bind` there, or `/hiveku:status` to see
-what Claude thinks is going on. A folder with no binding is meant to be inert, so the plugin
+First: a SHORT tool list is normal since 0.8.0. A bound folder deliberately advertises only a
+core set plus `hiveku_find_tools` - everything else is found by searching, and a found tool is
+added to the callable list on the spot. So "the tool I want is not listed" means search for
+it, not that anything is broken. If even the core tools and `hiveku_find_tools` are absent,
+THEN the folder is not bound: run `/hiveku:bind` there, or `/hiveku:status` to see what Claude
+thinks is going on. A folder with no binding is meant to be inert, so the plugin
 stays out of the way in projects that have nothing to do with Hiveku.
 
 **"I get 401 errors from Hiveku tools."**

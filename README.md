@@ -3,8 +3,11 @@
 Operate your [Hiveku](https://app.hiveku.com) accounts from Claude Code.
 
 An agency works across several Hiveku accounts. This plugin installs once and binds **each working
-directory to exactly one account**, so the tools you see in a folder are always the tools for that
-client — and a directory that is not bound stays completely inert.
+directory to exactly one account**, so every tool call in a folder goes to that client and no
+other — and a directory that is not bound stays completely inert. Since 0.8.0 the advertised
+tool list is deliberately small (a core set plus `hiveku_find_tools`); searching promotes what
+it finds into your callable list, so ~1,650 tools cost a few thousand tokens instead of
+hundreds of thousands.
 
 ## Install
 
