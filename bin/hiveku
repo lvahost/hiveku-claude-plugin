@@ -1030,8 +1030,14 @@ async function cmdHook(positional) {
   const dir = path.resolve(payload?.cwd || process.cwd());
 
   let creds = { accounts: {} };
+  // ★ Nullable on purpose. resolveDataDir() THROWS when no data dir can be
+  // located, and a hook that lets that escape prints NOTHING: the session
+  // starts silent, which reads as "the plugin is not installed". Every use
+  // below must tolerate null.
+  let hookDataDir = null;
   try {
-    creds = await readCredentials(resolveDataDir());
+    hookDataDir = resolveDataDir();
+    creds = await readCredentials(hookDataDir);
   } catch {
     return; // no data dir: stay silent, the shim already explains itself
   }
@@ -1082,7 +1088,7 @@ async function cmdHook(positional) {
       lines.push(
         `Hiveku: this directory is bound to ${binding.label} but no key for it is stored here. Run /hiveku:connect.`,
       );
-    } else if (Object.keys(creds.accounts).length === 0 && !(await onboardingDismissed(resolveDataDir()))) {
+    } else if (Object.keys(creds.accounts).length === 0 && !(hookDataDir && (await onboardingDismissed(hookDataDir)))) {
       // ★ THE ZERO STATE MUST SPEAK. The silence rule below (unrelated folder,
       // say nothing) is right for a machine that is set up — but on a machine
       // with the plugin installed and NO accounts connected, silence means the
@@ -1146,7 +1152,7 @@ async function cmdHook(positional) {
     // is the one place the plugin can repair the user's settings itself.
     // Additive, idempotent, backed up. A user who installed the plugin has
     // asked for it to work; nobody has to know a settings key exists.
-    const prov = await provisionSettings();
+    const prov = await provisionSettings().catch((e) => ({ applied: false, changes: [], error: e?.message || String(e) }));
     if (prov.applied) {
       lines.push(
         `Hiveku: configured Claude for Hiveku (${prov.changes.join(', ')}) — takes effect in the next ` +
