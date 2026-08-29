@@ -21,7 +21,9 @@ Triage THIS project's **$ARGUMENTS** environment (default development). This pro
    CRITICAL findings' `fix` text verbatim. Do not blindly retry the deploy.
 
 3. **Runtime error on a DEPLOYED tier (a page on development/staging/production is throwing NOW)** →
-   `project_logs_get({ project_id: <the project_id>, source: "runtime", level: "error" })` - the
+   `project_logs_get({ project_id: <the project_id>, source: "runtime", level: "error",
+   environment: "development" | "staging" | "production" })` - ★ environment DEFAULTS TO
+   PRODUCTION: omit it while triaging dev and you are silently reading production's logs. The
    Lambda/ECS request logs from CloudWatch, the "Vercel-like Functions tab" for Hiveku-deployed sites.
    Narrow with `filter` (CloudWatch FilterPattern syntax) to a route or request id; widen with
    `level: "all"` to see the traffic around the failure. NEVER `preview_logs` for this - it reads the

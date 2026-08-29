@@ -68,3 +68,34 @@ S6 - CLOSE THE LOOP:
   1. `pm_tasks_comment({ id, content })` per annotation: annotation-id → file changed → what was done.
   2. `pm_task_submit_for_review({ task_id, agent_codename, summary? })` is the DEFAULT close - it sets status to qa and a human confirms (it stamps `completed_at` even though the task is not complete, so judge by status, never by `completed_at`). Use `pm_tasks_complete({ id, summary })` ONLY when the user says the work is done-done. VERIFIED against builder source (lib/annotations/task-sync.ts): the annotation's `resolved_at` flips exactly when the task enters a done status (`done|completed|resolved|closed`) - so submit_for_review (qa) leaves the annotation OPEN by design, and completion resolves it.
   3. Tell the user the task's status flows back to the client's annotation through the two-way sync - completing the task is what resolves it; there is no per-annotation resolve tool. On FIRST use against an account, VERIFY THE SYNC: after completing, re-fetch `pm_tasks_get` and confirm the annotations' `resolved_at` actually flipped - legacy rows predate the 2026-08-25 link and will not sync; report that instead of claiming they resolved.
+
+
+## How the annotation system works (say this when asked, in plain words)
+
+Per-tier flags on the project decide where the review overlay exists
+(`project_annotation_settings_get`; dev defaults ON). The overlay script is injected AT DEPLOY
+TIME - flipping a flag does nothing until that tier is redeployed. Reviewers never use the raw
+site URL: the share page (`project_review_link_get`) iframes the tier and hosts the pin UI - the
+injected bridge deliberately does nothing outside that iframe. Each pin they drop becomes a
+browser annotation (screenshot captured async) AND a PM task in the "Website Feedback" project,
+linked 2-way: completing the task resolves the annotation. Coordinates are a POINT `{xPct,yPct}`
+in percent FRACTIONS 0..1 - not a rect, not 0..100.
+
+## Setup: get annotations onto a site (the enable → deploy → share loop)
+
+1. `project_hosting_options_get({ project_id })` - check `annotations.development` (fresh
+   projects default TRUE) and `review_share.enabled`.
+2. If the tier flag is off: `project_annotation_settings_set({ project_id,
+   annotations_enabled_dev: true })`. ★ The response says `redeploy_required` - a redeploy of
+   that tier (`deploy_site({ environment: "development" })`) is MANDATORY or the overlay never
+   appears. This is the flow's number-one silent failure.
+3. `project_review_link_set({ project_id, enabled: true })` if sharing is off, then
+   `project_review_link_get` and hand the user `annotate_urls.development` - NEVER the raw dev
+   URL (nothing can be pinned there). Say it plainly: "click anywhere on this link to leave
+   feedback pins; each pin becomes a task for me."
+4. When they have annotated: `project_annotations_list({ project_id, branch: "dev",
+   state: "open" })` - one call, no N+1. Note branch names here are dev|staging|production while
+   deploy_site says development.
+5. Fix each one, then complete its linked task (`task_id` → the server rail below) - completion
+   flips the annotation to resolved automatically. Do not look for a per-annotation resolve
+   tool; there deliberately is none.

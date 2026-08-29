@@ -595,3 +595,13 @@ come back marked `truncated` - refetch with `project_file_get`), and total paylo
 20MB, above which the response carries `partial: true` + `next_cursor` that you MUST
 follow. A partial you did not resume is the "my bulk_get returned 424 of 538 files"
 failure - it looks like a complete tree and is not. Read before you write.
+
+
+## Hosting options are deploy-time
+
+`project_hosting_options_get({ project_id })` is the one read for what is enabled per tier -
+annotations overlay, cookie consent, accessibility, SEO enhancements, security headers, PWA,
+form captcha, badge, minification, staging, deployment types. ★ Every one of these applies at
+DEPLOY time: after any toggle (`project_annotation_settings_set`, custom code, enhancements),
+the change is live only after the next deploy of that tier. ★ Per-tier password protection does
+not exist on this platform - never promise it to a user.

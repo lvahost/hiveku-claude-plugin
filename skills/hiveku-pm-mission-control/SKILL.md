@@ -227,9 +227,15 @@ capped at 99.
 one has `annotation_text`, `page_url`, `page_title`, `coordinates`, `priority`, `created_by_name`,
 `resolved_at`, and a `screenshot_url` that is a directly-fetchable public PNG. `screenshot_status`
 is `ready | capturing | failed | none`; `capturing` with a null url means the async capture is still
-running, so re-fetch shortly instead of working blind. There is no MCP tool that flips one
-annotation's `resolved_at` - record the fix with `pm_tasks_comment` and do not claim otherwise.
-`/hiveku:review` runs this loop.
+running, so re-fetch shortly instead of working blind. ★ Resolution flows through the
+task, by design: `browser_annotations.task_id` ↔ the PM task is a live 2-way link (since
+2026-08-25), and completing the task (`pm_tasks_complete`; done-set is
+{done, completed, resolved, closed}) flips `resolved_at` on every linked annotation. There is
+deliberately no per-annotation resolve tool. `pm_task_submit_for_review` (qa) leaves the
+annotation OPEN on purpose. Pre-2026-08-25 legacy rows never sync (no backfill was run) - for
+those, comment the fix and say the pin will not flip. For a project-wide view without the
+per-task N+1, `project_annotations_list({ project_id, branch, state })` returns every
+annotation in one call. `/hiveku:review` runs this loop.
 
 Milestones (where `milestone_id` comes from), sections (where `section_id` comes from),
 dependencies and the ready-set graph, time logs, attachment mechanics, and bulk reassignment:
