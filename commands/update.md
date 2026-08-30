@@ -19,9 +19,10 @@ tells the user to press Update in /plugin.
 Then tell the user, in one short line each:
 
 - What version is installed now.
-- ★ That this chat still runs the old version, and it takes effect in their NEXT new chat.
-  (Terminal Claude Code users can also run `/reload-plugins`; the Desktop app does not have that
-  command - never suggest it there.)
+- ★ That this chat still runs the old version. The reliable ritual on every surface: completely
+  quit and reopen Claude. (Terminal Claude Code users can run `/reload-plugins` instead - it
+  hot-reloads without a restart; the Desktop app does not have that command - never suggest it
+  there.)
 
 If the session-start notice said an update was available, this command is the whole answer -
 do not walk the user through git, the plugin cache, or manual steps.

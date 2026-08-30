@@ -1,5 +1,5 @@
 {
-  "description": "Reports which Hiveku account this directory is bound to, warns when a second Hiveku connection is live in the same session, and pre-approves Hiveku's read-only tools so a sweep does not stall on one permission check per tool.",
+  "description": "Reports which Hiveku account this directory is bound to, warns when a second Hiveku connection is live in the same session, and pre-approves Hiveku's read-only tools so a sweep does not stall on one permission check per tool, and keeps a throttled eye on plugin updates so long-lived sessions hear about a new version once.",
   "hooks": {
     "SessionStart": [
       {
@@ -29,6 +29,16 @@
           {
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/bin/hiveku\" hook pre-tool-use"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "HIVEKU_PLUGIN_DATA=\"${CLAUDE_PLUGIN_DATA}\" \"${CLAUDE_PLUGIN_ROOT}/bin/hiveku\" hook prompt-submit"
           }
         ]
       }

@@ -21,6 +21,15 @@ import {
   publicAccountList,
 } from '../lib/credentials.mjs';
 import { resolveBinding, writeBinding, removeBinding, looksLikeHivekuFolder } from '../lib/binding.mjs';
+import {
+  cmpVersions,
+  readUpdateCheck,
+  probeIsStale,
+  spawnDetachedProbe,
+  probeRemoteVersion,
+  chooseUpdateNotice,
+  maybePeriodicNotice,
+} from '../lib/update-check.mjs';
 import { decideWithGuardrails } from '../lib/tool-safety.mjs';
 import { parseFocus } from '../lib/tool-focus.mjs';
 import { detectExtensionServer, describeCollision } from '../lib/collision.mjs';
@@ -54,7 +63,7 @@ const HELP = `hiveku ${PLUGIN_VERSION} — Hiveku for Claude Code
   focus [<departments...>|--clear] [--json]
   env pull <project_id> write .env.local for local dev (values never printed)
   fleet                 read-only portfolio sweep across every connected account
-  hook <session-start|cwd-changed|pre-tool-use>
+  hook <session-start|cwd-changed|pre-tool-use|prompt-submit|probe-remote>
   update                        Refresh the marketplace and apply the plugin update
   doctor [--fix]                Check (and repair) the Claude settings Hiveku needs on this machine
                                 Internal: used by the plugin's hooks
@@ -785,26 +794,28 @@ async function describeVersionSkew() {
     if (!versions.length) return null;
     const newest = versions.reduce((a, b) => (cmp(a, b) >= 0 ? a : b));
 
-    // ★ The case that stranded a user on 0.9.1 for three releases: the
-    // marketplace clone has already PULLED a newer version — the pipeline
-    // worked — but nobody pressed Update, so every fixed bug still looks
-    // broken. Detect it here, where it costs one local file read, and name
-    // the command that finishes the job.
-    const avail = availablePluginUpdate(newest);
-    if (avail) {
-      return (
-        `Hiveku: plugin ${avail.available} is available (this machine has ${newest}). ` +
-        'Run /hiveku:update; it takes effect in the next new chat.'
-      );
-    }
+    // Three sources, one notice, in priority order (lib/update-check.mjs):
+    //   apply  — the marketplace clone already PULLED a newer version (the
+    //            0.9.1 case: pipeline worked, nobody pressed Update);
+    //   remote — GitHub has a release nothing local has seen (background
+    //            updater off/broken) — read from the probe's CACHE, never
+    //            fetched here: session start stays local-only;
+    //   skew   — this session's bridge is older than what is installed.
+    // And when the cache is stale, fire the detached probe so the NEXT hook
+    // firing can see the remote answer. Fire-and-forget: costs no latency.
+    let remoteVersion = null;
+    try {
+      const dataDir = resolveDataDir();
+      remoteVersion = (await readUpdateCheck(dataDir))?.remote_version ?? null;
+      if (probeIsStale(dataDir)) spawnDetachedProbe(process.argv[1]);
+    } catch { /* no data dir — clone + skew notices still work */ }
 
-    if (cmp(newest, running) <= 0) return null;
-
-    return (
-      `Hiveku: this session is running plugin ${running}, but ${newest} is installed. A session keeps ` +
-      'the bridge it started with, so newer tools and skills are missing here until you start a new ' +
-      'session. Symptoms look like missing capability rather than an error.'
-    );
+    return chooseUpdateNotice({
+      running,
+      installedNewest: newest,
+      cloneVersion: availablePluginUpdate(newest)?.available ?? null,
+      remoteVersion,
+    })?.text ?? null;
   } catch {
     return null;
   }
@@ -933,8 +944,9 @@ async function cmdUpdate(flags) {
     ok
       ? [
           `Updated${now ? ` to ${now}` : ''}.`,
-          '★ This chat still runs the old version. Start a NEW chat and it takes effect (in terminal',
-          'Claude Code, /reload-plugins also works; the Desktop app does not have that command).',
+          '★ This chat still runs the old version. Completely quit and reopen Claude and it takes',
+          'effect everywhere (in terminal Claude Code, /reload-plugins hot-reloads without a restart;',
+          'the Desktop app does not have that command).',
         ]
       : [
           `Update did not complete: ${(up.stderr || up.stdout || 'unknown error').trim().slice(0, 300)}`,
@@ -1034,6 +1046,18 @@ async function cmdOnboarding(flags) {
 
 async function cmdHook(positional) {
   const which = positional[0];
+
+  // ── probe-remote: the detached network probe (never run inline by hooks) ──
+  // Handled BEFORE the stdin read (it is spawned by hooks, not BY the app, so
+  // there is no hook payload) and exits explicitly: a lingering keep-alive
+  // socket from fetch must never leave a zombie probe process behind.
+  if (which === 'probe-remote') {
+    try {
+      await probeRemoteVersion(resolveDataDir());
+    } catch { /* silent by contract */ }
+    process.exit(0);
+  }
+
   const payload = await readHookStdin();
 
   // ── PreToolUse: answered before any I/O ────────────────────────────────
@@ -1047,10 +1071,47 @@ async function cmdHook(positional) {
   if (which === 'pre-tool-use') {
     const decision = decideWithGuardrails(payload);
     if (decision) process.stdout.write(JSON.stringify(decision));
+    // Marathon sessions never re-run session-start, so this is where the
+    // update probe stays fresh. ONE stat on one file (no JSON, no creds, no
+    // network); when stale, the probe runs detached and this hook has
+    // already answered. The result surfaces later via prompt-submit.
+    try {
+      const dd = resolveDataDir();
+      if (probeIsStale(dd)) spawnDetachedProbe(process.argv[1]);
+    } catch { /* silent — probing is a courtesy */ }
     return;
   }
 
   const dir = path.resolve(payload?.cwd || process.cwd());
+
+  // ── UserPromptSubmit: the marathon-session nudge ──────────────────────
+  // Local reads only (30s hook budget, and a user is waiting). Speaks at
+  // most once per 12h machine-wide, only in a Hiveku-BOUND folder — an
+  // update nudge must never spend context on unrelated work — and only for
+  // apply/remote (skew is a session property, said once at session start).
+  if (which === 'prompt-submit') {
+    try {
+      const dd = resolveDataDir();
+      if (probeIsStale(dd)) spawnDetachedProbe(process.argv[1]);
+      if (!(await resolveBinding(dir))) return;
+      const root = process.env.CLAUDE_PLUGIN_ROOT;
+      let newest = PLUGIN_VERSION;
+      if (root) {
+        try {
+          const sib = await fs.readdir(path.dirname(path.resolve(root)), { withFileTypes: true });
+          const versions = sib.filter((e) => e.isDirectory() && /^\d+(\.\d+)*$/.test(e.name)).map((e) => e.name);
+          if (versions.length) newest = versions.reduce((a, b) => (cmpVersions(a, b) >= 0 ? a : b));
+        } catch { /* fall back to the running version */ }
+      }
+      const notice = await maybePeriodicNotice(dd, {
+        running: PLUGIN_VERSION,
+        installedNewest: newest,
+        cloneVersion: availablePluginUpdate(newest)?.available ?? null,
+      });
+      if (notice) process.stdout.write(notice.text + '\n');
+    } catch { /* silent */ }
+    return;
+  }
 
   let creds = { accounts: {} };
   // ★ Nullable on purpose. resolveDataDir() THROWS when no data dir can be
