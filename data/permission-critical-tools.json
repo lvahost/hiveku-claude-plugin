@@ -6,7 +6,7 @@
     "mcp__hiveku__"
   ],
   "plugin_version": "0.14.9",
-  "count": 62,
+  "count": 78,
   "tools": [
     {
       "name": "deploy_site",
@@ -317,6 +317,86 @@
       "name": "voice_tenant_repair",
       "method": "POST",
       "why_gated": "reprovisions the whole PBX tenant - a last resort, not a routine fix"
+    },
+    {
+      "name": "seo_gbp_review_reply",
+      "method": "POST",
+      "why_gated": "posts a public owner reply on the live Google listing, replacing any existing reply"
+    },
+    {
+      "name": "seo_gbp_review_reply_delete",
+      "method": "POST",
+      "why_gated": "removes the public owner reply from the live Google listing"
+    },
+    {
+      "name": "seo_gbp_location_update",
+      "method": "POST",
+      "why_gated": "edits the live Google Business Profile customers see - name/address/category edits can trigger re-verification"
+    },
+    {
+      "name": "seo_gbp_attributes_update",
+      "method": "POST",
+      "why_gated": "changes the live listing's attributes - alters how the business appears in filtered local searches"
+    },
+    {
+      "name": "seo_gsc_delete_sitemap",
+      "method": "POST",
+      "why_gated": "removes a sitemap from Search Console"
+    },
+    {
+      "name": "seo_report_clear",
+      "method": "POST",
+      "why_gated": "wipes every Report Preview section in the account's single workspace"
+    },
+    {
+      "name": "seo_deliverable_delete",
+      "method": "DELETE",
+      "why_gated": "permanently deletes a client deliverable, no undo"
+    },
+    {
+      "name": "seo_task_implement",
+      "method": "POST",
+      "why_gated": "spends a paid coder turn and stages a production deploy"
+    },
+    {
+      "name": "seo_connection_delete",
+      "method": "DELETE",
+      "why_gated": "deactivates a data source so downstream reads stop finding it"
+    },
+    {
+      "name": "seo_gbp_services_update",
+      "method": "POST",
+      "why_gated": "REPLACES the live listing's whole service menu - every service missing from the call is removed, an empty array removes all"
+    },
+    {
+      "name": "seo_gbp_media_add",
+      "method": "POST",
+      "why_gated": "publishes a photo on the live listing - COVER / PROFILE / LOGO replace the primary imagery"
+    },
+    {
+      "name": "seo_gbp_media_delete",
+      "method": "POST",
+      "why_gated": "permanently removes a photo from the live public gallery"
+    },
+    {
+      "name": "seo_gtm_publish",
+      "method": "POST",
+      "why_gated": "publishes a GTM container version - every tag in it starts serving to the client's real visitors immediately"
+    },
+    {
+      "name": "seo_gtm_install",
+      "method": "POST",
+      "why_gated": "writes the GTM snippet into a tier's site-wide custom code"
+    },
+    {
+      "name": "seo_ga4_key_event_delete",
+      "method": "POST",
+      "why_gated": "un-marks a GA4 conversion - any Google Ads conversion imported from it flatlines silently, irreversible"
+    },
+    {
+      "name": "seo_ga4_event_create_rule_delete",
+      "method": "POST",
+      "why_gated": "GA4 stops creating the destination event - every key event and imported Ads conversion on that name records nothing, irreversible"
     }
   ]
 }

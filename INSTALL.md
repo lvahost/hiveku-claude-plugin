@@ -166,7 +166,23 @@ Put this in `.claude/settings.json` (per project) or `~/.claude/settings.json` (
       "mcp__plugin_hiveku_hk__voice_settings_update",
       "mcp__plugin_hiveku_hk__voice_number_update",
       "mcp__plugin_hiveku_hk__voice_blocked_numbers_remove",
-      "mcp__plugin_hiveku_hk__voice_tenant_repair"
+      "mcp__plugin_hiveku_hk__voice_tenant_repair",
+      "mcp__plugin_hiveku_hk__seo_gbp_review_reply",
+      "mcp__plugin_hiveku_hk__seo_gbp_review_reply_delete",
+      "mcp__plugin_hiveku_hk__seo_gbp_location_update",
+      "mcp__plugin_hiveku_hk__seo_gbp_attributes_update",
+      "mcp__plugin_hiveku_hk__seo_gsc_delete_sitemap",
+      "mcp__plugin_hiveku_hk__seo_report_clear",
+      "mcp__plugin_hiveku_hk__seo_deliverable_delete",
+      "mcp__plugin_hiveku_hk__seo_task_implement",
+      "mcp__plugin_hiveku_hk__seo_connection_delete",
+      "mcp__plugin_hiveku_hk__seo_gbp_services_update",
+      "mcp__plugin_hiveku_hk__seo_gbp_media_add",
+      "mcp__plugin_hiveku_hk__seo_gbp_media_delete",
+      "mcp__plugin_hiveku_hk__seo_gtm_publish",
+      "mcp__plugin_hiveku_hk__seo_gtm_install",
+      "mcp__plugin_hiveku_hk__seo_ga4_key_event_delete",
+      "mcp__plugin_hiveku_hk__seo_ga4_event_create_rule_delete"
     ]
   }
 }

@@ -1,25 +1,35 @@
 /**
- * Every voice_ tool name the plugin's prose teaches must be REAL.
+ * Every tool name the plugin's prose teaches must be REAL.
  *
  * The failure this guards against shipped three times in one audit: a skill or
  * command names a tool that does not exist (fabricated by a doc-writer,
  * renamed upstream, or a "coming soon" that never came), the session calls it,
  * the server returns unknown-tool, and the assistant concludes Hiveku cannot
- * do the thing — a phantom product gap that no grep catches because the prose
+ * do the thing - a phantom product gap that no grep catches because the prose
  * reads perfectly.
  *
- * The gate: every 3+-segment snake token starting `voice_` found in
- * skills/**, commands/*, agents/* must be one of
+ * The gate: every 3+-segment snake token starting with a GATED prefix, found in
+ * skills/**, commands/*, agents/*, must be one of
  *   - a tool in lib/tool-index.json (the live catalogue), or
  *   - a PENDING_TOOLS entry (contracted, shipping in a named batch), or
  *   - a KNOWN_NON_TOOLS entry (a table/column/error/trigger name that is
  *     legitimately not a tool, curated one at a time with a reason).
  *
+ * Gated prefixes:
+ *   - `voice_` (the 2026-08-29 phone program, which built this gate);
+ *   - `seo_` plus the DataForSEO vendor prefixes `backlinks_`,
+ *     `dataforseo_labs_`, `serp_`, `on_page_`, `keywords_data_`,
+ *     `content_analysis_`, `domain_analytics_`, `business_data_`,
+ *     `ai_optimization_` (the 2026-08-30 SEO program). The SEO surface is
+ *     spread across those prefixes, so gating `seo_` alone would still let a
+ *     fabricated `backlinks_new_lost_summary` through.
+ *
  * And the bridge cannot rot: a PENDING entry that the regenerated index now
  * contains FAILS, forcing its deletion from test/pending-tools.mjs.
  *
- * Other prefixes get a console report, not a failure — the voice program owns
- * this gate; widening it is a separate, deliberate step.
+ * Other prefixes get a console report, not a failure. Widening the gate to a
+ * new prefix is a deliberate step: it comes with a KNOWN_NON_TOOLS pass over
+ * every hit and a vacuous-pass guard sized to that prefix's real footprint.
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -30,9 +40,32 @@ import { PENDING_TOOLS } from './pending-tools.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
+/** Prefixes whose tokens must be real. Order does not matter; the longest match is not needed since none is a prefix of another. */
+const GATED_PREFIXES = [
+  'voice_',
+  'seo_',
+  'backlinks_',
+  'dataforseo_labs_',
+  'serp_',
+  'on_page_',
+  'keywords_data_',
+  'content_analysis_',
+  'domain_analytics_',
+  'business_data_',
+  'ai_optimization_',
+];
+
+/**
+ * Vacuous-pass floors per prefix: if the extraction regex or the file walk
+ * breaks, this test would "pass" while checking nothing. The repo carries far
+ * more than 150 voice_ mentions and far more than 400 seo_ mentions; the vendor
+ * prefixes are too sparse in prose to pin a floor on, and ride on these two.
+ */
+const MIN_CHECKED = { voice_: 150, seo_: 400 };
+
 /**
  * Snake tokens that LOOK like tools but are not, each with the one-word reason
- * it exists in prose. Curated by hand — add an entry only after reading the
+ * it exists in prose. Curated by hand - add an entry only after reading the
  * line that uses it; never to silence a failure you have not understood.
  */
 const KNOWN_NON_TOOLS = new Map([
@@ -78,6 +111,14 @@ const KNOWN_NON_TOOLS = new Map([
   // PUT is Batch Z, unbuilt at every layer). Move to PENDING_TOOLS if it is
   // ever contracted; delete here when it ships.
   ['voice_sms_campaign_update', 'unbuilt'],
+
+  // SEO program (gate widened 2026-08-30).
+  // technical-seo-blind-spots.md: "no writer for the `seo_site_audits` table" - the
+  // dashboard audit table the Olympus audit rail reads and nothing writes.
+  ['seo_site_audits', 'table'],
+  // seo_connection_test is NOT here on purpose: orient's integrations.md names
+  // it as "does not exist" (true today) but it is contracted in SEO batch S3,
+  // so it lives in PENDING_TOOLS, and that prose flips when S3 lands.
 ]);
 
 /**
@@ -89,13 +130,15 @@ const KNOWN_NON_TOOLS = new Map([
 const TOKEN = /(?<![\w/.\-])([a-z][a-z0-9]*(?:_[a-z0-9]+){2,})(?![\w*])/g;
 
 /**
- * The shorthand ban. `voice_pool_create / _update / _delete` and
- * `voice_pool_create/_update` read fine to a human and EVADE every grep-based
- * verifier (including this file's own token extraction), so nobody ever
- * checks whether `voice_pool_update` exists. Prose must spell every name in
- * full; the extra bytes buy verifiability.
+ * The shorthand ban. `voice_pool_create / _update / _delete`,
+ * `seo_gbp_media_add/_delete` and `seo_bing_query_stats` / `_pages` read fine
+ * to a human and EVADE every grep-based verifier (including this file's own
+ * token extraction), so nobody ever checks whether the elided name exists.
+ * Prose must spell every name in full; the extra bytes buy verifiability.
+ * Same prefixes as the gate.
  */
-const SHORTHAND = /voice_[a-z0-9]+(?:_[a-z0-9]+)+`?\s*\/\s*`?_[a-z_]+/;
+const SHORTHAND_PREFIX = '(?:voice|seo|backlinks|dataforseo_labs|serp|on_page|keywords_data|content_analysis|domain_analytics|business_data|ai_optimization)';
+const SHORTHAND = new RegExp(`${SHORTHAND_PREFIX}_[a-z0-9]+(?:_[a-z0-9]+)+\`?\\s*\\/\\s*\`?_[a-z_]+`);
 
 function walkMarkdown() {
   const files = [];
@@ -119,13 +162,16 @@ function loadIndex() {
   return new Set(raw.tools.map((t) => t.name));
 }
 
-test('every voice_ token in skills/commands/agents is a real, pending, or curated non-tool name', () => {
+const gatedPrefixOf = (token) => GATED_PREFIXES.find((p) => token.startsWith(p)) ?? null;
+
+test('every gated-prefix token in skills/commands/agents is a real, pending, or curated non-tool name', () => {
   const index = loadIndex();
   const files = walkMarkdown();
 
-  const misses = new Map(); // token -> first `file:line`
+  const misses = new Map(); // token -> [`file:line`, ...] (capped, so the failure is readable)
   const otherPrefixMisses = new Map(); // prefix -> Set of tokens
-  let voiceChecked = 0;
+  const checked = new Map(GATED_PREFIXES.map((p) => [p, 0]));
+  const MAX_LOCS = 6;
 
   for (const file of files) {
     const rel = path.relative(root, file);
@@ -135,10 +181,13 @@ test('every voice_ token in skills/commands/agents is a real, pending, or curate
     lines.forEach((line, i) => {
       for (const m of line.matchAll(TOKEN)) {
         const token = m[1];
-        if (token.startsWith('voice_')) {
-          voiceChecked++;
+        const gated = gatedPrefixOf(token);
+        if (gated) {
+          checked.set(gated, checked.get(gated) + 1);
           if (index.has(token) || PENDING_TOOLS.has(token) || KNOWN_NON_TOOLS.has(token)) continue;
-          if (!misses.has(token)) misses.set(token, `${rel}:${i + 1}`);
+          if (!misses.has(token)) misses.set(token, []);
+          const locs = misses.get(token);
+          if (locs.length < MAX_LOCS) locs.push(`${rel}:${i + 1}`);
         } else if (token.includes('_') && !index.has(token)) {
           const prefix = token.slice(0, token.indexOf('_'));
           if (!otherPrefixMisses.has(prefix)) otherPrefixMisses.set(prefix, new Set());
@@ -149,7 +198,7 @@ test('every voice_ token in skills/commands/agents is a real, pending, or curate
   }
 
   // Report-only for other prefixes: most of these are field names and prose
-  // snakes, and the voice program does not own that cleanup.
+  // snakes, and no program owns that cleanup yet.
   const report = [...otherPrefixMisses.entries()]
     .map(([p, s]) => [p, s.size])
     .sort((a, b) => b[1] - a[1])
@@ -157,18 +206,21 @@ test('every voice_ token in skills/commands/agents is a real, pending, or curate
     .map(([p, n]) => `${p}:${n}`)
     .join(' ');
   console.log(`  [tool-names] non-index snake tokens by other prefix (report only): ${report || 'none'}`);
+  console.log(`  [tool-names] gated tokens checked: ${[...checked.entries()].map(([p, n]) => `${p}${n}`).join(' ')}`);
 
-  // Vacuous-pass protection: if the extraction regex or the file walk breaks,
-  // this test would "pass" while checking nothing. The repo carries far more
-  // than 150 voice_ mentions.
-  assert.ok(voiceChecked > 150, `only ${voiceChecked} voice_ tokens found — extraction is broken, not the prose`);
+  for (const [prefix, floor] of Object.entries(MIN_CHECKED)) {
+    assert.ok(
+      checked.get(prefix) > floor,
+      `only ${checked.get(prefix)} ${prefix} tokens found (floor ${floor}) - extraction is broken, not the prose`,
+    );
+  }
 
   assert.deepEqual(
-    [...misses.entries()].map(([t, loc]) => `${t} (first at ${loc})`),
+    [...misses.entries()].map(([t, locs]) => `${t} (${locs.join(', ')})`),
     [],
-    'voice_ names that are neither in lib/tool-index.json, PENDING_TOOLS, nor KNOWN_NON_TOOLS. ' +
+    'gated-prefix names that are neither in lib/tool-index.json, PENDING_TOOLS, nor KNOWN_NON_TOOLS. ' +
       'A real incoming tool belongs in test/pending-tools.mjs with its batch; a table/error/column ' +
-      'belongs in KNOWN_NON_TOOLS with a reason; anything else is a fabricated name — fix the prose.',
+      'belongs in KNOWN_NON_TOOLS with a reason; anything else is a fabricated name - fix the prose.',
   );
 });
 
@@ -178,12 +230,12 @@ test('no PENDING_TOOLS entry still exists once the index contains it', () => {
   assert.deepEqual(
     stale,
     [],
-    'these tools have LANDED in lib/tool-index.json — delete their entries from test/pending-tools.mjs ' +
+    'these tools have LANDED in lib/tool-index.json - delete their entries from test/pending-tools.mjs ' +
       'so the pending bridge cannot mask a future rename: ' + stale.join(', '),
   );
 });
 
-test('no shorthand suffix chains after a voice_ tool name', () => {
+test('no shorthand suffix chains after a gated-prefix tool name', () => {
   const files = walkMarkdown();
   const hits = [];
   for (const file of files) {
@@ -195,7 +247,7 @@ test('no shorthand suffix chains after a voice_ tool name', () => {
   assert.deepEqual(
     hits,
     [],
-    'shorthand like `voice_pool_create/_update` or `voice_pool_create / _delete` evades name ' +
-      'verification — spell every tool name in full:\n  ' + hits.join('\n  '),
+    'shorthand like `voice_pool_create/_update`, `seo_gbp_media_add/_delete` or `seo_bing_query_stats / _pages` ' +
+      'evades name verification - spell every tool name in full:\n  ' + hits.join('\n  '),
   );
 });

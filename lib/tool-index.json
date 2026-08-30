@@ -3973,7 +3973,7 @@
       "name": "integration_oauth_initiate",
       "dept": "integration",
       "method": "POST",
-      "description": "Start an OAuth flow for google_ads / google_search_console / google_business_profile / google_analytics. Returns setup_url, setup_token (for polling), oauth_app_id, and (for ads/gsc/gbp) connection_id. ⚠️ DO NOT USE FOR GMAIL OR CALENDAR. Use `email_connect_start` instead — Gmail + Calendar + Meet share a single consent flow that writes to email_connections (the table CRM calendar/inbox/triage tools read). This route will return code='wrong_tool_for_provider' if you pass google_gmail or google_calendar. THREE PATHS: 1) FIRST-TIME SETUP (recommended for agents driving setup end-to-end). For google_ads pass {provider_slug, customer_id, manager_id?, developer_token} — the route creates the ppc_connections row with those bindings populated, then OAuth fills in refresh_token and status auto-promotes to 'connected'. The agent collects the three Google Ads fields from the user in conversation (developer_token from the MCC's API Center, customer_id of the client account, manager_id of the MCC), calls this tool ONCE, hands the setup_url to the user. Same for google_search_console (pass site_url) and google_business_profile (pass gbp_account_id + gbp_location_id) — but those bindings are usually discovered POST-OAuth via seo_gsc_discover_sites / seo_gbp_discover_locations, so omit them and discover later. 2) RE-AUTH (dead refresh_token). Pass target_connection_id pointing at the existing ppc_connections / seo_connections row. Credentials get replaced in place, bindings are preserved, status auto-promotes back to 'connected'. Symptom that triggers this: integration_test reports 'Account has been deleted', or sync starts failing with OAuth errors. 3) BARE INITIATE (no pre-bindings). For google_analytics, or when you want to bind fields later via seo_connection_update / ppc_connection_update. OAuth app resolution (per-account only — no platform-shared credentials): 1. body.oauth_app_id (if supplied) — validates account ownership + product match 2. First per-account oauth_apps row tagged with the product (provider=google, products contains <the product for provider_slug>) 3. The app the EXISTING connection was minted with, even if it is no longer tagged for the product (a Google client can request any scope its consent screen allows) — the response carries oauth_app_note asking you to tag it with oauth_app_update add_products so later connects find it directly If none resolves, returns 412 code='no_oauth_app_for_product' WITH diagnostic.existing_apps[] (id, name, products): extend one via oauth_app_update({ oauth_app_id, add_products: [<product>] }) — additive, never drops products — then retry. Only call oauth_app_create when the account has no Google app at all. After setup_url is opened + consent completed: poll integration_oauth_check until status='completed'. Then verify with integration_test (oauth/api) or ppc_connection_test (google_ads specifically) + run the sync to populate cached data."
+      "description": "Start an OAuth flow for google_ads / google_search_console / google_business_profile / google_analytics. Returns setup_url, setup_token (for polling), oauth_app_id, and (for ads/gsc/gbp) connection_id. ⚠️ DO NOT USE FOR GMAIL OR CALENDAR. Use `email_connect_start` instead — Gmail + Calendar + Meet share a single consent flow that writes to email_connections (the table CRM calendar/inbox/triage tools read). This route will return code='wrong_tool_for_provider' if you pass google_gmail or google_calendar. THREE PATHS: 1) FIRST-TIME SETUP (recommended for agents driving setup end-to-end). For google_ads pass {provider_slug, customer_id, manager_id?, developer_token} — the route creates the ppc_connections row with those bindings populated, then OAuth fills in refresh_token and status auto-promotes to 'connected'. The agent collects the three Google Ads fields from the user in conversation (developer_token from the MCC's API Center, customer_id of the client account, manager_id of the MCC), calls this tool ONCE, hands the setup_url to the user. Same for google_search_console (pass site_url) and google_business_profile (pass gbp_account_id + gbp_location_id) — but those bindings are usually discovered POST-OAuth via seo_gsc_discover_sites / seo_gbp_discover_locations, so omit them and discover later. 2) RE-AUTH (dead refresh_token, or a token missing a scope such as analytics.edit). Pass target_connection_id pointing at the existing ppc_connections / seo_connections row — google_analytics connections are seo_connections rows too (seo_connections_list shows them). Credentials get replaced in place, bindings are preserved, status auto-promotes back to 'connected'. Symptom that triggers this: integration_test reports 'Account has been deleted', or sync starts failing with OAuth errors. 3) BARE INITIATE (no pre-bindings). For google_analytics, or when you want to bind fields later via seo_connection_update / ppc_connection_update. OAuth app resolution (per-account only — no platform-shared credentials): 1. body.oauth_app_id (if supplied) — validates account ownership + product match 2. First per-account oauth_apps row tagged with the product (provider=google, products contains <the product for provider_slug>) 3. The app the EXISTING connection was minted with (its seo_connections / ppc_connections row, then the account_integrations mirror), even if it is no longer tagged for the product (a Google client can request any scope its consent screen allows) — the response carries oauth_app_note asking you to tag it with oauth_app_update add_products so later connects find it directly If none resolves, returns 412 code='no_oauth_app_for_product' WITH diagnostic.existing_apps[] (id, name, products): extend one via oauth_app_update({ oauth_app_id, add_products: [<product>] }) — additive, never drops products — then retry. Only call oauth_app_create when the account has no Google app at all. After setup_url is opened + consent completed: poll integration_oauth_check until status='completed'. Then verify with integration_test (oauth/api) or ppc_connection_test (google_ads specifically) + run the sync to populate cached data."
     },
     {
       "name": "integration_providers_list",
@@ -4140,19 +4140,19 @@
     {
       "name": "marketing_call_attribution_breakdown",
       "dept": "marketing",
-      "method": null,
+      "method": "POST",
       "description": "The same question for CALLS, which are most of a local-services advertiser's conversions. Groups this account's calls by source/medium/campaign and by day, the way a PPC platform aggregates, so the two can be laid side by side. AND IT REPORTS CALL QUALITY, WHICH THE PLATFORM STRUCTURALLY CANNOT. Google Ads counts a call as a conversion once it passes a minimum duration, regardless of whether it was a lead — so a 12-second wrong number is a conversion. This returns the duration distribution against THIS ACCOUNT'S own configured threshold, the disposition mix, and how many calls reached voicemail, were missed or were abandoned. Learning that 18 of 40 'conversions' were under 30 seconds is the point. Returns no call rows and no transcripts. ALWAYS read the caveats in the response before reporting a discrepancy: this is OUR record, not the platform's record of a conversion, and the two legitimately differ — view-through conversions have no click and can never appear here, cross-device joins are invisible to us, the platform dates by CLICK while we date by the event, and the platform also counts conversions that are not this type at all."
     },
     {
       "name": "marketing_call_attribution_list",
       "dept": "marketing",
-      "method": null,
+      "method": "POST",
       "description": "The breakdown from marketing_call_attribution_breakdown PLUS a page of individual calls. Each carries its source/medium/campaign, the tracking DID that rang and the pool session that credited it (dynamic-number insertion attributes through both), its duration bucket, whether it meets the account's own conversion policy, and has_transcript / has_summary. Returns NO transcripts and never touches storage — use marketing_call_transcript_get for a specific call. include_summaries inlines each AI summary; leave it off for a wide sweep. Breakdown percentages cover up to 5000 scanned calls: totals.truncated says when the window is larger, and totals.calls_matching is the uncapped count."
     },
     {
       "name": "marketing_call_transcript_get",
       "dept": "marketing",
-      "method": null,
+      "method": "POST",
       "description": "Read ONE call's verbatim transcript and AI summary by call id (the id field from marketing_call_attribution_list). DELIBERATELY A SEPARATE, COSTLIER STEP: the transcript is an object in the encrypted recordings bucket, so this pays a storage round trip a list sweep must never pay implicitly. Call it for calls you have a specific question about, not across a result set. THE TEXT IS VERBATIM AND UNREDACTED. A transcript contains whatever was said aloud, including card numbers, dates of birth and health details. Treat it as the most sensitive class of customer data and do not paste it anywhere it would outlive the question. When there is no transcript, transcript_state says WHICH of five situations it is, and none of them means 'empty': never_recorded (no recording ever existed, so nothing failed), pending (still processing), failed (the retry window has closed and nothing will retry it), purged (it WAS transcribed and retention later deleted it — the ai_summary is the surviving record), unreadable (the stored object is missing or will not read)."
     },
     {
@@ -4200,7 +4200,7 @@
     {
       "name": "marketing_form_conversion_audit",
       "dept": "marketing",
-      "method": null,
+      "method": "GET",
       "description": "Answer 'the platform says 40 conversions, the CRM shows 22 — where did the other 18 go?' for FORM fills. Returns submissions with their source attribution (UTMs, click ids, channel, landing page), aggregated the way a platform aggregates (source/medium/campaign, and by day in the ad-account timezone), plus named discrepancy buckets that SUM TO THE TOTAL: deleted, duplicate, spam, archived, workflow_failed, no_attribution, unpaid_attribution, counted. Use buckets.counted as OUR number and explain the gap with the rest — '40 vs 22, and here are 11 spam, 4 duplicates, 3 with no UTMs' answers the question; a bare number does not. Unlike the dashboard Forms tab this INCLUDES spam, deleted and duplicate rows and labels them, because they ARE the answer. has_click_id isolates submissions tied to a paid click, recovered from utm_params OR the landing-page URL — which catches real paid clicks the CRM recorded as organic. Defaults to the last 30 days, UTC days, and NO field data. ALWAYS read the caveats in the response before reporting a discrepancy: this is OUR record, not the platform's record of a conversion, and the two legitimately differ — view-through conversions have no click and can never appear here, cross-device joins are invisible to us, the platform dates by CLICK while we date by the event, and the platform also counts conversions that are not this type at all. CLICK TIMING splits into what is KNOWN and what is guessed — read `click_window` before quoting either. `click_window.click_dated` is how many counted rows carry the REAL click instant (embed v3.4+). Of those, `clicks_before_range` provably clicked before the range, so the platform credited them to an EARLIER period — that is a FINDING explaining part of the gap, not a hedge. `boundary_risk` covers only rows with no dated click. A row is never in both. CRITICAL: if `click_dated` is 0, then `clicks_before_range: 0` means NOT MEASURABLE, not zero — never report it as 'no clicks fell outside the window'. Each submission also carries `attribution.first_touch_at` with `click_time_is_exact`; only an exact one dates a click, the rest merely bound it. Compare against the conversions figure from ppc_metrics (or a single conversion action's total)."
     },
     {
@@ -4368,7 +4368,7 @@
     {
       "name": "marketing_report_pdf",
       "dept": "marketing",
-      "method": null,
+      "method": "GET",
       "description": "Download a client MARKETING report as a PDF, rendered server-side from the STORED last_report_data blob — the exact numbers the public share page and the report email show (marketing_report_regenerate is the only way they change). Returns { filename, content_type, size_bytes, generated_at, data_base64 } — decode data_base64 to get the PDF bytes. 409 when the report has never been generated: call marketing_report_regenerate first, then retry. Social reports are not supported (400) — share their public link instead. A plain browser GET on the same route (no format param) streams raw application/pdf with a download filename."
     },
     {
@@ -5754,7 +5754,7 @@
     {
       "name": "ppc_bing_impression_share_report",
       "dept": "ppc",
-      "method": null,
+      "method": "POST",
       "description": "Microsoft Ads (Bing Ads) campaign impression-share report (async; LIVE-VERIFIED 2026-08-23 with real production rows): impression_share, lost_to_budget, lost_to_rank per campaign, plus summary.scaling_headroom — budget_limited (>=10% lost to budget: raise-budget candidates) and rank_limited (>=20% lost to rank: raise bids / fix quality score) — and impressions-weighted avg_impression_share. days default 30; limit caps returned rows."
     },
     {
@@ -5802,7 +5802,7 @@
     {
       "name": "ppc_bing_quality_score_report",
       "dept": "ppc",
-      "method": null,
+      "method": "POST",
       "description": "Microsoft Ads (Bing Ads) keyword quality-score report (async): per-keyword QualityScore with component scores (ExpectedCtr / AdRelevance / LandingPageExperience), plus a low_quality summary (QS <= 5 with the weak components named and spend at risk) and avg_quality_score. days default 30; limit caps returned rows."
     },
     {
@@ -5814,7 +5814,7 @@
     {
       "name": "ppc_bing_search_terms_report",
       "dept": "ppc",
-      "method": null,
+      "method": "POST",
       "description": "Microsoft Ads (Bing Ads) search-terms report (async submit/poll/download; LIVE-VERIFIED 2026-08-23): per-query impressions/clicks/spend/conversions/ctr/cpc sorted by spend, plus a wasted_spend summary (queries with spend and zero conversions — the negatives-mining feed; add negatives via ppc_platform_negative_keyword_add). days default 30 (1-365); optional campaign_id scopes; limit caps returned rows (summaries always computed over the full report)."
     },
     {
@@ -6024,13 +6024,13 @@
     {
       "name": "ppc_google_pmax",
       "dept": "ppc",
-      "method": null,
+      "method": "POST",
       "description": "Google Ads Performance Max asset groups — the creative unit a PMax campaign cannot serve without (ppc_campaign_create alone makes a PMax campaign that can never serve). Nothing here can set anything live: groups are created PAUSED with no status argument; enabling the group and the campaign are two separate approvals on the enable lane. operation: 'asset-group-create' (params.campaign_id — must be a PERFORMANCE_MAX / DEMAND_GEN campaign; params.name; params.final_url https; params.headlines [3-15, each ≤30 chars]; params.descriptions [2-5, each ≤90, at least one ≤60]; params.long_headline ≤90; params.business_name ≤25; params.marketing_image_asset_resource_names [1.91:1] + params.square_marketing_image_asset_resource_names [1:1] + params.logo_asset_resource_names [1:1] — each needs ≥1, upload first via ppc_google_asset_upload image-asset-create which names the slot each image fits; optional params.landscape_logo_asset_resource_names, params.youtube_video_asset_resource_names ≤5, params.search_themes ≤25, params.audience_resource_names ≤10 ('customers/X/audiences/Y' paths), params.path1/params.path2 ≤15 chars). ONE atomic write — it refuses to create a group missing anything Google requires rather than building one that can never serve. Created PAUSED; returns servability note. 'asset-group-asset-add' (params.asset_group_id, params.asset_resource_names [≤20], params.field_type 'HEADLINE' | 'DESCRIPTION' | 'LONG_HEADLINE' | 'BUSINESS_NAME' | 'MARKETING_IMAGE' | 'SQUARE_MARKETING_IMAGE' | 'LOGO' | 'LANDSCAPE_LOGO' | 'YOUTUBE_VIDEO') — the repair path for a slot asset-group-list reports missing. CAUTION: on an ENABLED group in an ENABLED campaign the new creative serves immediately. 'asset-group-signal-add' (params.asset_group_id; params.search_themes [≤25, each ≤80 chars] and/or params.audience_resource_names [≤10]) — signals are HINTS, not targeting fences; never narrows delivery, never changes spend. 'asset-group-list' (optional params.campaign_id, params.limit ≤200) — read-only: every group with per-slot asset counts, signals, ad_strength, primary_status, and missing_requirements naming exactly why an idle group cannot serve. 'price-asset-create' (params.price_type 'BRANDS' | 'EVENTS' | 'LOCATIONS' | 'NEIGHBORHOODS' | 'PRODUCT_CATEGORIES' | 'PRODUCT_TIERS' | 'SERVICES' | 'SERVICE_CATEGORIES' | 'SERVICE_TIERS'; params.offerings_json JSON ARRAY of 3-8 rows {header ≤25, description ≤25, amount, final_url, optional unit 'PER_HOUR'|'PER_DAY'|'PER_WEEK'|'PER_MONTH'|'PER_YEAR'|'PER_NIGHT', optional currency_code — omitted falls back to the ad account's currency, refused if unreadable: a wrong-currency price is a real quote to a real customer; optional params.language_code default 'en', params.price_qualifier 'FROM' | 'UP_TO' | 'AVERAGE'). Account-level; shows nowhere until ppc_asset_attach field_type=PRICE."
     },
     {
       "name": "ppc_google_pmax_performance",
       "dept": "ppc",
-      "method": null,
+      "method": "POST",
       "description": "THE Performance Max performance surface (read-only): per-asset-group metrics (impressions, clicks, cost, conversions, conversions_value, ctr_pct, cost_per_conversion, ad_strength, primary_status) PLUS Google's per-channel split of where PMax delivery actually went (segments.ad_network_type: SEARCH, SEARCH_PARTNERS, CONTENT=Display, YOUTUBE, GMAIL, DISCOVER, MAPS, GOOGLE_TV; MIXED=cross-network), per campaign, channels sorted by spend. params.days 1-365 (default 30), optional params.campaign_id to scope to one PMax campaign (a non-PMax campaign_id is refused with a pointer to ppc_metrics). Asset groups with zero traffic in the window are absent — ppc_google_pmax asset-group-list shows every group with its servability diagnostic. If the channel query fails on an old agent image, asset-group rows still return and channel_split_unavailable says why."
     },
     {
@@ -6156,7 +6156,7 @@
     {
       "name": "ppc_linkedin_creative_disapprovals",
       "dept": "ppc",
-      "method": null,
+      "method": "POST",
       "description": "List LinkedIn ads (creatives) whose review REJECTED them. UNVALIDATED-LIVE. Detects rejection from the creative's review object (status REJECTED + rejectionReasons when the app tier decorates them) OR REJECT-flavoured servingHoldReasons. When LinkedIn returns no rejectionReasons text (tier-dependent), items are status-only (reasons_available=false) and the policy detail lives in Campaign Manager. LinkedIn creatives are unnamed — name is always null; use content_reference / ppc_linkedin_creatives detail for context. Returns {disapproved_count, items:[{id, name, level, status, reasons, serving_hold_reasons, campaign, intended_status, content_reference}]}. Optional campaign_id scopes to one campaign."
     },
     {
@@ -6270,7 +6270,7 @@
     {
       "name": "ppc_meta_conversion_volume",
       "dept": "ppc",
-      "method": null,
+      "method": "GET",
       "description": "Per-conversion volume for Meta — the answer 'is this recording, and when did it last record' that Meta was assumed not to give. Returns each Custom Conversion with attributed_conversions and attributed_value for the window, joined from insights actions[] on the conversion id (offsite_conversion.custom.<id> embeds the node id, so the join is exact). TWO NUMBERS, DELIBERATELY NOT MERGED. attributed_conversions counts only conversions Meta ATTRIBUTES TO ADS under the account's attribution setting — a strict subset. last_fired_time counts EVERY matching event, ad-driven or organic. So a conversion that fired an hour ago with zero attributed is recording perfectly and simply was not ad-driven: that is a MEDIA finding, not a tracking failure, and must not be reported as broken. Every value carries field_provenance naming which platform field it came from. One window per call. Ask twice for a 7-day and 30-day comparison, the same way the Google conversion tools are used. A read that fails returns readability/coverage_gap with a reason classified as permission, token or api_error — three different operator actions — and never zeros."
     },
     {
@@ -6288,13 +6288,13 @@
     {
       "name": "ppc_meta_custom_conversions",
       "dept": "ppc",
-      "method": null,
+      "method": "GET",
       "description": "What Meta thinks a conversion IS. Lists the ad account's Custom Conversions with name, the URL RULE (the only place a URL condition exists anywhere in Meta's object graph), custom_event_type, aggregation, default value, retention window, archived state, the owning pixel, and first/last_fired_time. USE THIS BEFORE CONCLUDING A META ACCOUNT CANNOT BE MEASURED. It was long believed Meta exposed no per-conversion detail, so tooling checked it at PIXEL grain only — but one pixel serves every conversion, so a pixel that fired an hour ago cannot tell a dead LEAD from a live PURCHASE. last_fired_time is per conversion and answers that directly. An empty list means this account defines no CUSTOM conversions — standard pixel events (fb_pixel_lead and friends) still record, they simply have no named definition object to read. That is different from a failed read: if the catalogue could not be read, the response says so in readability/coverage_gap and NEVER returns an empty list, because 'no conversions' and 'we could not look' must not render the same way."
     },
     {
       "name": "ppc_meta_disapprovals_list",
       "dept": "ppc",
-      "method": null,
+      "method": "POST",
       "description": "List Meta ads the platform is refusing to serve (effective_status DISAPPROVED) or serving restricted (WITH_ISSUES), with policy reasons from issues_info (error_summary/error_message per issue; empty reasons = Graph attached no detail, not 'no reason exists'). Returns {disapproved_count, items:[{id, name, level, status, reasons, issues, adset_id, campaign_id}]} — same shape as ppc_disapprovals_list (Google). Time-sensitive: disapproved ads spend nothing and silently starve their campaigns."
     },
     {
@@ -6438,7 +6438,7 @@
     {
       "name": "ppc_reallocation_plan",
       "dept": "ppc",
-      "method": null,
+      "method": "POST",
       "description": "Cross-platform budget reallocation PLAN — a recommendation engine over the synced local metrics cache (same tables the guardrail sweep and ppc_digest read). Ranks the account's active PPC connections by marginal efficiency (CPA ascending; zero-conversion spenders flagged as reduce candidates; budget-limited connections whose CPA beats the account median as increase candidates) and proposes conservation-balanced monthly moves: [{from_connection, to_connection, monthly_amount_cents, rationale, apply_with}] netting to ZERO against current targets, step-capped at 25% of any connection's monthly target per plan. Also returns per-connection cards {platform, spend, cpa, roas, mtd pace vs settings.monthly_budget_target_cents, impression-share headroom, verdict: increase|hold|reduce, reasons[]}. HONESTY CONTRACT: this tool NEVER applies anything — it is read-only over synced data. Applying a move goes through the guardrailed budget tools it names per move: ppc_budget_update (google_ads) / ppc_platform_budget_update (all platforms), which enforce the programmatic spend ceilings and 2x step cap. `confidence` (high|medium|low) is deterministic and drops when a recommendation rests on weak evidence; `data_gaps[]` lists what the plan could not know: connections without budget targets (excluded from moves), zero-conversion spend that may be a tracking gap rather than waste, sub-10-conversion CPAs (low significance), unknown impression-share headroom (it reads stored data only and never fires live share reports — it names ppc_impression_share / ppc_bing_impression_share_report for that), stale syncs, mixed currencies. Connections without settings.monthly_budget_target_cents get verdict cards but no moves."
     },
     {
@@ -6528,7 +6528,7 @@
     {
       "name": "ppc_tiktok_disapprovals",
       "dept": "ppc",
-      "method": null,
+      "method": "POST",
       "description": "List TikTok ads rejected by review (secondary_status AD_STATUS_REJECT) with the platform's rejection reasons from /ad/rejected_info/. UNVALIDATED-LIVE: reason extraction is defensive and each item keeps the raw rejected_info record under review. Reasons resolved for the first 300 rejected ads per call; beyond that (and for ads the endpoint returns no record for) items are status-only (reasons_available=false). One page per call — pagination.has_more/next_page say when to call again (params.page, params.page_size). params.include_reasons=false skips reason lookups. Ads still IN review (AD_STATUS_AUDIT/REAUDIT) are deliberately absent. Returns {disapproved_count, items:[{id, name, level, status, reasons, suggestions, adgroup_id, campaign_id, operation_status, review}], pagination}."
     },
     {
@@ -7512,13 +7512,13 @@
     {
       "name": "seo_citations_audit",
       "dept": "seo",
-      "method": null,
+      "method": "POST",
       "description": "Run a citation audit for a Google Business Profile connection: pulls the canonical NAP (name/address/phone/website) from the synced GBP listing, runs ONE DataForSEO Business Listings search for the business's public listings footprint, diffs every listing attributable to the business (primary + duplicates) for NAP consistency (normalized: phone digits-only, address tokenized with abbreviation canonicalization, name fuzzy), and checks a fixed major-directory list (Google, Yelp, Facebook, Bing Places, Apple Maps, BBB, Yellow Pages, Foursquare, Tripadvisor where category-relevant) using in-app signals. Returns directories_found / consistent / inconsistent (with per-field their_value vs expected) / missing_major (entries carry a basis field — 'no_signal' means presence is UNVERIFIED, not confirmed absent) and persists the snapshot. SPENDS DataForSEO CREDITS: one Business Listings search per run, metered under the account's monthly SEO research cap (same read-spend class as seo_research — no confirm step). A 24h server-side cooldown returns 429 with retry_at plus the stored audit. AUDIT ONLY — this never writes to any directory (citation submission is not offered). Get connection_id from seo_connections_list (platform google_business_profile). Read the stored snapshot for free with seo_citations_get."
     },
     {
       "name": "seo_citations_get",
       "dept": "seo",
-      "method": null,
+      "method": "GET",
       "description": "Read the STORED citation-audit snapshot for a GBP connection (canonical NAP, directories_found/consistent/inconsistent with per-field diffs, missing_major with per-directory basis, audited_at). Free, DB-only — never calls DataForSEO. Omit connection_id for a row per active GBP connection (audit: null = never audited; run seo_citations_audit to compute one)."
     },
     {
@@ -7584,7 +7584,7 @@
     {
       "name": "seo_cro_audit",
       "dept": "seo",
-      "method": null,
+      "method": "POST",
       "description": "Heuristic conversion-rate (CRO) audit of ONE landing page — v1 is audit only, NOT experiment tracking (run experiments as pm_tasks for now). Fetches the page (SSRF-guarded), then scores five sections 0-100: speed (CrUX real-user p75 + PageSpeed lab), clarity (H1/title/meta, image alt coverage), friction (form field counts, labels, a conversion path existing at all), trust (testimonials, reviews, guarantees, badges, social-proof numbers, visible phone), and cta (action-verb copy + an above-fold heuristic: header/hero or first 35% of the page). Returns named findings each carrying {issue, why_it_costs_conversions, fix} plus a quick_wins shortlist of cheap edits. Pure read: nothing persisted, no credit spend, works on any public URL including competitors. If the web-signals key is missing only the speed section degrades — the rest still audits."
     },
     {
@@ -7638,73 +7638,73 @@
     {
       "name": "seo_ga4_admin_scopes",
       "dept": "seo",
-      "method": null,
+      "method": "GET",
       "description": "Does this Google Analytics connection's token carry the analytics.edit scope? Read-only preflight — call it before a write wave to learn the customer must reconnect, instead of discovering it from a 403 halfway through a change."
     },
     {
       "name": "seo_ga4_conversion_audit",
       "dept": "seo",
-      "method": null,
+      "method": "GET",
       "description": "START HERE for GA4 conversions. Which key events exist, which URL rules feed them, and which recorded NOTHING in the window. A key event with zero events is a Google Ads conversion action (origin GOOGLE_ANALYTICS) reporting zero with no error shown anywhere — the Ads side looks configured and simply never fires. Many Ads conversions ARE imported GA4 key events, so this is where an 'Ads conversion stopped recording' investigation starts."
     },
     {
       "name": "seo_ga4_data_streams_list",
       "dept": "seo",
-      "method": null,
+      "method": "GET",
       "description": "List a GA4 property's data streams (name, type, defaultUri, measurementId). Event create rules hang off a STREAM, not the property, so this is the lookup that makes every rule action possible."
     },
     {
       "name": "seo_ga4_event_create_rule_create",
       "dept": "seo",
-      "method": null,
+      "method": "POST",
       "description": "TURN A URL INTO A CONVERSION. GA4 cannot mark 'a page_view whose URL contains /thank-you' as a conversion — only a whole event name — so the chain is: this rule creates a distinct event, then seo_ga4_key_event_create marks it, then Google Ads imports it. TWO TRAPS THIS TOOL HANDLES FOR YOU. GA4 has NO page_path parameter: the URL lives in page_location, which is the FULL url including host and any ?utm_ query string — so EQUALS never matches a bare path, and CONTAINS is the right default. And a rule with no event_name condition fires on nearly EVERY event GA4 collects; this pins the source event automatically. GA4 never backfills, so a new rule starts at zero. v1alpha, and rules hang off a DATA STREAM, not the property."
     },
     {
       "name": "seo_ga4_event_create_rule_delete",
       "dept": "seo",
-      "method": null,
+      "method": "POST",
       "description": "DESTRUCTIVE AND IRREVERSIBLE. GA4 stops creating the destination event entirely, so any key event on that name — and any Google Ads conversion imported from it — records nothing from that moment on, with no error anywhere. TWO-STEP CONFIRM: the first call does NOT delete; it returns requires_confirm with a preview and issues no write. Repeat with confirm: true (strict boolean). v1alpha."
     },
     {
       "name": "seo_ga4_event_create_rule_update",
       "dept": "seo",
-      "method": null,
+      "method": "POST",
       "description": "Change a GA4 event create rule's destination event, conditions, parameter copying or mutations. conditions is a REPEATED field — a patch REPLACES the whole list, it does not append, so send every condition you want to keep. Renaming the destination event leaves any key event on the OLD name receiving nothing, silently flatlining its imported Google Ads conversion. v1alpha. TWO-STEP CONFIRM, because unlike GTM (where a write is a draft that serves nothing until publish) a GA4 change is LIVE ON RETURN and propagates into every Google Ads conversion imported from it. The first call writes nothing and returns a preview naming each field's current value, new value and consequence. Repeat with confirm: true."
     },
     {
       "name": "seo_ga4_event_create_rules_list",
       "dept": "seo",
-      "method": null,
+      "method": "GET",
       "description": "List GA4 event create rules — the URL-driven rules that turn a thank-you-page URL into a distinct event. They live on a DATA STREAM (properties/{p}/dataStreams/{s}/eventCreateRules), NOT the property, and the resource exists only in Admin API v1alpha, so it can change without notice. Sweeps every stream unless data_stream is given."
     },
     {
       "name": "seo_ga4_key_event_create",
       "dept": "seo",
-      "method": null,
+      "method": "POST",
       "description": "Mark a GA4 event as a key event (a conversion). Google Ads conversion actions imported from GA4 read this. GA4 ACCEPTS A KEY EVENT FOR AN EVENT NAME IT HAS NEVER RECEIVED, and it then records nothing forever with no error — confirm the event actually arrives with seo_ga4_conversion_audit. If the conversion is a page URL rather than an existing event, create the event first with seo_ga4_event_create_rule_create. counting_method matters: ONCE_PER_SESSION for lead forms (a reloaded thank-you page counts once), ONCE_PER_EVENT for purchases. default_value and default_currency must be sent TOGETHER — GA4 rejects a value with no currency. Needs the analytics.edit scope; a connection authorized before it was requested must reconnect."
     },
     {
       "name": "seo_ga4_key_event_delete",
       "dept": "seo",
-      "method": null,
+      "method": "POST",
       "description": "DESTRUCTIVE AND IRREVERSIBLE. Un-marks a GA4 event as a conversion. Any Google Ads conversion action imported from it stops recording immediately and SILENTLY — the Ads conversion action keeps existing and flatlines, and if it sits in a bidding goal, Smart Bidding loses that signal. TWO-STEP CONFIRM: the first call does NOT delete — it returns requires_confirm with a preview and issues no write at all. Repeat the identical call with confirm: true (a strict boolean; the string 'true' only previews)."
     },
     {
       "name": "seo_ga4_key_event_update",
       "dept": "seo",
-      "method": null,
+      "method": "POST",
       "description": "Change a GA4 key event's counting method and/or default value. eventName is IMMUTABLE — renaming means create + delete. Both changes propagate AUTOMATICALLY to Google Ads conversions imported from this key event, shifting reported volume or value without anyone touching Google Ads, which moves CPA and forces Smart Bidding to relearn. Not retroactive. The response names the consequence. TWO-STEP CONFIRM, because unlike GTM (where a write is a draft that serves nothing until publish) a GA4 change is LIVE ON RETURN and propagates into every Google Ads conversion imported from it. The first call writes nothing and returns a preview naming each field's current value, new value and consequence. Repeat with confirm: true."
     },
     {
       "name": "seo_ga4_key_events_list",
       "dept": "seo",
-      "method": null,
+      "method": "GET",
       "description": "List GA4 key events (the conversions) with countingMethod and defaultValue — the two settings that make an imported Google Ads conversion wrong. GA4 Admin API v1beta properties/{p}/keyEvents. (conversionEvents is the deprecated name for the same thing.)"
     },
     {
       "name": "seo_ga4_report",
       "dept": "seo",
-      "method": null,
+      "method": "POST",
       "description": "Pull NUMBERS from a client's GA4 property — one Google Analytics Data API runReport. Every other seo_ga4_* tool is Admin API configuration (key events, streams, rules); this is the only one that returns sessions, landing pages, revenue. The GA4 PROPERTY ALWAYS COMES FROM THE CONNECTION ROW (seo_connections.ga_property_id) — there is no property input; a connection whose property is not the one you want cannot be redirected. Quickest path is a preset (ONE param): channel_sessions (sessionDefaultChannelGroup x sessions/engagedSessions/keyEvents), landing_pages (landingPage x sessions/keyEvents/engagementRate), ecommerce_revenue (date x purchaseRevenue/transactions). Explicit dimensions/metrics override the matching half of a preset, so preset 'ecommerce_revenue' + dimensions ['itemName'] is revenue by product (then use metrics ['itemRevenue','itemsPurchased'] — purchaseRevenue is order-scoped). Without a preset, pass dimensions (0-9) and metrics (1-10). Names are CASE SENSITIVE GA4 Data API names and are checked against a shape regex AND an allowlist before anything reaches Google; an unknown name is a 400 naming the offender and the response carries allowed_dimensions / allowed_metrics. Custom definitions use customEvent: / customUser: / customItem: prefixes. keyEvents is the current name for what GA4 called conversions (both accepted). dimension_filter is a GA4 FilterExpression ({ filter: { fieldName, stringFilter|inListFilter|numericFilter|betweenFilter } } or andGroup/orGroup/notExpression) rebuilt from known keys only — an unknown key is refused, never silently dropped. Dates default to the last 30 COMPLETE days ending yesterday (GA4 only serves complete days); a date_to of today is accepted with a warning that the last row is partial. limit 1-1000, default 100; total_row_count is Google's count BEFORE the limit and totals cover every matched row, so a truncated report says so. GOOGLE'S ERRORS COME BACK VERBATIM AND ARE NOT RETRIED: a 429 is the property's hourly Data API token quota and the full Google message plus the parsed google_error object are returned as-is — retrying inside the hour only burns the rest of it. property_quota in every success shows tokens consumed/remaining. Warnings flag thresholding (rows withheld for privacy, so rows do not sum to totals), '(other)' row folding, sampling, and zero-row results (a property that never sent purchase events returns zero rows, not an error). Metric values are numbers; engagementRate is a 0-1 ratio."
     },
     {
@@ -7752,19 +7752,19 @@
     {
       "name": "seo_gbp_media",
       "dept": "seo",
-      "method": null,
+      "method": "GET",
       "description": "The GBP location's public photo gallery (live read, no DB cache): each item's media_id (feed it to seo_gbp_media_delete), category (COVER / PROFILE / LOGO / EXTERIOR / INTERIOR / PRODUCT / AT_WORK / FOOD_AND_DRINK / MENU / COMMON_AREA / ROOMS / TEAMS / ADDITIONAL), format, googleUrl/thumbnail, dimensions, view count — plus total_media_item_count. Get connection_id from seo_connections_list (platform google_business_profile). Add photos with seo_gbp_media_add."
     },
     {
       "name": "seo_gbp_media_add",
       "dept": "seo",
-      "method": null,
+      "method": "POST",
       "description": "Add a PHOTO to the GBP location's gallery from a public https URL. The photo publishes PUBLICLY on the client's live listing (Google fetches it from source_url). Categories COVER / PROFILE / LOGO REPLACE the listing's primary imagery instead of appending to the gallery — use them deliberately. TWO-STEP CONFIRM: the first call (without confirm) does NOT publish — it returns a preview (category, source_url, media_format, whether primary imagery is replaced) with requires_confirm: true; URL and category validation run at this step, so a bad input fails before confirm. Repeat the IDENTICAL call with confirm: true to publish. source_url must be https and resolve to a public host; videos are rejected (photo-only). Get connection_id from seo_connections_list (platform google_business_profile)."
     },
     {
       "name": "seo_gbp_media_delete",
       "dept": "seo",
-      "method": null,
+      "method": "POST",
       "description": "Permanently remove one media item from the GBP location's live public gallery (deleting a COVER / PROFILE / LOGO item removes the listing's primary imagery). TWO-STEP CONFIRM: the first call (without confirm) does NOT delete — it fetches the live item and returns a preview (category, format, googleUrl/thumbnail, create time, view count) with requires_confirm: true, so you see exactly what is being removed; a bad media_id fails at this step. Repeat the IDENTICAL call with confirm: true to delete. Get connection_id from seo_connections_list (platform google_business_profile); get media_id from seo_gbp_media."
     },
     {
@@ -7794,13 +7794,13 @@
     {
       "name": "seo_gbp_services",
       "dept": "seo",
-      "method": null,
+      "method": "GET",
       "description": "The GBP location's service menu (live Business Information read): serviceItems — structured services (Google-defined serviceTypeId for the category) and free-form services (merchant-defined label under a category), each optionally priced — plus title/categories context for picking valid category ids. Services show publicly on the listing and feed Google's 'services' local-search filters. Get connection_id from seo_connections_list (platform google_business_profile). Edit with seo_gbp_services_update."
     },
     {
       "name": "seo_gbp_services_update",
       "dept": "seo",
-      "method": null,
+      "method": "POST",
       "description": "Replace the GBP location's service menu. This REPLACES the ENTIRE service list on the client's live listing — every current service missing from service_items is REMOVED, and an empty array removes ALL services. The menu publishes publicly. TWO-STEP CONFIRM: the first call (without confirm) does NOT apply — it returns a live diff summary (current_count / new_count / added / removed / kept service names) with requires_confirm: true. Repeat the IDENTICAL call with confirm: true to apply. Each item has EXACTLY ONE of structuredServiceItem ({ serviceTypeId, description? } — serviceTypeId comes from the category's Google-defined service types) or freeFormServiceItem ({ category: 'gcid:...', label: { displayName, description?, languageCode? } }), plus optional price ({ currencyCode, units?, nanos? }). Read the current list first with seo_gbp_services (it also returns the location's categories for free-form category ids). Get connection_id from seo_connections_list (platform google_business_profile)."
     },
     {
@@ -7890,115 +7890,115 @@
     {
       "name": "seo_gtm_install",
       "dept": "seo",
-      "method": null,
+      "method": "POST",
       "description": "Install a GTM container's snippet into one tier's site-wide custom code — the <script> block in HEAD and the <noscript> iframe in BODY. GTM needs BOTH; a head-only install silently loses no-JS and some privacy-blocked traffic. STRICT TWO-STEP CONFIRM: the first call (confirm omitted, or anything other than the boolean true) returns requires_confirm with a preview and changes NOTHING. Repeat the identical call with confirm: true to write. NEVER DUPLICATES, BUT DOES REPAIR. It is a no-op only when the container is FULLY installed site-wide (both halves). Otherwise it fixes what is wrong, writing only what is missing and leaving what is present byte-for-byte: a half install gets its missing box added (and the response says which, since an iframe-only install means the container never loads at all, while a script-only one merely undercounts no-JS traffic), and a container living only in page overrides is MOVED site-wide in one transaction. If a page override box holds other code alongside the snippet, the call refuses and names the page rather than splicing customer HTML. SAVED IS NOT LIVE: the write takes effect on the NEXT DEPLOY of that tier, and the preview tier additionally requires run_in_preview (see project_custom_code_preview_toggle)."
     },
     {
       "name": "seo_gtm_install_status",
       "dept": "seo",
-      "method": null,
+      "method": "GET",
       "description": "Is the GTM container the agent is editing actually installed on the site? Reports per tier (preview / development / staging / production), head and body separately: not installed, installed, installed-but-a-different-container, or installed more than once. ALWAYS call this before and after seo_gtm_tag_create / seo_gtm_publish. A published container that is not installed fires on nobody, and every tag call still reports success — that failure is invisible from both ends. The three findings that cost money: WRONG CONTAINER (the site runs a container the agent is not editing; both ids are named, and conversions recorded is zero), DUPLICATE INSTALL (the same container twice on one rendered page, which DOUBLE-COUNTS every conversion — it reads as performance improving and corrupts every downstream CPA and ROAS), and TIER DRIFT (verified on staging, never installed on production). Also flags a head-only install (loses no-JS traffic) and a row that is disabled or over the injection cap — which reads as installed in the UI and ships on no deploy, ever. SCOPE: reads project_custom_code. A container hardcoded in the site's own source is invisible here — use analytics_diagnose_tracking for that. Reports the SAVED state, never the LIVE one."
     },
     {
       "name": "seo_gtm_publish",
       "dept": "seo",
-      "method": null,
+      "method": "POST",
       "description": "Publish a GTM container version — THE step that CHANGES THE CLIENT'S LIVE SITE: every tag in the version starts serving to real visitors immediately. TWO-STEP CONFIRM: the first call (without confirm) does NOT publish — it returns a preview (container name + public id, the version's tags, what is currently live, and the workspace's pending changes with a note that those are NOT in this version) with requires_confirm: true. Repeat the IDENTICAL call with confirm: true to publish. Get version_id from seo_gtm_version_create. Requires the Tag Manager publish scopes (tagmanager.edit.containerversions + tagmanager.publish, requested since 2026-08-23) — a connection authorized before then gets a reconnect-Google-Analytics error naming the fix. Remember the documented failure mode this pipeline exists to close: a container whose conversion tags were never published recorded nothing for months. CONTAINER PINNING: the first time a container is used successfully on a connection, that container is claimed from Google's own answer and stored on the connection. A later call naming a DIFFERENT container is refused with a 403 naming both — the connection's Google user can legitimately reach containers belonging to other tenants, so the pin is what stops one account editing another's container. Retrying the same call will not help; either use the pinned container, or clear the pin deliberately with seo_connection_update (gtm_container_path: null) and let the next successful call re-claim it."
     },
     {
       "name": "seo_gtm_status",
       "dept": "seo",
-      "method": null,
+      "method": "GET",
       "description": "Google Tag Manager status for a Google Analytics connection (GTM rides the SAME seo_connections row — one Google authorization covers both). Without container_path: lists the GTM accounts + containers the connection's Google user can see (container_path + public GTM-XXXXXX id). With container_path: the publish preview for that container — container name, the default workspace's PENDING CHANGES (what the next version would contain), a draft-vs-live tag split (draft_only tags are NOT serving), the currently-live version, and a loud warning when the container has NEVER been published (the documented failure mode: a never-published container silently losing every Ads conversion). Also returns triggers[] — every trigger in the workspace, the live version and the built-ins, each with trigger_id, name, type, filters, load_only and spa_safe, and each tag's firing_triggers[] resolved BY NAME rather than as a bare numeric id. That is what lets you bind a conversion tag to a click trigger a human already built, without creating a duplicate. Also returns variables[] — variable_id, name, type, type_label, reference (the {{Name}} form) and data_layer_key (the dataLayer key it actually reads, which is independent of its display name). variable_id is what seo_gtm_variable_get / _update / _delete take, and nothing else emits it. Built-in variables are excluded because they have no numeric id. Read this before seo_gtm_tag_create and before seo_gtm_version_create / seo_gtm_publish. Get connection_id from seo_connections_list (platform google_analytics). CONTAINER PINNING: the first time a container is used successfully on a connection, that container is claimed from Google's own answer and stored on the connection. A later call naming a DIFFERENT container is refused with a 403 naming both — the connection's Google user can legitimately reach containers belonging to other tenants, so the pin is what stops one account editing another's container. Retrying the same call will not help; either use the pinned container, or clear the pin deliberately with seo_connection_update (gtm_container_path: null) and let the next successful call re-claim it."
     },
     {
       "name": "seo_gtm_tag_create",
       "dept": "seo",
-      "method": null,
+      "method": "POST",
       "description": "Create a tag in a GTM container's default workspace — a WORKSPACE DRAFT ONLY: nothing serves until the container is published (seo_gtm_version_create then seo_gtm_publish), and an unpublished conversion tag records nothing however complete it looks in GTM. No confirm gate for that reason. TAG TYPES: 'ga4_event' (measurement_id 'G-XXXXXXXXXX' + event_name), 'ads_conversion' (conversion_id + conversion_label from the Ads conversion action's tag setup), 'bing_uet' / 'bing_uet_event' (uet_tag_id), 'meta_pixel' / 'meta_event' (meta_pixel_id), 'custom_html'. Bing and Meta are emitted as templated Custom HTML because GTM has no first-party type for them; bing_uet and meta_pixel are BASE tags that fire once per document load. CONVERSION VALUE: pass conversion_value + currency_code (+ transaction_id to deduplicate) as a literal or a '{{Variable}}' reference. Omit them and the tag sends NO VALUE — the conversion still records, but every one is worth the same, so tROAS bids against a constant. Create a dataLayer variable with seo_gtm_variable_create and reference it here. FIRING TRIGGERS: pass firing_trigger_ids (existing ids from seo_gtm_status, which now returns every trigger's name/type/filters so you can bind to a click trigger a human already built) OR create_trigger. 'all_pages'; 'page_path' (+ trigger_page_path, e.g. /thank-you), which defaults to trigger_type 'both' — one pageview AND one historyChange trigger, because on a Next.js site a form submit is a client-side route change a pageview trigger never sees while a hard landing is a document load historyChange never sees, and either alone has a silent blind spot; or 'click' / 'link_click' / 'form_submit' (+ trigger_match_on / trigger_match_value) for the click conversions — tap-to-call, WhatsApp CTA, PDF download, booking button. Get connection_id from seo_connections_list (platform google_analytics); get container_path from seo_gtm_status. CONTAINER PINNING: the first time a container is used successfully on a connection, that container is claimed from Google's own answer and stored on the connection. A later call naming a DIFFERENT container is refused with a 403 naming both — the connection's Google user can legitimately reach containers belonging to other tenants, so the pin is what stops one account editing another's container. Retrying the same call will not help; either use the pinned container, or clear the pin deliberately with seo_connection_update (gtm_container_path: null) and let the next successful call re-claim it."
     },
     {
       "name": "seo_gtm_tag_delete",
       "dept": "seo",
-      "method": null,
+      "method": "POST",
       "description": "DESTRUCTIVE. Delete a GTM tag from the workspace. It stops working on the NEXT PUBLISH, not immediately, so the damage surfaces later than the action. A deleted conversion tag stops recording — the Google Ads or GA4 conversion it feeds flatlines with no error anywhere. Prefer paused: true on seo_gtm_tag_update, which is reversible. TWO-STEP CONFIRM: the first call does NOT delete — it returns a preview and touches nothing. Repeat with confirm: true (a strict boolean; the string 'true' only previews). Draft-only: the change lands in the workspace and serves nothing until seo_gtm_version_create then seo_gtm_publish. CONTAINER PINNING: the first time a container is used successfully on a connection, that container is claimed from Google's own answer and stored on the connection. A later call naming a DIFFERENT container is refused with a 403 naming both — the connection's Google user can legitimately reach containers belonging to other tenants, so the pin is what stops one account editing another's container. Retrying the same call will not help; either use the pinned container, or clear the pin deliberately with seo_connection_update (gtm_container_path: null) and let the next successful call re-claim it."
     },
     {
       "name": "seo_gtm_tag_get",
       "dept": "seo",
-      "method": null,
+      "method": "GET",
       "description": "Read one GTM tag in full — every stored field, its fingerprint, and referenced_by (what else in the container depends on it). Read this before any update: an update replaces the entity, so you need to know what is currently there. A GET, so it does not require the write scope. CONTAINER PINNING: the first time a container is used successfully on a connection, that container is claimed from Google's own answer and stored on the connection. A later call naming a DIFFERENT container is refused with a 403 naming both — the connection's Google user can legitimately reach containers belonging to other tenants, so the pin is what stops one account editing another's container. Retrying the same call will not help; either use the pinned container, or clear the pin deliberately with seo_connection_update (gtm_container_path: null) and let the next successful call re-claim it."
     },
     {
       "name": "seo_gtm_tag_revert",
       "dept": "seo",
-      "method": null,
+      "method": "POST",
       "description": "Undo a WORKSPACE edit to a GTM tag by restoring it to whatever the live published version holds. This is the clean way back from a bad update — safer than another edit, because you are not synthesising the old value, GTM is. WHAT IT DOES DEPENDS ON HOW THE TAG GOT THERE, and the tool resolves that BEFORE writing rather than guessing: a tag ADDED in this workspace has nothing to restore to, so reverting it DELETES it — and that path therefore carries the same reference refusal and force override as tag_delete, because otherwise revert would be the way around it. A tag UPDATED in the workspace is restored to the live value. A tag DELETED in the workspace is UN-deleted, which is the only way back from a tag_delete that has not been published yet. If the workspace holds no change at all, the call is REFUSED rather than returning a cheerful no-op an agent would read as an undo that happened. IT IS NOT AN UNPUBLISH. Revert restores FROM the live version and never modifies it, so a bad tag that is already serving real visitors is untouched by this — that needs a corrected version published. TWO-STEP CONFIRM: the first call returns a preview naming the change status, the effect, and anything that would be orphaned, and writes nothing. Repeat with confirm: true (a strict boolean; the string 'true' only previews). There is no un-revert: unpublished work is gone."
     },
     {
       "name": "seo_gtm_tag_update",
       "dept": "seo",
-      "method": null,
+      "method": "POST",
       "description": "Change an existing GTM tag: its name, paused state, measurement/conversion ids, and — the reason this matters — its CONVERSION VALUE, currency and transaction id. A conversion tag installed without a value sends none, so every conversion is worth the same and tROAS bids against a constant; this is how you fix one without deleting and rebuilding it. GTM UPDATES ARE A REPLACE, NOT A PATCH. This tool reads the stored entity first and merges your changes onto it, so anything you omit is preserved. Send an empty string to CLEAR a field — that is the only way to unset a wrong value rather than overwrite it. Optimistic concurrency: the fingerprint read at the start of this call is always sent, so two agents cannot silently clobber each other. A conflict returns 409 'someone else changed this, re-read and retry' rather than a raw Google error. A tag's TYPE cannot be changed — the parameter set is entirely different and a flip would compile and do nothing. Delete and recreate instead. Templated Bing/Meta tags are generated script bodies, so edit them with custom_html (which replaces the whole body) or recreate via seo_gtm_tag_create. Draft-only: the change lands in the workspace and serves nothing until seo_gtm_version_create then seo_gtm_publish. CONTAINER PINNING: the first time a container is used successfully on a connection, that container is claimed from Google's own answer and stored on the connection. A later call naming a DIFFERENT container is refused with a 403 naming both — the connection's Google user can legitimately reach containers belonging to other tenants, so the pin is what stops one account editing another's container. Retrying the same call will not help; either use the pinned container, or clear the pin deliberately with seo_connection_update (gtm_container_path: null) and let the next successful call re-claim it."
     },
     {
       "name": "seo_gtm_trigger_delete",
       "dept": "seo",
-      "method": null,
+      "method": "POST",
       "description": "DESTRUCTIVE. Delete a GTM trigger from the workspace. It stops working on the NEXT PUBLISH, not immediately, so the damage surfaces later than the action. Deleting a trigger is worse than deleting a tag: every tag that fires on it is affected, and a tag left with NO firing trigger silently never runs again. The call is REFUSED (409) if anything references it, naming each dependent; pass force only if the user explicitly asked. The built-in All Pages trigger cannot be deleted. TWO-STEP CONFIRM: the first call does NOT delete — it returns a preview and touches nothing. Repeat with confirm: true (a strict boolean; the string 'true' only previews). Draft-only: the change lands in the workspace and serves nothing until seo_gtm_version_create then seo_gtm_publish. CONTAINER PINNING: the first time a container is used successfully on a connection, that container is claimed from Google's own answer and stored on the connection. A later call naming a DIFFERENT container is refused with a 403 naming both — the connection's Google user can legitimately reach containers belonging to other tenants, so the pin is what stops one account editing another's container. Retrying the same call will not help; either use the pinned container, or clear the pin deliberately with seo_connection_update (gtm_container_path: null) and let the next successful call re-claim it."
     },
     {
       "name": "seo_gtm_trigger_get",
       "dept": "seo",
-      "method": null,
+      "method": "GET",
       "description": "Read one GTM trigger in full — every stored field, its fingerprint, and referenced_by (what else in the container depends on it). Read this before any update: an update replaces the entity, so you need to know what is currently there. A GET, so it does not require the write scope. CONTAINER PINNING: the first time a container is used successfully on a connection, that container is claimed from Google's own answer and stored on the connection. A later call naming a DIFFERENT container is refused with a 403 naming both — the connection's Google user can legitimately reach containers belonging to other tenants, so the pin is what stops one account editing another's container. Retrying the same call will not help; either use the pinned container, or clear the pin deliberately with seo_connection_update (gtm_container_path: null) and let the next successful call re-claim it."
     },
     {
       "name": "seo_gtm_trigger_revert",
       "dept": "seo",
-      "method": null,
+      "method": "POST",
       "description": "Undo a WORKSPACE edit to a GTM trigger by restoring it to whatever the live published version holds. This is the clean way back from a bad update — safer than another edit, because you are not synthesising the old value, GTM is. WHAT IT DOES DEPENDS ON HOW THE TRIGGER GOT THERE, and the tool resolves that BEFORE writing rather than guessing: a trigger ADDED in this workspace has nothing to restore to, so reverting it DELETES it — and that path therefore carries the same reference refusal and force override as trigger_delete, because otherwise revert would be the way around it. A trigger UPDATED in the workspace is restored to the live value. A trigger DELETED in the workspace is UN-deleted, which is the only way back from a trigger_delete that has not been published yet. If the workspace holds no change at all, the call is REFUSED rather than returning a cheerful no-op an agent would read as an undo that happened. IT IS NOT AN UNPUBLISH. Revert restores FROM the live version and never modifies it, so a bad tag that is already serving real visitors is untouched by this — that needs a corrected version published. TWO-STEP CONFIRM: the first call returns a preview naming the change status, the effect, and anything that would be orphaned, and writes nothing. Repeat with confirm: true (a strict boolean; the string 'true' only previews). There is no un-revert: unpublished work is gone."
     },
     {
       "name": "seo_gtm_trigger_update",
       "dept": "seo",
-      "method": null,
+      "method": "POST",
       "description": "Change an existing GTM trigger — its name, the URL path it matches, or the click/form condition. This is how you fix a conversion that fires on the wrong page or the wrong button without rebuilding the tag that uses it. GTM UPDATES ARE A REPLACE, NOT A PATCH. This tool reads the stored entity first and merges your changes onto it, so anything you omit is preserved. Send an empty string to CLEAR a field — that is the only way to unset a wrong value rather than overwrite it. Optimistic concurrency: the fingerprint read at the start of this call is always sent, so two agents cannot silently clobber each other. A conflict returns 409 'someone else changed this, re-read and retry' rather than a raw Google error. The response reports preserved_condition_parameters — the condition is amended onto what is stored, so parameters you did not name (ignore_case on a regex, for instance) survive. The trigger's TYPE cannot be changed. Editing a trigger changes behaviour for EVERY tag that fires on it — read seo_gtm_trigger_get's referenced_by first. Draft-only: the change lands in the workspace and serves nothing until seo_gtm_version_create then seo_gtm_publish. CONTAINER PINNING: the first time a container is used successfully on a connection, that container is claimed from Google's own answer and stored on the connection. A later call naming a DIFFERENT container is refused with a 403 naming both — the connection's Google user can legitimately reach containers belonging to other tenants, so the pin is what stops one account editing another's container. Retrying the same call will not help; either use the pinned container, or clear the pin deliberately with seo_connection_update (gtm_container_path: null) and let the next successful call re-claim it."
     },
     {
       "name": "seo_gtm_variable_create",
       "dept": "seo",
-      "method": null,
+      "method": "POST",
       "description": "Create a GTM user-defined variable in the container's default workspace and return its '{{Name}}' reference for use in seo_gtm_tag_create's conversion_value / currency_code / transaction_id. WORKSPACE DRAFT ONLY — nothing serves until seo_gtm_version_create then seo_gtm_publish. This is what makes a REAL conversion value possible. Without a variable the only option is a literal, so every conversion is worth the same number and Smart Bidding optimises toward an average rather than actual revenue. variable_type 'data_layer' (+ data_layer_key, e.g. 'value' or 'transaction_id', and an optional default_value) reads whatever the site pushes to the dataLayer at conversion time — the site must actually push that key, so confirm it before relying on it. 'constant' (+ constant_value) is a fixed string, useful for a currency code. Get connection_id from seo_connections_list (platform google_analytics); get container_path from seo_gtm_status. CONTAINER PINNING: the first time a container is used successfully on a connection, that container is claimed from Google's own answer and stored on the connection. A later call naming a DIFFERENT container is refused with a 403 naming both — the connection's Google user can legitimately reach containers belonging to other tenants, so the pin is what stops one account editing another's container. Retrying the same call will not help; either use the pinned container, or clear the pin deliberately with seo_connection_update (gtm_container_path: null) and let the next successful call re-claim it."
     },
     {
       "name": "seo_gtm_variable_delete",
       "dept": "seo",
-      "method": null,
+      "method": "POST",
       "description": "DESTRUCTIVE. Delete a GTM variable from the workspace. It stops working on the NEXT PUBLISH, not immediately, so the damage surfaces later than the action. Any tag referencing '{{Name}}' keeps that reference and resolves to nothing, so a conversion value quietly becomes empty rather than erroring. The call is REFUSED if anything references it. TWO-STEP CONFIRM: the first call does NOT delete — it returns a preview and touches nothing. Repeat with confirm: true (a strict boolean; the string 'true' only previews). Draft-only: the change lands in the workspace and serves nothing until seo_gtm_version_create then seo_gtm_publish. CONTAINER PINNING: the first time a container is used successfully on a connection, that container is claimed from Google's own answer and stored on the connection. A later call naming a DIFFERENT container is refused with a 403 naming both — the connection's Google user can legitimately reach containers belonging to other tenants, so the pin is what stops one account editing another's container. Retrying the same call will not help; either use the pinned container, or clear the pin deliberately with seo_connection_update (gtm_container_path: null) and let the next successful call re-claim it."
     },
     {
       "name": "seo_gtm_variable_get",
       "dept": "seo",
-      "method": null,
+      "method": "GET",
       "description": "Read one GTM variable in full — every stored field, its fingerprint, and referenced_by (what else in the container depends on it). Read this before any update: an update replaces the entity, so you need to know what is currently there. A GET, so it does not require the write scope. CONTAINER PINNING: the first time a container is used successfully on a connection, that container is claimed from Google's own answer and stored on the connection. A later call naming a DIFFERENT container is refused with a 403 naming both — the connection's Google user can legitimately reach containers belonging to other tenants, so the pin is what stops one account editing another's container. Retrying the same call will not help; either use the pinned container, or clear the pin deliberately with seo_connection_update (gtm_container_path: null) and let the next successful call re-claim it."
     },
     {
       "name": "seo_gtm_variable_revert",
       "dept": "seo",
-      "method": null,
+      "method": "POST",
       "description": "Undo a WORKSPACE edit to a GTM variable by restoring it to whatever the live published version holds. This is the clean way back from a bad update — safer than another edit, because you are not synthesising the old value, GTM is. WHAT IT DOES DEPENDS ON HOW THE VARIABLE GOT THERE, and the tool resolves that BEFORE writing rather than guessing: a variable ADDED in this workspace has nothing to restore to, so reverting it DELETES it — and that path therefore carries the same reference refusal and force override as variable_delete, because otherwise revert would be the way around it. A variable UPDATED in the workspace is restored to the live value. A variable DELETED in the workspace is UN-deleted, which is the only way back from a variable_delete that has not been published yet. If the workspace holds no change at all, the call is REFUSED rather than returning a cheerful no-op an agent would read as an undo that happened. IT IS NOT AN UNPUBLISH. Revert restores FROM the live version and never modifies it, so a bad tag that is already serving real visitors is untouched by this — that needs a corrected version published. TWO-STEP CONFIRM: the first call returns a preview naming the change status, the effect, and anything that would be orphaned, and writes nothing. Repeat with confirm: true (a strict boolean; the string 'true' only previews). There is no un-revert: unpublished work is gone."
     },
     {
       "name": "seo_gtm_variable_update",
       "dept": "seo",
-      "method": null,
+      "method": "POST",
       "description": "Change an existing GTM variable — the dataLayer key it reads, its default, or a constant's value. A conversion tag referencing '{{Order Value}}' breaks silently if that variable reads the wrong dataLayer key, and this is how you fix it without touching the tag. GTM UPDATES ARE A REPLACE, NOT A PATCH. This tool reads the stored entity first and merges your changes onto it, so anything you omit is preserved. Send an empty string to CLEAR a field — that is the only way to unset a wrong value rather than overwrite it. Optimistic concurrency: the fingerprint read at the start of this call is always sent, so two agents cannot silently clobber each other. A conflict returns 409 'someone else changed this, re-read and retry' rather than a raw Google error. Renaming a variable does NOT update the '{{Name}}' references in tags that use it — those keep pointing at a name that no longer exists. Check seo_gtm_variable_get's referenced_by before renaming. Draft-only: the change lands in the workspace and serves nothing until seo_gtm_version_create then seo_gtm_publish. CONTAINER PINNING: the first time a container is used successfully on a connection, that container is claimed from Google's own answer and stored on the connection. A later call naming a DIFFERENT container is refused with a 403 naming both — the connection's Google user can legitimately reach containers belonging to other tenants, so the pin is what stops one account editing another's container. Retrying the same call will not help; either use the pinned container, or clear the pin deliberately with seo_connection_update (gtm_container_path: null) and let the next successful call re-claim it."
     },
     {
       "name": "seo_gtm_version_create",
       "dept": "seo",
-      "method": null,
+      "method": "POST",
       "description": "Snapshot a GTM container's default workspace into a container version (name + notes). Still NOT live — seo_gtm_publish makes it serve. Creating a version CONSUMES the workspace (GTM opens a fresh one; response includes new_workspace_path). Fails loudly on GTM compilerError / sync problems instead of returning a version that does not exist. Check what the version will contain first with seo_gtm_status (pending_changes). Requires the Tag Manager publish scopes (requested since 2026-08-23) — a connection authorized before then gets a reconnect-Google-Analytics error. CONTAINER PINNING: the first time a container is used successfully on a connection, that container is claimed from Google's own answer and stored on the connection. A later call naming a DIFFERENT container is refused with a 403 naming both — the connection's Google user can legitimately reach containers belonging to other tenants, so the pin is what stops one account editing another's container. Retrying the same call will not help; either use the pinned container, or clear the pin deliberately with seo_connection_update (gtm_container_path: null) and let the next successful call re-claim it."
     },
     {

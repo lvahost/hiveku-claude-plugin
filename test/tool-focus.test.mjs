@@ -15,6 +15,7 @@ import {
   filterTools,
   parseFocus,
 } from '../lib/tool-focus.mjs';
+import { DEPT_ALIASES, deptMatches, expandDept } from '../lib/dept-aliases.mjs';
 
 const tool = (name) => ({ name, description: 'x', inputSchema: { type: 'object' } });
 const NAMES = [
@@ -25,6 +26,11 @@ const NAMES = [
   'get_account_info', 'account_context_get', 'connections_status',
   'list_departments', 'talk_to_department', 'audit_query',
   'deploy_site',
+  // The SEO surface is split across vendor prefixes (lib/dept-aliases.mjs).
+  'backlinks_summary', 'dataforseo_labs_google_keyword_ideas', 'content_analysis_summary',
+  'serp_organic_live_advanced', 'business_data_business_listings_search', 'crawl',
+  // Hiveku's OWN content tools share a first token with content_analysis_ and must not ride along.
+  'content_create',
 ];
 const TOOLS = NAMES.map(tool);
 
@@ -107,6 +113,60 @@ test('the banner speaks only when it has something to say', () => {
   assert.match(msg, /ppc, marketing/);
   // It must say what it is NOT, or someone will read it as access control.
   assert.match(msg, /still reachable/i);
+});
+
+test('★ the seo focus is an alias: it keeps the DataForSEO vendor tools too', () => {
+  // Measured 2026-08-30: a focus of `seo` dropped every backlinks_, dataforseo_labs_,
+  // serp_, on_page_, keywords_data_, content_analysis_ tool and bare `crawl`, so a
+  // session concluded the account had no backlink data. The alias closes that.
+  const kept = filterTools(TOOLS, ['seo']).map((t) => t.name);
+  for (const n of ['seo_rankings_list', 'seo_gsc_search_analytics', 'backlinks_summary',
+                   'dataforseo_labs_google_keyword_ideas', 'content_analysis_summary', 'crawl']) {
+    assert.ok(kept.includes(n), `${n} must survive an seo focus`);
+  }
+  // content_analysis_ is an explicit PREFIX alias, never the content department:
+  // 38 Hiveku content_* tools (publishing, calendar) stay out of an SEO menu.
+  assert.ok(!kept.includes('content_create'), 'Hiveku content_* tools are not SEO');
+  assert.ok(!kept.includes('ppc_digest'));
+  assert.ok(!kept.includes('crm_contact_delete'));
+});
+
+test('an unaliased focus is still an exact first-token match', () => {
+  // Aliases only widen the departments named in DEPT_ALIASES; ppc, crm, voice
+  // and every other focus behave exactly as before.
+  const kept = filterTools(TOOLS, ['ppc']).map((t) => t.name);
+  assert.ok(kept.includes('ppc_digest'));
+  assert.ok(!kept.includes('backlinks_summary'));
+  assert.ok(!kept.includes('crawl'));
+  assert.ok(!kept.includes('content_analysis_summary'));
+});
+
+test('localseo and aeo aliases match the manifest department ids', () => {
+  const local = filterTools(TOOLS, ['localseo']).map((t) => t.name);
+  assert.ok(local.includes('seo_gsc_search_analytics'));
+  assert.ok(local.includes('business_data_business_listings_search'));
+  assert.ok(local.includes('serp_organic_live_advanced'));
+  assert.ok(!local.includes('backlinks_summary'), 'localseo does not need the backlink surface');
+  const aeo = filterTools(TOOLS, ['aeo']).map((t) => t.name);
+  assert.ok(aeo.includes('seo_rankings_list'));
+  assert.ok(aeo.includes('serp_organic_live_advanced'));
+  assert.ok(!aeo.includes('backlinks_summary'));
+});
+
+test('deptMatches: the alias table is explicit and never widens an unaliased department', () => {
+  assert.deepEqual(Object.keys(DEPT_ALIASES).sort(), ['aeo', 'localseo', 'seo']);
+  assert.equal(deptMatches('crawl', 'seo'), true);
+  assert.equal(deptMatches('crawl', 'ppc'), false);
+  assert.equal(deptMatches('content_analysis_summary', 'seo'), true);
+  assert.equal(deptMatches('content_create', 'seo'), false);
+  assert.equal(deptMatches('ppc_digest', 'ppc'), true);
+  assert.equal(deptMatches('ppc_digest', 'PPC'), true, 'case-insensitive like parseFocus');
+  assert.equal(deptMatches('ppc_digest', 'constructor'), false, 'prototype names are not aliases');
+  assert.equal(deptMatches('', 'seo'), false);
+  assert.equal(deptMatches(null, 'seo'), false);
+  assert.equal(deptMatches('seo_rankings_list', ''), false);
+  assert.ok(expandDept('seo').includes('backlinks'));
+  assert.deepEqual(expandDept('ppc'), ['ppc']);
 });
 
 test('ALWAYS_AVAILABLE covers the five every key can call', () => {

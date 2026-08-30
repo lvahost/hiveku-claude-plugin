@@ -46,6 +46,30 @@ test('department filter narrows without emptying', () => {
   assert.ok(ppc.every((t) => t.dept === 'ppc'));
 });
 
+test('★ department seo reaches the DataForSEO vendor tools (dept alias)', () => {
+  // Measured 2026-08-30: department 'seo' and a focus of seo could not return
+  // any backlinks_ / dataforseo_labs_ / serp_ / on_page_ / keywords_data_ /
+  // content_analysis_ tool, so a session reported "no backlink data" on an
+  // account with twenty backlink tools. lib/dept-aliases.mjs widens both paths.
+  const byDept = searchTools('backlinks summary', { department: 'seo', limit: 15 }).map((t) => t.name);
+  assert.ok(byDept.includes('backlinks_summary'), `department seo got ${byDept.join(', ')}`);
+  const byFocus = searchTools('keyword ideas', { focus: ['seo'], limit: 20 }).map((t) => t.name);
+  assert.ok(byFocus.includes('dataforseo_labs_google_keyword_ideas'), `focus seo got ${byFocus.join(', ')}`);
+  // content_analysis_ is a PREFIX alias; Hiveku's own content_* tools stay out.
+  const content = searchTools('create content', { focus: ['seo'], limit: 50 }).map((t) => t.name);
+  assert.ok(!content.includes('content_create'), 'Hiveku content_* tools must not ride an seo focus');
+  // The no-terms department listing honours the alias too.
+  const listing = searchTools('', { department: 'seo', limit: 50 }).map((t) => t.name);
+  assert.ok(listing.some((n) => n.startsWith('backlinks_')), 'the empty-query listing must include vendor tools');
+});
+
+test('the search tool tells the model that seo covers the vendor prefixes', () => {
+  const desc = findToolDefinition(1770).inputSchema.properties.department.description;
+  for (const p of ['backlinks_', 'dataforseo_labs_', 'serp_', 'on_page_', 'keywords_data_']) {
+    assert.ok(desc.includes(p), `department description must name ${p}`);
+  }
+});
+
 test('an empty or useless query still answers usefully', () => {
   // Returning nothing would read as "Hiveku has nothing for this".
   assert.ok(searchTools('', { limit: 5 }).length > 0);

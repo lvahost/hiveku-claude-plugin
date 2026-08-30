@@ -49,8 +49,19 @@ const PLUGIN_ROOT = path.resolve(HERE, '..');
 const OUT = path.join(PLUGIN_ROOT, 'lib', 'tool-index.json');
 const SERVER_SRC = path.resolve(PLUGIN_ROOT, '..', 'hiveku-mcp-api-server', 'src', 'tools');
 
-/** A tool declaration is `name: '...',` alone on its line. Nothing else is. */
-const NAME_LINE = /^[ \t]*name:\s*'([a-z0-9_]+)',[ \t]*$/gm;
+/**
+ * A tool declaration is `name: '...',` alone on its line, OR its JSON-style
+ * twin `"name": "...",` alone on its line. Nothing else is.
+ *
+ * ★ The second form is not optional. 55 tools in src/tools (the seo_gtm_*,
+ * seo_ga4_*, seo_gbp_media*, seo_gbp_services*, seo_citations_*, seo_cro_audit,
+ * ppc_bing_*_report, ppc_meta_* and friends) are declared as pasted JSON with
+ * quoted keys. A parser that only knew the TS form paired them with NO method,
+ * even in live mode (the live list carries no HTTP method, so it is merged in
+ * from this parse), and 39 seo_* writes showed method null in the catalogue,
+ * which kept them out of the ask-list gate and off the read-only list.
+ */
+const NAME_LINE = /^[ \t]*(?:name:\s*'([a-z0-9_]+)'|"name":\s*"([a-z0-9_]+)"),[ \t]*$/gm;
 
 /**
  * Descriptions are single- or double-quoted and often concatenated across many
@@ -58,8 +69,9 @@ const NAME_LINE = /^[ \t]*name:\s*'([a-z0-9_]+)',[ \t]*$/gm;
  * silently make a tool unfindable by its own keywords.
  */
 const STR = String.raw`(?:'(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*")`;
-const DESC = new RegExp(String.raw`description:\s*(${STR}(?:\s*\+\s*${STR})*)`);
-const METHOD = /method:\s*'([A-Z]+)'/;
+// Both key styles: `description: '...'` / `method: 'GET'` and `"description": "..."` / `"method": "GET"`.
+const DESC = new RegExp(String.raw`"?description"?:\s*(${STR}(?:\s*\+\s*${STR})*)`);
+const METHOD = /"?method"?:\s*['"]([A-Z]+)['"]/;
 const STR_G = new RegExp(STR, 'g');
 
 function unquote(literal) {
@@ -70,6 +82,9 @@ function unquote(literal) {
         .slice(1, -1)
         .replace(/\\n/g, ' ')
         .replace(/\\t/g, ' ')
+        // JSON-style declarations carry \u2014 style escapes for the dashes and
+        // arrows Hiveku descriptions use; decode them so search matches prose.
+        .replace(/\\u([0-9a-fA-F]{4})/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)))
         .replace(/\\'/g, "'")
         .replace(/\\"/g, '"')
         .replace(/\\\\/g, '\\'),
@@ -136,7 +151,7 @@ function extract(source) {
     const desc = body.match(DESC);
     const method = body.match(METHOD);
     out.push({
-      name: m[1],
+      name: m[1] ?? m[2],
       description: desc ? unquote(desc[1]) : '',
       method: method ? method[1] : null,
     });
