@@ -19,7 +19,7 @@ manifest (e.g. `blog`), NOT a UUID.
    ("draft"|"published"|"scheduled") and `publish_at` are merged in as ORDINARY FIELDS named `status`
    and `publishAt` - `status: "draft"` does NOT create a draft, and `publish_at` alone only date-gates
    rendering (a real scheduled flip needs the schedule cron). Bulk-create in ONE call with
-   `cms_bulk_import({ project_id: <the project_id>, collection_id, items: [{ slug?, fields }] })` - prefer this
+   `cms_bulk_import({ project_id: <the project_id>, collection_id, entries: [{ slug?, fields }], status: 'published' })` - prefer this (the parameter is `entries`, not `items`; pass `status: 'published'` or the imported entries land as drafts the site hides)
    over many single writes. Delete: `cms_delete_entry({ project_id: <the project_id>, collection_id, slug })`.
 4. PUBLISH - the flow is write-draft → review → promote, and `draft: true` is the only thing that
    makes a draft:
