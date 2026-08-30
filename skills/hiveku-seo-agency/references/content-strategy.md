@@ -2,7 +2,7 @@
 
 ## What this covers / when to load this
 
-The manual behind Play 3 of the SEO skill: deciding what content to write, refresh, merge, or
+The manual behind the SEO skill's content lane: deciding what content to write, refresh, merge, or
 kill, and proving the decision paid. SKILL.md gives the arc and the tool list; this file gives
 the mechanics the tools hide, the numbers that trigger action, the exact call order per play,
 and the failure modes that make a confident answer wrong. Load it for content audits, the
@@ -12,6 +12,35 @@ analytics, links, or report assembly (references/keyword-research.md, technical-
 rankings-and-search-console.md, link-building-and-competitors.md, reporting-and-delivery.md).
 Assumes `account_context_get({ domain: 'seo' })` has run and you hold a `project_id` from
 `seo_list_projects` (or `hiveku-data/seo/projects.json`).
+
+## Availability
+
+Cost classes: A = free DB read; write = free, confirm-gated; B = Labs per request; C = live SERP
+per request per location; E = on_page instant per URL; F = crawl per page. Every metered call
+returns 402 when the DataForSEO balance is negative and 503 `dataforseo_unconfigured` with no
+credentials: neither means clean or empty.
+
+| Tool | Status | Cost class | Note |
+|---|---|---|---|
+| `seo_content_decay` | LIVE | A | Sunday sweep output; worst 30 rows, account-scoped |
+| `seo_cannibalization` | LIVE | A | same sweep; rows self-delete when resolved |
+| `seo_eeat_scores` | LIVE | A | top 10 GSC pages per account, ~28-day cadence |
+| `seo_featured_snippets` | LIVE | A | written only by AEO audit runs (references/aeo.md Play C) |
+| `seo_serp_features` | LIVE | A | append-only feature history from the same runs |
+| `seo_serp_get` | LIVE | A | stored SERP analysis rows; a LIVE SERP is `seo_research({ action: 'serp' })` or `serp_organic_live_advanced` (C) |
+| `seo_content_gaps` | LIVE, empty forever | A | no writer; compute gaps with the intersection tools (Play C4) |
+| `dataforseo_labs_google_domain_intersection` | LIVE | B | keywords a rival ranks for that you do not: the gap analysis |
+| `dataforseo_labs_google_page_intersection` | LIVE | B | the same at URL level, 2-20 pages |
+| `seo_research` | LIVE | B / C / E | actions `keyword-gap`, `page-intersection`, `keyword-density` (needs `target` = a `seo_audit_start` task_id; live-tested 2026-08-30), `serp` |
+| `on_page_content_parsing` | LIVE | E | structured headings, links and text of ONE URL; outline benchmarking |
+| `seo_internal_links` | LIVE | A | Hiveku-hosted published projects only; `suggested_links_to/from` not computed |
+| `seo_cro_audit` | LIVE | free | heuristic audit of one URL, works on competitor pages |
+| `seo_task_list`, `seo_task_get`, `seo_task_implement`, `seo_task_implement_status` | LIVE | write (implement spends a paid agent turn) | the implement rail, Play C7; the diff reader an approver needs is INCOMING, see references/reporting-and-delivery.md Availability |
+| `pages_list`, `pages_update`, `cms_list_collections`, `cms_read_entry`, `cms_write_entry` | LIVE | write | Hiveku-hosted page and CMS edits; `cms_*` not visible to a marketing-seo key |
+| `project_files_bulk_save`, `project_vcs_commit`, `deploy_site` | LIVE | write | the code lane; not visible to a marketing-seo key |
+| `content_create` | LIVE | write | persists a brief or draft |
+| `talk_to_department` | LIVE | free | briefs and copy; its numbers are never evidence |
+| `web_map`, `web_crawl`, `web_extract`, `web_search`, `web_scrape` | LIVE | free | the volume-blind fallback for gap work |
 
 ---
 
@@ -25,9 +54,9 @@ pipeline separates "the site has no decay" from "the sweep has never run for thi
 | `seo_content_decay` | seo-analysis-sweep cron, Sundays 05:35 UTC |
 | `seo_cannibalization` | same sweep |
 | `seo_eeat_scores` | same sweep, 28-day per-page cadence |
-| `seo_featured_snippets` | AEO audit runs only (SKILL.md Play 7) |
+| `seo_featured_snippets` | AEO audit runs only (references/aeo.md Play C) |
 | `seo_serp_features` | AEO audit runs only, append-only history |
-| `seo_serp_get` | DataForSEO, live and metered, on your call |
+| `seo_serp_get` | stored SERP analysis rows (no writer today); the LIVE SERP is `seo_research({ action: 'serp' })` or `serp_organic_live_advanced`, metered |
 | `seo_content_gaps` | **nothing writes its table** |
 
 - **Windows.** Decay and cannibalization compare two 28-day windows anchored at the most recently
@@ -37,7 +66,7 @@ pipeline separates "the site has no decay" from "the sweep has never run for thi
   25 percent or more (`decay_type: 'traffic'`), or impression-weighted average position worsened
   by 3.0+ while clicks fell 10 percent or more (`'position'`), or both. `decay_severity`: severe
   at 60 percent decline, moderate at 40, else mild. Top 100 pages per account per run.
-- **Cannibalization floors** (table `seo_keyword_cannibalization`). Per (domain, query) in the
+- **Cannibalization floors** (the backing table of `seo_cannibalization`). Per (domain, query) in the
   current window a competing page needs 50+ impressions; a finding needs 2+ such pages and 200+
   combined impressions. `severity: 'high'` when 3+ pages compete or the runner-up takes 40 percent or more of the
   leader's clicks; `'low'` when at most one page earns clicks; else `'medium'`.
@@ -50,8 +79,8 @@ pipeline separates "the site has no decay" from "the sweep has never run for thi
   `'llm'` reflects the prose, `'heuristic_only'` only the presence of a byline, a contact link,
   an Article schema. `competitor_scores` is not computed. `overall_score` weights trust 0.35,
   expertise 0.25, experience 0.20, authority 0.20.
-- **`seo_content_gaps` has no writer**, so expect `data: []` forever. Build gap analysis by hand
-  (Play C4), and never tell a client the list is empty because there are no gaps.
+- **`seo_content_gaps` has no writer**, so expect `data: []` forever. Compute gaps with the
+  intersection tools (Play C4), and never tell a client the list is empty because there are no gaps.
 
 Scoping quirks, verified against the routes:
 
@@ -63,8 +92,11 @@ Scoping quirks, verified against the routes:
 - `seo_eeat_scores` is the exception: it forwards `domain`, `url`, `is_ymyl`, `min_score`,
   `max_score`, `page`, `limit` (max 100). `seo_serp_features` forwards `keyword`
   (case-insensitive contains), ignores `project_id`, orders `checked_at` desc.
-- `seo_serp_get` is the only metered call here: `keyword` (required), `location_code` (2840 =
-  US), `language_code`, `device`. Never loop it.
+- `seo_serp_get` (`keyword` required, `location_code` 2840 = US, `language_code`, `device`)
+  reads stored SERP analysis rows, and nothing writes them today, so an empty result means
+  unpopulated. Wherever a play below says "read the SERP" and the stored row is empty, the live
+  read is `seo_research({ action: 'serp', keyword, location_code })` or
+  `serp_organic_live_advanced` (class C, per request per location): never loop either.
 
 **Local first.** `hiveku-data/seo/gsc_pages.json`, `gsc_queries.json`, `keywords.json`,
 `rankings.json`, `tracked_keywords.json`, `competitors.json` and `audits.json` orient you at zero
@@ -185,7 +217,7 @@ with clicks down hard means the SERP changed around you; down 3+ means you were 
    unread: invented statistics and credentials are the standard LLM failure mode, and a fake
    credential on a YMYL page is a liability.
 5. Ship. Hiveku-hosted sites go through the implement rail (Play C7) or the site tools in
-   SKILL.md Play 3. Externally hosted sites get the brief plus exact copy blocks and their team
+   Play C8. Externally hosted sites get the brief plus exact copy blocks and their team
    ships: no tool edits a site Hiveku does not host.
 6. Record ship date and before-numbers, then `pm_tasks_update` / `pm_tasks_complete`.
 7. Measure at 28 days: the clean signal is the decay row vanishing after the next sweep, the
@@ -208,27 +240,42 @@ with clicks down hard means the SERP changed around you; down 3+ means you were 
 6. `pm_tasks_create` per consolidation with the full URL list, then `memory_update` the SEO
    memory so a future session does not "discover" the merged page as a gap.
 
-### Play C4 - Content gaps (no working tool; build it by hand)
+### Play C4 - Content gaps (seo_content_gaps has no writer - use the intersection tools)
 
 `seo_content_gaps({ project_id, competitor_domain })` would return `missing_keywords`,
 `content_opportunities` and `traffic_potential` ordered by `priority_score`, but nothing writes
-the table. Call it once so you can honestly say you checked, then build the analysis: the
-competitor intersection and ranked-keyword tools in link-building-and-competitors.md and
-keyword-research.md are the real gap analysis, with volume and difficulty attached. Free
-fallback: `web_map({ url: competitorDomain })` for their URL space, `web_crawl` or `web_extract`
-on their content hubs for titles, H1s and publish dates, `web_search` for "topic + competitor",
-then diff against `hiveku-data/seo/gsc_pages.json` and your sitemap: volume-blind, but honest.
-Validate the top 10 with `seo_serp_get` first, since a SERP of national brands means re-scoping
-to the long tail however big the gap looks. Output is a ranked gap list in the strategy
-deliverable; gaps become tasks only once the client agrees they are worth writing.
+the table. Call it once so you can honestly say you checked, then compute the gap yourself.
+
+**Primary method [SPENDS, class B].** Confirm the spend, then one call per rival, batched:
+1. `dataforseo_labs_google_domain_intersection` with the rival and the client as the two
+   targets, US country code 2840 (Labs takes COUNTRY codes only; the server retries with US and
+   returns `location_note`). Rows are keywords both rank for, with volume, CPC and each side's
+   SERP element; the rival-only set comes from the intersection filters or from
+   `seo_research({ action: 'keyword-gap', domain, competitors: [...] })`, which returns keywords
+   the competitors rank for that the domain does not, volume and difficulty attached.
+2. `dataforseo_labs_google_page_intersection` on 2-20 URLs when the question is one hub versus
+   theirs (which spokes their pillar covers that ours does not). Supports organic, local pack and
+   featured-snippet results. `seo_research({ action: 'page-intersection', targets: [...] })` is
+   the same read through the router.
+3. Cluster the rival-only keywords by intent (keyword-research.md Play 2), drop what the client
+   cannot serve, and validate the top 10 with `seo_serp_get`: a SERP of national brands means
+   re-scoping to the long tail however big the gap looks.
+
+**Fallback, free and volume-blind:** `web_map({ url: competitorDomain })` for their URL space,
+`web_crawl` or `web_extract` on their content hubs for titles, H1s and publish dates,
+`web_search` for "topic + competitor", then diff against `hiveku-data/seo/gsc_pages.json` and
+your sitemap. Honest, but it cannot size anything: label it as such.
+
+Output is a ranked gap list in the strategy deliverable (a sheet tab, so nobody re-pays next
+quarter); gaps become tasks only once the client agrees they are worth writing.
 
 ### Play C5 - SERP features and featured snippets
 
 1. `seo_featured_snippets({ project_id })`. Read `keyword`, `our_position`, `can_win_snippet`,
    `opportunity_score`, `snippet_type`, `snippet_holder_domain`, `required_content_type`,
    `required_format`, `target_word_count`, `question_to_answer`, `content_gap`, `our_url`,
-   `status`. Empty is normal until an AEO audit has run for the domain (SKILL.md Play 7,
-   aeo.md): run it, then come back, since this tool is a free DB read.
+   `status`. Empty is normal until an AEO audit has run for the domain (references/aeo.md
+   Play C): run it, then come back, since this tool is a free DB read.
 2. Qualify: only `can_win_snippet: true` **and** `our_position` 10 or better (snippets come from
    page one, mostly the top 5). `our_position: 34` is a ranking project, not a snippet one.
 3. Verify the live format: `seo_serp_features({ keyword })` for persisted history
@@ -238,6 +285,11 @@ deliverable; gaps become tasks only once the client agrees they are worth writin
 4. Write to the observed format: paragraph snippets take a 40 to 60 word answer immediately
    under an H2 restating `question_to_answer`; list snippets 5 to 8 short parallel items; table
    snippets a real HTML table. Answer block at the top of its section, never in a summary.
+   Coverage instruments before you write: `on_page_content_parsing({ url })` on the holder's
+   page (class E) returns its headings, links and text, the outline you are answering against;
+   `seo_research({ action: 'keyword-density', target: <seo_audit_start task_id> })` shows which
+   terms our page already carries. The brief spec itself (title, H1, answer block, entity
+   coverage, schema, internal links) is section 2 of references/on-page-optimization.md.
 5. Ship via C2 step 5, then re-probe after the next AEO audit and report
    `we_have_featured_snippet` flipping true. Two probes 30 days apart before claiming a win.
 
@@ -259,6 +311,11 @@ deliverable; gaps become tasks only once the client agrees they are worth writin
 6. The sample is 10 pages re-scored roughly every 28 days: do not extrapolate to the site, do not
    expect a re-score the day after you ship, and say "the 10 pages we have scores for". File with
    `pm_tasks_create`, template fixes as one task each.
+7. When the fix is copy depth rather than signals, measure coverage before briefing:
+   `on_page_content_parsing({ url })` on the top-3 pages for the head term versus ours, and
+   `seo_research({ action: 'keyword-density', target })` after a crawl, so the brief names the
+   subtopics and entities missing rather than "write more". Brief spec: section 2 of
+   references/on-page-optimization.md.
 
 ### Play C7 - The implement rail (SEO task to deployed code)
 
@@ -284,6 +341,43 @@ deliverable; gaps become tasks only once the client agrees they are worth writin
    task written as a wish), so rewrite `ai_instructions` and re-dispatch; `deploy` means the
    build broke, which is technical-seo.md.
 
+### Play C8 - Opportunity sweep, briefs and where the fix ships
+
+The monthly sweep (all project-scoped DB reads, free, run them together): `seo_content_decay`
+(the refresh queue), `seo_cannibalization` (URLs competing for one query), `seo_internal_links`
+(point authority at striking-distance pages first; Hiveku-hosted published projects only, and
+its suggested-link fields are not computed, so read the graph and decide yourself),
+`seo_eeat_scores` (money pages first), `seo_schema_markup` (detected versus suggested structured
+data), `seo_featured_snippets` (verify the format with `seo_serp_get` or `seo_serp_features`
+before writing the answer block), and `seo_cro_audit({ url })` on striking-distance pages that
+already earn traffic: five sections scored 0-100 (speed, clarity, friction, trust, cta), each
+finding carrying issue, why it costs conversions and the fix, plus `quick_wins`. Free, works on
+competitor pages, audit only; run experiments as PM tasks.
+
+Outline benchmarking before a brief: `on_page_instant_pages` (load and on-page metrics) and
+`on_page_content_parsing` (structured headings and text) on any URL, both class E; batch rules in
+references/metered-research-suite.md.
+
+**Briefs and drafts.** `talk_to_department({ domain: 'seo', message })` with the target cluster,
+the SERP intent evidence, the top-3 competitor outlines, internal-link targets and required
+schema. A brief without SERP evidence is a guess. Persist with `content_create` or as a
+deliverable; the department's prose is a draft, and every number in it is unverified until you
+trace it to a tool call.
+
+**Ship fixes where the site actually lives.** Hiveku-hosted pages: `pages_list` then
+`pages_update` (titles, meta, slugs, SEO fields); CMS content via `cms_list_collections`,
+`cms_read_entry`, `cms_write_entry`. Code-level changes (templates, JSON-LD, redirects): pull
+the project, edit, `project_files_bulk_save` in ONE call, `project_vcs_commit`, verify the
+build, `deploy_site` only after approval. Commit is not live. On a marketing-seo scoped key the
+`cms_*`, `project_*` and `deploy_site` tools are not visible (say "not visible to this key",
+never "does not exist"): ship page-level fixes via `pages_update` and route code-level changes
+through the implement rail (Play C7) or a full-profile key. The per-path matrix and the 12-step
+page protocol are section 1 of references/on-page-optimization.md; every mutation clears the
+gate in references/seo-change-discipline.md first. Never report a fix as shipped because the
+edit call succeeded: `fetch_url` the live URL. After shipping, note the date, then
+`seo_gsc_time_series` with a page filter (for example `{ dimension: 'page', operator:
+'contains', expression: '/blog/' }`) proves the change worked in the next report.
+
 ---
 
 ## 3. Thresholds and benchmarks
@@ -301,8 +395,8 @@ one page earns the clicks and the split is cosmetic.
 Sizing (never promises): 4 to 8 pages per cohort, 2 to 3 if each is Tier 3; a consolidation
 returns 60 to 90 percent of `traffic_loss_estimate` once the redirect settles, in 3 to 8 weeks;
 snippet capture shows 1 to 4 weeks after re-crawl. Recovery per tier is in 1.5, time-to-signal in
-1.2, the CTR curve and difficulty bands in SKILL.md. Four strong pages a month beats twelve thin
-ones: thin pages become next year's decay rows.
+1.2, the CTR curve and difficulty bands in references/metered-research-suite.md. Four strong
+pages a month beats twelve thin ones: thin pages become next year's decay rows.
 
 ---
 

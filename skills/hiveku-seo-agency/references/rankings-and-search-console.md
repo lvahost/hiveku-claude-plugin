@@ -1,13 +1,41 @@
 # Rankings, Search Console and Bing Webmaster: the analyst's manual
 
-**What this covers.** Reading Google Search Console and Bing Webmaster like an analyst: telling a real
+## What this covers / when to load this
+
+Reading Google Search Console and Bing Webmaster like an analyst: telling a real
 ranking movement apart from noise, seasonality, a measurement artifact or a Google update, running the
 comparison cadence, harvesting striking-distance and CTR opportunities, and proving a shipped change
 worked. **Load this when** you run a weekly checkup, diagnose "traffic dropped" or "we lost a ranking",
 build the rankings and traffic sections of a report, size an opportunity from impressions, or the
-client asks "why did this move". Not for keyword discovery, crawl and index fixes, or report assembly
-(`references/keyword-research.md`, `technical-seo.md`, `reporting-and-delivery.md`). SKILL.md is the
-operating system; this is one instrument panel.
+client asks "why did this move". Not for keyword discovery, crawl and index fixes, forecasting, or
+report assembly (`references/keyword-research.md`, `technical-seo.md`,
+`forecasting-and-seasonality.md`, `reporting-and-delivery.md`); the end-to-end recipes (weekly pass,
+algorithm-update response, traffic-crash triage) are in `references/seo-playbooks.md`. SKILL.md is
+the operating system; this is one instrument panel.
+
+## Availability
+
+Cost classes: A = free DB read; write = free, confirm-gated; B = Labs per request (COUNTRY codes
+only); C = live SERP per request per location. GSC reads are free platform calls against Google's
+quota. A 402 on a metered call is a negative DataForSEO balance, never "no data".
+
+| Tool | Status | Cost class | Note |
+|---|---|---|---|
+| `seo_gsc_search_analytics` | LIVE | A | any combination of `date`, `query`, `page`, `country`, `device`, `searchAppearance`; 25,000 rows, `start_row` to page; bounded by Google's ~16-month retention |
+| `seo_gsc_search_queries`, `seo_gsc_top_pages`, `seo_gsc_time_series`, `seo_gsc_period_comparison` | LIVE | A | the reporting set; comparison caps winners/losers at 50 rows each |
+| `seo_gsc_list_sites`, `seo_gsc_discover_sites` | LIVE | free | the heartbeat; `restricted_sites` separates 403-prone properties |
+| `seo_gsc_inspect_url`, `seo_gsc_index_coverage` | LIVE | free | indexed snapshot only (no live test); coverage caps at 50 URLs per call |
+| `seo_bing_stats`, `seo_bing_query_stats`, `seo_bing_pages`, `seo_bing_keywords`, `seo_bing_period_comparison`, `seo_bing_list_sites` | LIVE | A | ~6 months of daily history; comparison is site-level only |
+| `seo_rankings_list` (= `seo_list_rankings`) | LIVE | A | the nine-lane tracker read; `group_by_keyword: true`; `view: 'history'` per `ranking_id` |
+| `seo_ranking_predictions` | LIVE | A | `{ domain, risk_level, limit }`; linear extrapolation (Play 8 pointer) |
+| `seo_competitor_changes` | LIVE | A | account-wide feed written by a workflow node; empty with no such workflow |
+| `seo_sync` | LIVE | write | fans out across every connection; confirm on large accounts |
+| `seo_serp_get` | LIVE | A | stored SERP analysis rows (no writer today); the live SERP is `seo_research({ action: 'serp' })` or `serp_organic_live_advanced`, class C |
+| `dataforseo_labs_google_historical_serp` | LIVE | B | the SERP as it stood on past dates for one keyword and location: who held the positions before the cliff |
+| `seo_connection_create`, `seo_connection_delete` | LIVE | write | GSC needs the FULL `webmasters` scope; delete is a soft delete |
+| `seo_query_page_metrics` | INCOMING (fallback: `seo_gsc_search_analytics` with `dimensions: ['date','query','page']`, bounded by Google's 16 months) | A | the permanent query x page x day archive; `site_url` or `connection_id`, `from`, `to`, `query_like`, `page_like`, `group_by`, returns rows plus `archive_coverage` |
+| `seo_issues` | INCOMING (fallback: Play 2 and Play 5 by hand each week) | A | position drops and CTR anomalies computed from GSC |
+| `seo_tracking_project_get`, `seo_tracking_project_update`, `seo_tracking_project_delete` | INCOMING (fallback: `seo_list_projects` / `seo_project_list_active` to read; edits and deletes are dashboard actions) | A / write | the `seo_projects` row (`name`, `description`, `target_country`, `target_language`, `is_active`) - distinct from `seo_project_get`, which is the WEBSITE project's SEO settings; delete takes the tracked history with it, a hard stop without a named id and a written yes |
 
 ---
 
@@ -20,7 +48,7 @@ the diagnosis. Never blend them into one number.
 |---|---|---|
 | **Search Console**: `seo_gsc_search_analytics`, `seo_gsc_search_queries`, `seo_gsc_top_pages`, `seo_gsc_time_series`, `seo_gsc_period_comparison` | What Google served and users clicked | Rank on a given day (position is impression-weighted across devices, countries, personalisation); anything past ~16 months; queries below the privacy threshold |
 | **Bing Webmaster**: `seo_bing_stats`, `seo_bing_query_stats`, `seo_bing_pages`, `seo_bing_keywords`, `seo_bing_period_comparison` | An independent engine, ~6 months of daily history, a proxy for Copilot-class AI surfaces | Per-query or per-page diffs. Bing's API has no dimensions parameter, so `seo_bing_period_comparison` is site-level only |
-| **Rank tracker**: `seo_rankings_list` (alias `seo_list_rankings`), `seo_ranking_predictions` | A daily check of keywords you chose, at fixed device and location, plus local pack position and AI-engine citations (`chatgpt`, `perplexity`, `ai_overview`, `claude`, `gemini`) | Anything untracked. A 12-keyword tracker cannot explain a sitewide move |
+| **Rank tracker**: `seo_rankings_list` (alias `seo_list_rankings`), `seo_ranking_predictions` | A scheduled check of keywords you chose, at fixed device and location. One tracked keyword is up to NINE lanes (rows): `google`, `bing`, `local` (pack position), `mobile`, and the AI engines `ai_overview`, `chatgpt`, `claude`, `gemini`, `perplexity`. `group_by_keyword: true` pages by keyword and `pagination.total_groups` is the honest keyword count (`total` counts lanes). `previous_rank` advances only on a new check day, so a same-day re-read shows no delta. `check_frequency` defaults to weekly. About $0.003 per scheduled organic check, about $0.10 per keyword per engine per AI check | Anything untracked (a 12-keyword tracker cannot explain a sitewide move). AI lanes on keywords created before the AI engines existed: a blank AI column means NOT TRACKED, never "not ranking" |
 
 **The tracker tells you position, GSC tells you consequence, Bing tells you whether it is you or
 Google.** A tracked keyword falling 4 to 9 with GSC clicks flat is usually noise. GSC clicks halving
@@ -28,6 +56,26 @@ with the tracker flat is coverage, CTR or SERP shape, not rank. Both engines fal
 is almost never an algorithm update; it is your site. (Always use the named `seo_gsc_*` tools below.
 There is no generic Search Console tool to fall back on, so if none of them covers what you need,
 say so rather than reaching for something that does not exist.)
+
+### 1.1 The archive and the issue feed
+
+Behind the GSC tools sits a synced metrics table that holds FIVE dimension signatures side by side
+(date-only, query, page, device, country). Each live tool pins one signature; summing across them
+multiplies clicks. The `date,query,page` combination does not live there at all: it lives only in a
+permanent query x page x day archive whose reader is INCOMING (Availability). Until it lands, the
+same rows come from `seo_gsc_search_analytics({ dimensions: ['date','query','page'] })`, bounded by
+Google's rolling ~16 months, which is why the month-1 baseline captures the full window. The
+archive reader returns `archive_coverage` beside its rows: read it before claiming YoY on a property
+connected eleven months ago.
+
+An automated issue feed (position drops and CTR anomalies computed from GSC) is INCOMING too; until
+it resolves, Play 2 and Play 5 are the weekly hand-run equivalent, and nothing else surfaces them.
+
+The `seo_projects` row itself (the tracking project's name, target country and language,
+`is_active`) has INCOMING get, update and delete tools; today `seo_list_projects` reads it and
+edits are dashboard actions. Do not confuse it with `seo_project_get` / `seo_project_update`, which
+take the WEBSITE project id and carry site-level SEO settings. Deleting the tracking project deletes
+every tracked keyword and its history: a named id, the blast radius stated, a written yes, or refuse.
 
 ---
 
@@ -81,7 +129,7 @@ That last row is why you never report clicks alone.
 - **MoM**: last 28 days vs the 28 before, never calendar months, which differ by up to 3 days and by weekend count and manufacture a 10 percent swing on their own.
 - **YoY**: the same 28 days a year earlier. The only window that survives seasonality; lead with it in seasonal verticals (tax, education, retail, travel, home services) and check it before escalating a drop.
 - **Pre vs post ship**: `period_a` = 28 days before, `period_b` = 28 after, filtered to the affected pages. Under 14 days post-ship is a guess.
-- **Never end a window on today.** GSC finalises with a ~2-day lag, so a window ending today carries two artificially thin days. End 3 days back with `data_state: 'final'`; `data_state: 'all'` pulls in still-processing rows and is only right when you want the freshest signal and say so out loud.
+- **Never end a window on today.** GSC finalises with a ~3-day lag, so a window ending today carries thin days. End 3 days back with `data_state: 'final'`; `data_state: 'all'` pulls in still-processing rows and is only right when you want the freshest signal and say so out loud. Days are Pacific-time days (section 6).
 
 ### 3.4 Materiality and write discipline
 
@@ -112,10 +160,15 @@ loudly when the refresh token dies. `memory_create` the property string once.
 
 ```
 seo_rankings_list({ view: 'keywords', domain, search_engine: 'google',
-                    ranking_type: 'organic', limit: 200 })
+                    ranking_type: 'organic', group_by_keyword: true, limit: 200 })
 ```
 
-- `current_rank` was <= 10 and `previous_rank` now > 10: **top-10 losses**, investigated the same day.
+- `group_by_keyword: true` collapses the nine lanes to one row per keyword; `pagination.total_groups`
+  is the keyword count you report. `previous_rank` advances only on a new check day, so a movement
+  read on the day of the check compares against the prior check, not against yesterday.
+- `current_rank` was <= 10 and `previous_rank` now > 10: **top-10 losses**, investigated the same day:
+  the URL, the live SERP, and `seo_competitor_changes({})` filtered to `our_domain` for a rival that
+  shipped something.
 - `current_rank` 4 to 15 with a strong `best_rank`: the striking-distance list, feeds Play 4.
 - `last_checked_at` over 48 hours old on `check_frequency: 'daily'` rows: the **tracker** is stalled, not the ranking. Section 6 before believing this screen.
 - `local_pack_position` going null on `ranking_type: 'local'` rows: a listing problem, not a page problem. Route to `references/local-seo.md`.
@@ -151,7 +204,10 @@ cannibalisation, and it belongs to `references/content-strategy.md`, not to "fix
 
 ### Play 3 - Diagnosing a real drop
 
-Trigger: a top-10 loss, or a money page down more than 20 percent WoW.
+Trigger: a top-10 loss, or any traffic move over 20 percent WoW on a money page. Same-day, and the
+client never finds out first. Measurement artifacts are ruled out BEFORE any causal story (property
+string, the lag, impression-weighted position, a dead connection: section 6), and only then
+indexation via `seo_gsc_inspect_url`, SERP-feature shifts and competitor launches.
 
 1. **Rule out a window artifact.** `seo_gsc_time_series({ site_url, start: <90d back>, end: <day -3>, filters: [{ dimension: 'page', operator: 'equals', expression: <url> }], data_state: 'final' })`. A cliff on one date is an event; a slope over weeks is decay or competition; a dip that recovers is the lag.
 2. **Decompose the four signals** across both windows (3.2). That alone routes you.
@@ -160,6 +216,7 @@ Trigger: a top-10 loss, or a money page down more than 20 percent WoW.
 5. **CTR fell, position flat:** `seo_gsc_search_analytics` on `dimensions: ['query','searchAppearance']` for that page across both windows. A `searchAppearance` value that appeared or vanished is the answer; otherwise it is title and meta.
 6. **Cross-check the second engine.** `seo_bing_period_comparison({ site_url, period_a, period_b })` over the same dates. Bing falling in lockstep means the cause is on your site; Google-only means it is Google. This one call settles more arguments than anything else here.
 7. **Only now** consider an update: `web_search` for independent sources dated within a day or two of your cliff, `web_scrape` two or three to date it. No source, no update.
+8. **Date the SERP itself** [SPENDS, class B]: `dataforseo_labs_google_historical_serp` for the keyword and location over the window around the cliff returns the SERPs as collected on past dates, features included. Who held position 3 the week before and who holds it now is the difference between "we slipped" and "the SERP was rebuilt", and it is the only tool evidence that dates a layout change. One keyword per money page, never the tracked list. The full sequence for a suspected update (Bing as the control, the two-week no-reactive-rewrite rule) is Recipe 8 in references/seo-playbooks.md; a sitewide crash walks Recipe 9 in references/seo-playbooks.md first, which starts at the measurement-artifact ladder.
 
 **When the move is sitewide**, run step 1 unfiltered at 180 days to find the cliff date, then
 `seo_gsc_period_comparison` on `['page']` across it (losses in one directory means a section problem:
@@ -220,20 +277,19 @@ Google-side coverage gap.
 - A `hint` appears on zero rows or an empty period. Bing retains ~6 months of daily history, so older periods come back empty: retention, not a drop.
 - `seo_bing_keywords` (tracked keyword performance; `country`, `language`, default `us` / `en-US`) is a different dataset from `seo_bing_query_stats` (queries traffic came from). Never cite one as the other. `seo_bing_stats` is the raw daily series and the Bing heartbeat; `seo_bing_list_sites` shows what the key sees.
 
-### Play 8 - Forecasting and expectation setting
+### Play 8 - Forecasting and expectation setting (pointer)
 
-`seo_ranking_predictions({ domain, risk_level: 'high', limit: 100 })` returns 30-day forecasts computed
-**every Sunday** by the seo-analysis-sweep cron via **linear trend extrapolation**, not machine
-learning, over rank-check history, covering only organic keywords with **5+ checks spanning 21+ days in
-the last 120**. `confidence_score` is trend-fit R-squared x 100; `requirements` / `backlinks_needed` are
-**not computed**. An empty result with a note means the tracker lacks history: correct behaviour, not a
-failure. Use it as a triage queue: `risk_level: 'high'` with `confidence_score` >= 60 is a real downward
-trend worth a defensive task now; below 40 the fit is too poor to use. Anything projected into the top
-3 stays out of client-facing material, because rank extrapolation is unbounded near position 1.
+The method lives in `references/forecasting-and-seasonality.md`. What this instrument panel keeps:
+`seo_ranking_predictions({ domain, risk_level: 'high', limit: 100 })` is a free read of 30-day
+forecasts computed every Sunday by linear trend extrapolation over rank-check history (organic keywords
+with 5+ checks spanning 21+ days in the last 120; `confidence_score` = fit R-squared x 100;
+`backlinks_needed` not computed; empty with a note when history is short). Use it as a triage queue:
+`risk_level: 'high'` with `confidence_score` >= 60 is a real downward trend worth a defensive task now;
+below 40 the fit is unusable; anything projected into the top 3 stays out of client material.
 
 ### Play 9 - Baseline and monthly narrative
 
-Baseline (SKILL.md month 1) captures the full ~16-month GSC window, all Google retains, with
+Baseline (month 1; Recipe 1 in references/seo-playbooks.md) captures the full ~16-month GSC window, all Google retains, with
 `seo_gsc_search_analytics` on `['date']`, `['query']`, `['page']` and `['query','page']` at
 `row_limit: 25000`, paginating with `start_row` whenever a call returns exactly `row_limit` rows.
 `memory_create` the totals, seasonal peaks, top 20 pages and top 50 queries: every YoY claim depends
@@ -286,6 +342,15 @@ on one keyword, write nothing.
 **Numbers do not reconcile between calls.** GSC deduplicates per dimension set: summed per-query clicks
 land **under** the site total because sub-threshold queries are withheld, and summed per-page clicks
 can land **over** it. Both are expected. Quote each figure from the dimension set that produced it.
+**The five-signature rule:** the synced table holds five dimension signatures (date-only, query,
+page, device, country) side by side; never sum across signatures, and never add a `query` figure to
+a `page` figure to make a total. Totals come from the date-only signature or from
+`seo_gsc_period_comparison`'s `summary`.
+
+**The Pacific-time boundary.** GSC rows are dated in Pacific time, not the client's timezone and
+not UTC. A "yesterday" window drawn in UTC straddles two Google days; a Monday-to-Sunday week in
+Eastern time is not the week Google counted. Draw every window in Pacific days, end it 3 days back
+(`data_state: 'final'`), and say so when a client's own dashboard disagrees by a day.
 
 **Position moved but nobody changed anything.** Position is impression-weighted, so winning new
 impressions in another country at position 40 drags the average down while nothing lost a ranking.

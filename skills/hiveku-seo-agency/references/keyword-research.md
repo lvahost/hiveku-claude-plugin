@@ -1,8 +1,8 @@
 # Keyword and Topic Research: Operator Manual
 
-## What this covers, and when to load it
+## What this covers / when to load this
 
-The deep manual behind Play 1 of the `hiveku-seo-agency` SKILL.md: building a keyword universe from
+The deep manual behind the keyword-research lane of the `hiveku-seo-agency` SKILL.md: building a keyword universe from
 seeds, qualifying it, clustering it, tearing down the SERP to learn what the page has to be, sizing the
 opportunity with a defensible forecast, choosing what to track, and re-qualifying on a cadence. Load it
 for net-new research, rebuilding a stale keyword set, planning a content roadmap, judging whether a
@@ -12,6 +12,39 @@ decisions (`content-strategy.md`), or competitor and link intelligence
 (`link-building-and-competitors.md`). The metered DataForSEO Labs expansion and qualification
 catalog AND the shared CTR and difficulty tables live in `metered-research-suite.md`.
 This file repeats neither.
+
+## Availability
+
+Cost classes: A = free DB read; write = free, confirm-gated; B = Labs / keywords_data per request
+(batch up to 1,000 keywords; COUNTRY location codes only, 2840 = US, the server retries with US
+and returns `location_note`); C = live SERP per request per location (city and region codes
+accepted). A negative DataForSEO balance makes every metered call a 402; 503
+`dataforseo_unconfigured` means no credentials. Neither is "no keywords".
+
+| Tool | Status | Cost class | Note |
+|---|---|---|---|
+| `seo_research` | LIVE | B / C | 60-action router: `keyword-ideas`, `related-keywords`, `keyword-overview`, `keyword-gap`, `historical-search-volume`, `keyword-trends`, `top-searches`, `serp`, `maps-serp`, `ai-keyword-volume`; returns without persisting |
+| `dataforseo_labs_google_keyword_ideas`, `dataforseo_labs_google_keyword_suggestions`, `dataforseo_labs_google_related_keywords`, `dataforseo_labs_google_keywords_for_site` | LIVE | B | the expansion set; batch rules in metered-research-suite.md |
+| `dataforseo_labs_google_top_searches` | LIVE | B | the 7-billion-keyword pool by location; a category sweep when seeds are thin |
+| `dataforseo_labs_google_page_intersection` | LIVE | B | keywords 2-20 specific URLs share; a rival pillar versus ours |
+| `dataforseo_labs_google_historical_keyword_data` | LIVE | B | monthly volume back to August 2021; the seasonal-index input |
+| `ai_optimization_keyword_data_search_volume` | LIVE | B | GOOGLE volume as an AI-demand proxy; no per-engine AI volume exists anywhere |
+| `keywords_data_google_ads_search_volume` | LIVE | B | Ads-grade volume for the qualified set |
+| `seo_serp_get` | LIVE | A | stored SERP analysis rows (no writer today); the live SERP is `seo_research({ action: 'serp' })` or `serp_organic_live_advanced`, class C |
+| `seo_serp_features`, `seo_featured_snippets` | LIVE | A | feature history and winnable snippets, written by AEO audit runs |
+| `seo_entity_check` | LIVE | free | Knowledge Graph lookup |
+| `seo_keyword_clusters`, `seo_topic_clusters` | LIVE | A | STORED cluster rows; empty until something created them |
+| `seo_keyword_cluster_create`, `seo_topic_cluster_create` | LIVE | write | one confirmed cluster at a time |
+| `seo_track_keyword` | LIVE | write, then about $0.003 per scheduled organic check; AI lanes about $0.10 per keyword per engine | one keyword = up to nine lanes (Play 7) |
+| `seo_tracked_keywords_list`, `seo_rankings_list` (= `seo_list_rankings`) | LIVE | A | `group_by_keyword: true` pages by keyword; `total_groups` is the keyword count |
+| `seo_tracked_keyword_delete` - the history dies too | LIVE | write | irreversible; never a keyword that appeared in a delivered report |
+| `seo_list_keywords` (= `seo_keywords_list`) | LIVE | A | the domain's currently ranked keywords from domain analysis, not your research |
+| `seo_ranking_predictions` | LIVE | A | `{ domain, risk_level, limit }`; linear extrapolation, Play 6 |
+| `seo_tracked_keyword_get` | INCOMING (fallback: `seo_tracked_keywords_list` and filter) | A | one tracked-keyword row by `keyword_id` |
+| `seo_tracked_keyword_update` | INCOMING (fallback: none that keeps history; delete plus re-track destroys it, so set `location_code`, `device_type` and `search_engine` right the first time) | write | `target_url`, `search_engine`, `location_code`, `language_code`, `device_type`, `is_active`, `tracking_frequency`, `target_rank`, `tags` |
+| `seo_rankings_platforms_set` | INCOMING (fallback: `seo_track_keyword` once per `search_engine`, and leave existing lanes alone) | write | sets a keyword's lanes in one call: `engines[]`, `track_mobile`, `track_local`, `business_name`; REMOVING a lane deletes that lane's history |
+| `seo_keyword_cluster_get`, `seo_keyword_cluster_update`, `seo_keyword_cluster_delete` | INCOMING (fallback: read via `seo_keyword_clusters`; edits and deletes are dashboard actions, mirrored in memory) | A / write | by `cluster_id` |
+| `seo_topic_cluster_get`, `seo_topic_cluster_update`, `seo_topic_cluster_delete` | INCOMING (same fallback via `seo_topic_clusters`) | A / write | by `cluster_id` |
 
 ---
 
@@ -29,9 +62,10 @@ This file repeats neither.
    `seo_connections_list` for which sources are configured. Do NOT reach for
    `seo_project_get` here: it reads a WEBSITE project's site-level SEO settings and takes the
    builder project id, a different id space entirely (see reporting-and-delivery.md, Play G).
-   Nearly every tool below needs `project_id`. No project or no data sources: stop and follow
-   the SETUP path in SKILL.md. `get_account_info` gives the account-level domain and
-   timezone for report framing.
+   Nearly every tool below needs `project_id`. No project or no data sources: stop and run the
+   setup path (`seo_create_project` for the tracking project, `seo_connection_create` per the
+   BYOK arguments in `outcomes-and-measurement.md`, then `seo_sync`), never improvise it.
+   `get_account_info` gives the account-level domain and timezone for report framing.
 
 Alias note: several reads ship under two names (`seo_list_keywords` / `seo_keywords_list`,
 `seo_list_rankings` / `seo_rankings_list`); same capability, so call one and try the other if it rejects
@@ -87,8 +121,15 @@ clusters is cannibalization on paper, which materializes the day both pages publ
 
 ### 1.5 Priority scoring
 
-SKILL.md gives the base formula (volume x intent weight x business value / difficulty band). Apply the
-three adjustments it leaves out:
+Base score per cluster: **volume x intent weight x business value / difficulty band**. Intent weight
+is the 1.4 column (transactional 1.0, commercial 0.8, informational 0.4, navigational 0.1);
+business value is the client-confirmed 1 to 3 (do they sell this?); the difficulty band is the
+attackable band for the client's authority tier (`metered-research-suite.md`). Rank descending:
+that ordering IS the roadmap. Persist the matrix into the strategy deliverable via
+`seo_sheet_create_tab` so nobody re-pays for the same research next quarter, and before any
+net-new plan leaves this play check it against what already ranks (`seo_cannibalization`,
+`seo_list_rankings`): a plan drawn up blind manufactures cannibalization against the client's own
+ranking pages. Then apply three adjustments the base formula leaves out:
 
 - **Serviceability (0 or 1)**: can the client fulfil this, in this geography, at this price? A 0 kills
   the keyword regardless of score. Main source of roadmaps that generate unqualified leads.
@@ -126,7 +167,19 @@ visible win, and steps 1 and 2 are where it lives.
    takes NO `project_id` - the proxy silently drops arguments a tool does not declare, so passing
    one changes nothing - and it RETURNS results without persisting them anywhere you can read back
    (its one persisting action is `aeo-audit`, which writes the SERP-feature tables, and the
-   dedicated `seo_aeo_audit_run` supersedes that).
+   dedicated `seo_aeo_audit_run` supersedes that). Four Labs tools that widen the universe when the
+   standard expansion runs thin, all class B and confirmed before calling:
+   - `dataforseo_labs_google_top_searches`: the whole keyword database for a location, with Ads
+     metrics. A category sweep when the client's vocabulary is unknown; filter hard, it is a
+     firehose (`seo_research({ action: 'top-searches', location_code })` is the routed form).
+   - `dataforseo_labs_google_page_intersection`: keywords 2-20 named URLs share, organic, local
+     pack and featured snippet included. Point it at a rival's pillar and ours: the difference is
+     the missing spokes.
+   - `dataforseo_labs_google_historical_keyword_data`: monthly searches back to August 2021 per
+     keyword. The input for a seasonal index and the only honest answer to "is this term growing".
+   - `ai_optimization_keyword_data_search_volume`: labelled AI search volume, but DataForSEO
+     publishes NO per-engine AI volume; this is Google volume used as a proxy (same as
+     `seo_research({ action: 'ai-keyword-volume' })`). Never present it as ChatGPT demand.
 3. Read out keyword, volume, difficulty, intent, CPC. On first read look for **shape**, not individual
    keywords: volume concentrated in three heads or spread across a long tail, intent mix commercial or
    informational. That decides pillar-and-spoke build versus money-page tuning.
@@ -205,35 +258,19 @@ checks, treat it as present. You generally need to be top 10 already, ideally to
 optimization matters; at position 14 this is a ranking problem. No tool here publishes the change, so
 raise `pm_tasks_create` and hand it to the content play.
 
-### Play 6: Forecasting
+### Play 6: Forecasting (pointer)
 
-Two independent methods; run both. Disagreement over 2x is a data problem, not a forecast.
-
-**Method A, tool-based**: `seo_ranking_predictions({ project_id })`. Read predicted positions and the
-horizon. It is model output driven by the project's ranking history, only as good as that history.
-Gates before quoting it: reject predicted improvement over 15 positions inside 90 days unless a funded
-plan backs it, because models extrapolate trends and do not know the budget; reject predictions on
-keywords with under ~8 weeks of history (`seo_tracked_keywords_list` gives the start date), and on
-keywords that never entered the top 50.
-
-**Method B, hand-built (the one you show the client)**:
-
-```
-expected monthly clicks = MSV x seasonal index x CTR(target position) x feature factor x geo share
-expected monthly value  = expected clicks x CVR x value per conversion
-```
-
-MSV is itself a 12-month average, so seasonal businesses need the index on top. CTR comes from the
-blended curve in SKILL.md, feature factor from 3.2. Geo share is the fraction of a national keyword's
-volume inside the service area; if you cannot estimate it defensibly, use the geo-modified keyword's own
-volume. CVR benchmarks when the client has no data: local service lead form 5-12 percent, B2B lead form
-2-4 percent, ecommerce transactional 1.5-3 percent, informational content under 1 percent. These are
-benchmarks, never the client's numbers.
-
-Present forecasts as a band, never a point: plus or minus 30 percent at 90 days, plus or minus 50
-percent at six months, and state the assumption that the plan ships on time. **Closes the loop**:
-`memory_create` the forecast, its inputs and its date. When the client asks in month 4 why we said 800
-clicks, you need those inputs.
+The full method, the seasonal index, the hand-built band and the roadmap impact column live in
+`references/forecasting-and-seasonality.md`. What this file keeps: the tool call is
+`seo_ranking_predictions({ domain, risk_level, limit })`, a free read of 30-day forecasts computed every
+Sunday by LINEAR trend extrapolation over rank-check history (organic keywords with 5+ checks spanning
+21+ days in the last 120; `confidence_score` = fit R-squared x 100; `backlinks_needed` NOT computed).
+Gates before quoting it: no keyword with under ~8 weeks of history (`seo_tracked_keywords_list` gives
+the start date), nothing that never entered the top 50, no predicted improvement over 15 positions
+inside 90 days without a funded plan, `confidence_score` under 40 ignored. Show the client a band
+(plus or minus 30 percent at 90 days, 50 at six months) built from MSV x seasonal index x CTR x the 3.2
+feature factor x geo share, never the model's point. **Closes the loop**: `memory_create` the forecast,
+its inputs and its date.
 
 ### Play 7: Tracking list construction and pruning
 
@@ -243,11 +280,25 @@ Tracking is a reporting decision: track what you will report on.
 2. Target 20-100 keywords: 40 percent money terms tied to revenue, 30 percent striking distance (the
    harvest list), 20 percent cluster heads for work in flight, 10 percent sentinels (brand, plus one or
    two competitor-owned terms).
-3. `seo_track_keyword({ keyword, target_domain })` per keyword. `goal_id` auto-derives from the domain
-   so they group; `location_code` defaults to 2840 (US). **Set `location_code` explicitly for any non-US
-   client.** Tracking a Canadian, UK or Australian client at 2840 produces plausible, entirely wrong
-   rankings, silently.
-4. `seo_tracked_keyword_delete` removes the keyword and its history irreversibly, and that history is
+3. `seo_track_keyword({ keyword, target_domain })` per keyword. `goal_id` auto-derives from
+   (account, domain) so they group; `location_code` defaults to 2840 (US); the first check is queued
+   immediately. **Set `location_code` explicitly for any non-US client.** Tracking a Canadian, UK or
+   Australian client at 2840 produces plausible, entirely wrong rankings, silently. Track 20-100
+   keywords, not 1,000: track what you report on.
+4. **The nine lanes.** One tracked keyword is up to nine rows: `google`, `bing`, `local`
+   (`ranking_type: 'local'` with `business_name`, city-level location), `mobile`, and the AI engines
+   `ai_overview`, `chatgpt`, `claude`, `gemini`, `perplexity` (`search_engine` on `seo_track_keyword`).
+   Read them with `seo_rankings_list({ group_by_keyword: true })`: `pagination.total_groups` is the
+   honest keyword count, `total` counts lanes. A keyword created before the AI engines existed has
+   NO AI lanes: a blank AI column is "not tracked", never "not ranking". `previous_rank` advances only
+   on a new check day; `check_frequency` defaults to weekly. Cost: about $0.003 per scheduled organic
+   check, about $0.10 per keyword per engine per AI check (class G), so confirm the engine list and
+   the count before adding AI lanes (references/aeo.md Play H).
+5. Editing a tracked row (location, device, engine, target URL, frequency) has an INCOMING update tool
+   and a one-call lane setter (Availability). Until they land there is no edit that keeps history:
+   delete plus re-track destroys it, so get the arguments right the first time. When the lane setter
+   arrives, removing a lane deletes that lane's history, so it needs the same confirm as a delete.
+6. `seo_tracked_keyword_delete` removes the keyword and its history irreversibly, and that history is
    what makes next quarter's report possible. Prune only at a quarterly review, with explicit
    confirmation, one at a time, never a keyword that appeared in a delivered report in the last two
    quarters. If the list is merely too long, stop adding rather than deleting history.
@@ -258,7 +309,10 @@ For locations or service areas, "service + city" is the opportunity, not the hea
 places the client will actually serve, and do not filter geo terms on volume: they report 10-50 or zero,
 and a zero-reported "emergency plumber + suburb" converts at rates that make its cluster the most
 valuable on the account. Run `seo_serp_get` on two or three representative geo terms; a SERP dominated
-by a local pack means the win is a Google Business Profile play, not a page.
+by a local pack means the win is a Google Business Profile play, not a page. For the pack itself,
+`seo_research({ action: 'maps-serp', keyword, location_code, device })` returns the Google Maps SERP
+at ONE city-level location code (class C, point-in-time, not a grid): who holds the pack and with
+how many reviews decides whether a page or the listing is the play. Local plays: `local-seo.md`.
 
 ### Play 9: Quarterly re-qualification
 
@@ -291,7 +345,7 @@ without SERP evidence is a guess with good grammar. Pure CRUD uses the direct to
 | Cluster viability | >= 5 keywords or >= 300 aggregate MSV | Merge into a neighbor or fold into an existing page |
 | Pillar viability | >= 12 keywords, >= 800 aggregate MSV, >= 3 sub-intents | Build one page, not a pillar |
 | Top-5 composition | >= 3 of top 5 are national brands, marketplaces or Wikipedia | Demote to siege or drop, whatever the KD |
-| Difficulty vs authority | Bands in SKILL.md | Over band: a funded link plan attaches, or it does not enter the roadmap |
+| Difficulty vs authority | Bands in `metered-research-suite.md` | Over band: a funded link plan attaches, or it does not enter the roadmap |
 | Tracked list size | 20-100 | Over 100: stop adding, review at quarter end |
 | Ranking history for a forecast | >= 8 weeks | Below: CTR model only, say predictions are unavailable |
 | Shipped pillar, no movement | 6 months | Escalate with a revised plan, do not quietly extend |
@@ -355,7 +409,8 @@ guessed arguments against a live account are how silent wrong-data failures star
   `seo_topic_cluster_create`, `seo_track_keyword` and `seo_tracked_keyword_delete` writes to a live
   client account. Summarize, confirm, execute deliberately. Confirmation can cover a batch of related
   writes, but the user must see the list before it lands. `seo_tracked_keyword_delete` in particular is
-  destructive and silent: the history does not come back.
+  destructive and silent: the history does not come back, and the INCOMING lane setter (Availability)
+  deletes a lane's history the same way when a lane is removed.
 - **Do not track competitor brand terms without approval.** It consumes the tracking allotment, shows up
   in reports, and some clients have contractual reasons against it.
 - **Do not present `seo_ranking_predictions` output as a commitment.** It is a model, the client will
@@ -393,14 +448,14 @@ goes out without explicit confirmation.
 
 - **Keyword-level conversion or revenue data**: none. Get it from the analytics or PPC surfaces or the
   client; CVR figures stay benchmarks until then.
-- **Competitor keyword gap and domain intersection**: the metered suite in SKILL.md Play 1 and
-  `link-building-and-competitors.md`.
+- **Competitor keyword gap and domain intersection**: `content-strategy.md` Play C4 (the
+  intersection tools) and `link-building-and-competitors.md`.
 - **SERP screenshots, visual layout, competitor on-page structure**: none. Use `web_scrape` plus
   `web_extract`, or the dashboard.
 - **Bulk export of the universe**: none here. Use a deliverable sheet (`reporting-and-delivery.md`).
-- **Editing a tracked keyword's location**: no update tool. You would delete and re-track, destroying
-  history. Set `location_code` correctly the first time.
-- **Historical volume by month**: `seo_research` with `action: 'historical-search-volume'` (multi-year
-  volume trend) or `action: 'keyword-trends'` (trend bands), both metered. Cross-check the seasonal
-  story against the GSC time series tooling in `rankings-and-search-console.md` on queries we already
-  rank for, which reflects this client rather than the market.
+- **Editing a tracked keyword's location, device or engine**: INCOMING (the update tool and the lane
+  setter in the Availability table). Until they land, delete plus re-track is the only path and it
+  destroys history, so set `location_code` right the first time and prefer leaving a slightly wrong
+  row alone over losing a reported series.
+- **Historical volume by month and seasonality**: `references/forecasting-and-seasonality.md`
+  (`dataforseo_labs_google_historical_keyword_data`, the Trends family, GSC YoY).

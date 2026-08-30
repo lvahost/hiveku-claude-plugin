@@ -2,12 +2,39 @@
 
 ## What this covers / when to load this
 
-The deep manual behind Play 7 of the SEO skill. Load it for work on how the brand shows up inside
+The deep manual behind the SEO skill's AEO lane. Load it for work on how the brand shows up inside
 answers rather than blue links: Google AI Overviews, featured snippets and PAA, citation in ChatGPT /
 Perplexity / Gemini / Claude answers, brand recognition and sentiment inside LLMs, entity resolution
 in the Google Knowledge Graph, and the readiness layer (AI crawler access, JSON-LD, llms.txt) that
-gates all of it. SKILL.md is the overview; this is the manual it points to. Anything outside the
-tool index below is a handoff, named as such.
+gates all of it. Not for the on-page work the findings turn into (references/on-page-optimization.md
+and content-strategy.md), organic rank reporting (rankings-and-search-console.md) or report assembly
+(reporting-and-delivery.md). SKILL.md is the overview; this is the manual it points to. Anything
+outside the Availability table is a handoff, named as such.
+
+## Availability
+
+Cost classes: A = free DB read; write = free, confirm-gated; C = live SERP per keyword; G = LLM
+Mentions, about $0.10 per keyword per engine; H = LLM-scored against a shared per-UTC-day budget.
+A negative DataForSEO balance turns every metered call into a 402 with no per-tool warning.
+
+| Tool | Status | Cost class | Note |
+|---|---|---|---|
+| `seo_aeo_readiness` | LIVE | free | homepage-only fetch; checks degrade to fail on a network error |
+| `seo_entity_check` | LIVE | free | Knowledge Graph lookup, `query` required |
+| `seo_aeo_audit_get` | LIVE | A | stored SERP-side results; `since` for incremental re-reads |
+| `seo_aeo_audit_run` | LIVE | C | one SERP call per keyword, cap 25; `location_code` is a NUMBER |
+| `seo_aeo_rankings_sync` | LIVE | G | one LLM Mentions call per keyword x engine; `location_code` is a STRING; `skip_sync: true` creates rows without spending |
+| `seo_rankings_list` (= `seo_list_rankings`) | LIVE | A | reads the synced AI lanes back: `search_engine` `ai_overview`, `chatgpt`, `perplexity`, `claude`, `gemini`; `group_by_keyword: true` |
+| `seo_aeo_brand_profile_get`, `seo_aeo_brand_profile_upsert` | LIVE | A / write | upsert is a FULL REPLACE (5.1) |
+| `seo_aeo_brand_audit` | LIVE | H | 15-20 OpenRouter calls; refuses when the day's budget is spent |
+| `seo_aeo_brand_audit_history` | LIVE | A | up to 100 prior runs, populated by the weekly sweep |
+| `seo_schema_markup`, `seo_featured_snippets`, `seo_serp_features` | LIVE | A | detected vs suggested markup; winnable snippets; feature history |
+| `seo_project_update` (`robots_txt_content`) | LIVE | write | STORED, never served: a real robots.txt ships through the code lane |
+| `project_files_bulk_save`, `project_vcs_commit`, `deploy_site`, `pages_update` | LIVE | write | the code lane and the pages-model write; not all visible to a marketing-seo key |
+| `fetch_url` | LIVE | free | verifies the live robots.txt, llms.txt and JSON-LD after a deploy |
+| `seo_deliverable_save` | LIVE | write | persists the AEO baseline and monthly deliverable |
+| `seo_llms_txt_generate` | INCOMING (fallback: draft the file, `project_files_bulk_save` `public/llms.txt`, `project_vcs_commit`, `deploy_site`, verify with `fetch_url`) | write | takes the WEBSITE project id, not the tracking project id |
+| `seo_ai_visibility` | INCOMING (fallback: `seo_aeo_audit_get` summary plus `seo_rankings_list` on the AI lanes) | A | one read for citation presence across engines and Google's answer surfaces |
 
 ## 0. Doctrine for this lane
 
@@ -94,8 +121,15 @@ status allowed / blocked / unspecified plus `via` (bot group, wildcard, none); `
 `{ count, types }`. Weights, pass full / warn half / fail zero: `ai_crawlers` 25, `json_ld` 20,
 `llms_txt` 15, `sitemap` 15, `title_meta` 15, `h1` 10, which is also the priority order.
 **Decision:** thresholds in section 3. **Closing write:** one `pm_tasks_create` per failing check,
-naming the file (robots.txt, llms.txt, homepage template) and the directive to add. No AEO tool
-writes files or templates; that is the technical-seo lane.
+naming the file (robots.txt, llms.txt, homepage template) and the directive to add. Where each fix
+ships: **llms.txt** has an INCOMING generator (Availability); until it lands, draft the file from
+the sitemap and the top pages, `project_files_bulk_save` it as `public/llms.txt`,
+`project_vcs_commit`, `deploy_site` after approval. **robots.txt**: `seo_project_update({
+robots_txt_content })` STORES the text and never serves it, so a crawler directive ships as
+`public/robots.txt` through the same code lane and is proven with `fetch_url` on the live URL
+(a client stays billed for AI visibility while GPTBot is still blocked otherwise). **JSON-LD,
+title/meta, H1** ship through the code lane or `pages_update` per references/on-page-optimization.md
+section 1. Never change crawler access without the client's decision (5.4).
 
 ### Play B - Entity resolution
 
@@ -133,7 +167,10 @@ work.
 `ai_overview_reference_count`, `domain_organic_position`.
 **Decision:** run the 1.3 tiering. Two headline client numbers: answer-layer coverage
 (`keywords_with_ai_overview / keywords_analyzed`) and citation rate (`domain_in_ai_overviews /
-keywords_with_ai_overview`).
+keywords_with_ai_overview`). The gap that pays: `has_ai_overview` true and `domain_in_ai_overview`
+false on a page that already ranks, fixed with schema plus an answer-first restructuring (Play E)
+shipped through content-strategy.md. About one SERP call per keyword, so monthly on the priority
+set only, never the whole tracked list.
 **Closing write:** `pm_tasks_create` per tier-1 and tier-2 keyword naming the URL, current organic
 position and required format; `memory_update` the baseline record.
 
@@ -183,10 +220,13 @@ official URL for `sameAs`.
 **Decision:** priority order is Organization and WebSite on the homepage (the identity anchor), then
 FAQPage or QAPage on the Play E blocks, then Article with a real author and dateModified, then
 Product / Service / LocalBusiness on money pages, then BreadcrumbList. Never mark up an FAQ that is
-not visible on the page. `seo_schema_markup` is a read; writing JSON-LD is a template edit owned by
-the technical-seo lane, so this playbook produces the spec and one `pm_tasks_create` per template,
-never per page. When the two disagree, mind the scope: `seo_aeo_readiness` reads only homepage HTML,
-and client-side-injected markup is invisible to a plain fetch, which is itself a finding.
+not visible on the page. `seo_schema_markup` is a read; JSON-LD ships through the code lane
+(`project_files_bulk_save`, `project_vcs_commit`, `deploy_site`) or `pages_update` per
+references/on-page-optimization.md section 1, which also carries the templates and 2025
+eligibility rules, so this playbook produces the spec and one `pm_tasks_create` per template,
+never per page, and verifies with `fetch_url` after the deploy. When the two disagree, mind the
+scope: `seo_aeo_readiness` reads only homepage HTML, and client-side-injected markup is invisible
+to a plain fetch, which is itself a finding.
 
 ### Play G - Brand interrogation baseline
 
@@ -226,15 +266,29 @@ something you shipped.
 **Trigger:** a defined priority set worth tracking, usually 10-25 keywords.
 **Chain:** create rows without spending via `seo_aeo_rankings_sync({ target_domain: 'acme.com',
 keywords: [...], search_engines: ['ai_overview'], skip_sync: true })`, then confirm the spend and run
-again without `skip_sync`. One LLM Mentions call per keyword per engine, so 20 keywords across 3
-engines is 60 paid calls; the default `['ai_overview']` is usually correct. Argument that bites:
-`location_code` here is a **string** ("US") with a human-readable `location_name` ("United States"),
-unlike `seo_aeo_audit_run` where it is the numeric code. `device_type` is 'desktop' or 'mobile'.
+again without `skip_sync`. The tool's schema lists `ai_overview`, `chatgpt` and `perplexity`; the
+tracker itself carries five AI lanes (`claude` and `gemini` too, created through `seo_track_keyword`
+with that `search_engine`), so check the schema before passing an engine the sync does not list.
+Argument that bites: `location_code` here is a **string** ("US") with a human-readable
+`location_name` ("United States"), unlike `seo_aeo_audit_run` where it is the numeric code.
+`device_type` is 'desktop' or 'mobile'.
+
+**AI-lane tracking cost.** Every AI lane is about $0.10 per keyword per engine per check (class
+G), against $0.003 for a scheduled organic check. 20 keywords across 3 engines is 60 paid calls
+per sync, and a lane created with a recurring `check_frequency` keeps paying weekly. Confirm the
+keyword count, the engine list and the resulting call count out loud before every sync, and
+refuse "sync every keyword on every engine": a 200-keyword list on five engines is 1,000 calls.
+
 **Read out:** per row, citation position, `ai_mentioned`, `mentions_count`, `ai_search_volume`.
-**Decision:** track only what you report on; 20 keywords monthly beats 200 once. No AEO-scoped tool
-reads the synced rows back (they land in the dashboard's AI ranking columns; the project rank tools
-belong to the rankings-and-search-console reference), so read citation presence from
-`seo_aeo_audit_get`.
+**Read-back:** the synced rows are ordinary tracker lanes.
+`seo_rankings_list({ search_engine: 'ai_overview' | 'chatgpt' | 'perplexity' | 'claude' | 'gemini',
+group_by_keyword: true })` reads them; `pagination.total_groups` is the honest keyword count
+(`total` counts lanes). Keywords created before the AI engines existed have NO AI lanes, so a blank
+AI column means "not tracked", never "not ranking"; `previous_rank` only advances on a new check
+day. Citation presence on Google's answer surfaces still comes from `seo_aeo_audit_get`; the single
+cross-engine visibility read is INCOMING (Availability) and until then you assemble it from those
+two calls.
+**Decision:** track only what you report on; 20 keywords monthly beats 200 once.
 
 ## 3. Thresholds and benchmarks
 
@@ -268,9 +322,10 @@ answer-block rewrites on already-ranking pages 2-6 weeks; new answer content wit
 3-6 months; brand-side movement one to three quarters, and only if the off-site corpus changes. Model
 version changes can move brand-side numbers more than your work does, in either direction.
 
-**Cadence:** `seo_aeo_audit_get` weekly; `seo_aeo_readiness` (also after every deploy) and
-`seo_aeo_brand_audit_history` monthly; `seo_aeo_audit_run` and `seo_aeo_rankings_sync` monthly;
-`seo_aeo_brand_audit` and `seo_entity_check` quarterly.
+**Cadence:** `seo_aeo_audit_get` and the `seo_rankings_list` AI lanes weekly (both free);
+`seo_aeo_readiness` (also after every deploy) and `seo_aeo_brand_audit_history` monthly;
+`seo_aeo_audit_run` and `seo_aeo_rankings_sync` monthly; `seo_aeo_brand_audit` and
+`seo_entity_check` quarterly.
 
 ## 4. Diagnosis
 
@@ -367,39 +422,12 @@ Cross-cutting: `account_context_get`, `talk_to_department`, `memory_list`, `memo
 `memory_update`, `pm_tasks_create`, `pm_tasks_update`, `pm_tasks_complete`, `hiveku_docs_search`,
 `hiveku_docs_get`, `web_search`, `web_scrape`, `web_extract`. Local: `hiveku-data/aeo|seo/*.json`.
 
-No tool in this lane for publishing llms.txt, editing robots.txt, writing JSON-LD, publishing pages,
-saving deliverables, or reading back synced AI ranking rows: those are dashboard or other-reference
-operations. Name the handoff; never imply this playbook ships them.
-
----
-
-## Notes on this deliverable
-
-**Size:** 25,026 bytes. **Em dashes:** 0. **Emojis:** 0. Draft file lives at
-`/private/tmp/claude-501/-Users-aberubarts-Documents-main-hiveku/30c385fb-6c1e-4ade-8eb0-b3167903d1e5/scratchpad/aeo.md`
-(not written to `skills/hiveku-seo-agency/references/aeo.md` so the orchestrator controls placement).
-
-**Grounded against source, not invented.** I verified every argument name, response field, threshold,
-and cost note against:
-- `hiveku-mcp-api-server/src/tools/marketing-tools.ts` (the `seo_aeo_*` tool schemas)
-- `hiveku-mcp-api-server/src/tools/olympus-tools.ts` (`seo_aeo_readiness`, `seo_aeo_brand_audit`, `seo_entity_check`)
-- `hiveku_builder/src/lib/aeo/types.ts` (the 20/10/20/40/10 brand-audit rubric, provider keys, `overallAvg` excluding errored providers)
-- `hiveku_builder/src/lib/seo/aeo-readiness.ts` (`CHECK_WEIGHTS` 25/20/15/15/15/10, `AI_CRAWLER_BOTS`, the 5s timeout and fail-on-network-error behavior)
-- `hiveku_builder/src/app/api/olympus/seo/aeo/audit/route.ts` (exact `summary` and per-keyword field names, and the `denom = latest.length * 2` that makes `aeo_readiness_pct` cap at 50 for AI-Overview-only citation)
-
-Facts that were only derivable from source and are the manual's sharpest edges: the `location_code`
-type flip between `seo_aeo_audit_run` (number) and `seo_aeo_rankings_sync` (string); `perplexity`
-routing through Google; the full-replace semantics of `seo_aeo_brand_profile_upsert`; the
-`{ profile: null }` state that both 400s the audit and silently skips the weekly sweep cron; and
-failed providers dropping out of `overallAvg` so the average can jump with no real change.
-
-**Capabilities I named as having no tool** (per the rules): publishing llms.txt, editing robots.txt,
-writing JSON-LD, publishing pages, saving deliverables, per-competitor brand audits, and reading back
-the rows `seo_aeo_rankings_sync` writes. Each points at the dashboard, another reference, or
-`web_search` / `web_scrape` research rather than a fabricated tool name.
-
-**Complements rather than repeats SKILL.md:** SKILL.md's Play 7 is 10 lines naming four tools. This
-manual adds the four-gate diagnosis order, the SERP-side vs brand-side split, the tier-1..5 citation
-opportunity scoring off real response fields, the brand rubric weighting as a lever-selection tool,
-the displacement play built on `ai_overview_references`, answer-block format rules, every threshold,
-and the failure modes. It does not restate SKILL.md's keyword research, audits, links, or local plays.
+Where each capability this lane needs actually lives, so the handoff is named and never implied:
+**llms.txt** is INCOMING (Availability) with the code lane as the fallback (`project_files_bulk_save`
+of `public/llms.txt`, `project_vcs_commit`, `deploy_site`, then `fetch_url` to prove it serves).
+**robots.txt**: `seo_project_update({ robots_txt_content })` is STORED, not served; ship
+`public/robots.txt` through the code lane and verify with `fetch_url`. **JSON-LD and pages**: the
+code lane or `pages_update`, per references/on-page-optimization.md section 1. **Deliverables**:
+`seo_deliverable_save` (mechanics in reporting-and-delivery.md). **Synced AI ranking rows**:
+`seo_rankings_list` on the AI-engine lanes (Play H). **Per-competitor brand audits**: none (5.6).
+A tool outside the key's profile fails like a missing feature: say "not visible to this key".

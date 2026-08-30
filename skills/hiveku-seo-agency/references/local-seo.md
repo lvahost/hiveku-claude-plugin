@@ -2,13 +2,39 @@
 
 ## What this covers / when to load this
 
-The deep manual behind Play 6 of the SEO skill: running Google Business Profile as a managed asset,
+The deep manual behind the SEO skill's local lane: running Google Business Profile as a managed asset,
 diagnosing local visibility, and operating reviews as a service line. Load it when the client has physical
 locations or a service area, when the brief mentions GBP, Maps, the local pack, "near me" terms, listing
 photos, the service menu, citations or reviews, or when local numbers moved and you must explain why.
-SKILL.md says these tools exist; this
-file says what to read from each response, which number triggers which action, what the data does not
-mean, and what will get a listing suspended.
+Not for geo-keyword research (`keyword-research.md` Play 8), building location pages
+(`content-strategy.md`), GBP post copy (the social lane) or report assembly
+(`reporting-and-delivery.md`); the new-location launch recipe is in `references/seo-playbooks.md`.
+SKILL.md says these tools exist; this file says what to read from each response, which number
+triggers which action, what the data does not mean, and what will get a listing suspended.
+
+## Availability
+
+Cost classes: A = free DB read; write = free, two-step confirmed, publishes PUBLICLY; live = a
+Google API call under a small per-location quota (once per location, never looped); C = live SERP
+per request per location; I = one Business Listings search with a 24h cooldown.
+
+| Tool | Status | Cost class | Note |
+|---|---|---|---|
+| `seo_gbp_overview`, `seo_gbp_listing`, `seo_gbp_insights`, `seo_gbp_reviews` | LIVE | A | cached snapshot on a 6-hour cron; over 26h old is stale, not fact |
+| `seo_gbp_location`, `seo_gbp_attributes`, `seo_gbp_services`, `seo_gbp_media`, `seo_gbp_discover_locations` | LIVE | live | `gbp_quota_exceeded` = wait a minute; `gbp_quota_not_approved` = the Cloud project never passed review, waiting cannot help |
+| `seo_gbp_location_update`, `seo_gbp_attributes_update`, `seo_gbp_services_update`, `seo_gbp_media_add`, `seo_gbp_media_delete`, `seo_gbp_review_reply`, `seo_gbp_review_reply_delete` | LIVE | write | all seven: first call previews with `requires_confirm: true`, identical call with `confirm: true` publishes |
+| `seo_local_search_performance`, `seo_local_top_queries`, `seo_local_top_pages`, `seo_local_rank_changes`, `seo_local_rank_history`, `seo_local_compare_periods` | LIVE | A | account-scoped; every `days` you pass is HALVED into two windows |
+| `seo_citations_get` | LIVE | A | the stored citation audit; `basis: 'no_signal'` = UNVERIFIED |
+| `seo_citations_audit` | LIVE | I | 429 inside the cooldown returns the stored audit; no confirm step of its own |
+| `business_data_business_listings_search` | LIVE | I-class per search | the engine behind `seo_citations_audit`: Google Maps business entities by category and location, NAP, rating, hours; a competitor's local footprint |
+| `seo_research` | LIVE | C | actions `maps-serp` and `local-finder-serp` (one location code, not a grid), `gbp-locations`, `gbp-info`, `gbp-questions`, `gbp-reviews`, `yelp-reviews`, `trustpilot-reviews`, `tripadvisor-reviews` |
+| `seo_serp_get` | LIVE | A | stored SERP rows (no writer today); the live SERP is `seo_research({ action: 'serp' })`, class C |
+| `social_create_post` | LIVE | write | GBP posts, platform `google_business_profile`, through the social approval queue |
+| `seo_track_keyword`, `seo_tracked_keywords_list`, `seo_tracked_keyword_delete` | LIVE | write / A | "keyword + city" and pack tracking; owned by keyword-research.md |
+| `seo_connections_list`, `seo_connection_create`, `seo_connection_update` | LIVE | A / write | the GBP connect flow (section 1) |
+| `seo_gbp_posts` | INCOMING (fallback: the dashboard's GBP posts view; publishing stays on `social_create_post`) | A | READ of published posts per `connection_id`, `refresh`, `limit` |
+| `seo_listings_get` | INCOMING (fallback: `seo_gbp_listing` for the Listing Score and duplicate status) | A | the stored listings snapshot per `connection_id` |
+| `seo_listings_scan` | INCOMING (fallback: `seo_citations_audit`, same engine, same cooldown) | I | Listing Score plus the Google Maps footprint: duplicates, NAP drift; spends one Business Listings search, 24h cooldown |
 
 ---
 
@@ -41,21 +67,29 @@ loop. The cached snapshot refreshes on a six-hour cron: older than **26 hours** 
 stale not fact.
 
 **Spends DataForSEO credits** (metered against the account's monthly SEO research cap, with NO confirm
-step of its own, so you are the gate): `seo_citations_audit({ connection_id })` and every
-`seo_research` action named in this file. Confirm the spend with the human before calling.
+step of its own, so you are the gate): `seo_citations_audit({ connection_id })`,
+`business_data_business_listings_search` (the same engine called directly: business entities on
+Google Maps by category, location and name, with NAP, rating, hours and reviews, which is how you
+read a COMPETITOR's local footprint or a rival's citation count) and every `seo_research` action
+named in this file. Confirm the spend with the human before calling.
+
+**Data sources first.** `seo_connections_list` must show GBP plus GSC connected. If not, the connect
+flow is `seo_connection_create` (platform `google_business_profile`, OAuth) then
+`seo_gbp_discover_locations({ id })` then `seo_connection_update` with `gbp_account_id` and
+`gbp_location_id`, then `seo_sync`. A connection without a bound location is empty, not broken.
 
 **No tool in this lane.** GBP **posts** go through the social lane's approval queue or the dashboard:
 publish via `social_create_post` with platform `google_business_profile`, or raise them with
-`pm_tasks_create`, copy attached, and never claim you posted. **Q&A**: readable via
-`seo_research({ action: 'gbp-questions' })`; ANSWERING has no tool (Google discontinued the write API) -
-raise answers as a dashboard task. **Directory submission**: no submission tool exists anywhere, by
-design - `seo_citations_audit` audits and never writes to a directory. **Geo-GRID rank maps** (a lattice
-of positions across many points): none, do not imply otherwise; a single geo-located pack read at ONE
-location code is available via `seo_research({ action: 'maps-serp' })` (Play L5). **Review requests**:
-none in this lane - surveys are a separate voice-of-customer instrument, not a Google review request.
-
-**Adjacent-lane names, handoff only**: `seo_track_keyword`, `seo_tracked_keywords_list`,
-`seo_tracked_keyword_delete`, `seo_serp_get` (keyword-research), `seo_sync` (rankings).
+`pm_tasks_create`, copy attached, and never claim you posted; a read of published posts is INCOMING
+(Availability). **Q&A**: readable via `seo_research({ action: 'gbp-questions' })`; ANSWERING has no
+tool (Google retired the write API in November 2025) - raise answers as a dashboard task.
+**Directory submission**: no submission tool exists anywhere, by design - `seo_citations_audit`
+audits and never writes to a directory. **Geo-GRID rank maps** (a lattice of positions across many
+points): none, do not imply otherwise; a single geo-located pack read at ONE location code is
+`seo_research({ action: 'maps-serp' })` (Play L5). **Review requests**: none in MCP.
+`marketing_testimonial_widget_create` and its siblings collect TESTIMONIALS for the client's own
+site, not Google reviews; a review ask goes out on the client's communications rail (email or SMS)
+with its own confirm - hand off, draft the ask if wanted, never send it from here.
 
 **Local files first.** `hiveku-data/localseo/*.json` exports exactly these datasets: `connections.json`,
 `top_queries.json` (90d, limit 200), `top_pages.json`, `rank_changes.json` (30d, min_drop 3),
@@ -120,38 +154,23 @@ review and unreplied counts. One location at 62 with eleven unanswered reviews o
 per location; averaging hides the outlier losing the money. When a location is onboarded, looks bound to
 the wrong branch, or the client counts more locations than the account shows,
 `seo_gbp_discover_locations({ id })` (`id` = the connection UUID) lists every account and location that
-authorization can see, with `location_id` and `location_title`. Binding is the SKILL.md setup path;
+authorization can see, with `location_id` and `location_title`. Binding is the connect flow in section 1;
 discovery is quota-expensive and cached, so call it once.
 
 ---
 
 ## 3. The plays
 
-### Play L1: Local baseline (first session on a local account)
+### Play L1: Local baseline (pointer)
 
-1. `account_context_get({ domain: 'seo' })`. Service area, brand voice, public-reply rules.
-2. Read `hiveku-data/localseo/connections.json` for what is connected and when each synced, at zero cost.
-   Missing or over a week old: get the connection list live via the SKILL.md setup path.
-3. `seo_gbp_listing({})`. Read `score`, the `items` breakdown (which weights absent, which `unknown`), NAP
-   block, verification and duplicate status, `score_history`, snapshot freshness.
-4. `seo_gbp_overview({ connection_id, days: 90 })` per location.
-5. `seo_gbp_attributes({ connection_id })` per location, once. Read `audit.missing`. Live call: do not
-   loop it while exploring. Same pass, same rule: `seo_gbp_media({ connection_id })` (Play L8) and
-   `seo_gbp_services({ connection_id })` (Play L9) - both live, both once.
-6. `seo_citations_get({})` for the stored NAP snapshot per connection, free (Play L10). Only run
-   `seo_citations_audit` if nothing is stored and the client has approved the credit spend.
-7. `seo_local_search_performance({ days: 90, source: 'all' })`, then `seo_local_top_queries` and
-   `seo_local_top_pages` at `{ days: 90, limit: 200 }`.
-8. `seo_local_compare_periods({ days: 180, source: 'all' })` for a true 90-vs-90 read (halving gotcha,
-   section 5).
-
-**Drives:** a ranked defect list. Listing gaps by weight, unreplied review backlog, missing attributes,
-missing or stale photos, an empty service menu, inconsistent citations, and the gap between local demand
-and the pages that exist.
-
-**Closes the loop:** `memory_create` with connection ids and their branches, canonical NAP exactly as
-published, categories, service area, and baseline Listing Score, review count and average rating per
-location with the date. Then `pm_tasks_create` per accepted fix.
+The first-session chain is `/hiveku:local` (commands/local.md), step for step: context, then the
+free DB reads for every location (`seo_gbp_listing({})` with no `connection_id` for one row per
+connection, `seo_gbp_overview` at 90 days, `seo_citations_get({})`), then the live reads once per
+location (`seo_gbp_attributes`, `seo_gbp_media`, `seo_gbp_services`), then local organic at 90 days
+with `seo_local_compare_periods({ days: 180 })` for a true 90-vs-90. It drives a ranked defect list
+per location and closes with `memory_create` (connection ids and branches, canonical NAP exactly as
+published, categories, service area, baseline Listing Score, review count and average rating with
+the date) plus `pm_tasks_create` per accepted fix. Plays L2 to L10 are what each defect turns into.
 
 ### Play L2: Listing Score remediation
 
@@ -233,12 +252,11 @@ business, competitors included, and `seo_research({ action: 'gbp-locations', que
 finds the pack holders in the first place. That is the evidence behind the rule; without it the claim is
 a guess. Spends research credits.
 
-**Off-Google reputation.** Play L4 above is Google-only. A client whose problem is on Yelp or Trustpilot
-is read with `seo_research({ action: 'yelp-reviews' | 'trustpilot-reviews' | 'tripadvisor-reviews' })`,
-and brand sentiment across the open web with `seo_research({ action: 'sentiment-analysis', keyword })`,
-`content-mention-search` and `content-summary`. All are READS: there is no reply tool for any non-Google
-platform, so the output is a report plus `pm_tasks_create`, never a posted response. All spend research
-credits.
+**Off-Google reputation.** Play L4 is Google-only. Yelp, Trustpilot or Tripadvisor problems are read
+with `seo_research({ action: 'yelp-reviews' | 'trustpilot-reviews' | 'tripadvisor-reviews' })`; brand
+sentiment across the open web is `references/digital-pr-and-brand-mentions.md`. All READS, all spend
+research credits: no reply tool exists for any non-Google platform, so the output is a report plus
+`pm_tasks_create`, never a posted response.
 
 **Closes the loop:** `pm_tasks_update` with counts replied and escalated; `memory_create` for standing
 decisions (agreed template, escalation contact, topics off limits publicly).
@@ -273,7 +291,9 @@ than zero, so a keyword that fell out of the result set entirely, the worst outc
 2. Segment queries by geo-modifier: bare service, service plus city, "near me", brand. The
    service-plus-city block is your page inventory requirement.
 3. Where a city or service has real impressions and either no matching page or a page averaging worse than
-   position 10, raise the page with `pm_tasks_create` and build it through Play 3 of SKILL.md.
+   position 10, raise the page with `pm_tasks_create` and build it through `content-strategy.md`
+   (never "generate 50 city pages": one page per place the client actually serves, with real
+   substance, or it is thin content and next year's decay row).
 4. Track the resulting terms in the keyword-research lane (`seo_track_keyword`). For pack tracking that
    tracker supports a local ranking type with the business name and a city-level location: set the actual
    city, not the national default, or the number you report is not the number customers see.
@@ -321,11 +341,10 @@ with no DB cache, so one pass per location.
 4. **The trap: COVER, PROFILE and LOGO REPLACE the listing's primary imagery instead of appending to the
    gallery**, and deleting one of those removes the primary imagery. Those three categories need explicit
    written client sign-off, exactly like a `title` edit. Everything else appends.
-5. Two-step confirm on both writes. `seo_gbp_media_add` without `confirm` returns a preview (category,
-   `source_url`, media format, whether primary imagery is replaced) with `requires_confirm: true`; URL and
-   category validation run at THIS step, so a bad input fails before publish. `seo_gbp_media_delete`
-   without `confirm` fetches the live item and previews category, format, `googleUrl`/thumbnail, create
-   time and view count, so you see exactly what is going; a bad `media_id` fails here too. Repeat the
+5. Two-step confirm on both writes. `seo_gbp_media_add` previews category, `source_url`, format and
+   whether primary imagery is replaced (URL and category validation run at the preview, so a bad input
+   fails before publish); `seo_gbp_media_delete` fetches the live item and previews category, format,
+   `googleUrl`/thumbnail, create time and view count (a bad `media_id` fails here too). Repeat the
    identical call with `confirm: true` to apply. Deletion is permanent.
 
 ### Play L9: Service menu completeness
@@ -359,17 +378,22 @@ same category of visibility lever as attributes (Play L3), and just as commonly 
    attributable to the business (phone digits-only, address tokenized, name fuzzy) and checks a fixed
    major-directory list: Google, Yelp, Facebook, Bing Places, Apple Maps, BBB, Yellow Pages, Foursquare,
    and Tripadvisor where category-relevant.
-3. Three traps, all of them real:
- - It **spends DataForSEO credits** against the account's monthly SEO research cap and has **no confirm
-     step**, so you are the gate: confirm with the human before calling.
- - A **24h server-side cooldown** returns 429 with `retry_at` plus the stored audit. That is not a
-     failure - read the stored audit and report it as of `audited_at`.
- - `missing_major` entries carry a `basis` field. `basis: 'no_signal'` means presence is **UNVERIFIED**,
-     not confirmed absent. **Never report a `no_signal` directory to the client as "not listed."** Report
-     it as unverified, or verify it by hand.
-4. It is AUDIT ONLY. It never writes to any directory, and no submission tool exists anywhere in Hiveku
+3. **The engine.** That one search is `business_data_business_listings_search`: Google Maps business
+   entities matching a name, category and location. So the audit sees what Google Maps aggregates,
+   not each directory's own database, which is exactly why `basis` exists. Each `missing_major` entry
+   carries `basis`: a value naming an in-app signal means the directory was checked and the listing
+   was absent; `basis: 'no_signal'` means the audit had NO signal for that directory and presence is
+   **UNVERIFIED**, never "not listed". Report it as unverified or verify by hand
+   (`fetch_url` on the directory's search page). Calling the engine directly on a competitor's name
+   returns their footprint and rating for the same credit.
+4. Two more traps, both real: it **spends DataForSEO credits** against the account's monthly SEO
+   research cap with **no confirm step**, so you are the gate; and a **24h server-side cooldown**
+   returns 429 with `retry_at` plus the stored audit, which is not a failure - read the stored audit
+   and report it as of `audited_at`.
+5. It is AUDIT ONLY. It never writes to any directory, and no submission tool exists anywhere in Hiveku
    by design. The deliverable is the fix list plus `pm_tasks_create` per inconsistent listing, worst
-   fields first (phone and address outrank a name variant).
+   fields first (phone and address outrank a name variant). A Listing Score plus Maps-footprint scan
+   (duplicates, NAP drift) is INCOMING (Availability), same engine and cooldown.
 
 ---
 
@@ -429,24 +453,13 @@ same category of visibility lever as attributes (Play L3), and just as commonly 
   listing can lose visibility. Never casual, never batched with cosmetic changes, never without written
   approval. Changing the primary category changes which searches the business appears in at all: evidence
   first (what do the pack holders use?), propose rather than apply.
-- **The two-step confirm is not optional, and it covers all SEVEN writes.** `seo_gbp_review_reply`,
-  `seo_gbp_review_reply_delete`, `seo_gbp_attributes_update`, `seo_gbp_location_update`,
-  `seo_gbp_services_update`, `seo_gbp_media_add` and `seo_gbp_media_delete` each return
-  `requires_confirm: true` with a preview first and publish only on an identical repeat with
-  `confirm: true`. There is no unlisted GBP write that publishes immediately. What each preview shows,
-  because they are not the same and the differences are the point:
- - `seo_gbp_location_update`: the changed fields only.
- - `seo_gbp_attributes_update`: attribute names and count, connection name.
- - `seo_gbp_review_reply`: the reply text and its length, the review, the connection.
- - `seo_gbp_review_reply_delete`: the existing reply and the review.
- - `seo_gbp_services_update`: a live diff - `current_count` / `new_count` / `added` / `removed` /
-    `kept`. This is a FULL REPLACE, so `removed[]` is the field that saves you.
- - `seo_gbp_media_add`: category, `source_url`, media format, and whether primary imagery is replaced.
-    URL and category validation run at the preview step, so a bad input fails before confirm.
- - `seo_gbp_media_delete`: the live item's category, format, `googleUrl`/thumbnail, create time and view
-    count.
-  Read the preview: it catches a wrong `connection_id`, which on a multi-location account means
-  publishing to the wrong branch.
+- **The two-step confirm is not optional, and it covers all SEVEN writes** (Availability). Each
+  returns `requires_confirm: true` with a preview first and publishes only on an identical repeat with
+  `confirm: true`; there is no unlisted GBP write that publishes immediately. The previews differ and
+  the differences are the point (each play above says what its preview shows; `removed[]` on
+  `seo_gbp_services_update` and "primary imagery replaced" on `seo_gbp_media_add` are the two that
+  save you). Read the preview: it catches a wrong `connection_id`, which on a multi-location account
+  means publishing to the wrong branch.
 - **Never loop a write tool across reviews, attributes or locations.** One reply, one confirm, one check:
   a batch published in seconds reads as automated to every human who sees it.
 - **Do not present local rank tools as pack truth by default.** Ranking rows carry an organic or local

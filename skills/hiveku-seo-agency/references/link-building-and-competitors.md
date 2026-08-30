@@ -1,11 +1,43 @@
 # Link Building and Competitor Intelligence - Operator Manual
 
-**What this covers.** The authority baseline, the opportunity queue, lost-link recovery, the
-competitor set, the change-response loop, SERP-level link-gap work on one money keyword, and the
-outreach handoff to Outbound. **Load this when** the ask is backlinks, referring domains, anchor
-text, link velocity, toxic links, link reclamation, "why did they hold and we dropped", competitor
-teardowns, or the Authority section of the monthly report. SKILL.md gives the arc (Plays 2 and 5);
-this is the manual those plays point at, with the response shapes, traps, numbers and sequencing.
+## What this covers / when to load this
+
+The authority baseline, the opportunity queue, lost-link recovery, the
+competitor set, the change-response loop, SERP-level link-gap work on one money keyword, the metered
+vendor catalogue for links and competitor intelligence, and the outreach handoff to Outbound. **Load
+this when** the ask is backlinks, referring domains, anchor text, link velocity, toxic links, link
+reclamation, "why did they hold and we dropped", competitor teardowns, or the Authority section of
+the monthly report. Not for brand mentions, sentiment and digital-PR angles
+(`references/digital-pr-and-brand-mentions.md`), keyword gaps as content planning
+(`content-strategy.md` Play C4) or internal linking (`technical-seo.md`). SKILL.md gives the arc;
+this is the manual it points at, with the response shapes, traps, numbers and sequencing.
+
+## Availability
+
+Cost classes: A = free DB read; write = free, confirm-gated; B = Labs per request (COUNTRY codes
+only); C = live SERP; D = backlinks per request (`backlinks_bulk_*` take up to 1,000 targets in one
+call, the cheap way to qualify a list). A 402 on any of them is a negative DataForSEO balance.
+
+| Tool | Status | Cost class | Note |
+|---|---|---|---|
+| `seo_backlinks_list` | LIVE | A | profile row from the dashboard's Domain Analysis run; the per-link rows have no writer (4.1) |
+| `seo_backlink_opportunities` | LIVE | A | account-wide prospect queue; `project_id` ignored |
+| `seo_new_lost_backlinks` | LIVE | A | the MANUAL link tracker (links you built or pursued), not DataForSEO new/lost; `since` ignored (4.2) |
+| `seo_bing_backlinks` | LIVE | A | Bing's independent count, no anchors |
+| `seo_competitors_list` (= `seo_list_competitors`), `seo_add_competitor` | LIVE | A / write | add is confirmed by name; a Domain Analysis run replaces the list |
+| `seo_competitor_changes` | LIVE | A | written by a workflow node; empty forever without one |
+| `seo_serp_get` | LIVE | A | stored SERP rows (no writer today); the live SERP is `seo_research({ action: 'serp' })` or `serp_organic_live_advanced`, class C |
+| `backlinks_summary`, `backlinks_backlinks`, `backlinks_referring_domains`, `backlinks_anchors`, `backlinks_referring_networks`, `backlinks_domain_pages`, `backlinks_domain_pages_summary`, `backlinks_available_filters` | LIVE | D | profile and page-level reads for ANY domain (section 7) |
+| `backlinks_timeseries_summary`, `backlinks_timeseries_new_lost_summary` | LIVE | D | velocity over `date_from`/`date_to`, grouped day/week/month/year |
+| `backlinks_bulk_ranks`, `backlinks_bulk_spam_score`, `backlinks_bulk_referring_domains`, `backlinks_bulk_backlinks`, `backlinks_bulk_new_lost_backlinks`, `backlinks_bulk_new_lost_referring_domains`, `backlinks_bulk_pages_summary` | LIVE | D | prospect-list qualification in one call, up to 1,000 targets |
+| `backlinks_domain_intersection`, `backlinks_page_intersection` | LIVE | D | the two gap tools |
+| `dataforseo_labs_google_competitors_domain`, `dataforseo_labs_google_serp_competitors`, `dataforseo_labs_google_ranked_keywords`, `dataforseo_labs_google_domain_rank_overview`, `dataforseo_labs_google_domain_intersection`, `dataforseo_labs_google_subdomains` | LIVE | B | competitor discovery and sizing (section 7) |
+| `domain_analytics_technologies_domain_technologies`, `domain_analytics_whois_overview` | LIVE | B | a rival's tech stack; domain age and registrar with backlink and traffic stats |
+| `seo_research` | LIVE | B / C / D | actions `domain-backlinks`, `referring-domains`, `backlinks-anchors`, `backlinks-timeseries`, `backlinks-history`, `backlinks-competitors`, `bulk-page-summary`, `link-gap`, `competitors`, `ranked-keywords`, `gbp-locations`, `gbp-info`; returns without persisting |
+| `web_scrape`, `web_map`, `web_crawl`, `web_extract`, `web_search` | LIVE | free | verification and contact discovery |
+| `seo_backlink_tracker_list`, `seo_backlink_tracker_add`, `seo_backlink_tracker_get`, `seo_backlink_tracker_update`, `seo_backlink_tracker_delete` | INCOMING (fallback: `seo_new_lost_backlinks` reads it; a won link is logged in the dashboard and mirrored in a PM task) | A / write | the manual tracker: `url`, `title`, `target_url`, `target_anchor`, `link_type`, `status`, `date_published`, `page_authority`, `domain_authority`, `notes`, `project_id` = the WEBSITE project id |
+| `seo_backlink_opportunity_create`, `seo_backlink_opportunity_get`, `seo_backlink_opportunity_update`, `seo_backlink_opportunity_delete` | INCOMING (fallback: dashboard prospecting feeds the queue; `status` and `outreach_attempts` change in the dashboard, mirrored in the PM task) | A / write | `target_domain`, `source_domain`, `source_type`, `domain_rating`, `contact_email`, `status`, `notes` |
+| `seo_competitor_get`, `seo_competitor_update`, `seo_competitor_delete` | INCOMING (fallback: read via `seo_competitors_list`; removal is a dashboard action, the agreed set lives in memory) | A / write | by `competitor_id`; delete is confirmed by name, one at a time |
 
 ---
 
@@ -133,7 +165,9 @@ narrow-and-strong, deciding whether the next campaign chases volume or a few rea
 
 **Quarterly, on the same pull:** page while `pagination.total_pages > 1` and build the anchor
 distribution from `anchor_text` (branded, naked URL, generic, partial match, exact-match commercial)
-against `profile.toxic_score`. Rising exact-match share becomes a real problem when those anchors
+against `profile.toxic_score`; when the link rows are empty (4.1), `backlinks_anchors({ target })`
+or `seo_research({ action: 'backlinks-anchors', target })` [SPENDS, class D] returns the
+distribution directly. Rising exact-match share becomes a real problem when those anchors
 concentrate in a few low-quality domains acquired in a narrow window: a bought-link burst that
 usually predates the engagement.
 
@@ -163,9 +197,13 @@ Ten minutes weekly, and the highest-yield recurring habit in link work.
 
 **Closes the loop:** `pm_tasks_create` per recoverable link, titled with source domain plus
 classification, so the report can count recoveries. Ship our-fault redirect fixes through the site
-tools in the technical reference, then `pm_tasks_complete`. There is **no MCP write tool for the
-link tracker**: logging a won link is a dashboard action, so say so plainly and mirror it in a PM
-task.
+tools in the technical reference, then `pm_tasks_complete`. The link-tracker write tools are
+INCOMING (Availability); until they land, logging a won link is a dashboard action, so say so
+plainly and mirror it in a PM task. For velocity beyond the profile's 30-day counters,
+`backlinks_timeseries_new_lost_summary({ target, date_from, date_to })` or
+`seo_research({ action: 'backlinks-timeseries', target, date_from, date_to })` [SPENDS, class D]
+chart new and lost referring domains by week or month: DataForSEO's new/lost, which
+`seo_new_lost_backlinks` is NOT (it reads the manual tracker).
 
 ### Play C - Opportunity triage and the outbound handoff
 
@@ -210,7 +248,19 @@ angle copy. Get a yes. Outreach is client-facing sending: never silent, never bu
    **by name, one at a time**. A duplicate returns 409 "already tracked": a successful no-op, not an
    error to retry.
 4. Publishing velocity has no tool: `web_scrape` or `web_crawl` the competitor's blog index and
-   count posts per month over the last quarter.
+   count posts per month over the last quarter. Link velocity does:
+   `backlinks_timeseries_summary({ target })` [SPENDS, class D] by month for the rival and for us.
+5. Teardown extras, each class B and confirmed before spending:
+   `domain_analytics_technologies_domain_technologies({ target })` lists the rival's stack (CMS,
+   analytics, tag manager, schema plugins, chat, review widgets), which explains a rich-result edge
+   or a speed gap in one call; `domain_analytics_whois_overview` returns domain age and registrar
+   with backlink and traffic stats, the normalizer for "they have 3,000 referring domains" (a
+   15-year-old domain should); `dataforseo_labs_google_subdomains({ target })` lists a rival's
+   subdomains with their ranking distribution, which finds the blog, the docs or the store that is
+   doing the ranking when the root domain looks quiet.
+6. Editing a tracked competitor's fields or removing one from the set has INCOMING tools
+   (Availability); until then removal is a dashboard action and the agreed set in memory is the
+   restore point.
 
 **Read out of it:** `keyword_gap` and `shared_keywords` size the overlap; `trend_direction` and
 `market_share` say who is moving (`account_context_get` and `get_account_info` often already name
@@ -380,47 +430,69 @@ competitor movement, including why we did not respond where we did not; next mon
 prospects, asset and timing window from 1.4. Every number must be reproducible from a named tool
 call, and a figure from `web_scrape` or a dashboard view is labelled as such.
 
-**Capabilities with no tool** (name the fallback, never invent a tool): creating an opportunity row;
-writing to the link tracker; marking a competitor change responded; editing or deleting a tracked
-competitor; disavow; anchor-distribution reports; competitor link velocity. All are dashboard
-actions or `web_*` research, mirrored into PM tasks and memory. And `seo_project_get` is not the
-SEO-project read: it carries site-level SEO settings and takes the builder project id, not the
-`seo_list_projects` id.
+**Where each capability lives** (name the fallback, never invent a tool). Anchor distribution:
+`backlinks_anchors` or `seo_research({ action: 'backlinks-anchors' })`. Link velocity, ours or a
+rival's: `backlinks_timeseries_summary`, `backlinks_timeseries_new_lost_summary`, or
+`seo_research` actions `backlinks-timeseries` and `backlinks-history`. Creating or editing an
+opportunity row, writing to the link tracker, and editing or deleting a tracked competitor: all
+INCOMING (Availability table), dashboard actions until then, mirrored into PM tasks and memory.
+Marking a competitor change responded: none; the PM task is the record. Disavow: none, and a hard
+stop (section 5). And `seo_project_get` is not the SEO-project read: it carries site-level SEO
+settings and takes the builder project id, not the `seo_list_projects` id.
 
 ---
 
-## 7. The metered vendor profile catalog and the outreach program (moved from SKILL.md Play 5)
+## 7. The metered vendor catalogue and the outreach program (the hub's link and competitor plays)
 
-This section carries SKILL.md's Play 5 body. The plays above (A-F) run on the project-scoped
-`seo_*` surface; the catalog below is the per-call-billed DataForSEO `backlinks_*` family -
-same cost rules as `references/metered-research-suite.md` (batch, persist, never re-pull
-unchanged data), and it answers for ANY domain, ours or a competitor's.
+The plays above (A-F) run on the project-scoped `seo_*` surface; the catalogue below is the
+per-call-billed DataForSEO family, same cost rules as `references/metered-research-suite.md`
+(batch, persist, never re-pull unchanged data), and it answers for ANY domain, ours or a rival's.
+Every call here is confirmed with the human first.
 
-Profile (target = any domain, ours or theirs):
-- `backlinks_summary` - topline backlinks, referring domains, rank. Run monthly for
-  us + the competitor set.
-- `backlinks_backlinks` - individual links, filterable; `backlinks_referring_domains`
- - domain-level rollup.
-- `backlinks_anchors` - anchor-text distribution; flag over-optimized exact-match
-  anchors before they become a problem.
-- `backlinks_bulk_spam_score` - spam scores in bulk. A spike in high-spam referrers
-  is a hygiene item, not a panic item.
-- `backlinks_timeseries_new_lost_summary` - new/lost trend over time;
-  `seo_new_lost_backlinks({ project_id, since })` - project-scoped delta since the
-  last review.
+**Competitor intelligence (class B).** Run on a priority cluster before writing for it, and feed the
+winners into keyword-research qualification:
+- `dataforseo_labs_google_competitors_domain({ target })` - SERP-overlap competitors (month 1, then
+  quarterly); cross-check against who the client THINKS competes, both lists matter; persist with
+  `seo_add_competitor`, read back with `seo_list_competitors`.
+- `dataforseo_labs_google_domain_intersection` - THE gap tool: keywords a rival ranks for that we
+  do not, sized. `dataforseo_labs_google_serp_competitors` (who owns the SERPs for a keyword set),
+  `dataforseo_labs_google_ranked_keywords` (everything a rival ranks for),
+  `dataforseo_labs_google_domain_rank_overview` (traffic and rank distribution).
+- Monitoring: `seo_competitor_changes({})` weekly (Play E); brief the client when a rival ships
+  something material. Deliverable: quarterly teardown (`seo_deliverable_save`, type
+  `competitor_analysis`): their clusters, publishing velocity, link velocity, stack (Play D step 5),
+  and our counter-moves.
 
-Prospecting:
-- `seo_backlink_opportunities({ project_id })` - built-in gap analysis against
-  tracked competitors.
+**Profile (class D; target = any domain):**
+- `backlinks_summary` - topline backlinks, referring domains, rank. Monthly for us plus the set.
+- `backlinks_backlinks` - individual links, filterable (`backlinks_available_filters` lists the
+  filter fields per endpoint, read it once before building a filter); `backlinks_referring_domains`
+  - domain-level rollup; `backlinks_referring_networks` - referring IP networks, the check for a
+  link scheme behind a sudden spike.
+- `backlinks_anchors` - anchor-text distribution; flag over-optimized exact-match anchors before
+  they become a problem.
+- `backlinks_timeseries_summary` and `backlinks_timeseries_new_lost_summary` - velocity and
+  new/lost by day, week, month or year between `date_from` and `date_to`. These are DataForSEO's
+  new/lost; `seo_new_lost_backlinks` is the MANUAL tracker of links you built, a different record.
+- `backlinks_domain_pages` and `backlinks_domain_pages_summary` - a domain's pages ranked by the
+  links they earn. Run on a rival: their most-linked pages ARE the linkable-asset brief (what earned
+  links in this niche), and on us: which asset to point a campaign at.
+
+**Bulk qualification (class D, up to 1,000 targets per call):** `backlinks_bulk_ranks`,
+`backlinks_bulk_spam_score`, `backlinks_bulk_referring_domains`, `backlinks_bulk_backlinks`,
+`backlinks_bulk_new_lost_backlinks`, `backlinks_bulk_new_lost_referring_domains`,
+`backlinks_bulk_pages_summary`. One call qualifies a whole prospect list (rank, spam, referring
+domains, recent growth) instead of one summary per domain; the R-A-P-D authority axis comes from
+here. A spike in high-spam referrers is a hygiene item, not a panic item.
+
+**Prospecting:**
+- `seo_backlink_opportunities({ project_id })` - the stored prospect queue (Play C: the endpoint
+  ignores `project_id`, filter by `target_domain` yourself).
 - `backlinks_domain_intersection` - who links to multiple competitors but not us.
-- `backlinks_page_intersection` - who links to the competitor PAGES ranking for our
-  target keyword (link gap for a single SERP - the highest-relevance list there is).
-- Digital-PR angles: `talk_to_department({ domain: 'seo', message })` with the
-  client's assets (proprietary data, tools, expertise) to generate campaign angles
-  worth a link. Persist chosen angles as pm tasks with owners and deadlines.
-
-(Play C above documents `seo_backlink_opportunities`' real behavior: the endpoint ignores
-`project_id`, so filter by `target_domain` yourself on multi-site accounts.)
+- `backlinks_page_intersection` - who links to the competitor PAGES ranking for our target keyword
+  (link gap for a single SERP: the highest-relevance list there is).
+- Digital-PR angles, unlinked-mention reclamation and the sentiment watch:
+  `references/digital-pr-and-brand-mentions.md`.
 
 Rule: links to money pages arrive slowly and look unnatural when forced. Aim campaigns
 at linkable assets, then route the authority internally (`seo_internal_links`).
@@ -429,12 +501,11 @@ Running the outreach (cross-discipline with Outbound - this is a paid agency ser
 1. Build the target list from the prospecting tools above. For each domain record WHY
    it should link: which of our pages/assets, and the competitor link that proves the
    relevance (from `backlinks_page_intersection`).
-2. Find the human: `web_search` / `web_scrape` the site for author, editor or
-   contact pages; for local prospects `seo_research({ action: 'gbp-locations', query,
-   location_name })` finds businesses by query and `seo_research({ action: 'gbp-info', domain })`
-   (or `target` / `place_id`) returns one business's snapshot. Both spend DataForSEO credits
-   under the account's monthly SEO research cap - confirm the spend with the human before
-   calling. Verify addresses before loading - list quality IS deliverability.
+2. Find the human: `web_search` / `web_scrape` the site for author, editor or contact pages; for
+   local prospects `seo_research({ action: 'gbp-locations', query, location_name })` finds
+   businesses and `seo_research({ action: 'gbp-info', domain })` (or `target` / `place_id`)
+   returns one business's snapshot, both metered and confirmed first. Verify addresses before
+   loading: list quality IS deliverability.
 3. Hand the list to the outbound program (the `hiveku-outbound-agency` skill has a
    dedicated "Backlink outreach campaigns" section): contacts loaded via
    `crm_contacts_bulk_create` tagged link-outreach, a Smartlead campaign for the
@@ -443,10 +514,9 @@ Running the outreach (cross-discipline with Outbound - this is a paid agency ser
    with `backlinks_backlinks` / `seo_new_lost_backlinks`; log each won link
    (`crm_create_activity`) and report links-won + cost-per-link in the monthly report.
 
-Visibility caveat on step 4: `crm_create_activity` is a real tool but is NOT visible to a
-`marketing-seo` scoped key - that profile carries only the seven CRM contact tools
-(`crm_contacts_bulk_create` in step 3 IS one of them). On a scoped key, record the won link as
-a PM task instead, which also matches section 6's rule that the PM task is the record of a won
-link. Outreach never sends from this skill: drafting and handing off is this file's job,
-sending is Outbound's, and "just send the pitches from here" is refused - including the
-workarounds of sending through a survey, a GBP review reply, or `social_create_post`.
+Visibility caveat on step 4: `crm_create_activity` is NOT visible to a `marketing-seo` key (that
+profile carries only the seven CRM contact tools; `crm_contacts_bulk_create` in step 3 is one). On
+a scoped key record the won link as a PM task, section 6's rule anyway. Outreach never sends from
+this skill: drafting and handoff is this file's job, sending is Outbound's, and "just send the
+pitches from here" is refused, including sending through a survey, a GBP review reply or
+`social_create_post`.
