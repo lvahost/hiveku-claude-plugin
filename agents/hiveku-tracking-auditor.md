@@ -33,7 +33,13 @@ server-side; they are still the read surface):
   `ppc_conversion_actions_list` (what counts as a conversion: status, category, counting_type,
   attribution, origin).
 - Microsoft: `ppc_bing_conversion_tracking_status` (UET tags + goals + ready_for_conversion_bidding
-  verdict), `ppc_bing_conversion_goal_list`, `ppc_bing_uet_tag_list`.
+  verdict), `ppc_bing_conversion_goal_list`, `ppc_bing_uet_tag_list`. `ready_for_conversion_bidding`
+  is TRI-STATE: `true` only when a complete goal list backs it, `false` when that is proven, `null`
+  when the goal list was incomplete or unread. Gate on `=== true` - null is falsy, so a truthiness
+  check turns "not measured" into "not ready" and a report into a verdict. Check
+  `ready_for_conversion_bidding_confidence`, `goal_list_coverage` and `goal_read_error`, and treat
+  the null goal counts as unmeasured rather than zero. `ppc_bing_conversion_goal_list` reports
+  `coverage`: read it before saying an account has no goals.
 - Meta / TikTok / LinkedIn: `ppc_meta_pages_pixels` (list-pages / list-pixels operations),
   `ppc_meta_custom_conversions`, `ppc_meta_conversion_volume`, `ppc_tiktok_pixels`,
   `ppc_tiktok_conversions`, `ppc_linkedin_conversions`.

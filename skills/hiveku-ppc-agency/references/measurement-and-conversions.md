@@ -427,7 +427,8 @@ disagreeing, check date range and timezone basis, then the attribution window.
 using Google-only tools; the ops family fails on microsoft, meta, tiktok, linkedin. Confirm `connection_id`
 is present: almost everything here requires it, and only `ppc_digest` and the cached reads do not.
 
-**Sync will not complete.** `ppc_sync` is incremental, blocks up to ~60s. For a full historical backfill use
+**Sync will not complete.** `ppc_sync` is incremental and blocks up to about 120s, where the network
+edge ends the call. For a full historical backfill use
 `ppc_sync_async` and poll the returned job with the job-status tool named in SKILL.md section 0.3. Do not
 loop `ppc_sync` hoping for a different outcome.
 

@@ -121,7 +121,11 @@ Never propose a change class without the read that justifies it in hand.
 `ppc_digest`, `ppc_campaign_list`, `ppc_ad_group_list`, `ppc_ad_list`, `ppc_campaign_get` and
 `ppc_metrics` all read the LOCAL mirror. They are exactly as fresh as the last sync.
 
-- `ppc_sync({ connection_id })` is synchronous and can block the call for up to 300s.
+- `ppc_sync({ connection_id })` is synchronous, and the network bounds it at about 120s, not the
+  300s this file used to claim. The edge in front of Hiveku ends a synchronous call there and
+  answers 524, so a sync that needs longer can never complete on this lane no matter how the
+  budgets are set. After a timeout, or for any full backfill, use `ppc_sync_async` +
+  `job_status_get` rather than re-sending.
 - `ppc_sync_async({ connection_id })` returns a job id immediately; poll `job_status_get({ job_id })`.
   Use it for 5-year backfills. It accepts an `idempotency_key`, so a retry after a conversation
   resume returns the existing job instead of stacking a second one.

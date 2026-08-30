@@ -339,8 +339,15 @@ show, confirm.
 
 - **`ppc_bing_conversion_tracking_status`** - UET tags and install state, goals and recording state,
   `ready_for_conversion_bidding`, plain-language verdict. **Run it BEFORE switching any campaign to
-  max_conversions, target_cpa or target_roas**: the bidding tool refuses without a bidding-eligible
-  goal, so checking first saves a failed change.
+  max_conversions, target_cpa or target_roas**: `ppc_platform_bidding_strategy_update` does NOT
+  refuse an unbacked strategy (that refusal was removed on 2026-08-24) - it reports
+  `conversion_signal` and applies the switch anyway, so checking first is the only gate there is.
+  **`ready_for_conversion_bidding` is tri-state:** `true` only when a complete goal list backs it and
+  a goal has recorded, `false` when that is proven, and `null` when the goal list was incomplete or
+  never read - which authorizes nothing either way. Gate on `=== true`; null is falsy and reads as
+  `false` in any truthiness check. `ready_for_conversion_bidding_confidence` says `verified` only
+  when the flag is a real boolean, and the goal counts beside it are `null`, never `0`, when the read
+  did not happen.
 - **`ppc_bing_uet_tag_list`** / **`ppc_bing_uet_tag_create`** - a tag not "recording" means the site
   snippet is missing or broken, the **number one reason a Bing account reports zero conversions**.
 - **`ppc_bing_conversion_goal_list`** - the exact goal NAME a Microsoft mapping needs.

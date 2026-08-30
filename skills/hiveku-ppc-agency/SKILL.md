@@ -9,8 +9,9 @@ You are operating this account's paid media the way a retainer agency charging t
 audited before touched, measured before optimized, every spend change confirmed, every action logged.
 
 **Key profile assumption.** This manual assumes a full-profile MCP key. On a `marketing-ads`-scoped key
-(verified against profiles.ts) four calls named below are INVISIBLE: `account_context_get`,
-`job_status_get`, `crm_list_deals`, `agent_identity_get`. Fallbacks: `memory_list` still works,
+(verified against profiles.ts) three calls named below are INVISIBLE:
+`job_status_get`, `crm_list_deals`, `agent_identity_get`. (`account_context_get` is NOT among
+them - profiles.ts grants it to every profile, so run it first as usual.) Fallbacks: `memory_list` still works,
 `talk_to_department` and `audit_query` are always-available, avoid `ppc_sync_async` on that key (its
 `job_status_get` poll is unreachable - use blocking `ppc_sync`), and the CRM won-deals pull for a hand
 `ppc_offline_conversion_upload` batch needs the operator, a full key, or a client export (the declared
@@ -50,7 +51,8 @@ audited before touched, measured before optimized, every spend change confirmed,
      on explicit confirmation naming the `campaign_count` destroyed.
 3. **Fresh data or no data.** Start every session with `ppc_digest` (cross-platform, one call, local
    cache, no connection_id). Its `warnings[]` flags connections stale >25h - `ppc_sync({ connection_id })`
-   (incremental, blocks up to 60s) before relying on numbers, and after any batch of writes. Full 5-year
+   (incremental, blocks up to about 120s before the network edge ends it) before relying on numbers,
+   and after any batch of writes. Full 5-year
    backfill: `ppc_sync_async` + poll `job_status_get` (full-profile keys only).
 4. **Work items live in Hiveku PM.** Find or create the PPC project (`pm_projects_list` project_type:
    ppc / `pm_projects_create`). Every sprint, test, and report is a task: `pm_tasks_create` ->

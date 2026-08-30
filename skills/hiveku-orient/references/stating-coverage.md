@@ -98,6 +98,9 @@ and report the result as complete, you are guessing.
 | `seo_gsc_index_coverage` | **50 URLs per call.** Fans out URL Inspection per URL; split larger sets into batches |
 | `seo_gsc_search_analytics` | Up to **25000 rows** per call; paginate with `start_row` |
 | `ppc_search_terms_report` | `days` default **28** (1-365), `limit` default **1000** (1-10000) |
+| `ppc_bing_search_terms_report` | `days` default **30** (1-365); `limit` caps returned rows only. `zero_conversions_only` and `min_spend` narrow server-side and combine as AND; with either set, RAISE `limit` |
+| `ppc_bing_audience_list` | `limit` default **25**, max **200**, plus `offset`. Filters: `name_contains`, `audience_types` |
+| `ppc_bing_ad_extension_list` | `limit` default **200**, ceiling **1000**, plus `offset`. Microsoft's 100-ids-per-call cap is chunked internally, so do NOT page for the 100 |
 | `ppc_change_history` | `days` default **7**, **max 30** (a Google API limit, not ours); `limit` default 200, max 10000 |
 | `ppc_keyword_list` | `days` default 30, `limit` default **1000** (1-10000) |
 | `ppc_period_comparison` | per-period `limit` default **500**, max 10000 |
@@ -113,6 +116,18 @@ and report the result as complete, you are guessing.
 `ppc_bing_search_terms_report` is the Microsoft-side twin of `ppc_search_terms_report`; a Google
 `connection_id` on a Bing tool returns a wrong-platform error rather than an empty result, so an
 empty report is not evidence of no search terms.
+
+**The Microsoft reads are the family where a short answer most often means a stopped read, so each
+one publishes what it covered. Quote those fields, not the row count.**
+
+| Tool | The field that carries the coverage |
+| --- | --- |
+| `ppc_bing_search_terms_report` | `summary`, `total_rows` and `wasted_spend` always describe the **full** report, never the filtered slice. So `rows: []` on a filtered call is a filter miss (`filter.empty_reason`), never an account with no waste. `truncated` describes `rows[]` only, and is present even on the empty and `report_pending` responses |
+| `ppc_bing_audience_list` | `audience_count` is THIS page, `total_count` the rows matching your filters, `total_on_account` every row the account returned before filtering, `truncated` / `next_offset` whether more matched rows remain. Microsoft ships its global in-market catalog to every account, so `total_on_account` near a thousand says nothing about what the client owns. `filter_gaps` names rows excluded from `total_count` because they could not be classified, which is not the same as failing the filter |
+| `ppc_bing_ad_extension_list` | `extension_types_read` is the scope, so a zero means none of THOSE types. `truncated` / `next_offset` for more ids, `stopped_reason` when a wall-clock budget ended the chunk loop early, `null_entries` and `partial_errors` for what Microsoft would not return. `extension_count` counts what came back and can be below `ids_requested` |
+| `ppc_bing_criterions_list` | `criterion_count` is **null** whenever `partial_read` is true, with `criterion_count_at_least` as the floor and `unreadable_criterion_types` naming the gap. `has_location_targeting` is tri-state: `false` only when both geo types were read cleanly, else `null` with `location_targeting_unknown_reason` |
+| `ppc_bing_impression_share_report` | `summary.impression_share_coverage` (`share_measured` / `share_unmeasured` / `budget_unmeasured` / `rank_unmeasured`, plus `unmeasured_campaigns`). An empty `budget_limited` beside `budget_unmeasured > 0` is not a clean bill of health, and `avg_impression_share` is null when nothing was measured |
+| `ppc_bing_conversion_goal_list` | `coverage`. When the account had to be enumerated through the UET-tag lane, App-install, offline and in-store goals cannot appear at all, so an empty list is a scoped read and not an empty account |
 
 **One documented cap in this family is wrong, and it is the busiest tool in the set.**
 `crm_list_contacts` describes `limit` as "Results per page (default 25)". The route

@@ -74,6 +74,37 @@ const DESC = new RegExp(String.raw`"?description"?:\s*(${STR}(?:\s*\+\s*${STR})*
 const METHOD = /"?method"?:\s*['"]([A-Z]+)['"]/;
 const STR_G = new RegExp(STR, 'g');
 
+/**
+ * The server's own budget for this tool, so the bridge can stop aborting calls
+ * the server was still working on.
+ *
+ * ★ WHY IT IS GENERATED RATHER THAN HAND-LISTED. lib/upstream.mjs used to hold a
+ * three-key table of per-tool timeouts, and it was wrong in both directions at
+ * once: 254 tools declare `mapping.timeoutMs` above the bridge's 60s default and
+ * were aborted client-side mid-call, while the three tools the table DID name
+ * map to routes that declare no timeoutMs at all, so the bridge waited 180s for
+ * a proxy that had already given up at 60s. A table that must track another
+ * repo drifts silently; a generated field cannot.
+ *
+ * ★ SCOPED TO THE `mapping` OBJECT, not the whole tool body. `web_scrape`
+ * declares an INPUT PARAMETER also called timeoutMs (`timeoutMs: { type:
+ * 'number' … }` in its inputSchema), which is a value the caller passes to
+ * Firecrawl, not a budget for the proxy hop. Matching it would publish a
+ * downstream tool's argument as this tool's client budget. Requiring a NUMERIC
+ * value already excludes that one, but the scoping is what keeps the next
+ * numeric-defaulted parameter from silently becoming a timeout.
+ *
+ * ★ NULL, NEVER 0, when nothing is declared. A tool with no mapping.timeoutMs
+ * has not declared 60s: it has declared nothing, and the proxy applies its own
+ * default. The consumer has to be able to tell those apart - see timeoutFor()
+ * in lib/upstream.mjs, which treats null as "unknown" and falls back to the
+ * infrastructure ceiling rather than to a short guess.
+ */
+const MAPPING_KEY = /(?:^|[^A-Za-z0-9_])"?mapping"?:/;
+// Both key styles again, and both number styles: `timeoutMs: 160_000` (TS
+// numeric separators) and `"timeoutMs": 160000` (the pasted-JSON declarations).
+const TIMEOUT_MS = /"?timeoutMs"?:\s*([0-9][0-9_]*)/;
+
 function unquote(literal) {
   // Join a `'a' + 'b'` run into one string without eval.
   return (literal.match(STR_G) || [])
@@ -150,10 +181,16 @@ function extract(source) {
     const body = source.slice(from, to);
     const desc = body.match(DESC);
     const method = body.match(METHOD);
+    // Read the budget out of the mapping object alone; see TIMEOUT_MS above for
+    // the input-parameter collision this scoping avoids.
+    const mappingAt = body.search(MAPPING_KEY);
+    const timeout = mappingAt === -1 ? null : body.slice(mappingAt).match(TIMEOUT_MS);
+    const timeoutMs = timeout ? Number(timeout[1].replace(/_/g, '')) : null;
     out.push({
       name: m[1] ?? m[2],
       description: desc ? unquote(desc[1]) : '',
       method: method ? method[1] : null,
+      timeoutMs: Number.isFinite(timeoutMs) && timeoutMs > 0 ? timeoutMs : null,
     });
   }
   return out;
@@ -206,16 +243,27 @@ if (FROM_SOURCE || !DIR_ARG) {
     console.error(`[gen-tool-index] live collection failed: ${e.message}`);
     process.exit(2);
   });
-  // The live list has no HTTP method — that only exists in source. Merge it in
-  // where we have it, so the read-only classification keeps working.
+  // The live list has no HTTP method and no timeout: both exist only in
+  // source, because the wire tools/list carries name/description/inputSchema
+  // and nothing about the route behind them. Merge them in where we have them,
+  // so the read-only classification and the bridge's timeout keep working.
+  //
+  // ★ A tool the source parse cannot see (the ~125 DataForSEO tools registered
+  // at runtime) keeps timeoutMs null. That is the honest answer - "not read" -
+  // and the bridge treats it as unknown, not as "no budget declared".
   const methods = new Map();
+  const timeouts = new Map();
   if (fs.existsSync(SERVER_SRC)) {
-    for (const t of collectFromSource()) if (t.method) methods.set(t.name, t.method);
+    for (const t of collectFromSource()) {
+      if (t.method) methods.set(t.name, t.method);
+      if (t.timeoutMs != null) timeouts.set(t.name, t.timeoutMs);
+    }
   }
   raw = live.map((t) => ({
     name: t.name,
     description: String(t.description ?? '').replace(/\s+/g, ' ').trim(),
     method: methods.get(t.name) ?? null,
+    timeoutMs: timeouts.get(t.name) ?? null,
   }));
   source = 'live MCP tools/list (authoritative — includes runtime-registered tools)';
 }
@@ -225,6 +273,10 @@ const tools = raw
     name: t.name,
     dept: t.name.includes('_') ? t.name.slice(0, t.name.indexOf('_')) : null,
     method: t.method,
+    // The server's declared budget for this tool, or null when it declares
+    // none. lib/upstream.mjs reads it so the bridge stops aborting calls the
+    // server was still working on. null means UNKNOWN, never "60s".
+    timeoutMs: t.timeoutMs ?? null,
     // ★ FULL description, not trimmed. This file is read from disk and searched
     // locally; it is NEVER sent to a model, so trimming it buys nothing and
     // costs everything. A 400-char cap truncated 628 of 1,656 descriptions and
@@ -237,6 +289,7 @@ const tools = raw
   .sort((a, b) => a.name.localeCompare(b.name));
 
 const missingDesc = tools.filter((t) => !t.description).length;
+const withTimeout = tools.filter((t) => t.timeoutMs != null).length;
 
 // Gates. A silently tiny or description-less index is worse than a hard failure:
 // search returns nothing and the tools look like they do not exist.
@@ -248,13 +301,27 @@ if (missingDesc > tools.length * 0.05) {
   console.error(`[gen-tool-index] ${missingDesc} tools have no description — collection is broken`);
   process.exit(4);
 }
+// ★ A timeout extraction that quietly stops matching is INVISIBLE at runtime:
+// every tool falls back to the ceiling and long calls still work, so nobody
+// notices until a short-budget tool waits 135s for a proxy that gave up at 60s.
+// The server source declares 254 of these today; zero means the regex broke.
+// Only checkable when the source is on disk - a live-only machine cannot see
+// mappings at all, and "cannot verify" must not masquerade as "verified".
+if (fs.existsSync(SERVER_SRC) && withTimeout === 0) {
+  console.error('[gen-tool-index] no tool carries a mapping timeoutMs - the extraction is broken');
+  process.exit(5);
+}
 
 const payload = {
   _comment:
     'GENERATED by scripts/gen-tool-index.mjs. Do not edit. Searched locally by the plugin so the ' +
-    'full tool surface stays discoverable without advertising ~1,500 tool definitions per session.',
+    'full tool surface stays discoverable without advertising ~1,500 tool definitions per session. ' +
+    'timeoutMs is the server\'s own declared budget for the tool (mapping.timeoutMs), read by ' +
+    'lib/upstream.mjs so the bridge does not abort a call the server is still working on; null ' +
+    'means the declaration carries none, which is UNKNOWN and not a budget of zero.',
   generatedFrom: source,
   toolCount: tools.length,
+  timeoutCount: withTimeout,
   tools,
 };
 const next = JSON.stringify(payload, null, 2) + '\n';
@@ -265,11 +332,12 @@ if (CHECK) {
     console.error('[gen-tool-index] lib/tool-index.json is STALE. Run: node scripts/gen-tool-index.mjs --dir <bound-account>');
     process.exit(1);
   }
-  console.log(`[gen-tool-index] up to date (${tools.length} tools)`);
+  console.log(`[gen-tool-index] up to date (${tools.length} tools, ${withTimeout} with a server timeout)`);
 } else {
   fs.writeFileSync(OUT, next);
   console.log(
     `[gen-tool-index] wrote ${tools.length} tools ` +
-      `(${(Buffer.byteLength(next) / 1024).toFixed(0)} KB), ${missingDesc} without a description`,
+      `(${(Buffer.byteLength(next) / 1024).toFixed(0)} KB), ${missingDesc} without a description, ` +
+      `${withTimeout} with a declared server timeout`,
   );
 }

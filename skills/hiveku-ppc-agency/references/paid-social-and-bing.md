@@ -28,7 +28,7 @@ Never import a Google CPA target onto Meta or TikTok without restating what a co
 
 ## 3. Framework B: Microsoft is not "Google with less volume"
 
-A Bing audit is mostly the hunt for four import defects. (1) **Location intent** defaults to `in_or_searching`, so ads serve both to people in the area and to anyone anywhere searching about it: a pure leak on a local-service client and usually the highest-value fix in the account. (2) **No location targeting at all**, because a fresh shell serves everywhere the account allows; `ppc_bing_criterions_list` returns `has_location_targeting: false` for exactly this. (3) **Goals that record nothing**, because Bing tracking is a UET tag plus goals hung off it and an uninstalled tag makes every goal report zero, blocking smart bidding and making the channel look worthless. (4) **Negative drift**, because imported negatives are a snapshot from import day and Microsoft's matching plus its wider search-partner inventory put waste elsewhere.
+A Bing audit is mostly the hunt for four import defects. (1) **Location intent** defaults to `in_or_searching`, so ads serve both to people in the area and to anyone anywhere searching about it: a pure leak on a local-service client and usually the highest-value fix in the account. (2) **No location targeting at all**, because a fresh shell serves everywhere the account allows; `ppc_bing_criterions_list` returns `has_location_targeting: false` for exactly this - but only a **proven** `false` means it, see the tri-state rule in section 6 step 4. (3) **Goals that record nothing**, because Bing tracking is a UET tag plus goals hung off it and an uninstalled tag makes every goal report zero, blocking smart bidding and making the channel look worthless. (4) **Negative drift**, because imported negatives are a snapshot from import day and Microsoft's matching plus its wider search-partner inventory put waste elsewhere.
 
 ## 4. Framework C: the paid-social diagnosis ladder
 
@@ -62,29 +62,55 @@ First session on a Microsoft connection, then quarterly.
 1. `ppc_connection_list` for the microsoft_ads connection_id and status.
 2. `ppc_sync`, `ppc_bing_pull_ad_groups`, `ppc_bing_pull_ads`: hydrates the mirror every later write depends on.
 3. `ppc_campaign_list` / `ppc_campaign_get` for structure (cached, cross-platform).
-4. `ppc_bing_criterions_list` per campaign: `has_location_targeting`, location intent, schedules, device and demographic adjustments, audience criterions. `false` or `in_or_searching` on a local business goes to Play 8.
-5. `ppc_bing_conversion_tracking_status`: `ready_for_conversion_bidding` plus per-tag install state. Anything but ready blocks Play 7 and every conversion-based bidding strategy.
+4. `ppc_bing_criterions_list` per campaign: `has_location_targeting`, location intent, schedules, device and demographic adjustments, audience criterions. A **proven** `false`, or `in_or_searching`, on a local business goes to Play 8.
+ - **`has_location_targeting` is TRI-STATE.** Microsoft's read takes one concrete criterion type per
+     request, so this is a fan-out of 10 to 21 calls under a time budget and any of them can fail.
+     `true` means a Location or Radius query came back non-empty. `false` is returned **only** when
+     both of those types were read cleanly and both were empty, and it arrives with a `note` saying
+     so. `null` means at least one geo type could not be read, with
+     `location_targeting_unknown_reason` naming which - re-read, and never answer a null with a geo
+     write. Read `partial_read` too: when it is true, `criterion_count` is `null` and
+     `criterion_count_at_least` carries the floor that was actually seen, and
+     `unreadable_criterion_types` names the gap.
+5. `ppc_bing_conversion_tracking_status`: `ready_for_conversion_bidding` plus per-tag install state.
+ - **`ready_for_conversion_bidding` is TRI-STATE, not a boolean.** `true` only when a COMPLETE goal
+     list backs it and at least one goal has recorded. `false` means proven not ready. `null` means
+     the goal list was incomplete or never read, so nothing here authorizes a conversion strategy
+     either way - and null reads as falsy in most languages, so gate on `=== true`, never on `if
+     (!ready)`. Check `ready_for_conversion_bidding_confidence` (`verified` only when the flag is a
+     real boolean), `goal_list_coverage`, and `goal_read_error`. The counts beside it
+     (`conversion_goal_count`, `recording_goal_count`, ...) are `null`, never `0`, when the goal read
+     did not happen: a null count is not "no goals". Anything that is not a proven `true` blocks
+     Play 7 and every conversion-based bidding strategy.
 6. `ppc_bing_keyword_performance` with `ad_group_id` omitted sweeps all synced ad groups. The ONLY source of Bing keyword ids (keywords are not mirrored locally). Read editorial status: a disapproved keyword is a silent zero.
-7. `ppc_bing_ad_extension_list` and `ppc_bing_shared_negative_list_list` for coverage gaps.
+7. `ppc_bing_ad_extension_list` and `ppc_bing_shared_negative_list_list` for coverage gaps. The
+   extension read is **TYPE-SCOPED** (default `SitelinkAdExtension` + `CalloutAdExtension`), so a
+   zero means none of THOSE types and never "this account has no extensions" - `extension_types_read`
+   publishes the scope on every response. It is also chunked and time-budgeted: read `truncated`,
+   `next_offset` and `stopped_reason` before writing a coverage sentence, because a short list can be
+   a stopped read rather than a small account.
 8. Baseline into `pm_tasks_create`; connection ids, currency, targets, protected campaigns into memory via the read-merge-write protocol in section 21.
 
 Drives a defect list ranked by dollars: geo leak, dead tracking, waste, extensions, bids.
 
 ## 7. Play: Bing conversion tracking rescue (unlocks smart bidding)
 
-Trigger: `ready_for_conversion_bidding` false, or goals at zero while clicks are healthy.
+Trigger: `ready_for_conversion_bidding` is anything other than a proven `true` (a `false`, or a
+`null` that means the goal list could not be read), or goals at zero while clicks are healthy. On a
+`null`, the first move is to re-read, not to rebuild tracking: `null` is an unread list, not a
+missing goal.
 
 1. `ppc_bing_uet_tag_list`. A tag not `recording` means the snippet is missing or broken on the site: the number one reason a Bing account reports zero conversions.
 2. No tag: `ppc_bing_uet_tag_create`. Spends nothing, serves nothing, returns a `tracking_script` that must be installed site-wide before anything records. That install is a web-team job: `pm_tasks_create` with the snippet and target pages. Creating goals on an uninstalled tag and declaring victory is the classic false close.
 3. `ppc_bing_conversion_goal_list` for what exists, including `exclude_from_bidding` and revenue settings.
 4. `ppc_bing_conversion_goal_create` against the tag id. The judgment, not the schema: pick the `goal_category` the client values rather than the easiest to fire; set `revenue_type: "fixed"` with `revenue_value` wherever an average deal value exists, since that turns Bing bidding from lead-counting into value-seeking; `count_type: "unique"` on lead-gen so one person submitting twice counts once; `exclude_from_bidding: true` on goals reported but not optimised toward.
 5. Goals are created ACTIVE. They never serve or spend, but they DO change what smart bidding optimises toward, so this still needs client confirmation.
-6. Re-check `ppc_bing_conversion_tracking_status` once volume accrues. Only then may a campaign move to a conversion-based strategy via `ppc_platform_bidding_strategy_update`, which refuses one without an eligible goal. Its `target_roas` is a RATIO: 2.5 means 250 percent.
+6. Re-check `ppc_bing_conversion_tracking_status` once volume accrues. Only then may a campaign move to a conversion-based strategy via `ppc_platform_bidding_strategy_update`. **That tool does NOT refuse an unbacked strategy** - the refusal was removed on 2026-08-24. It checks the signal, REPORTS it, and applies the switch anyway: every result carries `conversion_signal`, and anything but `live` (`no_goal`, `never_recorded`, `no_recent_conversions`, `check_failed`) also carries a warning. `check_failed` means the goal read itself failed, so the switch was applied **unverified**. So the gate is yours, not the platform's: read `ppc_bing_conversion_tracking_status` first and do not send the write unless it comes back ready. Its `target_roas` is a RATIO: 2.5 means 250 percent.
 
 ## 8. Play: Bing geo leak (the signature Microsoft money bug)
 
-1. `ppc_bing_criterions_list`: confirm the leak before fixing it.
-2. `ppc_bing_location_search` resolves place names or postal codes to Microsoft location ids.
+1. `ppc_bing_criterions_list`: confirm the leak before fixing it. Confirmation means `has_location_targeting === false` with both geo types read cleanly, or an explicit `in_or_searching` intent. A `null` is not a confirmed leak: re-read first, because adding geo criteria to a campaign that already has them narrows live serving.
+2. `ppc_bing_location_search` resolves place names or postal codes to Microsoft location ids. `location_types` is exactly City, County, Country, MetroArea, PostalCode, State - Province, District and Neighborhood do not exist. Both filters fail LOUD: an unrecognised type, or a `country_code` that removed every match, comes back as an error naming what was dropped rather than as an empty list, so an empty result really does mean no match. `country_code` is matched against the presentational last component of the Bing display name, so US territories print their own component and drop out of `country_code=US`. Every call downloads Microsoft's whole locations file: budget up to two minutes and do not loop it.
 3. Propose in one message: current intent, proposed intent, the areas, expected effect (impressions and clicks fall, CPA should fall further). Get the yes.
 4. `ppc_bing_location_criterion_add`, max 100 ids, exactly one of campaign_id or ad_group_id; `bid_adjustment_percent` is not allowed with `exclude: true`.
 5. Service radius: `ppc_bing_radius_criterion_add` around a lat/lon point.
@@ -99,7 +125,11 @@ The Google search-terms report refuses a Microsoft connection; the Bing one is i
 `ppc_bing_search_terms_report` - async submit/poll/download, per-query impressions/clicks/spend/
 conversions sorted by spend, plus a `wasted_spend` summary of zero-conversion queries (the
 negatives-mining feed; optional campaign_id scopes, days 1-365 default 30, limit caps returned rows
-while summaries cover the full report). Supplement with `ppc_bing_keyword_performance`,
+while summaries cover the full report). Narrow server-side instead of paging: `zero_conversions_only`
+and `min_spend` combine as AND, and with either set you should RAISE `limit` because the matched set
+is much smaller than the report. **`summary`, `total_rows` and `wasted_spend` always describe the
+FULL report, never the filtered slice**, so `rows: []` on a filtered call is a filter miss - read
+`filter.empty_reason` - and is never evidence of an account with no waste. Supplement with `ppc_bing_keyword_performance`,
 `hiveku-data/ppc/search_terms.json` where the export covers this connection, and `ppc_metrics`. If a
 pull fails, say so rather than inventing a number.
 
@@ -118,7 +148,7 @@ Do not seed a Bing list with broad negatives copied from Google. Microsoft match
 - **Dayparting.** `ppc_bing_ad_schedule_add` restricts serving to the listed windows and **unlisted hours stop serving entirely**. A spend-shape change; propose only with hour-of-day evidence.
 - **Device.** `ppc_bing_device_criterion_set` requires the adjustment and `-100` removes the device class outright. Cap first moves at 20 to 30 percent, only on segments with 30+ clicks or 1x target CPA in cost.
 - **Demographics.** `ppc_bing_demographic_criterion_add` has no exclude flag: Microsoft expresses exclusion as `-100`. Never exclude the `unknown` bucket, usually a large share of impressions.
-- **Audiences.** `ppc_bing_audience_list` reads what the account can target plus the audience_type the attach lane needs; creation and upload are deliberately not exposed on Microsoft for PII reasons, so a new remarketing list is a UI task. `ppc_bing_audience_criterion_add` attaches one, but whether that RESTRICTS reach depends on the entity's target-and-bid mode. Read it with `ppc_bing_audience_associations_list` (every audience attached to one campaign or ad group, split targeted vs excluded, with the entity's audience_mode and the criterion_ids the remove tool takes); flip it with `ppc_bing_audience_target_setting_set` - `bid_only` is Microsoft's default (audiences adjust bids, reach unchanged - the SAFE fix for an accidentally narrowed entity), `target_and_bid` serves ONLY to the targeted audiences and collapses reach to their size, so flipping TO it is a spend-shape change needing its own confirmation. Both need a prior `ppc_sync`. `ppc_bing_audience_criterion_remove` detaches and refuses non-audience ids (geo, schedule, device, demographic go through `ppc_bing_criterion_delete`). Removing an exclusion WIDENS reach: a spend change.
+- **Audiences.** `ppc_bing_audience_list` reads what the account can target plus the audience_type the attach lane needs; creation and upload are deliberately not exposed on Microsoft for PII reasons, so a new remarketing list is a UI task. **It is PAGED and it is not a list of the client's audiences.** Microsoft returns its whole global in-market catalog to every account (roughly a thousand rows even on an account that owns none), so FILTER rather than page blindly: `audience_types: ["RemarketingList"]` for this advertiser's own lists, `name_contains` for one you can already name, plus `limit` / `offset`. Read the four numbers before saying anything about coverage: `audience_count` is THIS page, `total_count` is the rows matching your filters, `total_on_account` is every row the account returned before filtering, and `truncated` / `next_offset` say whether more matched rows exist. A short page is never the whole account. If `filter_gaps` comes back, some rows could not be classified against your filter and are excluded from `total_count` - they are not evidence of a miss. `ppc_bing_audience_criterion_add` attaches one, but whether that RESTRICTS reach depends on the entity's target-and-bid mode. Read it with `ppc_bing_audience_associations_list` (every audience attached to one campaign or ad group, split targeted vs excluded, with the entity's audience_mode and the criterion_ids the remove tool takes); flip it with `ppc_bing_audience_target_setting_set` - `bid_only` is Microsoft's default (audiences adjust bids, reach unchanged - the SAFE fix for an accidentally narrowed entity), `target_and_bid` serves ONLY to the targeted audiences and collapses reach to their size, so flipping TO it is a spend-shape change needing its own confirmation. Both need a prior `ppc_sync`. `ppc_bing_audience_criterion_remove` detaches and refuses non-audience ids (geo, schedule, device, demographic go through `ppc_bing_criterion_delete`). Removing an exclusion WIDENS reach: a spend change.
 - **New structure.** `ppc_bing_push_campaign`, then `ppc_platform_ad_group_create`, `ppc_platform_keyword_add`, `ppc_platform_responsive_search_ad_create` (Bing needs 3+ headlines, 2+ descriptions), then geo per Play 8, then `ppc_platform_enable_resource` last, with confirmation.
 
 ## 11. Play: Meta weekly read
@@ -192,7 +222,7 @@ Suppression is the most under-used first-party move: upload existing customers a
 
 1. `ppc_digest({ days: 30 })`, then `ppc_platform_period_comparison` per connection. Microsoft's reporting API is async-only, so that response may tell you to diff cached `ppc_metrics` client-side: do that rather than reporting a gap.
 2. Normalise before comparing: currency, conversion definition, attribution window, per platform. Write the assumptions into the report; an unstated assumption is how a reallocation argument becomes a lie.
-3. Rank by marginal efficiency, not average CPA. The question is what the NEXT dollar buys, which is why a Bing campaign at 60 percent impression share and target CPA beats a saturated Meta campaign at the same CPA. Read Bing headroom directly: `ppc_bing_impression_share_report` (async) returns per-campaign impression_share, lost_to_budget and lost_to_rank plus a `scaling_headroom` summary - budget_limited (>=10% lost to budget: raise-budget candidates) and rank_limited (>=20% lost to rank: bids or quality, not budget).
+3. Rank by marginal efficiency, not average CPA. The question is what the NEXT dollar buys, which is why a Bing campaign at 60 percent impression share and target CPA beats a saturated Meta campaign at the same CPA. Read Bing headroom directly: `ppc_bing_impression_share_report` (async) returns per-campaign impression_share, lost_to_budget and lost_to_rank plus a `scaling_headroom` summary - budget_limited (>=10% lost to budget: raise-budget candidates) and rank_limited (>=20% lost to rank: bids or quality, not budget). **Read `summary.impression_share_coverage` before calling either list empty.** Microsoft returns no data for a metric it could not measure, and an unmeasured metric comes back `null` rather than `0`, so an absent campaign is either under the threshold or unassessable: `share_measured` / `share_unmeasured` / `budget_unmeasured` / `rank_unmeasured` and the `unmeasured_campaigns` sample are what tell them apart. An empty `budget_limited` beside `budget_unmeasured > 0` is not a clean bill of health, and `avg_impression_share` is null when nothing was measured.
 4. Propose moves netting to zero against the client ceiling, cap any single move at roughly 25 percent of that connection's monthly target, apply one at a time with `ppc_platform_budget_update`, each separately confirmed. Never move budget out of a protected or brand campaign.
 5. `ppc_anomaly_check` for the daily watch where supported, and `ppc_sync` after the write batch.
 
@@ -204,7 +234,7 @@ Defaults only; account memory overrides every line.
 
 - **Bing CTR:** 2 to 5 percent non-brand is healthy (structurally below Google). Under 1.5 percent is relevance or extensions, not bids.
 - **Bing volume:** typically 5 to 15 percent of a comparable Google account's search volume at 20 to 40 percent lower CPC. Bing spend above roughly 25 percent of Google spend on the same keyword set means suspect a geo or match-type leak before celebrating.
-- **Bing conversion gate:** no conversion-based strategy until `ready_for_conversion_bidding` is true AND the goal has recorded for a full 14 days.
+- **Bing conversion gate:** no conversion-based strategy until `ready_for_conversion_bidding === true` AND the goal has recorded for a full 14 days. The flag is tri-state and `null` is not `false`: a null means the goal list was never read, which authorizes nothing in either direction. `ppc_platform_bidding_strategy_update` will NOT stop you - it reports `conversion_signal` and applies the switch regardless - so this gate is enforced here or nowhere.
 - **Meta frequency:** above 3.0 in a 7-day window on prospecting is fatigue; above 2.0 with falling CTR is the same thing earlier. Remarketing tolerates 5 to 7.
 - **Meta creative velocity:** 3 to 5 new creatives per active ad set per month. No new creative in 60 days means decline regardless of bidding.
 - **Meta learning:** roughly 50 optimisation events per ad set per week to exit learning. An ad set that cannot reach that should be consolidated, not micro-optimised.
@@ -227,7 +257,13 @@ Defaults only; account memory overrides every line.
 
 **An integration looks dead.** `ppc_connection_list`, then `ppc_connection_get`. A disconnected connection or stale token is a client reconnect task; retrying does not fix it. Open a PM task, name the platform, and state that reporting for that channel is unavailable for the period rather than reporting zero spend.
 
-**A campaign changed and nobody here touched it.** No platform-side change-history tool covers these platforms in this set, but `audit_query` (always-available) reads the account's Hiveku MCP audit log - every tool call with key preview, tool name, sanitized args summary and status - so it answers whether ANOTHER Hiveku key made the change (e.g. `{tool_contains: "budget", since}`). A change made directly in the platform UI stays invisible to it: for those, say so, pull what the UI shows, and log every change in the PM task so the next dispute is answerable.
+**A campaign changed and nobody here touched it.** No platform-side change-history tool covers these platforms in this set, but `audit_query` (always-available) reads the account's Hiveku MCP audit log - every tool call with key preview, tool name, sanitized args summary and status - so it answers whether ANOTHER Hiveku key ATTEMPTED the change (e.g. `{tool_contains: "budget", since}`). Three limits, all of which have produced a wrong answer:
+
+- **A row is an attempt, not an outcome.** Read `status` and `error_message` on every row, never row presence alone. A call that failed by RETURNING an error rather than throwing was logged as `status: "success"` with `error_message: null`, so a refused or failed write reads exactly like a landed one until the classifier fix is deployed. Until then, confirm any write you are attributing against the platform's own current value.
+- **A missing row is not proof the call never ran.** The row is written after the tool call settles, so a call still in flight has no row yet, and a client-side timeout does not cancel the server. "No row" is equally consistent with "dispatched and still running" - which is the dangerous reading.
+- **The log covers the two MCP transports only.** Work dispatched through the per-service REST path runs under a valid key and writes no row at all, so absence means "not seen by /mcp or /sse", never "did not happen".
+
+A change made directly in the platform UI stays invisible to it: for those, say so, pull what the UI shows, and log every change in the PM task so the next dispute is answerable.
 
 **No tool at all** (a new platform feature, a policy change, a competitor's approach): `web_search` and `web_scrape`, or `hiveku_docs_search` / `hiveku_docs_get` for Hiveku's own documentation. Cite what you found; never present a guess as a platform fact.
 

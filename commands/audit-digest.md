@@ -2,12 +2,29 @@
 description: Oversight digest - who did what on this account from the MCP audit log, writes by key, anomalies, in owner language. Read-only.
 argument-hint: "[window - e.g. 'last 7 days' or 'since 2026-08-01']"
 ---
-Oversight digest for the bound account$ARGUMENTS. `audit_query` logs EVERY MCP tool call on this
+Oversight digest for the bound account$ARGUMENTS. `audit_query` logs MCP tool calls on this
 account - api_key_preview (last 10 chars of the key), tool name, sanitized args summary, status
 (success | error | rate_limited), duration, IP, user agent - so this is the one place "what did the
 team and the AI actually do here" is answerable. This play reads; its only write is the memory note
 at the end. One account per run: the log is tenant-scoped, so a roster review is this command once
 per bound folder.
+
+**What the log does NOT cover, stated up front, because every one of these has been read as a clean
+negative:**
+
+- **The two MCP transports only.** Work dispatched through the per-service REST path runs under a
+  valid key and writes no row at all. So a missing row means "not seen by /mcp or /sse", never
+  "did not happen", and a family with zero rows is not proof that family was untouched.
+- **A row is written only after the call SETTLES.** A call still in flight has no row yet, and a
+  client-side timeout does not cancel the server. So "no row" is equally consistent with
+  "dispatched and still running" - which is the dangerous reading when the question is whether a
+  write landed. Never report a missing row as proof a call never reached the server.
+- **`status` is a claim about control flow, not about the answer.** A tool call that failed by
+  RETURNING an error rather than throwing was recorded as `status: "success"` with
+  `error_message: null`, so a refused or failed write reads exactly like a landed one until the
+  classifier fix is deployed. When a row is load-bearing (a money write, an enable, a send), check
+  the target system's current value rather than trusting the status column alone.
+- Anything done directly in a platform's own UI is invisible here.
 
 1. **Fix the window.** Default: last 7 days. `audit_query` filters compose with AND, but only
    `since` (ISO 8601, e.g. `2026-08-22T00:00:00Z`) is documented - there is no documented `until`,
@@ -41,7 +58,10 @@ per bound folder.
      are not already in memory, ask once and persist; until then use a stated default (before 7am /
      after 7pm account-local, plus weekends) and LABEL the definition in the report.
  - **Failure clusters**: `status: "error"` repeats on one tool or one key (something is broken and
-     being retried against this client), and `rate_limited` rows (someone is hammering).
+     being retried against this client), and `rate_limited` rows (someone is hammering). Read this
+     as a FLOOR, never a total: a returned-error call is logged as a success today, and calls made
+     outside the two MCP transports leave no row, so "no failures this week" is a statement about
+     what the log can see. Say that in the report rather than reporting zero.
 5. **Sweep the automations too** - agent work that never touches the audit log's headline families:
    `workflow_runs_recent({ status: "failed", since })`, account-wide across all workflows (default
    window is only the last hour, so pass `since`). Each row carries workflow_name, error_message and

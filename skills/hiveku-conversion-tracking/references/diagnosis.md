@@ -168,8 +168,20 @@ Neither tool sees whether the tag fires; configuration only.
 
 **`ppc_bing_conversion_tracking_status`** - UET tags plus install state, goals plus recording state,
 `ready_for_conversion_bidding`, plain-language verdict. **Star: run this BEFORE switching any
-campaign to `max_conversions` / `target_cpa` / `target_roas`**, because the bidding tool refuses
-without a bidding-eligible goal and you do not want to learn that mid-change on a live campaign.
+campaign to `max_conversions` / `target_cpa` / `target_roas`**, because
+`ppc_platform_bidding_strategy_update` does **not** refuse an unbacked strategy (the refusal was
+removed on 2026-08-24) - it reports `conversion_signal` and applies the switch anyway, including
+`check_failed`, which means the goal read itself failed and the switch went in **unverified**. The
+platform is not your safety net here; this call is.
+
+**`ready_for_conversion_bidding` is TRI-STATE, not a boolean.** `true` only when a complete goal list
+backs it and at least one goal has recorded. `false` means proven not ready. `null` means the goal
+list was incomplete or never read, so nothing in the response authorizes a conversion strategy either
+way. Null is falsy in every language you will write the check in, so gate on `=== true`, never on
+`if (!ready)` and never on truthiness. Read `ready_for_conversion_bidding_confidence` (`verified`
+only when the flag is a real boolean), `goal_list_coverage` and `goal_read_error` alongside it, and
+remember the counts (`conversion_goal_count`, `recording_goal_count`, ...) are `null`, never `0`,
+when the goal read did not happen: a null count is not "no goals exist".
 
 **`ppc_bing_uet_tag_list`** - recording state per tag. **A tag not "recording" means the site snippet
 is missing or broken, and that is the #1 reason a Bing account reports zero conversions** - almost
