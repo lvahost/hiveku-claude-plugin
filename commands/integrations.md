@@ -159,16 +159,21 @@ Consent opens a browser and belongs to the user, so:
 
 - **Read freely.** `connections_status`, the list tools, `oauth_app_list`, `integration_test`,
   `marketing_setup_status`, `ppc_digest`, `voice_diagnose_setup` are all safe to call unprompted.
-- **Never call `integration_oauth_initiate`, `email_connect_start`, or `shopify_connect_start`
-  unprompted.** Each mints a short-lived setup URL that expires unused (5 minutes for
-  `email_connect_start`), so an unrequested one is a dead link by the time the user reads it. Finish
-  the audit with a short list of the flows you can start, and start one only when they pick it.
+- **Never mint a link unprompted** - not `integration_connect_link_create`, not
+  `integration_oauth_initiate`, `email_connect_start` or `shopify_connect_start`. Finish the audit
+  with a short list of the flows you can start (one line per gap: "Reconnect Google Analytics - I can
+  give you a link"), and start one only when they pick it. When they do, use
+  `integration_connect_link_create` (the `/hiveku:connect-integration` flow): one Hiveku link for any
+  connector, valid for hours, with `integration_connect_link_status` to confirm. The legacy tools
+  hand out raw provider URLs that die in 5 to 15 minutes.
 - Never call `oauth_app_create`, `oauth_app_update`, `ppc_connection_create`, `seo_connection_create`
   or any `*_delete` without an explicit yes. They write credentials.
 - Never print a key, secret, token, or the full `credentials_preview`. Say a credential is present or
   absent and move on.
-- When you do start a flow, hand the `setup_url` to the user rather than opening it - they need to be
-  in their own browser session for the provider's consent screen.
+- When you do start a flow, hand the link to the user rather than opening it - they need to be in
+  their own browser session for the provider's consent screen. Check `integration_connectors_list`
+  first: a connector that is `ready` with `client.would_use: 'hiveku'` needs NO OAuth app from the
+  account, so do not send anyone to the Google Cloud Console for it.
 
 Some of this is not yours to fix and saying so is the useful answer. Registering a Google Cloud
 project, enabling the Tag Manager or Search Console API on it, adding scopes to the OAuth consent

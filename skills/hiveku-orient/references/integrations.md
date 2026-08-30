@@ -141,9 +141,15 @@ true for a tool to work, and each one fails with a different symptom.
 
 ### Layer (a): the OAuth CLIENT, registered for that PRODUCT
 
-Hiveku has **no platform-shared Google credentials**. Every account brings its own `client_id` and
-`client_secret`, registered as an `oauth_apps` row, and that row carries a `products` array saying
-which Hiveku products it may drive.
+Two kinds of client can front a consent. An account may bring its own `client_id` and
+`client_secret`, registered as an `oauth_apps` row whose `products` array says which Hiveku products
+it may drive (BYOK). And for Google Analytics, Search Console, Business Profile, Google Ads,
+Calendar and Microsoft Ads, Hiveku runs its own platform apps - the dashboard's Quick connect uses
+them, and so does `integration_connect_link_create` whenever the account has no tagged app. A
+connection made that way has `oauth_app_id: null`; that is normal, not broken, and it must be
+re-authenticated under the SAME platform app (a connect link with `target_connection_id` does
+this). Gmail and Outlook are BYOK only. `integration_connectors_list` says, per connector, which
+client would be used on this account (`client.would_use`) and what is missing when neither exists.
 
 **A client registered for `google_search_console` and `google_ads` cannot serve `google_analytics`.**
 The product match is exact. This is the layer people miss, because from the outside "we already
@@ -152,10 +158,11 @@ have a Google app" sounds like it should cover Google.
 - **Reveals it:** `oauth_app_list` (per app: `id`, `provider`, `name`, `client_id`,
   `client_id_preview`, `products`, `created_at`). The `client_secret` is never returned by any read
   endpoint.
-- **Symptom:** `integration_oauth_initiate` returns HTTP **412** with
-  `code: 'integration_not_configured'` and a hint naming the exact product. `email_connect_start`
-  and `shopify_connect_start` return `code: 'no_oauth_app'` on the same condition. No amount of
-  retrying changes any of them.
+- **Symptom:** `integration_connect_link_create` returns HTTP **412** `code: 'no_oauth_client'`
+  with the exact prerequisite in `hint` (only when neither a tagged app nor a Hiveku platform app
+  exists). `integration_oauth_initiate` returns 412 `no_oauth_app_for_product` /
+  `integration_not_configured`; `email_connect_start` and `shopify_connect_start` return
+  `code: 'no_oauth_app'`. No amount of retrying changes any of them.
 - **Fix without losing what exists:** `oauth_app_update({ oauth_app_id, add_products: [...] })`.
   `add_products` MERGES into the existing array. `products` REPLACES it, and replacing is how you
   silently break the products the app was already serving. Use `add_products` unless you mean to
@@ -402,47 +409,64 @@ likewise connect at `/<accountId>/dashboard/marketing/ppc`.
 
 ## 5. Handing over a link, done properly
 
-A `setup_url` dropped into a message with no framing is a link the user does not trust and does
-not click. Five things, every time:
+**The link to hand over is a Hiveku connect link**, minted with
+`integration_connect_link_create({ connector, target_connection_id? })` - see the
+`/hiveku:connect-integration` command for the full flow. It is one tool for every connector
+(Google Analytics, Search Console, Business Profile, Google Ads, Gmail, Calendar, Outlook,
+Microsoft Ads, and the social / commerce providers as they are ported), it returns
+`https://app.hiveku.com/connect/oauth/<token>` valid for hours (default 24) rather than a raw
+provider URL that dies in 5 minutes, it resolves the account + connector + OAuth client
+server-side when the human presses Continue (the account's own app if tagged, else Hiveku's
+platform app - so a missing `oauth_apps` row is no longer a dead end), and it has one status tool.
+`integration_connectors_list` first tells you which connectors are `ready` on the account and the
+ids of the existing connections a reconnect targets.
 
-1. **The URL itself**, on its own line, unmangled.
-2. **What they will see.** "Google's consent screen for <account email>", "your Shopify admin
-   asking to approve the app", "Microsoft's sign-in". Users abandon links whose destination they
-   cannot predict.
-3. **What to click, and any choice they have to make.** If the consent screen lists an account
-   picker, say which account to pick. If they will have to grant a scope that sounds alarming,
-   say why it is needed before they read it.
-4. **The TTL, stated as a number.** `integration_oauth_initiate` is 15 minutes.
-   `email_connect_start` is **5 minutes**. `shopify_connect_start` is 15 minutes. Put the link at
-   the END of a message, not buried in the middle of a long one, so the clock starts when they
-   are ready.
-5. **What you will do next.** "Once you tell me you are through, I will poll for the connection,
+A link dropped into a message with no framing is a link the user does not trust and does not
+click. Five things, every time (the `handoff` block in the create response carries all of them):
+
+1. **The URL itself**, on its own line, unmangled, at the END of the message.
+2. **What they will see.** A Hiveku page explaining the connection with a Continue button, then
+   "Google's account chooser and consent screen", "your Shopify admin asking to approve the app",
+   "Microsoft's sign-in". Users abandon links whose destination they cannot predict.
+3. **What to click, and any choice they have to make.** Which account to pick on the chooser
+   (`handoff.pick_hint`); why an alarming-sounding permission is needed (`handoff.permissions`).
+4. **The TTL, stated plainly.** The link is valid until `expires_at`; the provider's own consent
+   window is five minutes once they press Continue, so they click when they are ready.
+5. **What you will do next.** "Once you tell me you are through, I will confirm the connection,
    bind the Ads customer id, and run the first sync." Then actually do that.
+
+The link can be forwarded to whoever owns the provider account (a client, a colleague); they land
+on a Hiveku "Connected" page, every admin on the account gets a bell notification, and the status
+below flips.
 
 **The polling pattern.**
 
 ```
-integration_oauth_initiate({ provider_slug, ...bindings })
-  -> keep setup_token AND connection_id from the response
-  -> hand setup_url to the user
-  -> integration_oauth_check({ setup_token }) every ~5s
-       pending   : keep waiting, up to ~15 minutes
-       completed : integration_id is the account_integrations row
-       failed    : read `error`, fix, initiate again
-       expired   : 15 minutes elapsed, initiate again
-  -> verify: integration_test (account_integrations)
-             ppc_connection_test (google_ads specifically)
-  -> bind if still pending: seo_gsc_discover_sites / seo_gbp_discover_locations /
-             ppc_ads_discover_customers, then seo_connection_update / ppc_connection_update
+integration_connectors_list                       -> ready? existing connection ids?
+integration_connect_link_create({ connector, target_connection_id?, source: 'plugin' })
+  -> keep link_id; hand url over with the handoff block
+  -> integration_connect_link_status({ link_id, wait_seconds: 8 }) when they say they are through
+       pending / opened : not finished - ask, poll again when they answer
+       completed        : connection_id is the DOMAIN row (`table`); needs_binding[] says what
+                          is still to be chosen
+       failed           : read `error`; consent denied / wrong account -> the SAME link retries;
+                          an OAuth-client error -> fix it, mint a fresh link
+       expired / revoked: mint a fresh link
+  -> bind if needs_binding: seo_analytics_discover_properties / seo_gsc_discover_sites /
+             seo_gbp_discover_locations / ppc_ads_discover_customers, then
+             seo_connection_update / ppc_connection_update
+  -> verify: ppc_connection_test / seo_sync / crm_list_email_connections / social_list_accounts
   -> populate: seo_sync / ppc_sync
 ```
 
-Do not poll in a tight loop while the user is mid-consent, and do not poll silently for fifteen
-minutes. Ask them to say when they are through, and poll then. If they go quiet, the token
-expires and you initiate again; that is cheap.
+Do not poll in a tight loop while the user is mid-consent, and do not poll silently. Ask them to
+say when they are through, and poll then.
 
-For `email_connect_start` there is no check tool. Poll `email_connections_list` and look for
-`connection_status: 'connected'`. For Shopify, poll `shopify_connection_status`.
+**The legacy lanes still exist.** `integration_oauth_initiate` (four Google products, needs the
+account's own app or answers with `connect_link: true` and a `link_id` when Hiveku's app fronts
+the consent), `email_connect_start` (raw Google/Microsoft URL, 5 minutes, no status tool - poll
+`crm_list_email_connections`) and `shopify_connect_start` (poll `shopify_connection_status`).
+Use them only when a caller already drives those loops.
 
 ---
 
@@ -600,10 +624,12 @@ GTM can work on a connection where `seo_ga4_admin_scopes` still 400s.
   run. Rotate with `oauth_app_update`.
 - **Using `integration_oauth_initiate` for Gmail or Calendar.** 400
   `wrong_tool_for_provider`. Use `email_connect_start`, which writes the table the CRM reads.
-- **Assuming `integration_oauth_initiate({ provider_slug: 'google_analytics' })` produces a
-  connection the GA4 and GTM tools can use.** It writes `account_integrations` only. The callback
-  mirror and the read-path backfill both cover exactly `google_search_console`,
-  `google_business_profile` and `google_ads`.
+- **Reaching for `integration_oauth_initiate` when a human has to click.** Mint a connect link
+  instead (`integration_connect_link_create`). The initiate lane still hands out Google's raw URL,
+  covers four products, and 412s when the account has no tagged app unless Hiveku's platform app
+  can take over (then it answers with `connect_link: true` - poll by `link_id`). Its
+  `google_analytics` consent now does refresh the `seo_connections` row the GA4/GTM tools read (it
+  used to write `account_integrations` only).
 - **Passing the `integration_id` from `integration_oauth_check` to a department tool.** That is an
   `account_integrations` id. The domain-table id is `connection_id` from the initiate response.
 - **Deleting and recreating a connection to fix a dead token.** Re-auth with
@@ -613,8 +639,9 @@ GTM can work on a connection where `seo_ga4_admin_scopes` still 400s.
   `ppc_ads_discover_customers` and bind `customer_id` plus `manager_id`.
 - **Retrying a 412 or a `no_oauth_app`.** Both are structural. Nothing changes until a client is
   registered.
-- **Letting a `setup_url` expire in a long message.** 5 minutes for `email_connect_start`, 15 for
-  the other two. Put it last and say the number.
+- **Letting a raw `setup_url` expire in a long message.** 5 minutes for `email_connect_start`, 15
+  for `integration_oauth_initiate` and `shopify_connect_start`. A connect link lasts until its
+  `expires_at` (hours), which is the reason to prefer it. Put the link last either way.
 - **Opening the consent URL yourself, or offering to.** It requires the user's own browser session.
 - **Reaching for `seo_connection_test`.** It does not exist. Use `seo_sync`, or call the capability
   and read the error.
