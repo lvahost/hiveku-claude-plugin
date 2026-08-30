@@ -202,6 +202,19 @@ const READ_ONLY_POST_OVERRIDES = new Map([
     'the route loads the definition and runs validateDefinition in memory; it returns {ok, issues, summary} and has no write path'],
   ['workflow_normalize_payload',
     'pure function over the posted payload (meta/normalize-payload); returns the aliased shape, touches no workflow and no row'],
+  // workflow_test is a POST, and it EXECUTES the graph - it earns this entry on
+  // the engine's gate, not on its verb. Held back until 2026-08-30, when two
+  // holes closed in production: the gate now runs at all three dispatch sites
+  // (a side-effecting node inside a parallelExecute branch or a transactionBlock
+  // used to reach its real handler, so graph SHAPE defeated the dry run), and
+  // aiAgent joined the gated set (a "dry run" used to spend real tokens and,
+  // since an agent turn can call its own tools, could write). Verified live
+  // before adding this line.
+  // NOT side-effect-free in the absolute: metered DataForSEO reads and `delay`
+  // still execute. It is on this list because it cannot SEND, WRITE or DEPLOY,
+  // which is what the reads-only ceiling exists to stop.
+  ['workflow_test',
+    'runs/:runId POST with test_mode pinned server-side via extraBody (a caller cannot unset it); the engine short-circuits every SIDE_EFFECTING_NODE_TYPES node at all three dispatch sites, persists no run row and burns no quota'],
 ]);
 
 const fromDist = collectFromDist();

@@ -328,12 +328,19 @@ surface is loud about terminal states and silent about the ordinary one:
   classic report is "it just stopped, and there are no errors".
 
 So for anything a client depends on, turn on per-run failure alerting when you enable
-it. The opt-in lives in the workflow's own definition as
-`settings.notify_on_failure: true`, which means it survives a clone, a template
-instantiation and a version restore. On a failed triggered run it raises one inbox
-item and emails the account admins **once per incident, not once per failed run** - a
-workflow failing every five minutes produces 288 failures a day and one email;
-resolving the inbox item re-arms it.
+it:
+
+```
+workflow_update({ workflow_id, settings: { notify_on_failure: true } })
+```
+
+Send `settings` on its own - you do NOT resend the graph, and the server merges it, so
+a later `workflow_update({ definition })` cannot silently drop the flag. Read it back
+with `workflow_get` under `definition.settings`. The opt-in lives in the workflow's own
+definition, which means it survives a clone, a template instantiation and a version
+restore. On a failed triggered run it raises one inbox item and emails the account
+admins **once per incident, not once per failed run** - a workflow failing every five
+minutes produces 288 failures a day and one email; resolving the inbox item re-arms it.
 
 Rules for it:
 
