@@ -1,0 +1,215 @@
+{
+  "workflows": [
+    {
+      "key": "lead",
+      "id": "3f9c1a72-8e04-4b31-9d55-1c07ab24e610",
+      "name": "New Lead Notification",
+      "description": "Website enquiry form -> CRM contact -> email the owner.",
+      "is_enabled": true,
+      "is_paused": true,
+      "paused_at": "2026-08-24T14:47:33.402Z",
+      "pause_reason": "circuit_breaker",
+      "created_at": "2026-02-11T18:24:03Z",
+      "updated_at": "2026-08-24T14:47:33Z",
+      "nodes": [
+        { "id": "webhookTrigger_lead01", "type": "webhookTrigger", "label": "Website form submission" },
+        { "id": "crmCreateContact_lead02", "type": "crmCreateContact", "label": "Create or update the CRM contact" },
+        { "id": "sendEmail_lead03", "type": "sendEmail", "label": "Email the new lead to the owner" }
+      ]
+    },
+    {
+      "key": "review",
+      "id": "6b21d0e5-4a9f-4c72-8e10-93bd7f2c4a08",
+      "name": "Review Request Follow-up",
+      "description": "Two days after a deal is won, ask the customer for a review and log the ask.",
+      "is_enabled": true,
+      "is_paused": false,
+      "paused_at": null,
+      "pause_reason": null,
+      "created_at": "2026-03-04T09:41:52Z",
+      "updated_at": "2026-08-22T16:09:11Z",
+      "nodes": [
+        { "id": "internalEventTrigger_rev01", "type": "internalEventTrigger", "label": "Deal marked won" },
+        { "id": "delay_rev02", "type": "delay", "label": "Wait 2 days" },
+        { "id": "sendEmail_rev03", "type": "sendEmail", "label": "Ask the customer for a review" },
+        { "id": "crmCreateActivity_rev04", "type": "crmCreateActivity", "label": "Log the review ask on the contact" }
+      ]
+    },
+    {
+      "key": "report",
+      "id": "c48a5f13-2d67-4e90-b1a4-7f0c9d3e2b55",
+      "name": "Weekly Client Report",
+      "description": "Monday morning: build the client report and email it.",
+      "is_enabled": true,
+      "is_paused": false,
+      "paused_at": null,
+      "pause_reason": null,
+      "created_at": "2026-01-19T22:15:37Z",
+      "updated_at": "2026-06-02T11:03:44Z",
+      "nodes": [
+        { "id": "scheduledTrigger_rep01", "type": "scheduledTrigger", "label": "Monday morning" },
+        { "id": "marketingReportCreate_rep02", "type": "marketingReportCreate", "label": "Build the client report" },
+        { "id": "sendEmail_rep03", "type": "sendEmail", "label": "Email the report to the client" }
+      ]
+    },
+    {
+      "key": "invoice",
+      "id": "9d70e2b8-5c31-4a6f-8b02-4e91c7d05f36",
+      "name": "Monthly Invoice Reminder",
+      "description": "Collect the open invoices and send the reminder.",
+      "is_enabled": true,
+      "is_paused": false,
+      "paused_at": null,
+      "pause_reason": null,
+      "created_at": "2026-04-28T14:52:19Z",
+      "updated_at": "2026-05-06T08:30:22Z",
+      "nodes": [
+        { "id": "manualTrigger_inv01", "type": "manualTrigger", "label": "Run by hand" },
+        { "id": "transformData_inv02", "type": "transformData", "label": "Collect open invoices" },
+        { "id": "sendEmail_inv03", "type": "sendEmail", "label": "Send the invoice reminder" }
+      ]
+    },
+    {
+      "key": "nurture",
+      "id": "2a5e8c04-7b19-4d83-95f7-6c0281ba4e97",
+      "name": "Onboarding Nurture Sequence",
+      "description": "When a deal moves to Onboarding, enrol the contact in the welcome sequence.",
+      "is_enabled": true,
+      "is_paused": false,
+      "paused_at": null,
+      "pause_reason": null,
+      "created_at": "2026-07-15T13:07:41Z",
+      "updated_at": "2026-07-15T13:22:08Z",
+      "nodes": [
+        { "id": "internalEventTrigger_nur01", "type": "internalEventTrigger", "label": "Deal moved to Onboarding" },
+        { "id": "crmEnrollSequence_nur02", "type": "crmEnrollSequence", "label": "Enrol in the welcome sequence" }
+      ]
+    },
+    {
+      "key": "legacy",
+      "id": "f10b47c9-3e52-4a18-8c6d-b90e5a217d43",
+      "name": "Legacy Slack Alerts",
+      "description": "Posted every new enquiry to #leads. Retired when the client left Slack.",
+      "is_enabled": false,
+      "is_paused": false,
+      "paused_at": null,
+      "pause_reason": null,
+      "created_at": "2025-11-02T10:18:55Z",
+      "updated_at": "2026-06-14T17:41:26Z",
+      "nodes": [
+        { "id": "webhookTrigger_leg01", "type": "webhookTrigger", "label": "Website form submission" },
+        { "id": "slackMessage_leg02", "type": "slackMessage", "label": "Post to #leads" }
+      ]
+    },
+    {
+      "key": "ticket",
+      "id": "81c4de60-9a27-4f5b-b3e8-2d16074c9fa2",
+      "name": "Ticket Escalation Ping",
+      "description": "When a helpdesk ticket breaches its SLA, post to the on-call hook.",
+      "is_enabled": true,
+      "is_paused": false,
+      "paused_at": null,
+      "pause_reason": null,
+      "created_at": "2026-05-21T07:33:12Z",
+      "updated_at": "2026-08-11T19:26:40Z",
+      "nodes": [
+        { "id": "internalEventTrigger_tic01", "type": "internalEventTrigger", "label": "Ticket breached its SLA" },
+        { "id": "apiCall_tic02", "type": "apiCall", "label": "Post the escalation to the on-call hook" }
+      ]
+    },
+    {
+      "key": "digest",
+      "id": "d5382b1f-6c40-49ae-9017-38f5be2a06cd",
+      "name": "Daily Ops Digest",
+      "description": "Every morning: gather yesterday's numbers and email the ops digest.",
+      "is_enabled": true,
+      "is_paused": false,
+      "paused_at": null,
+      "pause_reason": null,
+      "created_at": "2026-06-30T12:44:09Z",
+      "updated_at": "2026-08-03T15:58:31Z",
+      "nodes": [
+        { "id": "scheduledTrigger_dig01", "type": "scheduledTrigger", "label": "Every morning" },
+        { "id": "transformData_dig02", "type": "transformData", "label": "Gather yesterday's numbers" },
+        { "id": "sendEmail_dig03", "type": "sendEmail", "label": "Send the ops digest" }
+      ]
+    }
+  ],
+  "schedules": {
+    "report": {
+      "cron_expression": "0 9 * * 1",
+      "timezone": "UTC",
+      "enabled": true,
+      "frequency": "weekly",
+      "next_run_at": "2026-08-31T09:00:00Z",
+      "last_run_at": "2026-08-24T09:00:07Z"
+    },
+    "digest": {
+      "cron_expression": "0 7 * * *",
+      "timezone": "America/Denver",
+      "enabled": true,
+      "frequency": "daily",
+      "next_run_at": "2026-08-31T13:00:00Z",
+      "last_run_at": "2026-08-30T13:00:08Z"
+    }
+  },
+  "triggers": {
+    "lead": [
+      {
+        "id": "7a0c31be-1d48-4e07-9f62-8c4b05d3a1e2",
+        "name": "Enquiry form",
+        "trigger_type": "webhook",
+        "is_enabled": true,
+        "webhook_path": "wh_lead_5f2a9c",
+        "allowed_method": "POST",
+        "require_auth_token": false,
+        "created_at": "2026-02-11T18:26:47Z"
+      }
+    ],
+    "legacy": [
+      {
+        "id": "b6f22a05-9c17-4d3e-8a41-70e6b9c2d508",
+        "name": "Enquiry form (retired)",
+        "trigger_type": "webhook",
+        "is_enabled": false,
+        "webhook_path": "wh_legacy_1c88de",
+        "allowed_method": "POST",
+        "require_auth_token": false,
+        "created_at": "2025-11-02T10:20:31Z"
+      }
+    ],
+    "report": [
+      {
+        "id": "4e83d17c-5b60-42fa-9d08-16c7ae30b9f5",
+        "name": "Monday 09:00",
+        "trigger_type": "scheduled_trigger",
+        "is_enabled": true,
+        "webhook_path": null,
+        "allowed_method": null,
+        "require_auth_token": false,
+        "created_at": "2026-01-19T22:17:02Z"
+      }
+    ],
+    "digest": [
+      {
+        "id": "0c95f4a8-73e1-4b26-8fd3-2a5017c6e94b",
+        "name": "Daily 07:00 Denver",
+        "trigger_type": "scheduled_trigger",
+        "is_enabled": true,
+        "webhook_path": null,
+        "allowed_method": null,
+        "require_auth_token": false,
+        "created_at": "2026-06-30T12:46:18Z"
+      }
+    ]
+  },
+  "versions": {
+    "review": [
+      { "version": 7, "change_summary": "update node sendEmail_rev03 (from address)", "created_at": "2026-08-22T16:09:11Z", "actor": "ops@partneragency.example" },
+      { "version": 6, "change_summary": "update node crmCreateActivity_rev04 (activity type)", "created_at": "2026-06-18T10:12:44Z", "actor": "owner@brightside.example" }
+    ],
+    "lead": [
+      { "version": 12, "change_summary": "update node sendEmail_lead03 (recipient)", "created_at": "2026-08-19T09:05:37Z", "actor": "owner@brightside.example" }
+    ]
+  }
+}

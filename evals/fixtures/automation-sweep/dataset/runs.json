@@ -1,0 +1,651 @@
+{
+  "step_templates": {
+    "lead": {
+      "completed": [
+        {
+          "node": "webhookTrigger_lead01",
+          "node_type": "webhookTrigger",
+          "node_label": "Website form submission",
+          "ms": 8
+        },
+        {
+          "node": "crmCreateContact_lead02",
+          "node_type": "crmCreateContact",
+          "node_label": "Create or update the CRM contact",
+          "ms": 410
+        },
+        {
+          "node": "sendEmail_lead03",
+          "node_type": "sendEmail",
+          "node_label": "Email the new lead to the owner",
+          "ms": 960
+        }
+      ],
+      "failed": [
+        {
+          "node": "webhookTrigger_lead01",
+          "node_type": "webhookTrigger",
+          "node_label": "Website form submission",
+          "ms": 9
+        },
+        {
+          "node": "crmCreateContact_lead02",
+          "node_type": "crmCreateContact",
+          "node_label": "Create or update the CRM contact",
+          "ms": 395
+        },
+        {
+          "node": "sendEmail_lead03",
+          "node_type": "sendEmail",
+          "node_label": "Email the new lead to the owner",
+          "ms": 29800,
+          "status": "error",
+          "error": "502 upstream_unavailable from the mail relay",
+          "retry_count": 3,
+          "max_retries": 3
+        }
+      ]
+    },
+    "review": {
+      "completed": [
+        {
+          "node": "internalEventTrigger_rev01",
+          "node_type": "internalEventTrigger",
+          "node_label": "Deal marked won",
+          "ms": 6
+        },
+        {
+          "node": "delay_rev02",
+          "node_type": "delay",
+          "node_label": "Wait 2 days",
+          "ms": 4
+        },
+        {
+          "node": "sendEmail_rev03",
+          "node_type": "sendEmail",
+          "node_label": "Ask the customer for a review",
+          "ms": 730,
+          "degraded": true,
+          "original_error": "sendEmail: 550 5.1.1 no mailbox for reviews@brightside-fixtures.example",
+          "on_error_mode": "continue"
+        },
+        {
+          "node": "crmCreateActivity_rev04",
+          "node_type": "crmCreateActivity",
+          "node_label": "Log the review ask on the contact",
+          "ms": 280
+        }
+      ]
+    },
+    "report": {
+      "completed": [
+        {
+          "node": "scheduledTrigger_rep01",
+          "node_type": "scheduledTrigger",
+          "node_label": "Monday morning",
+          "ms": 5
+        },
+        {
+          "node": "marketingReportCreate_rep02",
+          "node_type": "marketingReportCreate",
+          "node_label": "Build the client report",
+          "ms": 6200
+        },
+        {
+          "node": "sendEmail_rep03",
+          "node_type": "sendEmail",
+          "node_label": "Email the report to the client",
+          "ms": 1900
+        }
+      ]
+    },
+    "invoice": {
+      "completed": [
+        {
+          "node": "manualTrigger_inv01",
+          "node_type": "manualTrigger",
+          "node_label": "Run by hand",
+          "ms": 4
+        },
+        {
+          "node": "transformData_inv02",
+          "node_type": "transformData",
+          "node_label": "Collect open invoices",
+          "ms": 120
+        },
+        {
+          "node": "sendEmail_inv03",
+          "node_type": "sendEmail",
+          "node_label": "Send the invoice reminder",
+          "ms": 2100
+        }
+      ]
+    },
+    "ticket": {
+      "completed": [
+        {
+          "node": "internalEventTrigger_tic01",
+          "node_type": "internalEventTrigger",
+          "node_label": "Ticket breached its SLA",
+          "ms": 5
+        },
+        {
+          "node": "apiCall_tic02",
+          "node_type": "apiCall",
+          "node_label": "Post the escalation to the on-call hook",
+          "ms": 640
+        }
+      ],
+      "failed": [
+        {
+          "node": "internalEventTrigger_tic01",
+          "node_type": "internalEventTrigger",
+          "node_label": "Ticket breached its SLA",
+          "ms": 6
+        },
+        {
+          "node": "apiCall_tic02",
+          "node_type": "apiCall",
+          "node_label": "Post the escalation to the on-call hook",
+          "ms": 5000,
+          "status": "error",
+          "error": "502 Bad Gateway from https://hooks.brightside.example/escalate",
+          "retry_count": 3,
+          "max_retries": 3
+        }
+      ]
+    },
+    "digest": {
+      "completed": [
+        {
+          "node": "scheduledTrigger_dig01",
+          "node_type": "scheduledTrigger",
+          "node_label": "Every morning",
+          "ms": 5
+        },
+        {
+          "node": "transformData_dig02",
+          "node_type": "transformData",
+          "node_label": "Gather yesterday’s numbers",
+          "ms": 410
+        },
+        {
+          "node": "sendEmail_dig03",
+          "node_type": "sendEmail",
+          "node_label": "Send the ops digest",
+          "ms": 1180
+        }
+      ]
+    }
+  },
+  "runs": [
+    {
+      "id": "1ead0001-4c17-4b3a-9e51-1ead00000001",
+      "workflow": "lead",
+      "status": "completed",
+      "triggered_by": "webhook",
+      "started_at": "2026-08-23T16:20:04Z",
+      "duration_ms": 1420,
+      "error_message": null
+    },
+    {
+      "id": "1ead0002-4c17-4b3a-9e52-1ead00000002",
+      "workflow": "lead",
+      "status": "completed",
+      "triggered_by": "webhook",
+      "started_at": "2026-08-23T18:05:41Z",
+      "duration_ms": 1180,
+      "error_message": null
+    },
+    {
+      "id": "1ead0003-4c17-4b3a-9e53-1ead00000003",
+      "workflow": "lead",
+      "status": "completed",
+      "triggered_by": "webhook",
+      "started_at": "2026-08-23T20:41:16Z",
+      "duration_ms": 1655,
+      "error_message": null
+    },
+    {
+      "id": "1ead0004-4c17-4b3a-9e54-1ead00000004",
+      "workflow": "lead",
+      "status": "completed",
+      "triggered_by": "webhook",
+      "started_at": "2026-08-24T06:12:38Z",
+      "duration_ms": 1290,
+      "error_message": null
+    },
+    {
+      "id": "1ead0005-4c17-4b3a-9e55-1ead00000005",
+      "workflow": "lead",
+      "status": "completed",
+      "triggered_by": "webhook",
+      "started_at": "2026-08-24T07:58:02Z",
+      "duration_ms": 1502,
+      "error_message": null
+    },
+    {
+      "id": "1ead0006-4c17-4b3a-9e56-1ead00000006",
+      "workflow": "lead",
+      "status": "failed",
+      "triggered_by": "webhook",
+      "started_at": "2026-08-24T09:12:55Z",
+      "duration_ms": 30240,
+      "error_message": "sendEmail failed after 3 attempts: 502 upstream_unavailable from the mail relay"
+    },
+    {
+      "id": "1ead0007-4c17-4b3a-9e57-1ead00000007",
+      "workflow": "lead",
+      "status": "failed",
+      "triggered_by": "webhook",
+      "started_at": "2026-08-24T10:30:11Z",
+      "duration_ms": 30185,
+      "error_message": "sendEmail failed after 3 attempts: 502 upstream_unavailable from the mail relay"
+    },
+    {
+      "id": "1ead0008-4c17-4b3a-9e58-1ead00000008",
+      "workflow": "lead",
+      "status": "failed",
+      "triggered_by": "webhook",
+      "started_at": "2026-08-24T11:58:47Z",
+      "duration_ms": 30310,
+      "error_message": "sendEmail failed after 3 attempts: 502 upstream_unavailable from the mail relay"
+    },
+    {
+      "id": "1ead0009-4c17-4b3a-9e59-1ead00000009",
+      "workflow": "lead",
+      "status": "failed",
+      "triggered_by": "webhook",
+      "started_at": "2026-08-24T13:20:29Z",
+      "duration_ms": 30120,
+      "error_message": "sendEmail failed after 3 attempts: 502 upstream_unavailable from the mail relay"
+    },
+    {
+      "id": "1ead0010-4c17-4b3a-9e5a-1ead00000010",
+      "workflow": "lead",
+      "status": "failed",
+      "triggered_by": "webhook",
+      "started_at": "2026-08-24T14:47:03Z",
+      "duration_ms": 30402,
+      "error_message": "sendEmail failed after 3 attempts: 502 upstream_unavailable from the mail relay"
+    },
+    {
+      "id": "e7ee0001-4c17-4b3a-9e51-e7ee00000001",
+      "workflow": "review",
+      "status": "completed",
+      "triggered_by": "event",
+      "started_at": "2026-08-23T17:10:22Z",
+      "duration_ms": 1102,
+      "error_message": null
+    },
+    {
+      "id": "e7ee0002-4c17-4b3a-9e52-e7ee00000002",
+      "workflow": "review",
+      "status": "completed",
+      "triggered_by": "event",
+      "started_at": "2026-08-24T08:41:07Z",
+      "duration_ms": 1240,
+      "error_message": null
+    },
+    {
+      "id": "e7ee0003-4c17-4b3a-9e53-e7ee00000003",
+      "workflow": "review",
+      "status": "completed",
+      "triggered_by": "event",
+      "started_at": "2026-08-24T19:55:33Z",
+      "duration_ms": 986,
+      "error_message": null
+    },
+    {
+      "id": "e7ee0004-4c17-4b3a-9e54-e7ee00000004",
+      "workflow": "review",
+      "status": "completed",
+      "triggered_by": "event",
+      "started_at": "2026-08-25T09:18:49Z",
+      "duration_ms": 1330,
+      "error_message": null
+    },
+    {
+      "id": "e7ee0005-4c17-4b3a-9e55-e7ee00000005",
+      "workflow": "review",
+      "status": "completed",
+      "triggered_by": "event",
+      "started_at": "2026-08-25T21:03:12Z",
+      "duration_ms": 1051,
+      "error_message": null
+    },
+    {
+      "id": "e7ee0006-4c17-4b3a-9e56-e7ee00000006",
+      "workflow": "review",
+      "status": "completed",
+      "triggered_by": "event",
+      "started_at": "2026-08-26T10:27:38Z",
+      "duration_ms": 1188,
+      "error_message": null
+    },
+    {
+      "id": "e7ee0007-4c17-4b3a-9e57-e7ee00000007",
+      "workflow": "review",
+      "status": "completed",
+      "triggered_by": "event",
+      "started_at": "2026-08-26T22:14:05Z",
+      "duration_ms": 1264,
+      "error_message": null
+    },
+    {
+      "id": "e7ee0008-4c17-4b3a-9e58-e7ee00000008",
+      "workflow": "review",
+      "status": "completed",
+      "triggered_by": "event",
+      "started_at": "2026-08-27T11:39:51Z",
+      "duration_ms": 1017,
+      "error_message": null
+    },
+    {
+      "id": "e7ee0009-4c17-4b3a-9e59-e7ee00000009",
+      "workflow": "review",
+      "status": "completed",
+      "triggered_by": "event",
+      "started_at": "2026-08-28T07:52:16Z",
+      "duration_ms": 1421,
+      "error_message": null
+    },
+    {
+      "id": "e7ee0010-4c17-4b3a-9e5a-e7ee00000010",
+      "workflow": "review",
+      "status": "completed",
+      "triggered_by": "event",
+      "started_at": "2026-08-28T20:06:44Z",
+      "duration_ms": 1093,
+      "error_message": null
+    },
+    {
+      "id": "e7ee0011-4c17-4b3a-9e5b-e7ee00000011",
+      "workflow": "review",
+      "status": "completed",
+      "triggered_by": "event",
+      "started_at": "2026-08-29T14:31:09Z",
+      "duration_ms": 1156,
+      "error_message": null
+    },
+    {
+      "id": "e7ee0012-4c17-4b3a-9e50-e7ee00000012",
+      "workflow": "review",
+      "status": "completed",
+      "triggered_by": "event",
+      "started_at": "2026-08-30T09:40:27Z",
+      "duration_ms": 1209,
+      "error_message": null
+    },
+    {
+      "id": "9e900001-4c17-4b3a-9e51-9e9000000001",
+      "workflow": "report",
+      "status": "completed",
+      "triggered_by": "schedule",
+      "started_at": "2026-08-24T09:00:07Z",
+      "duration_ms": 8420,
+      "error_message": null
+    },
+    {
+      "id": "14f00001-4c17-4b3a-9e51-14f000000001",
+      "workflow": "invoice",
+      "status": "completed",
+      "triggered_by": "manual",
+      "started_at": "2026-08-25T16:32:11Z",
+      "duration_ms": 4210,
+      "error_message": null
+    },
+    {
+      "id": "14f00002-4c17-4b3a-9e52-14f000000002",
+      "workflow": "invoice",
+      "status": "completed",
+      "triggered_by": "manual",
+      "started_at": "2026-08-28T15:04:49Z",
+      "duration_ms": 3980,
+      "error_message": null
+    },
+    {
+      "id": "7c4e0001-4c17-4b3a-9e51-7c4e00000001",
+      "workflow": "ticket",
+      "status": "completed",
+      "triggered_by": "event",
+      "started_at": "2026-08-23T18:22:41Z",
+      "duration_ms": 702,
+      "error_message": null
+    },
+    {
+      "id": "7c4e0002-4c17-4b3a-9e52-7c4e00000002",
+      "workflow": "ticket",
+      "status": "completed",
+      "triggered_by": "event",
+      "started_at": "2026-08-24T07:14:03Z",
+      "duration_ms": 655,
+      "error_message": null
+    },
+    {
+      "id": "7c4e0003-4c17-4b3a-9e53-7c4e00000003",
+      "workflow": "ticket",
+      "status": "completed",
+      "triggered_by": "event",
+      "started_at": "2026-08-24T12:48:19Z",
+      "duration_ms": 731,
+      "error_message": null
+    },
+    {
+      "id": "7c4e0004-4c17-4b3a-9e54-7c4e00000004",
+      "workflow": "ticket",
+      "status": "completed",
+      "triggered_by": "event",
+      "started_at": "2026-08-24T17:05:52Z",
+      "duration_ms": 690,
+      "error_message": null
+    },
+    {
+      "id": "7c4e0005-4c17-4b3a-9e55-7c4e00000005",
+      "workflow": "ticket",
+      "status": "completed",
+      "triggered_by": "event",
+      "started_at": "2026-08-25T08:33:27Z",
+      "duration_ms": 812,
+      "error_message": null
+    },
+    {
+      "id": "7c4e0006-4c17-4b3a-9e56-7c4e00000006",
+      "workflow": "ticket",
+      "status": "completed",
+      "triggered_by": "event",
+      "started_at": "2026-08-25T13:19:44Z",
+      "duration_ms": 668,
+      "error_message": null
+    },
+    {
+      "id": "7c4e0007-4c17-4b3a-9e57-7c4e00000007",
+      "workflow": "ticket",
+      "status": "completed",
+      "triggered_by": "event",
+      "started_at": "2026-08-25T19:41:08Z",
+      "duration_ms": 745,
+      "error_message": null
+    },
+    {
+      "id": "7c4e0008-4c17-4b3a-9e58-7c4e00000008",
+      "workflow": "ticket",
+      "status": "completed",
+      "triggered_by": "event",
+      "started_at": "2026-08-26T09:02:36Z",
+      "duration_ms": 703,
+      "error_message": null
+    },
+    {
+      "id": "7c4e0009-4c17-4b3a-9e59-7c4e00000009",
+      "workflow": "ticket",
+      "status": "failed",
+      "triggered_by": "event",
+      "started_at": "2026-08-26T11:14:22Z",
+      "duration_ms": 5120,
+      "error_message": "apiCall: 502 Bad Gateway from https://hooks.brightside.example/escalate"
+    },
+    {
+      "id": "7c4e0010-4c17-4b3a-9e5a-7c4e00000010",
+      "workflow": "ticket",
+      "status": "completed",
+      "triggered_by": "event",
+      "started_at": "2026-08-26T11:25:40Z",
+      "duration_ms": 688,
+      "error_message": null
+    },
+    {
+      "id": "7c4e0011-4c17-4b3a-9e5b-7c4e00000011",
+      "workflow": "ticket",
+      "status": "completed",
+      "triggered_by": "event",
+      "started_at": "2026-08-26T16:58:13Z",
+      "duration_ms": 774,
+      "error_message": null
+    },
+    {
+      "id": "7c4e0012-4c17-4b3a-9e50-7c4e00000012",
+      "workflow": "ticket",
+      "status": "completed",
+      "triggered_by": "event",
+      "started_at": "2026-08-27T08:11:29Z",
+      "duration_ms": 651,
+      "error_message": null
+    },
+    {
+      "id": "7c4e0013-4c17-4b3a-9e51-7c4e00000013",
+      "workflow": "ticket",
+      "status": "completed",
+      "triggered_by": "event",
+      "started_at": "2026-08-27T14:37:55Z",
+      "duration_ms": 719,
+      "error_message": null
+    },
+    {
+      "id": "7c4e0014-4c17-4b3a-9e52-7c4e00000014",
+      "workflow": "ticket",
+      "status": "completed",
+      "triggered_by": "event",
+      "started_at": "2026-08-27T20:04:31Z",
+      "duration_ms": 698,
+      "error_message": null
+    },
+    {
+      "id": "7c4e0015-4c17-4b3a-9e53-7c4e00000015",
+      "workflow": "ticket",
+      "status": "completed",
+      "triggered_by": "event",
+      "started_at": "2026-08-28T09:26:47Z",
+      "duration_ms": 762,
+      "error_message": null
+    },
+    {
+      "id": "7c4e0016-4c17-4b3a-9e54-7c4e00000016",
+      "workflow": "ticket",
+      "status": "completed",
+      "triggered_by": "event",
+      "started_at": "2026-08-28T15:52:10Z",
+      "duration_ms": 673,
+      "error_message": null
+    },
+    {
+      "id": "7c4e0017-4c17-4b3a-9e55-7c4e00000017",
+      "workflow": "ticket",
+      "status": "completed",
+      "triggered_by": "event",
+      "started_at": "2026-08-29T10:08:38Z",
+      "duration_ms": 736,
+      "error_message": null
+    },
+    {
+      "id": "7c4e0018-4c17-4b3a-9e56-7c4e00000018",
+      "workflow": "ticket",
+      "status": "completed",
+      "triggered_by": "event",
+      "started_at": "2026-08-29T18:45:02Z",
+      "duration_ms": 709,
+      "error_message": null
+    },
+    {
+      "id": "7c4e0019-4c17-4b3a-9e57-7c4e00000019",
+      "workflow": "ticket",
+      "status": "completed",
+      "triggered_by": "event",
+      "started_at": "2026-08-30T08:29:16Z",
+      "duration_ms": 681,
+      "error_message": null
+    },
+    {
+      "id": "7c4e0020-4c17-4b3a-9e58-7c4e00000020",
+      "workflow": "ticket",
+      "status": "completed",
+      "triggered_by": "event",
+      "started_at": "2026-08-30T13:57:44Z",
+      "duration_ms": 727,
+      "error_message": null
+    },
+    {
+      "id": "d16e0001-4c17-4b3a-9e51-d16e00000001",
+      "workflow": "digest",
+      "status": "completed",
+      "triggered_by": "schedule",
+      "started_at": "2026-08-24T13:00:06Z",
+      "duration_ms": 1601,
+      "error_message": null
+    },
+    {
+      "id": "d16e0002-4c17-4b3a-9e52-d16e00000002",
+      "workflow": "digest",
+      "status": "completed",
+      "triggered_by": "schedule",
+      "started_at": "2026-08-25T13:00:04Z",
+      "duration_ms": 1548,
+      "error_message": null
+    },
+    {
+      "id": "d16e0003-4c17-4b3a-9e53-d16e00000003",
+      "workflow": "digest",
+      "status": "completed",
+      "triggered_by": "schedule",
+      "started_at": "2026-08-26T13:00:09Z",
+      "duration_ms": 1672,
+      "error_message": null
+    },
+    {
+      "id": "d16e0004-4c17-4b3a-9e54-d16e00000004",
+      "workflow": "digest",
+      "status": "completed",
+      "triggered_by": "schedule",
+      "started_at": "2026-08-27T13:00:05Z",
+      "duration_ms": 1503,
+      "error_message": null
+    },
+    {
+      "id": "d16e0005-4c17-4b3a-9e55-d16e00000005",
+      "workflow": "digest",
+      "status": "completed",
+      "triggered_by": "schedule",
+      "started_at": "2026-08-28T13:00:07Z",
+      "duration_ms": 1629,
+      "error_message": null
+    },
+    {
+      "id": "d16e0006-4c17-4b3a-9e56-d16e00000006",
+      "workflow": "digest",
+      "status": "completed",
+      "triggered_by": "schedule",
+      "started_at": "2026-08-29T13:00:03Z",
+      "duration_ms": 1584,
+      "error_message": null
+    },
+    {
+      "id": "d16e0007-4c17-4b3a-9e57-d16e00000007",
+      "workflow": "digest",
+      "status": "completed",
+      "triggered_by": "schedule",
+      "started_at": "2026-08-30T13:00:08Z",
+      "duration_ms": 1610,
+      "error_message": null
+    }
+  ]
+}

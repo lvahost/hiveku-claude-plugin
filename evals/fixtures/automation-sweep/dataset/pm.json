@@ -1,0 +1,22 @@
+{
+  "_note": "Two different rails. `projects` are Hiveku PM projects (pm_projects_list / pm_tasks_create). `site_projects` are website projects (list_projects), which is where the OTHER cron rail lives - project_crons_list / project_cron_logs. The site project has the cron feature switched off, so that rail is honestly empty rather than absent.",
+  "projects": [
+    {
+      "id": "proj_fixture_automation",
+      "name": "Brightside Fixtures - retainer",
+      "project_type": "marketing",
+      "status": "active",
+      "created_at": "2026-01-08T15:12:44Z"
+    }
+  ],
+  "site_projects": [
+    {
+      "id": "site_fixture_showroom",
+      "name": "Brightside Fixtures showroom site",
+      "status": "active",
+      "cron_enabled": false,
+      "cron_environments": [],
+      "functions": []
+    }
+  ]
+}

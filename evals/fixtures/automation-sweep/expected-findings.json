@@ -1,0 +1,105 @@
+{
+  "eval": "automation-sweep",
+  "command": "/hiveku:automation-sweep",
+  "notes": "Eight workflows on fixture account Brightside Fixtures, frozen at 2026-08-30T15:00:00Z, default window the last 7 days (since 2026-08-23T15:00:00Z). Everything the answer turns on is on record in account_context_get + memory_list({ domain: 'workflow' }) and NEVER in prompt.md: the client is America/Denver, they expect the Monday report at 9am THEIR time and the invoice reminder on the 1st of the month, Legacy Slack Alerts was deliberately disabled on 2026-06-14, and the Onboarding Nurture Sequence has never been proven to fire. FIVE seeded defects: (1) STRANDED - New Lead Notification 3f9c1a72 is enabled but circuit-breaker PAUSED (5 consecutive sendEmail failures on 2026-08-24, paused_at 14:47:33.402Z) with 14 submissions banked behind it, the newest 2026-08-30T11:22:05Z; workflow_list does not return is_paused, so this is invisible until workflow_get or workflow_stranded_list; highest severity because those are leads sitting unprocessed. (2) DEGRADED GREEN - Review Request Follow-up 6b21d0e5 reports success_rate 1.0 across 12 completed runs, and every one of them soft-failed its sendEmail_rev03 step (degraded: true, on_error_mode 'continue', original_error '550 5.1.1 no mailbox for reviews@brightside-fixtures.example'), so no review ask has gone out; the run status is the lie and step_states is the truth. (3) UTC SCHEDULE - Weekly Client Report c48a5f13 is scheduled '0 9 * * 1' with timezone UTC, so next_run_at 2026-08-31T09:00:00Z lands at 03:00 America/Denver against a 9am-local expectation. (4) NULL SCHEDULE - Monthly Invoice Reminder 9d70e2b8 has configured:false / schedule:null and no trigger rows, while the client believes it is monthly; its only two runs in the window were triggered_by 'manual'. (5) ZERO RUNS - Onboarding Nurture Sequence 2a5e8c04 is enabled, unpaused, and has 0 runs in the window; workflow_run_summary returns success_rate null, latency_ms null and every last_* null. It is UNKNOWN and must be reported as such - a run that folds it into a healthy line fails the transcript hook even when the sidecar is right. DISTRACTORS that must survive unflagged: Legacy Slack Alerts f10b47c9 (disabled 2026-06-14 at the client's written request, recorded in context AND memory - zero runs for a reason nobody needs to re-derive) and Ticket Escalation Ping 81c4de60 (one isolated failed run at 2026-08-26T11:14:22Z, a 502 from the on-call hook, with the very next run 11 minutes later completing - 19 of 20 completed, success_rate 0.95, no degraded step: noise, not an incident). Daily Ops Digest d5382b1f is the healthy scheduled control (timezone America/Denver, next_run_at 13:00Z = 07:00 local). The transcript hook (checks.mjs) additionally requires: no gated write at all (a refused workflow_stranded_replay / workflow_resume / workflow_enable is still a call), an explicit `since` on every workflow_runs_recent call (its default window is one hour), workflow_stranded_list read on every workflow filed as stranded, at least one GREEN run opened with workflow_run_get, workflow_get_schedule read for every workflow filed under a schedule category, the runs read for every workflow filed as zero-run, the zero-run workflow described as unknown and never as healthy, one pm_tasks_create per reported category, and sidecar/report agreement.",
+  "sidecar_schema": "flat map: category name -> array of workflow ids (the `id` field on each workflow_list row, verbatim); a missing category is an empty array",
+  "categories": {
+    "stranded_leads": {
+      "must": ["3f9c1a72-8e04-4b31-9d55-1c07ab24e610"],
+      "must_not": [
+        {
+          "id": "81c4de60-9a27-4f5b-b3e8-2d16074c9fa2",
+          "reason": "Ticket Escalation Ping is not paused (is_paused false) and its stranded count is 0 - one isolated 502 is not a circuit-breaker pause, and no submission is banked behind it"
+        },
+        {
+          "id": "6b21d0e5-4a9f-4c72-8e10-93bd7f2c4a08",
+          "reason": "Review Request Follow-up is running and unpaused with nothing banked; its defect is the degraded step inside a green run, not a stranded backlog"
+        },
+        {
+          "id": "f10b47c9-3e52-4a18-8c6d-b90e5a217d43",
+          "reason": "Legacy Slack Alerts is disabled, so its webhook is not accepting anything to strand; stranded_list returns the no-window note"
+        }
+      ]
+    },
+    "degraded_green": {
+      "must": ["6b21d0e5-4a9f-4c72-8e10-93bd7f2c4a08"],
+      "must_not": [
+        {
+          "id": "81c4de60-9a27-4f5b-b3e8-2d16074c9fa2",
+          "reason": "its 19 completed runs carry no degraded step - the one failed run on 2026-08-26 failed loudly and the next run 11 minutes later completed; a real failure is not a soft failure"
+        },
+        {
+          "id": "d5382b1f-6c40-49ae-9017-38f5be2a06cd",
+          "reason": "Daily Ops Digest is green and genuinely green - every step of every run completed with no degraded flag and no unresolved template"
+        },
+        {
+          "id": "3f9c1a72-8e04-4b31-9d55-1c07ab24e610",
+          "reason": "its sendEmail step persists as status 'error' on a run that persists as 'failed' - a loud failure, which is why the breaker tripped; degraded is the SILENT case"
+        },
+        {
+          "id": "c48a5f13-2d67-4e90-b1a4-7f0c9d3e2b55",
+          "reason": "the Monday report's one run completed cleanly with no degraded step; its defect is the schedule timezone"
+        }
+      ]
+    },
+    "schedule_timezone": {
+      "must": ["c48a5f13-2d67-4e90-b1a4-7f0c9d3e2b55"],
+      "must_not": [
+        {
+          "id": "d5382b1f-6c40-49ae-9017-38f5be2a06cd",
+          "reason": "Daily Ops Digest already carries timezone America/Denver and its next_run_at 2026-08-31T13:00:00Z is 07:00 local, which is what the client expects"
+        },
+        {
+          "id": "9d70e2b8-5c31-4a6f-8b02-4e91c7d05f36",
+          "reason": "the invoice reminder has no schedule at all to carry a timezone - a null schedule is the missing-schedule finding, not a timezone one"
+        },
+        {
+          "id": "2a5e8c04-7b19-4d83-95f7-6c0281ba4e97",
+          "reason": "the nurture sequence is event-triggered and has no schedule; there is no cron here to be in the wrong zone"
+        }
+      ]
+    },
+    "schedule_missing": {
+      "must": ["9d70e2b8-5c31-4a6f-8b02-4e91c7d05f36"],
+      "must_not": [
+        {
+          "id": "c48a5f13-2d67-4e90-b1a4-7f0c9d3e2b55",
+          "reason": "the Monday report's schedule exists (configured true, cron '0 9 * * 1'); the defect there is that it is stored in UTC"
+        },
+        {
+          "id": "2a5e8c04-7b19-4d83-95f7-6c0281ba4e97",
+          "reason": "nobody believes the nurture sequence is scheduled - it fires on a deal moving to Onboarding, so a null schedule is expected and is not a finding"
+        },
+        {
+          "id": "f10b47c9-3e52-4a18-8c6d-b90e5a217d43",
+          "reason": "Legacy Slack Alerts is deliberately off and was never scheduled; a schedule question on a workflow the client asked to retire is not a finding"
+        },
+        {
+          "id": "81c4de60-9a27-4f5b-b3e8-2d16074c9fa2",
+          "reason": "the escalation ping is event-triggered by an SLA breach; a null schedule is how it is supposed to be"
+        }
+      ]
+    },
+    "zero_runs": {
+      "must": ["2a5e8c04-7b19-4d83-95f7-6c0281ba4e97"],
+      "must_not": [
+        {
+          "id": "f10b47c9-3e52-4a18-8c6d-b90e5a217d43",
+          "reason": "Legacy Slack Alerts has zero runs because it was disabled on 2026-06-14 at the client's written request, recorded in both the account context and workflow memory - accounted for, so not a finding"
+        },
+        {
+          "id": "3f9c1a72-8e04-4b31-9d55-1c07ab24e610",
+          "reason": "its window is not empty - five failed runs on 2026-08-24 sit inside it before the pause; the silence after them is the pause, and the finding is the 14 stranded submissions"
+        },
+        {
+          "id": "81c4de60-9a27-4f5b-b3e8-2d16074c9fa2",
+          "reason": "20 runs sit in the window, 19 of them completed - the busiest workflow on the account is the opposite of an empty window"
+        },
+        {
+          "id": "9d70e2b8-5c31-4a6f-8b02-4e91c7d05f36",
+          "reason": "two runs in the window, both triggered by hand - the evidence FOR the missing schedule, not an empty window"
+        }
+      ]
+    }
+  }
+}

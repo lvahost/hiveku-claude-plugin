@@ -1,0 +1,19 @@
+{
+  "domain": "workflow",
+  "account": "Brightside Fixtures",
+  "account_id": "acct_fixture_automation",
+  "identity": {
+    "persona": "Brightside Fixtures - a two-showroom lighting retailer. Automations run their intake, their review asks, and their reporting.",
+    "primary_contact": "owner@brightside.example",
+    "operations_lead": "dana@brightside.example"
+  },
+  "business_timezone": "America/Denver",
+  "rules": [
+    "Every deliverable this client sees is scheduled in America/Denver. A schedule stored in UTC fires at the wrong local hour and is a finding, not a preference.",
+    "The client depends on four automations by name: the new-lead notification, the review-request follow-up, the Monday client report, and the monthly invoice reminder. They expect the report in their inbox at 9am Monday their time, and the invoice reminder on the 1st of each month.",
+    "Legacy Slack Alerts was switched off on 2026-06-14 at the client's written request when they left Slack. It stays off. It is not broken and it is not a finding.",
+    "Nothing is resumed, replayed, enabled, rescheduled or edited without the owner's explicit yes on that specific workflow. Replaying banked submissions sends real notifications to people who may have filled the form days ago, so the owner sees the list and the dates before anything is sent."
+  ],
+  "memory_notes": "Workflow department memory carries the client's timezone (America/Denver), the two scheduled expectations (Monday 9am report, invoice reminder on the 1st), and the deliberate retirement of Legacy Slack Alerts on 2026-06-14. Read memory_list({ domain: 'workflow' }) for the full entry.",
+  "instructions": "Read the rules above before judging any automation. A workflow the rules account for is not a finding; a workflow nobody can account for is."
+}

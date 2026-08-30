@@ -1,0 +1,11 @@
+{
+  "entries": [
+    {
+      "id": "mem_wf_1",
+      "type": "memory",
+      "name": "workflow",
+      "updated_at": "2026-08-12T16:44:09Z",
+      "content": "Brightside Fixtures - automation department notes.\n\nTIMEZONE. The client is in America/Denver and reads everything on local time. Every schedule we set for them is stored with an explicit IANA timezone; anything sitting on the UTC default fires six or seven hours early for them depending on the season.\n\nWHAT THEY DEPEND ON.\n- New Lead Notification: the enquiry form on the site. The owner treats this as the business's front door.\n- Review Request Follow-up: fires two days after a deal is won. Dana checks the review count, not the workflow, so a silent failure here shows up weeks later as \"we stopped getting reviews\".\n- Weekly Client Report: the client expects it in their inbox at 9am Monday, their time.\n- Monthly Invoice Reminder: the client expects it to go out on the 1st of each month. Dana has been running it by hand since June and mentioned in passing that she assumed it was 'on a schedule like the others'. Nobody has checked.\n\nDELIBERATELY OFF. Legacy Slack Alerts was disabled on 2026-06-14 at the client's written request when they moved off Slack. Do not re-enable it and do not file it as broken; it is recorded here so the weekly pass stops re-discovering it.\n\nNEWER, NOT YET PROVEN. Onboarding Nurture Sequence was built on 2026-07-15 and enabled the same day. Nobody has confirmed it has ever fired end to end.\n\nAPPROVALS. The owner signs off on every resume, replay, enable and schedule change individually, and wants the stranded list with arrival dates before any replay - a count is not enough."
+    }
+  ]
+}
