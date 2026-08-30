@@ -325,5 +325,5 @@ covers" section. Load ONE when the work actually goes there, not preemptively (t
 | `references/ads-assets-quality.md` | The query-to-click gap: RSAs, extensions and assets, ad strength, disapprovals (all platforms), auction insights. |
 | `references/audiences-and-remarketing.md` | Who sees the ads: remarketing, RLSA, Customer Match, list architecture, first-party data, activation. |
 | `references/measurement-and-conversions.md` | Whether the numbers can be trusted: tracking integrity, offline conversion import, metric definitions, anomalies. Load BEFORE optimising toward an unverified conversion number. |
-| `references/google-ads-advanced.md` | Google-only depth: the raw read lane, Performance Max, Shopping, advanced targeting, conversion-action surgery, forecasting. |
+| `references/google-ads-advanced.md` | Google-only depth: the raw read lane, Performance Max, Shopping, advanced targeting, conversion-action surgery, forecasting, campaign experiments (create / schedule / end / graduate - new as of 2026-08-29, section 11). |
 | `references/paid-social-and-bing.md` | Anything that is not Google Ads: Microsoft/Bing, Meta, TikTok, LinkedIn, with per-platform quirks and metric definitions. |

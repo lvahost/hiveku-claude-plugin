@@ -106,9 +106,11 @@ Value index = audience (conv value / cost) / campaign (conv value / cost)
 Baseline from `metrics_daily.json`, or campaign-level rows in `ppc_audience_performance`. Act only when the
 index clears the section 8 band AND the segment clears the volume minimum: an index of 0.95 on 40 clicks is
 noise. **Incrementality caveat, stated to the client every time:** none of these tools measure whether the
-audience CAUSED the conversion. A holdout or geo-split is the only honest answer and there is no experiment
-tool on this surface, so run it through `google-ads-advanced.md` (drafts and experiments via raw API) or
-the Ads UI, and label the reported figures correlational.
+audience CAUSED the conversion. A holdout or geo-split is the only honest answer. A campaign experiment
+(`google-ads-advanced.md` section 11: `ppc_experiment_create` then `ppc_experiment_schedule`, new as of
+2026-08-29 and not yet live-validated) splits traffic between a control and a treatment; a geo holdout is
+an Ads UI setup. There is no raw-API drafts path on this surface. Label the reported figures correlational
+until one of those has run.
 
 ---
 

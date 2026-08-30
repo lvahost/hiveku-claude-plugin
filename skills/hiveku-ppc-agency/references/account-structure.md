@@ -319,10 +319,11 @@ judging an ad-group change on account-level metrics.
   inheriting the campaign's paused state. On Microsoft, `ppc_platform_ad_group_create` starts PAUSED, so
   enabling is two calls, and its ownership check reads the LOCAL mirror, so sync before any Bing
   ad-group-scoped write. Backwards, you ship a dead build or an unintentionally live one.
-- **No rename tool** for campaigns or ad groups. **No geo, language, schedule or network criteria tool.**
+- **No rename tool** for campaigns or ad groups. **No ad-schedule or network criteria tool.**
   **No keyword-move operation.** **No campaign-settings update** beyond budget and bidding strategy here.
-  Fall back to the raw Google Ads mutate surface in `references/google-ads-advanced.md`, or the Ads UI with
-  exact steps for the client. Never pretend a capability exists.
+  Geo, proximity, language and location-settings targeting DO have a tool: `ppc_google_targeting`
+  (`references/google-ads-advanced.md`). There is no raw Google Ads mutate surface on this lane; for
+  everything else, the Ads UI with exact steps for the client. Never pretend a capability exists.
 - **No delete.** `ppc_pause_resource` and `ppc_bulk_edit` set status only; removal is a UI action. Both
   pause and enable require `ad_group_id` for resource_type "ad" or "keyword", the most common call error
   here. `ppc_bulk_edit`'s `operations` schema accepts a `daily_budget` field that is refused.

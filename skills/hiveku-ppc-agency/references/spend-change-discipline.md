@@ -17,7 +17,13 @@ after a write to know it actually happened.
 Every tool named in this file was verified against
 `hiveku-mcp-api-server/src/tools/marketing-tools.ts` and `olympus-tools.ts`, and every enforcement
 claim against the builder routes that back them. Where a capability does not exist, this file says
-so rather than inventing a tool name.
+so rather than inventing a tool name. The one exception is the campaign-experiment lane
+(`ppc_experiments_list`, `ppc_experiment_create`, `ppc_experiment_schedule`, `ppc_experiment_end`,
+`ppc_experiment_graduate`), new as of 2026-08-29: those five are described from the builder route
+contract (`/api/olympus/ppc/google-ops`, module `experiments`) because their tool declarations ship
+after the route deploys, and none has been live-validated. Every claim about them below is contract,
+not observation, until a session has driven one end to end. Their lifecycle and verdict rules live in
+`references/google-ads-advanced.md` section 11.
 
 ## The governing rule
 
@@ -33,8 +39,10 @@ Three separate refusals, and they fail in that order.
   words "Write path not yet live-validated" in their own tool descriptions
   (`ppc_meta_campaign_update`, `ppc_meta_ad_set_update`, `ppc_meta_campaign_push`) or
   "UNVALIDATED-LIVE" (`ppc_linkedin_conversions`, `ppc_linkedin_audience_segments`,
-  `ppc_linkedin_abm_segment`). Do not promise a client an outcome through a lane nobody has driven
-  end to end. Say what is validated, say what is not, and let the operator choose.
+  `ppc_linkedin_abm_segment`), and as of 2026-08-29 the whole experiment lane is in the same state
+  without a tool description to carry the words yet. Do not promise a client an outcome through a
+  lane nobody has driven end to end. Say what is validated, say what is not, and let the operator
+  choose.
 - **No approval means no mutations.** Every spend-affecting change gets its own approval exchange.
   Not a batch approval, not an implied approval from an earlier "sounds good", not an approval you
   inferred from a plan the client skimmed last week.
@@ -106,6 +114,7 @@ Never propose a change class without the read that justifies it in hand.
 | Upload customer-match members | `ppc_google_user_lists` operation `user-lists-list` - the ONLY tool that surfaces the `user_list_id` that `ppc_customer_match_upload` requires |
 | Change Meta ad set targeting | `ppc_sync` then `ppc_ad_group_list` for the ad set row's `targeting` JSON - the only whole-spec read in this surface. `ppc_meta_audiences_list` operation `ad-set-audiences` is NOT that read: it returns the audience lists plus the NAMES of the other targeting keys, never their values. See 2.4 |
 | Change a PMax asset group | `ppc_google_pmax` operation `asset-group-list` - read-only, returns `missing_requirements` naming exactly why an idle group cannot serve |
+| Schedule, end or graduate a campaign experiment | `ppc_experiments_list` for the experiment's `status` and `arms` (SETUP means nothing is serving), the per-arm clicks and conversions against the SKILL.md section-9 minimums for any verdict, and for graduate the reads a budget raise needs: `ppc_pacing_summary` plus the base campaign's current `daily_budget` from `ppc_campaign_get` after a fresh `ppc_sync` |
 
 ### 1.3 Freshness is a precondition, not a nicety
 
@@ -233,7 +242,9 @@ Why it is quiet, and why it deserves more ceremony than a budget change:
 
 Treat a strategy change as a scheduled event: announce it, freeze other changes on that campaign for
 the learning window, and put the end date in the PM task so the next session does not read the
-learning phase as a performance collapse.
+learning phase as a performance collapse. A running campaign experiment is the same kind of event: from
+a confirmed `ppc_experiment_schedule` until `ppc_experiment_end` or `ppc_experiment_graduate`, it IS
+the base campaign's one change for its window, so nothing else lands on that campaign meanwhile.
 
 ### 2.4 The diffs that do not look like diffs
 
@@ -362,7 +373,10 @@ steps or use the dashboard.
 Where it fires: the Google ops budget update and campaign create, the cross-platform budget update,
 `ppc_bing_push_campaign`, `ppc_meta_ad_set_create`, `ppc_meta_advantage_create`,
 `ppc_linkedin_campaign_group_create` and `ppc_linkedin_campaign_group_update`. In other words, every
-budget-bearing create as well as every budget update.
+budget-bearing create as well as every budget update. As of 2026-08-29 that list gains
+`ppc_experiment_graduate` (contract, not yet live-validated): its `daily_budget` becomes the promoted
+campaign's budget, so the guardrail runs on it BEFORE the confirm preview in 4.2 is even built, and a
+refusal is `code: budget_guardrail` with no preview attached.
 
 Two things you need to know about it:
 
@@ -376,7 +390,8 @@ Two things you need to know about it:
   greater than zero. On a campaign that has never synced, or a create (where there is no prior
   campaign at all), ONLY the absolute 10,000 ceiling applies. A stale mirror silently downgrades your
   strongest rail. Run `ppc_sync({ connection_id })` before a budget write so the step cap has
-  something to compare against.
+  something to compare against. The same applies to a graduate: the step cap compares the new
+  `daily_budget` against the BASE campaign's synced budget, so sync before the preview call.
 
 There is also a per-connection MONTHLY guardrail, armed by configuration rather than always-on:
 `ppc_connection_update` with `settings.monthly_budget_target_cents` (integer cents) arms a daily budget
@@ -404,10 +419,13 @@ commit. Show those numbers to the operator. Never auto-confirm by immediately re
 | `ppc_linkedin_conversions` | `conversion-event-send` ALWAYS previews, and `conversion-rule-create` previews whenever `default_value` is set. The stated reason: conversion data trains LinkedIn's bidding and uploaded conversions cannot be recalled. |
 | `ppc_linkedin_audience_segments` | Gate on `campaign-audiences-update`: it changes delivery on a possibly-live campaign immediately. |
 | `ppc_linkedin_abm_segment` | Gate on `company-segment-add`: campaigns targeting the segment start reaching the added companies. Person-level identifiers are REFUSED by policy on this lane. |
+| `ppc_experiment_schedule` | STARTS SPENDING on the treatment copy of the base campaign at the experiment's traffic split. The first call (no `confirm`) executes nothing and returns `requires_confirm: true` with the preview (arms, split, dates); the identical call with `confirm: true` executes. Until then the experiment stays in SETUP, serving nothing. New as of 2026-08-29, contract-described, not yet live-validated. |
+| `ppc_experiment_graduate` | ADOPTS the treatment into the base campaign as a promoted campaign with a NEW `daily_budget`: a budget raise with a test result attached. The budget guardrail (4.1) runs on `daily_budget` FIRST, then the same two-step confirm as schedule. Its diff's CURRENT line is the base campaign's daily budget today; IF WRONG is the delta times 30. New as of 2026-08-29, contract-described, not yet live-validated. |
 
 Note the pattern across LinkedIn and Meta: the gate is on the direction that starts or expands
 delivery, and on anything terminal. Pausing is ungated everywhere. That is a deliberate asymmetry and
-a good model for your own judgment where no gate exists.
+a good model for your own judgment where no gate exists. The experiment lane follows it exactly:
+schedule and graduate gated, end ungated, create needing no gate because it lands in SETUP.
 
 ### 4.3 Warnings that are prose only (they will NOT stop you)
 
@@ -425,6 +443,7 @@ These are documented dangers with no code gate behind them. You are the gate.
 | `ppc_bing_shared_negative_list_items_add` | Every campaign already associated with the list starts blocking immediately. |
 | `ppc_google_shared_negatives` | `shared-set-keywords-add` takes effect immediately on every attached campaign; `shared-set-attach` starts blocking immediately on that campaign; `shared-set-detach` widens reach. |
 | `ppc_negative_keyword_add` | Defaults to BROAD match if you omit `match_type`. A broad negative blocks any query containing the words in any order. Always pass `match_type` explicitly. |
+| `ppc_experiment_end` | No confirm flag: a single call, like a pause. The treatment stops serving, the base campaign continues unchanged, and the test cannot be resumed. Ungated because it is the safe direction, but ending early discards every click the treatment has bought, so it still gets a diff and an approval, with each arm's clicks and conversions against the section-9 minimums in the CURRENT line. New as of 2026-08-29, contract-described, not yet live-validated. |
 
 ### 4.4 The rails that do not exist
 
@@ -466,6 +485,7 @@ and a local mirror that will happily keep showing you the old value.
 | Bulk status flip | `applied` and `skipped_unknown` counts in the response - read BOTH | Same status reads as above |
 | New RSA | Response payload | `ppc_ad_list`, then `ppc_disapprovals_list` a day later; a new ad can be disapproved after it is created |
 | PMax asset group | Response servability note | `ppc_google_pmax` operation `asset-group-list` - `missing_requirements` and `primary_status` |
+| Campaign experiment (schedule, end, graduate) | The `confirm: true` response (schedule, graduate) or the single-call response (end) | `ppc_experiments_list` - `status` off SETUP after a schedule, ended after an end; after a graduate, `ppc_sync` then `ppc_campaign_get` on the base campaign for the new `daily_budget`, plus `ppc_change_history` for the API-client write. Per-arm metrics have no confirmed read on this surface yet (`google-ads-advanced.md` 11.2). Contract-described as of 2026-08-29, not yet live-validated |
 | Offline conversion upload | `results[]` per row, checking every `ok: false` | `ppc_conversion_tracking_status` and `ppc_segment_report({ dimensions: ["conversion_action"] })` a few hours later; conversions are not instant |
 | Customer match upload | The confirm-call response | `ppc_google_user_lists` operation `user-lists-list` for sizes and eligibility. The job runs async on Google's side and audience sizes take 24 to 48 hours |
 | Audience sync (any platform) | `processed_adds` / `processed_removes` / `remaining` from `ppc_audience_ops` `process-pending` | `ppc_audience_ops` operation `stats`, which returns `matched_count` where the platform reports one, else null |
@@ -501,9 +521,10 @@ Say this plainly rather than implying a check you cannot run.
   Cloud Billing API. Do not reconcile a client invoice from `ppc_metrics` and call it billing.
 - **Whether a not-yet-live-validated write path did what the client thinks.** For
   `ppc_meta_campaign_update`, `ppc_meta_ad_set_update`, `ppc_meta_campaign_push`,
-  `ppc_linkedin_conversions`, `ppc_linkedin_audience_segments` and `ppc_linkedin_abm_segment`, verify
-  by reading the object back through its platform read tool and, on the first use per account, in the
-  platform's own UI. Then record in account memory that the lane is now validated for this account.
+  `ppc_linkedin_conversions`, `ppc_linkedin_audience_segments`, `ppc_linkedin_abm_segment` and, as of
+  2026-08-29, the five `ppc_experiment*` tools, verify by reading the object back through its platform
+  read tool and, on the first use per account, in the platform's own UI. Then record in account memory
+  that the lane is now validated for this account.
 
 ## 6. Never do these unprompted
 
@@ -518,7 +539,8 @@ strongly the data supports them. Propose, diff, wait.
    `ppc_change_history` for who paused it, then ask.
 2. **Raising a budget.** Even a well-evidenced raise, even a small one, even inside the guardrail. The
    guardrail's 10,000 ceiling and 2x step cap are the limits of catastrophe, not a mandate. The client's
-   monthly ceiling is the real number and it lives in account memory.
+   monthly ceiling is the real number and it lives in account memory. `ppc_experiment_graduate` is a
+   budget raise: its `daily_budget` is exactly this, however good the test result looks.
 3. **Applying negatives in bulk.** One at a time against reviewed evidence, or one approval for a list
    the operator actually read. Never a loop over a report. And never on a shared negative list without
    first listing the campaigns that list is attached to.
@@ -526,7 +548,11 @@ strongly the data supports them. Propose, diff, wait.
    last 7 days, or launched inside the last 7 days, it is learning. Changing again restarts the clock
    and destroys the only signal that would have told you whether the first change worked. The hub
    skill's rule is one strategy change per campaign per 2 weeks; treat the learning window as a freeze
-   on that campaign, not just on its strategy.
+   on that campaign, not just on its strategy. A campaign experiment counts against the same velocity
+   rule: from a confirmed schedule to its end or graduate it is the base campaign's one change for its
+   window, so no strategy, budget, geo or shared-negative change on that campaign while it runs, and no
+   scheduling an experiment on a campaign still inside a learning phase. Stacking the two makes both
+   unreadable.
 
 Four more that belong in the same tier because they are irreversible or invisible:
 

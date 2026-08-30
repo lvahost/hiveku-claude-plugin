@@ -177,6 +177,8 @@ const READ_ONLY_POST_OVERRIDES = new Map([
     'findMany over the outbox with masked identifiers; no write path in the handler'],
   ['seo_ga4_report',
     'one Data API runReport; the route asks requireOlympusAuth for the read grant ({ action: "read" })'],
+  ['ppc_experiments_list',
+    'two GAQL SELECTs (experiment, experiment_arm); google-ops lists it in READ_OPERATIONS on the read grant; nothing mutates'],
 ]);
 
 const fromDist = collectFromDist();
