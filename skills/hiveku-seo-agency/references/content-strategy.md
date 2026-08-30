@@ -29,7 +29,7 @@ credentials: neither means clean or empty.
 | `seo_serp_features` | LIVE | A | append-only feature history from the same runs |
 | `seo_serp_get` | LIVE | A | stored SERP analysis rows; a LIVE SERP is `seo_research({ action: 'serp' })` or `serp_organic_live_advanced` (C) |
 | `seo_content_gaps` | LIVE | A | stored gap rows, empty until the compute writer below has run for the project; empty means "not computed", never "no gaps" (Play C4) |
-| `seo_content_gaps_compute` | INCOMING S6 | B + write | computes and PERSISTS gaps: one Labs domain_intersection call per competitor (up to 3 tracked competitors, or one explicit `competitor_domain`; `limit` keywords stored per competitor, default 100, max 300; about 2 minutes per competitor); REPLACES the row per project+competitor, never accumulates; 402 = monthly research cap; read back with `seo_content_gaps` |
+| `seo_content_gaps_compute` | LIVE | B + write | computes and PERSISTS gaps: one Labs domain_intersection call per competitor (up to 3 tracked competitors, or one explicit `competitor_domain`; `limit` keywords stored per competitor, default 100, max 300; about 2 minutes per competitor); REPLACES the row per project+competitor, never accumulates; 402 = monthly research cap; read back with `seo_content_gaps` |
 | `dataforseo_labs_google_domain_intersection` | LIVE | B | keywords a rival ranks for that you do not: the gap analysis |
 | `dataforseo_labs_google_page_intersection` | LIVE | B | the same at URL level, 2-20 pages |
 | `seo_research` | LIVE | B / C / E | actions `keyword-gap`, `page-intersection`, `keyword-density` (needs `target` = a `seo_audit_start` task_id; live-tested 2026-08-30), `serp` |
@@ -58,7 +58,7 @@ pipeline separates "the site has no decay" from "the sweep has never run for thi
 | `seo_featured_snippets` | AEO audit runs only (references/aeo.md Play C) |
 | `seo_serp_features` | AEO audit runs only, append-only history |
 | `seo_serp_get` | stored SERP analysis rows (no writer today); the LIVE SERP is `seo_research({ action: 'serp' })` or `serp_organic_live_advanced`, metered |
-| `seo_content_gaps` | the gap compute writer (INCOMING S6, Availability table), on demand; nothing else, and no cron |
+| `seo_content_gaps` | the gap compute writer (Availability table), on demand; nothing else, and no cron |
 
 - **Windows.** Decay and cannibalization compare two 28-day windows anchored at the most recently
   archived GSC day, not today (GSC lags 2 to 3 days): current = maxDate-27d..maxDate, prior =
@@ -80,7 +80,7 @@ pipeline separates "the site has no decay" from "the sweep has never run for thi
   `'llm'` reflects the prose, `'heuristic_only'` only the presence of a byline, a contact link,
   an Article schema. `competitor_scores` is not computed. `overall_score` weights trust 0.35,
   expertise 0.25, experience 0.20, authority 0.20.
-- **`seo_content_gaps` is empty until its compute writer has run** (INCOMING S6; the Availability
+- **`seo_content_gaps` is empty until its compute writer has run** (the Availability
   table). Empty means gaps have not been computed for this project, never that there are no gaps -
   run the compute (or, until it ships, the intersection tools, Play C4) before telling a client
   anything about their gap list.
@@ -247,7 +247,7 @@ with clicks down hard means the SERP changed around you; down 3+ means you were 
 
 `seo_content_gaps({ project_id, competitor_domain })` returns `missing_keywords`,
 `content_opportunities` and `traffic_potential` ordered by `priority_score` - but only after the
-gap compute writer (INCOMING S6, Availability table) has persisted rows for the project. Once it
+gap compute writer (Availability table) has persisted rows for the project. Once it
 is live the play is compute-then-read: run the compute [SPENDS, class B - one Labs
 domain_intersection call per competitor, up to 3 tracked competitors or one explicit
 `competitor_domain`, about 2 minutes each; confirm the spend], which finds the keywords the rival
