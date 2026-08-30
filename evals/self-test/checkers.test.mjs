@@ -131,6 +131,43 @@ test('trace-check accepts derived figures whose inputs are shown inline, unless 
   assert.equal(runNode('checkers/trace-check.mjs', [...args, '--strict']).status, 1);
 });
 
+test('trace-check accepts a figure whose arithmetic is shown inline over tool numbers, even with a small divisor', () => {
+  // 12 conversions is below ignoreBelow, so the line carries only ONE traced
+  // number and the old two-per-line rule read the CPA as fabricated. The
+  // formula names both operands, both came from the tool, and it reproduces
+  // the figure - that is provenance.
+  const dir = tmpDir();
+  fs.writeFileSync(
+    path.join(dir, 'transcript.jsonl'),
+    `${JSON.stringify({ ts: 'x', tool: 't', input: {}, result: { terms: [{ search_term: 'crm software', cost: 1548.7, conversions: 12 }] } })}\n`
+  );
+  fs.writeFileSync(path.join(dir, 'report.md'), '| crm software | $1,548.70 | 12 | $129.06 (=1548.70/12) | keep |\n');
+  const args = ['--transcript', path.join(dir, 'transcript.jsonl'), '--report', path.join(dir, 'report.md')];
+  const res = runNode('checkers/trace-check.mjs', args);
+  assert.equal(res.status, 0, res.stdout);
+  assert.match(res.stdout, /derived-inline: 1/);
+  assert.equal(runNode('checkers/trace-check.mjs', [...args, '--strict']).status, 1);
+});
+
+test('trace-check still fails a shown formula that does not reproduce the figure, or whose operand no tool returned', () => {
+  const dir = tmpDir();
+  fs.writeFileSync(
+    path.join(dir, 'transcript.jsonl'),
+    `${JSON.stringify({ ts: 'x', tool: 't', input: {}, result: { terms: [{ search_term: 'crm software', cost: 1548.7, conversions: 12 }] } })}\n`
+  );
+  // Wrong arithmetic: 1548.70/12 is 129.06, not 141.06.
+  fs.writeFileSync(path.join(dir, 'report.md'), 'CPA $141.06 (=1548.70/12) on the term.\n');
+  const args = ['--transcript', path.join(dir, 'transcript.jsonl'), '--report', path.join(dir, 'report.md')];
+  let res = runNode('checkers/trace-check.mjs', args);
+  assert.equal(res.status, 1);
+  assert.match(res.stdout, /UNTRACED/);
+  // Right arithmetic over an operand the tool never returned (2100.50).
+  fs.writeFileSync(path.join(dir, 'report.md'), 'CPA $175.04 (=2100.50/12) on the term.\n');
+  res = runNode('checkers/trace-check.mjs', args);
+  assert.equal(res.status, 1);
+  assert.match(res.stdout, /UNTRACED/);
+});
+
 test('trace-check ignores fenced exhibits, dates, times, ids and small counts', () => {
   const dir = tmpDir();
   fs.writeFileSync(

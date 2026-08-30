@@ -138,7 +138,13 @@ export function checks(transcript, outputs = {}) {
       }
     }
     if (headlines.length === 0) fail('no scorecard result with channel headlines in the transcript');
-    const missing = headlines.filter((h) => !report.includes(h.headline));
+    // A channel the report refused to stand behind (stale connection, unreadable
+    // source) has its scorecard headline deliberately NOT relayed: that headline
+    // asserts the very platform number the session judged unreadable. Verbatim
+    // relay is owed only for verdicts the report adopts.
+    const unverified = new Set([...asArray(findings.could_not_verify), ...asArray(findings.unknown)]);
+    const owed = headlines.filter((h) => !unverified.has(h.channel));
+    const missing = owed.filter((h) => !report.includes(h.headline));
     if (missing.length) fail(`headline not relayed verbatim for ${missing.map((m) => m.channel).join(', ')}`);
   });
 

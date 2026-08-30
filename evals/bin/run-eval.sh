@@ -81,7 +81,11 @@ EOF
     # shellcheck disable=SC2086
     # Write only - no Read/Bash, so the session cannot follow the fixture
     # path in mcp.json and peek at expected-findings.json (the answer key).
-    claude -p "$PROMPT" \
+    # The prompt goes over STDIN, never as an argument: every command file
+    # opens with YAML frontmatter, and a positional prompt beginning with
+    # "---" is parsed by the CLI as an unknown option, so the session died
+    # before the mock server ever started (0/3 with no transcript).
+    printf '%s' "$PROMPT" | claude -p \
       --mcp-config "$RUN_DIR/mcp.json" \
       --strict-mcp-config \
       --allowedTools "mcp__hk__*" "Write" \

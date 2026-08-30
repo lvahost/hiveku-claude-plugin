@@ -22,7 +22,7 @@
 import fs from 'node:fs';
 import process from 'node:process';
 import { readTranscript, buildCorpus } from '../lib/transcript.mjs';
-import { extractNumbers, stripFences } from '../lib/text.mjs';
+import { canonicalNumber, extractNumbers, stripFences } from '../lib/text.mjs';
 
 function parseArgs(argv) {
   const args = { ignoreBelow: 13, strict: false, json: false };
@@ -75,9 +75,42 @@ for (const num of numbers) {
   if (!tracedByLine.has(num.line)) tracedByLine.set(num.line, new Set());
   tracedByLine.get(num.line).add(num.canonical);
 }
+// A figure the report derives with its arithmetic shown - "$129.06 (=1548.70/12)"
+// - is provenance in the strongest form the report can offer, and it must not
+// depend on the two-traced-numbers-per-line heuristic: a divisor under
+// ignoreBelow (12 conversions) is never extracted from the report, so the line
+// carries one traced number and the figure would read as fabricated. Accept the
+// figure when the formula sits right after it, both operands come from a tool
+// result (small integers included - the corpus keeps every number a tool
+// returned), and evaluating it reproduces the figure to the cent.
+const reportLines = reportText.split('\n');
+const FORMULA_RE = /^\s*\(\s*=\s*([$]?[\d,]+(?:\.\d+)?)\s*([\/*x×+\-])\s*([$]?[\d,]+(?:\.\d+)?)\s*\)/;
+function operandKnown(value) {
+  return corpus.numbers.has(canonicalNumber(value)) || (Number.isInteger(value) && corpus.counts.has(value));
+}
+function explicitFormulaDerives(num) {
+  const line = reportLines[num.line - 1] || '';
+  let from = 0;
+  while (true) {
+    const at = line.indexOf(num.raw, from);
+    if (at === -1) return false;
+    const m = line.slice(at + num.raw.length).match(FORMULA_RE);
+    if (m) {
+      const a = Number(m[1].replace(/[$,]/g, ''));
+      const b = Number(m[3].replace(/[$,]/g, ''));
+      if (Number.isFinite(a) && Number.isFinite(b) && operandKnown(a) && operandKnown(b)) {
+        const op = m[2];
+        const result = op === '/' ? (b === 0 ? NaN : a / b) : op === '+' ? a + b : op === '-' ? a - b : a * b;
+        if (Number.isFinite(result) && Math.abs(result - num.value) <= Math.max(0.011, Math.abs(num.value) * 0.005)) return true;
+      }
+    }
+    from = at + num.raw.length;
+  }
+}
 for (const num of numbers) {
   if (num.traced) num.kind = 'traced';
   else if ((tracedByLine.get(num.line)?.size || 0) >= 2) num.kind = 'derived-inline';
+  else if (explicitFormulaDerives(num)) num.kind = 'derived-inline';
   else num.kind = 'UNTRACED';
 }
 

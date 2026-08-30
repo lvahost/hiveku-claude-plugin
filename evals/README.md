@@ -178,6 +178,20 @@ the 18 skills' disciplines (books, helpdesk, paid media, conversion tracking,
 social). `ppc-optimize` is the first case whose grade also depends on which
 tools the session did NOT call.
 
+Model-in-the-loop results so far (2026-08-29, first-party Claude, one run
+each; the committed `sample-run/` directories are mock-server replays, not
+these runs): `ppc-optimize`, `tracking-check` and `social-plan` each PASS on
+all four verdicts. Getting there took three harness fixes, not model fixes:
+the runner passed the prompt as an argument and every command file opens with
+`---`, which the CLI read as an unknown option (0/3 with no transcript, now
+fed over stdin); the tracking fixture demanded the stale channel's scorecard
+headline verbatim when the session had correctly refused to stand behind that
+number (verbatim relay is now owed only for adopted verdicts); and the trace
+checker could not credit `$129.06 (=1548.70/12)` because a divisor under 13 is
+never extracted from a report (an inline formula over tool numbers that
+reproduces the figure now counts as derived-inline). No 3-run cadence and no
+gateway (Kimi/GLM) comparison has been run yet.
+
 Not covered, no pretense otherwise:
 
 - the other 93 commands, 13 skills, and **all 10 agents** (0 of 10);
