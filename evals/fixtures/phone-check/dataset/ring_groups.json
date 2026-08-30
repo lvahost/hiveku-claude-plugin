@@ -1,0 +1,28 @@
+[
+  {
+    "id": "rg_front_desk",
+    "account_id": "acct_fixture_phone",
+    "name": "Front Desk",
+    "strategy": "simultaneous",
+    "ring_seconds": 25,
+    "extension": "2001",
+    "timeout_target_type": "voicemail",
+    "timeout_target_id": null,
+    "timeout_target_external_e164": null,
+    "fusionpbx_group_uuid": "fpbx-rg-4e7a1c22-9b0d-4c5e-8f3a-6d2b1a0c9e88",
+    "rr_cursor": 0,
+    "is_personal": false,
+    "personal_user_id": null,
+    "created_at": "2026-05-12T17:05:00Z",
+    "members": [
+      {
+        "id": "rgm_1",
+        "extension_id": "ext_1003",
+        "priority": 1,
+        "weight": 1,
+        "delay_seconds": 0,
+        "timeout_seconds": 25
+      }
+    ]
+  }
+]

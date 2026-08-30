@@ -1,0 +1,19 @@
+{
+  "_comment": "Inner object of the { data: ... } envelope the diagnostics route returns (builder src/app/api/olympus/voice/diagnostics/route.ts, action=diagnose_setup). dids_without_e911 is the route's raw count of is_active DIDs with a null e911_address_id - it does NOT exempt toll-free numbers, which is the seeded inflation trap (3 reported; the pinned blocking_issues string is the route's own template). verified_e911_addresses counts voice_e911_addresses rows with verified_at NOT NULL.",
+  "data": {
+    "tenant_provisioned": true,
+    "fusionpbx_domain": "brightsidefixtures.pbx.hiveku.example",
+    "ai_agent_enabled": false,
+    "recording_enabled": false,
+    "hipaa_mode": false,
+    "active_dids": 5,
+    "dids_without_e911": 3,
+    "extensions": 2,
+    "ring_groups": 1,
+    "ivrs": 1,
+    "verified_e911_addresses": 1,
+    "blocking_issues": [
+      "3 active DID(s) have no E911 address — calls may not connect emergency services."
+    ]
+  }
+}

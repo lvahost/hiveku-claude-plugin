@@ -1,6 +1,6 @@
 ---
 name: hiveku-communications
-description: "Operating manual for everything a Hiveku account sends and receives. People say: \"did we miss any calls yesterday?\", \"there's a voicemail - where do I hear it?\", \"can you text her back?\", \"who called at 4:15?\", \"the main line rings the wrong person\", \"she told us over the phone but it's not in her file\" (call recordings and transcripts answer that). Use for ANY communications work - reading the shared team inbox, finding and answering a customer email, replying inside an existing thread, a mailbox that stopped syncing or says \"No active Gmail connection found\", connecting Gmail or Outlook, sending or automating text messages, SMS threads, STOP replies and do-not-contact compliance, inbound texts that should become tickets, missed calls, voicemails, call recordings and transcripts, phone numbers and extensions, IVRs and call routing, and the email infrastructure behind campaigns, transactional templates, drip sequences, audiences, sending domains and deliverability. ALSO load before risky sends - \"text every contact\", \"email the whole list\", \"undo their STOP\", \"release this phone number\" - the refusal and the safe alternative live here."
+description: "Operating manual for the account's EMAIL and shared-inbox surface. People say: \"did we get a reply?\", \"answer that customer email\", \"the mailbox stopped syncing\", \"No active Gmail connection found\", \"connect Gmail or Outlook\", \"why is our email not arriving?\", \"cancel the scheduled campaign\". Use for ANY mailbox or email-infrastructure work - reading the shared team inbox, finding and answering a customer email, replying inside an existing thread, repairing a Gmail/Outlook connection, the gmail_* family, campaigns (finding, creating, cancelling a scheduled send), transactional templates, drip sequences, audiences, sending domains, suppression and deliverability. Phone calls, voicemail, recordings, transcripts, TEXT MESSAGING (SMS/MMS), phone numbers, IVRs and call routing moved to the hiveku-phone-agency skill - load that one for anything a phone does, including \"can you text her back?\" and \"did we miss any calls?\". ALSO load before risky email sends - \"email the whole list\", \"just send it, skip the dry run\" - the refusal and the safe alternative live here."
 ---
 
 # Hiveku Communications Operating System
@@ -32,9 +32,10 @@ current registry:** sending a text is rung 1 since 2026-08-27 (`voice_sms_send`,
 on a key that can see `crm_` (`crm_contact_email_send` - the interactive path); the `gmailReply`
 and `crmSendContactEmail` nodes are the AUTOMATION path (rung 2), and the node is the only path
 under a communications-scoped key. Reading the shared inbox is rung 1 (`crm_inbox_list`) on a
-key whose profile can see it. Buying a phone number is rung 3 by design: `voice_numbers_search`
-shortlists carrier inventory but reserves nothing, and no route on this surface places the
-order.
+key whose profile can see it. Buying a phone number, long the canonical rung-3 example, is
+rung 1 now (`voice_number_purchase`, ask-gated, owned by the **hiveku-phone-agency** skill) -
+which is itself the durable lesson: negative-existence claims expire, verify before repeating
+one.
 
 The corollary: do not invent a tool name to fill a gap. If a name does not resolve, it does not
 exist. Check the node catalog before concluding anything, and prefer `hiveku_docs_search` /
@@ -210,92 +211,39 @@ Two cautions on `gmail_inbox_lead_replies`: **it writes to the mailbox by defaul
 tenant-scoped team filter degrades quietly to noise-only when the membership lookup fails.
 Signatures and trap detail: `references/inbox.md` Part 3.
 
-## Play 5 - SMS
+## Play 5 - SMS (the phone skill owns it now)
 
-**Direct SMS tools exist since 2026-08-27** - the `voice_sms_*` family, 19 tools, rung 1. The
-workflow `sms` node remains the rail for automation. Which rail is the first decision:
+Texting - sends, replies, bulk, scheduled sends, templates, MMS, opt-outs, caps and the
+reputation governor, 10DLC and toll-free registration - is the **hiveku-phone-agency**
+skill's territory (`hiveku-phone-agency/references/sms-operations.md` and
+`hiveku-phone-agency/references/tendlc-and-toll-free.md`). Load that skill for any SMS work.
+Three facts survive here because they cross into THIS skill's lanes:
 
-- **"Text this person once"**: `voice_sms_send_to_contact` (recipient from `crm_contacts.phone`
-  ONLY, never your input) or `voice_sms_send` (raw E.164). Real sends within seconds, **no
-  draft, no recall, no idempotency key - two identical calls are two texts**. `voice_sms_send`
-  returns `{ thread }` with NO message id: confirm with `voice_sms_thread_messages_list`, never
-  from the 200. A 502 `send_failed` is NOT a no-op (the failed row is committed), so a blind
-  retry can double-send.
-- **Reply in an ongoing conversation**: `voice_sms_thread_reply` - recipient and DID come off
-  the stored thread; `opted_out` is re-checked on every reply.
-- **Automation** (trigger, schedule, sequence): the `sms` node, dry-run first.
+- **The STOP trap.** A bare compliance keyword (`stop`, `unsubscribe`, `cancel`, `end`,
+  `quit`, `stopall`) is handled upstream and suppresses the notification entirely - no bell,
+  no ticket, **no `smsReceivedTrigger` fire** - so never build a workflow keyed on "STOP",
+  and know a bare "CANCEL" opts the customer out of ALL SMS. `yes` is carved out and fires.
+- **Compliance writes.** `crm_set_dnc` / `crm_get_dnc_status` / `crm_remove_dnc` on a full
+  key are atomic across email AND SMS (mind the phone-format trap - the phone skill
+  documents it); `voice_sms_opt_out_add` is the in-profile, number-scoped stop.
+- **The helpdesk projection.** An inbound text becomes a ticket on helpdesk-enabled
+  accounts, but `helpdesk_ticket_send_reply` records a reply and DELIVERS NOTHING for
+  `channel: 'sms'` - text back with `voice_sms_thread_reply`, then log.
 
-**Reading is rung 1 now.** `voice_sms_threads_list` is the paged SMS inbox (402
-`voice_not_enabled` is a plan refusal, not an empty inbox). `voice_sms_thread_messages_list`
-reads one transcript - **NOT read-only despite the GET**: it resets the thread's unread badge;
-pass `mark_read: 'false'` (that exact string) for any background read.
+## Play 6 - Telephony (the phone skill owns it now)
 
-**The STOP trap still stands - it is upstream of everything.** Opt-out keywords (`stop`,
-`unsubscribe`, `cancel`, `end`, `quit`, `stopall`) are handled in the voice server before the
-builder hears about the message, and a bare compliance keyword suppresses the notification
-entirely: no bell, no ticket, **no `smsReceivedTrigger` fire**. A workflow keyed on "STOP"
-will never fire - do not build it. A bare "CANCEL" opts the customer out of ALL SMS. `yes` is
-carved out and does fire; multi-word messages always notify. `references/sms.md` Part 3.
-
-**Compliance writes:** `crm_set_dnc` / `crm_get_dnc_status` / `crm_remove_dnc` on a full key
-(atomic across email, SMS, lifecycle and sequence exits - beware the phone-format trap,
-`references/sms.md` Part 4). In-profile, number-scoped: `voice_sms_opt_out_add` honors a stop
-request made by phone, email or in person (silent no-op when a row exists: 200 with
-`already_present: true`).
-
-**Enablement and 10DLC are rung 1 now.** On `sms_not_enabled`, `voice_sms_registration_get` is
-the verdict: key on `can_send` and `blocking_reason` instead of re-deriving the rule. The fix
-path is tooled - `voice_sms_brand_submit` (a fee-bearing, IRREVERSIBLE carrier filing of a
-real company's legal identity: human decision, EIN right first time), `voice_sms_campaign_draft`
-(drafts text only), **`voice_sms_cta_preflight` before any filing**, the create/resubmit lane,
-`voice_sms_campaign_carriers_get`, `voice_sms_toll_free_verification_get`. Load
-`references/sms.md` Parts 6-7 first.
-
-An inbound text is also projected into helpdesk (`helpdesk_ticket_list({ channel: 'sms' })` -
-full key, helpdesk-enabled accounts only). **Do not reply to an SMS ticket with
-`helpdesk_ticket_send_reply`** - it records the reply and delivers NOTHING for
-`channel: 'sms'`. Text back with `voice_sms_thread_reply` or the `sms` node, then log it.
-
-Send gates, caps and the reputation governor, templating, retries, quiet hours, SMS templates,
-scheduled sends, diagnosis: `references/sms.md`. Load it before building anything.
-
-## Play 6 - Telephony
-
-Reads: `voice_calls_list`, `voice_recent_calls` (the diagnostic view for "calls are not coming
-through"), `voice_call_get` (one call - its `recording_url` is hardcoded null and its
-`recording_transcript` carries the AI summary, not the transcript), `voice_diagnose_setup`
-(read `blocking_issues` verbatim, minus the E911 toll-free caveat in the reference),
-`voice_toll_fraud_state` (outbound rejected = the daily-cap guard working), and the inventory
-listings plus `voice_ivr_walk` to narrate a phone tree.
-
-**Voicemail is a first-class queue now.** `voice_voicemails_list` is the paged voicemail inbox
-(still `voice_calls` rows with `disposition: 'voicemail'` underneath). Its `audio_url` is a
-5-minute presigned link: never paste it; pass `audio_urls: 'false'` when you do not need
-playback. `voice_voicemail_mark_read` clears the badge a human triages from - never use it to
-tidy an inbox you are only reading.
-
-**Dispositions:** the column only ever holds `answered`, `voicemail`, `missed`, `ai_handled`,
-`abandoned`. `voice_calls_list`'s own description still advertises `no_answer`, `busy`,
-`failed` - those NEVER match and return silent zeros.
-
-**Transcripts, two paths.** Communications-scoped key: `voice_call_transcript_get` (verbatim,
-inline, no redaction) and `voice_recording_url_get` (presigned, unauthenticated, non-revocable
-5-minute audio URL - prefer the transcript). Full key: `marketing_call_attribution_list` +
-`marketing_call_transcript_get` add attribution and the `transcript_state` verdict - five
-states, **none meaning "empty"** (`purged` still has a surviving `ai_summary`; report the
-state). `references/telephony.md` Parts 3-4.
-
-**Routing writes exist now** - create/update/delete for extensions, IVRs and ring groups,
-update/delete for queues, get/update for tenant settings; number lifecycle is partly tooled
-(`voice_numbers_search`,
-`voice_number_update`/`_cnam_set`/`_release`, `voice_port_orders_list` for porting status,
-`voice_blocked_numbers_add`/`_list`/`_remove`). These are live phone-system changes with real
-blast radius, and release/unblock are hard stops. Load `references/telephony.md` Parts 5-6
-before ANY voice write. Buying a number remains rung 3.
-
-Voice automation nodes (rung 2): `voiceCallCompletedTrigger`, `voiceVoicemailTrigger` (caller
-and message length, NEVER the transcript), `voiceMissedCallTrigger` (the speed-to-lead hook),
-plus read-only action nodes and `phoneCall`.
+Calls, voicemail, recordings and transcripts, numbers and E911, extensions, IVRs, ring
+groups, queues, caller ID, porting, call tracking - all of it lives in the
+**hiveku-phone-agency** skill, whose references carry the trap manuals
+(`hiveku-phone-agency/references/pbx-routing.md`,
+`hiveku-phone-agency/references/calls-voicemail-transcripts.md`, and siblings). Load it for
+any phone work, any voice WRITE, and `/hiveku:phone-check` for the diagnosis ladder. Two
+facts worth keeping in view from this side: the stored call dispositions are exactly
+`answered | voicemail | missed | ai_handled | abandoned` (the tool description's
+`no_answer/busy/failed` are never stored and return silent zeros), and a presigned
+recording/voicemail `audio_url` is an unauthenticated five-minute link - never paste one.
+Voice automation nodes (rung 2): `voiceCallCompletedTrigger`, `voiceVoicemailTrigger`,
+`voiceMissedCallTrigger`, plus read-only action nodes and `phoneCall`.
 
 ## Play 7 - Email infrastructure
 
@@ -368,7 +316,7 @@ strategy via `talk_to_department({ domain: 'marketing' })`; workflow design via
   and a bare "CANCEL" is an opt-out, so your cancellation flow never sees it.
 - **Replying to an SMS ticket with `helpdesk_ticket_send_reply`.** Records the message,
   delivers nothing. Use `voice_sms_thread_reply` or the `sms` node.
-- **Reading an SMS thread without `mark_read: 'false'`**, clearing a human's unread badge.
+- **Passing `mark_read: 'true'` on a background SMS-thread read**, clearing a human's unread badge (the read is side-effect-free by default now).
 - **Reporting `sent` as delivered, or blind-retrying a 502.** `sent` = carrier accepted; null
   `delivery_status` = never reconciled; the failed row is committed, so a retry can
   double-send.
@@ -399,6 +347,9 @@ incidents behind each rule. Load the relevant one BEFORE building, not after a s
 | Reference | Load it when |
 |---|---|
 | `references/inbox.md` | Reading or searching any mailbox; replying in a thread (`crm_contact_email_send` interactively, the `gmailReply` node for automation); `gmail_*` signatures and traps; connecting or repairing a Gmail/Outlook connection; `no_oauth_app`; "no active Gmail connection found". |
-| `references/sms.md` | Any text-message work: the `voice_sms_*` send/read/reply tools, the `sms` node, inbound triggers, STOP and opt-out compliance, DNC, caps and the reputation governor, quiet hours, SMS templates, 10DLC and toll-free registration, scheduled sends, the helpdesk projection. |
-| `references/telephony.md` | Calls, the voicemail queue, recordings, transcripts and `transcript_state`; attribution; numbers, porting, blocked callers, extensions, IVRs, ring groups, queues, settings, E911; toll-fraud rejections; any voice WRITE. |
 | `references/email-infrastructure.md` | Campaigns (finding, creating, cancelling a scheduled send), audiences, the three template families, both sequence engines, the CRM send queue, sending domains, suppression, deliverability, send-log diagnosis. |
+
+Phone and SMS manuals moved: they are the **hiveku-phone-agency** skill's references now
+(`hiveku-phone-agency/references/sms-operations.md`,
+`hiveku-phone-agency/references/pbx-routing.md`, and siblings). Load that skill, not a file
+from here, for anything a phone does.

@@ -197,3 +197,92 @@ test('no guardrails file changes nothing', () => {
   assert.equal(decision(decideWithGuardrails(payload('crm_list_contacts', cwd))), 'allow');
   assert.equal(decideWithGuardrails(payload('ppc_budget_update', cwd)), null);
 });
+
+// ── Per-call gates: NEVER_AUTO_APPROVE + ARG_GATED_READS (voice program) ───
+//
+// `isReadOnlyTool` answers about the TOOL; `isAutoApprovable` answers about
+// the CALL. These cases pin the two override rails added for the 2026-08-29
+// voice audit: a GET whose response is itself the hazard (an unauthenticated
+// recording URL) and a read whose safety depends on its arguments.
+import { ARG_GATED_READS, NEVER_AUTO_APPROVE, isAutoApprovable } from '../lib/tool-safety.mjs';
+import { PENDING_TOOLS } from './pending-tools.mjs';
+
+test('vetoed reads never auto-approve, even while the server lists them as reads', () => {
+  // voice_recording_url_get IS a server-declared GET today; the veto must win.
+  // voice_tts_preview is a pending POST kept here as defence in depth against
+  // a mis-generated list — either way, neither may run unattended.
+  for (const t of ['voice_recording_url_get', 'voice_tts_preview']) {
+    assert.equal(isAutoApprovable(t, {}), false, `${t} must never be auto-approvable`);
+    assert.equal(isAutoApprovable(t, undefined), false, `${t} must never be auto-approvable (no input)`);
+    assert.equal(
+      decideForPayload({ tool_name: `${HIVEKU_TOOL_PREFIX}${t}`, tool_input: {} }),
+      null,
+      `${t} must fall through to the normal permission prompt`,
+    );
+  }
+});
+
+test('voice_voicemails_list auto-approves ONLY the explicit metadata form', () => {
+  // The route returns a presigned recording URL per voicemail unless
+  // audio_urls === 'false'. Fail closed: no input, empty input, or the wrong
+  // type must all fall back to the prompt.
+  assert.equal(isAutoApprovable('voice_voicemails_list', { audio_urls: 'false' }), true);
+  for (const input of [{}, undefined, null, { audio_urls: 'true' }, { audio_urls: false }, { audio_urls: 'FALSE' }]) {
+    assert.equal(
+      isAutoApprovable('voice_voicemails_list', input),
+      false,
+      `voice_voicemails_list with ${JSON.stringify(input)} must not auto-approve`,
+    );
+  }
+  const allowed = decideForPayload({
+    tool_name: `${HIVEKU_TOOL_PREFIX}voice_voicemails_list`,
+    tool_input: { audio_urls: 'false' },
+  });
+  assert.equal(allowed?.hookSpecificOutput?.permissionDecision, 'allow');
+  assert.equal(
+    decideForPayload({ tool_name: `${HIVEKU_TOOL_PREFIX}voice_voicemails_list`, tool_input: {} }),
+    null,
+  );
+});
+
+test('every override name is real and consistent with the generated lists', () => {
+  // A veto on a name that exists nowhere is a typo that protects nothing; a
+  // veto on a name the readonly list carries but the index says is not a GET
+  // means one of the generated files is stale. Both must fail loudly.
+  const readonly = new Set(
+    JSON.parse(readFileSync(new URL('../lib/readonly-tools.json', import.meta.url), 'utf8')).tools,
+  );
+  const index = new Map(
+    JSON.parse(readFileSync(new URL('../lib/tool-index.json', import.meta.url), 'utf8'))
+      .tools.map((t) => [t.name, t.method]),
+  );
+  const overrides = [...NEVER_AUTO_APPROVE, ...Object.keys(ARG_GATED_READS)];
+  for (const name of overrides) {
+    assert.ok(
+      index.has(name) || PENDING_TOOLS.has(name),
+      `${name} is in an override but exists neither in the tool index nor PENDING_TOOLS — a typo gates nothing`,
+    );
+    if (readonly.has(name)) {
+      // The override is LIVE: the list says read, so the index must agree it
+      // is a GET, and the override must actually bite on a bare call.
+      assert.equal(
+        index.get(name),
+        'GET',
+        `${name} sits in readonly-tools.json but the index says ${index.get(name)} — stale generated list`,
+      );
+      assert.equal(
+        isAutoApprovable(name, {}),
+        false,
+        `${name} is in the readonly list yet its override does not bite — stale override`,
+      );
+    } else if (index.has(name)) {
+      // Not in the readonly list: fine for a write, but a GET missing from
+      // the readonly list means the generated list has drifted.
+      assert.notEqual(
+        index.get(name),
+        'GET',
+        `${name} is a GET in the index but absent from readonly-tools.json — regenerate the list`,
+      );
+    }
+  }
+});

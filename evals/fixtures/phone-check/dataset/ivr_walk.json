@@ -1,0 +1,60 @@
+{
+  "_comment": "voice_ivr_walk response for ivr_main, pinned to the registered description: options keyed by digit, resolved is a union, and a deleted/missing target does NOT error - it becomes {type:'unknown',reason} while the route still answers 200. Digit 3's target ext_1099 exists in no dataset file (a deleted extension): that digit answers and goes nowhere. greeting.voice_id carries the hardcoded Cartesia fallback the route always substitutes, so it is not evidence anyone chose a voice; invalid_input_max_attempts reports 3 when the column is null.",
+  "ivr": {
+    "id": "ivr_main",
+    "name": "Main Menu",
+    "extension": "3000",
+    "greeting": {
+      "text": "Thanks for calling Brightside Fixtures. For the front desk, press 1. For sales, press 2. For order status, press 3.",
+      "voice_id": "a0e99841-438c-4a64-b679-ae501e7d6091",
+      "rendered": true
+    },
+    "options": {
+      "1": {
+        "digit": "1",
+        "target_type": "ring_group",
+        "target_id": "rg_front_desk",
+        "label": "Front desk",
+        "announcement_tts_text": null,
+        "announcement_voice_id": null,
+        "resolved": {
+          "type": "ring_group",
+          "id": "rg_front_desk",
+          "name": "Front Desk",
+          "strategy": "simultaneous",
+          "members": [
+            { "extension": "1003", "display_name": "Dana Whitfield - Front Desk", "priority": 1 }
+          ]
+        }
+      },
+      "2": {
+        "digit": "2",
+        "target_type": "extension",
+        "target_id": "ext_1004",
+        "label": "Sales",
+        "announcement_tts_text": null,
+        "announcement_voice_id": null,
+        "resolved": {
+          "type": "extension",
+          "extension": "1004",
+          "display_name": "Renee Ortiz - Sales"
+        }
+      },
+      "3": {
+        "digit": "3",
+        "target_type": "extension",
+        "target_id": "ext_1099",
+        "label": "Order status",
+        "announcement_tts_text": null,
+        "announcement_voice_id": null,
+        "resolved": {
+          "type": "unknown",
+          "reason": "extension ext_1099 not found"
+        }
+      }
+    },
+    "invalid_input_max_attempts": 3,
+    "business_hours": null,
+    "after_hours": null
+  }
+}

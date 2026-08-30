@@ -1,0 +1,62 @@
+[
+  {
+    "id": "call_5001",
+    "call_uuid": "call_5001",
+    "account_id": "acct_fixture_phone",
+    "direction": "inbound",
+    "from_e164": "+14695550111",
+    "to_e164": "+18335550142",
+    "disposition": "missed",
+    "started_at": "2026-08-29T13:05:00Z",
+    "duration_seconds": 0,
+    "billable_seconds": 0
+  },
+  {
+    "id": "call_5002",
+    "call_uuid": "call_5002",
+    "account_id": "acct_fixture_phone",
+    "direction": "inbound",
+    "from_e164": "+12145550977",
+    "to_e164": "+18335550142",
+    "disposition": "missed",
+    "started_at": "2026-08-29T13:41:00Z",
+    "duration_seconds": 0,
+    "billable_seconds": 0
+  },
+  {
+    "id": "call_5003",
+    "call_uuid": "call_5003",
+    "account_id": "acct_fixture_phone",
+    "direction": "outbound",
+    "from_e164": "+12145550188",
+    "to_e164": "+12145550990",
+    "disposition": "answered",
+    "started_at": "2026-08-29T09:20:00Z",
+    "duration_seconds": 620,
+    "billable_seconds": 620
+  },
+  {
+    "id": "call_5004",
+    "call_uuid": "call_5004",
+    "account_id": "acct_fixture_phone",
+    "direction": "inbound",
+    "from_e164": "+19725550244",
+    "to_e164": "+12145550163",
+    "disposition": "missed",
+    "started_at": "2026-08-29T14:12:00Z",
+    "duration_seconds": 0,
+    "billable_seconds": 0
+  },
+  {
+    "id": "vm_1",
+    "call_uuid": "vm_1",
+    "account_id": "acct_fixture_phone",
+    "direction": "inbound",
+    "from_e164": "+14695550111",
+    "to_e164": "+18885550171",
+    "disposition": "voicemail",
+    "started_at": "2026-08-29T08:47:00Z",
+    "duration_seconds": 45,
+    "billable_seconds": 45
+  }
+]

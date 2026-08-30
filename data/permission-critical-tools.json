@@ -5,8 +5,8 @@
     "mcp__plugin_hiveku_hk__",
     "mcp__hiveku__"
   ],
-  "plugin_version": "0.14.0",
-  "count": 37,
+  "plugin_version": "0.14.6",
+  "count": 62,
   "tools": [
     {
       "name": "deploy_site",
@@ -192,6 +192,131 @@
       "name": "outbound_reply_draft_send",
       "method": "POST",
       "why_gated": "emails a prospect - sends a saved draft as a real reply through the provider"
+    },
+    {
+      "name": "voice_number_purchase",
+      "method": "POST",
+      "why_gated": "buys a phone number - real money, billed monthly until released"
+    },
+    {
+      "name": "voice_number_release",
+      "method": "DELETE",
+      "why_gated": "returns a number to the carrier - unrecoverable, callers get dead air"
+    },
+    {
+      "name": "voice_e911_address_create",
+      "method": "POST",
+      "why_gated": "registers a legal emergency (E911) address with the carrier"
+    },
+    {
+      "name": "voice_extension_delete",
+      "method": "DELETE",
+      "why_gated": "deletes a phone extension - that person's phone stops ringing"
+    },
+    {
+      "name": "voice_ivr_create",
+      "method": "POST",
+      "why_gated": "creates a live phone menu and spends TTS money rendering it"
+    },
+    {
+      "name": "voice_ivr_update",
+      "method": "PATCH",
+      "why_gated": "rewrites a live phone menu - every save re-renders paid TTS audio"
+    },
+    {
+      "name": "voice_ivr_delete",
+      "method": "DELETE",
+      "why_gated": "deletes a live phone menu and its audio - callers routed to it hit nothing"
+    },
+    {
+      "name": "voice_ring_group_delete",
+      "method": "DELETE",
+      "why_gated": "deletes a ring group - lines routed to it stop ringing anyone"
+    },
+    {
+      "name": "voice_queue_delete",
+      "method": "DELETE",
+      "why_gated": "deletes a call queue callers may be waiting in"
+    },
+    {
+      "name": "voice_pool_delete",
+      "method": "DELETE",
+      "why_gated": "deletes a DNI tracking pool - live ad attribution stops"
+    },
+    {
+      "name": "voice_call_tracking_setup",
+      "method": "POST",
+      "why_gated": "can buy tracking numbers (did_count) - real recurring money"
+    },
+    {
+      "name": "voice_call_originate",
+      "method": "POST",
+      "why_gated": "rings a real phone and bills per minute"
+    },
+    {
+      "name": "voice_sms_bulk_send",
+      "method": "POST",
+      "why_gated": "sends real SMS to up to 200 recipients, no draft or recall"
+    },
+    {
+      "name": "voice_sms_brand_submit",
+      "method": "POST",
+      "why_gated": "files the business's legal identity with the 10DLC carrier registry"
+    },
+    {
+      "name": "voice_sms_campaign_submit",
+      "method": "POST",
+      "why_gated": "files a 10DLC campaign - carrier fee (~$15), no withdrawal"
+    },
+    {
+      "name": "voice_sms_campaign_resubmit",
+      "method": "POST",
+      "why_gated": "re-files a 10DLC campaign with the carrier registry"
+    },
+    {
+      "name": "voice_sms_campaign_delete",
+      "method": "DELETE",
+      "why_gated": "deletes a texting registration - assigned numbers can stop sending"
+    },
+    {
+      "name": "voice_sms_number_assign_campaign",
+      "method": "POST",
+      "why_gated": "binds a number to a 10DLC campaign at the carrier"
+    },
+    {
+      "name": "voice_sms_toll_free_verification_submit",
+      "method": "POST",
+      "why_gated": "resubmitting a VERIFIED number overwrites its approval - texting stops for weeks"
+    },
+    {
+      "name": "voice_port_order_create",
+      "method": "POST",
+      "why_gated": "files a number-port order with the carrier"
+    },
+    {
+      "name": "voice_port_order_action",
+      "method": "POST",
+      "why_gated": "confirm is the legal act under the LOA; cancel/activate move real numbers"
+    },
+    {
+      "name": "voice_settings_update",
+      "method": "PATCH",
+      "why_gated": "rewrites tenant-wide phone behavior for every line at once"
+    },
+    {
+      "name": "voice_number_update",
+      "method": "PATCH",
+      "why_gated": "rewrites where a live phone number routes"
+    },
+    {
+      "name": "voice_blocked_numbers_remove",
+      "method": "DELETE",
+      "why_gated": "unblocks a caller someone deliberately blocked"
+    },
+    {
+      "name": "voice_tenant_repair",
+      "method": "POST",
+      "why_gated": "reprovisions the whole PBX tenant - a last resort, not a routine fix"
     }
   ]
 }

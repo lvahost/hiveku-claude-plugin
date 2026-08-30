@@ -1,0 +1,12 @@
+{
+  "_comment": "voice_tenant_healthcheck response, served verbatim minus this key. EXACTLY ONE element in checks: the battery short-circuits when either database pool is closed and returns only db_pools_open with ok false - so nothing else was inspected, and none of the other ~20 named checks may be reported as healthy or unhealthy (the registered description's SILENT FAILURE paragraph).",
+  "account_id": "acct_fixture_phone",
+  "ok": false,
+  "checks": [
+    {
+      "id": "db_pools_open",
+      "ok": false,
+      "detail": "voice_server database pool is closed; the consistency battery aborted before any FusionPBX comparison ran"
+    }
+  ]
+}

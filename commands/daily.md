@@ -52,8 +52,10 @@ operator should DO, not a data dump.
  - Helpdesk: open tickets, anything breaching.
  - Voice (accounts with a phone system): `voice_diagnose_setup` - no arguments, one cheap call. A
      non-empty `blocking_issues[]` outranks everything else in the brief; a dead phone system beats
-     any ranking movement. Report the issues verbatim and point at `/hiveku:phone-check`. The whole
-     `voice_*` family is read-only, so the action is always a dashboard fix or a PM task.
+     any ranking movement. Report the issues verbatim and point at `/hiveku:phone-check`. The
+     `voice_*` family carries LIVE writes now - the brief itself only READS; a fix is a confirmed
+     write in a follow-up session (the **hiveku-phone-agency** skill) or a PM task, never a
+     side-effect of the morning brief.
  - Social/content/email: what's scheduled, what needs drafting.
  - Automations: `workflow_runs_recent({ status: "failed", since: <last 24h> })` is account-wide across
      every workflow, so one call tells you whether a form notification, a CRM write, or a scheduled

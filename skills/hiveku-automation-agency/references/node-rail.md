@@ -780,7 +780,9 @@ reporting).
 `voiceCallCompletedTrigger` (filter by direction, disposition, tracking number, minimum
 length), `voiceVoicemailTrigger` (carries caller, number dialled, and message length, never
 the transcript), `voiceMissedCallTrigger` (the speed-to-lead hook), `voiceListCalls`,
-`voiceGetCallDetail`, `voiceListNumbers`, `voiceExtensionStatus`.
+`voiceGetCallDetail`, `voiceListNumbers`, `voiceExtensionStatus`. The direct-tool rail for
+everything phone/SMS (sends, caps, opt-outs, 10DLC readiness, the STOP-suppression trigger
+trap) is the **hiveku-phone-agency** skill - load it before wiring an `sms` or voice node.
 
 **Team notifications**: `slackNotification`, `discordNotification`, `teamsNotification`,
 `pushNotification`.

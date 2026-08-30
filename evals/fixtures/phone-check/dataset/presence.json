@@ -1,0 +1,5 @@
+{
+  "_comment": "The SILENT-FAILURE shape from the registered description of voice_presence_get: { extensions: [], channels_ok: false } is what comes back when the tenant is unprovisioned, when the voice_server call threw and was swallowed, or when channel state is down - the route emits no 5xx, so an empty list must never be read as 'nobody is on a call' or 'nobody is registered'. Served verbatim minus this key.",
+  "extensions": [],
+  "channels_ok": false
+}

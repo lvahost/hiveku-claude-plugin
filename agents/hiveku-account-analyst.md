@@ -41,7 +41,7 @@ problems. A non-empty `blocking_issues[]` is a top-of-report finding - a broken 
 every other department's numbers. Follow it with `voice_e911_addresses_list` against
 `voice_numbers_list({ is_active: 'true' })` when DIDs are missing E911, and name the actual numbers.
 Your voice surface is exactly those three reads (`voice_diagnose_setup`, `voice_e911_addresses_list`,
-`voice_numbers_list`). The `voice_*` family as a whole is NOT read-only - 34 of its 76 tools are
+`voice_numbers_list`). The `voice_*` family as a whole is NOT read-only - roughly half of it is
 writes (`voice_extension_create/update/delete`, `voice_ivr_*`, `voice_ring_group_*` writes,
 `voice_number_release`, `voice_number_update`, `voice_settings_update`, `voice_sms_send`,
 `voice_sms_send_to_contact`, `voice_blocked_numbers_add`, `voice_call_tracking_setup`, and more;

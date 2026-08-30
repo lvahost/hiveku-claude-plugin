@@ -141,7 +141,32 @@ Put this in `.claude/settings.json` (per project) or `~/.claude/settings.json` (
       "mcp__plugin_hiveku_hk__crm_remove_dnc",
       "mcp__plugin_hiveku_hk__outbound_campaign_status_set",
       "mcp__plugin_hiveku_hk__outbound_campaign_sequences_save",
-      "mcp__plugin_hiveku_hk__outbound_reply_draft_send"
+      "mcp__plugin_hiveku_hk__outbound_reply_draft_send",
+      "mcp__plugin_hiveku_hk__voice_number_purchase",
+      "mcp__plugin_hiveku_hk__voice_number_release",
+      "mcp__plugin_hiveku_hk__voice_e911_address_create",
+      "mcp__plugin_hiveku_hk__voice_extension_delete",
+      "mcp__plugin_hiveku_hk__voice_ivr_create",
+      "mcp__plugin_hiveku_hk__voice_ivr_update",
+      "mcp__plugin_hiveku_hk__voice_ivr_delete",
+      "mcp__plugin_hiveku_hk__voice_ring_group_delete",
+      "mcp__plugin_hiveku_hk__voice_queue_delete",
+      "mcp__plugin_hiveku_hk__voice_pool_delete",
+      "mcp__plugin_hiveku_hk__voice_call_tracking_setup",
+      "mcp__plugin_hiveku_hk__voice_call_originate",
+      "mcp__plugin_hiveku_hk__voice_sms_bulk_send",
+      "mcp__plugin_hiveku_hk__voice_sms_brand_submit",
+      "mcp__plugin_hiveku_hk__voice_sms_campaign_submit",
+      "mcp__plugin_hiveku_hk__voice_sms_campaign_resubmit",
+      "mcp__plugin_hiveku_hk__voice_sms_campaign_delete",
+      "mcp__plugin_hiveku_hk__voice_sms_number_assign_campaign",
+      "mcp__plugin_hiveku_hk__voice_sms_toll_free_verification_submit",
+      "mcp__plugin_hiveku_hk__voice_port_order_create",
+      "mcp__plugin_hiveku_hk__voice_port_order_action",
+      "mcp__plugin_hiveku_hk__voice_settings_update",
+      "mcp__plugin_hiveku_hk__voice_number_update",
+      "mcp__plugin_hiveku_hk__voice_blocked_numbers_remove",
+      "mcp__plugin_hiveku_hk__voice_tenant_repair"
     ]
   }
 }

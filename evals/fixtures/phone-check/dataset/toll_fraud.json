@@ -1,0 +1,8 @@
+{
+  "_comment": "Inner object of the { data: ... } envelope (diagnostics route, action=toll_fraud_state). Under cap on purpose: today_billable_seconds reconciles to the sum of billable_seconds on calls.json outbound rows started on 2026-08-29 UTC (620, one answered call from the front-desk DID), and daily_outbound_cap_cents matches settings.json's same-named column - voice_toll_fraud_state reads that same column. The cap is NOT the reason the rep cannot dial out.",
+  "data": {
+    "daily_outbound_cap_cents": 5000,
+    "today_billable_seconds": 620,
+    "today_outbound_start_utc": "2026-08-29T00:00:00Z"
+  }
+}

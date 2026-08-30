@@ -15,6 +15,10 @@ Scope warning first: this sweep spans six tool families (`analytics_`, `seo_`, `
 `marketing_`, `voice_`, `crm_`), and NO scoped key profile carries them all - only a full-profile
 key does. On a scoped key, tool-not-found means the family is invisible to this key, not that the
 channel is unconfigured: report it as could-not-verify with the reason, never as a verdict.
+Seam: YOU own "are click ids captured and are the platforms receiving what we recorded" - the
+capture-to-upload chain. Whether the phone system ITSELF works (provisioning, routing, presence,
+SMS deliverability, 10DLC state) is `hiveku-voice-analyst`'s charter; when the phones are the
+question, say so and stop rather than stretching this sweep.
 
 Investigate with exactly these tools (many are POST in the registry - reports that compute
 server-side; they are still the read surface):

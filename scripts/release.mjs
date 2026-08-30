@@ -4,13 +4,17 @@
  *
  * The version string is the ONLY update signal: adding skills, commands, or
  * agents does nothing for installed users until it changes — they keep the
- * cached copy. And the version lives in three files that must never drift:
+ * cached copy. And the version lives in four files that must never drift:
  *
  *   .claude-plugin/plugin.json       the authority (Claude Code uses this one
  *                                    WITHOUT WARNING, so a stale value here
  *                                    silently masks a bumped marketplace entry)
  *   .claude-plugin/marketplace.json  what the catalog lists
  *   lib/util.mjs PLUGIN_VERSION      what the CLI and User-Agent report
+ *   data/permission-critical-tools.json plugin_version — which plugin release
+ *                                    the ask-list was verified against (the
+ *                                    MCP-side jest suite and this repo's
+ *                                    permission-critical test both read it)
  *
  * Usage:
  *   node scripts/release.mjs            show current versions + drift check
@@ -28,6 +32,7 @@ const ROOT = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const PLUGIN_JSON = path.join(ROOT, '.claude-plugin', 'plugin.json');
 const MARKET_JSON = path.join(ROOT, '.claude-plugin', 'marketplace.json');
 const UTIL_MJS = path.join(ROOT, 'lib', 'util.mjs');
+const PERM_JSON = path.join(ROOT, 'data', 'permission-critical-tools.json');
 
 const SEMVER = /^\d+\.\d+\.\d+$/;
 
@@ -35,13 +40,15 @@ async function readVersions() {
   const plugin = JSON.parse(await fs.readFile(PLUGIN_JSON, 'utf8'));
   const market = JSON.parse(await fs.readFile(MARKET_JSON, 'utf8'));
   const util = await fs.readFile(UTIL_MJS, 'utf8');
+  const perm = JSON.parse(await fs.readFile(PERM_JSON, 'utf8'));
   const utilMatch = /export const PLUGIN_VERSION = '([^']+)'/.exec(util);
   const entry = (market.plugins || []).find((p) => p.name === plugin.name);
   return {
     plugin: plugin.version,
     marketplace: entry?.version,
     util: utilMatch?.[1],
-    _raw: { plugin, market, util, entry },
+    perm: perm.plugin_version,
+    _raw: { plugin, market, util, entry, perm },
   };
 }
 
@@ -104,10 +111,11 @@ async function main() {
   const v = await readVersions();
 
   if (!arg) {
-    const drift = new Set([v.plugin, v.marketplace, v.util]).size !== 1;
+    const drift = new Set([v.plugin, v.marketplace, v.util, v.perm]).size !== 1;
     console.log(`plugin.json      ${v.plugin}`);
     console.log(`marketplace.json ${v.marketplace}`);
     console.log(`lib/util.mjs     ${v.util}`);
+    console.log(`permission-critical-tools.json ${v.perm}`);
     if (drift) {
       console.error(
         '\nDRIFT: these must match. plugin.json wins silently, so installed users would ' +
@@ -154,13 +162,19 @@ async function main() {
     v._raw.util.replace(/export const PLUGIN_VERSION = '[^']+'/, `export const PLUGIN_VERSION = '${next}'`),
   );
 
+  // The ask-list carries the plugin version it was verified against, and two
+  // suites (this repo's permission-critical test and the MCP server's jest
+  // suite) fail on drift — so it is stamped here, never edited by hand.
+  v._raw.perm.plugin_version = next;
+  await fs.writeFile(PERM_JSON, JSON.stringify(v._raw.perm, null, 2) + '\n');
+
   const after = await readVersions();
-  if (new Set([after.plugin, after.marketplace, after.util]).size !== 1) {
+  if (new Set([after.plugin, after.marketplace, after.util, after.perm]).size !== 1) {
     console.error('Bump did not apply cleanly — versions still differ. Fix by hand before releasing.');
     process.exit(1);
   }
 
-  console.log(`${v.plugin} -> ${next} (plugin.json, marketplace.json, lib/util.mjs)`);
+  console.log(`${v.plugin} -> ${next} (plugin.json, marketplace.json, lib/util.mjs, data/permission-critical-tools.json)`);
   console.log('\nNext: commit and push. Installed users see an Update button once their');
   console.log('marketplace catalog refreshes in the background; nothing ships until then.');
 }

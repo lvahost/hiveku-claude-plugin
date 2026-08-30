@@ -1,0 +1,68 @@
+[
+  {
+    "id": "queue_sales",
+    "account_id": "acct_fixture_phone",
+    "name": "Sales Queue",
+    "strategy": "longest_idle",
+    "extension": "5001",
+    "moh_s3_key": null,
+    "moh_local_path": null,
+    "greeting_text": null,
+    "greeting_voice_id": null,
+    "announce_position": false,
+    "announce_frequency_sec": null,
+    "max_wait_sec": 300,
+    "sla_answer_seconds": 30,
+    "callback_enabled": false,
+    "abandon_target_type": null,
+    "abandon_target_id": null,
+    "abandon_target_external_e164": null,
+    "fusionpbx_queue_uuid": null,
+    "created_at": "2026-08-25T13:45:00Z",
+    "members": [
+      {
+        "id": "qm_1",
+        "queue_id": "queue_sales",
+        "extension_id": "ext_1004",
+        "skills": null,
+        "tier": 1,
+        "position": 1,
+        "timeout_seconds": 20,
+        "created_at": "2026-08-25T13:46:00Z"
+      }
+    ]
+  },
+  {
+    "id": "queue_support",
+    "account_id": "acct_fixture_phone",
+    "name": "Support Queue",
+    "strategy": "round_robin",
+    "extension": "5002",
+    "moh_s3_key": null,
+    "moh_local_path": null,
+    "greeting_text": "You have reached Brightside support. An agent will be with you shortly.",
+    "greeting_voice_id": null,
+    "announce_position": true,
+    "announce_frequency_sec": 45,
+    "max_wait_sec": 600,
+    "sla_answer_seconds": 60,
+    "callback_enabled": false,
+    "abandon_target_type": null,
+    "abandon_target_id": null,
+    "abandon_target_external_e164": null,
+    "fusionpbx_queue_uuid": "fpbx-q-71b3d8a5-6e02-4f9c-b1d4-3c7a9e5f2081",
+    "created_at": "2026-06-10T10:30:00Z",
+    "members": [
+      {
+        "id": "qm_2",
+        "queue_id": "queue_support",
+        "extension_id": "ext_1003",
+        "skills": null,
+        "tier": 1,
+        "position": 1,
+        "timeout_seconds": 20,
+        "created_at": "2026-06-10T10:31:00Z"
+      }
+    ]
+  }
+]

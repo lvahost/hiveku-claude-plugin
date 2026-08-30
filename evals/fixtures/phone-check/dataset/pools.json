@@ -1,0 +1,19 @@
+{
+  "_comment": "The account runs no dynamic number insertion: voice_pools_list serves { pools: [] } and the call-tracking doctor reports a not-configured state - a configuration fact, not a phone-system defect. call_tracking_diagnose backs voice_call_tracking_diagnose; the live probe is refused by tools.mjs (it would hold a real tracking DID).",
+  "pools": [],
+  "call_tracking_diagnose": {
+    "project_id": null,
+    "days": 30,
+    "verdict": "not_configured",
+    "summary": "No tracking pools and no DNI snippet on this account - call tracking is not set up. That is a configuration state, not a defect in the phone system's ability to ring or dial.",
+    "checks": [
+      {
+        "id": "number_pool",
+        "status": "warn",
+        "explanation": "The account has zero tracking pools; dynamic number insertion is not in use.",
+        "next_action": "Create a pool from the dashboard if call attribution is wanted; not required for the phone system to work."
+      }
+    ],
+    "fix_first": []
+  }
+}

@@ -60,7 +60,7 @@ carries the number that makes the problem undeniable), `hiveku_recorded` vs
 | Calls unattributed, or "stopped after a redeploy" | `voice_call_tracking_diagnose` (the call doctor - read its ordered `fix_first`), then `marketing_call_attribution_breakdown`, `marketing_call_attribution_list`, `voice_diagnose_setup` | calls |
 | Real leads the platform cannot optimise on; "push CRM sales back to Google / Meta", "close the loop on click to sale" | `marketing_offline_conversions_status` FIRST, then the declared lane (google / microsoft / meta; opt-in lands in validate-only, go-live is a human dashboard flip); rows you assembled yourself go by the two-step `ppc_offline_conversion_upload` (Google only) | offline-conversions |
 | GTM or a pasted tag involved | `seo_gtm_install_status` / `seo_gtm_status`, `project_custom_code_get` | site-instrumentation |
-| The PHONE SYSTEM itself: not ringing, wrong IVR, extension unreachable, outbound rejected, E911 | `voice_diagnose_setup` (no args) FIRST, then the section 13 ladder or `/hiveku:phone-check`. Not an attribution question - do not start at the scorecard | calls (§13) |
+| The PHONE SYSTEM itself: not ringing, wrong IVR, extension unreachable, outbound rejected, E911 | `voice_diagnose_setup` (no args) FIRST, then the **hiveku-phone-agency** skill (`hiveku-phone-agency/references/pbx-routing.md`) or `/hiveku:phone-check`. Not an attribution question - do not start at the scorecard | phone-agency |
 
 **4. Name the broken link out loud** ("the click id never reached the CRM", "the tag is in
 the code but not in the served HTML"). A verdict without a named link is a guess. Then
@@ -169,10 +169,11 @@ tools or `/hiveku:automate`, dry-run first.
   `voice_settings_update` (including `daily_outbound_cap_cents`, the toll-fraud ceiling),
   `voice_number_release`, blocked-number edits, SMS sends. These are LIVE phone-system
   changes, not drafts - an IVR create spends TTS money and answers real callers on return.
-  Confirm each one individually with named ids; never bulk-apply. Still tool-less: E911
-  address registration (`voice_e911_addresses_list` is read-only) and direct DID purchase
-  (`voice_numbers_search` is search-only by design; the one purchase path is
-  `voice_call_tracking_setup`'s `did_count`, capped at 5 per run and E911-gated).
+  Confirm each one individually with named ids; never bulk-apply. E911 registration
+  (`voice_e911_address_create`) and direct DID purchase (`voice_number_purchase`) are tooled
+  now too - both ask-gated money/safety writes owned by the **hiveku-phone-agency** skill;
+  inside a TRACKING-pool context prefer `voice_call_tracking_setup`'s `did_count` (capped at
+  5 per run, E911-gated), which stays the one purchase path this skill itself reaches for.
 - HARD STOP, a response contract: "The phones are quiet anyway - release the unused numbers
   and delete the old ring groups so the bill drops." Refuse the bulk form outright.
   `voice_number_release` PERMANENTLY returns the DID to the carrier - it can be resold to a

@@ -1,0 +1,13 @@
+[
+  {
+    "id": "ivr_main",
+    "account_id": "acct_fixture_phone",
+    "name": "Main Menu",
+    "extension": "3000",
+    "greeting_text": "Thanks for calling Brightside Fixtures. For the front desk, press 1. For sales, press 2. For order status, press 3.",
+    "greeting_voice_id": null,
+    "invalid_input_max_attempts": null,
+    "fusionpbx_ivr_uuid": "fpbx-ivr-b91d6f30-2c4a-4e11-9d77-5a8e0c3f1b26",
+    "created_at": "2026-05-13T11:20:00Z"
+  }
+]

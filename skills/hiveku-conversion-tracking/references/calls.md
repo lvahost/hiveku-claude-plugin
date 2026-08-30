@@ -307,13 +307,13 @@ the named finding plus `pm_tasks_create`.
 
 | | `voice_calls_list` | `marketing_call_attribution_*` |
 |---|---|---|
-| `disposition` | a single STRING: `answered \| no_answer \| voicemail \| busy \| failed` | an ARRAY: `answered \| ai_handled \| voicemail \| missed \| abandoned` |
+| `disposition` | a single STRING: `answered \| voicemail \| missed \| ai_handled \| abandoned` (the CDR writer's whole vocabulary; the tool description still advertises `no_answer/busy/failed`, which are NEVER stored) | an ARRAY: `answered \| ai_handled \| voicemail \| missed \| abandoned` |
 | `direction` | `inbound \| outbound` only | `inbound \| outbound \| internal` |
 
-Filtering `voice_calls_list` with `missed` or `abandoned` returns nothing, and an empty filtered
-result reads as "no missed calls" when it actually means "wrong enum" - that is the exact filter
-someone types after section 10 tells them a high missed share is a staffing finding. In the other
-direction, `disposition` on the attribution tools must be an array (`['missed']`, not `'missed'`).
+Filtering `voice_calls_list` with `missed` WORKS - it is exactly how you count missed calls. The
+silent-zero traps run the other way: `no_answer`, `busy` and `failed` are advertised in the tool's
+own description and NEVER stored, so filtering on them returns an empty result that reads as "no
+problem". On the attribution tools `disposition` must be an array (`['missed']`, not `'missed'`).
 And a `voice_calls_list` total silently excludes internal calls, so the two totals legitimately
 differ before any attribution gap exists. Never read the raw totals as directly comparable.
 
@@ -494,7 +494,10 @@ command.
    `read` / `read_at` say whether a human ever opened it. Do not mark anything read while
    diagnosing.
 
-**The write surface, and its rules.** The registry now carries live-PBX writes: ring-group, IVR and
+**The write surface, and its rules.** (The full operator manual for everything below now lives in
+the **hiveku-phone-agency** skill - `hiveku-phone-agency/references/pbx-routing.md` and its
+siblings; this section keeps only what a tracking investigation needs.) The registry now carries
+live-PBX writes: ring-group, IVR and
 extension create / update / delete, `voice_settings_update`, `voice_number_release`,
 blocked-number edits. These are not drafts - a ring-group create rings real desk phones the moment
 it returns, an IVR create renders greetings through a paid TTS vendor and answers real callers, and
@@ -503,12 +506,13 @@ extension pools, so a collision is yours to prevent. Ship a routing fix only wit
 explicit yes to the exact change, one object at a time, echoing before and after. What remains
 tool-less or hard-stopped:
 
-- **E911 address registration** is still a dashboard action - `voice_e911_addresses_list` is the
-  only E911 tool and it is read-only.
-- **Buying a number directly**: `voice_numbers_search` searches carrier inventory and, by its own
-  registration, is a dead end by design - no route buys a number from a shortlist. The one purchase
-  path is `voice_call_tracking_setup`'s `did_count` (tracking-pool DIDs only, max 5 per run,
-  E911-gated, confirm-first).
+- **E911 address registration** is tooled now (`voice_e911_address_create` - this is where 911
+  DISPATCHES, an ask-gated write owned by the **hiveku-phone-agency** skill; pending is still not
+  registered).
+- **Buying a number directly** is tooled now too (`voice_number_purchase` - money monthly until
+  released, ask-gated, hiveku-phone-agency's `references/numbers-and-e911.md`). Inside a tracking
+  pool, prefer `voice_call_tracking_setup`'s `did_count` (max 5 per run, E911-gated,
+  confirm-first) - it joins the pool and wires the config in the same idempotent run.
 - **`voice_number_release` is permanent**: the DID returns to the carrier, can be sold to a
   stranger, and every printed instance of it stops working. Only ever after a human confirms that
   exact number, by digits - never a bulk sweep, never a target derived from "unused".
@@ -538,5 +542,6 @@ under Kari's Law and RAY BAUM'S Act, not a nice-to-have.
    numbers, not a count.
 4. File it: `pm_tasks_create` with the named DIDs, and raise it to the client as a risk item.
 
-Registration is a dashboard action. There is no MCP write tool, so the deliverable is the named list
-plus the task - never "I registered them".
+Registration is `voice_e911_address_create` plus `voice_number_update`'s `e911_address_id` (both
+confirm-gated; the hiveku-phone-agency skill owns the play). Never report "registered" until the
+address row carries `verified_at` and the DID row points at it - pending is not registered.

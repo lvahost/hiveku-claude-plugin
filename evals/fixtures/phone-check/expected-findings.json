@@ -1,0 +1,107 @@
+{
+  "eval": "phone-check",
+  "notes": "Seeded defects and traps, all reachable from reads. (1) TF-INFLATION: voice_diagnose_setup reports dids_without_e911: 3 and a blocking_issues string carrying that 3 - but the route's counter is raw `is_active && e911_address_id IS NULL` and two of the three are toll-free DIDs (+1833/+1888) that take no E911 registration at all. The real exposure is ONE local DID with no address (did_5) plus ONE local DID whose address is still pending verification (did_3 -> addr_pending, verified_at null): pending is NOT registered, and it is also not 'missing', so it is its own category. A session that relays the 3 flags the TF pair; one that subtracts TF but treats pending as fine reports 1 and misses did_3. (2) THE no_answer SILENT ZERO: the stored disposition vocabulary is answered|voicemail|missed|ai_handled|abandoned and voice_calls_list filters by RAW equality, so disposition:'no_answer' returns an empty page that reads as 'no missed calls' while three rows sit under 'missed'. (3) THE ONE-ELEMENT HEALTHCHECK: voice_tenant_healthcheck returns exactly one check (db_pools_open, ok false) - the documented short-circuit, so the other ~20 named checks NEVER RAN and none may be reported as healthy or unhealthy; only db_pools_open was actually inspected. (4) ROUTING: ivr_main digit 3 resolves {type:'unknown'} (deleted target ext_1099 - the digit answers and goes nowhere, on a 200); queue_sales has fusionpbx_queue_uuid null (exists in Postgres, never loaded into FreeSWITCH, answers nothing, not reported as an error); ext_1004 is the rep who cannot dial out - a softphone_desktop with presence_state offline. Distractors that must survive unflagged: rg_front_desk (fusionpbx_group_uuid set, member enabled), ext_1003 (registered desk phone), queue_support (uuid and extension both set). (5) OUTBOUND CAP: 620 outbound billable seconds today against the 5000-cent daily cap - the toll-fraud guard is not the cause of anything; outbound_cap_hit stays []. (6) VOICEMAIL (dataset colour, NOT a graded category): vm_2 carries has_audio true with audio_url null - under the command's audio_urls:'false' discipline every row reads audio_url null, so the distinction is unreachable to a compliant session and is deliberately not scored. voice_presence_get returns {extensions:[],channels_ok:false} - the silent-failure shape, never evidence that nobody is registered.",
+  "sidecar_schema": "flat map: category name -> array of ids exactly as the tools return them (missing category = empty)",
+  "categories": {
+    "e911_missing_local": {
+      "must": [
+        "did_5"
+      ],
+      "must_not": [
+        {
+          "id": "did_tf_1",
+          "reason": "toll-free (+1833) - E911 registration is not applicable to toll-free numbers; it inflates dids_without_e911 but is not exposure"
+        },
+        {
+          "id": "did_tf_2",
+          "reason": "toll-free (+1888) - same non-applicability; the diagnose counter's raw null-linkage includes it anyway"
+        },
+        {
+          "id": "did_4",
+          "reason": "linked to addr_ok, verified_at set - registered"
+        },
+        {
+          "id": "did_3",
+          "reason": "linked to addr_pending (verified_at null) - pending verification is its own category, not 'missing'"
+        }
+      ]
+    },
+    "e911_pending": {
+      "must": [
+        "did_3"
+      ],
+      "must_not": [
+        {
+          "id": "did_5",
+          "reason": "no E911 address linked at all - missing, not pending"
+        },
+        {
+          "id": "did_4",
+          "reason": "addr_ok is verified (verified_at set) - nothing pending"
+        }
+      ]
+    },
+    "routing_defects": {
+      "must": [
+        "ivr_main",
+        "queue_sales",
+        "ext_1004"
+      ],
+      "must_not": [
+        {
+          "id": "rg_front_desk",
+          "reason": "fusionpbx_group_uuid set and its member is a registered desk phone - the group is provisioned and can ring"
+        },
+        {
+          "id": "ext_1003",
+          "reason": "registered desk phone (presence_state idle) - it can both receive and place calls; it made today's outbound call"
+        },
+        {
+          "id": "queue_support",
+          "reason": "fusionpbx_queue_uuid and extension both set - provisioned and reachable"
+        }
+      ]
+    },
+    "missed_calls": {
+      "must": [
+        "call_5001",
+        "call_5002",
+        "call_5004"
+      ],
+      "must_not": [
+        {
+          "id": "call_5003",
+          "reason": "disposition answered (an outbound call that connected) - not missed"
+        },
+        {
+          "id": "vm_1",
+          "reason": "disposition voicemail - the caller reached a mailbox; voicemail is its own disposition, not a missed call"
+        }
+      ]
+    },
+    "healthcheck_inconclusive": {
+      "must": [
+        "db_pools_open"
+      ],
+      "must_not": [
+        {
+          "id": "dids_have_resolvable_targets",
+          "reason": "single-element result is a short-circuit; the other checks never ran"
+        }
+      ]
+    },
+    "outbound_cap_hit": {
+      "must": [],
+      "must_not": [
+        {
+          "id": "ext_1004",
+          "reason": "the rep's dial-out failure is an unregistered softphone (presence_state offline), not the toll-fraud cap - today's 620 outbound billable seconds sit far under the 5000-cent daily cap and nothing was rejected"
+        },
+        {
+          "id": "did_4",
+          "reason": "the DID that placed today's one outbound call - it dialed out fine; the cap stopped nothing"
+        }
+      ]
+    }
+  }
+}

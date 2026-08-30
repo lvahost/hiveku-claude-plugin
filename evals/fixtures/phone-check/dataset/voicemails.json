@@ -1,0 +1,37 @@
+{
+  "_comment": "Rows for voice_voicemails_list, newest first. audio_presign_ok is a fixture-only helper the tools strip before serving: vm_1 mints a presigned audio_url (unless audio_urls === 'false'); vm_2 models the swallowed-presign trap - has_audio stays true while audio_url comes back null because per-key presign errors are swallowed to null (registered description of voice_voicemails_list). vm_2's underlying call row (2026-08-26) predates the 24h diagnostic window calls.json holds, which is why calls.json shows one voicemail-disposition row while this inbox holds two. Field split per the description: a raw transcript lives in transcript_text with summary null; an AI summary lives in summary with transcript_text null; the legacy transcript field is transcript_text falling back to summary.",
+  "voicemails": [
+    {
+      "id": "vm_1",
+      "from_number": "+14695550111",
+      "to_number": "+18885550171",
+      "peer_name": null,
+      "contact_id": null,
+      "received_at": "2026-08-29T08:47:00Z",
+      "duration_seconds": 45,
+      "has_audio": true,
+      "audio_presign_ok": true,
+      "summary": "Caller asking whether their fixture order shipped; wants a call back before end of day.",
+      "transcript_text": null,
+      "has_stored_transcript": false,
+      "read": false,
+      "read_at": null
+    },
+    {
+      "id": "vm_2",
+      "from_number": "+19725550244",
+      "to_number": "+18335550142",
+      "peer_name": null,
+      "contact_id": null,
+      "received_at": "2026-08-26T16:22:00Z",
+      "duration_seconds": 62,
+      "has_audio": true,
+      "audio_presign_ok": false,
+      "summary": null,
+      "transcript_text": "Hi, this is Marla from Caldwell Interiors, I left a message earlier this week about the pendant order and have not heard back, please call me at 972-555-0244.",
+      "has_stored_transcript": false,
+      "read": false,
+      "read_at": null
+    }
+  ]
+}

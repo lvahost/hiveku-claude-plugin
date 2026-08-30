@@ -1,0 +1,24 @@
+{
+  "_comment": "voice_settings_get returns { settings } - a sane, provisioned voice_tenant_config row. daily_outbound_cap_cents deliberately equals toll_fraud.json's cap: the registered description says voice_toll_fraud_state reads this same column. conversion_upload_value is null (Prisma Decimal serializes as a quoted string when set); keyword_spotting_terms null = never configured, distinct from [].",
+  "settings": {
+    "fusionpbx_domain": "brightsidefixtures.pbx.hiveku.example",
+    "carrier_mode": "telnyx",
+    "concurrent_call_cap": 10,
+    "daily_outbound_cap_cents": 5000,
+    "recording_enabled": false,
+    "recording_retention_days": 90,
+    "hipaa_mode": false,
+    "ai_agent_enabled": false,
+    "missed_call_autoresponder_enabled": false,
+    "missed_call_autoresponder_body": null,
+    "conversion_upload_enabled": false,
+    "conversion_upload_disposition": "answered",
+    "conversion_upload_min_duration_sec": 60,
+    "conversion_upload_value": null,
+    "conversion_upload_currency": "USD",
+    "ga4_upload_enabled": false,
+    "keyword_spotting_enabled": false,
+    "keyword_spotting_terms": null,
+    "provisioned_at": "2026-05-12T16:40:00Z"
+  }
+}

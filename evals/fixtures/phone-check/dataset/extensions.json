@@ -1,0 +1,32 @@
+[
+  {
+    "id": "ext_1003",
+    "account_id": "acct_fixture_phone",
+    "extension": "1003",
+    "display_name": "Dana Whitfield - Front Desk",
+    "user_id": null,
+    "endpoint_type": "desk_phone",
+    "sip_username": "1003",
+    "presence_state": "idle",
+    "mac_address": "80:5e:c0:11:22:33",
+    "phone_model": "yealink_t53w",
+    "external_target_e164": null,
+    "voicemail_enabled": true,
+    "created_at": "2026-05-12T17:00:00Z"
+  },
+  {
+    "id": "ext_1004",
+    "account_id": "acct_fixture_phone",
+    "extension": "1004",
+    "display_name": "Renee Ortiz - Sales",
+    "user_id": null,
+    "endpoint_type": "softphone_desktop",
+    "sip_username": "1004",
+    "presence_state": "offline",
+    "mac_address": null,
+    "phone_model": null,
+    "external_target_e164": null,
+    "voicemail_enabled": true,
+    "created_at": "2026-06-02T09:15:00Z"
+  }
+]

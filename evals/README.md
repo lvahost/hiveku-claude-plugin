@@ -48,6 +48,7 @@ evals/
                         marketing fixture; first to carry checks.mjs)
     tracking-check/     conversion-tracking fixture for /hiveku:tracking-check
     social-plan/        social fixture for /hiveku:social-plan
+    phone-check/        telephony fixture for /hiveku:phone-check
       dataset/*.json        the account's truth, internally consistent
       tools.mjs             executable tool surface over the dataset
       prompt.md             eval contract shown to the session (NO answers in it)
@@ -170,13 +171,35 @@ shapes - and run `grade.mjs`.
 
 ## What this covers, and what it does not
 
-Covered: **5 of the plugin's 98 commands** - `/hiveku:ap-screen` and
-`/hiveku:support-sweep` from v1, and `/hiveku:ppc-optimize` plus the
-`tracking-check` and `social-plan` fixtures landing in the same release -
-chosen because each has a crisp defect model. That exercises slices of 5 of
-the 18 skills' disciplines (books, helpdesk, paid media, conversion tracking,
-social). `ppc-optimize` is the first case whose grade also depends on which
-tools the session did NOT call.
+Covered: **6 of the plugin's 98 commands** - `/hiveku:ap-screen` and
+`/hiveku:support-sweep` from v1, `/hiveku:ppc-optimize` plus the
+`tracking-check` and `social-plan` fixtures landing in the same release, and
+`/hiveku:phone-check` (2026-08-29) - chosen because each has a crisp defect
+model. That exercises slices of 6 of the 18 skills' disciplines (books,
+helpdesk, paid media, conversion tracking, social, telephony). `ppc-optimize`
+is the first case whose grade also depends on which tools the session did NOT
+call.
+
+`phone-check`: a five-DID voice tenant for "the phones aren't ringing and one
+rep says she can't dial out", frozen at 2026-08-29T15:00Z. The headline trap
+is arithmetic: `voice_diagnose_setup` reports `dids_without_e911: 3` (raw
+null-linkage that counts two toll-free DIDs taking no E911 at all) against a
+real exposure of ONE local DID with no address plus ONE whose address is still
+pending verification - its own category, because pending is not registered.
+Routing seeds: an IVR digit resolving `{type:'unknown'}` (deleted target, on a
+200), a queue with `fusionpbx_queue_uuid` null, and the complaining rep's
+unregistered desktop softphone - against a provisioned ring group, a healthy
+queue, and a registered desk phone that must survive unflagged. The
+environment traps from the tool contracts are all live: a one-element
+healthcheck (`db_pools_open`) that must be reported as inconclusive rather
+than "20 checks healthy", `voice_calls_list` filtering dispositions by raw
+equality so `no_answer` is a silent zero while three `missed` rows carry the
+answer, presence returning the `{extensions: [], channels_ok: false}`
+silent-failure shape, an outbound cap that is far from hit, and a voicemail
+whose `has_audio: true` still yields `audio_url: null`. Every voice write, the
+live probe, and the recording-URL mint refuse. No `sample-run/` golden yet -
+producing one needs a model-in-the-loop run (follow-up); the deterministic
+invariants live in `self-test/fixtures.test.mjs`.
 
 Model-in-the-loop results so far (2026-08-29, first-party Claude, one run
 each; the committed `sample-run/` directories are mock-server replays, not
@@ -221,7 +244,8 @@ write surface, not just the tools the command names.
 
 Adding a case: copy a fixture directory's shape, keep `dataset/` internally
 consistent (add invariants to a self-test - `fixtures.test.mjs` for the v1
-cases, one file per fixture from `ppc-optimize.test.mjs` on - the aging must
+cases and `phone-check`, one file per fixture from `ppc-optimize.test.mjs`
+on - the aging must
 reconcile, the seeds must stay the only defect-shaped rows, and every served
 tool name must exist in `lib/tool-index.json`), seed at most a handful of
 defects with named traps, keep the answer key out of `prompt.md`, and add a

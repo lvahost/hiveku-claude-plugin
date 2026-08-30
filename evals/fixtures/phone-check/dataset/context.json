@@ -1,0 +1,28 @@
+{
+  "_comment": "Orientation data only. account_context serves account_context_get; memory/pm serve the allowed write-back acks. Nothing in this file names a defect.",
+  "account_context": {
+    "account": "Brightside Fixtures",
+    "domain": "communications",
+    "brand_voice": "warm, plain-spoken, no jargon, no exclamation marks",
+    "team": [
+      { "id": "agent_dana", "name": "Dana Whitfield", "role": "front desk" },
+      { "id": "agent_renee", "name": "Renee Ortiz", "role": "sales rep" }
+    ],
+    "memory_notes": "Published main line is the toll-free number; the support line fronts the phone menu. Local Dallas/Plano DIDs were added in August for the new offices. Front desk staffed 8am-6pm CT."
+  },
+  "memory": {
+    "entries": [
+      {
+        "memory_id": "mem_comms_1",
+        "type": "memory",
+        "name": "communications",
+        "content": "Voice notes for Brightside Fixtures: telnyx carrier mode, one front-desk ring group, one main IVR, two ACD queues. The toll-free pair carries the published numbers; local DIDs came online 2026-08 for the Dallas and Plano offices."
+      }
+    ]
+  },
+  "pm": {
+    "projects": [
+      { "id": "proj_fixture_ops", "name": "Fixture Ops", "status": "active", "project_type": "marketing" }
+    ]
+  }
+}
