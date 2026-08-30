@@ -7,7 +7,8 @@ read lane into the Google implementation (`ppc_google_ads_read`), Performance Ma
 proximity / language targeting (`ppc_google_targeting`), conversion actions that must be created or repaired
 rather than merely diagnosed (`ppc_google_conversion_actions`), remarketing list plumbing
 (`ppc_google_user_lists`), account-wide blocklists (`ppc_google_shared_negatives`), creative bytes
-(`ppc_google_asset_upload`), competitive pressure (`ppc_auction_insights`), pre-launch volume math
+(`ppc_google_asset_upload`), competitive pressure (`ppc_impression_share` — Auction Insights is UI-only and
+`ppc_auction_insights` always refuses), pre-launch volume math
 (`ppc_keyword_planner_forecast`), Google's own recommendations (`ppc_recommendations_list` /
 `ppc_recommendation_apply`), campaign experiments (`ppc_experiments_list` and its four lifecycle writes, new as
 of 2026-08-29, section 11), and account binding (`ppc_ads_discover_customers`). SKILL.md section 0 is in force
@@ -131,9 +132,9 @@ dashes: `{ "days": 30, "campaign-id": "123", "limit": 500 }`.
   date-range flag on this module and passing one fails the whole call.
 
 **Defaults differ from the curated tools, which is the point and the trap.** Here `days` defaults to **7** and
-`limit` to **1000**; `ppc_auction_insights` defaults to 30 days and 100 rows. Run both bare and you get two
-different reports with the same name, then explain the gap to a client. Always pass `days` and `limit`
-explicitly on the raw lane.
+`limit` to **1000**, while the curated twin of the same report usually defaults to 30 days. Run both bare and
+you get two different reports with the same name, then explain the gap to a client. Always pass `days` and
+`limit` explicitly on the raw lane.
 
 **Scope and safety.** The bridge expects platform `google_ads`; a Microsoft or Meta connection id fails as
 wrong-platform or not-found rather than returning empty rows, so the mistake is loud. Calls are live and can
@@ -190,7 +191,8 @@ own: it needs all four of `period-a-start`, `period-a-end`, `period-b-start`, `p
 **What works.** `pull-campaigns` shows `campaign_type: "shopping"`; `search-terms` works for Shopping (unlike
 PMax), so mining and negatives apply as in `keywords-search-terms-negatives.md`; `segment-report` on `device`,
 `geo_target_constant` and `ad_network_type` works; `ppc_google_shared_negatives` attaches blocklists,
-`ppc_google_targeting` sets geo and language, `ppc_auction_insights` returns Shopping competitors.
+`ppc_google_targeting` sets geo and language. Shopping competitor domains are NOT retrievable —
+`ppc_auction_insights` refuses on every campaign type, Shopping included.
 
 **What does not.** There is **no Merchant Center tool** in this plugin: no feed read, no product-status check,
 no disapproved-product list, no feed rule, no listing group or product partition edit. Those are the levers that
@@ -299,14 +301,18 @@ read side. Uploading spends nothing and serves nothing.
 
 ## 10. Play: competitive read, forecast, recommendation cross-check
 
-**Auction insights.** `ppc_auction_insights({ connection_id, campaign_id?, days: 30, limit: 100 })` returns
-per-competitor-domain `impression_share`, `overlap_rate`, `outranking_share`, `position_above_rate`. Three
-questions: who is in most of my auctions (`overlap_rate` above **60%** is a real rival, below 20% is noise); am
-I winning (`outranking_share` below **40%** against a high-overlap domain means they beat you routinely); how
-badly (`position_above_rate` above **50%**). A high-overlap, high-outranking competitor is a Quality Score and
-bid problem, not a budget problem, and justifies pulling their landing pages with `web_scrape`. **Empty on
-low-volume campaigns by design**: empty is not a finding and not evidence that nobody competes. For more rows,
-`ppc_google_ads_read({ action: "auction-insights", args: { days: 30, limit: 200 } })`, minding the 7-day default.
+**Auction insights: NOT RETRIEVABLE, on any account, through any lane.** Google exposes no `auction_insight`
+resource and none of `overlap_rate` / `outranking_share` / `position_above_rate` exist on Metrics in any
+current API version. `ppc_auction_insights` returns a refusal naming this, and so does
+`ppc_google_ads_read({ action: "auction-insights" })` — the raw lane calls the same implementation, so it is
+not a workaround. Do not budget a report section for competitor domains and do not retry with a wider window.
+
+What to run instead: `ppc_impression_share({ connection_id, days: 30 })`, which carries the account's own
+search impression share plus the split between share **lost to rank** and **lost to budget**. That split
+answers the question the competitor table was being used for — high lost_to_rank means you are being
+outranked (a Quality Score and bid problem), high lost_to_budget means you stopped showing (a budget
+problem) — without naming anyone. If the client specifically needs rival domains, a human exports Google Ads
+UI > Campaigns > Insights > Auction insights; say that plainly rather than reporting "no competitors found".
 
 **Forecasting.** `ppc_keyword_planner_forecast({ connection_id, keywords: [...], bid_micros, daily_budget,
 language_id, geo_target_ids })`. `bid_micros` is micros (2000000 = $2.00); `language_id` defaults to 1000

@@ -286,10 +286,15 @@ Three paths through the same tool:
    preserved**, and status promotes back to `connected`. This is the right move whenever
    `integration_test` reports the account was deleted, or a sync starts failing with OAuth errors.
    Prefer it over deleting and recreating, which throws away the bindings.
-   `target_connection_id` is **only** valid for `google_ads`, `google_search_console` and
-   `google_business_profile`; anything else returns 400 `target_connection_not_supported`.
-3. **Bare initiate.** No bindings, no target. This is the only shape available for
-   `google_analytics`, and it returns `connection_id: null`.
+   `target_connection_id` is valid for `google_ads` (a `ppc_connections` row) and for
+   `google_search_console`, `google_business_profile` and `google_analytics` (all
+   `seo_connections` rows — a GA4 connection IS one, and `seo_connections_list` shows it).
+   `google_gmail` / `google_calendar` have no domain-specific table: call initiate without
+   a target and `account_integrations` is updated in place.
+3. **Bare initiate.** No bindings, no target. Use it for a FIRST connect, and for
+   `google_gmail` / `google_calendar`, which have no domain-specific row to target. It returns
+   `connection_id: null`. (It used to be the only shape available for `google_analytics`; GA4
+   re-auth now takes its `seo_connections` id like the other Google surfaces.)
 
 **`integration_oauth_initiate` is explicitly NOT for Gmail or Calendar.** Passing `google_gmail`
 or `google_calendar` returns 400 `code: 'wrong_tool_for_provider'`, because this route writes to

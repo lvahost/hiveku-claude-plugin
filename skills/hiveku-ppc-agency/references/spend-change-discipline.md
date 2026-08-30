@@ -365,7 +365,7 @@ hard:
 | --- | --- | --- |
 | Absolute daily ceiling | 10,000 per day, account currency | every daily-budget write |
 | Absolute lifetime/total ceiling | 100,000 | every lifetime/total budget write |
-| Step cap | at most 2x the currently-synced daily budget, per change | daily budgets only, and only when the current budget is known |
+| Step cap | at most 2x the current daily budget, per change | daily budgets only. Google Ads: always (read live from Google). Other platforms: only when the mirror knows the current budget |
 
 A refusal comes back as HTTP 400 with `code: budget_guardrail` and a message telling you to raise in
 steps or use the dashboard.
@@ -385,13 +385,28 @@ Two things you need to know about it:
   declares in its `bodyParams` allowlist, dropping undeclared arguments. From this session the
   override does not exist. Do not tell a client you can raise a budget past the ceiling; the real next
   step is a human setting it in the dashboard or the ad platform directly.
-- **The step cap is conditional, and that is the trap.** The 2x check looks up the campaign's
-  `daily_budget` in the local `ppc_campaigns` mirror and only fires when it finds a current value
-  greater than zero. On a campaign that has never synced, or a create (where there is no prior
-  campaign at all), ONLY the absolute 10,000 ceiling applies. A stale mirror silently downgrades your
-  strongest rail. Run `ppc_sync({ connection_id })` before a budget write so the step cap has
-  something to compare against. The same applies to a graduate: the step cap compares the new
-  `daily_budget` against the BASE campaign's synced budget, so sync before the preview call.
+- **On Google Ads the step cap is now authoritative; everywhere else it is still conditional.**
+  There are two implementations and they are not equivalent.
+
+  The builder's check (`ppc-budget-guardrail.ts`) looks the campaign's `daily_budget` up in the local
+  `ppc_campaigns` mirror and can only fire when it finds a value greater than zero. That is the rail
+  that failed: a campaign created through the tools has no cached budget, a successful update never
+  wrote one back, and so a live Google Ads budget went 1 -> 2 -> 50 in three calls with `warning: null`
+  (2026-08-30). Two things changed. The route now writes the applied budget back into the mirror, so
+  the SECOND change to any campaign is always checked; and the response carries
+  `local_guardrail.step_cap_checked_locally`, so "the cap did not apply here" no longer looks
+  identical to "the cap checked and was happy". Read that field.
+
+  For **Google Ads** the cap also lives in `budget_update` in the marketing agent's
+  `ppc_google_ads.py`, which compares against the budget GOOGLE reports microseconds before the
+  mutate. That one cannot be blind, fires on the first change to a brand-new campaign, and returns
+  `code: budget_guardrail` with `max_allowed_this_step`. The response's `guardrails` block states the
+  ceiling, the multiple, and whether the cap was enforced or overridden.
+
+  For **Microsoft, Meta, LinkedIn, TikTok, Amazon, Vibe and ChatGPT Ads** only the mirror-based check
+  exists, so a never-synced campaign still gets the 10,000 ceiling and nothing else. Run
+  `ppc_sync({ connection_id })` before a budget write on those platforms. The same applies to a
+  graduate: the step cap compares the new `daily_budget` against the BASE campaign's synced budget.
 
 There is also a per-connection MONTHLY guardrail, armed by configuration rather than always-on:
 `ppc_connection_update` with `settings.monthly_budget_target_cents` (integer cents) arms a daily budget

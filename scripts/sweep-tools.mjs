@@ -115,28 +115,68 @@ const short = (v, n = 160) => {
   return s && s.length > n ? s.slice(0, n) + '…' : s;
 };
 
+const NEEDS_PARAMS_RE = /required|missing|invalid_?param|must provide|expected .* argument|validation|pass (?:exactly )?one of/i;
+
+/**
+ * The top-level `error` a tool put in its own JSON body, or null.
+ *
+ * ★ A 200 IS NOT A PASS. The transport is healthy on every Hiveku tool call —
+ * the Olympus routes answer 200 and put failures in the BODY, and the MCP
+ * result carries no isError for them. Classifying on the envelope alone marked
+ * ppc_campaign_get "ok" while its own recorded detail read
+ * {"error":"Missing required parameter: id"}, and that tool turned out to 500
+ * on every real input. A sweep that counts an error body as a pass does not
+ * measure health, it manufactures it (Locus PPC report, PPC-12).
+ */
+function bodyError(text) {
+  if (!text) return null;
+  const trimmed = text.trim();
+  if (!trimmed.startsWith('{') && !trimmed.startsWith('[')) return null;
+  let parsed;
+  try { parsed = JSON.parse(trimmed); } catch { return null; }
+  const node = Array.isArray(parsed) ? parsed[0] : parsed;
+  if (!node || typeof node !== 'object') return null;
+  // Some routes nest the payload under `data`; an error is always top-level.
+  const err = node.error ?? node.errors;
+  if (err === undefined || err === null || err === false) return null;
+  return typeof err === 'string' ? err : JSON.stringify(err);
+}
+
 /**
  * Classify one tool result.
  *
  * A tool that rejects empty arguments is NOT broken -- it wants parameters this
  * sweep has no business inventing. Reporting that as a failure would bury the
  * real ones, which is the whole reason a sweep is worth running.
+ *
+ * But "it wants parameters" and "it is fine" are different answers, and only
+ * one of them may be counted as coverage. Three buckets, never two-and-a-half:
+ *   needs-params — the tool refused for want of an argument the sweep withheld;
+ *   error        — anything else that failed, INCLUDING a 200 with an error body;
+ *   ok           — the tool answered.
  */
 function classify(msg) {
   if (msg?.error) {
-    const text = `${msg.error.message || ''} ${JSON.stringify(msg.error.data || '')}`.toLowerCase();
-    if (/required|missing|invalid_?param|must provide|expected .* argument|validation/.test(text)) {
+    const text = `${msg.error.message || ''} ${JSON.stringify(msg.error.data || '')}`;
+    if (NEEDS_PARAMS_RE.test(text)) {
       return { status: 'needs-params', detail: short(msg.error.message) };
     }
     return { status: 'error', detail: short(msg.error.message) };
   }
   const result = msg?.result;
+  const text = (result?.content || []).map((c) => c.text || '').join(' ');
   if (result?.isError) {
-    const text = short((result.content || []).map((c) => c.text || '').join(' '));
-    if (/required|missing|must provide|validation/i.test(text)) return { status: 'needs-params', detail: text };
-    return { status: 'error', detail: text };
+    const detail = short(text);
+    if (NEEDS_PARAMS_RE.test(detail)) return { status: 'needs-params', detail };
+    return { status: 'error', detail };
   }
-  return { status: 'ok', detail: short((result?.content || []).map((c) => c.text || '').join(' '), 80) };
+  const inBody = bodyError(text);
+  if (inBody !== null) {
+    const detail = short(inBody);
+    if (NEEDS_PARAMS_RE.test(inBody)) return { status: 'needs-params', detail };
+    return { status: 'error', detail };
+  }
+  return { status: 'ok', detail: short(text, 80) };
 }
 
 async function main() {

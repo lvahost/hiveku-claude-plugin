@@ -8,14 +8,14 @@ Competitive ad review ($ARGUMENTS). Follow the **hiveku-ppc-agency** skill; the 
 keeps it by month) and which campaigns count as money campaigns; `ppc_connection_list` for the
 Google connection_id. Say this before the first call: no tool in this registry reads a rival's ad
 copy, spend, budget, or targeting, so nothing below is platform data about them.
-1. Own-auction truth first: `ppc_auction_insights({ connection_id, campaign_id, days: 30 })` at
-   campaign level for each money campaign - account-wide output blends brand and non-brand into a
-   meaningless average. Per competing domain: impression_share, overlap_rate, position_above_rate,
-   outranking_share. Honesty, said where the numbers are quoted: this is Google-only (a Meta or
-   TikTok connection_id returns a wrong-platform error, not an empty result), and it describes
-   YOUR auctions only - who showed when you showed and who ranked above you - never their
-   creative, spend, or results. Empty output on a low-volume campaign means "not enough
-   auctions", never "no competitors": widen to 90 days or run at account level and label it.
+1. Own-auction truth first: `ppc_impression_share({ connection_id, days: 30 })`, read per campaign -
+   account-wide output blends brand and non-brand into a meaningless average. It gives YOUR search
+   impression share and the split between share lost to RANK and lost to BUDGET. Say this where the
+   numbers are quoted: competitor DOMAINS are not obtainable. Auction Insights is a Google Ads
+   UI-only report, `ppc_auction_insights` always refuses on every account and every campaign type,
+   and the raw lane calls the same implementation, so there is no workaround and no window to
+   widen. Lost-to-rank is the honest proxy for "somebody is outranking us"; if the client needs
+   rival names from the auction, a human exports them from Google Ads UI > Campaigns > Insights.
    Classify each domain by Framework G (they outrank you on high overlap; you outrank them - do
    not escalate an auction you lead; a new domain with overlap rising month over month;
    aggregators on top) and diff against the set in memory - the trend is the insight. Nothing here

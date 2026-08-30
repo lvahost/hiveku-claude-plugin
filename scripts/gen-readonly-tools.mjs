@@ -45,14 +45,23 @@ const SERVER_SRC = path.resolve(PLUGIN_ROOT, '..', 'hiveku-mcp-api-server', 'src
  * the loose form produced a bogus `name` tool and left 5 tools unmapped; this
  * form produces neither.
  */
-const TOKEN = /(?:^[ \t]*name:\s*'([a-z0-9_]+)',[ \t]*$)|(?:method:\s*'([A-Z]+)')/gm;
+/**
+ * ★ BOTH DECLARATION STYLES. Most tools are written as object literals
+ * (`name: 'x',`), but a few hundred were generated as JSON (`"name": "x",`).
+ * A pattern that only knew the first form skipped those tools entirely from
+ * the source-parse fallback — including two PPC reads found on 2026-08-30 —
+ * and the miss was invisible because the dist path, which reads real objects,
+ * covered for it whenever the server happened to be built.
+ */
+const TOKEN = /(?:^[ \t]*"?name"?:\s*['"]([a-z0-9_]+)['"],[ \t]*$)|(?:"?method"?:\s*['"]([A-Z]+)['"])|(?:"?readOnlyHint"?:\s*(true))/gm;
 
 function extract(source) {
-  // Every tool name and every HTTP method, in document order.
+  // Every tool name, every HTTP method and every readOnlyHint, in document order.
   const tokens = [];
   for (const m of source.matchAll(TOKEN)) {
     if (m[1]) tokens.push({ kind: 'name', value: m[1] });
-    else tokens.push({ kind: 'method', value: m[2] });
+    else if (m[2]) tokens.push({ kind: 'method', value: m[2] });
+    else tokens.push({ kind: 'hint', value: true });
   }
 
   // Pair each name with the first method before the next name. No window.
@@ -60,10 +69,12 @@ function extract(source) {
   for (let i = 0; i < tokens.length; i++) {
     if (tokens[i].kind !== 'name') continue;
     let method = null;
+    let readOnlyHint = false;
     for (let j = i + 1; j < tokens.length && tokens[j].kind !== 'name'; j++) {
-      if (tokens[j].kind === 'method') { method = tokens[j].value; break; }
+      if (tokens[j].kind === 'method' && method === null) method = tokens[j].value;
+      if (tokens[j].kind === 'hint') readOnlyHint = true;
     }
-    pairs.push({ name: tokens[i].value, method });
+    pairs.push({ name: tokens[i].value, method, readOnlyHint });
   }
   return pairs;
 }
@@ -121,7 +132,9 @@ function collectFromDist() {
   // meta tools stayed unapproved.
   for (const key of ['olympusTools', 'hivekuMetaTools']) {
     for (const t of mod[key] ?? []) {
-      if (t?.name) byName.set(t.name, t?.mapping?.method ?? null);
+      if (t?.name) {
+        byName.set(t.name, { method: t?.mapping?.method ?? null, readOnlyHint: t?.readOnlyHint === true });
+      }
     }
   }
   return byName.size ? byName : null;
@@ -142,8 +155,8 @@ function collect() {
   const conflicts = [];
   for (const p of all) {
     const prev = byName.get(p.name);
-    if (prev !== undefined && prev !== p.method) conflicts.push(`${p.name}: ${prev} vs ${p.method}`);
-    if (prev === undefined) byName.set(p.name, p.method);
+    if (prev !== undefined && prev.method !== p.method) conflicts.push(`${p.name}: ${prev.method} vs ${p.method}`);
+    if (prev === undefined) byName.set(p.name, { method: p.method, readOnlyHint: p.readOnlyHint === true });
   }
   if (conflicts.length) {
     console.error('[gen-readonly-tools] same tool name with conflicting methods:\n  ' + conflicts.join('\n  '));
@@ -193,10 +206,28 @@ for (const n of READ_ONLY_POST_OVERRIDES.keys()) {
   // rather than carry it forward silently.
   if (!byName.has(n)) { console.error(`[gen-readonly-tools] override names unknown tool ${n}`); process.exit(8); }
 }
+// ★ readOnlyHint BEATS THE VERB, and that is the whole point of it.
+//
+// The HTTP method is only a good proxy while every read is a GET. It is not:
+// 170 ppc_* tools post {action, connection_id} to an action-dispatched route,
+// so 47 unambiguous reads — every _list, _report, _status, _summary, _history,
+// _performance, _comparison — classified as writes. Operators got a permission
+// prompt for reading a report, safety tooling treated an audit as a mutation,
+// and the sweep that exists to prove coverage could reach 11 of 170
+// (Locus PPC report, PPC-10).
+//
+// A hint is a CLAIM BY THE DECLARATION that the route writes nothing for that
+// tool's fixed action. It is not a naming heuristic — the tool author sets it,
+// after reading the handler — and it still cannot rescue a tool listed in
+// SENSITIVE_READ_EXCLUSIONS, because "reads only" and "safe to auto-approve"
+// are different questions.
 const readOnly = [...byName.entries()]
-  .filter(([n, m]) => (m === 'GET' && !SENSITIVE_READ_EXCLUSIONS.has(n)) || READ_ONLY_POST_OVERRIDES.has(n))
+  .filter(([n, e]) =>
+    !SENSITIVE_READ_EXCLUSIONS.has(n) &&
+    (e.method === 'GET' || e.readOnlyHint === true || READ_ONLY_POST_OVERRIDES.has(n)))
   .map(([n]) => n).sort();
-const unmapped = [...byName.entries()].filter(([, m]) => m === null).map(([n]) => n);
+const hinted = [...byName.entries()].filter(([, e]) => e.readOnlyHint === true).length;
+const unmapped = [...byName.entries()].filter(([, e]) => e.method === null).map(([n]) => n);
 
 // Sanity gates. A generator that silently produces a tiny or enormous list is
 // worse than one that fails: too few means tools start prompting again, too
@@ -210,12 +241,15 @@ const payload = {
     'GENERATED by scripts/gen-readonly-tools.mjs from hiveku-mcp-api-server route mappings. ' +
     'Do not edit by hand. Every entry has mapping.method === GET, i.e. the server itself ' +
     'declares it a read, except the few POST-dispatched pure reads named with evidence in ' +
-    'READ_ONLY_POST_OVERRIDES inside the generator. Used by the PreToolUse hook to pre-approve reads.',
+    'READ_ONLY_POST_OVERRIDES inside the generator, plus every tool whose declaration carries ' +
+    'readOnlyHint: true (an explicit claim by the tool author that its route writes nothing). ' +
+    'Used by the PreToolUse hook to pre-approve reads.',
   generatedFrom: fromDist
     ? 'hiveku-mcp-api-server/dist/tools/olympus-tools.js (olympusTools + hivekuMetaTools)'
     : 'hiveku-mcp-api-server/src/tools/*.ts (source parse — undercounts)',
   toolCount: total,
   readOnlyCount: readOnly.length,
+  readOnlyHintCount: hinted,
   tools: readOnly,
 };
 const next = JSON.stringify(payload, null, 2) + '\n';
@@ -239,6 +273,6 @@ if (process.argv.includes('--check')) {
   console.log(`[gen-readonly-tools] up to date (${readOnly.length} read-only of ${total})`);
 } else {
   fs.writeFileSync(OUT, next);
-  console.log(`[gen-readonly-tools] wrote ${readOnly.length} read-only of ${total} tools`);
+  console.log(`[gen-readonly-tools] wrote ${readOnly.length} read-only of ${total} tools (${hinted} via readOnlyHint)`);
   if (unmapped.length) console.log(`  ${unmapped.length} tool(s) had no method and are NOT auto-approved: ${unmapped.slice(0, 5).join(', ')}`);
 }

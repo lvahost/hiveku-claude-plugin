@@ -286,13 +286,16 @@ Sequence: callouts (no destinations), sitelinks (need real URLs), structured sni
 
 1. `ppc_impression_share({ connection_id, days: 30 })` first, always (Framework A), segmented by campaign:
    account totals hide the campaign where the problem lives.
-2. `ppc_auction_insights({ connection_id, campaign_id?, days: 30 })` at campaign level for money campaigns;
-   account-wide output blends brand and non-brand into a meaningless average. **Expect empty output on
-   low-volume campaigns**: Google suppresses it below a data threshold and returns nothing rather than an
-   error, which means "not enough auctions," never "no competitors."
-3. Classify each domain per Framework G and track month over month; the trend is the insight. Enrich the
-   top rivals with `web_search` plus `web_scrape` on their landing pages, the only route to competitor
-   creative since no tool exposes rivals' ad copy. Output is a report section and a hypothesis, not a bid
+2. There is NO competitor-domain data. Auction Insights is a Google Ads UI-only report; Google exposes no
+   `auction_insight` resource and none of the four competitor metrics, so `ppc_auction_insights` always
+   refuses and nothing can be planned around it. Read the competitive pressure out of step 1 instead:
+   `lost_to_rank` IS "somebody is outranking me", `lost_to_budget` is "I am outbidding nobody because I
+   stopped showing". If the client needs rival domains by name, a human exports Google Ads UI > Campaigns >
+   Insights > Auction insights; say so rather than implying the data was unavailable this month.
+3. Name rivals from the public ad libraries via the web lane, then classify per Framework G and track month
+   over month; the trend is the insight. Enrich the top rivals with `web_search` plus `web_scrape` on their
+   landing pages, the only route to competitor creative since no tool exposes rivals' ad copy. Output is a
+   report section and a hypothesis, not a bid
    change.
 
 ---
@@ -343,9 +346,9 @@ client first.
 - **`ppc_impression_share` shows nulls or zeros.** Not available for every campaign type or for very low
   volume, and Display and video report different share metrics; never show a null as a zero or average
   across types. Ad strength is likewise sometimes absent: read it in the dashboard or say it was not
-  retrieved, never infer it from headline count and call it Google's grade. An empty
-  `ppc_auction_insights` is the same story: below Google's threshold, so widen to 90 days or run at
-  account level.
+  retrieved, never infer it from headline count and call it Google's grade. `ppc_auction_insights` is a
+  different story and not a data-volume one: it can NEVER return data on any account, because Google does
+  not expose the report through the API at all. Do not widen the window and retry.
 - **`ads.json` disagrees with the Ads UI.** Staleness (check `fetched_at`, sync per SKILL.md 0.3), else
   timezone or attribution lag; and a write that just succeeded is absent from the mirror until a sync, so
   do not "fix" it twice and create duplicate ads.

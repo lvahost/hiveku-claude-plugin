@@ -38,8 +38,10 @@ audited before touched, measured before optimized, every spend change confirmed,
      QS you cannot rebuild. Pause now, review in two weeks.
    - "Just apply all of Google's recommendations." -> Refuse blanket apply; triage one at a time (6.4).
    - "Set every budget to the max, we got funding." -> Refuse that form; propose staged per-campaign
-     raises backed by pacing + impression-share evidence (the code guardrail refuses >2x steps and
-     >10,000/day regardless).
+     raises backed by pacing + impression-share evidence. On Google Ads the code guardrail refuses
+     >2x steps and >10,000/day regardless, checked against the budget Google itself holds; on the
+     other platforms the 2x step cap only fires when the local mirror knows the current budget, so
+     `ppc_sync` first. Your confirmation is the rail that always works.
    - "Skip the confirmations this once." -> No. Per-change confirmation is the product, not the friction.
    - "Here's the customer CSV, upload it everywhere." -> Not raw. Pre-hashed SHA256 only, consent basis
      confirmed, one list per confirmation (raw PII is rejected with `raw_pii_rejected` regardless).
@@ -160,7 +162,9 @@ per 2 weeks.
 at +-20-30%. **Headroom:** `ppc_impression_share` (Google) / `ppc_bing_impression_share_report`
 (Microsoft - async, IS / lost_to_budget / lost_to_rank + `scaling_headroom` summary): high lost_to_budget
 = raise budget (cheapest growth); high lost_to_rank = raise bids or fix QS, NOT budget.
-`ppc_auction_insights` shows who you're losing to. Pre-launch volume: `ppc_keyword_planner_forecast`.
+Who you're losing to is NOT available: Auction Insights is a Google Ads UI-only report, `ppc_auction_insights`
+always refuses, and no tool can retrieve competitor domains. Lost-to-rank IS the answer to "am I being
+outranked". Pre-launch volume: `ppc_keyword_planner_forecast`.
 Depth: `references/bidding-budgets-pacing.md`.
 
 ## 4. Play: Quality + relevance (Quality Score program)
