@@ -1045,7 +1045,7 @@
       "name": "cms_scaffold",
       "dept": "cms",
       "method": "POST",
-      "description": "Scaffold a new CMS collection — generates field definitions in the manifest plus any required helper files."
+      "description": "Seed a project that has NO CMS yet: writes hiveku.cms.json with a starter blog collection, content/blog/hello-world.mdx, and a GENERATED typed reader at lib/cms-server.ts (get<Collection>Entries / get<Collection>Entry / get<Collection>Slugs / get<Collection>Url, resolveReference, isLive filtering, draft-shadow skipping — dependency-free, server-only). Returns 409 if a manifest already exists — add collections with cms_create_collection instead; the reader is regenerated on every manifest save, so it always has helpers for every collection. Pages read content ONLY through '@/lib/cms-server'; never hand-roll fs/frontmatter code or add gray-matter."
     },
     {
       "name": "cms_search_entries",
