@@ -192,6 +192,16 @@ const READ_ONLY_POST_OVERRIDES = new Map([
     'one Data API runReport; the route asks requireOlympusAuth for the read grant ({ action: "read" })'],
   ['ppc_experiments_list',
     'two GAQL SELECTs (experiment, experiment_arm); google-ops lists it in READ_OPERATIONS on the read grant; nothing mutates'],
+  // 2026-08-30. Both are POSTs only because they take a body, and both were
+  // being refused inside a reads-only guardrail folder - which broke the
+  // promise scheduled-routines.md makes, that a read-shaped play degrades to a
+  // proposal rather than failing. Validating a graph you cannot change, and
+  // previewing how a payload would be normalised, are exactly the reads an
+  // unattended session should still be able to do.
+  ['workflow_validate',
+    'the route loads the definition and runs validateDefinition in memory; it returns {ok, issues, summary} and has no write path'],
+  ['workflow_normalize_payload',
+    'pure function over the posted payload (meta/normalize-payload); returns the aliased shape, touches no workflow and no row'],
 ]);
 
 const fromDist = collectFromDist();

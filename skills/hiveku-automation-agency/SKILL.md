@@ -29,18 +29,30 @@ that order.
   REPLACES the entire graph in one coarse snapshot - pass a whole `definition` only
   when you already have a known-good graph (from `workflow_version_get` or
   `workflow_duplicate`).
-- **Create disabled; enable after validate, BEFORE the dry-run.** `workflow_create`
-  defaults `is_enabled: false` - leave it false through the build. The run route
-  checks `is_enabled` before it reads `test_mode` (400 "Workflow is disabled. Enable
-  it first"), so a disabled workflow cannot be dry-run either: validate,
-  `workflow_enable`, `workflow_test`, in that order. Enabling a `manualTrigger`-only
-  graph is inert (no listener exists); enabling a graph with a `webhookTrigger` or
-  `scheduledTrigger` makes it LIVE, so for those get the operator's approval of the
-  automation itself first - never enable merely to satisfy the run gate.
+- **Create disabled, dry-run disabled, enable LAST.** `workflow_create` defaults
+  `is_enabled: false` - leave it false through the entire build AND through the dry
+  run. **`workflow_test` runs on a DISABLED workflow**: the run route only rejects a
+  disabled workflow when `test_mode` is absent. Order: validate, `workflow_test`,
+  read `would_have`, THEN `workflow_enable` on the operator's yes.
+  (This changed. The route used to demand enable-first, which forced the unsafe
+  "enable -> dry-run -> disable" dance and left a half-tested automation LIVE in the
+  gap - if a webhook fired or a cron ticked in those seconds, it ran for real. Any
+  older instruction telling you to enable before testing is stale: a dry run touches
+  nothing the enabled flag guards, so there is never a reason to arm a graph you have
+  not yet tested.)
+  Enabling a `manualTrigger`-only graph is inert (no listener exists); enabling a
+  graph with a `webhookTrigger` or `scheduledTrigger` makes it LIVE, so for those get
+  the operator's approval of the automation itself first - never enable merely to
+  satisfy a run gate that no longer exists.
 - Confirm every write that can reach a customer: `workflow_enable` (on a webhook or
   scheduled graph), `workflow_run` (real mode), `workflow_stranded_replay`,
-  `workflow_delete`, `workflow_delete_schedule`, `agent_approval_approve`. Reading,
+  `workflow_delete`, `workflow_delete_schedule`, `workflow_set_recipient` (it rewrites
+  where EVERY notification in the graph goes), `agent_approval_approve`. Reading,
   listing, validating and `workflow_test` are free and safe.
+  Several of these also prompt at the permission layer, on the install shape
+  documented in INSTALL.md. That prompt is a backstop for an accident, not the
+  approval itself: the operator's yes has to be informed - say what will fire, to
+  whom, and how many - and a prompt you clicked through is not a yes anyone gave.
 - Durable decisions (which template a client is on, who the recipient is, why an
   automation is deliberately disabled) -> `memory_create`. Work items ->
   `pm_tasks_create`.
@@ -87,10 +99,12 @@ keys are silently ignored**.
    `handleId` from `switchConfig.cases`.
 8. **Validate.** `workflow_validate({ workflow_id })`. Fix every error and read every
    warning. An orphan node warning usually means you forgot an edge.
-9. **Enable.** `workflow_enable({ workflow_id })` - required before the dry-run, per
-   the operating principle above (webhook/scheduled graphs go LIVE here: operator's
-   yes first).
-10. **Dry-run.** `workflow_test({ workflow_id, input_data })`. See the next section.
+9. **Dry-run while still disabled.** `workflow_test({ workflow_id, input_data })`, then
+   READ `would_have`. See the next section. Nothing is armed yet, which is the point.
+10. **Enable, last, on the operator's yes.** `workflow_enable({ workflow_id })`.
+    Webhook/scheduled graphs go LIVE at this call, and only after a dry run they have
+    seen. If a failure here should reach a human, turn on failure alerts in the same
+    breath (see "When it breaks at 3am").
 11. **Real run / leave live, on approval.** `workflow_run` for a one-shot; for an
     always-on automation, confirm with the operator that it stays enabled.
 
@@ -112,11 +126,24 @@ way to check a client's automation before it can reach their customers.
 
 **What it skips** (no real side effect fires): outbound email/SMS/Slack/Discord,
 every CRM write, external HTTP `apiCall` (mocked), helpdesk creates and replies, PM
-task writes, database writes, deploys and GitHub pushes, project file saves. **What
-still runs** for fidelity: data transforms, array ops, flow control, template
+task writes, database writes, deploys and GitHub pushes, project file saves, and - as
+of 2026-08-30 - **`aiAgent` and the sub-agent role nodes** (`blogWriter`,
+`seoSpecialist`, `socialMedia`, `dataAnalyst`, `contentCurator`, `videoCreator`).
+**What still runs** for fidelity: data transforms, array ops, flow control, template
 resolution, and the trigger node itself against your `input_data`. Some read-shaped
-nodes still execute for real in a test - metered DataForSEO calls, `aiAgent`,
-`delay` - full lists in `references/node-rail.md` Part 4.
+nodes still execute for real in a test - metered DataForSEO calls, `delay` - full
+lists in `references/node-rail.md` Part 4.
+
+**Two dry-run holes were closed on 2026-08-30; both are worth knowing because older
+notes describe the broken behaviour.** (1) A side-effecting node inside a
+`parallelExecute` branch or a `transactionBlock` used to reach the REAL handler: the
+gate was written into the main dispatch loop only, and those two run their own inline
+chains, so a graph defeated the dry run purely by having a fan-out shape. The gate now
+holds at all three dispatch sites. (2) `aiAgent` was ungated, so a "dry run" spent
+real tokens and, because an agent turn can call its own tools, could WRITE. Both mean
+the same thing for you: a dry run is now trustworthy on graph shapes where it
+previously was not, and the mocked AI node returns a `would_have` instead of generated
+copy. Judging the copy is what a real run, on approval, is for.
 
 **A test run persists NO run row.** The sync response returns `run_id: null`, and
 `workflow_run_get`, `workflow_run_logs`, and `workflow_runs_list` have nothing to
@@ -286,6 +313,43 @@ window cap is **partial** - narrow `since` before quoting a `success_rate`. Disc
 the window and which workflows were covered or excluded, and compare each workflow
 against its own prior window, not against workflows with different triggers and
 volumes.
+
+## When it breaks at 3am: make the workflow tell someone
+
+The weekly sweep above is how YOU find a broken automation. It is not how the CLIENT
+finds out, and a week is a long time for a lead form to be dead. The reliability
+surface is loud about terminal states and silent about the ordinary one:
+
+- The circuit breaker pauses a workflow after **five consecutive** failures and emails
+  the account admins. Four failed nights in a row say nothing.
+- An **intermittent** failure - the one that fails a third of the time - never trips
+  the breaker at all, so it can run broken indefinitely.
+- A paused workflow rejects triggers **without writing a run row**, which is why the
+  classic report is "it just stopped, and there are no errors".
+
+So for anything a client depends on, turn on per-run failure alerting when you enable
+it. The opt-in lives in the workflow's own definition as
+`settings.notify_on_failure: true`, which means it survives a clone, a template
+instantiation and a version restore. On a failed triggered run it raises one inbox
+item and emails the account admins **once per incident, not once per failed run** - a
+workflow failing every five minutes produces 288 failures a day and one email;
+resolving the inbox item re-arms it.
+
+Rules for it:
+
+- **Alerting is not a substitute for the dry run.** It tells you the automation broke
+  after it broke. `workflow_test` tells you it was wrong before it ever ran.
+- **Turn it on for anything customer-facing** - lead capture, notification, billing,
+  anything whose silence costs the client money. Leave it off for noisy internal
+  sweeps where a single failure is genuinely uninteresting, or you teach the owner to
+  ignore the channel.
+- **Human-origin failures do not alert.** Your own editor iteration is not an
+  incident.
+- Say plainly which workflows have it on when you hand over. An owner who believes
+  they will be told, and will not be, is worse off than one who knows to check.
+
+Deep detail, the triage ladder, and the ways a run can look green while doing nothing:
+`references/reliability.md`.
 
 ## Debug ladder: an automation is not working
 
@@ -469,6 +533,9 @@ evidence of what the automation did to real customers.
 
 | Reference | Load it when |
 | --- | --- |
+| `references/recipes.md` | Someone describes a tedious problem in their own words and you want a proven end-to-end build for it rather than a design invented on the spot. Start here before hand-building anything. |
+| `references/reliability.md` | An automation "stopped working", or you are doing a health pass. The triage ladder, the ways a run looks green while doing nothing, how to read a failed run, and the confirm-gated path back to healthy. |
+| `references/scheduled-routines.md` | Running a play UNATTENDED on a cron (the daily brief, a fleet sweep). The per-folder guardrail ceiling, the output contract, launchd/cron wiring, and why an unattended session must never hold write permission. |
 | `references/node-rail.md` | A capability appears to have no MCP tool (~332 palette nodes are executable from workflows, several doing things no tool does), or you need node config schemas, `step_states` internals, dry-run mechanics, run economics, or ad-hoc hygiene. |
 | `references/event-triggers.md` | Picking a trigger for an internal Hiveku event - the 35-type domain map, `output_shape_keys`, and `workflow_triggers`-row mechanics. |
 | `references/templates.md` | Installing a shipped template - the slug catalog, `variables[]` semantics, and both staged queues (`agent_inbox_*`, `agent_approval_*`) in full. |

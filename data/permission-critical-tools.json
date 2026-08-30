@@ -6,7 +6,7 @@
     "mcp__hiveku__"
   ],
   "plugin_version": "0.16.0",
-  "count": 89,
+  "count": 95,
   "tools": [
     {
       "name": "deploy_site",
@@ -452,6 +452,36 @@
       "name": "seo_page_schema_delete",
       "method": "DELETE",
       "why_gated": "removes a page's stored JSON-LD"
+    },
+    {
+      "name": "workflow_run",
+      "method": "POST",
+      "why_gated": "runs a workflow FOR REAL - fires its emails, SMS, CRM writes and external calls. workflow_test is the dry run"
+    },
+    {
+      "name": "workflow_enable",
+      "method": "PATCH",
+      "why_gated": "arms a live webhook or cron: from this call the automation reaches customers unattended"
+    },
+    {
+      "name": "workflow_delete",
+      "method": "DELETE",
+      "why_gated": "hard-deletes a workflow and cascades its triggers, schedules, versions and run history - there is no soft archive"
+    },
+    {
+      "name": "workflow_delete_schedule",
+      "method": "DELETE",
+      "why_gated": "stops a scheduled automation running, and orphans the nodes hanging off the schedule trigger"
+    },
+    {
+      "name": "workflow_stranded_replay",
+      "method": "POST",
+      "why_gated": "re-sends real notifications for submissions banked while the workflow was paused, to contacts who may be days old"
+    },
+    {
+      "name": "workflow_set_recipient",
+      "method": "POST",
+      "why_gated": "rewrites the recipient on EVERY sendEmail node in the graph at once"
     }
   ]
 }

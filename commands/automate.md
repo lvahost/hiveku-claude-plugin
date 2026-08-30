@@ -27,11 +27,15 @@ version-snapshotted and server-validated.
    notification and the CRM write are SIBLINGS off the trigger, so neither can swallow the other.
 4. Validate: `workflow_validate({ workflow_id })`. Fix every error and read every warning. "Multiple
    triggers" is a warning, and it means only the FIRST one fires.
-5. Dry-run: `workflow_test({ workflow_id, input_data })` fires NO real emails, Slack posts, CRM
-   writes, HTTP calls, tickets, PM writes, DB writes, or deploys, and burns no run quota. Then
-   `workflow_run_get({ workflow_id, run_id })` and read each node's `would_have` payload to confirm
-   the real recipient, body, and CRM fields before anything goes live. Never use `workflow_run` to
-   test. That sends for real.
+5. Dry-run, while it is still DISABLED: `workflow_test({ workflow_id, input_data })` fires NO real
+   emails, Slack posts, CRM writes, HTTP calls, tickets, PM writes, DB writes, deploys or AI agent
+   turns, and burns no run quota. Read the evidence out of the CALL'S OWN RESPONSE: a test persists
+   no run row, so `run_id` comes back null and `workflow_run_get` has nothing to fetch. The response
+   `data.output` carries the terminal node's context, and every mocked node contributes
+   `__dry_run: true` plus `would_have` (the args it would have sent). Confirm the real recipient,
+   body and CRM fields there before anything goes live; if a mid-graph node's `would_have` is the
+   one you need, make that node terminal temporarily. Never use `workflow_run` to test. That sends
+   for real.
 6. Schedule it, if it is recurring: `workflow_set_schedule({ workflow_id, cron_expression, timezone })`.
    5-field cron, and `timezone` DEFAULTS TO UTC, so pass the client's IANA zone explicitly or a
    9am report lands at 2am. Read it back with `workflow_get_schedule`.

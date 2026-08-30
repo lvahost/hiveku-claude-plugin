@@ -193,7 +193,13 @@ Put this in `.claude/settings.json` (per project) or `~/.claude/settings.json` (
       "mcp__plugin_hiveku_hk__seo_backlink_tracker_delete",
       "mcp__plugin_hiveku_hk__seo_backlink_opportunity_delete",
       "mcp__plugin_hiveku_hk__seo_automated_report_delete",
-      "mcp__plugin_hiveku_hk__seo_page_schema_delete"
+      "mcp__plugin_hiveku_hk__seo_page_schema_delete",
+      "mcp__plugin_hiveku_hk__workflow_run",
+      "mcp__plugin_hiveku_hk__workflow_enable",
+      "mcp__plugin_hiveku_hk__workflow_delete",
+      "mcp__plugin_hiveku_hk__workflow_delete_schedule",
+      "mcp__plugin_hiveku_hk__workflow_stranded_replay",
+      "mcp__plugin_hiveku_hk__workflow_set_recipient"
     ]
   }
 }

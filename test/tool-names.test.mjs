@@ -53,6 +53,11 @@ const GATED_PREFIXES = [
   'domain_analytics_',
   'business_data_',
   'ai_optimization_',
+  // 2026-08-30. The automation department writes workflow_ tool names in prose
+  // constantly (the hub alone names 51), and until now a fabricated one was a
+  // console note rather than a failure - the exact way a skill starts teaching a
+  // tool that does not exist.
+  'workflow_',
 ];
 
 /**
@@ -61,7 +66,7 @@ const GATED_PREFIXES = [
  * more than 150 voice_ mentions and far more than 400 seo_ mentions; the vendor
  * prefixes are too sparse in prose to pin a floor on, and ride on these two.
  */
-const MIN_CHECKED = { voice_: 150, seo_: 400 };
+const MIN_CHECKED = { voice_: 150, seo_: 400, workflow_: 120 };
 
 /**
  * Snake tokens that LOOK like tools but are not, each with the one-word reason
@@ -69,6 +74,9 @@ const MIN_CHECKED = { voice_: 150, seo_: 400 };
  * line that uses it; never to silence a failure you have not understood.
  */
 const KNOWN_NON_TOOLS = new Map([
+  // Workflow engine tables the automation references name by their real
+  // database identity. Each is a table, not a tool.
+  ['workflow_pending_waits', 'table'],
   ['voice_calls', 'table'],
   ['voice_numbers', 'table'],
   ['voice_sms_messages', 'table'],

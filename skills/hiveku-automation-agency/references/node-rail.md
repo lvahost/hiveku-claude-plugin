@@ -414,18 +414,25 @@ workflow_run_get({ "workflow_id": "<uuid>", "run_id": "<run uuid>" })
 
 ### 3.3 The disabled-workflow trap
 
-**A disabled workflow cannot be run, and cannot be dry-run either.** The Olympus run route
-checks `is_enabled` before it looks at anything else, including `test_mode`, and returns:
+**A disabled workflow cannot be RUN for real, but it CAN be dry-run.** The Olympus run route
+rejects a disabled workflow only when `test_mode` is absent:
 
 ```
 400  Workflow is disabled. Enable it first via PATCH /workflows/:id { "is_enabled": true }
 ```
 
-So `workflow_create` gives you a disabled workflow and `workflow_test` refuses to touch it.
-The correct order is validate, then `workflow_enable`, then `workflow_test`, then
-`workflow_run`.
+`workflow_test` is exempt. The correct order is validate, `workflow_test` while still
+disabled, read `would_have`, and only then `workflow_enable`.
 
-This is safe for the ad-hoc rail specifically because of what "enabled" does and does not do:
+**This section used to say the opposite**, and the order it prescribed (validate, enable,
+test) was the unsafe one: enabling arms the real webhook and any cron, so a graph that had
+never been tested was live for the length of the test, and anything that fired in that window
+ran for real. The route was changed specifically to remove that window. A dry run touches
+nothing the enabled flag guards, so there is no reason to arm a graph before testing it. If
+you find another note anywhere prescribing enable-then-test, it predates this and is wrong.
+
+Enabling remains comparatively safe on the ad-hoc rail because of what "enabled" does and
+does not do, and that is still worth understanding before you enable anything:
 
 - A `manualTrigger`-only graph has **no listener**. There is no `workflow_triggers` row and no
   `workflow_schedules` row, so the only thing that can start it is your own `workflow_run`.
@@ -566,9 +573,23 @@ their own, so they execute for real inside a `workflow_test`:
 | `rankTracker` | real DataForSEO SERP call, metered spend |
 | `domainAnalysis` | real DataForSEO domain call, metered spend |
 | `serpAnalysis` | real live SERP fetch, metered spend |
-| `aiAgent` | runs the model for real, burns tokens and any delegate sub-agents |
 | `kbSearch` | real vector search |
 | `delay` | actually waits |
+
+**`aiAgent` left this table on 2026-08-30.** It used to run the model for real during a dry
+run, burning tokens and firing any delegate sub-agents, and because an agent turn can call
+its own tools it could also WRITE from a run whose whole purpose was to prove nothing would
+be written. It and the six sub-agent role nodes (`blogWriter`, `seoSpecialist`, `socialMedia`,
+`dataAnalyst`, `contentCurator`, `videoCreator`) are now in `SIDE_EFFECTING_NODE_TYPES`, so a
+dry run returns a `would_have` instead of generated copy. The trade is deliberate: judging the
+copy needs a real run, on approval. Note the rows ABOVE were not part of that change - the
+metered DataForSEO reads and `delay` still execute for real.
+
+The same day closed the other hole in this section: a side-effecting node inside a
+`parallelExecute` branch or a `transactionBlock` used to reach its real handler, because the
+gate lived in the main dispatch loop only and those two run their own inline chains. A graph
+defeated the dry run purely by having a fan-out shape. The gate now runs at all three dispatch
+sites, so the mocking described here holds regardless of graph shape.
 
 For contrast, these ARE mocked: `seoStartAudit`, `kbIndexText`, `generateImage`,
 `generateImageSet`, `generateVideo`, `designExportImage`, `designExportMp4`, `webSearch`,
