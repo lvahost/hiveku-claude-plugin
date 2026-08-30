@@ -470,8 +470,8 @@ diagnosis in the body, and for any rung you could not close (headers, server log
    (see that file); `pages_update` and the code lane still work.
 6. Link gap: `backlinks_page_intersection` with the top-ranking URLs as targets and ours excluded
    [SPENDS D x1; check the schema for the targets shape]; for resource-page prospects,
-   `seo_research({ action: 'broken-links', url })` [SPENDS E x1 per page; `url` required] finds
-   the dead external links that make the pitch (`references/link-building-and-competitors.md`
+   `seo_research({ action: 'broken-links', target })` [free; `target` is the task_id of a crawl
+   of THEIR site, so the spend is that crawl] finds the dead external links that make the pitch (`references/link-building-and-competitors.md`
    Prospecting); hand the segmented list and one angle per
    segment to Outbound via `talk_to_department({ domain: 'outbound', message })` [CONFIRM the
    list]. Nothing sends here.

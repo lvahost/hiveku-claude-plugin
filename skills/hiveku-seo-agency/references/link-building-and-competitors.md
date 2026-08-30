@@ -491,11 +491,13 @@ here. A spike in high-spam referrers is a hygiene item, not a panic item.
 - `backlinks_domain_intersection` - who links to multiple competitors but not us.
 - `backlinks_page_intersection` - who links to the competitor PAGES ranking for our target keyword
   (link gap for a single SERP: the highest-relevance list there is).
-- `seo_research({ action: 'broken-links', url })` [SPENDS, one class-E rendered fetch per page,
-  no per-link fan-out] - the dead external links on a resource or roundup page you want a link
-  from: each row's `broken_url` (status >= 400) is the pitch ("your link to X is dead; our page
-  covers it"), with `anchor_text` telling you what the page meant to link to. Results cap at
-  `limit`; an empty list means none detected on that render, not a verified page. Log keepers as
+- `seo_research({ action: 'broken-links', target })` [free read of a crawl you already paid for:
+  `target` is the task_id from a `seo_audit_start` of THEIR site] - the dead external links on a
+  resource or roundup page you want a link from: each row's `link_to` (`page_to_status_code >= 400`
+  or `is_broken`) is the pitch ("your link to X is dead; our page covers it"), with `text` telling
+  you what the page meant to link to. Results cap at `limit`; an empty list means none of the
+  links the crawl RESOLVED were broken, not a verified page - unresolved targets carry a null
+  status and are counted neither way. Log keepers as
   opportunity rows (`seo_backlink_opportunity_create`, `source_type: 'broken_link'`).
 - Digital-PR angles, unlinked-mention reclamation and the sentiment watch:
   `references/digital-pr-and-brand-mentions.md`.
