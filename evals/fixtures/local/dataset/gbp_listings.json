@@ -1,0 +1,63 @@
+{
+  "_comment": "The cached listing snapshot per GBP connection, exactly the metadata the 6h sync cron writes. tools.mjs recomputes score from items (an item with unknown: true is renormalized OUT of the denominator, as lib/listings/score.ts does) and stale from fetched_at against the frozen NOW (26h line). Item keys, labels, weights and hints are the route's own.",
+  "rows": [
+    {
+      "connection_id": "conn_gbp_a",
+      "display_name": "Brightside Fixtures - Downtown",
+      "state": "connected",
+      "fetched_at": "2026-08-28T19:00:00.000Z",
+      "items": [
+        { "key": "title", "label": "Business name", "present": true, "weight": 10, "hint": "Exact real-world business name - no keyword stuffing." },
+        { "key": "address", "label": "Address", "present": true, "weight": 12, "hint": "A complete storefront address anchors local rankings." },
+        { "key": "phone", "label": "Phone number", "present": true, "weight": 12, "hint": "Primary phone - must match the number on your website (NAP consistency)." },
+        { "key": "website", "label": "Website link", "present": true, "weight": 10, "hint": "Drives clicks and lets Google associate your site with the listing." },
+        { "key": "primary_category", "label": "Primary category", "present": true, "weight": 15, "hint": "The single strongest local ranking factor." },
+        { "key": "additional_categories", "label": "Additional categories", "present": false, "weight": 8, "hint": "Cover every service you actually offer." },
+        { "key": "hours", "label": "Business hours", "present": true, "weight": 12, "hint": "Listings without hours lose \"open now\" searches entirely." },
+        { "key": "description", "label": "Business description", "present": true, "weight": 10, "hint": "A 750-character description with your services and area." },
+        { "key": "service_area_or_storefront", "label": "Service area / storefront set", "present": true, "weight": 5, "hint": "Tell Google where you serve." },
+        { "key": "labels_attributes", "label": "Attributes", "present": true, "weight": 6, "hint": "Accessibility, amenities, payments - filters customers actually use." }
+      ],
+      "nap": { "name": "Brightside Fixtures", "address": "410 Commerce St, Dallas, TX, 75202", "phone": "+1 214-555-0140", "website": "https://brightside.example/" },
+      "status": { "open_status": "OPEN", "has_voice_of_merchant": true, "duplicate": true, "place_id": "ChIJbsfDown0001", "maps_uri": "https://maps.google.com/?cid=1101" },
+      "score_history": [
+        { "date": "2026-08-22", "score": 84 },
+        { "date": "2026-08-23", "score": 84 },
+        { "date": "2026-08-24", "score": 92 },
+        { "date": "2026-08-25", "score": 92 },
+        { "date": "2026-08-26", "score": 92 },
+        { "date": "2026-08-27", "score": 92 },
+        { "date": "2026-08-28", "score": 92 }
+      ]
+    },
+    {
+      "connection_id": "conn_gbp_b",
+      "display_name": "Brightside Fixtures - Northside",
+      "state": "connected",
+      "fetched_at": "2026-08-28T08:00:00.000Z",
+      "items": [
+        { "key": "title", "label": "Business name", "present": true, "weight": 10, "hint": "Exact real-world business name - no keyword stuffing." },
+        { "key": "address", "label": "Address", "present": true, "weight": 12, "hint": "A complete storefront address anchors local rankings." },
+        { "key": "phone", "label": "Phone number", "present": true, "weight": 12, "hint": "Primary phone - must match the number on your website (NAP consistency)." },
+        { "key": "website", "label": "Website link", "present": true, "weight": 10, "hint": "Drives clicks and lets Google associate your site with the listing." },
+        { "key": "primary_category", "label": "Primary category", "present": true, "weight": 15, "hint": "The single strongest local ranking factor." },
+        { "key": "additional_categories", "label": "Additional categories", "present": true, "weight": 8, "hint": "Cover every service you actually offer." },
+        { "key": "hours", "label": "Business hours", "present": false, "weight": 12, "hint": "Listings without hours lose \"open now\" searches entirely." },
+        { "key": "description", "label": "Business description", "present": false, "weight": 10, "hint": "A 750-character description with your services and area." },
+        { "key": "service_area_or_storefront", "label": "Service area / storefront set", "present": true, "weight": 5, "hint": "Tell Google where you serve." },
+        { "key": "labels_attributes", "label": "Attributes", "present": false, "weight": 6, "hint": "Accessibility, amenities, payments - filters customers actually use.", "unknown": true }
+      ],
+      "nap": { "name": "Brightside Fixtures Northside", "address": "2200 Legacy Dr, Plano, TX, 75023", "phone": "+1 972-555-0188", "website": "https://brightside.example/northside" },
+      "status": { "open_status": "OPEN", "has_voice_of_merchant": true, "duplicate": false, "place_id": "ChIJbsfNorth0003", "maps_uri": "https://maps.google.com/?cid=1103" },
+      "score_history": [
+        { "date": "2026-08-22", "score": 77 },
+        { "date": "2026-08-23", "score": 77 },
+        { "date": "2026-08-24", "score": 77 },
+        { "date": "2026-08-25", "score": 77 },
+        { "date": "2026-08-26", "score": 77 },
+        { "date": "2026-08-27", "score": 77 },
+        { "date": "2026-08-28", "score": 77 }
+      ]
+    }
+  ]
+}

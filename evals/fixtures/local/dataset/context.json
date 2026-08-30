@@ -1,0 +1,37 @@
+{
+  "_comment": "Orientation data only. account_context serves account_context_get; memory/pm serve the allowed write-back acks. Nothing in this file names a defect.",
+  "account_context": {
+    "account": "Brightside Fixtures",
+    "account_id": "acct_fixture_local",
+    "domain": "seo",
+    "business_name": "Brightside Fixtures",
+    "marketing_name": "Brightside Lighting Co.",
+    "service_area": "Dallas-Fort Worth: the Downtown Dallas showroom on Commerce St and the Northside showroom in Plano (opened March 2026)",
+    "brand_voice": "warm, plain-spoken, no exclamation marks, never quotes a price in public",
+    "rules": [
+      "Public replies on Google are signed 'The Brightside team' and never mention pricing or a specific employee.",
+      "Only the owner (Janie) approves anything that publishes to the Google listing - a draft goes to her first.",
+      "The legal business name on every directory is 'Brightside Fixtures'; the marketing name is never used in NAP fields."
+    ],
+    "memory_notes": "Two Google Business Profile locations, one Search Console property (sc-domain:brightside.example) and one Bing Webmaster site. The Downtown listing has been live since 2025; Northside was bound in March 2026 when the Plano showroom opened. Local organic reporting runs on 90-day windows.",
+    "instructions": "Re-read the rules above before drafting any public-facing text. Report per location; the owner reads the Downtown and Northside numbers separately.",
+    "size": { "approx_chars": 1400, "sections_included": ["identity", "memory", "rules"] }
+  },
+  "memory": {
+    "entries": [
+      {
+        "memory_id": "mem_seo_1",
+        "type": "memory",
+        "name": "seo",
+        "project_id": null,
+        "content": "SEO notes for Brightside Fixtures. GBP connections: conn_gbp_a = Downtown (410 Commerce St, Dallas TX 75202, +1 214-555-0140), conn_gbp_b = Northside (2200 Legacy Dr, Plano TX 75023, +1 972-555-0188). Search Console: conn_gsc_1 (sc-domain:brightside.example). Bing: conn_bing_1. Canonical NAP name on every directory is 'Brightside Fixtures'. Primary category on both listings: Lighting store. Baseline recorded 2026-06-02: Downtown Listing Score 84, Northside 77."
+      }
+    ]
+  },
+  "pm": {
+    "projects": [
+      { "id": "proj_fixture_seo", "name": "Brightside SEO", "status": "active", "project_type": "seo" },
+      { "id": "proj_fixture_site", "name": "brightside.example website", "status": "active", "project_type": "website" }
+    ]
+  }
+}

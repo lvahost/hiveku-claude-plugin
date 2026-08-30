@@ -1,0 +1,24 @@
+{
+  "_comment": "Live seo_gbp_media payload per connection (listMedia shape: media[] + total_media_item_count). quota_exceeded_first_call marks the connection whose FIRST media read hits Google's per-minute quota; the second read succeeds. Northside's gallery is its opening-day set from March 2026.",
+  "conn_gbp_a": {
+    "quota_exceeded_first_call": false,
+    "total_media_item_count": 5,
+    "media": [
+      { "media_id": "AF1QipDown0001", "name": "accounts/108/locations/1101/media/AF1QipDown0001", "media_format": "PHOTO", "category": "COVER", "google_url": "https://lh3.googleusercontent.com/p/AF1QipDown0001", "thumbnail_url": "https://lh3.googleusercontent.com/p/AF1QipDown0001=s300", "create_time": "2026-06-02T15:10:00.000Z", "width_px": 2048, "height_px": 1365, "view_count": 1840, "description": null },
+      { "media_id": "AF1QipDown0002", "name": "accounts/108/locations/1101/media/AF1QipDown0002", "media_format": "PHOTO", "category": "LOGO", "google_url": "https://lh3.googleusercontent.com/p/AF1QipDown0002", "thumbnail_url": "https://lh3.googleusercontent.com/p/AF1QipDown0002=s300", "create_time": "2025-11-05T09:00:00.000Z", "width_px": 1200, "height_px": 1200, "view_count": 920, "description": null },
+      { "media_id": "AF1QipDown0003", "name": "accounts/108/locations/1101/media/AF1QipDown0003", "media_format": "PHOTO", "category": "EXTERIOR", "google_url": "https://lh3.googleusercontent.com/p/AF1QipDown0003", "thumbnail_url": "https://lh3.googleusercontent.com/p/AF1QipDown0003=s300", "create_time": "2026-06-02T15:12:00.000Z", "width_px": 2048, "height_px": 1536, "view_count": 640, "description": null },
+      { "media_id": "AF1QipDown0004", "name": "accounts/108/locations/1101/media/AF1QipDown0004", "media_format": "PHOTO", "category": "INTERIOR", "google_url": "https://lh3.googleusercontent.com/p/AF1QipDown0004", "thumbnail_url": "https://lh3.googleusercontent.com/p/AF1QipDown0004=s300", "create_time": "2026-08-10T17:40:00.000Z", "width_px": 2048, "height_px": 1365, "view_count": 310, "description": "Showroom floor, August refresh" },
+      { "media_id": "AF1QipDown0005", "name": "accounts/108/locations/1101/media/AF1QipDown0005", "media_format": "PHOTO", "category": "PRODUCT", "google_url": "https://lh3.googleusercontent.com/p/AF1QipDown0005", "thumbnail_url": "https://lh3.googleusercontent.com/p/AF1QipDown0005=s300", "create_time": "2026-08-10T17:44:00.000Z", "width_px": 1600, "height_px": 2000, "view_count": 275, "description": "Brass pendant wall" }
+    ]
+  },
+  "conn_gbp_b": {
+    "quota_exceeded_first_call": true,
+    "total_media_item_count": 4,
+    "media": [
+      { "media_id": "AF1QipNorth0001", "name": "accounts/108/locations/1103/media/AF1QipNorth0001", "media_format": "PHOTO", "category": "COVER", "google_url": "https://lh3.googleusercontent.com/p/AF1QipNorth0001", "thumbnail_url": "https://lh3.googleusercontent.com/p/AF1QipNorth0001=s300", "create_time": "2026-03-18T14:00:00.000Z", "width_px": 2048, "height_px": 1365, "view_count": 560, "description": null },
+      { "media_id": "AF1QipNorth0002", "name": "accounts/108/locations/1103/media/AF1QipNorth0002", "media_format": "PHOTO", "category": "LOGO", "google_url": "https://lh3.googleusercontent.com/p/AF1QipNorth0002", "thumbnail_url": "https://lh3.googleusercontent.com/p/AF1QipNorth0002=s300", "create_time": "2026-03-18T14:02:00.000Z", "width_px": 1200, "height_px": 1200, "view_count": 210, "description": null },
+      { "media_id": "AF1QipNorth0003", "name": "accounts/108/locations/1103/media/AF1QipNorth0003", "media_format": "PHOTO", "category": "EXTERIOR", "google_url": "https://lh3.googleusercontent.com/p/AF1QipNorth0003", "thumbnail_url": "https://lh3.googleusercontent.com/p/AF1QipNorth0003=s300", "create_time": "2026-03-18T14:05:00.000Z", "width_px": 2048, "height_px": 1536, "view_count": 190, "description": null },
+      { "media_id": "AF1QipNorth0004", "name": "accounts/108/locations/1103/media/AF1QipNorth0004", "media_format": "PHOTO", "category": "INTERIOR", "google_url": "https://lh3.googleusercontent.com/p/AF1QipNorth0004", "thumbnail_url": "https://lh3.googleusercontent.com/p/AF1QipNorth0004=s300", "create_time": "2026-03-18T14:08:00.000Z", "width_px": 2048, "height_px": 1365, "view_count": 150, "description": null }
+    ]
+  }
+}

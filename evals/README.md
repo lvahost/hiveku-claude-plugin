@@ -48,6 +48,8 @@ evals/
                         marketing fixture; first to carry checks.mjs)
     tracking-check/     conversion-tracking fixture for /hiveku:tracking-check
     social-plan/        social fixture for /hiveku:social-plan
+    local/              local-SEO fixture for /hiveku:local (GBP, citations,
+                        local organic; live GBP read counts are gated)
     phone-check/        telephony fixture for /hiveku:phone-check
       dataset/*.json        the account's truth, internally consistent
       tools.mjs             executable tool surface over the dataset
@@ -171,14 +173,14 @@ shapes - and run `grade.mjs`.
 
 ## What this covers, and what it does not
 
-Covered: **6 of the plugin's 98 commands** - `/hiveku:ap-screen` and
+Covered: **7 of the plugin's 109 commands** - `/hiveku:ap-screen` and
 `/hiveku:support-sweep` from v1, `/hiveku:ppc-optimize` plus the
-`tracking-check` and `social-plan` fixtures landing in the same release, and
-`/hiveku:phone-check` (2026-08-29) - chosen because each has a crisp defect
-model. That exercises slices of 6 of the 18 skills' disciplines (books,
-helpdesk, paid media, conversion tracking, social, telephony). `ppc-optimize`
-is the first case whose grade also depends on which tools the session did NOT
-call.
+`tracking-check` and `social-plan` fixtures landing in the same release,
+`/hiveku:phone-check` (2026-08-29), and `/hiveku:local` (2026-08-30) - chosen
+because each has a crisp defect model. That exercises slices of 7 of the 19
+skills' disciplines (books, helpdesk, paid media, conversion tracking, social,
+telephony, local SEO). `ppc-optimize` is the first case whose grade also
+depends on which tools the session did NOT call.
 
 `phone-check`: a five-DID voice tenant for "the phones aren't ringing and one
 rep says she can't dial out", frozen at 2026-08-29T15:00Z. The headline trap
@@ -201,6 +203,35 @@ live probe, and the recording-URL mint refuse. No `sample-run/` golden yet -
 producing one needs a model-in-the-loop run (follow-up); the deterministic
 invariants live in `self-test/fixtures.test.mjs`.
 
+`local`: a two-location Google Business Profile account (Downtown and
+Northside showrooms, plus one Search Console property and one Bing site) for
+the `/hiveku:local` baseline, frozen at 2026-08-29T15:00Z. Seeds: one cached
+listing snapshot 31h old (over the 26h line - its Listing Score may be read
+but never quoted as current fact) beside one 20h old; a location Google flags
+as a duplicate; an empty public service menu; a live attributes audit with 7
+of 12 unset beside one at 12 of 12 whose CACHED listing item is `unknown` and
+renormalized out of the score (not a gap); a 1-star review 40h old with no
+owner reply, next to a replied 4-star and an unreplied 5-star that inflate the
+count; and a stored citation audit where exactly one major directory is
+verifiably absent (operator checklist) while three are `no_signal` - the route
+emits those on every audit, and they are UNVERIFIED, never "not listed" - plus
+an inconsistent duplicate Maps entry whose website is wrong and whose phone
+differs only in formatting. The other location was never audited (`audit:
+null`), and the only remedy, `seo_citations_audit`, spends a DataForSEO search
+with no confirm step, so it is filed as a task and never run. `seo_gbp_media`
+on the stale location returns Google's per-minute quota failure on its FIRST
+call only. `seo_local_compare_periods` halves the days it is passed (90 gives
+45 vs 45, 180 gives 90 vs 90) and exposes the honest window in a fixture-only
+`window` block. `checks.mjs` gates the run: no paid audit and none of the
+seven GBP writes, `seo_gbp_attributes` / `seo_gbp_services` at most once per
+connection, `seo_gbp_media` at most twice on the quota connection and once
+elsewhere, the listing snapshot read at all, the 90-vs-90 read honest (days
+>= 180 or the halved window stated), both connection ids named in the report,
+one `pm_tasks_create` per reported category, and sidecar/report agreement. No
+`sample-run/` golden yet - producing one needs a model-in-the-loop run
+(follow-up); the deterministic invariants and the hook's failure cases run
+over a synthetic transcript in `self-test/local-fixture.test.mjs`.
+
 Model-in-the-loop results so far (2026-08-29, first-party Claude, one run
 each; the committed `sample-run/` directories are mock-server replays, not
 these runs): `ppc-optimize`, `tracking-check` and `social-plan` each PASS on
@@ -217,7 +248,7 @@ gateway (Kimi/GLM) comparison has been run yet.
 
 Not covered, no pretense otherwise:
 
-- the other 93 commands, 13 skills, and **all 10 agents** (0 of 10);
+- the other 102 commands, 12 skills, and **all 11 agents** (0 of 11);
 - the plugin's real MCP plumbing (binding, credentials, tool promotion) -
   the mock server replaces it; `test/*.mjs` owns that layer;
 - send/approval behavior beyond "the fixture refuses gate-crossing writes,

@@ -1,0 +1,40 @@
+{
+  "_comment": "Live seo_gbp_attributes material per connection: `current` is what Google returns from getAttributes (only entries with values count as set), `available` is the catalog for the location's category (the id rides `parent`, as the Business Information API returns it). tools.mjs derives audit.summary / audit.missing exactly as the olympus gbp route does. Downtown's cached listing snapshot scored attributes as present because five were set at sync time; the live catalog shows the rest unset.",
+  "available": [
+    { "parent": "attributes/wheelchair_accessible_entrance", "displayName": "Wheelchair accessible entrance", "groupDisplayName": "Accessibility", "valueType": "BOOL" },
+    { "parent": "attributes/wheelchair_accessible_parking", "displayName": "Wheelchair accessible parking lot", "groupDisplayName": "Accessibility", "valueType": "BOOL" },
+    { "parent": "attributes/wheelchair_accessible_restroom", "displayName": "Wheelchair accessible restroom", "groupDisplayName": "Accessibility", "valueType": "BOOL" },
+    { "parent": "attributes/has_delivery", "displayName": "Delivery", "groupDisplayName": "Service options", "valueType": "BOOL" },
+    { "parent": "attributes/has_in_store_pickup", "displayName": "In-store pickup", "groupDisplayName": "Service options", "valueType": "BOOL" },
+    { "parent": "attributes/has_in_store_shopping", "displayName": "In-store shopping", "groupDisplayName": "Service options", "valueType": "BOOL" },
+    { "parent": "attributes/has_onsite_services", "displayName": "On-site services", "groupDisplayName": "Service options", "valueType": "BOOL" },
+    { "parent": "attributes/pay_credit_card", "displayName": "Credit cards", "groupDisplayName": "Payments", "valueType": "BOOL" },
+    { "parent": "attributes/pay_debit_card", "displayName": "Debit cards", "groupDisplayName": "Payments", "valueType": "BOOL" },
+    { "parent": "attributes/pay_mobile_nfc", "displayName": "NFC mobile payments", "groupDisplayName": "Payments", "valueType": "BOOL" },
+    { "parent": "attributes/requires_appointments", "displayName": "Appointment required", "groupDisplayName": "Planning", "valueType": "BOOL" },
+    { "parent": "attributes/has_free_parking_lot", "displayName": "Free parking lot", "groupDisplayName": "Parking", "valueType": "BOOL" }
+  ],
+  "current": {
+    "conn_gbp_a": [
+      { "name": "attributes/wheelchair_accessible_entrance", "valueType": "BOOL", "values": [true] },
+      { "name": "attributes/has_in_store_shopping", "valueType": "BOOL", "values": [true] },
+      { "name": "attributes/pay_credit_card", "valueType": "BOOL", "values": [true] },
+      { "name": "attributes/pay_debit_card", "valueType": "BOOL", "values": [true] },
+      { "name": "attributes/has_delivery", "valueType": "BOOL", "values": [true] }
+    ],
+    "conn_gbp_b": [
+      { "name": "attributes/wheelchair_accessible_entrance", "valueType": "BOOL", "values": [true] },
+      { "name": "attributes/wheelchair_accessible_parking", "valueType": "BOOL", "values": [true] },
+      { "name": "attributes/wheelchair_accessible_restroom", "valueType": "BOOL", "values": [true] },
+      { "name": "attributes/has_delivery", "valueType": "BOOL", "values": [true] },
+      { "name": "attributes/has_in_store_pickup", "valueType": "BOOL", "values": [true] },
+      { "name": "attributes/has_in_store_shopping", "valueType": "BOOL", "values": [true] },
+      { "name": "attributes/has_onsite_services", "valueType": "BOOL", "values": [false] },
+      { "name": "attributes/pay_credit_card", "valueType": "BOOL", "values": [true] },
+      { "name": "attributes/pay_debit_card", "valueType": "BOOL", "values": [true] },
+      { "name": "attributes/pay_mobile_nfc", "valueType": "BOOL", "values": [true] },
+      { "name": "attributes/requires_appointments", "valueType": "BOOL", "values": [false] },
+      { "name": "attributes/has_free_parking_lot", "valueType": "BOOL", "values": [true] }
+    ]
+  }
+}

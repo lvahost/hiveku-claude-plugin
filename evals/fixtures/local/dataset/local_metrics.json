@@ -1,0 +1,3442 @@
+{
+ "_comment": "Synced Search Console + Bing rows in the signatures the local route reads: gsc_daily is the GSC date-only rollup (daily, 3-day final lag, ends 2026-08-26); gsc_query / gsc_page are the GSC per-query and per-page slices (WEEKLY rows dated Mondays, 13 weeks); bing_query is the Bing per-query slice (weekly, 26 weeks - Bing writes NO rollup, so its daily totals are the per-date SUM of these). The previous 90 days ran hotter than the current 90 on GSC; Bing is flat. Nothing in this file names a GBP defect.",
+ "generated_by": "scratchpad/gen-local-metrics.mjs (deterministic LCG, seed 20260829)",
+ "gsc_daily": [
+  {
+   "date": "2026-03-02",
+   "source": "gsc",
+   "clicks": 41,
+   "impressions": 1222,
+   "position": 8.7
+  },
+  {
+   "date": "2026-03-03",
+   "source": "gsc",
+   "clicks": 44,
+   "impressions": 1050,
+   "position": 8.4
+  },
+  {
+   "date": "2026-03-04",
+   "source": "gsc",
+   "clicks": 37,
+   "impressions": 912,
+   "position": 9.3
+  },
+  {
+   "date": "2026-03-05",
+   "source": "gsc",
+   "clicks": 46,
+   "impressions": 1097,
+   "position": 8.9
+  },
+  {
+   "date": "2026-03-06",
+   "source": "gsc",
+   "clicks": 40,
+   "impressions": 1106,
+   "position": 9.2
+  },
+  {
+   "date": "2026-03-07",
+   "source": "gsc",
+   "clicks": 22,
+   "impressions": 495,
+   "position": 8.8
+  },
+  {
+   "date": "2026-03-08",
+   "source": "gsc",
+   "clicks": 27,
+   "impressions": 733,
+   "position": 8.4
+  },
+  {
+   "date": "2026-03-09",
+   "source": "gsc",
+   "clicks": 49,
+   "impressions": 1446,
+   "position": 8.3
+  },
+  {
+   "date": "2026-03-10",
+   "source": "gsc",
+   "clicks": 36,
+   "impressions": 862,
+   "position": 8.3
+  },
+  {
+   "date": "2026-03-11",
+   "source": "gsc",
+   "clicks": 43,
+   "impressions": 1029,
+   "position": 9
+  },
+  {
+   "date": "2026-03-12",
+   "source": "gsc",
+   "clicks": 40,
+   "impressions": 898,
+   "position": 8.3
+  },
+  {
+   "date": "2026-03-13",
+   "source": "gsc",
+   "clicks": 41,
+   "impressions": 917,
+   "position": 9.1
+  },
+  {
+   "date": "2026-03-14",
+   "source": "gsc",
+   "clicks": 19,
+   "impressions": 551,
+   "position": 8.2
+  },
+  {
+   "date": "2026-03-15",
+   "source": "gsc",
+   "clicks": 26,
+   "impressions": 612,
+   "position": 9
+  },
+  {
+   "date": "2026-03-16",
+   "source": "gsc",
+   "clicks": 41,
+   "impressions": 1026,
+   "position": 8.8
+  },
+  {
+   "date": "2026-03-17",
+   "source": "gsc",
+   "clicks": 43,
+   "impressions": 1184,
+   "position": 9
+  },
+  {
+   "date": "2026-03-18",
+   "source": "gsc",
+   "clicks": 47,
+   "impressions": 1188,
+   "position": 8.5
+  },
+  {
+   "date": "2026-03-19",
+   "source": "gsc",
+   "clicks": 46,
+   "impressions": 1303,
+   "position": 9.2
+  },
+  {
+   "date": "2026-03-20",
+   "source": "gsc",
+   "clicks": 42,
+   "impressions": 942,
+   "position": 8.2
+  },
+  {
+   "date": "2026-03-21",
+   "source": "gsc",
+   "clicks": 28,
+   "impressions": 741,
+   "position": 8.8
+  },
+  {
+   "date": "2026-03-22",
+   "source": "gsc",
+   "clicks": 28,
+   "impressions": 800,
+   "position": 9.1
+  },
+  {
+   "date": "2026-03-23",
+   "source": "gsc",
+   "clicks": 50,
+   "impressions": 1120,
+   "position": 8.6
+  },
+  {
+   "date": "2026-03-24",
+   "source": "gsc",
+   "clicks": 42,
+   "impressions": 936,
+   "position": 8.7
+  },
+  {
+   "date": "2026-03-25",
+   "source": "gsc",
+   "clicks": 47,
+   "impressions": 1265,
+   "position": 9.1
+  },
+  {
+   "date": "2026-03-26",
+   "source": "gsc",
+   "clicks": 47,
+   "impressions": 1284,
+   "position": 8.1
+  },
+  {
+   "date": "2026-03-27",
+   "source": "gsc",
+   "clicks": 50,
+   "impressions": 1326,
+   "position": 8.5
+  },
+  {
+   "date": "2026-03-28",
+   "source": "gsc",
+   "clicks": 21,
+   "impressions": 490,
+   "position": 8.1
+  },
+  {
+   "date": "2026-03-29",
+   "source": "gsc",
+   "clicks": 21,
+   "impressions": 581,
+   "position": 8.2
+  },
+  {
+   "date": "2026-03-30",
+   "source": "gsc",
+   "clicks": 38,
+   "impressions": 1045,
+   "position": 8.3
+  },
+  {
+   "date": "2026-03-31",
+   "source": "gsc",
+   "clicks": 38,
+   "impressions": 837,
+   "position": 8.3
+  },
+  {
+   "date": "2026-04-01",
+   "source": "gsc",
+   "clicks": 50,
+   "impressions": 1399,
+   "position": 8.5
+  },
+  {
+   "date": "2026-04-02",
+   "source": "gsc",
+   "clicks": 42,
+   "impressions": 1155,
+   "position": 8.6
+  },
+  {
+   "date": "2026-04-03",
+   "source": "gsc",
+   "clicks": 46,
+   "impressions": 1316,
+   "position": 8.9
+  },
+  {
+   "date": "2026-04-04",
+   "source": "gsc",
+   "clicks": 23,
+   "impressions": 507,
+   "position": 8.2
+  },
+  {
+   "date": "2026-04-05",
+   "source": "gsc",
+   "clicks": 20,
+   "impressions": 497,
+   "position": 8.7
+  },
+  {
+   "date": "2026-04-06",
+   "source": "gsc",
+   "clicks": 38,
+   "impressions": 1063,
+   "position": 8.9
+  },
+  {
+   "date": "2026-04-07",
+   "source": "gsc",
+   "clicks": 42,
+   "impressions": 956,
+   "position": 8.4
+  },
+  {
+   "date": "2026-04-08",
+   "source": "gsc",
+   "clicks": 43,
+   "impressions": 1194,
+   "position": 8.3
+  },
+  {
+   "date": "2026-04-09",
+   "source": "gsc",
+   "clicks": 46,
+   "impressions": 1326,
+   "position": 8.6
+  },
+  {
+   "date": "2026-04-10",
+   "source": "gsc",
+   "clicks": 51,
+   "impressions": 1173,
+   "position": 8.9
+  },
+  {
+   "date": "2026-04-11",
+   "source": "gsc",
+   "clicks": 20,
+   "impressions": 596,
+   "position": 8.7
+  },
+  {
+   "date": "2026-04-12",
+   "source": "gsc",
+   "clicks": 27,
+   "impressions": 660,
+   "position": 8.8
+  },
+  {
+   "date": "2026-04-13",
+   "source": "gsc",
+   "clicks": 48,
+   "impressions": 1425,
+   "position": 8.2
+  },
+  {
+   "date": "2026-04-14",
+   "source": "gsc",
+   "clicks": 36,
+   "impressions": 945,
+   "position": 8.5
+  },
+  {
+   "date": "2026-04-15",
+   "source": "gsc",
+   "clicks": 41,
+   "impressions": 966,
+   "position": 8.8
+  },
+  {
+   "date": "2026-04-16",
+   "source": "gsc",
+   "clicks": 38,
+   "impressions": 916,
+   "position": 8.8
+  },
+  {
+   "date": "2026-04-17",
+   "source": "gsc",
+   "clicks": 43,
+   "impressions": 1028,
+   "position": 8.7
+  },
+  {
+   "date": "2026-04-18",
+   "source": "gsc",
+   "clicks": 24,
+   "impressions": 548,
+   "position": 8.9
+  },
+  {
+   "date": "2026-04-19",
+   "source": "gsc",
+   "clicks": 26,
+   "impressions": 743,
+   "position": 8.2
+  },
+  {
+   "date": "2026-04-20",
+   "source": "gsc",
+   "clicks": 50,
+   "impressions": 1446,
+   "position": 9
+  },
+  {
+   "date": "2026-04-21",
+   "source": "gsc",
+   "clicks": 47,
+   "impressions": 1182,
+   "position": 8.2
+  },
+  {
+   "date": "2026-04-22",
+   "source": "gsc",
+   "clicks": 51,
+   "impressions": 1377,
+   "position": 9.3
+  },
+  {
+   "date": "2026-04-23",
+   "source": "gsc",
+   "clicks": 40,
+   "impressions": 1092,
+   "position": 8.6
+  },
+  {
+   "date": "2026-04-24",
+   "source": "gsc",
+   "clicks": 52,
+   "impressions": 1487,
+   "position": 8.8
+  },
+  {
+   "date": "2026-04-25",
+   "source": "gsc",
+   "clicks": 20,
+   "impressions": 542,
+   "position": 9.3
+  },
+  {
+   "date": "2026-04-26",
+   "source": "gsc",
+   "clicks": 20,
+   "impressions": 465,
+   "position": 8.9
+  },
+  {
+   "date": "2026-04-27",
+   "source": "gsc",
+   "clicks": 37,
+   "impressions": 1089,
+   "position": 8.4
+  },
+  {
+   "date": "2026-04-28",
+   "source": "gsc",
+   "clicks": 47,
+   "impressions": 1234,
+   "position": 8.9
+  },
+  {
+   "date": "2026-04-29",
+   "source": "gsc",
+   "clicks": 45,
+   "impressions": 1063,
+   "position": 8.3
+  },
+  {
+   "date": "2026-04-30",
+   "source": "gsc",
+   "clicks": 46,
+   "impressions": 1227,
+   "position": 8.8
+  },
+  {
+   "date": "2026-05-01",
+   "source": "gsc",
+   "clicks": 48,
+   "impressions": 1335,
+   "position": 9.2
+  },
+  {
+   "date": "2026-05-02",
+   "source": "gsc",
+   "clicks": 29,
+   "impressions": 670,
+   "position": 9.2
+  },
+  {
+   "date": "2026-05-03",
+   "source": "gsc",
+   "clicks": 21,
+   "impressions": 627,
+   "position": 8.3
+  },
+  {
+   "date": "2026-05-04",
+   "source": "gsc",
+   "clicks": 50,
+   "impressions": 1258,
+   "position": 8.4
+  },
+  {
+   "date": "2026-05-05",
+   "source": "gsc",
+   "clicks": 36,
+   "impressions": 879,
+   "position": 8.7
+  },
+  {
+   "date": "2026-05-06",
+   "source": "gsc",
+   "clicks": 52,
+   "impressions": 1280,
+   "position": 8.5
+  },
+  {
+   "date": "2026-05-07",
+   "source": "gsc",
+   "clicks": 41,
+   "impressions": 1038,
+   "position": 8.5
+  },
+  {
+   "date": "2026-05-08",
+   "source": "gsc",
+   "clicks": 36,
+   "impressions": 910,
+   "position": 8.4
+  },
+  {
+   "date": "2026-05-09",
+   "source": "gsc",
+   "clicks": 26,
+   "impressions": 731,
+   "position": 9.2
+  },
+  {
+   "date": "2026-05-10",
+   "source": "gsc",
+   "clicks": 21,
+   "impressions": 512,
+   "position": 8.4
+  },
+  {
+   "date": "2026-05-11",
+   "source": "gsc",
+   "clicks": 40,
+   "impressions": 1150,
+   "position": 8.3
+  },
+  {
+   "date": "2026-05-12",
+   "source": "gsc",
+   "clicks": 40,
+   "impressions": 1190,
+   "position": 8.4
+  },
+  {
+   "date": "2026-05-13",
+   "source": "gsc",
+   "clicks": 42,
+   "impressions": 1215,
+   "position": 8.9
+  },
+  {
+   "date": "2026-05-14",
+   "source": "gsc",
+   "clicks": 42,
+   "impressions": 1123,
+   "position": 9.2
+  },
+  {
+   "date": "2026-05-15",
+   "source": "gsc",
+   "clicks": 39,
+   "impressions": 1068,
+   "position": 8.3
+  },
+  {
+   "date": "2026-05-16",
+   "source": "gsc",
+   "clicks": 27,
+   "impressions": 718,
+   "position": 8.1
+  },
+  {
+   "date": "2026-05-17",
+   "source": "gsc",
+   "clicks": 27,
+   "impressions": 618,
+   "position": 8.3
+  },
+  {
+   "date": "2026-05-18",
+   "source": "gsc",
+   "clicks": 50,
+   "impressions": 1451,
+   "position": 8.2
+  },
+  {
+   "date": "2026-05-19",
+   "source": "gsc",
+   "clicks": 52,
+   "impressions": 1285,
+   "position": 8.9
+  },
+  {
+   "date": "2026-05-20",
+   "source": "gsc",
+   "clicks": 46,
+   "impressions": 1138,
+   "position": 8.5
+  },
+  {
+   "date": "2026-05-21",
+   "source": "gsc",
+   "clicks": 43,
+   "impressions": 990,
+   "position": 9.2
+  },
+  {
+   "date": "2026-05-22",
+   "source": "gsc",
+   "clicks": 49,
+   "impressions": 1094,
+   "position": 8.8
+  },
+  {
+   "date": "2026-05-23",
+   "source": "gsc",
+   "clicks": 22,
+   "impressions": 518,
+   "position": 9
+  },
+  {
+   "date": "2026-05-24",
+   "source": "gsc",
+   "clicks": 23,
+   "impressions": 622,
+   "position": 9
+  },
+  {
+   "date": "2026-05-25",
+   "source": "gsc",
+   "clicks": 50,
+   "impressions": 1354,
+   "position": 9.2
+  },
+  {
+   "date": "2026-05-26",
+   "source": "gsc",
+   "clicks": 52,
+   "impressions": 1350,
+   "position": 9.2
+  },
+  {
+   "date": "2026-05-27",
+   "source": "gsc",
+   "clicks": 38,
+   "impressions": 851,
+   "position": 8.5
+  },
+  {
+   "date": "2026-05-28",
+   "source": "gsc",
+   "clicks": 41,
+   "impressions": 1029,
+   "position": 8.2
+  },
+  {
+   "date": "2026-05-29",
+   "source": "gsc",
+   "clicks": 49,
+   "impressions": 1263,
+   "position": 9.1
+  },
+  {
+   "date": "2026-05-30",
+   "source": "gsc",
+   "clicks": 28,
+   "impressions": 793,
+   "position": 9.2
+  },
+  {
+   "date": "2026-05-31",
+   "source": "gsc",
+   "clicks": 17,
+   "impressions": 419,
+   "position": 9.9
+  },
+  {
+   "date": "2026-06-01",
+   "source": "gsc",
+   "clicks": 42,
+   "impressions": 1020,
+   "position": 9.9
+  },
+  {
+   "date": "2026-06-02",
+   "source": "gsc",
+   "clicks": 38,
+   "impressions": 975,
+   "position": 9.3
+  },
+  {
+   "date": "2026-06-03",
+   "source": "gsc",
+   "clicks": 31,
+   "impressions": 842,
+   "position": 9.7
+  },
+  {
+   "date": "2026-06-04",
+   "source": "gsc",
+   "clicks": 36,
+   "impressions": 987,
+   "position": 9.7
+  },
+  {
+   "date": "2026-06-05",
+   "source": "gsc",
+   "clicks": 44,
+   "impressions": 1009,
+   "position": 9.3
+  },
+  {
+   "date": "2026-06-06",
+   "source": "gsc",
+   "clicks": 22,
+   "impressions": 638,
+   "position": 9.2
+  },
+  {
+   "date": "2026-06-07",
+   "source": "gsc",
+   "clicks": 17,
+   "impressions": 499,
+   "position": 10
+  },
+  {
+   "date": "2026-06-08",
+   "source": "gsc",
+   "clicks": 43,
+   "impressions": 1178,
+   "position": 8.9
+  },
+  {
+   "date": "2026-06-09",
+   "source": "gsc",
+   "clicks": 36,
+   "impressions": 883,
+   "position": 9.9
+  },
+  {
+   "date": "2026-06-10",
+   "source": "gsc",
+   "clicks": 45,
+   "impressions": 1337,
+   "position": 9.6
+  },
+  {
+   "date": "2026-06-11",
+   "source": "gsc",
+   "clicks": 36,
+   "impressions": 863,
+   "position": 9.2
+  },
+  {
+   "date": "2026-06-12",
+   "source": "gsc",
+   "clicks": 32,
+   "impressions": 857,
+   "position": 9.7
+  },
+  {
+   "date": "2026-06-13",
+   "source": "gsc",
+   "clicks": 25,
+   "impressions": 629,
+   "position": 8.9
+  },
+  {
+   "date": "2026-06-14",
+   "source": "gsc",
+   "clicks": 24,
+   "impressions": 681,
+   "position": 9.2
+  },
+  {
+   "date": "2026-06-15",
+   "source": "gsc",
+   "clicks": 46,
+   "impressions": 1327,
+   "position": 9.5
+  },
+  {
+   "date": "2026-06-16",
+   "source": "gsc",
+   "clicks": 37,
+   "impressions": 964,
+   "position": 9
+  },
+  {
+   "date": "2026-06-17",
+   "source": "gsc",
+   "clicks": 33,
+   "impressions": 978,
+   "position": 9.1
+  },
+  {
+   "date": "2026-06-18",
+   "source": "gsc",
+   "clicks": 37,
+   "impressions": 899,
+   "position": 9.9
+  },
+  {
+   "date": "2026-06-19",
+   "source": "gsc",
+   "clicks": 45,
+   "impressions": 1240,
+   "position": 9.5
+  },
+  {
+   "date": "2026-06-20",
+   "source": "gsc",
+   "clicks": 20,
+   "impressions": 524,
+   "position": 9.8
+  },
+  {
+   "date": "2026-06-21",
+   "source": "gsc",
+   "clicks": 20,
+   "impressions": 473,
+   "position": 9.3
+  },
+  {
+   "date": "2026-06-22",
+   "source": "gsc",
+   "clicks": 32,
+   "impressions": 823,
+   "position": 9.3
+  },
+  {
+   "date": "2026-06-23",
+   "source": "gsc",
+   "clicks": 33,
+   "impressions": 775,
+   "position": 9.2
+  },
+  {
+   "date": "2026-06-24",
+   "source": "gsc",
+   "clicks": 35,
+   "impressions": 836,
+   "position": 8.9
+  },
+  {
+   "date": "2026-06-25",
+   "source": "gsc",
+   "clicks": 33,
+   "impressions": 949,
+   "position": 8.8
+  },
+  {
+   "date": "2026-06-26",
+   "source": "gsc",
+   "clicks": 34,
+   "impressions": 1002,
+   "position": 9.3
+  },
+  {
+   "date": "2026-06-27",
+   "source": "gsc",
+   "clicks": 24,
+   "impressions": 614,
+   "position": 9.7
+  },
+  {
+   "date": "2026-06-28",
+   "source": "gsc",
+   "clicks": 23,
+   "impressions": 554,
+   "position": 9.9
+  },
+  {
+   "date": "2026-06-29",
+   "source": "gsc",
+   "clicks": 43,
+   "impressions": 1206,
+   "position": 9.5
+  },
+  {
+   "date": "2026-06-30",
+   "source": "gsc",
+   "clicks": 40,
+   "impressions": 1050,
+   "position": 9.9
+  },
+  {
+   "date": "2026-07-01",
+   "source": "gsc",
+   "clicks": 42,
+   "impressions": 1208,
+   "position": 9.8
+  },
+  {
+   "date": "2026-07-02",
+   "source": "gsc",
+   "clicks": 35,
+   "impressions": 821,
+   "position": 9.1
+  },
+  {
+   "date": "2026-07-03",
+   "source": "gsc",
+   "clicks": 33,
+   "impressions": 969,
+   "position": 9.9
+  },
+  {
+   "date": "2026-07-04",
+   "source": "gsc",
+   "clicks": 18,
+   "impressions": 474,
+   "position": 8.8
+  },
+  {
+   "date": "2026-07-05",
+   "source": "gsc",
+   "clicks": 21,
+   "impressions": 495,
+   "position": 9.6
+  },
+  {
+   "date": "2026-07-06",
+   "source": "gsc",
+   "clicks": 43,
+   "impressions": 1210,
+   "position": 9.6
+  },
+  {
+   "date": "2026-07-07",
+   "source": "gsc",
+   "clicks": 31,
+   "impressions": 724,
+   "position": 8.9
+  },
+  {
+   "date": "2026-07-08",
+   "source": "gsc",
+   "clicks": 44,
+   "impressions": 1234,
+   "position": 9.3
+  },
+  {
+   "date": "2026-07-09",
+   "source": "gsc",
+   "clicks": 45,
+   "impressions": 1303,
+   "position": 9.5
+  },
+  {
+   "date": "2026-07-10",
+   "source": "gsc",
+   "clicks": 36,
+   "impressions": 1052,
+   "position": 8.8
+  },
+  {
+   "date": "2026-07-11",
+   "source": "gsc",
+   "clicks": 24,
+   "impressions": 673,
+   "position": 9.7
+  },
+  {
+   "date": "2026-07-12",
+   "source": "gsc",
+   "clicks": 24,
+   "impressions": 629,
+   "position": 9.4
+  },
+  {
+   "date": "2026-07-13",
+   "source": "gsc",
+   "clicks": 39,
+   "impressions": 1078,
+   "position": 9.6
+  },
+  {
+   "date": "2026-07-14",
+   "source": "gsc",
+   "clicks": 42,
+   "impressions": 1244,
+   "position": 9.7
+  },
+  {
+   "date": "2026-07-15",
+   "source": "gsc",
+   "clicks": 42,
+   "impressions": 1229,
+   "position": 9.8
+  },
+  {
+   "date": "2026-07-16",
+   "source": "gsc",
+   "clicks": 33,
+   "impressions": 894,
+   "position": 9.2
+  },
+  {
+   "date": "2026-07-17",
+   "source": "gsc",
+   "clicks": 45,
+   "impressions": 1189,
+   "position": 10
+  },
+  {
+   "date": "2026-07-18",
+   "source": "gsc",
+   "clicks": 17,
+   "impressions": 422,
+   "position": 9.9
+  },
+  {
+   "date": "2026-07-19",
+   "source": "gsc",
+   "clicks": 19,
+   "impressions": 516,
+   "position": 8.8
+  },
+  {
+   "date": "2026-07-20",
+   "source": "gsc",
+   "clicks": 33,
+   "impressions": 951,
+   "position": 9.3
+  },
+  {
+   "date": "2026-07-21",
+   "source": "gsc",
+   "clicks": 45,
+   "impressions": 1212,
+   "position": 9.1
+  },
+  {
+   "date": "2026-07-22",
+   "source": "gsc",
+   "clicks": 37,
+   "impressions": 890,
+   "position": 9.4
+  },
+  {
+   "date": "2026-07-23",
+   "source": "gsc",
+   "clicks": 42,
+   "impressions": 971,
+   "position": 9.3
+  },
+  {
+   "date": "2026-07-24",
+   "source": "gsc",
+   "clicks": 34,
+   "impressions": 788,
+   "position": 9.8
+  },
+  {
+   "date": "2026-07-25",
+   "source": "gsc",
+   "clicks": 22,
+   "impressions": 591,
+   "position": 9.9
+  },
+  {
+   "date": "2026-07-26",
+   "source": "gsc",
+   "clicks": 21,
+   "impressions": 613,
+   "position": 8.9
+  },
+  {
+   "date": "2026-07-27",
+   "source": "gsc",
+   "clicks": 33,
+   "impressions": 905,
+   "position": 9.7
+  },
+  {
+   "date": "2026-07-28",
+   "source": "gsc",
+   "clicks": 42,
+   "impressions": 1111,
+   "position": 9.4
+  },
+  {
+   "date": "2026-07-29",
+   "source": "gsc",
+   "clicks": 39,
+   "impressions": 1041,
+   "position": 9.8
+  },
+  {
+   "date": "2026-07-30",
+   "source": "gsc",
+   "clicks": 36,
+   "impressions": 971,
+   "position": 9.7
+  },
+  {
+   "date": "2026-07-31",
+   "source": "gsc",
+   "clicks": 37,
+   "impressions": 923,
+   "position": 9.1
+  },
+  {
+   "date": "2026-08-01",
+   "source": "gsc",
+   "clicks": 23,
+   "impressions": 594,
+   "position": 9.1
+  },
+  {
+   "date": "2026-08-02",
+   "source": "gsc",
+   "clicks": 18,
+   "impressions": 464,
+   "position": 8.9
+  },
+  {
+   "date": "2026-08-03",
+   "source": "gsc",
+   "clicks": 37,
+   "impressions": 843,
+   "position": 9
+  },
+  {
+   "date": "2026-08-04",
+   "source": "gsc",
+   "clicks": 41,
+   "impressions": 1200,
+   "position": 9.4
+  },
+  {
+   "date": "2026-08-05",
+   "source": "gsc",
+   "clicks": 45,
+   "impressions": 992,
+   "position": 9.7
+  },
+  {
+   "date": "2026-08-06",
+   "source": "gsc",
+   "clicks": 39,
+   "impressions": 944,
+   "position": 9.3
+  },
+  {
+   "date": "2026-08-07",
+   "source": "gsc",
+   "clicks": 42,
+   "impressions": 1035,
+   "position": 9.4
+  },
+  {
+   "date": "2026-08-08",
+   "source": "gsc",
+   "clicks": 24,
+   "impressions": 605,
+   "position": 9.4
+  },
+  {
+   "date": "2026-08-09",
+   "source": "gsc",
+   "clicks": 22,
+   "impressions": 588,
+   "position": 9.7
+  },
+  {
+   "date": "2026-08-10",
+   "source": "gsc",
+   "clicks": 38,
+   "impressions": 892,
+   "position": 9
+  },
+  {
+   "date": "2026-08-11",
+   "source": "gsc",
+   "clicks": 45,
+   "impressions": 1041,
+   "position": 9.6
+  },
+  {
+   "date": "2026-08-12",
+   "source": "gsc",
+   "clicks": 37,
+   "impressions": 1055,
+   "position": 9.6
+  },
+  {
+   "date": "2026-08-13",
+   "source": "gsc",
+   "clicks": 31,
+   "impressions": 773,
+   "position": 9
+  },
+  {
+   "date": "2026-08-14",
+   "source": "gsc",
+   "clicks": 39,
+   "impressions": 1024,
+   "position": 9.9
+  },
+  {
+   "date": "2026-08-15",
+   "source": "gsc",
+   "clicks": 21,
+   "impressions": 506,
+   "position": 9.4
+  },
+  {
+   "date": "2026-08-16",
+   "source": "gsc",
+   "clicks": 17,
+   "impressions": 462,
+   "position": 9.8
+  },
+  {
+   "date": "2026-08-17",
+   "source": "gsc",
+   "clicks": 34,
+   "impressions": 974,
+   "position": 9.1
+  },
+  {
+   "date": "2026-08-18",
+   "source": "gsc",
+   "clicks": 43,
+   "impressions": 1258,
+   "position": 9.1
+  },
+  {
+   "date": "2026-08-19",
+   "source": "gsc",
+   "clicks": 34,
+   "impressions": 934,
+   "position": 9.9
+  },
+  {
+   "date": "2026-08-20",
+   "source": "gsc",
+   "clicks": 32,
+   "impressions": 712,
+   "position": 9.6
+  },
+  {
+   "date": "2026-08-21",
+   "source": "gsc",
+   "clicks": 31,
+   "impressions": 696,
+   "position": 9.6
+  },
+  {
+   "date": "2026-08-22",
+   "source": "gsc",
+   "clicks": 17,
+   "impressions": 377,
+   "position": 9.5
+  },
+  {
+   "date": "2026-08-23",
+   "source": "gsc",
+   "clicks": 19,
+   "impressions": 436,
+   "position": 9.4
+  },
+  {
+   "date": "2026-08-24",
+   "source": "gsc",
+   "clicks": 45,
+   "impressions": 1254,
+   "position": 9.4
+  },
+  {
+   "date": "2026-08-25",
+   "source": "gsc",
+   "clicks": 43,
+   "impressions": 1221,
+   "position": 9.4
+  },
+  {
+   "date": "2026-08-26",
+   "source": "gsc",
+   "clicks": 34,
+   "impressions": 950,
+   "position": 9.4
+  }
+ ],
+ "gsc_query": [
+  {
+   "date": "2026-06-01",
+   "source": "gsc",
+   "query": "lighting store dallas",
+   "clicks": 50,
+   "impressions": 524,
+   "position": 2.9
+  },
+  {
+   "date": "2026-06-01",
+   "source": "gsc",
+   "query": "brightside fixtures",
+   "clicks": 39,
+   "impressions": 139,
+   "position": 1.2
+  },
+  {
+   "date": "2026-06-01",
+   "source": "gsc",
+   "query": "chandelier showroom dallas",
+   "clicks": 30,
+   "impressions": 348,
+   "position": 5.1
+  },
+  {
+   "date": "2026-06-01",
+   "source": "gsc",
+   "query": "led ceiling fixtures dallas",
+   "clicks": 22,
+   "impressions": 315,
+   "position": 6.4
+  },
+  {
+   "date": "2026-06-01",
+   "source": "gsc",
+   "query": "lighting store plano",
+   "clicks": 11,
+   "impressions": 330,
+   "position": 11.1
+  },
+  {
+   "date": "2026-06-01",
+   "source": "gsc",
+   "query": "outdoor lighting dallas tx",
+   "clicks": 14,
+   "impressions": 245,
+   "position": 7.9
+  },
+  {
+   "date": "2026-06-01",
+   "source": "gsc",
+   "query": "pendant lights showroom",
+   "clicks": 8,
+   "impressions": 182,
+   "position": 8.8
+  },
+  {
+   "date": "2026-06-01",
+   "source": "gsc",
+   "query": "brightside fixtures northside",
+   "clicks": 8,
+   "impressions": 25,
+   "position": 1
+  },
+  {
+   "date": "2026-06-08",
+   "source": "gsc",
+   "query": "lighting store dallas",
+   "clicks": 65,
+   "impressions": 583,
+   "position": 3.5
+  },
+  {
+   "date": "2026-06-08",
+   "source": "gsc",
+   "query": "brightside fixtures",
+   "clicks": 47,
+   "impressions": 168,
+   "position": 1
+  },
+  {
+   "date": "2026-06-08",
+   "source": "gsc",
+   "query": "chandelier showroom dallas",
+   "clicks": 26,
+   "impressions": 368,
+   "position": 5.2
+  },
+  {
+   "date": "2026-06-08",
+   "source": "gsc",
+   "query": "led ceiling fixtures dallas",
+   "clicks": 22,
+   "impressions": 353,
+   "position": 6.1
+  },
+  {
+   "date": "2026-06-08",
+   "source": "gsc",
+   "query": "lighting store plano",
+   "clicks": 11,
+   "impressions": 261,
+   "position": 11.3
+  },
+  {
+   "date": "2026-06-08",
+   "source": "gsc",
+   "query": "outdoor lighting dallas tx",
+   "clicks": 16,
+   "impressions": 271,
+   "position": 7.8
+  },
+  {
+   "date": "2026-06-08",
+   "source": "gsc",
+   "query": "pendant lights showroom",
+   "clicks": 9,
+   "impressions": 207,
+   "position": 8.8
+  },
+  {
+   "date": "2026-06-08",
+   "source": "gsc",
+   "query": "brightside fixtures northside",
+   "clicks": 7,
+   "impressions": 22,
+   "position": 0.9
+  },
+  {
+   "date": "2026-06-15",
+   "source": "gsc",
+   "query": "lighting store dallas",
+   "clicks": 70,
+   "impressions": 713,
+   "position": 2.9
+  },
+  {
+   "date": "2026-06-15",
+   "source": "gsc",
+   "query": "brightside fixtures",
+   "clicks": 38,
+   "impressions": 137,
+   "position": 1
+  },
+  {
+   "date": "2026-06-15",
+   "source": "gsc",
+   "query": "chandelier showroom dallas",
+   "clicks": 31,
+   "impressions": 399,
+   "position": 5
+  },
+  {
+   "date": "2026-06-15",
+   "source": "gsc",
+   "query": "led ceiling fixtures dallas",
+   "clicks": 22,
+   "impressions": 349,
+   "position": 5.7
+  },
+  {
+   "date": "2026-06-15",
+   "source": "gsc",
+   "query": "lighting store plano",
+   "clicks": 8,
+   "impressions": 184,
+   "position": 11.4
+  },
+  {
+   "date": "2026-06-15",
+   "source": "gsc",
+   "query": "outdoor lighting dallas tx",
+   "clicks": 12,
+   "impressions": 233,
+   "position": 7.5
+  },
+  {
+   "date": "2026-06-15",
+   "source": "gsc",
+   "query": "pendant lights showroom",
+   "clicks": 11,
+   "impressions": 200,
+   "position": 8.6
+  },
+  {
+   "date": "2026-06-15",
+   "source": "gsc",
+   "query": "brightside fixtures northside",
+   "clicks": 7,
+   "impressions": 22,
+   "position": 1.1
+  },
+  {
+   "date": "2026-06-22",
+   "source": "gsc",
+   "query": "lighting store dallas",
+   "clicks": 73,
+   "impressions": 670,
+   "position": 3.4
+  },
+  {
+   "date": "2026-06-22",
+   "source": "gsc",
+   "query": "brightside fixtures",
+   "clicks": 44,
+   "impressions": 159,
+   "position": 1.3
+  },
+  {
+   "date": "2026-06-22",
+   "source": "gsc",
+   "query": "chandelier showroom dallas",
+   "clicks": 26,
+   "impressions": 319,
+   "position": 4.7
+  },
+  {
+   "date": "2026-06-22",
+   "source": "gsc",
+   "query": "led ceiling fixtures dallas",
+   "clicks": 18,
+   "impressions": 223,
+   "position": 6.1
+  },
+  {
+   "date": "2026-06-22",
+   "source": "gsc",
+   "query": "lighting store plano",
+   "clicks": 11,
+   "impressions": 252,
+   "position": 11.1
+  },
+  {
+   "date": "2026-06-22",
+   "source": "gsc",
+   "query": "outdoor lighting dallas tx",
+   "clicks": 10,
+   "impressions": 210,
+   "position": 8.1
+  },
+  {
+   "date": "2026-06-22",
+   "source": "gsc",
+   "query": "pendant lights showroom",
+   "clicks": 12,
+   "impressions": 247,
+   "position": 9
+  },
+  {
+   "date": "2026-06-22",
+   "source": "gsc",
+   "query": "brightside fixtures northside",
+   "clicks": 8,
+   "impressions": 21,
+   "position": 1.4
+  },
+  {
+   "date": "2026-06-29",
+   "source": "gsc",
+   "query": "lighting store dallas",
+   "clicks": 72,
+   "impressions": 591,
+   "position": 3.5
+  },
+  {
+   "date": "2026-06-29",
+   "source": "gsc",
+   "query": "brightside fixtures",
+   "clicks": 37,
+   "impressions": 160,
+   "position": 1.3
+  },
+  {
+   "date": "2026-06-29",
+   "source": "gsc",
+   "query": "chandelier showroom dallas",
+   "clicks": 37,
+   "impressions": 437,
+   "position": 5
+  },
+  {
+   "date": "2026-06-29",
+   "source": "gsc",
+   "query": "led ceiling fixtures dallas",
+   "clicks": 27,
+   "impressions": 370,
+   "position": 6.5
+  },
+  {
+   "date": "2026-06-29",
+   "source": "gsc",
+   "query": "lighting store plano",
+   "clicks": 11,
+   "impressions": 302,
+   "position": 11.4
+  },
+  {
+   "date": "2026-06-29",
+   "source": "gsc",
+   "query": "outdoor lighting dallas tx",
+   "clicks": 13,
+   "impressions": 236,
+   "position": 8
+  },
+  {
+   "date": "2026-06-29",
+   "source": "gsc",
+   "query": "pendant lights showroom",
+   "clicks": 12,
+   "impressions": 279,
+   "position": 8.6
+  },
+  {
+   "date": "2026-06-29",
+   "source": "gsc",
+   "query": "brightside fixtures northside",
+   "clicks": 6,
+   "impressions": 20,
+   "position": 1
+  },
+  {
+   "date": "2026-07-06",
+   "source": "gsc",
+   "query": "lighting store dallas",
+   "clicks": 52,
+   "impressions": 439,
+   "position": 3.2
+  },
+  {
+   "date": "2026-07-06",
+   "source": "gsc",
+   "query": "brightside fixtures",
+   "clicks": 57,
+   "impressions": 245,
+   "position": 1.1
+  },
+  {
+   "date": "2026-07-06",
+   "source": "gsc",
+   "query": "chandelier showroom dallas",
+   "clicks": 26,
+   "impressions": 281,
+   "position": 4.7
+  },
+  {
+   "date": "2026-07-06",
+   "source": "gsc",
+   "query": "led ceiling fixtures dallas",
+   "clicks": 28,
+   "impressions": 348,
+   "position": 6.4
+  },
+  {
+   "date": "2026-07-06",
+   "source": "gsc",
+   "query": "lighting store plano",
+   "clicks": 7,
+   "impressions": 169,
+   "position": 11.5
+  },
+  {
+   "date": "2026-07-06",
+   "source": "gsc",
+   "query": "outdoor lighting dallas tx",
+   "clicks": 13,
+   "impressions": 209,
+   "position": 7.8
+  },
+  {
+   "date": "2026-07-06",
+   "source": "gsc",
+   "query": "pendant lights showroom",
+   "clicks": 14,
+   "impressions": 255,
+   "position": 9
+  },
+  {
+   "date": "2026-07-06",
+   "source": "gsc",
+   "query": "brightside fixtures northside",
+   "clicks": 6,
+   "impressions": 17,
+   "position": 1.5
+  },
+  {
+   "date": "2026-07-13",
+   "source": "gsc",
+   "query": "lighting store dallas",
+   "clicks": 70,
+   "impressions": 652,
+   "position": 3.5
+  },
+  {
+   "date": "2026-07-13",
+   "source": "gsc",
+   "query": "brightside fixtures",
+   "clicks": 48,
+   "impressions": 168,
+   "position": 1.1
+  },
+  {
+   "date": "2026-07-13",
+   "source": "gsc",
+   "query": "chandelier showroom dallas",
+   "clicks": 35,
+   "impressions": 478,
+   "position": 5.2
+  },
+  {
+   "date": "2026-07-13",
+   "source": "gsc",
+   "query": "led ceiling fixtures dallas",
+   "clicks": 25,
+   "impressions": 400,
+   "position": 6.5
+  },
+  {
+   "date": "2026-07-13",
+   "source": "gsc",
+   "query": "lighting store plano",
+   "clicks": 7,
+   "impressions": 201,
+   "position": 11.3
+  },
+  {
+   "date": "2026-07-13",
+   "source": "gsc",
+   "query": "outdoor lighting dallas tx",
+   "clicks": 16,
+   "impressions": 341,
+   "position": 7.8
+  },
+  {
+   "date": "2026-07-13",
+   "source": "gsc",
+   "query": "pendant lights showroom",
+   "clicks": 10,
+   "impressions": 183,
+   "position": 9
+  },
+  {
+   "date": "2026-07-13",
+   "source": "gsc",
+   "query": "brightside fixtures northside",
+   "clicks": 7,
+   "impressions": 23,
+   "position": 0.9
+  },
+  {
+   "date": "2026-07-20",
+   "source": "gsc",
+   "query": "lighting store dallas",
+   "clicks": 60,
+   "impressions": 494,
+   "position": 3.2
+  },
+  {
+   "date": "2026-07-20",
+   "source": "gsc",
+   "query": "brightside fixtures",
+   "clicks": 57,
+   "impressions": 259,
+   "position": 1.3
+  },
+  {
+   "date": "2026-07-20",
+   "source": "gsc",
+   "query": "chandelier showroom dallas",
+   "clicks": 37,
+   "impressions": 473,
+   "position": 4.9
+  },
+  {
+   "date": "2026-07-20",
+   "source": "gsc",
+   "query": "led ceiling fixtures dallas",
+   "clicks": 20,
+   "impressions": 317,
+   "position": 6.5
+  },
+  {
+   "date": "2026-07-20",
+   "source": "gsc",
+   "query": "lighting store plano",
+   "clicks": 10,
+   "impressions": 267,
+   "position": 11.8
+  },
+  {
+   "date": "2026-07-20",
+   "source": "gsc",
+   "query": "outdoor lighting dallas tx",
+   "clicks": 15,
+   "impressions": 295,
+   "position": 8.3
+  },
+  {
+   "date": "2026-07-20",
+   "source": "gsc",
+   "query": "pendant lights showroom",
+   "clicks": 12,
+   "impressions": 222,
+   "position": 9
+  },
+  {
+   "date": "2026-07-20",
+   "source": "gsc",
+   "query": "brightside fixtures northside",
+   "clicks": 7,
+   "impressions": 18,
+   "position": 1.1
+  },
+  {
+   "date": "2026-07-27",
+   "source": "gsc",
+   "query": "lighting store dallas",
+   "clicks": 74,
+   "impressions": 710,
+   "position": 3.4
+  },
+  {
+   "date": "2026-07-27",
+   "source": "gsc",
+   "query": "brightside fixtures",
+   "clicks": 46,
+   "impressions": 172,
+   "position": 0.9
+  },
+  {
+   "date": "2026-07-27",
+   "source": "gsc",
+   "query": "chandelier showroom dallas",
+   "clicks": 37,
+   "impressions": 484,
+   "position": 4.5
+  },
+  {
+   "date": "2026-07-27",
+   "source": "gsc",
+   "query": "led ceiling fixtures dallas",
+   "clicks": 27,
+   "impressions": 348,
+   "position": 5.7
+  },
+  {
+   "date": "2026-07-27",
+   "source": "gsc",
+   "query": "lighting store plano",
+   "clicks": 8,
+   "impressions": 193,
+   "position": 11.2
+  },
+  {
+   "date": "2026-07-27",
+   "source": "gsc",
+   "query": "outdoor lighting dallas tx",
+   "clicks": 12,
+   "impressions": 201,
+   "position": 7.5
+  },
+  {
+   "date": "2026-07-27",
+   "source": "gsc",
+   "query": "pendant lights showroom",
+   "clicks": 10,
+   "impressions": 217,
+   "position": 9.1
+  },
+  {
+   "date": "2026-07-27",
+   "source": "gsc",
+   "query": "brightside fixtures northside",
+   "clicks": 5,
+   "impressions": 14,
+   "position": 0.9
+  },
+  {
+   "date": "2026-08-03",
+   "source": "gsc",
+   "query": "lighting store dallas",
+   "clicks": 50,
+   "impressions": 462,
+   "position": 3
+  },
+  {
+   "date": "2026-08-03",
+   "source": "gsc",
+   "query": "brightside fixtures",
+   "clicks": 46,
+   "impressions": 171,
+   "position": 0.9
+  },
+  {
+   "date": "2026-08-03",
+   "source": "gsc",
+   "query": "chandelier showroom dallas",
+   "clicks": 38,
+   "impressions": 476,
+   "position": 4.7
+  },
+  {
+   "date": "2026-08-03",
+   "source": "gsc",
+   "query": "led ceiling fixtures dallas",
+   "clicks": 20,
+   "impressions": 246,
+   "position": 5.9
+  },
+  {
+   "date": "2026-08-03",
+   "source": "gsc",
+   "query": "lighting store plano",
+   "clicks": 7,
+   "impressions": 163,
+   "position": 11.4
+  },
+  {
+   "date": "2026-08-03",
+   "source": "gsc",
+   "query": "outdoor lighting dallas tx",
+   "clicks": 11,
+   "impressions": 234,
+   "position": 7.6
+  },
+  {
+   "date": "2026-08-03",
+   "source": "gsc",
+   "query": "pendant lights showroom",
+   "clicks": 12,
+   "impressions": 223,
+   "position": 8.6
+  },
+  {
+   "date": "2026-08-03",
+   "source": "gsc",
+   "query": "brightside fixtures northside",
+   "clicks": 6,
+   "impressions": 17,
+   "position": 1.1
+  },
+  {
+   "date": "2026-08-10",
+   "source": "gsc",
+   "query": "lighting store dallas",
+   "clicks": 48,
+   "impressions": 461,
+   "position": 3.3
+  },
+  {
+   "date": "2026-08-10",
+   "source": "gsc",
+   "query": "brightside fixtures",
+   "clicks": 41,
+   "impressions": 158,
+   "position": 1.4
+  },
+  {
+   "date": "2026-08-10",
+   "source": "gsc",
+   "query": "chandelier showroom dallas",
+   "clicks": 32,
+   "impressions": 361,
+   "position": 4.7
+  },
+  {
+   "date": "2026-08-10",
+   "source": "gsc",
+   "query": "led ceiling fixtures dallas",
+   "clicks": 19,
+   "impressions": 280,
+   "position": 5.8
+  },
+  {
+   "date": "2026-08-10",
+   "source": "gsc",
+   "query": "lighting store plano",
+   "clicks": 11,
+   "impressions": 332,
+   "position": 11.2
+  },
+  {
+   "date": "2026-08-10",
+   "source": "gsc",
+   "query": "outdoor lighting dallas tx",
+   "clicks": 15,
+   "impressions": 246,
+   "position": 8.1
+  },
+  {
+   "date": "2026-08-10",
+   "source": "gsc",
+   "query": "pendant lights showroom",
+   "clicks": 13,
+   "impressions": 243,
+   "position": 8.8
+  },
+  {
+   "date": "2026-08-10",
+   "source": "gsc",
+   "query": "brightside fixtures northside",
+   "clicks": 6,
+   "impressions": 18,
+   "position": 1.5
+  },
+  {
+   "date": "2026-08-17",
+   "source": "gsc",
+   "query": "lighting store dallas",
+   "clicks": 53,
+   "impressions": 417,
+   "position": 3.4
+  },
+  {
+   "date": "2026-08-17",
+   "source": "gsc",
+   "query": "brightside fixtures",
+   "clicks": 58,
+   "impressions": 263,
+   "position": 0.9
+  },
+  {
+   "date": "2026-08-17",
+   "source": "gsc",
+   "query": "chandelier showroom dallas",
+   "clicks": 26,
+   "impressions": 301,
+   "position": 4.6
+  },
+  {
+   "date": "2026-08-17",
+   "source": "gsc",
+   "query": "led ceiling fixtures dallas",
+   "clicks": 20,
+   "impressions": 249,
+   "position": 6.3
+  },
+  {
+   "date": "2026-08-17",
+   "source": "gsc",
+   "query": "lighting store plano",
+   "clicks": 9,
+   "impressions": 215,
+   "position": 11.6
+  },
+  {
+   "date": "2026-08-17",
+   "source": "gsc",
+   "query": "outdoor lighting dallas tx",
+   "clicks": 12,
+   "impressions": 256,
+   "position": 7.6
+  },
+  {
+   "date": "2026-08-17",
+   "source": "gsc",
+   "query": "pendant lights showroom",
+   "clicks": 14,
+   "impressions": 303,
+   "position": 9.1
+  },
+  {
+   "date": "2026-08-17",
+   "source": "gsc",
+   "query": "brightside fixtures northside",
+   "clicks": 6,
+   "impressions": 17,
+   "position": 1.5
+  },
+  {
+   "date": "2026-08-24",
+   "source": "gsc",
+   "query": "lighting store dallas",
+   "clicks": 53,
+   "impressions": 537,
+   "position": 3.4
+  },
+  {
+   "date": "2026-08-24",
+   "source": "gsc",
+   "query": "brightside fixtures",
+   "clicks": 43,
+   "impressions": 168,
+   "position": 1.3
+  },
+  {
+   "date": "2026-08-24",
+   "source": "gsc",
+   "query": "chandelier showroom dallas",
+   "clicks": 31,
+   "impressions": 341,
+   "position": 5.2
+  },
+  {
+   "date": "2026-08-24",
+   "source": "gsc",
+   "query": "led ceiling fixtures dallas",
+   "clicks": 27,
+   "impressions": 328,
+   "position": 5.8
+  },
+  {
+   "date": "2026-08-24",
+   "source": "gsc",
+   "query": "lighting store plano",
+   "clicks": 9,
+   "impressions": 206,
+   "position": 11.1
+  },
+  {
+   "date": "2026-08-24",
+   "source": "gsc",
+   "query": "outdoor lighting dallas tx",
+   "clicks": 13,
+   "impressions": 211,
+   "position": 7.7
+  },
+  {
+   "date": "2026-08-24",
+   "source": "gsc",
+   "query": "pendant lights showroom",
+   "clicks": 11,
+   "impressions": 254,
+   "position": 8.8
+  },
+  {
+   "date": "2026-08-24",
+   "source": "gsc",
+   "query": "brightside fixtures northside",
+   "clicks": 7,
+   "impressions": 19,
+   "position": 1.3
+  }
+ ],
+ "gsc_page": [
+  {
+   "date": "2026-06-01",
+   "source": "gsc",
+   "page": "https://brightside.example/",
+   "clicks": 87,
+   "impressions": 729,
+   "position": 5.2
+  },
+  {
+   "date": "2026-06-01",
+   "source": "gsc",
+   "page": "https://brightside.example/showroom",
+   "clicks": 55,
+   "impressions": 568,
+   "position": 6.5
+  },
+  {
+   "date": "2026-06-01",
+   "source": "gsc",
+   "page": "https://brightside.example/chandeliers",
+   "clicks": 33,
+   "impressions": 516,
+   "position": 8
+  },
+  {
+   "date": "2026-06-01",
+   "source": "gsc",
+   "page": "https://brightside.example/outdoor",
+   "clicks": 15,
+   "impressions": 266,
+   "position": 9.4
+  },
+  {
+   "date": "2026-06-01",
+   "source": "gsc",
+   "page": "https://brightside.example/northside",
+   "clicks": 7,
+   "impressions": 41,
+   "position": 3.6
+  },
+  {
+   "date": "2026-06-08",
+   "source": "gsc",
+   "page": "https://brightside.example/",
+   "clicks": 82,
+   "impressions": 658,
+   "position": 5.2
+  },
+  {
+   "date": "2026-06-08",
+   "source": "gsc",
+   "page": "https://brightside.example/showroom",
+   "clicks": 42,
+   "impressions": 528,
+   "position": 6.5
+  },
+  {
+   "date": "2026-06-08",
+   "source": "gsc",
+   "page": "https://brightside.example/chandeliers",
+   "clicks": 31,
+   "impressions": 437,
+   "position": 8.3
+  },
+  {
+   "date": "2026-06-08",
+   "source": "gsc",
+   "page": "https://brightside.example/outdoor",
+   "clicks": 19,
+   "impressions": 349,
+   "position": 9.6
+  },
+  {
+   "date": "2026-06-08",
+   "source": "gsc",
+   "page": "https://brightside.example/northside",
+   "clicks": 6,
+   "impressions": 37,
+   "position": 3.1
+  },
+  {
+   "date": "2026-06-15",
+   "source": "gsc",
+   "page": "https://brightside.example/",
+   "clicks": 103,
+   "impressions": 772,
+   "position": 5.1
+  },
+  {
+   "date": "2026-06-15",
+   "source": "gsc",
+   "page": "https://brightside.example/showroom",
+   "clicks": 44,
+   "impressions": 560,
+   "position": 6.4
+  },
+  {
+   "date": "2026-06-15",
+   "source": "gsc",
+   "page": "https://brightside.example/chandeliers",
+   "clicks": 37,
+   "impressions": 526,
+   "position": 8
+  },
+  {
+   "date": "2026-06-15",
+   "source": "gsc",
+   "page": "https://brightside.example/outdoor",
+   "clicks": 19,
+   "impressions": 349,
+   "position": 9.4
+  },
+  {
+   "date": "2026-06-15",
+   "source": "gsc",
+   "page": "https://brightside.example/northside",
+   "clicks": 7,
+   "impressions": 47,
+   "position": 3.1
+  },
+  {
+   "date": "2026-06-22",
+   "source": "gsc",
+   "page": "https://brightside.example/",
+   "clicks": 98,
+   "impressions": 726,
+   "position": 5.1
+  },
+  {
+   "date": "2026-06-22",
+   "source": "gsc",
+   "page": "https://brightside.example/showroom",
+   "clicks": 46,
+   "impressions": 461,
+   "position": 6.8
+  },
+  {
+   "date": "2026-06-22",
+   "source": "gsc",
+   "page": "https://brightside.example/chandeliers",
+   "clicks": 27,
+   "impressions": 407,
+   "position": 8.2
+  },
+  {
+   "date": "2026-06-22",
+   "source": "gsc",
+   "page": "https://brightside.example/outdoor",
+   "clicks": 17,
+   "impressions": 337,
+   "position": 9.3
+  },
+  {
+   "date": "2026-06-22",
+   "source": "gsc",
+   "page": "https://brightside.example/northside",
+   "clicks": 8,
+   "impressions": 57,
+   "position": 3.8
+  },
+  {
+   "date": "2026-06-29",
+   "source": "gsc",
+   "page": "https://brightside.example/",
+   "clicks": 101,
+   "impressions": 946,
+   "position": 5
+  },
+  {
+   "date": "2026-06-29",
+   "source": "gsc",
+   "page": "https://brightside.example/showroom",
+   "clicks": 50,
+   "impressions": 541,
+   "position": 6.4
+  },
+  {
+   "date": "2026-06-29",
+   "source": "gsc",
+   "page": "https://brightside.example/chandeliers",
+   "clicks": 37,
+   "impressions": 453,
+   "position": 8
+  },
+  {
+   "date": "2026-06-29",
+   "source": "gsc",
+   "page": "https://brightside.example/outdoor",
+   "clicks": 18,
+   "impressions": 314,
+   "position": 9.2
+  },
+  {
+   "date": "2026-06-29",
+   "source": "gsc",
+   "page": "https://brightside.example/northside",
+   "clicks": 9,
+   "impressions": 53,
+   "position": 3.6
+  },
+  {
+   "date": "2026-07-06",
+   "source": "gsc",
+   "page": "https://brightside.example/",
+   "clicks": 94,
+   "impressions": 744,
+   "position": 5
+  },
+  {
+   "date": "2026-07-06",
+   "source": "gsc",
+   "page": "https://brightside.example/showroom",
+   "clicks": 52,
+   "impressions": 621,
+   "position": 6.6
+  },
+  {
+   "date": "2026-07-06",
+   "source": "gsc",
+   "page": "https://brightside.example/chandeliers",
+   "clicks": 32,
+   "impressions": 445,
+   "position": 8.1
+  },
+  {
+   "date": "2026-07-06",
+   "source": "gsc",
+   "page": "https://brightside.example/outdoor",
+   "clicks": 13,
+   "impressions": 255,
+   "position": 9.4
+  },
+  {
+   "date": "2026-07-06",
+   "source": "gsc",
+   "page": "https://brightside.example/northside",
+   "clicks": 8,
+   "impressions": 49,
+   "position": 3.7
+  },
+  {
+   "date": "2026-07-13",
+   "source": "gsc",
+   "page": "https://brightside.example/",
+   "clicks": 79,
+   "impressions": 703,
+   "position": 5.5
+  },
+  {
+   "date": "2026-07-13",
+   "source": "gsc",
+   "page": "https://brightside.example/showroom",
+   "clicks": 44,
+   "impressions": 487,
+   "position": 6.8
+  },
+  {
+   "date": "2026-07-13",
+   "source": "gsc",
+   "page": "https://brightside.example/chandeliers",
+   "clicks": 36,
+   "impressions": 423,
+   "position": 7.7
+  },
+  {
+   "date": "2026-07-13",
+   "source": "gsc",
+   "page": "https://brightside.example/outdoor",
+   "clicks": 16,
+   "impressions": 295,
+   "position": 9
+  },
+  {
+   "date": "2026-07-13",
+   "source": "gsc",
+   "page": "https://brightside.example/northside",
+   "clicks": 9,
+   "impressions": 64,
+   "position": 3.4
+  },
+  {
+   "date": "2026-07-20",
+   "source": "gsc",
+   "page": "https://brightside.example/",
+   "clicks": 110,
+   "impressions": 931,
+   "position": 5.4
+  },
+  {
+   "date": "2026-07-20",
+   "source": "gsc",
+   "page": "https://brightside.example/showroom",
+   "clicks": 52,
+   "impressions": 499,
+   "position": 6.5
+  },
+  {
+   "date": "2026-07-20",
+   "source": "gsc",
+   "page": "https://brightside.example/chandeliers",
+   "clicks": 39,
+   "impressions": 504,
+   "position": 8.1
+  },
+  {
+   "date": "2026-07-20",
+   "source": "gsc",
+   "page": "https://brightside.example/outdoor",
+   "clicks": 19,
+   "impressions": 333,
+   "position": 9
+  },
+  {
+   "date": "2026-07-20",
+   "source": "gsc",
+   "page": "https://brightside.example/northside",
+   "clicks": 8,
+   "impressions": 55,
+   "position": 3.1
+  },
+  {
+   "date": "2026-07-27",
+   "source": "gsc",
+   "page": "https://brightside.example/",
+   "clicks": 82,
+   "impressions": 763,
+   "position": 4.8
+  },
+  {
+   "date": "2026-07-27",
+   "source": "gsc",
+   "page": "https://brightside.example/showroom",
+   "clicks": 53,
+   "impressions": 608,
+   "position": 6.5
+  },
+  {
+   "date": "2026-07-27",
+   "source": "gsc",
+   "page": "https://brightside.example/chandeliers",
+   "clicks": 36,
+   "impressions": 436,
+   "position": 7.7
+  },
+  {
+   "date": "2026-07-27",
+   "source": "gsc",
+   "page": "https://brightside.example/outdoor",
+   "clicks": 17,
+   "impressions": 298,
+   "position": 8.9
+  },
+  {
+   "date": "2026-07-27",
+   "source": "gsc",
+   "page": "https://brightside.example/northside",
+   "clicks": 10,
+   "impressions": 64,
+   "position": 3.6
+  },
+  {
+   "date": "2026-08-03",
+   "source": "gsc",
+   "page": "https://brightside.example/",
+   "clicks": 85,
+   "impressions": 795,
+   "position": 5
+  },
+  {
+   "date": "2026-08-03",
+   "source": "gsc",
+   "page": "https://brightside.example/showroom",
+   "clicks": 49,
+   "impressions": 548,
+   "position": 6.9
+  },
+  {
+   "date": "2026-08-03",
+   "source": "gsc",
+   "page": "https://brightside.example/chandeliers",
+   "clicks": 30,
+   "impressions": 463,
+   "position": 7.7
+  },
+  {
+   "date": "2026-08-03",
+   "source": "gsc",
+   "page": "https://brightside.example/outdoor",
+   "clicks": 15,
+   "impressions": 273,
+   "position": 9
+  },
+  {
+   "date": "2026-08-03",
+   "source": "gsc",
+   "page": "https://brightside.example/northside",
+   "clicks": 7,
+   "impressions": 45,
+   "position": 3.3
+  },
+  {
+   "date": "2026-08-10",
+   "source": "gsc",
+   "page": "https://brightside.example/",
+   "clicks": 108,
+   "impressions": 973,
+   "position": 4.9
+  },
+  {
+   "date": "2026-08-10",
+   "source": "gsc",
+   "page": "https://brightside.example/showroom",
+   "clicks": 61,
+   "impressions": 740,
+   "position": 7.1
+  },
+  {
+   "date": "2026-08-10",
+   "source": "gsc",
+   "page": "https://brightside.example/chandeliers",
+   "clicks": 28,
+   "impressions": 373,
+   "position": 8.1
+  },
+  {
+   "date": "2026-08-10",
+   "source": "gsc",
+   "page": "https://brightside.example/outdoor",
+   "clicks": 21,
+   "impressions": 380,
+   "position": 9.6
+  },
+  {
+   "date": "2026-08-10",
+   "source": "gsc",
+   "page": "https://brightside.example/northside",
+   "clicks": 9,
+   "impressions": 54,
+   "position": 3.1
+  },
+  {
+   "date": "2026-08-17",
+   "source": "gsc",
+   "page": "https://brightside.example/",
+   "clicks": 94,
+   "impressions": 777,
+   "position": 4.8
+  },
+  {
+   "date": "2026-08-17",
+   "source": "gsc",
+   "page": "https://brightside.example/showroom",
+   "clicks": 44,
+   "impressions": 501,
+   "position": 6.6
+  },
+  {
+   "date": "2026-08-17",
+   "source": "gsc",
+   "page": "https://brightside.example/chandeliers",
+   "clicks": 26,
+   "impressions": 372,
+   "position": 7.7
+  },
+  {
+   "date": "2026-08-17",
+   "source": "gsc",
+   "page": "https://brightside.example/outdoor",
+   "clicks": 15,
+   "impressions": 295,
+   "position": 9.1
+  },
+  {
+   "date": "2026-08-17",
+   "source": "gsc",
+   "page": "https://brightside.example/northside",
+   "clicks": 7,
+   "impressions": 47,
+   "position": 3.6
+  },
+  {
+   "date": "2026-08-24",
+   "source": "gsc",
+   "page": "https://brightside.example/",
+   "clicks": 94,
+   "impressions": 757,
+   "position": 5.6
+  },
+  {
+   "date": "2026-08-24",
+   "source": "gsc",
+   "page": "https://brightside.example/showroom",
+   "clicks": 63,
+   "impressions": 793,
+   "position": 7
+  },
+  {
+   "date": "2026-08-24",
+   "source": "gsc",
+   "page": "https://brightside.example/chandeliers",
+   "clicks": 28,
+   "impressions": 410,
+   "position": 7.5
+  },
+  {
+   "date": "2026-08-24",
+   "source": "gsc",
+   "page": "https://brightside.example/outdoor",
+   "clicks": 15,
+   "impressions": 285,
+   "position": 9.6
+  },
+  {
+   "date": "2026-08-24",
+   "source": "gsc",
+   "page": "https://brightside.example/northside",
+   "clicks": 9,
+   "impressions": 53,
+   "position": 3.4
+  }
+ ],
+ "bing_query": [
+  {
+   "date": "2026-03-02",
+   "source": "bing",
+   "query": "brightside fixtures",
+   "clicks": 7,
+   "impressions": 24,
+   "position": 1.1
+  },
+  {
+   "date": "2026-03-02",
+   "source": "bing",
+   "query": "lighting store dallas",
+   "clicks": 8,
+   "impressions": 84,
+   "position": 4.4
+  },
+  {
+   "date": "2026-03-02",
+   "source": "bing",
+   "query": "led fixtures dallas",
+   "clicks": 4,
+   "impressions": 60,
+   "position": 6.9
+  },
+  {
+   "date": "2026-03-02",
+   "source": "bing",
+   "query": "chandelier showroom plano",
+   "clicks": 2,
+   "impressions": 46,
+   "position": 9.4
+  },
+  {
+   "date": "2026-03-09",
+   "source": "bing",
+   "query": "brightside fixtures",
+   "clicks": 7,
+   "impressions": 24,
+   "position": 1.7
+  },
+  {
+   "date": "2026-03-09",
+   "source": "bing",
+   "query": "lighting store dallas",
+   "clicks": 4,
+   "impressions": 36,
+   "position": 4
+  },
+  {
+   "date": "2026-03-09",
+   "source": "bing",
+   "query": "led fixtures dallas",
+   "clicks": 3,
+   "impressions": 44,
+   "position": 6.5
+  },
+  {
+   "date": "2026-03-09",
+   "source": "bing",
+   "query": "chandelier showroom plano",
+   "clicks": 2,
+   "impressions": 41,
+   "position": 9.7
+  },
+  {
+   "date": "2026-03-16",
+   "source": "bing",
+   "query": "brightside fixtures",
+   "clicks": 7,
+   "impressions": 20,
+   "position": 1.5
+  },
+  {
+   "date": "2026-03-16",
+   "source": "bing",
+   "query": "lighting store dallas",
+   "clicks": 7,
+   "impressions": 79,
+   "position": 3.9
+  },
+  {
+   "date": "2026-03-16",
+   "source": "bing",
+   "query": "led fixtures dallas",
+   "clicks": 3,
+   "impressions": 41,
+   "position": 6.3
+  },
+  {
+   "date": "2026-03-16",
+   "source": "bing",
+   "query": "chandelier showroom plano",
+   "clicks": 2,
+   "impressions": 39,
+   "position": 9.5
+  },
+  {
+   "date": "2026-03-23",
+   "source": "bing",
+   "query": "brightside fixtures",
+   "clicks": 8,
+   "impressions": 23,
+   "position": 1.1
+  },
+  {
+   "date": "2026-03-23",
+   "source": "bing",
+   "query": "lighting store dallas",
+   "clicks": 6,
+   "impressions": 70,
+   "position": 4.4
+  },
+  {
+   "date": "2026-03-23",
+   "source": "bing",
+   "query": "led fixtures dallas",
+   "clicks": 3,
+   "impressions": 47,
+   "position": 6.7
+  },
+  {
+   "date": "2026-03-23",
+   "source": "bing",
+   "query": "chandelier showroom plano",
+   "clicks": 2,
+   "impressions": 43,
+   "position": 9.2
+  },
+  {
+   "date": "2026-03-30",
+   "source": "bing",
+   "query": "brightside fixtures",
+   "clicks": 10,
+   "impressions": 34,
+   "position": 1.1
+  },
+  {
+   "date": "2026-03-30",
+   "source": "bing",
+   "query": "lighting store dallas",
+   "clicks": 8,
+   "impressions": 76,
+   "position": 3.9
+  },
+  {
+   "date": "2026-03-30",
+   "source": "bing",
+   "query": "led fixtures dallas",
+   "clicks": 2,
+   "impressions": 32,
+   "position": 6.2
+  },
+  {
+   "date": "2026-03-30",
+   "source": "bing",
+   "query": "chandelier showroom plano",
+   "clicks": 3,
+   "impressions": 59,
+   "position": 9.3
+  },
+  {
+   "date": "2026-04-06",
+   "source": "bing",
+   "query": "brightside fixtures",
+   "clicks": 7,
+   "impressions": 22,
+   "position": 1
+  },
+  {
+   "date": "2026-04-06",
+   "source": "bing",
+   "query": "lighting store dallas",
+   "clicks": 4,
+   "impressions": 43,
+   "position": 4.3
+  },
+  {
+   "date": "2026-04-06",
+   "source": "bing",
+   "query": "led fixtures dallas",
+   "clicks": 4,
+   "impressions": 63,
+   "position": 6.7
+  },
+  {
+   "date": "2026-04-06",
+   "source": "bing",
+   "query": "chandelier showroom plano",
+   "clicks": 2,
+   "impressions": 37,
+   "position": 9.2
+  },
+  {
+   "date": "2026-04-13",
+   "source": "bing",
+   "query": "brightside fixtures",
+   "clicks": 8,
+   "impressions": 29,
+   "position": 1.4
+  },
+  {
+   "date": "2026-04-13",
+   "source": "bing",
+   "query": "lighting store dallas",
+   "clicks": 6,
+   "impressions": 59,
+   "position": 4
+  },
+  {
+   "date": "2026-04-13",
+   "source": "bing",
+   "query": "led fixtures dallas",
+   "clicks": 2,
+   "impressions": 31,
+   "position": 6.2
+  },
+  {
+   "date": "2026-04-13",
+   "source": "bing",
+   "query": "chandelier showroom plano",
+   "clicks": 2,
+   "impressions": 44,
+   "position": 9.3
+  },
+  {
+   "date": "2026-04-20",
+   "source": "bing",
+   "query": "brightside fixtures",
+   "clicks": 12,
+   "impressions": 43,
+   "position": 1.6
+  },
+  {
+   "date": "2026-04-20",
+   "source": "bing",
+   "query": "lighting store dallas",
+   "clicks": 7,
+   "impressions": 77,
+   "position": 3.9
+  },
+  {
+   "date": "2026-04-20",
+   "source": "bing",
+   "query": "led fixtures dallas",
+   "clicks": 2,
+   "impressions": 30,
+   "position": 6.4
+  },
+  {
+   "date": "2026-04-20",
+   "source": "bing",
+   "query": "chandelier showroom plano",
+   "clicks": 2,
+   "impressions": 44,
+   "position": 9.4
+  },
+  {
+   "date": "2026-04-27",
+   "source": "bing",
+   "query": "brightside fixtures",
+   "clicks": 11,
+   "impressions": 35,
+   "position": 1.5
+  },
+  {
+   "date": "2026-04-27",
+   "source": "bing",
+   "query": "lighting store dallas",
+   "clicks": 7,
+   "impressions": 67,
+   "position": 3.8
+  },
+  {
+   "date": "2026-04-27",
+   "source": "bing",
+   "query": "led fixtures dallas",
+   "clicks": 3,
+   "impressions": 42,
+   "position": 6.5
+  },
+  {
+   "date": "2026-04-27",
+   "source": "bing",
+   "query": "chandelier showroom plano",
+   "clicks": 2,
+   "impressions": 37,
+   "position": 9.3
+  },
+  {
+   "date": "2026-05-04",
+   "source": "bing",
+   "query": "brightside fixtures",
+   "clicks": 11,
+   "impressions": 39,
+   "position": 1.2
+  },
+  {
+   "date": "2026-05-04",
+   "source": "bing",
+   "query": "lighting store dallas",
+   "clicks": 5,
+   "impressions": 50,
+   "position": 3.8
+  },
+  {
+   "date": "2026-05-04",
+   "source": "bing",
+   "query": "led fixtures dallas",
+   "clicks": 3,
+   "impressions": 43,
+   "position": 6.7
+  },
+  {
+   "date": "2026-05-04",
+   "source": "bing",
+   "query": "chandelier showroom plano",
+   "clicks": 2,
+   "impressions": 41,
+   "position": 9.6
+  },
+  {
+   "date": "2026-05-11",
+   "source": "bing",
+   "query": "brightside fixtures",
+   "clicks": 10,
+   "impressions": 30,
+   "position": 1.4
+  },
+  {
+   "date": "2026-05-11",
+   "source": "bing",
+   "query": "lighting store dallas",
+   "clicks": 5,
+   "impressions": 56,
+   "position": 3.8
+  },
+  {
+   "date": "2026-05-11",
+   "source": "bing",
+   "query": "led fixtures dallas",
+   "clicks": 3,
+   "impressions": 42,
+   "position": 6.7
+  },
+  {
+   "date": "2026-05-11",
+   "source": "bing",
+   "query": "chandelier showroom plano",
+   "clicks": 2,
+   "impressions": 38,
+   "position": 9.2
+  },
+  {
+   "date": "2026-05-18",
+   "source": "bing",
+   "query": "brightside fixtures",
+   "clicks": 7,
+   "impressions": 20,
+   "position": 1.6
+  },
+  {
+   "date": "2026-05-18",
+   "source": "bing",
+   "query": "lighting store dallas",
+   "clicks": 7,
+   "impressions": 71,
+   "position": 4.3
+  },
+  {
+   "date": "2026-05-18",
+   "source": "bing",
+   "query": "led fixtures dallas",
+   "clicks": 4,
+   "impressions": 50,
+   "position": 6.3
+  },
+  {
+   "date": "2026-05-18",
+   "source": "bing",
+   "query": "chandelier showroom plano",
+   "clicks": 2,
+   "impressions": 48,
+   "position": 9.7
+  },
+  {
+   "date": "2026-05-25",
+   "source": "bing",
+   "query": "brightside fixtures",
+   "clicks": 7,
+   "impressions": 24,
+   "position": 1.3
+  },
+  {
+   "date": "2026-05-25",
+   "source": "bing",
+   "query": "lighting store dallas",
+   "clicks": 5,
+   "impressions": 55,
+   "position": 4
+  },
+  {
+   "date": "2026-05-25",
+   "source": "bing",
+   "query": "led fixtures dallas",
+   "clicks": 2,
+   "impressions": 27,
+   "position": 6.5
+  },
+  {
+   "date": "2026-05-25",
+   "source": "bing",
+   "query": "chandelier showroom plano",
+   "clicks": 2,
+   "impressions": 41,
+   "position": 9.3
+  },
+  {
+   "date": "2026-06-01",
+   "source": "bing",
+   "query": "brightside fixtures",
+   "clicks": 8,
+   "impressions": 25,
+   "position": 1.6
+  },
+  {
+   "date": "2026-06-01",
+   "source": "bing",
+   "query": "lighting store dallas",
+   "clicks": 7,
+   "impressions": 69,
+   "position": 4.4
+  },
+  {
+   "date": "2026-06-01",
+   "source": "bing",
+   "query": "led fixtures dallas",
+   "clicks": 4,
+   "impressions": 59,
+   "position": 6.4
+  },
+  {
+   "date": "2026-06-01",
+   "source": "bing",
+   "query": "chandelier showroom plano",
+   "clicks": 2,
+   "impressions": 45,
+   "position": 9.6
+  },
+  {
+   "date": "2026-06-08",
+   "source": "bing",
+   "query": "brightside fixtures",
+   "clicks": 11,
+   "impressions": 37,
+   "position": 1.5
+  },
+  {
+   "date": "2026-06-08",
+   "source": "bing",
+   "query": "lighting store dallas",
+   "clicks": 7,
+   "impressions": 74,
+   "position": 4.2
+  },
+  {
+   "date": "2026-06-08",
+   "source": "bing",
+   "query": "led fixtures dallas",
+   "clicks": 2,
+   "impressions": 26,
+   "position": 7
+  },
+  {
+   "date": "2026-06-08",
+   "source": "bing",
+   "query": "chandelier showroom plano",
+   "clicks": 2,
+   "impressions": 42,
+   "position": 9.8
+  },
+  {
+   "date": "2026-06-15",
+   "source": "bing",
+   "query": "brightside fixtures",
+   "clicks": 8,
+   "impressions": 22,
+   "position": 1.3
+  },
+  {
+   "date": "2026-06-15",
+   "source": "bing",
+   "query": "lighting store dallas",
+   "clicks": 4,
+   "impressions": 36,
+   "position": 4.1
+  },
+  {
+   "date": "2026-06-15",
+   "source": "bing",
+   "query": "led fixtures dallas",
+   "clicks": 3,
+   "impressions": 42,
+   "position": 6.3
+  },
+  {
+   "date": "2026-06-15",
+   "source": "bing",
+   "query": "chandelier showroom plano",
+   "clicks": 2,
+   "impressions": 45,
+   "position": 9.8
+  },
+  {
+   "date": "2026-06-22",
+   "source": "bing",
+   "query": "brightside fixtures",
+   "clicks": 9,
+   "impressions": 31,
+   "position": 1.4
+  },
+  {
+   "date": "2026-06-22",
+   "source": "bing",
+   "query": "lighting store dallas",
+   "clicks": 4,
+   "impressions": 42,
+   "position": 4.1
+  },
+  {
+   "date": "2026-06-22",
+   "source": "bing",
+   "query": "led fixtures dallas",
+   "clicks": 3,
+   "impressions": 44,
+   "position": 6.2
+  },
+  {
+   "date": "2026-06-22",
+   "source": "bing",
+   "query": "chandelier showroom plano",
+   "clicks": 2,
+   "impressions": 40,
+   "position": 9.4
+  },
+  {
+   "date": "2026-06-29",
+   "source": "bing",
+   "query": "brightside fixtures",
+   "clicks": 10,
+   "impressions": 28,
+   "position": 1.3
+  },
+  {
+   "date": "2026-06-29",
+   "source": "bing",
+   "query": "lighting store dallas",
+   "clicks": 7,
+   "impressions": 73,
+   "position": 4.4
+  },
+  {
+   "date": "2026-06-29",
+   "source": "bing",
+   "query": "led fixtures dallas",
+   "clicks": 3,
+   "impressions": 47,
+   "position": 6.4
+  },
+  {
+   "date": "2026-06-29",
+   "source": "bing",
+   "query": "chandelier showroom plano",
+   "clicks": 2,
+   "impressions": 40,
+   "position": 9.7
+  },
+  {
+   "date": "2026-07-06",
+   "source": "bing",
+   "query": "brightside fixtures",
+   "clicks": 7,
+   "impressions": 23,
+   "position": 1.4
+  },
+  {
+   "date": "2026-07-06",
+   "source": "bing",
+   "query": "lighting store dallas",
+   "clicks": 8,
+   "impressions": 82,
+   "position": 4.2
+  },
+  {
+   "date": "2026-07-06",
+   "source": "bing",
+   "query": "led fixtures dallas",
+   "clicks": 3,
+   "impressions": 42,
+   "position": 6.8
+  },
+  {
+   "date": "2026-07-06",
+   "source": "bing",
+   "query": "chandelier showroom plano",
+   "clicks": 2,
+   "impressions": 39,
+   "position": 9.5
+  },
+  {
+   "date": "2026-07-13",
+   "source": "bing",
+   "query": "brightside fixtures",
+   "clicks": 10,
+   "impressions": 28,
+   "position": 1.6
+  },
+  {
+   "date": "2026-07-13",
+   "source": "bing",
+   "query": "lighting store dallas",
+   "clicks": 5,
+   "impressions": 45,
+   "position": 4.5
+  },
+  {
+   "date": "2026-07-13",
+   "source": "bing",
+   "query": "led fixtures dallas",
+   "clicks": 4,
+   "impressions": 53,
+   "position": 6.7
+  },
+  {
+   "date": "2026-07-13",
+   "source": "bing",
+   "query": "chandelier showroom plano",
+   "clicks": 2,
+   "impressions": 46,
+   "position": 9.3
+  },
+  {
+   "date": "2026-07-20",
+   "source": "bing",
+   "query": "brightside fixtures",
+   "clicks": 12,
+   "impressions": 33,
+   "position": 0.9
+  },
+  {
+   "date": "2026-07-20",
+   "source": "bing",
+   "query": "lighting store dallas",
+   "clicks": 7,
+   "impressions": 66,
+   "position": 3.8
+  },
+  {
+   "date": "2026-07-20",
+   "source": "bing",
+   "query": "led fixtures dallas",
+   "clicks": 3,
+   "impressions": 38,
+   "position": 6.8
+  },
+  {
+   "date": "2026-07-20",
+   "source": "bing",
+   "query": "chandelier showroom plano",
+   "clicks": 2,
+   "impressions": 44,
+   "position": 9.4
+  },
+  {
+   "date": "2026-07-27",
+   "source": "bing",
+   "query": "brightside fixtures",
+   "clicks": 11,
+   "impressions": 38,
+   "position": 1
+  },
+  {
+   "date": "2026-07-27",
+   "source": "bing",
+   "query": "lighting store dallas",
+   "clicks": 5,
+   "impressions": 56,
+   "position": 4.3
+  },
+  {
+   "date": "2026-07-27",
+   "source": "bing",
+   "query": "led fixtures dallas",
+   "clicks": 3,
+   "impressions": 40,
+   "position": 6.6
+  },
+  {
+   "date": "2026-07-27",
+   "source": "bing",
+   "query": "chandelier showroom plano",
+   "clicks": 2,
+   "impressions": 45,
+   "position": 9.5
+  },
+  {
+   "date": "2026-08-03",
+   "source": "bing",
+   "query": "brightside fixtures",
+   "clicks": 7,
+   "impressions": 26,
+   "position": 1.1
+  },
+  {
+   "date": "2026-08-03",
+   "source": "bing",
+   "query": "lighting store dallas",
+   "clicks": 6,
+   "impressions": 63,
+   "position": 4.4
+  },
+  {
+   "date": "2026-08-03",
+   "source": "bing",
+   "query": "led fixtures dallas",
+   "clicks": 2,
+   "impressions": 28,
+   "position": 6.6
+  },
+  {
+   "date": "2026-08-03",
+   "source": "bing",
+   "query": "chandelier showroom plano",
+   "clicks": 2,
+   "impressions": 46,
+   "position": 9.6
+  },
+  {
+   "date": "2026-08-10",
+   "source": "bing",
+   "query": "brightside fixtures",
+   "clicks": 11,
+   "impressions": 33,
+   "position": 1.2
+  },
+  {
+   "date": "2026-08-10",
+   "source": "bing",
+   "query": "lighting store dallas",
+   "clicks": 5,
+   "impressions": 57,
+   "position": 3.9
+  },
+  {
+   "date": "2026-08-10",
+   "source": "bing",
+   "query": "led fixtures dallas",
+   "clicks": 4,
+   "impressions": 60,
+   "position": 6.9
+  },
+  {
+   "date": "2026-08-10",
+   "source": "bing",
+   "query": "chandelier showroom plano",
+   "clicks": 3,
+   "impressions": 60,
+   "position": 9.8
+  },
+  {
+   "date": "2026-08-17",
+   "source": "bing",
+   "query": "brightside fixtures",
+   "clicks": 10,
+   "impressions": 29,
+   "position": 1.5
+  },
+  {
+   "date": "2026-08-17",
+   "source": "bing",
+   "query": "lighting store dallas",
+   "clicks": 5,
+   "impressions": 48,
+   "position": 4.3
+  },
+  {
+   "date": "2026-08-17",
+   "source": "bing",
+   "query": "led fixtures dallas",
+   "clicks": 2,
+   "impressions": 30,
+   "position": 6.5
+  },
+  {
+   "date": "2026-08-17",
+   "source": "bing",
+   "query": "chandelier showroom plano",
+   "clicks": 2,
+   "impressions": 41,
+   "position": 9.4
+  },
+  {
+   "date": "2026-08-24",
+   "source": "bing",
+   "query": "brightside fixtures",
+   "clicks": 8,
+   "impressions": 27,
+   "position": 1.5
+  },
+  {
+   "date": "2026-08-24",
+   "source": "bing",
+   "query": "lighting store dallas",
+   "clicks": 5,
+   "impressions": 56,
+   "position": 4
+  },
+  {
+   "date": "2026-08-24",
+   "source": "bing",
+   "query": "led fixtures dallas",
+   "clicks": 2,
+   "impressions": 31,
+   "position": 6.4
+  },
+  {
+   "date": "2026-08-24",
+   "source": "bing",
+   "query": "chandelier showroom plano",
+   "clicks": 3,
+   "impressions": 59,
+   "position": 9.6
+  }
+ ]
+}

@@ -1,0 +1,46 @@
+{
+  "_comment": "The STORED citation audit per GBP connection (seo_connections.metadata.citations_audit), the CitationsAuditResult shape from lib/seo/citations.service.ts. Downtown was audited a week ago; Northside never (audit: null). The route ALWAYS emits bbb / yellowpages / foursquare with status unknown + basis no_signal (no Hiveku data source can see them), and only an operator-checklist entry can mark a major verifiably missing. A phone difference is a minor_variation that rides along on an entry already inconsistent for another field; the audit normalizes phones digits-only, so formatting alone never marks a listing inconsistent.",
+  "conn_gbp_a": {
+    "audit": {
+      "version": 1,
+      "audited_at": "2026-08-22T10:12:00.000Z",
+      "audited_by": null,
+      "dfs_cost": 0.02,
+      "nap_source": "snapshot",
+      "canonical_nap": { "name": "Brightside Fixtures", "address": "410 Commerce St, Dallas, TX, 75202", "phone": "+1 214-555-0140", "website": "https://brightside.example/" },
+      "total_found_nearby": 6,
+      "directories_found": 2,
+      "primary_found": true,
+      "consistent": 1,
+      "inconsistent": [
+        {
+          "source": "google_maps",
+          "place_id": "ChIJbsfDown0002",
+          "title": "Brightside Fixtures Downtown",
+          "is_primary": false,
+          "fields_wrong": [
+            { "field": "website", "verdict": "mismatch", "their_value": "https://brightside-fixtures.example/", "expected": "https://brightside.example/" },
+            { "field": "phone", "verdict": "minor_variation", "their_value": "(214) 555-0140", "expected": "+1 214-555-0140" }
+          ]
+        }
+      ],
+      "majors": [
+        { "directory": "google", "label": "Google Business Profile", "status": "present", "basis": "maps_scan" },
+        { "directory": "yelp", "label": "Yelp", "status": "present", "basis": "reviews_syncing" },
+        { "directory": "facebook", "label": "Facebook", "status": "present", "basis": "operator_checklist" },
+        { "directory": "bing_places", "label": "Bing Places", "status": "missing", "basis": "operator_checklist" },
+        { "directory": "apple_maps", "label": "Apple Maps (Business Connect)", "status": "present", "basis": "operator_checklist" },
+        { "directory": "bbb", "label": "Better Business Bureau", "status": "unknown", "basis": "no_signal" },
+        { "directory": "yellowpages", "label": "Yellow Pages", "status": "unknown", "basis": "no_signal" },
+        { "directory": "foursquare", "label": "Foursquare", "status": "unknown", "basis": "no_signal" }
+      ],
+      "missing_major": [
+        { "directory": "bing_places", "label": "Bing Places", "status": "missing", "basis": "operator_checklist" },
+        { "directory": "bbb", "label": "Better Business Bureau", "status": "unknown", "basis": "no_signal" },
+        { "directory": "yellowpages", "label": "Yellow Pages", "status": "unknown", "basis": "no_signal" },
+        { "directory": "foursquare", "label": "Foursquare", "status": "unknown", "basis": "no_signal" }
+      ]
+    }
+  },
+  "conn_gbp_b": { "audit": null }
+}

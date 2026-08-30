@@ -1,0 +1,23 @@
+{
+  "_comment": "Live seo_gbp_services payload per connection, the getServices() shape: title, categories, service_items (Business Information ServiceItem objects). No DB cache exists for services.",
+  "conn_gbp_a": {
+    "title": "Brightside Fixtures",
+    "categories": {
+      "primaryCategory": { "name": "categories/gcid:lighting_store", "displayName": "Lighting store" }
+    },
+    "service_items": [
+      { "structuredServiceItem": { "serviceTypeId": "job_type_id:lighting_design_consultation", "description": "In-showroom lighting design consultation with a staff designer." } },
+      { "structuredServiceItem": { "serviceTypeId": "job_type_id:fixture_installation_referral" } },
+      { "freeFormServiceItem": { "category": "gcid:lighting_store", "label": { "displayName": "Chandelier sourcing", "description": "Special-order chandeliers from our catalogue partners.", "languageCode": "en" } }, "price": { "currencyCode": "USD", "units": "150" } },
+      { "freeFormServiceItem": { "category": "gcid:lighting_store", "label": { "displayName": "Outdoor lighting layout", "languageCode": "en" } } }
+    ]
+  },
+  "conn_gbp_b": {
+    "title": "Brightside Fixtures Northside",
+    "categories": {
+      "primaryCategory": { "name": "categories/gcid:lighting_store", "displayName": "Lighting store" },
+      "additionalCategories": [ { "name": "categories/gcid:lighting_consultant", "displayName": "Lighting consultant" } ]
+    },
+    "service_items": []
+  }
+}

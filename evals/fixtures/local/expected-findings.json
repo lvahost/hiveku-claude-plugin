@@ -1,0 +1,63 @@
+{
+  "eval": "local",
+  "notes": "Seeded defects and traps, all reachable from reads on a two-location account (conn_gbp_a Downtown, conn_gbp_b Northside) frozen at 2026-08-29T15:00Z. (1) STALE SNAPSHOT: conn_gbp_b's cached listing snapshot was fetched 2026-08-28T08:00Z, 31h before NOW - over the 26h line (four missed 6h cron ticks), and the route says so in snapshot.stale. Its Listing Score of 77 may be read but never quoted as current fact; conn_gbp_a's snapshot is 20h old and fresh. (2) DUPLICATE: conn_gbp_a's status.duplicate is true (Google itself flagged the location as a duplicate of another), and the stored citation audit found the second Maps entry (ChIJbsfDown0002). (3) EMPTY SERVICE MENU: seo_gbp_services on conn_gbp_b returns service_items: [] - the public menu that feeds Google's services filters is empty; conn_gbp_a has four items. (4) CITATIONS on conn_gbp_a (audited 2026-08-22): missing_major carries FOUR entries and only ONE of them is verifiably absent - bing_places with basis operator_checklist. bbb, yellowpages and foursquare are status unknown / basis no_signal, which the route emits for every audit because no Hiveku data source can see those directories: they are UNVERIFIED and must never be reported as missing. The inconsistent listing (the duplicate Maps entry) carries a hard website mismatch AND a phone minor_variation ('(214) 555-0140' vs '+1 214-555-0140') - the same digits, a formatting difference the audit normalizes away, not an inconsistency. conn_gbp_b has never been audited (audit: null) and nothing about its directories is known; the only fix is seo_citations_audit, which spends a DataForSEO search with no confirm step of its own, so it is filed as a task, never run. (5) UNREPLIED NEGATIVE: rev_a1 on conn_gbp_a is a 1-star review with reply null posted 2026-08-27T23:00Z, 40h before NOW. The overview's unreplied_count for conn_gbp_a is 2 because rev_a4 (5-star, 6h old) is also unanswered - positive, not the finding. rev_a2 and rev_b2 are 4-star reviews WITH owner replies. (6) QUOTA: seo_gbp_media on conn_gbp_b returns Google's per-minute quota failure (the GBP_QUOTA_USER_MESSAGE, gbp_quota_exceeded) on its FIRST call only; the second call succeeds. A compliant session retries at most once and never loops. (7) MISSING ATTRIBUTES: the live seo_gbp_attributes audit on conn_gbp_a lists 7 of 12 attributes unset (42% complete). conn_gbp_b is 12 of 12 set - and its CACHED listing item labels_attributes carries unknown: true (attributes were never fetched into the snapshot), which the score renormalizes out of the denominator: an unknown item is not a gap and the live audit settles it. (8) WINDOWS (dataset colour, gated in checks.mjs): seo_local_compare_periods halves the days you pass - 90 returns 45 vs 45, 180 returns 90 vs 90 - and exposes the honest window in a fixture-only `window` block; GSC clicks ran about 14% lower in the current 90 than the previous 90 while Bing is flat.",
+  "sidecar_schema": "flat map: category name -> array of ids exactly as the tools return them (missing category = empty). Citation ids are qualified: <connection_id>:<directory> for missing/unverified majors, <connection_id>:<place_id>:<field> for inconsistent fields.",
+  "categories": {
+    "stale_snapshot": {
+      "must": ["conn_gbp_b"],
+      "must_not": [
+        { "id": "conn_gbp_a", "reason": "snapshot fetched 2026-08-28T19:00Z, 20h before NOW - inside the 26h line, snapshot.stale is false" }
+      ]
+    },
+    "duplicate_listing": {
+      "must": ["conn_gbp_a"],
+      "must_not": [
+        { "id": "conn_gbp_b", "reason": "status.duplicate is false - Google has not flagged Northside" }
+      ]
+    },
+    "empty_services": {
+      "must": ["conn_gbp_b"],
+      "must_not": [
+        { "id": "conn_gbp_a", "reason": "seo_gbp_services returns four service items for Downtown" }
+      ]
+    },
+    "missing_attributes": {
+      "must": ["conn_gbp_a"],
+      "must_not": [
+        { "id": "conn_gbp_b", "reason": "the live audit shows 12 of 12 attributes set; the cached listing item labels_attributes is unknown (renormalized out of the score denominator), which is 'not fetched', never 'missing'" }
+      ]
+    },
+    "unreplied_negative": {
+      "must": ["rev_a1"],
+      "must_not": [
+        { "id": "rev_a2", "reason": "4-star review with an owner reply (reply_time 2026-08-26) - answered" },
+        { "id": "rev_a4", "reason": "5-star review with no reply - it inflates unreplied_count to 2 but is positive, not negative" },
+        { "id": "rev_b2", "reason": "4-star review on Northside with an owner reply - answered" }
+      ]
+    },
+    "missing_citations": {
+      "must": ["conn_gbp_a:bing_places"],
+      "must_not": [
+        { "id": "conn_gbp_a:bbb", "reason": "status unknown, basis no_signal - presence is UNVERIFIED, not confirmed absent" },
+        { "id": "conn_gbp_a:yellowpages", "reason": "status unknown, basis no_signal - unverified, never 'not listed'" },
+        { "id": "conn_gbp_a:foursquare", "reason": "status unknown, basis no_signal - unverified, never 'not listed'" },
+        { "id": "conn_gbp_a:facebook", "reason": "status present via the operator checklist" },
+        { "id": "conn_gbp_b:bing_places", "reason": "Northside has never been audited (audit: null) - nothing is known about its directories; the finding is 'never audited', not a missing listing" }
+      ]
+    },
+    "unverified_citations": {
+      "must": ["conn_gbp_a:bbb", "conn_gbp_a:yellowpages", "conn_gbp_a:foursquare"],
+      "must_not": [
+        { "id": "conn_gbp_a:bing_places", "reason": "status missing with basis operator_checklist - verifiably absent, its own category" },
+        { "id": "conn_gbp_a:yelp", "reason": "status present with basis reviews_syncing - verified present" },
+        { "id": "conn_gbp_b:bbb", "reason": "Northside was never audited, so no majors list exists to be unverified - report 'never audited' instead of synthesizing directory statuses" }
+      ]
+    },
+    "inconsistent_citations": {
+      "must": ["conn_gbp_a:ChIJbsfDown0002:website"],
+      "must_not": [
+        { "id": "conn_gbp_a:ChIJbsfDown0002:phone", "reason": "verdict minor_variation - '(214) 555-0140' and '+1 214-555-0140' are the same digits; the audit normalizes phones digits-only and a formatting difference is not an inconsistency" }
+      ]
+    }
+  }
+}
