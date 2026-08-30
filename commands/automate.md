@@ -8,9 +8,9 @@ version-snapshotted and server-validated.
 
 1. Context: `account_context_get({ domain: "workflow" })`. Then `workflow_list`. If something close
    already exists, `workflow_clone({ workflow_id, new_name, overrides? })` (clone starts disabled)
-   beats rebuilding. And before hand-building anything recurring, call `workflow_templates_list`: 19
-   templates ship, and 16 of them are the standing SEO/PPC/reputation delivery plays (read the
-   returned `count` rather than assuming - the catalog grows between releases); install one with
+   beats rebuilding. And before hand-building anything recurring, call `workflow_templates_list`: the
+   catalog is the form/newsletter migration defaults plus the standing SEO/PPC/reputation delivery plays
+   (read the returned `count` rather than assuming a number - the catalog grows between releases); install one with
    `workflow_create_from_template({ slug, overrides })` (it defaults to `is_enabled: true`, so
    confirm first or pass `is_enabled: false`).
 2. Discover, do not guess. `workflow_event_trigger_types_list` for a trigger that fires on an

@@ -68,6 +68,9 @@ test('results tell the model the found tools are now callable', () => {
   const text = renderResults(searchTools('rankings', { limit: 2 }), 'rankings');
   assert.match(text, /added to this session's tool list/i);
   assert.match(text, /DEFERRED/);
+  assert.match(text, /select:mcp__plugin_hiveku_hk__/);
+  assert.doesNotMatch(text, /mcp__hiveku__</);
+  assert.doesNotMatch(text, /can be called now/);
 });
 
 test('index mode advertises the core plus the search tool, and nothing else', () => {

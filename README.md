@@ -154,6 +154,8 @@ be live in the same session**, potentially serving different accounts:
 - `mcp__hiveku__*` — the VS Code extension's connection
 - `mcp__plugin_hiveku_hk__*` — this plugin's connection
 
+Tools that `hiveku_find_tools` returns arrive DEFERRED in Claude Code: load one with ToolSearch `select:mcp__plugin_hiveku_hk__<name>` before its first call. A session whose search results still say "can be called now" is running a bridge older than 0.13.5 — the bridge is spawned at session start and never reloads, so after `/hiveku:update` start a new chat.
+
 When that happens the session-start banner names which account each one serves, and warns explicitly
 if they differ. Confirm with `get_account_info` before writing.
 
