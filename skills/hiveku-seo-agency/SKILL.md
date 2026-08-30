@@ -273,7 +273,8 @@ Field shapes, payloads and traps: `hiveku-automation-agency/references/node-rail
 - The GBP Q&A write API is dead (Google, 2025-11); GBP posts go through `social_create_post`.
 - No disavow, directory submission, hreflang builder, log-file analyzer or geo-grid: describe the
   gap and escalate; never invent a name.
-  their route ignores until the drift fix lands; read the response, not the request.
+- Declared filters match what each route reads as of 2026-08-30; still read the response, not the
+  request - an empty list can mean the backing table simply has no writer.
 - `seo_gsc_inspect_url` is the indexed snapshot (no live test): verify a fix only after a recrawl;
   "Discovered / Crawled - currently not indexed" at scale is a quality or linking problem.
 - Commit is not live: `project_vcs_commit` saves a version, `deploy_site` ships it, `fetch_url` proves
