@@ -245,10 +245,12 @@ consolidate memory, without deleting history anyone reports on.
 
 1. `seo_tracked_keywords_list({ project_id })` against the last two quarters' reports; candidates
    go to the client as a list, then `seo_tracked_keyword_delete` [CONFIRM, one keyword at a time,
-   by name; the history dies with it]. Never a keyword reported in the last two quarters; if the
-   list is merely long, stop adding. In-place edits of lanes, location or target URL:
-   `seo_tracked_keyword_update` and `seo_rankings_platforms_set`
-   (`references/keyword-research.md`); delete and re-track loses history.
+   by name; the row's rank history dies with it - the lanes pause, so checks and billing stop
+   with lane history kept (seo-change-discipline.md 2.7)]. Never a keyword reported in the last
+   two quarters; if the list is merely long, stop adding, or pause with
+   `seo_tracked_keyword_update({ is_active: false })`. In-place edits of lanes, location or
+   target URL: `seo_tracked_keyword_update` and `seo_rankings_platforms_set`
+   (`references/keyword-research.md`); delete and re-track still loses the row's history.
 2. Re-qualification (`references/keyword-research.md` Play 9): re-run the SAME expansion calls on
    the same seeds, location and language [SPENDS B, name the count], diff against the stored
    universe tab, `seo_keyword_cluster_create` for agreed additions [CONFIRM].
@@ -301,8 +303,8 @@ full-profile key (`project_*`, `cms_*`, `deploy_site` are not visible to a marke
 4. Canonicals, noindex, robots via the code lane: `project_files_bulk_get` -> edit ->
    `project_files_bulk_save` in ONE call -> `project_test_build({ use_db_state: true })` ->
    `project_vcs_commit` [CONFIRM] -> `deploy_site({ environment })` [CONFIRM, commit is not live].
-   `seo_project_update({ robots_txt_content })` is STORED, never served: robots.txt ships as
-   `public/robots.txt`, verified with `fetch_url`. Per-page SEO field and schema writes:
+   `seo_project_update({ robots_txt_content })` only serves as a deploy-time fallback where the code
+   ships no robots source, so robots.txt ships as `public/robots.txt`, verified with `fetch_url`. Per-page SEO field and schema writes:
    `seo_page_seo_set` and `seo_page_schema_set` (`references/on-page-optimization.md`);
    `pages_update` and the code lane still work.
 5. `seo_generate_sitemap({ project_id: <website id> })` returns `{ file_path: 'public/sitemap.xml',
@@ -467,7 +469,10 @@ diagnosis in the body, and for any rung you could not close (headers, server log
    [CONFIRM per write], verified with `fetch_url`. Per-page SEO field writes: `seo_page_seo_set`
    (see that file); `pages_update` and the code lane still work.
 6. Link gap: `backlinks_page_intersection` with the top-ranking URLs as targets and ours excluded
-   [SPENDS D x1; check the schema for the targets shape]; hand the segmented list and one angle per
+   [SPENDS D x1; check the schema for the targets shape]; for resource-page prospects,
+   `seo_research({ action: 'broken-links', url })` [SPENDS E x1 per page; `url` required] finds
+   the dead external links that make the pitch (`references/link-building-and-competitors.md`
+   Prospecting); hand the segmented list and one angle per
    segment to Outbound via `talk_to_department({ domain: 'outbound', message })` [CONFIRM the
    list]. Nothing sends here.
 7. Track [CONFIRM]: `seo_track_keyword({ keyword: X, target_domain, location_code })` organic;

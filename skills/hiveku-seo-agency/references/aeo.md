@@ -29,7 +29,7 @@ A negative DataForSEO balance turns every metered call into a 402 with no per-to
 | `seo_aeo_brand_audit` | LIVE | H | 15-20 OpenRouter calls; refuses when the day's budget is spent |
 | `seo_aeo_brand_audit_history` | LIVE | A | up to 100 prior runs, populated by the weekly sweep |
 | `seo_schema_markup`, `seo_featured_snippets`, `seo_serp_features` | LIVE | A | detected vs suggested markup; winnable snippets; feature history |
-| `seo_project_update` (`robots_txt_content`) | LIVE | write | STORED, never served: a real robots.txt ships through the code lane |
+| `seo_project_update` (`robots_txt_content`) | LIVE | write | a deploy-time fallback the code file beats; a real robots.txt ships through the code lane |
 | `project_files_bulk_save`, `project_vcs_commit`, `deploy_site`, `pages_update` | LIVE | write | the code lane and the pages-model write; not all visible to a marketing-seo key |
 | `fetch_url` | LIVE | free | verifies the live robots.txt, llms.txt and JSON-LD after a deploy |
 | `seo_deliverable_save` | LIVE | write | persists the AEO baseline and monthly deliverable |
@@ -125,7 +125,8 @@ naming the file (robots.txt, llms.txt, homepage template) and the directive to a
 ships: **llms.txt** is generated with `seo_llms_txt_generate` (Availability; WEBSITE project id),
 or hand-drafted from the sitemap and the top pages, `project_files_bulk_save` as `public/llms.txt`,
 `project_vcs_commit`, `deploy_site` after approval. **robots.txt**: `seo_project_update({
-robots_txt_content })` STORES the text and never serves it, so a crawler directive ships as
+robots_txt_content })` only fills in at the next deploy, and only where the code ships no robots
+source, so a crawler directive ships as
 `public/robots.txt` through the same code lane and is proven with `fetch_url` on the live URL
 (a client stays billed for AI visibility while GPTBot is still blocked otherwise). **JSON-LD,
 title/meta, H1** ship through the code lane or `pages_update` per references/on-page-optimization.md
@@ -426,8 +427,8 @@ Where each capability this lane needs actually lives, so the handoff is named an
 **llms.txt** is `seo_llms_txt_generate` (Availability), with the code lane as the hand path
 (`project_files_bulk_save` of `public/llms.txt`, `project_vcs_commit`, `deploy_site`, then
 `fetch_url` to prove it serves).
-**robots.txt**: `seo_project_update({ robots_txt_content })` is STORED, not served; ship
-`public/robots.txt` through the code lane and verify with `fetch_url`. **JSON-LD and pages**: the
+**robots.txt**: `seo_project_update({ robots_txt_content })` is a deploy-time fallback the code
+file beats; ship `public/robots.txt` through the code lane and verify with `fetch_url`. **JSON-LD and pages**: the
 code lane or `pages_update`, per references/on-page-optimization.md section 1. **Deliverables**:
 `seo_deliverable_save` (mechanics in reporting-and-delivery.md). **Synced AI ranking rows**:
 `seo_rankings_list` on the AI-engine lanes (Play H). **Per-competitor brand audits**: none (5.6).

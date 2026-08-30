@@ -34,8 +34,8 @@ write of the session.
    project_id, from_path, to_path, status_code: 301, match_type: "exact" })` then
    `project_redirects_deploy({ project_id, tier })`; a narrow mechanical page edit on a hosted site ->
    `seo_task_implement` (two-step, human `agent_approval_approve`, never yours). `seo_project_update({
-   robots_txt_content })` is STORED, never served: a real robots.txt is `public/robots.txt` through the
-   code lane. On a marketing-seo key `cms_*`, `project_*` and `deploy_site` are not visible: say "not
+   robots_txt_content })` only fills in at the next deploy, where the code ships no robots source: a
+   real robots.txt is `public/robots.txt` through the code lane. On a marketing-seo key `cms_*`, `project_*` and `deploy_site` are not visible: say "not
    visible to this key", use `pages_update` or the implement rail, never "does not exist".
 5. Pre-flight card before EACH write [CONFIRM - one artifact per yes]: the object and its id space, the
    exact before/after diff, blast radius (pages and templates touched), reversibility, the verification

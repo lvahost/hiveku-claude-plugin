@@ -33,7 +33,7 @@ call, the cheap way to qualify a list). A 402 on any of them is a negative DataF
 | `backlinks_domain_intersection`, `backlinks_page_intersection` | LIVE | D | the two gap tools |
 | `dataforseo_labs_google_competitors_domain`, `dataforseo_labs_google_serp_competitors`, `dataforseo_labs_google_ranked_keywords`, `dataforseo_labs_google_domain_rank_overview`, `dataforseo_labs_google_domain_intersection`, `dataforseo_labs_google_subdomains` | LIVE | B | competitor discovery and sizing (section 7) |
 | `domain_analytics_technologies_domain_technologies`, `domain_analytics_whois_overview` | LIVE | B | a rival's tech stack; domain age and registrar with backlink and traffic stats |
-| `seo_research` | LIVE | B / C / D | actions `domain-backlinks`, `referring-domains`, `backlinks-anchors`, `backlinks-timeseries`, `backlinks-history`, `backlinks-competitors`, `bulk-page-summary`, `link-gap`, `competitors`, `ranked-keywords`, `gbp-locations`, `gbp-info`; returns without persisting |
+| `seo_research` | LIVE | B / C / D / E | actions `domain-backlinks`, `referring-domains`, `backlinks-anchors`, `backlinks-timeseries`, `backlinks-history`, `backlinks-competitors`, `bulk-page-summary`, `link-gap`, `competitors`, `ranked-keywords`, `gbp-locations`, `gbp-info`, plus `broken-links` (`url` required; one rendered fetch, class E; the broken-link-building prospector, see metered-research-suite.md for the row); returns without persisting |
 | `web_scrape`, `web_map`, `web_crawl`, `web_extract`, `web_search` | LIVE | free | verification and contact discovery |
 | `seo_backlink_tracker_list`, `seo_backlink_tracker_add`, `seo_backlink_tracker_get`, `seo_backlink_tracker_update`, `seo_backlink_tracker_delete` | LIVE | A / write | the manual tracker: `url`, `title`, `target_url`, `target_anchor`, `link_type`, `status`, `date_published`, `page_authority`, `domain_authority`, `notes`, `project_id` = the WEBSITE project id; delete is ask-gated; `seo_new_lost_backlinks` reads the same tracker |
 | `seo_backlink_opportunity_create`, `seo_backlink_opportunity_get`, `seo_backlink_opportunity_update`, `seo_backlink_opportunity_delete` | LIVE | A / write | `target_domain`, `source_domain`, `source_type`, `domain_rating`, `contact_email`, `status`, `notes`; delete is ask-gated |
@@ -491,6 +491,12 @@ here. A spike in high-spam referrers is a hygiene item, not a panic item.
 - `backlinks_domain_intersection` - who links to multiple competitors but not us.
 - `backlinks_page_intersection` - who links to the competitor PAGES ranking for our target keyword
   (link gap for a single SERP: the highest-relevance list there is).
+- `seo_research({ action: 'broken-links', url })` [SPENDS, one class-E rendered fetch per page,
+  no per-link fan-out] - the dead external links on a resource or roundup page you want a link
+  from: each row's `broken_url` (status >= 400) is the pitch ("your link to X is dead; our page
+  covers it"), with `anchor_text` telling you what the page meant to link to. Results cap at
+  `limit`; an empty list means none detected on that render, not a verified page. Log keepers as
+  opportunity rows (`seo_backlink_opportunity_create`, `source_type: 'broken_link'`).
 - Digital-PR angles, unlinked-mention reclamation and the sentiment watch:
   `references/digital-pr-and-brand-mentions.md`.
 

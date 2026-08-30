@@ -103,7 +103,8 @@ INCOMING name is spelled in exactly ONE reference's Availability table; this hub
   against. Offer: compress it (R1's short form, `references/seo-playbooks.md`).
 - **"Delete all keywords with zero volume" (any delete by pattern).** Never derive a deletion target
   by pattern - only ids the user named or a reviewed list they approved. `seo_tracked_keyword_delete`
-  takes the rank history with the row, no undo; `seo_deliverable_delete` is permanent;
+  takes the row's rank history with it, no undo (its lanes pause - checks and billing stop, lane
+  history kept; seo-change-discipline.md 2.7); `seo_deliverable_delete` is permanent;
   `seo_ga4_key_event_delete` silently flatlines any Ads conversion imported from it. Offer: archive
   (`seo_deliverable_update({ status: 'archived' })`) or a reviewed list, then one confirmed delete per id.
 - **"Crawl the whole site."** Refuse: `max_crawl_pages` clamps at 500 and every crawled page is
@@ -121,9 +122,10 @@ INCOMING name is spelled in exactly ONE reference's Availability table; this hub
   engines is about $100 per run, and a scheduled lane keeps paying. Offer: the 10-25 priority set on
   `ai_overview` first, then one engine at a time with the number stated.
 - **"Block the AI crawlers / noindex staging in robots.txt."** Refuse to do it through
-  `seo_project_update` `robots_txt_content` (STORED, never served), and never report a robots.txt as
-  live until `fetch_url` shows it; a wrong Disallow deindexes the site. Offer: `public/robots.txt` via
-  the code lane with a reviewed diff (`project_files_bulk_save`, `project_vcs_commit`, `deploy_site`).
+  `seo_project_update` `robots_txt_content`: it is a deploy-time fallback, served only from the next
+  `deploy_site` and only on a project whose code ships no robots source, so the stored write alone
+  changes nothing live. Never report a robots.txt as live until `fetch_url` shows it; a wrong
+  Disallow deindexes the site. Offer: `public/robots.txt` via the code lane with a reviewed diff (`project_files_bulk_save`, `project_vcs_commit`, `deploy_site`).
 - **"Delete the tracking project and start fresh."** Refuse. No tool deletes a tracking project
   today, and the one coming is ask-gated because it destroys the rank history every future report
   reconciles against. Offer: keep the project, prune to what you report on
@@ -290,7 +292,10 @@ Field shapes, payloads and traps: `hiveku-automation-agency/references/node-rail
 - `seo_new_lost_backlinks` reads the MANUAL link tracker; DataForSEO new/lost is
   `backlinks_bulk_new_lost_backlinks`, `backlinks_timeseries_new_lost_summary` or
   `seo_research({ action: 'backlinks-timeseries' })`.
-- `seo_content_gaps` has no writer (empty forever): use `dataforseo_labs_google_domain_intersection`,
+- `seo_content_gaps` reads STORED gap rows and is empty until its compute writer has run for the
+  project (INCOMING; named with its spend in the Availability table and Play C4 of
+  `references/content-strategy.md`): empty means "not computed", never "no gaps". Compute, then
+  read it back - or build the gap by hand with `dataforseo_labs_google_domain_intersection`,
   `dataforseo_labs_google_page_intersection` or `seo_research({ action: 'keyword-gap' })`.
 - `seo_ga4_report` 429 is the hourly quota - do not retry; it is the ONLY GA4 numbers tool.
 - Position deltas are signed Google-style (negative = improved); never flip signs in a report.

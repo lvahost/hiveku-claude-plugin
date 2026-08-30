@@ -34,7 +34,7 @@ only by description: the diff-and-preview reader for a staged implement task
 | `seo_core_web_vitals` | LIVE | free, platform key | `url` or `origin`, `strategy`, `include`. Any URL. NOT `project_id`. |
 | `seo_gsc_index_coverage`, `seo_gsc_inspect_url`, `seo_gsc_list_sitemaps`, `seo_gsc_get_sitemap`, `seo_gsc_submit_sitemap`, `seo_gsc_delete_sitemap` | LIVE | free | 50 URLs per call; indexed snapshot only; `feedpath` = full sitemap URL; delete is ask-gated. |
 | `seo_bing_crawl_stats`, `seo_bing_inspect_url`, `seo_bing_list_sitemaps`, `seo_bing_submit_sitemap`, `seo_bing_submit_url` | LIVE | free | Bing takes `sitemap_url` and `url`. |
-| `seo_generate_sitemap`, `seo_internal_links`, `seo_schema_markup`, `seo_entity_check`, `seo_aeo_readiness`, `seo_project_get`, `seo_project_update` | LIVE | free | Hosted projects for the first three; `seo_generate_sitemap` needs WEBSITE `project_id` + `base_url` and writes nothing; `robots_txt_content` is stored, never served. |
+| `seo_generate_sitemap`, `seo_internal_links`, `seo_schema_markup`, `seo_entity_check`, `seo_aeo_readiness`, `seo_project_get`, `seo_project_update` | LIVE | free | Hosted projects for the first three; `seo_generate_sitemap` needs WEBSITE `project_id` + `base_url` and writes nothing; `robots_txt_content` is a deploy-time fallback only (1.4). |
 | `domain_analytics_technologies_domain_technologies`, `domain_analytics_whois_overview` | LIVE | B, per request | Vendor tools; need includeDataForSEO. |
 | `fetch_url`, `web_map`, `web_scrape`, `web_extract`, `web_crawl`, `project_files_bulk_save`, `project_vcs_commit`, `deploy_site`, `project_redirects_list`, `project_redirect_create`, `project_redirects_deploy` | LIVE | free; crawl credits for `web_crawl` | `web_crawl` and the code and redirect lanes are not visible to a marketing-seo key today. |
 
@@ -112,10 +112,14 @@ only), Google's crawl-stats report and Removals (Search Console UI), or a bulk i
 - **robots.txt**: `fetch_url` on the live `https://domain/robots.txt` returns the raw body;
   `seo_aeo_readiness({ domain })` reads the robots AI-crawler directives, `llms.txt`, homepage
   JSON-LD, meta and h1, and the sitemap in one free call - run it first.
-  `seo_project_update({ robots_txt_content })` is STORED, never served (`seo_project_get` shows the
-  stored value). A real robots.txt ships as `public/robots.txt` through the code lane
-  (`project_files_bulk_save` -> `project_vcs_commit` -> `deploy_site`) and is verified with
-  `fetch_url` on the live URL. Never report the stored field as the live file.
+  `seo_project_update({ robots_txt_content })` is a deploy-time fallback, not a live setting
+  (`seo_project_get` shows the stored value). From the next `deploy_site` it is emitted as the site's
+  `/robots.txt`, but only on a project whose code ships no robots source of its own, and never on the
+  Fly preview, the dev tier, a GitHub-connected project, or a raw-source static project carrying a
+  `package.json`. The file in the code always wins, so a real robots.txt still ships as
+  `public/robots.txt` through the code lane (`project_files_bulk_save` -> `project_vcs_commit` ->
+  `deploy_site`), the one lane that works on every project shape, and is verified with `fetch_url` on
+  the live URL. Never report the stored field as the live file.
 - **meta robots**: `web_scrape` with `formats: ['rawHtml']`, or `instant-page` for the rendered view.
 - **X-Robots-Tag**: no HTML reader sees it; `references/technical-seo-blind-spots.md` section 2.
 - **Ad-hoc crawl outside the audit**: `seo_audit_start` with `max_crawl_pages` set, then the crawl
@@ -440,9 +444,10 @@ is third-party scripts or real-device CPU; field-good with lab-poor is a throttl
 recrawl yet: compare `web_scrape` raw HTML, the rendered `instant-page` result and
 `seo_gsc_inspect_url` detection.
 
-**robots.txt looks right in Hiveku and wrong on the site.** `seo_project_get` shows the STORED
-`robots_txt_content`; the live file is whatever `public/robots.txt` shipped. `fetch_url` the live URL
-and treat that as the only truth.
+**robots.txt looks right in Hiveku and wrong on the site.** `seo_project_get` shows the stored
+`robots_txt_content`, which reaches the site only at the next `deploy_site`, and only where the code
+ships no robots source; a `public/robots.txt` in the code beats it every time. `fetch_url` the live
+URL and treat that as the only truth.
 
 **Tools disagree.** Crawl counts are the crawler's view of `max_crawl_pages` pages, GSC counts are
 Google's over the URLs you sent, Bing's are Bing's. One named source per metric, forever. Where a
@@ -457,8 +462,9 @@ indexation") and get it connected. Never estimate the gap.
   noindex is never seen and the URL stays indexed URL-only. Allow the crawl, keep the noindex, wait
   for the drop, then block. Canonical plus noindex is likewise contradictory: pick one. Paginated
   series self-canonicalize; canonicalizing them to page one removes deep items.
-- **"Update the robots.txt" through `seo_project_update`.** The field is stored and never served;
-  the client's site keeps the old file and you have reported a fix that did not happen. Ship
+- **"Update the robots.txt" through `seo_project_update`.** The write lands in the column, not on
+  the site: nothing changes until the next `deploy_site`, and a robots source in the code wins
+  outright, so the client's site can keep the old file while you report a fix that did not happen. Ship
   `public/robots.txt` through the code lane and verify with `fetch_url`. Never block crawlers in
   robots.txt on an ask alone: a blanket Disallow is the fastest way to deindex a site.
 - **Bulk canonical or redirect changes off an audit list.** Audit tools do not know which duplicate

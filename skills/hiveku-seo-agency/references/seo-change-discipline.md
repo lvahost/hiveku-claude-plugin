@@ -99,7 +99,7 @@ Until all six hold the change is a DRAFT. Write drafts into the PM task, not int
 | GBP listing | `seo_gbp_location({ connection_id })` | Live title, phone, address, hours, categories; refreshes the cached snapshot. Quota-limited: once per location, never looped |
 | Tracked keywords | `seo_tracked_keywords_list`, `seo_rankings_list({ group_by_keyword: true })` | The `keyword_id` a delete needs; `pagination.total_groups` as the honest count; which AI lanes exist (blank = not tracked, never not ranking) |
 | GA4 / GTM | `seo_ga4_key_events_list({ connection_id })`, `seo_gtm_status({ connection_id, container_path })` | Counting method and default value per key event; pending changes, draft-only tags, live version |
-| Robots, canonical, noindex | `fetch_url` on the URL and on `/robots.txt` | The served directive. `seo_project_update`'s stored `robots_txt_content` is not it |
+| Robots, canonical, noindex | `fetch_url` on the URL and on `/robots.txt` | The served directive. `seo_project_update`'s `robots_txt_content` only fills in at deploy time, where the code ships none |
 | Engine's view | `seo_gsc_inspect_url({ site_url, inspection_url })` | The indexed snapshot: coverage, selected canonical, `lastCrawlTime`, rich results. Never a live test |
 
 ### 1.2 Freshness is a precondition, not a nicety
@@ -183,8 +183,9 @@ UNDO:     project_checkpoint_restore with the commit's checkpoint_hash, then dep
 The write looks like one line, the effect is the whole index, and the damage is invisible until
 the recrawl. Three rules: robots.txt Disallow plus meta noindex on one URL is a contradiction (the
 blocked page's noindex is never seen); a canonical is a hint, so pointing it elsewhere and hoping
-is not a fix; and `seo_project_update({ robots_txt_content })` is STORED, never served, so a real
-robots.txt ships as `public/robots.txt` through the code lane and is proven with `fetch_url`.
+is not a fix; and `seo_project_update({ robots_txt_content })` only fills in at deploy time on a
+project whose code ships no robots source, so a real robots.txt ships as `public/robots.txt` through
+the code lane and is proven with `fetch_url`.
 Never block crawlers in robots.txt to fix duplication.
 
 ### 2.4 Redirects: prefix blast radius and chains
@@ -232,25 +233,36 @@ legitimate use is a file that no longer exists at that path. Regenerate first:
 `seo_generate_sitemap({ project_id })` returns the content for `public/sitemap.xml`, which ships
 through the code lane, deploys, and only then gets submitted.
 
-### 2.7 seo_tracked_keyword_delete - partial, irreversible, and the checks do not stop
+### 2.7 seo_tracked_keyword_delete - the row history dies, the lanes pause
 
-Route-read verified on 2026-08-30 (the crawl actions were also live-tested that day): `seo_track_keyword` writes TWO rows, a
+Contract as of the 2026-08-30 SEO wave: `seo_track_keyword` writes TWO rows, a
 `tracked_keywords` row (what `seo_tracked_keywords_list` shows, with its own 30-check history)
-and a `website_rankings` row the daily worker checks (what `seo_rankings_list` shows, with
+and a `website_rankings` lane row the daily worker checks (what `seo_rankings_list` shows, with
 `view: 'history'`). `seo_tracked_keyword_delete({ keyword_id })` removes the first and cascades
-its history; it does not touch the second. The keyword vanishes from the tracked list, its lanes
-keep being checked and keep costing until the per-keyword lane editor trims them
-(`seo_rankings_platforms_set`, ask-gated, `references/keyword-research.md` Availability;
-removing a lane deletes that lane's history). Re-tracking links back to the surviving row, so
-`view: 'history'` survives; the deleted row's own history does not.
+its `keyword_rank_history` - that part is still irreversible. The lanes no longer keep running:
+when no sibling tracked row remains for the same keyword and domain, every lane is set to
+`check_frequency 'paused'`, the daily worker skips paused lanes, and checking and billing stop
+while the lanes and their rank history survive. Read the response: `data.lanes_paused` says how
+many lanes stopped, and the `note` explains a `lanes_paused: 0` (sibling rows kept the lanes
+running, or no lanes existed). Resuming takes TWO calls: `seo_track_keyword` re-creates
+the config row but does not unpause the lane or queue a check (the lane still exists, so the
+response says `ranking.already_tracked: true` and `first_check.queued: false`), then
+`seo_tracked_keyword_update({ is_active: true })` writes `check_frequency` back onto every lane
+for that keyword and domain, and that is the unpause.
+`seo_rankings_platforms_set` does NOT unpause anything - it only adds or removes lanes, and
+removing one still deletes that lane's history. The cheaper move is usually not to delete at all:
+`seo_tracked_keyword_update({ is_active: false })` parks every lane at `check_frequency:
+'paused'`, so checks and billing stop while the config row and its `keyword_rank_history` both
+survive, and `{ is_active: true }` resumes them. Delete only when the client wants the keyword
+gone from the universe, and price the lost history before you offer it.
 
 ```
 CHANGE:   seo_tracked_keyword_delete, keyword_id <uuid> (seo_tracked_keywords_list, NOT ranking_id)
 CURRENT:  "roof repair dallas", google, desktop, tracked since <date>, 9 lanes (seo_rankings_list)
-PROPOSED: delete the tracked row
-IF WRONG: the tracked row's history is gone; the lanes keep spending. Time-to-notice: never.
-SCOPE:    one keyword; nothing about its website_rankings lanes changes
-UNDO:     none for the history; seo_track_keyword re-creates the row against the surviving lanes
+PROPOSED: delete the tracked row; its lanes pause (read lanes_paused in the response)
+IF WRONG: the tracked row's keyword_rank_history is gone; the lanes are paused, not lost
+SCOPE:    one keyword; every website_rankings lane for it pauses unless a sibling row remains
+UNDO:     none for the row history; re-track, then seo_tracked_keyword_update to unpause the lanes
 ```
 
 On the add side the trap is the default: `tracking_frequency` defaults to daily on the tool and
@@ -375,8 +387,8 @@ variable delete and revert tools also carry a confirm gate in their descriptions
 |---|---|
 | `seo_report_clear` | Account-wide wipe; the description says only "(tabs are untouched)". Hub and reporting-and-delivery.md carry it |
 | `seo_deliverable_delete` | Permanent, no undo tool; description "Delete a deliverable." Archive with `seo_deliverable_update({ status: 'archived' })` |
-| `seo_tracked_keyword_delete` | 2.7; description "Stop tracking a keyword." No warning |
-| `seo_project_update` | `robots_txt_content` stored, never served; takes the WEBSITE project id, a wrong id space targets nothing. No warning |
+| `seo_tracked_keyword_delete` | 2.7; the lanes pause, but the row's `keyword_rank_history` dies with no undo |
+| `seo_project_update` | `robots_txt_content` is deploy-time only, not live on save; takes the WEBSITE project id, a wrong id space targets nothing. No warning |
 | `seo_gsc_delete_sitemap` | Destroys the reporting row; framed as a migration step |
 | `seo_connection_delete` | Soft delete (`is_active=false`); downstream tools stop finding it; reactivation from this surface unverified, check `seo_connection_update`'s schema |
 | `pages_update` | `is_published: false` 404s the page; `slug` changes the URL with no redirect. No warning |
@@ -399,7 +411,8 @@ backlink-opportunity, automated-report and page-schema deletes, plus `seo_rankin
   `dataforseo_unconfigured` means no credentials. Neither means clean or empty.
 - **No balance pre-check.** The 402 is the first signal.
 - **No undo for a tracked-keyword delete** (2.7).
-- **robots.txt is not served from `seo_project_update`.** Only the code lane serves one.
+- **No live robots.txt write.** `seo_project_update` stores a deploy-time fallback; nothing
+  serves until the next `deploy_site`, and only where the code ships no robots source.
 - **No disavow, no directory submission, no hreflang builder, no GBP Q&A write, no GSC live
   URL test, no Rich Results Test.** Each is a hand-off, named as such.
 - **`deploy_site` has no diff preview of its own.** The diff is your `project_vcs_commit` and its
@@ -456,7 +469,7 @@ Propose, diff, wait.
 
 1. **Approve a staged deploy.** `agent_approval_approve` ships code to production. "Implement
    this" is not pre-approval; re-dispatching around a rejection is the same violation.
-2. **Delete tracked keywords.** History dies, lanes keep spending (2.7).
+2. **Delete tracked keywords.** The row's history dies; the lanes pause, not vanish (2.7).
 3. **Clear the report workspace.** Account-wide (2.10).
 4. **Submit or delete a sitemap.** A dirty submission is a trust loss; a delete destroys history.
 5. **Change robots, a canonical or noindex.** The quiet deindexer (2.3).

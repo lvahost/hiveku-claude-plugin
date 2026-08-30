@@ -51,8 +51,9 @@ means clean or empty.
 | `seo_page_seo_get` | LIVE | A | merged DB-plus-file view of one page's SEO fields with validation scoring, `project_id` + `page_id`; `pages_get` plus `fetch_url` remains the raw cross-check |
 | `seo_page_seo_set` | LIVE | write | `project_id`, `page_slug`, `meta_title`, `meta_description`, `keywords`, `canonical_url`, `og`, `twitter`; a versioned file write for filesystem-detected pages, live after `deploy_site`; the code lane still works |
 | `seo_page_schema_get`, `seo_page_schema_set`, `seo_page_schema_delete` | LIVE | A / write | the page's `structured_data` block by `page_id`, validated for `@context` and `@type`, optional `sync_to_file`; delete is ask-gated; template JSON-LD stays a code-lane change |
+| `seo_page_schema_generate` | INCOMING S6 | free | PROPOSAL ONLY, writes nothing: builds a deploy-parity JSON-LD `@graph` (WebSite, Organization - upgraded to LocalBusiness when GBP NAP is cached or business overrides are passed - WebPage, BreadcrumbList off the slug, Article on blog posts) with validation and a per-decision `rationale`; review the proposal, then apply it with `seo_page_schema_set` |
 
-The five names above are owned here: elsewhere "the per-page SEO writer" and "the page schema
+The six names above are owned here: elsewhere "the per-page SEO writer" and "the page schema
 writer" point at this file's Availability table.
 
 ---

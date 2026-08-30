@@ -20,8 +20,11 @@ Plays D and E, the vendor catalog in section 7). Every metered call below is cla
 4. Keyword gap: `dataforseo_labs_google_domain_intersection({ target1: <rival>, target2: <client> })`
    [SPENDS - class B, one request per rival; check the schema for the target arguments] filtered to
    their positions 1 to 20 and ours absent or beyond 30; the winners feed `/hiveku:seo-keywords`.
-   `seo_content_gaps` has no writer and is empty forever: call it once so you can say you checked,
-   never report its emptiness as "no gaps".
+   `seo_content_gaps` reads STORED gap rows and is empty until its compute writer has run for this
+   project (INCOMING; named with its spend in the Availability table and Play C4 of the SEO skill's
+   `references/content-strategy.md`) - compute first, then read it back. Until that ships the
+   intersection call above is the manual method, and an empty read is "not computed", never
+   "no gaps".
 5. Money pages: `dataforseo_labs_google_ranked_keywords({ target })` [SPENDS - class B] sorted by
    estimated traffic to find the URLs that earn, and `backlinks_domain_pages_summary({ target })`
    [SPENDS - class D] for the pages that earn links, which is where their linkable assets live.

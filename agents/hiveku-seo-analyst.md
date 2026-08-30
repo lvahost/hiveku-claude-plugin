@@ -50,7 +50,11 @@ server-side; still the read surface). Nothing outside this list:
 - Content: `seo_content_decay`, `seo_cannibalization`, `seo_internal_links` (Hiveku-hosted
   projects only, weekly), `seo_eeat_scores` (top 10 GSC pages, monthly), `seo_featured_snippets`,
   `seo_serp_features`, `seo_serp_get` (stored SERP rows, not a live SERP), `seo_keyword_clusters`,
-  `seo_topic_clusters`. `seo_content_gaps` has no writer and is empty forever - never "no gaps".
+  `seo_topic_clusters`. `seo_content_gaps` reads STORED gap rows and is empty until its compute
+  writer has run for the project (INCOMING; named with its spend in the Availability table and
+  Play C4 of the skill's `references/content-strategy.md`): empty is "not computed", never
+  "no gaps". That compute spends a research credit, so recommend it with its count and cost
+  class - it is not yours to run.
 - Technical: `seo_core_web_vitals({ url })` (CrUX field p75 plus lab, any URL including a
   competitor's, free) and `seo_cro_audit({ url })` (free) - the evidence for a page-level verdict.
 - Authority: `seo_backlinks_list` (needs the SEO project id), `seo_backlink_opportunities`,

@@ -28,7 +28,8 @@ credentials: neither means clean or empty.
 | `seo_featured_snippets` | LIVE | A | written only by AEO audit runs (references/aeo.md Play C) |
 | `seo_serp_features` | LIVE | A | append-only feature history from the same runs |
 | `seo_serp_get` | LIVE | A | stored SERP analysis rows; a LIVE SERP is `seo_research({ action: 'serp' })` or `serp_organic_live_advanced` (C) |
-| `seo_content_gaps` | LIVE, empty forever | A | no writer; compute gaps with the intersection tools (Play C4) |
+| `seo_content_gaps` | LIVE | A | stored gap rows, empty until the compute writer below has run for the project; empty means "not computed", never "no gaps" (Play C4) |
+| `seo_content_gaps_compute` | INCOMING S6 | B + write | computes and PERSISTS gaps: one Labs domain_intersection call per competitor (up to 3 tracked competitors, or one explicit `competitor_domain`; `limit` keywords stored per competitor, default 100, max 300; about 2 minutes per competitor); REPLACES the row per project+competitor, never accumulates; 402 = monthly research cap; read back with `seo_content_gaps` |
 | `dataforseo_labs_google_domain_intersection` | LIVE | B | keywords a rival ranks for that you do not: the gap analysis |
 | `dataforseo_labs_google_page_intersection` | LIVE | B | the same at URL level, 2-20 pages |
 | `seo_research` | LIVE | B / C / E | actions `keyword-gap`, `page-intersection`, `keyword-density` (needs `target` = a `seo_audit_start` task_id; live-tested 2026-08-30), `serp` |
@@ -57,7 +58,7 @@ pipeline separates "the site has no decay" from "the sweep has never run for thi
 | `seo_featured_snippets` | AEO audit runs only (references/aeo.md Play C) |
 | `seo_serp_features` | AEO audit runs only, append-only history |
 | `seo_serp_get` | stored SERP analysis rows (no writer today); the LIVE SERP is `seo_research({ action: 'serp' })` or `serp_organic_live_advanced`, metered |
-| `seo_content_gaps` | **nothing writes its table** |
+| `seo_content_gaps` | the gap compute writer (INCOMING S6, Availability table), on demand; nothing else, and no cron |
 
 - **Windows.** Decay and cannibalization compare two 28-day windows anchored at the most recently
   archived GSC day, not today (GSC lags 2 to 3 days): current = maxDate-27d..maxDate, prior =
@@ -79,8 +80,10 @@ pipeline separates "the site has no decay" from "the sweep has never run for thi
   `'llm'` reflects the prose, `'heuristic_only'` only the presence of a byline, a contact link,
   an Article schema. `competitor_scores` is not computed. `overall_score` weights trust 0.35,
   expertise 0.25, experience 0.20, authority 0.20.
-- **`seo_content_gaps` has no writer**, so expect `data: []` forever. Compute gaps with the
-  intersection tools (Play C4), and never tell a client the list is empty because there are no gaps.
+- **`seo_content_gaps` is empty until its compute writer has run** (INCOMING S6; the Availability
+  table). Empty means gaps have not been computed for this project, never that there are no gaps -
+  run the compute (or, until it ships, the intersection tools, Play C4) before telling a client
+  anything about their gap list.
 
 Scoping quirks, verified against the routes:
 
@@ -240,13 +243,23 @@ with clicks down hard means the SERP changed around you; down 3+ means you were 
 6. `pm_tasks_create` per consolidation with the full URL list, then `memory_update` the SEO
    memory so a future session does not "discover" the merged page as a gap.
 
-### Play C4 - Content gaps (seo_content_gaps has no writer - use the intersection tools)
+### Play C4 - Content gaps (compute-then-read; the intersection tools are the manual method)
 
-`seo_content_gaps({ project_id, competitor_domain })` would return `missing_keywords`,
-`content_opportunities` and `traffic_potential` ordered by `priority_score`, but nothing writes
-the table. Call it once so you can honestly say you checked, then compute the gap yourself.
+`seo_content_gaps({ project_id, competitor_domain })` returns `missing_keywords`,
+`content_opportunities` and `traffic_potential` ordered by `priority_score` - but only after the
+gap compute writer (INCOMING S6, Availability table) has persisted rows for the project. Once it
+is live the play is compute-then-read: run the compute [SPENDS, class B - one Labs
+domain_intersection call per competitor, up to 3 tracked competitors or one explicit
+`competitor_domain`, about 2 minutes each; confirm the spend], which finds the keywords the rival
+ranks for that the project does not and REPLACES the stored row for that project+competitor
+(re-running refreshes, never accumulates), then read `seo_content_gaps` back and work the list. A
+402 is the monthly research cap; a 400 with no competitor means none is tracked - add one with
+`seo_add_competitor` or pass `competitor_domain`.
 
-**Primary method [SPENDS, class B].** Confirm the spend, then one call per rival, batched:
+Until the compute ships - and afterward, whenever you want a gap read without persisting
+anything - build the gap by hand with the intersection tools:
+
+**Manual method [SPENDS, class B].** Confirm the spend, then one call per rival, batched:
 1. `dataforseo_labs_google_domain_intersection` with the rival and the client as the two
    targets, US country code 2840 (Labs takes COUNTRY codes only; the server retries with US and
    returns `location_note`). Rows are keywords both rank for, with volume, CPC and each side's
@@ -408,7 +421,7 @@ empty with no note means analyzed and clean; check Search Console is connected w
 exactly matching the property string (`sc-domain:` and url-prefix are not interchangeable, and a
 mismatch produces silent empties); check there are 42+ days of archive; check a Sunday has passed
 since connection (the sweep is bounded to 500 accounts per run, so a new account can miss a
-cycle). `seo_content_gaps` empty never resolves; empty `seo_featured_snippets` or
+cycle). `seo_content_gaps` empty resolves only by running its compute (Play C4); empty `seo_featured_snippets` or
 `seo_serp_features` means no AEO audit has run for this domain.
 
 **A page you know is dying is not in the decay list.** The floors exclude it: under 100 prior

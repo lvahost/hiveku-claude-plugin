@@ -55,7 +55,7 @@ class before you spend; batch to the documented maximum.
 | B | Labs and keywords_data | per request; up to 1,000 keywords on the bulk endpoints | `dataforseo_labs_*`, `keywords_data_*`, `seo_research` keyword and domain actions |
 | C | live SERP | per request per location | `serp_organic_live_advanced`, `serp_youtube_*`, `seo_research` actions `serp`, `bing-serp`, `maps-serp`, `local-finder-serp` |
 | D | backlinks | per request; `backlinks_bulk_*` take 1,000 targets | `backlinks_*`, `seo_research` backlinks actions |
-| E | on-page instant | per URL | `on_page_instant_pages`, `on_page_content_parsing`, `seo_research` actions `instant-page`, `lighthouse` |
+| E | on-page instant | per URL | `on_page_instant_pages`, `on_page_content_parsing`, `seo_research` actions `instant-page`, `lighthouse`, `broken-links` |
 | F | crawl | per page; `max_crawl_pages` default 50, clamped to 500 | `seo_audit_start`, `seo_run_audit` |
 | G | LLM mentions | about $0.10 per keyword per engine | `seo_aeo_rankings_sync`, the AI rank lanes |
 | H | LLM-scored, budget-gated | per page or per day | `seo_eeat_scores` sweep, `seo_aeo_brand_audit` (one per-UTC-day budget) |
@@ -318,6 +318,7 @@ Handlers live-tested 2026-08-30 on a 25-page crawl: a finished crawl reports `cr
 | Action | Required args | Wraps | Prefer the wrapper when / prefer raw when |
 |---|---|---|---|
 | `instant-page` | `url`; `device: 'mobile'` sets an iPhone user agent | `on_page_instant_pages` with JavaScript, browser rendering, resources on | wrapper for a rendered check; raw for a custom user agent or accept-language |
+| `broken-links` | `url` | one browser-rendered `on_page_instant_pages` fetch, then filters that page's external links to status >= 400 or is_broken | broken external links on ONE page for broken-link building; the cost is the single rendered fetch (class E) - link statuses ride the same response, so spend does not scale with link count; returns source_url / broken_url / anchor_text / status_code per link, capped at `limit` (default 50); empty means none detected on that render, not a verified clean page |
 | `duplicate-content` | `target`; pass `url` too (the endpoint looks for duplicates of a page) | On-Page duplicate_content | wrapper only |
 | `duplicate-tags` | `target` | On-Page duplicate_tags, type fixed to title | titles only, never meta descriptions |
 | `redirect-chains` | `target` | On-Page redirect_chains | wrapper only |
@@ -325,7 +326,7 @@ Handlers live-tested 2026-08-30 on a 25-page crawl: a finished crawl reports `cr
 | `internal-links` | `target`; `filters` passthrough | On-Page links | the crawl's link graph; `seo_internal_links` is the hosted-project static scan |
 | `keyword-density` | `target` | On-Page keyword_density, phrase length fixed to 2 | two-word phrases only |
 
-`lighthouse` and `instant-page` need `url`, not a task_id. `seo_audit_start` queues the
+`lighthouse`, `instant-page` and `broken-links` need `url`, not a task_id. `seo_audit_start` queues the
 crawl (`max_crawl_pages` default 50, clamped 500; `audit_type` is ignored, one crawl type)
 and returns the task_id plus an audit_id that `seo_audit_get` polls and persists (live
 since 2026-08-30): an empty audit list means no crawl has run, never a clean site.

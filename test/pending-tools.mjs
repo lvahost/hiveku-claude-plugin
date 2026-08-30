@@ -37,6 +37,11 @@
  *     S5  rank-lane platforms set, GBP posts reader, listings get/scan, the
  *         permanent GSC query-page archive reader, per-page SEO get/set and
  *         per-page schema get/set/delete
+ *
+ *   SEO capability wave (2026-08-30, same program):
+ *     S6  the content-gap compute writer (persists seo_content_gaps rows), the
+ *         page schema proposal generator (proposal only; apply stays the
+ *         existing schema set), and the rank-tracking location directory
  */
 const SEO_SINCE = '2026-08-30';
 const seo = (batch) => ({ since: SEO_SINCE, batch });
@@ -54,4 +59,9 @@ export const PENDING_TOOLS = new Map([
   // S4
 
   // S5
+
+  // S6
+  ['seo_content_gaps_compute', seo('S6')],
+  ['seo_page_schema_generate', seo('S6')],
+  ['seo_rankings_locations', seo('S6')],
 ]);

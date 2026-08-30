@@ -31,8 +31,9 @@ checkpoint via `/hiveku:checkpoint` before anything changes.
 5. Canonicals, noindex and robots through the code lane: `project_files_bulk_get` -> edit ->
    `project_files_bulk_save` in ONE call -> `project_test_build({ use_db_state: true })` ->
    `project_vcs_commit` [CONFIRM] -> `deploy_site({ environment })` [CONFIRM - commit is not live].
-   `seo_project_update({ robots_txt_content })` is STORED, never served: the real robots.txt ships as
-   `public/robots.txt` and is verified with `fetch_url` on the live URL. Before production,
+   `seo_project_update({ robots_txt_content })` only fills in at the next deploy, where the code ships
+   no robots source: the real robots.txt ships as `public/robots.txt` and is verified with `fetch_url`
+   on the live URL. Before production,
    `preview_http_get({ project_id, path, headers_only: true })` on the home page and one path per
    template: a staging noindex header is the classic migration killer. Per-page SEO field and schema
    writes: `seo_page_seo_set` and `seo_page_schema_set` (`references/on-page-optimization.md`);
