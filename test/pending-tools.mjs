@@ -43,60 +43,15 @@ const seo = (batch) => ({ since: SEO_SINCE, batch });
 
 export const PENDING_TOOLS = new Map([
   // S1
-  ['seo_tracked_keyword_get', seo('S1')],
-  ['seo_tracked_keyword_update', seo('S1')],
-  ['seo_tracking_project_get', seo('S1')],
-  ['seo_tracking_project_update', seo('S1')],
-  ['seo_tracking_project_delete', seo('S1')],
 
   // S2
-  ['seo_competitor_get', seo('S2')],
-  ['seo_competitor_update', seo('S2')],
-  ['seo_competitor_delete', seo('S2')],
-  ['seo_keyword_cluster_get', seo('S2')],
-  ['seo_keyword_cluster_update', seo('S2')],
-  ['seo_keyword_cluster_delete', seo('S2')],
-  ['seo_topic_cluster_get', seo('S2')],
-  ['seo_topic_cluster_update', seo('S2')],
-  ['seo_topic_cluster_delete', seo('S2')],
-  ['seo_backlink_tracker_list', seo('S2')],
-  ['seo_backlink_tracker_add', seo('S2')],
-  ['seo_backlink_tracker_get', seo('S2')],
-  ['seo_backlink_tracker_update', seo('S2')],
-  ['seo_backlink_tracker_delete', seo('S2')],
-  ['seo_backlink_opportunity_create', seo('S2')],
-  ['seo_backlink_opportunity_get', seo('S2')],
-  ['seo_backlink_opportunity_update', seo('S2')],
-  ['seo_backlink_opportunity_delete', seo('S2')],
 
   // S3
-  ['seo_connection_get', seo('S3')],
   // seo_connection_test: the orient skill's integrations.md still says this
   // tool "does not exist" (true today); it is contracted in S3 and WRITES
   // connection_status, so it lives here rather than in KNOWN_NON_TOOLS.
-  ['seo_connection_test', seo('S3')],
-  ['seo_connections_health', seo('S3')],
-  ['seo_analytics_discover_properties', seo('S3')],
-  ['seo_automated_report_get', seo('S3')],
-  ['seo_automated_report_update', seo('S3')],
-  ['seo_automated_report_delete', seo('S3')],
-  ['seo_task_changes', seo('S3')],
 
   // S4
-  ['seo_llms_txt_generate', seo('S4')],
-  ['seo_ai_visibility', seo('S4')],
-  ['seo_issues', seo('S4')],
-  ['seo_organic_leads', seo('S4')],
 
   // S5
-  ['seo_rankings_platforms_set', seo('S5')],
-  ['seo_gbp_posts', seo('S5')],
-  ['seo_listings_get', seo('S5')],
-  ['seo_listings_scan', seo('S5')],
-  ['seo_query_page_metrics', seo('S5')],
-  ['seo_page_seo_get', seo('S5')],
-  ['seo_page_seo_set', seo('S5')],
-  ['seo_page_schema_get', seo('S5')],
-  ['seo_page_schema_set', seo('S5')],
-  ['seo_page_schema_delete', seo('S5')],
 ]);
