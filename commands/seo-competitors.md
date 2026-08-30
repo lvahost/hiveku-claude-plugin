@@ -36,9 +36,9 @@ Plays D and E, the vendor catalog in section 7). Every metered call below is cla
    client-side to `our_domain` and `requires_response: true` (an empty feed with no competitor-change
    workflow installed is "monitoring is not running", never "no activity").
 9. Persist: `seo_add_competitor({ project_id, competitor_domain })` [CONFIRM by name, one at a time;
-   4 to 8 tracked, never 20; a 409 is a no-op]; read back `seo_list_competitors`. Editing or removing a
-   tracked competitor is a capability shipping now (see the reference's Availability table); today it
-   is a dashboard action filed as a task, and a dashboard Domain Analysis run replaces the whole list,
+   4 to 8 tracked, never 20; a 409 is a no-op]; read back `seo_list_competitors`. Edit a tracked
+   competitor with `seo_competitor_update`; remove one with `seo_competitor_delete` [ask-gated, by
+   name, one at a time]. A dashboard Domain Analysis run replaces the whole list,
    so memory keeps the agreed set as the restore point. The teardown: `seo_deliverable_save({ title,
    slug: "competitor-teardown-<yyyy>-q<n>", deliverable_type: "competitor_analysis", status: "draft",
    target_domain, summary, recommendations })` [CONFIRM]; read `existed`; the tables as dated sheet

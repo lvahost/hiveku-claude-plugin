@@ -29,13 +29,13 @@ quota. A 402 on a metered call is a negative DataForSEO balance, never "no data"
 | `seo_rankings_list` (= `seo_list_rankings`) | LIVE | A | the nine-lane tracker read; `group_by_keyword: true`; `view: 'history'` per `ranking_id` |
 | `seo_ranking_predictions` | LIVE | A | `{ domain, risk_level, limit }`; linear extrapolation (Play 8 pointer) |
 | `seo_competitor_changes` | LIVE | A | account-wide feed written by a workflow node; empty with no such workflow |
-| `seo_sync` | LIVE | write | fans out across every connection; confirm on large accounts |
+| `seo_sync` | LIVE | write | fans out across every connection unless `connection_id` scopes it; `full: true` forces a full re-sync; confirm on large accounts |
 | `seo_serp_get` | LIVE | A | stored SERP analysis rows (no writer today); the live SERP is `seo_research({ action: 'serp' })` or `serp_organic_live_advanced`, class C |
 | `dataforseo_labs_google_historical_serp` | LIVE | B | the SERP as it stood on past dates for one keyword and location: who held the positions before the cliff |
 | `seo_connection_create`, `seo_connection_delete` | LIVE | write | GSC needs the FULL `webmasters` scope; delete is a soft delete |
-| `seo_query_page_metrics` | INCOMING (fallback: `seo_gsc_search_analytics` with `dimensions: ['date','query','page']`, bounded by Google's 16 months) | A | the permanent query x page x day archive; `site_url` or `connection_id`, `from`, `to`, `query_like`, `page_like`, `group_by`, returns rows plus `archive_coverage` |
-| `seo_issues` | INCOMING (fallback: Play 2 and Play 5 by hand each week) | A | position drops and CTR anomalies computed from GSC |
-| `seo_tracking_project_get`, `seo_tracking_project_update`, `seo_tracking_project_delete` | INCOMING (fallback: `seo_list_projects` / `seo_project_list_active` to read; edits and deletes are dashboard actions) | A / write | the `seo_projects` row (`name`, `description`, `target_country`, `target_language`, `is_active`) - distinct from `seo_project_get`, which is the WEBSITE project's SEO settings; delete takes the tracked history with it, a hard stop without a named id and a written yes |
+| `seo_query_page_metrics` | LIVE | A | the permanent query x page x day archive; `site_url` or `connection_id`, `from`, `to`, `query_like`, `page_like`, `group_by`, returns rows plus `archive_coverage`; `seo_gsc_search_analytics` with `dimensions: ['date','query','page']` covers only Google's 16 months |
+| `seo_issues` | LIVE | A | position drops and CTR anomalies computed from GSC; Play 2 and Play 5 stay the hand-run deep dive |
+| `seo_tracking_project_get`, `seo_tracking_project_update`, `seo_tracking_project_delete` | LIVE | A / write | the `seo_projects` row (`name`, `description`, `target_country`, `target_language`, `is_active`) - distinct from `seo_project_get`, which is the WEBSITE project's SEO settings; delete is ask-gated and takes the tracked history with it, a hard stop without a named id and a written yes |
 
 ---
 
@@ -62,18 +62,18 @@ say so rather than reaching for something that does not exist.)
 Behind the GSC tools sits a synced metrics table that holds FIVE dimension signatures side by side
 (date-only, query, page, device, country). Each live tool pins one signature; summing across them
 multiplies clicks. The `date,query,page` combination does not live there at all: it lives only in a
-permanent query x page x day archive whose reader is INCOMING (Availability). Until it lands, the
-same rows come from `seo_gsc_search_analytics({ dimensions: ['date','query','page'] })`, bounded by
+permanent query x page x day archive, read with `seo_query_page_metrics` (Availability). The same
+rows also come from `seo_gsc_search_analytics({ dimensions: ['date','query','page'] })`, bounded by
 Google's rolling ~16 months, which is why the month-1 baseline captures the full window. The
 archive reader returns `archive_coverage` beside its rows: read it before claiming YoY on a property
 connected eleven months ago.
 
-An automated issue feed (position drops and CTR anomalies computed from GSC) is INCOMING too; until
-it resolves, Play 2 and Play 5 are the weekly hand-run equivalent, and nothing else surfaces them.
+`seo_issues` is the automated issue feed (position drops and CTR anomalies computed from GSC);
+Play 2 and Play 5 remain the weekly hand-run deep dive behind whatever it raises.
 
 The `seo_projects` row itself (the tracking project's name, target country and language,
-`is_active`) has INCOMING get, update and delete tools; today `seo_list_projects` reads it and
-edits are dashboard actions. Do not confuse it with `seo_project_get` / `seo_project_update`, which
+`is_active`) is read with `seo_tracking_project_get`, edited with `seo_tracking_project_update`,
+listed by `seo_list_projects`. Do not confuse it with `seo_project_get` / `seo_project_update`, which
 take the WEBSITE project id and carry site-level SEO settings. Deleting the tracking project deletes
 every tracked keyword and its history: a named id, the blast radius stated, a written yes, or refuse.
 
@@ -141,7 +141,8 @@ two.
 
 Almost everything here is a read; the writes are `seo_sync`, `memory_*` and `pm_tasks_*`. The failure
 mode is therefore not a destructive write, it is a **confident wrong narrative** shipped to a client.
-Still: confirm before `seo_sync` on a large account (it fans out across every connection) and before
+Still: confirm before `seo_sync` on a large account (unscoped it fans out across every connection;
+`connection_id` narrows it) and before
 creating tasks in bulk, never send anything client-facing without an explicit yes, and never target
 what the account context marks protected.
 

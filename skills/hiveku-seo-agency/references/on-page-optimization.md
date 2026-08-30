@@ -48,12 +48,12 @@ means clean or empty.
 | `serp_youtube_organic_live_advanced`, `serp_youtube_video_info_live_advanced`, `serp_youtube_video_subtitles_live_advanced`, `serp_youtube_video_comments_live_advanced` | LIVE | C | YouTube SERP and per-video teardown; needs includeDataForSEO; check each schema for the keyword, location and video id arguments |
 | `fetch_url` | LIVE | free, every profile | raw HTML of any public URL; `data.url` is the landing URL after redirects, `data.body` capped at 200KB |
 | `seo_deliverable_save`, `content_create`, `pm_tasks_create`, `pm_tasks_comment` | LIVE | write | persistence, section 11 |
-| `seo_page_seo_get` | INCOMING | A | merged DB-plus-file view of one page's SEO fields with validation scoring, `project_id` + `page_id`. Fallback today: `pages_get` plus `fetch_url` |
-| `seo_page_seo_set` | INCOMING | write | `project_id`, `page_slug`, `meta_title`, `meta_description`, `keywords`, `canonical_url`, `og`, `twitter`; a versioned file write for filesystem-detected pages, live after `deploy_site`. Fallback today: the code lane |
-| `seo_page_schema_get`, `seo_page_schema_set`, `seo_page_schema_delete` | INCOMING | A / write | the page's `structured_data` block by `page_id`, validated for `@context` and `@type`, optional `sync_to_file`. Fallback today: template JSON-LD through the code lane |
+| `seo_page_seo_get` | LIVE | A | merged DB-plus-file view of one page's SEO fields with validation scoring, `project_id` + `page_id`; `pages_get` plus `fetch_url` remains the raw cross-check |
+| `seo_page_seo_set` | LIVE | write | `project_id`, `page_slug`, `meta_title`, `meta_description`, `keywords`, `canonical_url`, `og`, `twitter`; a versioned file write for filesystem-detected pages, live after `deploy_site`; the code lane still works |
+| `seo_page_schema_get`, `seo_page_schema_set`, `seo_page_schema_delete` | LIVE | A / write | the page's `structured_data` block by `page_id`, validated for `@context` and `@type`, optional `sync_to_file`; delete is ask-gated; template JSON-LD stays a code-lane change |
 
-The five INCOMING names above are spelled only here. Elsewhere refer to "the per-page SEO writer"
-or "the page schema writer, see references/on-page-optimization.md Availability".
+The five names above are owned here: elsewhere "the per-page SEO writer" and "the page schema
+writer" point at this file's Availability table.
 
 ---
 

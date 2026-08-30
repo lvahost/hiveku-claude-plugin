@@ -35,8 +35,8 @@ checkpoint via `/hiveku:checkpoint` before anything changes.
    `public/robots.txt` and is verified with `fetch_url` on the live URL. Before production,
    `preview_http_get({ project_id, path, headers_only: true })` on the home page and one path per
    template: a staging noindex header is the classic migration killer. Per-page SEO field and schema
-   writes are a capability shipping now (see `references/on-page-optimization.md` Availability); today
-   `pages_update` or the code lane.
+   writes: `seo_page_seo_set` and `seo_page_schema_set` (`references/on-page-optimization.md`);
+   `pages_update` and the code lane still work.
 6. Sitemap: `seo_generate_sitemap({ project_id: <website id> })` returns `{ file_path:
    "public/sitemap.xml", content }`; save it with `project_files_bulk_save`, commit, deploy, `fetch_url`
    the live file, then `seo_gsc_submit_sitemap({ site_url, sitemap_url })` and
@@ -51,9 +51,9 @@ checkpoint via `/hiveku:checkpoint` before anything changes.
    control; lost links via `backlinks_bulk_new_lost_backlinks({ targets: [<domain>] })` [SPENDS - class
    D]; `seo_core_web_vitals` against the frozen baseline at day 28.
 8. Mechanical follow-ups on a hosted site may go down the implement rail: `seo_task_implement`
-   two-step, then the human's `agent_approval_approve`, never yours; the approver sees one line of
-   prose today and the staged-diff reader is a capability shipping now (see
-   `references/reporting-and-delivery.md` Availability).
+   two-step, then the human's `agent_approval_approve`, never yours; the staged action shows one line of
+   prose, so the approver reads the staged diff with `seo_task_changes`
+   (`references/reporting-and-delivery.md`).
 9. Tell the client: the map and what each old URL now does, that redirects are live on production with
    the fetch evidence, what the sitemap lists, that Google re-evaluates over 2 to 6 weeks with the
    first two watched daily, and which numbers will look wrong during the swap. Honesty rules: coverage

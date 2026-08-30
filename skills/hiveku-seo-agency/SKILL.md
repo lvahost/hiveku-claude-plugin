@@ -39,10 +39,9 @@ metered DataForSEO vendor families `backlinks_`, `dataforseo_labs_`, `serp_`,
   visible to this key", never "does not exist", and file the step with `pm_tasks_create` naming the
   exact tool.
 
-**Discovery.** `hiveku_find_tools` and the directory focus key on the FIRST token of a tool name, so
-`department: 'seo'` or a focus of `seo` never returns `backlinks_summary`. Search with no `department`,
-or focus `seo,backlinks,dataforseo,serp,on,keywords,content,domain,business,ai`. An alias is landing;
-until then use the list.
+**Discovery.** `hiveku_find_tools` and the directory focus key on the FIRST token of a tool name.
+The alias landed: `department: 'seo'` or a focus of `seo` now reaches the vendor families too -
+`seo,backlinks,dataforseo,serp,on,keywords,content,domain,business,ai` is the list it covers.
 
 ## The availability rule
 
@@ -163,7 +162,7 @@ check day. `check_frequency` defaults to weekly.
 | Rows are dated in Pacific time; final after about 3 days | a GSC day is not the client's day; never compare the last three days |
 | Rolling ~16-month retention | the baseline rolls off; capture it in month 1 |
 | Five stored dimension signatures (date-only, query, page, device, country) | never sum across them, nor across GSC, Bing, the tracker, vendor estimates and GA4 |
-| `date,query,page` lives only in the permanent archive | reader incoming (`references/rankings-and-search-console.md` Availability); today use `seo_gsc_search_analytics` |
+| `date,query,page` lives only in the permanent archive | read it with `seo_query_page_metrics` (`references/rankings-and-search-console.md`); `seo_gsc_search_analytics` covers only Google's 16 months |
 | `seo_local_*` tools halve the window you pass | pass 180 for a 90-vs-90 |
 
 **Id spaces.**
@@ -254,9 +253,9 @@ Field shapes, payloads and traps: `hiveku-automation-agency/references/node-rail
 - Aliases: `seo_rankings_list` = `seo_list_rankings`, `seo_keywords_list` = `seo_list_keywords`,
   `seo_list_projects` = `seo_project_list_active`, `seo_audit_list` = `seo_list_audits`,
   `seo_competitors_list` = `seo_list_competitors`. One capability each.
-- `audit_type` is ignored - ONE crawl type. Until the audit-lane fix is live, `seo_run_audit` and
-  `seo_audit_start` start a crawl nothing persists and `seo_list_audits` / `seo_audit_get` read a
-  table nothing writes. Never read an empty audit list as a clean site.
+- `audit_type` is ignored - ONE crawl type. The persisted audit lane is live (since 2026-08-30):
+  `seo_run_audit` / `seo_audit_start` return 202 `{ audit_id, task_id, status: 'queued' }` and
+  `seo_audit_get` polls and persists. An empty audit list means no crawl has run, never a clean site.
 - `seo_audit_start` IS the crawl for `seo_research` (live-tested 2026-08-30): its task_id is the
   `target` for `redirect-chains`, `duplicate-content`, `duplicate-tags`, `non-indexable`,
   `internal-links` and `keyword-density`; `instant-page` and `lighthouse` take `url`.
@@ -274,15 +273,14 @@ Field shapes, payloads and traps: `hiveku-automation-agency/references/node-rail
 - The GBP Q&A write API is dead (Google, 2025-11); GBP posts go through `social_create_post`.
 - No disavow, directory submission, hreflang builder, log-file analyzer or geo-grid: describe the
   gap and escalate; never invent a name.
-- `seo_backlink_opportunities` ignores `project_id`, and a dozen other `seo_*` reads declare filters
   their route ignores until the drift fix lands; read the response, not the request.
 - `seo_gsc_inspect_url` is the indexed snapshot (no live test): verify a fix only after a recrawl;
   "Discovered / Crawled - currently not indexed" at scale is a quality or linking problem.
 - Commit is not live: `project_vcs_commit` saves a version, `deploy_site` ships it, `fetch_url` proves
   it. `seo_generate_sitemap` returns content, not a submission: commit, deploy, then
   `seo_gsc_submit_sitemap` and `seo_bing_submit_sitemap`; verify with `seo_gsc_list_sitemaps`.
-- `seo_connection_update` cannot set the GA4 property yet; the property comes from the connection
-  row and discovery is incoming (`references/outcomes-and-measurement.md` Availability).
+- `seo_connection_update` accepts `ga_property_id`; list a connection's candidate GA4 properties
+  with `seo_analytics_discover_properties` (`references/outcomes-and-measurement.md`).
 - Live GBP reads (`seo_gbp_attributes`, `seo_gbp_services`, `seo_gbp_media`, `seo_gbp_location`) are
   auto-approved but quota-limited: once per location, never looped; `gbp_quota_exceeded` = wait,
   `gbp_quota_not_approved` = the Cloud project never passed review.

@@ -27,9 +27,9 @@ only by description: the diff-and-preview reader for a staged implement task
 
 | Tool | Status | Cost | Note |
 |---|---|---|---|
-| `seo_audit_start` | LIVE | F, crawl per page | The ONE crawl type; `max_crawl_pages` default 50, clamp 500; returns `task_id`; persists nothing today. |
+| `seo_audit_start` | LIVE | F, crawl per page | The ONE crawl type; `max_crawl_pages` default 50, clamp 500; returns `audit_id` + `task_id`; `seo_audit_get` polls and persists (live since 2026-08-30). |
 | `seo_run_audit` | LIVE | F, crawl per page | Same crawl; `audit_type` required and ignored; no `max_crawl_pages` or `target_url`, so always 50 pages. Prefer `seo_audit_start`. |
-| `seo_audit_get`, `seo_list_audits`, `seo_audit_list` | LIVE, hollow today | A, free | Read the `seo_site_audits` table, which nothing writes today. Populated = the persisted lane is live. |
+| `seo_audit_get`, `seo_list_audits`, `seo_audit_list` | LIVE | A, free | Read the persisted `seo_site_audits` rows (written since 2026-08-30). An empty list means no crawl has run, never a clean site. |
 | `seo_research` crawl actions | LIVE, live-tested 2026-08-30 | E, per request | `target` = task_id for `redirect-chains`, `non-indexable`, `duplicate-tags`, `duplicate-content` (also REQUIRES `url`), `internal-links`, `keyword-density`; `url` for `instant-page`, `lighthouse`. |
 | `seo_core_web_vitals` | LIVE | free, platform key | `url` or `origin`, `strategy`, `include`. Any URL. NOT `project_id`. |
 | `seo_gsc_index_coverage`, `seo_gsc_inspect_url`, `seo_gsc_list_sitemaps`, `seo_gsc_get_sitemap`, `seo_gsc_submit_sitemap`, `seo_gsc_delete_sitemap` | LIVE | free | 50 URLs per call; indexed snapshot only; `feedpath` = full sitemap URL; delete is ask-gated. |
@@ -62,20 +62,19 @@ No tool here connects a source; that is the setup doc (`hiveku_docs_search`) or 
 ### 1.1 The audit rail - what round-trips today (verified 2026-08-30)
 
 - `seo_audit_start({ project_id, target_url, max_crawl_pages })` queues one DataForSEO crawl and
-  returns 202 with `{ task_id, target, project_id, max_crawl_pages, status: 'queued' }` (an
+  returns 202 with `{ audit_id, task_id, target, project_id, max_crawl_pages, status: 'queued' }` (an
   `audit_type` is echoed, never used); a 25-page crawl finished in about 4 minutes live. There is ONE
   crawl type: `seo_run_audit` requires `audit_type` and the route ignores it, so 'technical',
   'content' and 'mobile' are the same crawl. `max_crawl_pages` defaults to 50 and clamps at 500 -
   always pass it, and compare it with the URL count from `web_map`.
-- The Olympus rail persists nothing today. `seo_list_audits`, `seo_audit_list` and `seo_audit_get`
-  read the `seo_site_audits` table, and nothing in the builder writes it (the dashboard's own
-  site-audit screen persists into a different table). An empty audit list is never a clean site. A
-  fix is in flight: once live, `seo_run_audit` returns `{ audit_id, task_id }` and
-  `seo_audit_get({ audit_id })` round-trips.
-- The rule that is right before and after that fix: start the crawl with `seo_audit_start`, keep the
-  `task_id`, read the crawl through the `seo_research` crawl actions in 1.2; when `seo_audit_get`
-  returns a populated result the persisted lane is live - use it for the summary, keep the actions
-  for the deep dive.
+- The Olympus rail persists (live-smoked 2026-08-30): `seo_run_audit` and `seo_audit_start` return
+  `{ audit_id, task_id }`, `seo_audit_get({ audit_id })` polls and persists the result, and
+  `seo_list_audits` / `seo_audit_list` list the `seo_site_audits` rows (the dashboard's own
+  site-audit screen persists into a different table). An empty audit list still means no crawl has
+  run, never a clean site.
+- The working rule: start the crawl with `seo_audit_start`, keep the `task_id`, poll
+  `seo_audit_get` for the persisted summary, and read the crawl through the `seo_research` crawl
+  actions in 1.2 for the deep dive.
 - 402 = the metered budget is exhausted or the DataForSEO balance went negative; 503
   `dataforseo_unconfigured` = no credentials. Neither means "clean" or "no data".
 
@@ -199,12 +198,12 @@ scale are a quality or internal-linking problem, not a submission problem. A 50-
 
 ### Play T1 - Technical baseline (onboarding, once)
 
-1. Orientation per section 0. `seo_list_audits({ project_id })` - a populated row from the last 14
-   days means the persisted lane is live: read it instead of paying for a new crawl. Empty means
-   nothing was persisted, not that nothing is wrong.
+1. Orientation per section 0. `seo_list_audits({ project_id })` - a row from the last 14
+   days is a crawl to read instead of paying for a new one. Empty means no crawl has run,
+   not that nothing is wrong.
 2. `web_map({ url })` for the URL universe, then `seo_audit_start({ project_id, target_url,
    max_crawl_pages })` with the cap set against that count (clamp 500). Keep the `task_id`. Wait a
-   few minutes (about 4 for 25 pages); where `seo_audit_get` populates, poll it for the summary.
+   few minutes (about 4 for 25 pages); poll `seo_audit_get` for the persisted summary.
 3. Read the crawl through `seo_research` with `target` = task_id: `non-indexable`, `redirect-chains`,
    `duplicate-tags`, `internal-links`, then `instant-page` on one URL per template family for missing
    H1, meta and rendered content. Every count carries its denominator: "12 of the 200 pages crawled".
@@ -236,8 +235,8 @@ pass is the highest-value habit in technical SEO and the one nobody does.
 2. Run `non-indexable`, `redirect-chains` and `duplicate-tags` on both task ids and **diff them**.
    The delta is the report, not the absolute counts. Hunt: a new noindex reason on a template, a
    flipped canonical, a jump in 404s (a deploy changed slugs), a new redirect chain, a title pattern
-   that lost its brand suffix. Any **new** severity-5 finding is a same-day escalation. Once
-   `seo_audit_get` populates, diff its issue list the same way.
+   that lost its brand suffix. Any **new** severity-5 finding is a same-day escalation. Diff
+   `seo_audit_get`'s issue list the same way.
 3. Post-deploy, hunt the four classic regressions: a staging noindex in production; robots.txt
    replaced with a blanket Disallow (`fetch_url` the live file); slugs changed without 301s;
    canonicals pointing at staging or the home page. Smoke-test with `seo_gsc_inspect_url` on the

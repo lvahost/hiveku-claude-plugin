@@ -182,7 +182,18 @@ Put this in `.claude/settings.json` (per project) or `~/.claude/settings.json` (
       "mcp__plugin_hiveku_hk__seo_gtm_publish",
       "mcp__plugin_hiveku_hk__seo_gtm_install",
       "mcp__plugin_hiveku_hk__seo_ga4_key_event_delete",
-      "mcp__plugin_hiveku_hk__seo_ga4_event_create_rule_delete"
+      "mcp__plugin_hiveku_hk__seo_ga4_event_create_rule_delete",
+      "mcp__plugin_hiveku_hk__seo_tracking_project_delete",
+      "mcp__plugin_hiveku_hk__seo_rankings_platforms_set",
+      "mcp__plugin_hiveku_hk__seo_listings_scan",
+      "mcp__plugin_hiveku_hk__seo_connection_test",
+      "mcp__plugin_hiveku_hk__seo_competitor_delete",
+      "mcp__plugin_hiveku_hk__seo_keyword_cluster_delete",
+      "mcp__plugin_hiveku_hk__seo_topic_cluster_delete",
+      "mcp__plugin_hiveku_hk__seo_backlink_tracker_delete",
+      "mcp__plugin_hiveku_hk__seo_backlink_opportunity_delete",
+      "mcp__plugin_hiveku_hk__seo_automated_report_delete",
+      "mcp__plugin_hiveku_hk__seo_page_schema_delete"
     ]
   }
 }

@@ -11,8 +11,8 @@ write of the session.
    exact GSC property string. Two id spaces: `seo_list_projects` gives the SEO tracking id (audits,
    keywords); `sites_list` gives the WEBSITE project id (`pages_*`, `project_*`, `deploy_site`). Say
    which one every call below takes.
-2. Findings: `seo_list_audits({ project_id })` then `seo_audit_get({ audit_id })` for the newest crawl.
-   Until the audit-lane fix is live that list may be empty even after a crawl ran: start one with
+2. Findings: `seo_list_audits({ project_id })` then `seo_audit_get({ audit_id })` for the newest crawl
+   (the lane persists, live since 2026-08-30); an empty list means no crawl has run: start one with
    `seo_audit_start({ project_id, target_url, max_crawl_pages })` [SPENDS - class F per page; state the
    count against `web_map({ url })`] and read it through `seo_research` with `target` = the returned
    task id and `action` `non-indexable`, `redirect-chains`, `internal-links` (each returns

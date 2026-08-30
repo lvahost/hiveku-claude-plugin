@@ -14,9 +14,9 @@ qualified keyword universe sits in a sheet tab from `/hiveku:seo-keywords`; busi
    present the structure, then `seo_keyword_cluster_create` per agreed cluster [CONFIRM the list, then
    one write per cluster; `cluster_name` is unique per account and a 409 means it exists]. Pillars:
    `seo_topic_clusters({ project_id })` then `seo_topic_cluster_create` [CONFIRM]; never both cluster
-   types on one keyword set. Read back both list tools. Editing or deleting a saved cluster is a
-   capability shipping now: see `references/keyword-research.md` Availability; today a wrong cluster is
-   recreated under a new name and the old one noted in memory.
+   types on one keyword set. Read back both list tools. Edit or delete a saved cluster with
+   `seo_keyword_cluster_update` / `seo_keyword_cluster_delete` and the topic-cluster twins [deletes
+   ask-gated]; see `references/keyword-research.md` Availability.
 3. Priority matrix: SKILL.md's formula (volume x intent weight x business value / difficulty band) with
    the three adjustments in `references/keyword-research.md` 1.5: serviceability (0 or 1), SERP feature
    drag (0.5 to 1.0), asset readiness (0.7 to 1.3). Tear down each top cluster head before committing

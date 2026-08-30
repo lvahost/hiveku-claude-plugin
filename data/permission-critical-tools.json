@@ -6,7 +6,7 @@
     "mcp__hiveku__"
   ],
   "plugin_version": "0.14.10",
-  "count": 78,
+  "count": 89,
   "tools": [
     {
       "name": "deploy_site",
@@ -397,6 +397,61 @@
       "name": "seo_ga4_event_create_rule_delete",
       "method": "POST",
       "why_gated": "GA4 stops creating the destination event - every key event and imported Ads conversion on that name records nothing, irreversible"
+    },
+    {
+      "name": "seo_tracking_project_delete",
+      "method": "DELETE",
+      "why_gated": "deletes an SEO tracking project and cascades its keyword analyses, competitors and audit history"
+    },
+    {
+      "name": "seo_rankings_platforms_set",
+      "method": "PUT",
+      "why_gated": "removing a lane deletes that lane's rank history with it - unrecoverable"
+    },
+    {
+      "name": "seo_listings_scan",
+      "method": "POST",
+      "why_gated": "spends a metered DataForSEO Business Listings search against the account's monthly research cap"
+    },
+    {
+      "name": "seo_connection_test",
+      "method": "POST",
+      "why_gated": "writes connection_status - a transient failure demotes a healthy connection and pauses its 6-hour sync until a passing test"
+    },
+    {
+      "name": "seo_competitor_delete",
+      "method": "DELETE",
+      "why_gated": "deletes a tracked competitor row and its analysis history"
+    },
+    {
+      "name": "seo_keyword_cluster_delete",
+      "method": "DELETE",
+      "why_gated": "deletes a persisted keyword cluster, no undo"
+    },
+    {
+      "name": "seo_topic_cluster_delete",
+      "method": "DELETE",
+      "why_gated": "deletes a persisted topic cluster, no undo"
+    },
+    {
+      "name": "seo_backlink_tracker_delete",
+      "method": "DELETE",
+      "why_gated": "deletes a manually tracked backlink row from the link-building ledger"
+    },
+    {
+      "name": "seo_backlink_opportunity_delete",
+      "method": "DELETE",
+      "why_gated": "deletes a link prospect and its outreach history"
+    },
+    {
+      "name": "seo_automated_report_delete",
+      "method": "DELETE",
+      "why_gated": "deletes a scheduled client report - the standing delivery stops"
+    },
+    {
+      "name": "seo_page_schema_delete",
+      "method": "DELETE",
+      "why_gated": "removes a page's stored JSON-LD"
     }
   ]
 }

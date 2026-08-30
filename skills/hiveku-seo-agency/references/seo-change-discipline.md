@@ -42,9 +42,9 @@ mentions, about $0.10 per keyword per engine; I = one Business Listings search, 
 | `seo_audit_start`, `seo_research` crawl actions, `seo_aeo_rankings_sync`, `seo_citations_audit` | LIVE | F / E, G, I | metered, no confirm |
 | `pm_tasks_comment`, `memory_list_versions`, `memory_restore_version`, `checkpoint_create`, `project_checkpoint_restore`, `audit_query` | LIVE | free | the audit trail and the undo handles |
 
-The diff-and-preview reader for a staged implement is INCOMING and owned elsewhere: see
-`references/reporting-and-delivery.md` Availability. Until it lands the approver sees one line of
-prose (4.4).
+The diff-and-preview reader for a staged implement is `seo_task_changes`, owned by
+`references/reporting-and-delivery.md`: read it before any approve; the staged action itself
+shows only one line of prose.
 
 ## The governing rule
 
@@ -106,10 +106,10 @@ Until all six hold the change is a DRAFT. Write drafts into the PM task, not int
 
 - **Project-scoped `seo_*` reads** are as fresh as the last `seo_sync({ project_id })` or cron
   tick. Sync before you diff against a stored value, and after a batch of writes.
-- **Audits.** `seo_list_audits` and `seo_audit_get` read a table nothing writes until the
-  audit-lane fix is live; today `seo_audit_start` queues a crawl and you read it through
-  `seo_research` crawl actions with `target` = its task_id. A crawl older than 14 days, or older
-  than the last deploy, is history. Never read an empty audit list as a clean site.
+- **Audits.** The persisted lane round-trips (live since 2026-08-30): `seo_audit_start` queues a
+  crawl, `seo_audit_get` polls and persists it, and the `seo_research` crawl actions with
+  `target` = its task_id stay the deep dive. A crawl older than 14 days, or older
+  than the last deploy, is history. An empty audit list means no crawl has run, never a clean site.
 - **GSC** rows are dated in Pacific time and final about 3 days late; retention rolls at 16 months.
 - **GBP** cached reads refresh on a six-hour cron; a snapshot older than 26 hours is stale, not
   fact. Draft listing edits from one fresh `seo_gbp_location`.
@@ -163,7 +163,7 @@ UNDO:     pages_update back to the CURRENT string
 ### 2.3 Canonical, noindex and robots: the quiet deindexer
 
 There is no canonical or robots field on `pages_update`. Those live in the template (code lane),
-in `public/robots.txt` (code lane), or in the per-page SEO writer that is INCOMING
+in `public/robots.txt` (code lane), or in the per-page SEO writer
 (`references/on-page-optimization.md` Availability). Two `pages_update` fields still deindex
 quietly: `is_published: false` turns the URL into a 404, and `show_in_sitemap: false` drops it
 from the next generated sitemap.
@@ -214,8 +214,8 @@ so name the tier in the CHANGE line every time.
 
 ### 2.5 Schema
 
-Template JSON-LD is a code change; page-level blocks are the INCOMING schema writer
-(`references/on-page-optimization.md` Availability) or, today, the code lane. The diff is the
+Template JSON-LD is a code change; page-level blocks go through the page schema writer
+(`references/on-page-optimization.md` Availability) or the code lane. The diff is the
 whole block: markup describing something not visible on the page risks a manual action, a syntax
 error silently invalidates the entire block, and a `Product` with invented ratings is a policy
 violation that outlives the fix. CURRENT is what `fetch_url` serves and what
@@ -239,9 +239,9 @@ Route-read verified on 2026-08-30 (the crawl actions were also live-tested that 
 and a `website_rankings` row the daily worker checks (what `seo_rankings_list` shows, with
 `view: 'history'`). `seo_tracked_keyword_delete({ keyword_id })` removes the first and cascades
 its history; it does not touch the second. The keyword vanishes from the tracked list, its lanes
-keep being checked and keep costing, and no tool on this surface deletes or pauses a
-`website_rankings` row today (the per-keyword lane editor is INCOMING,
-`references/keyword-research.md` Availability). Re-tracking links back to the surviving row, so
+keep being checked and keep costing until the per-keyword lane editor trims them
+(`seo_rankings_platforms_set`, ask-gated, `references/keyword-research.md` Availability;
+removing a lane deletes that lane's history). Re-tracking links back to the surviving row, so
 `view: 'history'` survives; the deleted row's own history does not.
 
 ```
@@ -387,21 +387,23 @@ variable delete and revert tools also carry a confirm gate in their descriptions
 | `seo_aeo_rankings_sync`, `seo_citations_audit` | Cost stated, no confirm ("no confirm step" in the citations description) |
 | `seo_gsc_submit_sitemap`, `seo_bing_submit_sitemap`, `seo_bing_submit_url` | Low risk, still client-visible; no confirm |
 
+By contrast, the 2026-08-30 batch shipped its risky writes harness-gated (the tool itself asks
+first): the tracking-project, competitor, keyword-cluster, topic-cluster, backlink-tracker,
+backlink-opportunity, automated-report and page-schema deletes, plus `seo_rankings_platforms_set`,
+`seo_listings_scan` and `seo_connection_test`.
+
 ### 4.4 The rails that do not exist
 
 - **No confirm on any metered spend.** Classes B through I run on the first call. The DataForSEO
   balance can go NEGATIVE; every metered call then returns 402 with no per-tool warning, and 503
   `dataforseo_unconfigured` means no credentials. Neither means clean or empty.
 - **No balance pre-check.** The 402 is the first signal.
-- **No undo for a tracked-keyword delete**, and no tool to stop the surviving lanes (2.7).
+- **No undo for a tracked-keyword delete** (2.7).
 - **robots.txt is not served from `seo_project_update`.** Only the code lane serves one.
 - **No disavow, no directory submission, no hreflang builder, no GBP Q&A write, no GSC live
   URL test, no Rich Results Test.** Each is a hand-off, named as such.
 - **`deploy_site` has no diff preview of its own.** The diff is your `project_vcs_commit` and its
   checkpoint; `deploy_get` reads status, not content.
-- **The approver of a staged implement sees one line of prose** until the diff reader lands
-  (`references/reporting-and-delivery.md` Availability); the human approves on the task text plus
-  your own `fetch_url` of the preview, not on a diff.
 - **No restore for a GBP edit, a deleted media item or a deleted reply.** Google keeps no
   version history you can reach.
 - **No gate on `is_published: false` or a slug change.** A 404 wall is one `pages_update` away.
@@ -442,7 +444,6 @@ next session does not read the lag as a regression.
 
 - **A live URL test in Search Console** and **the Rich Results Test** are UI-only. Hand the URL to
   the user; your proxy is `fetch_url` plus a JSON parse of the block.
-- **The implement diff**, until the diff reader lands: verify the deployed page directly.
 - **GBP re-verification state** after a name or address edit is visible only in the GBP dashboard.
 - **Edge propagation.** `fetch_url` samples one CloudFront edge; say "verified from one edge".
 - **Server-side directives on an externally hosted site.** `fetch_url` shows what is served;

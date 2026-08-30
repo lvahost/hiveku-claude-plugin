@@ -40,11 +40,11 @@ accepted). A negative DataForSEO balance makes every metered call a 402; 503
 | `seo_tracked_keyword_delete` - the history dies too | LIVE | write | irreversible; never a keyword that appeared in a delivered report |
 | `seo_list_keywords` (= `seo_keywords_list`) | LIVE | A | the domain's currently ranked keywords from domain analysis, not your research |
 | `seo_ranking_predictions` | LIVE | A | `{ domain, risk_level, limit }`; linear extrapolation, Play 6 |
-| `seo_tracked_keyword_get` | INCOMING (fallback: `seo_tracked_keywords_list` and filter) | A | one tracked-keyword row by `keyword_id` |
-| `seo_tracked_keyword_update` | INCOMING (fallback: none that keeps history; delete plus re-track destroys it, so set `location_code`, `device_type` and `search_engine` right the first time) | write | `target_url`, `search_engine`, `location_code`, `language_code`, `device_type`, `is_active`, `tracking_frequency`, `target_rank`, `tags` |
-| `seo_rankings_platforms_set` | INCOMING (fallback: `seo_track_keyword` once per `search_engine`, and leave existing lanes alone) | write | sets a keyword's lanes in one call: `engines[]`, `track_mobile`, `track_local`, `business_name`; REMOVING a lane deletes that lane's history |
-| `seo_keyword_cluster_get`, `seo_keyword_cluster_update`, `seo_keyword_cluster_delete` | INCOMING (fallback: read via `seo_keyword_clusters`; edits and deletes are dashboard actions, mirrored in memory) | A / write | by `cluster_id` |
-| `seo_topic_cluster_get`, `seo_topic_cluster_update`, `seo_topic_cluster_delete` | INCOMING (same fallback via `seo_topic_clusters`) | A / write | by `cluster_id` |
+| `seo_tracked_keyword_get` | LIVE | A | one tracked-keyword row by `keyword_id`; `seo_tracked_keywords_list` remains the bulk read |
+| `seo_tracked_keyword_update` | LIVE | write | `target_url`, `search_engine`, `location_code`, `language_code`, `device_type`, `is_active`, `tracking_frequency`, `target_rank`, `tags`; mirrors the edit onto the `website_rankings` lanes and returns `lanes_updated` - read it back; delete plus re-track still destroys history |
+| `seo_rankings_platforms_set` | LIVE | write | ask-gated; sets a keyword's lanes in one call: `engines[]`, `track_mobile`, `track_local`, `business_name`; REMOVING a lane deletes that lane's history |
+| `seo_keyword_cluster_get`, `seo_keyword_cluster_update`, `seo_keyword_cluster_delete` | LIVE | A / write | by `cluster_id`; delete is ask-gated; `seo_keyword_clusters` remains the list read |
+| `seo_topic_cluster_get`, `seo_topic_cluster_update`, `seo_topic_cluster_delete` | LIVE | A / write | by `cluster_id`; delete is ask-gated; `seo_topic_clusters` remains the list read |
 
 ---
 
@@ -294,10 +294,11 @@ Tracking is a reporting decision: track what you will report on.
    on a new check day; `check_frequency` defaults to weekly. Cost: about $0.003 per scheduled organic
    check, about $0.10 per keyword per engine per AI check (class G), so confirm the engine list and
    the count before adding AI lanes (references/aeo.md Play H).
-5. Editing a tracked row (location, device, engine, target URL, frequency) has an INCOMING update tool
-   and a one-call lane setter (Availability). Until they land there is no edit that keeps history:
-   delete plus re-track destroys it, so get the arguments right the first time. When the lane setter
-   arrives, removing a lane deletes that lane's history, so it needs the same confirm as a delete.
+5. Editing a tracked row (location, device, engine, target URL, frequency) is
+   `seo_tracked_keyword_update`: it mirrors the edit onto the `website_rankings` lanes and returns
+   `lanes_updated` - read it back. The one-call lane setter is `seo_rankings_platforms_set`
+   (ask-gated): removing a lane deletes that lane's history, so treat it like a delete. Delete
+   plus re-track still destroys history; never use it as an edit.
 6. `seo_tracked_keyword_delete` removes the keyword and its history irreversibly, and that history is
    what makes next quarter's report possible. Prune only at a quarterly review, with explicit
    confirmation, one at a time, never a keyword that appeared in a delivered report in the last two
@@ -409,8 +410,8 @@ guessed arguments against a live account are how silent wrong-data failures star
   `seo_topic_cluster_create`, `seo_track_keyword` and `seo_tracked_keyword_delete` writes to a live
   client account. Summarize, confirm, execute deliberately. Confirmation can cover a batch of related
   writes, but the user must see the list before it lands. `seo_tracked_keyword_delete` in particular is
-  destructive and silent: the history does not come back, and the INCOMING lane setter (Availability)
-  deletes a lane's history the same way when a lane is removed.
+  destructive and silent: the history does not come back, and the lane setter
+  `seo_rankings_platforms_set` deletes a lane's history the same way when a lane is removed.
 - **Do not track competitor brand terms without approval.** It consumes the tracking allotment, shows up
   in reports, and some clients have contractual reasons against it.
 - **Do not present `seo_ranking_predictions` output as a commitment.** It is a model, the client will
@@ -453,9 +454,9 @@ goes out without explicit confirmation.
 - **SERP screenshots, visual layout, competitor on-page structure**: none. Use `web_scrape` plus
   `web_extract`, or the dashboard.
 - **Bulk export of the universe**: none here. Use a deliverable sheet (`reporting-and-delivery.md`).
-- **Editing a tracked keyword's location, device or engine**: INCOMING (the update tool and the lane
-  setter in the Availability table). Until they land, delete plus re-track is the only path and it
-  destroys history, so set `location_code` right the first time and prefer leaving a slightly wrong
-  row alone over losing a reported series.
+- **Editing a tracked keyword's location, device or engine**: `seo_tracked_keyword_update`
+  (mirrors onto the lanes, returns `lanes_updated`) or the lane setter
+  `seo_rankings_platforms_set` (Availability table). Delete plus re-track destroys history;
+  never use it as an edit.
 - **Historical volume by month and seasonality**: `references/forecasting-and-seasonality.md`
   (`dataforseo_labs_google_historical_keyword_data`, the Trends family, GSC YoY).

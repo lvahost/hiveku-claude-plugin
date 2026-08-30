@@ -46,9 +46,10 @@ section 1).
 11. Ship [CONFIRM - one write per yes, the exact diff shown]: a pages-model page -> `pages_update`; a
     CMS entry -> `cms_write_entry`; a template, JSON-LD or canonical -> the code lane
     (`project_files_bulk_save` in one call, `project_vcs_commit`, `deploy_site`); a mechanical edit on a
-    hosted site -> `seo_task_implement` two-step with a human `agent_approval_approve`. A per-page SEO
-    field and schema write that is live after deploy is a capability shipping now: see the reference's
-    Availability table; today it is `pages_update` or the code lane. On a marketing-seo key the `cms_*`
+    hosted site -> `seo_task_implement` two-step with a human `agent_approval_approve`. The per-page SEO
+    field and schema writes that go live after deploy are `seo_page_seo_set` and `seo_page_schema_set`
+    (see the reference's Availability table); `pages_update` and the code lane still work. On a
+    marketing-seo key the `cms_*`
     and `project_*` tools are not visible: say so, use `pages_update` or the implement rail.
 12. Verify and track: `fetch_url({ url })` and read the changed title, meta, headings and JSON-LD in the
     body (never the write's 200); `seo_track_keyword({ keyword, target_domain, location_code })` for

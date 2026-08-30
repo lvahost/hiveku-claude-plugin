@@ -35,11 +35,11 @@ is `reporting-and-delivery.md`.
 | `seo_gtm_trigger_get`, `seo_gtm_trigger_update`, `seo_gtm_trigger_delete`, `seo_gtm_trigger_revert` | LIVE | A | no standalone trigger-create tool: triggers are created through `create_trigger` on `seo_gtm_tag_create` |
 | `seo_gtm_variable_create`, `seo_gtm_variable_get`, `seo_gtm_variable_update`, `seo_gtm_variable_delete`, `seo_gtm_variable_revert` | LIVE | A | the conversion-value rail |
 | `seo_connection_create`, `seo_connection_update`, `seo_connection_delete`, `seo_connections_list`, `seo_sync` | LIVE | A | BYOK shapes below; delete is a soft-delete |
-| `seo_connection_get` | INCOMING (S3) | A | until it lands: `seo_connections_list` and filter by id |
-| `seo_connection_test` | INCOMING (S3) | A | WRITES connection_status: a transient failure pauses the 6h cron until a passing test, so never sweep it across connections; until it lands: `seo_sync`, then read connection_status from `seo_connections_list` |
-| `seo_connections_health` | INCOMING (S3) | A | until it lands: `seo_connections_list`, read connection_status and last sync per row |
-| `seo_analytics_discover_properties` | INCOMING (S3) | A | until it lands: the property is whatever the connection row holds; a wrong property is re-pointed in the dashboard (unverified whether `seo_connection_update` accepts a GA4 property field; its description lists site_url, GBP ids, display_name, is_active) |
-| `seo_organic_leads` | INCOMING (S4) | A | `from`, `to`, `project_id`; until it lands: `marketing_form_conversion_audit` with `channel: 'Organic Search'` plus GA4 key events from `seo_ga4_report` |
+| `seo_connection_get` | LIVE | A | one connection row by id; `seo_connections_list` remains the bulk read |
+| `seo_connection_test` | LIVE | A | ask-gated; WRITES connection_status: a transient failure pauses the 6h cron until a passing test, so never sweep it across connections |
+| `seo_connections_health` | LIVE | A | the one-call roll-up; `seo_connections_list` still shows connection_status and last sync per row |
+| `seo_analytics_discover_properties` | LIVE | A | lists the GA4 properties a connection can reach; re-point the row with `seo_connection_update` (`ga_property_id`) |
+| `seo_organic_leads` | LIVE | A | `from`, `to`, `project_id`; cross-check against `marketing_form_conversion_audit` with `channel: 'Organic Search'` plus GA4 key events from `seo_ga4_report`, side by side |
 
 Creating a google_analytics connection: `seo_connection_create` documents BYOK shapes for
 Bing Webmaster, Google Search Console and Google Business Profile; the GA4 connection is
@@ -67,8 +67,8 @@ resets it to pending when credentials change. `seo_connection_delete` soft-delet
 pending row from a failed OAuth, and expect downstream tools that filter on is_active to
 stop finding it. The department SETUP.md, when present, is at `hiveku-data/seo/SETUP.md`
 (written by `/hiveku:pull` only where an integration needs connecting - absent is normal).
-The connection test, health roll-up and property discovery are INCOMING (Availability);
-until then `seo_sync` plus `seo_connections_list` is the verification.
+Verify with `seo_connection_test` (ask-gated; it WRITES connection_status) or the
+`seo_connections_health` roll-up; `seo_sync` plus `seo_connections_list` still cross-checks.
 
 ### What each measurement ledger is
 
@@ -231,8 +231,8 @@ answer is a table, never a total.
 
 ### Organic leads
 
-The organic-leads reader is INCOMING (Availability). Until it lands, organic leads are
-answered from two ledgers, side by side: `marketing_form_conversion_audit({ channel: 'Organic Search', from, to, timezone })`
+`seo_organic_leads({ from, to, project_id })` is the organic-leads reader. Beside it, organic
+leads are cross-checked from two ledgers, side by side: `marketing_form_conversion_audit({ channel: 'Organic Search', from, to, timezone })`
 gives form submissions with their attribution and named discrepancy buckets that sum to
 the total (`buckets.counted` is our number; spam, duplicate, deleted and no_attribution
 explain the rest; read `click_window` before quoting any click timing), and the GA4 key
@@ -273,7 +273,7 @@ organic are the call-tracking discipline in `hiveku-conversion-tracking`, not th
   what flatlines in Ads before the second call.
 - Never publish a GTM version without reading `seo_gtm_status` pending changes and
   `seo_gtm_install_status` on production first; a version can carry someone else's draft.
-- Never sweep the INCOMING connection test across every connection once it lands: a
+- Never sweep `seo_connection_test` across every connection: a
   transient failure pauses that connection's sync until a passing test.
 - Multi-property clients: the connection row decides the property; name it in the report.
 - Do not sum GA4 key events with form audit counts, GSC clicks or CRM leads. Side by side.
@@ -301,8 +301,8 @@ The GA4 numbers block, from the three-call recipe:
   split), labeled order-scoped.
 - The GSC clicks figure for the same window beside the GA4 sessions figure, with the gap
   stated, never reconciled.
-- Organic form leads from `marketing_form_conversion_audit` with the bucket breakdown,
-  until the organic-leads reader lands.
+- Organic form leads from `seo_organic_leads`, with `marketing_form_conversion_audit`'s
+  bucket breakdown beside it.
 - Every warning the report returned (thresholding, sampling, partial day).
 - The same-month-last-year figures where memory holds them (`forecasting-and-seasonality.md`
   F3), and the forecast band reconciliation row.

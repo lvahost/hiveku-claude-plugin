@@ -33,8 +33,8 @@ A negative DataForSEO balance turns every metered call into a 402 with no per-to
 | `project_files_bulk_save`, `project_vcs_commit`, `deploy_site`, `pages_update` | LIVE | write | the code lane and the pages-model write; not all visible to a marketing-seo key |
 | `fetch_url` | LIVE | free | verifies the live robots.txt, llms.txt and JSON-LD after a deploy |
 | `seo_deliverable_save` | LIVE | write | persists the AEO baseline and monthly deliverable |
-| `seo_llms_txt_generate` | INCOMING (fallback: draft the file, `project_files_bulk_save` `public/llms.txt`, `project_vcs_commit`, `deploy_site`, verify with `fetch_url`) | write | takes the WEBSITE project id, not the tracking project id |
-| `seo_ai_visibility` | INCOMING (fallback: `seo_aeo_audit_get` summary plus `seo_rankings_list` on the AI lanes) | A | one read for citation presence across engines and Google's answer surfaces |
+| `seo_llms_txt_generate` | LIVE | write | takes the WEBSITE project id, not the tracking project id; the code lane (`project_files_bulk_save` `public/llms.txt`, `project_vcs_commit`, `deploy_site`, `fetch_url`) remains the hand-written path |
+| `seo_ai_visibility` | LIVE | A | one read for citation presence across engines and Google's answer surfaces; `seo_aeo_audit_get` plus `seo_rankings_list` on the AI lanes is the assembled cross-check |
 
 ## 0. Doctrine for this lane
 
@@ -122,8 +122,8 @@ status allowed / blocked / unspecified plus `via` (bot group, wildcard, none); `
 `llms_txt` 15, `sitemap` 15, `title_meta` 15, `h1` 10, which is also the priority order.
 **Decision:** thresholds in section 3. **Closing write:** one `pm_tasks_create` per failing check,
 naming the file (robots.txt, llms.txt, homepage template) and the directive to add. Where each fix
-ships: **llms.txt** has an INCOMING generator (Availability); until it lands, draft the file from
-the sitemap and the top pages, `project_files_bulk_save` it as `public/llms.txt`,
+ships: **llms.txt** is generated with `seo_llms_txt_generate` (Availability; WEBSITE project id),
+or hand-drafted from the sitemap and the top pages, `project_files_bulk_save` as `public/llms.txt`,
 `project_vcs_commit`, `deploy_site` after approval. **robots.txt**: `seo_project_update({
 robots_txt_content })` STORES the text and never serves it, so a crawler directive ships as
 `public/robots.txt` through the same code lane and is proven with `fetch_url` on the live URL
@@ -286,8 +286,8 @@ group_by_keyword: true })` reads them; `pagination.total_groups` is the honest k
 (`total` counts lanes). Keywords created before the AI engines existed have NO AI lanes, so a blank
 AI column means "not tracked", never "not ranking"; `previous_rank` only advances on a new check
 day. Citation presence on Google's answer surfaces still comes from `seo_aeo_audit_get`; the single
-cross-engine visibility read is INCOMING (Availability) and until then you assemble it from those
-two calls.
+cross-engine visibility read is `seo_ai_visibility` (Availability), with those two calls as the
+assembled cross-check.
 **Decision:** track only what you report on; 20 keywords monthly beats 200 once.
 
 ## 3. Thresholds and benchmarks
@@ -423,8 +423,9 @@ Cross-cutting: `account_context_get`, `talk_to_department`, `memory_list`, `memo
 `hiveku_docs_get`, `web_search`, `web_scrape`, `web_extract`. Local: `hiveku-data/aeo|seo/*.json`.
 
 Where each capability this lane needs actually lives, so the handoff is named and never implied:
-**llms.txt** is INCOMING (Availability) with the code lane as the fallback (`project_files_bulk_save`
-of `public/llms.txt`, `project_vcs_commit`, `deploy_site`, then `fetch_url` to prove it serves).
+**llms.txt** is `seo_llms_txt_generate` (Availability), with the code lane as the hand path
+(`project_files_bulk_save` of `public/llms.txt`, `project_vcs_commit`, `deploy_site`, then
+`fetch_url` to prove it serves).
 **robots.txt**: `seo_project_update({ robots_txt_content })` is STORED, not served; ship
 `public/robots.txt` through the code lane and verify with `fetch_url`. **JSON-LD and pages**: the
 code lane or `pages_update`, per references/on-page-optimization.md section 1. **Deliverables**:

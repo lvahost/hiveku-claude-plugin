@@ -45,8 +45,8 @@ four lanes, Plays A to F, the outreach handoff). Unlinked mentions follow
    toxic profile with evidence, never act).
 8. Tasks: `pm_tasks_create({ project_id, title })` per recoverable link (source domain plus
    classification in the title), per campaign with segment counts and a target link count, per asset
-   to build. The PM task is the record of a won link; a write to the link tracker is a capability
-   shipping now (see the reference's Availability table), and `crm_create_activity` is not visible on
+   to build. Log a won link with `seo_backlink_tracker_add` (see the reference's
+   Availability table) and mirror it in the PM task; `crm_create_activity` is not visible on
    a marketing-seo key.
 9. Honesty rules: a data event (referring domains moving over 20 percent between reads) is verified
    with the second source before it is reported; vendor DR is directional; close rates are quoted as

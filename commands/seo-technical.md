@@ -18,8 +18,9 @@ section 0 is the coverage contract, section 8 the checklist). Read-only througho
    0. Every later finding carries its N.
 3. Crawl: `seo_list_audits({ project_id })`; a crawl inside 14 days is reused. Otherwise
    `seo_audit_start({ project_id, target_url, max_crawl_pages })` [SPENDS - class F per page; default
-   50, clamp 500; state the count against step 2 and get the yes]. It returns `{ task_id, status:
-   "queued" }`, persists nothing you can list, and a 25-page crawl finishes in about 4 minutes. Read it
+   50, clamp 500; state the count against step 2 and get the yes]. It returns `{ audit_id, task_id, status:
+   "queued" }`; `seo_audit_get` polls and persists it (live since 2026-08-30); a 25-page crawl
+   finishes in about 4 minutes. Read it
    through `seo_research` with `target` = that task id: `non-indexable`, `redirect-chains`,
    `internal-links` and `keyword-density` return results with `crawl_status { pages_crawled }` (empty
    items on a finished crawl means none found in the pages crawled: state the sample);

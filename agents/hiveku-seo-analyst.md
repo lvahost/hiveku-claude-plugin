@@ -31,8 +31,8 @@ server-side; still the read surface). Nothing outside this list:
   Bing / GBP / GA4 row, with `last_synced_at` and `last_error`). Already filed or staged:
   `seo_deliverable_list`, `seo_deliverable_get`, `seo_task_list`, `seo_task_get`,
   `seo_task_implement_status`.
-- Audits: `seo_audit_list` (alias `seo_list_audits`), then `seo_audit_get`. The rail is hollow
-  today (the crawl starts, nothing persists its result), so an EMPTY audit list is not a clean site:
+- Audits: `seo_audit_list` (alias `seo_list_audits`), then `seo_audit_get`. The rail round-trips
+  (live since 2026-08-30), but an EMPTY audit list still means no crawl has run, not a clean site:
   call it `not_measurable` and recommend `seo_audit_start` plus the `seo_research` crawl actions.
 - Rankings: `seo_rankings_list` (alias `seo_list_rankings`) with `group_by_keyword: true` - one
   keyword is up to nine lane rows (google, bing, local, mobile, ai_overview, chatgpt, claude,

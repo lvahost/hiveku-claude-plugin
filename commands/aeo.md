@@ -49,8 +49,8 @@ the two scoreboards, citation tiering, the answer-block format rules, the brand-
    schema per template from `seo_schema_markup({ project_id })` (Organization and WebSite on the home
    page first, FAQPage only where visible). `pm_tasks_create({ project_id, title, task_type: "seo" })`
    per tier-1 and tier-2 keyword naming the URL, organic position and required format, and one per
-   inaccuracy. A generated llms.txt and a one-call AI visibility rollup are capabilities shipping now:
-   see the reference's Availability table; today llms.txt is a code-lane file.
+   inaccuracy. Generate llms.txt with `seo_llms_txt_generate` (WEBSITE project id) and read the one-call
+   AI visibility rollup with `seo_ai_visibility`: see the reference's Availability table.
 10. Honesty rules: per-provider overalls beside every average (a failed provider drops out and moves
     the mean with no real change); a budget refusal or a 402 is partial, never zero; model version
     changes move brand-side numbers more than your work does, footnote them; brand-side movement is

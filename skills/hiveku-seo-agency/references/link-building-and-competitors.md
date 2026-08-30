@@ -35,9 +35,9 @@ call, the cheap way to qualify a list). A 402 on any of them is a negative DataF
 | `domain_analytics_technologies_domain_technologies`, `domain_analytics_whois_overview` | LIVE | B | a rival's tech stack; domain age and registrar with backlink and traffic stats |
 | `seo_research` | LIVE | B / C / D | actions `domain-backlinks`, `referring-domains`, `backlinks-anchors`, `backlinks-timeseries`, `backlinks-history`, `backlinks-competitors`, `bulk-page-summary`, `link-gap`, `competitors`, `ranked-keywords`, `gbp-locations`, `gbp-info`; returns without persisting |
 | `web_scrape`, `web_map`, `web_crawl`, `web_extract`, `web_search` | LIVE | free | verification and contact discovery |
-| `seo_backlink_tracker_list`, `seo_backlink_tracker_add`, `seo_backlink_tracker_get`, `seo_backlink_tracker_update`, `seo_backlink_tracker_delete` | INCOMING (fallback: `seo_new_lost_backlinks` reads it; a won link is logged in the dashboard and mirrored in a PM task) | A / write | the manual tracker: `url`, `title`, `target_url`, `target_anchor`, `link_type`, `status`, `date_published`, `page_authority`, `domain_authority`, `notes`, `project_id` = the WEBSITE project id |
-| `seo_backlink_opportunity_create`, `seo_backlink_opportunity_get`, `seo_backlink_opportunity_update`, `seo_backlink_opportunity_delete` | INCOMING (fallback: dashboard prospecting feeds the queue; `status` and `outreach_attempts` change in the dashboard, mirrored in the PM task) | A / write | `target_domain`, `source_domain`, `source_type`, `domain_rating`, `contact_email`, `status`, `notes` |
-| `seo_competitor_get`, `seo_competitor_update`, `seo_competitor_delete` | INCOMING (fallback: read via `seo_competitors_list`; removal is a dashboard action, the agreed set lives in memory) | A / write | by `competitor_id`; delete is confirmed by name, one at a time |
+| `seo_backlink_tracker_list`, `seo_backlink_tracker_add`, `seo_backlink_tracker_get`, `seo_backlink_tracker_update`, `seo_backlink_tracker_delete` | LIVE | A / write | the manual tracker: `url`, `title`, `target_url`, `target_anchor`, `link_type`, `status`, `date_published`, `page_authority`, `domain_authority`, `notes`, `project_id` = the WEBSITE project id; delete is ask-gated; `seo_new_lost_backlinks` reads the same tracker |
+| `seo_backlink_opportunity_create`, `seo_backlink_opportunity_get`, `seo_backlink_opportunity_update`, `seo_backlink_opportunity_delete` | LIVE | A / write | `target_domain`, `source_domain`, `source_type`, `domain_rating`, `contact_email`, `status`, `notes`; delete is ask-gated |
+| `seo_competitor_get`, `seo_competitor_update`, `seo_competitor_delete` | LIVE | A / write | by `competitor_id`; delete is ask-gated, confirmed by name, one at a time; the agreed set still lives in memory |
 
 ---
 
@@ -197,9 +197,8 @@ Ten minutes weekly, and the highest-yield recurring habit in link work.
 
 **Closes the loop:** `pm_tasks_create` per recoverable link, titled with source domain plus
 classification, so the report can count recoveries. Ship our-fault redirect fixes through the site
-tools in the technical reference, then `pm_tasks_complete`. The link-tracker write tools are
-INCOMING (Availability); until they land, logging a won link is a dashboard action, so say so
-plainly and mirror it in a PM task. For velocity beyond the profile's 30-day counters,
+tools in the technical reference, then `pm_tasks_complete`. Log a won link with `seo_backlink_tracker_add`
+(Availability) and mirror it in a PM task. For velocity beyond the profile's 30-day counters,
 `backlinks_timeseries_new_lost_summary({ target, date_from, date_to })` or
 `seo_research({ action: 'backlinks-timeseries', target, date_from, date_to })` [SPENDS, class D]
 chart new and lost referring domains by week or month: DataForSEO's new/lost, which
@@ -258,8 +257,8 @@ angle copy. Get a yes. Outreach is client-facing sending: never silent, never bu
    15-year-old domain should); `dataforseo_labs_google_subdomains({ target })` lists a rival's
    subdomains with their ranking distribution, which finds the blog, the docs or the store that is
    doing the ranking when the root domain looks quiet.
-6. Editing a tracked competitor's fields or removing one from the set has INCOMING tools
-   (Availability); until then removal is a dashboard action and the agreed set in memory is the
+6. Edit a tracked competitor's fields with `seo_competitor_update`; remove one with
+   `seo_competitor_delete` (ask-gated, by name, one at a time); the agreed set in memory is the
    restore point.
 
 **Read out of it:** `keyword_gap` and `shared_keywords` size the overlap; `trend_direction` and
@@ -434,8 +433,9 @@ call, and a figure from `web_scrape` or a dashboard view is labelled as such.
 `backlinks_anchors` or `seo_research({ action: 'backlinks-anchors' })`. Link velocity, ours or a
 rival's: `backlinks_timeseries_summary`, `backlinks_timeseries_new_lost_summary`, or
 `seo_research` actions `backlinks-timeseries` and `backlinks-history`. Creating or editing an
-opportunity row, writing to the link tracker, and editing or deleting a tracked competitor: all
-INCOMING (Availability table), dashboard actions until then, mirrored into PM tasks and memory.
+opportunity row, writing to the link tracker, and editing or deleting a tracked competitor: the
+`seo_backlink_opportunity_*`, `seo_backlink_tracker_*` and `seo_competitor_*` writes
+(Availability table), mirrored into PM tasks and memory.
 Marking a competitor change responded: none; the PM task is the record. Disavow: none, and a hard
 stop (section 5). And `seo_project_get` is not the SEO-project read: it carries site-level SEO
 settings and takes the builder project id, not the `seo_list_projects` id.

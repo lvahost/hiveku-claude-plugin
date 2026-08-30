@@ -26,9 +26,9 @@ redirect tools are not visible to a marketing-seo key today.
 
 | Tool | Status | Cost | Note |
 |---|---|---|---|
-| `seo_audit_start` | LIVE | F, crawl per page | `max_crawl_pages` default 50, clamp 500; returns `task_id`; persists nothing today. |
+| `seo_audit_start` | LIVE | F, crawl per page | `max_crawl_pages` default 50, clamp 500; returns `audit_id` + `task_id`; `seo_audit_get` polls and persists (live since 2026-08-30). |
 | `seo_research` crawl actions | LIVE, live-tested 2026-08-30 | E, per request | `target` = task_id for `redirect-chains`, `non-indexable`, `duplicate-tags`, `duplicate-content` (also REQUIRES `url`), `internal-links`, `keyword-density`; `url` for `instant-page`. 50 rows per page. |
-| `seo_audit_get`, `seo_list_audits` | LIVE, hollow today | A, free | Read the `seo_site_audits` table, which nothing writes. Populated = the persisted lane is live. |
+| `seo_audit_get`, `seo_list_audits` | LIVE | A, free | Read the persisted `seo_site_audits` rows (written since 2026-08-30). An empty list means no crawl has run, never a clean site. |
 | `seo_gsc_index_coverage`, `seo_gsc_inspect_url`, `seo_gsc_list_sitemaps`, `seo_gsc_get_sitemap`, `seo_gsc_top_pages` | LIVE | free | 50 URLs per call; indexed snapshot only; `feedpath` = full sitemap URL. |
 | `preview_http_get` | LIVE | free | The only header reader; preview container only. |
 | `project_files_search`, `project_redirects_list`, `project_redirects_deploy`, `pages_list` | LIVE | free | Hiveku-hosted projects only. |
@@ -106,17 +106,16 @@ Verified behavior (route read and live call, 2026-08-30):
   pass it, compare it to the URL count from `web_map`, and report both. `seo_run_audit` cannot pass
   it (it declares only `project_id` and an `audit_type` the route echoes and ignores), so it is
   always a 50-page crawl of the project domain; there is ONE crawl type.
-- It returns `202` with `{ task_id, target, project_id, max_crawl_pages, status: 'queued' }` and
+- It returns `202` with `{ audit_id, task_id, target, project_id, max_crawl_pages, status: 'queued' }` and
   does not wait; a 25-page crawl finished in about 4 minutes. Keep the `task_id`.
 - `503 dataforseo_unconfigured` = no credentials; `402` = the metered budget is exhausted or the
   DataForSEO balance went negative. Neither is "the site is clean".
 
-**The audit tables have no writer today.** `seo_list_audits` and `seo_audit_get` read the
-`seo_site_audits` table; nothing in the builder writes it, so after `seo_audit_start` the list is
-empty or stale. **Never read an empty audit list as a
-clean site.** A fix is in flight: once live, `seo_run_audit` returns `{ audit_id, task_id }` and a
-populated `seo_audit_get` result is your signal that the persisted lane is live. Until then, and as
-the deep dive afterwards, read the crawl through `seo_research`.
+**The persisted lane round-trips (live since 2026-08-30).** `seo_run_audit` and `seo_audit_start`
+return `{ audit_id, task_id }`; `seo_audit_get({ audit_id })` polls and persists the result into
+the `seo_site_audits` table that `seo_list_audits` reads. **An empty audit list still means no
+crawl has run, never a clean site.** For everything past the persisted summary, read the crawl
+through `seo_research`.
 
 **What the crawl computes IS reachable, through the `seo_research` crawl actions.** The crawl client
 carries filter mappings for 84 checks, including every one this file is about (`canonical_chain`,
@@ -498,7 +497,7 @@ checked. **Omitting the EXTERNAL rows from your report recreates the exact defec
 | 2 | Project, sources, GSC connected (without it this is a crawl opinion) | `seo_list_projects`, `seo_project_get`, `sites_list`, `seo_gsc_list_sitemaps` | YES |
 | 3 | URL universe, live sitemap count, template families, the section 0 coverage block | `web_map({ url, limit })`, `fetch_url` on sitemap.xml (200 KB cap), your own pass | YES (grouping is manual) |
 | 4 | Crawl with `max_crawl_pages` set against step 3; keep the task_id | `seo_audit_start({ project_id, target_url, max_crawl_pages })` | YES (default 50, max 500) |
-| 5 | Did the persisted lane deliver; empty = nothing persisted, not clean | `seo_list_audits`, `seo_audit_get` | HOLLOW today (section 1.2) |
+| 5 | Did the persisted lane deliver; empty = no crawl ran, not clean | `seo_list_audits`, `seo_audit_get` | YES, live since 2026-08-30 (section 1.2) |
 | 6 | Once `crawl_progress` is finished: non-indexable pages with reasons, chains hop by hop, duplicate titles | `seo_research` `non-indexable`, `redirect-chains`, `duplicate-tags` (`target` = task_id) | YES; coverage = the cap |
 | 7 | Index coverage batch 1, value-ordered: `indexing_state` (`BLOCKED_BY_HTTP_HEADER`, `BLOCKED_BY_META_TAG`) and `user_canonical` vs `google_canonical` on every result | `seo_gsc_index_coverage({ site_url, urls })` | YES, 50 URLs per call |
 | 8 | Deep-dive any single URL that looks wrong | `seo_gsc_inspect_url` | YES (indexed snapshot only) |

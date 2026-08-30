@@ -327,8 +327,8 @@ Handlers live-tested 2026-08-30 on a 25-page crawl: a finished crawl reports `cr
 
 `lighthouse` and `instant-page` need `url`, not a task_id. `seo_audit_start` queues the
 crawl (`max_crawl_pages` default 50, clamped 500; `audit_type` is ignored, one crawl type)
-and returns the task_id. Until the audit-lane fix is live `seo_list_audits` and
-`seo_audit_get` read a table nothing writes: an empty audit list is never a clean site.
+and returns the task_id plus an audit_id that `seo_audit_get` polls and persists (live
+since 2026-08-30): an empty audit list means no crawl has run, never a clean site.
 
 ### Backlinks deep dive (Tranche D) - needs `target` or `domain`
 

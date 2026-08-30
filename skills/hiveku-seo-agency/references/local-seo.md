@@ -32,9 +32,9 @@ per request per location; I = one Business Listings search with a 24h cooldown.
 | `social_create_post` | LIVE | write | GBP posts, platform `google_business_profile`, through the social approval queue |
 | `seo_track_keyword`, `seo_tracked_keywords_list`, `seo_tracked_keyword_delete` | LIVE | write / A | "keyword + city" and pack tracking; owned by keyword-research.md |
 | `seo_connections_list`, `seo_connection_create`, `seo_connection_update` | LIVE | A / write | the GBP connect flow (section 1) |
-| `seo_gbp_posts` | INCOMING (fallback: the dashboard's GBP posts view; publishing stays on `social_create_post`) | A | READ of published posts per `connection_id`, `refresh`, `limit` |
-| `seo_listings_get` | INCOMING (fallback: `seo_gbp_listing` for the Listing Score and duplicate status) | A | the stored listings snapshot per `connection_id` |
-| `seo_listings_scan` | INCOMING (fallback: `seo_citations_audit`, same engine, same cooldown) | I | Listing Score plus the Google Maps footprint: duplicates, NAP drift; spends one Business Listings search, 24h cooldown |
+| `seo_gbp_posts` | LIVE | A | READ of published posts per `connection_id`, `refresh`, `limit`; publishing stays on `social_create_post` |
+| `seo_listings_get` | LIVE | A | the stored listings snapshot per `connection_id`; `seo_gbp_listing` remains the Listing Score and duplicate-status read |
+| `seo_listings_scan` | LIVE | I | ask-gated; Listing Score plus the Google Maps footprint: duplicates, NAP drift; spends one Business Listings search, 24h cooldown; `seo_citations_audit` runs the same engine and cooldown |
 
 ---
 
@@ -80,8 +80,8 @@ flow is `seo_connection_create` (platform `google_business_profile`, OAuth) then
 
 **No tool in this lane.** GBP **posts** go through the social lane's approval queue or the dashboard:
 publish via `social_create_post` with platform `google_business_profile`, or raise them with
-`pm_tasks_create`, copy attached, and never claim you posted; a read of published posts is INCOMING
-(Availability). **Q&A**: readable via `seo_research({ action: 'gbp-questions' })`; ANSWERING has no
+`pm_tasks_create`, copy attached, and never claim you posted; read published posts back with
+`seo_gbp_posts` (Availability). **Q&A**: readable via `seo_research({ action: 'gbp-questions' })`; ANSWERING has no
 tool (Google retired the write API in November 2025) - raise answers as a dashboard task.
 **Directory submission**: no submission tool exists anywhere, by design - `seo_citations_audit`
 audits and never writes to a directory. **Geo-GRID rank maps** (a lattice of positions across many
@@ -392,8 +392,9 @@ same category of visibility lever as attributes (Play L3), and just as commonly 
    and report it as of `audited_at`.
 5. It is AUDIT ONLY. It never writes to any directory, and no submission tool exists anywhere in Hiveku
    by design. The deliverable is the fix list plus `pm_tasks_create` per inconsistent listing, worst
-   fields first (phone and address outrank a name variant). A Listing Score plus Maps-footprint scan
-   (duplicates, NAP drift) is INCOMING (Availability), same engine and cooldown.
+   fields first (phone and address outrank a name variant). `seo_listings_scan` (ask-gated,
+   Availability) adds the Listing Score plus Maps-footprint scan (duplicates, NAP drift), same
+   engine and cooldown.
 
 ---
 

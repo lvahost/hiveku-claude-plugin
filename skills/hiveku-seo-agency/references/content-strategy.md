@@ -35,7 +35,7 @@ credentials: neither means clean or empty.
 | `on_page_content_parsing` | LIVE | E | structured headings, links and text of ONE URL; outline benchmarking |
 | `seo_internal_links` | LIVE | A | Hiveku-hosted published projects only; `suggested_links_to/from` not computed |
 | `seo_cro_audit` | LIVE | free | heuristic audit of one URL, works on competitor pages |
-| `seo_task_list`, `seo_task_get`, `seo_task_implement`, `seo_task_implement_status` | LIVE | write (implement spends a paid agent turn) | the implement rail, Play C7; the diff reader an approver needs is INCOMING, see references/reporting-and-delivery.md Availability |
+| `seo_task_list`, `seo_task_get`, `seo_task_implement`, `seo_task_implement_status` | LIVE | write (implement spends a paid agent turn) | the implement rail, Play C7; the diff reader an approver needs is `seo_task_changes`, see references/reporting-and-delivery.md |
 | `pages_list`, `pages_update`, `cms_list_collections`, `cms_read_entry`, `cms_write_entry` | LIVE | write | Hiveku-hosted page and CMS edits; `cms_*` not visible to a marketing-seo key |
 | `project_files_bulk_save`, `project_vcs_commit`, `deploy_site` | LIVE | write | the code lane; not visible to a marketing-seo key |
 | `content_create` | LIVE | write | persists a brief or draft |

@@ -18,9 +18,6 @@ family's mechanics, the write discipline behind one mutation
   keywords_data; C live SERP per location; D backlinks; E on_page per URL; F crawl per page; G LLM
   mentions about $0.10 per keyword per engine; H LLM-scored, budget-gated; I the citations audit).
   A 402 is a negative balance, a 503 `dataforseo_unconfigured` is no credentials: neither is clean.
-- **[INCOMING]**: a capability shipping now that may not resolve yet, described by what it does
-  plus a pointer to the owning reference's Availability table, the only place its name is spelled.
-  A name that does not resolve has NOT shipped; never say the capability does not exist.
 - **Read back after every write**: the read-back named in the step is the verification, not the
   200. **Hydrate first**: `account_context_get({ domain: 'seo' })` and `memory_list({ domain:
   'seo' })` (`include_project_scoped: true` on project-scoped accounts) before every recipe.
@@ -32,17 +29,17 @@ family's mechanics, the write discipline behind one mutation
 
 | Recipe | Fully live today? |
 |---|---|
-| 1. New-client onboarding | LIVE; connection-health and llms.txt steps INCOMING |
-| 2. Strategy and forecast | LIVE; editing or deleting a saved cluster INCOMING |
-| 3. Weekly pass | LIVE; the query x page archive reader INCOMING |
+| 1. New-client onboarding | LIVE end to end |
+| 2. Strategy and forecast | LIVE end to end |
+| 3. Weekly pass | LIVE end to end |
 | 4. Monthly report | LIVE end to end |
-| 5. Quarterly hygiene | LIVE; in-place edits of a tracked keyword or competitor INCOMING |
-| 6. Site migration | LIVE on a full-profile key; the staged-diff reader INCOMING |
-| 7. New-location launch | LIVE; listings scan and GBP posts read INCOMING |
+| 5. Quarterly hygiene | LIVE end to end |
+| 6. Site migration | LIVE on a full-profile key |
+| 7. New-location launch | LIVE end to end |
 | 8. Algorithm-update response | LIVE end to end |
-| 9. Traffic-crash triage | LIVE; a connection test that writes status INCOMING |
+| 9. Traffic-crash triage | LIVE end to end |
 | 10. "Rank for X" | LIVE end to end |
-| 11. Content refresh sprint | LIVE; per-page SEO field and schema writes INCOMING |
+| 11. Content refresh sprint | LIVE end to end |
 | 12. Ecommerce / Shopify | Reads LIVE; a store Hiveku does not host gets client tasks |
 
 ---
@@ -57,20 +54,21 @@ account; the client's competitor list and GSC property string in hand.
    name, target_country, target_language })` [CONFIRM]; read back `seo_list_projects`.
 2. `seo_connections_list`: per platform, present, status, `last_error`; copy the GSC `site_url`
    VERBATIM (sc-domain vs url-prefix differ). Missing sources: `seo_connection_create` per
-   `references/outcomes-and-measurement.md` [CONFIRM, BYOK], then `seo_sync`. A one-call health
-   read is [INCOMING, see that file's Availability].
+   `references/outcomes-and-measurement.md` [CONFIRM, BYOK], then `seo_sync`. The one-call health
+   read is `seo_connections_health` (see that file).
 3. `seo_sync({ project_id, full: true })` [CONFIRM on a large account; it fans out]. Read back
    `seo_rankings_list({ domain, group_by_keyword: true, limit: 200 })`:
    `pagination.total_groups` is the keyword count.
 4. Crawl: `web_map({ url })` for the URL count, then `seo_audit_start({ project_id, target_url,
-   max_crawl_pages })` [SPENDS F per page; default 50, clamp 500; name the count]. It returns `{
-   task_id, status: 'queued' }` and persists nothing you can list; 25 pages take about 4 minutes.
+   max_crawl_pages })` [SPENDS F per page; default 50, clamp 500; name the count]. It returns 202 with
+   `audit_id` and `task_id` ('queued'); `seo_audit_get` polls and persists (live since
+   2026-08-30); 25 pages take about 4 minutes.
    Read it via `seo_research` with `target` = that task id: `non-indexable`, `redirect-chains`,
    `internal-links`, `keyword-density` return `crawl_status { pages_crawled }` (empty items on a
    finished crawl = none found; state the sample); `duplicate-content` REQUIRES `url`;
    `duplicate-tags` is title-only [SPENDS B per request]; `instant-page` takes `url`, one per
-   template [SPENDS E]. Never read an empty `seo_list_audits` as clean; carry the coverage block
-   (blind-spots section 0).
+   template [SPENDS E]. An empty `seo_list_audits` means no crawl has run, never clean; carry the
+   coverage block (blind-spots section 0).
 5. The GSC capture, all ~16 months Google retains: `seo_gsc_list_sites` as the heartbeat, then
    `seo_gsc_search_analytics({ site_url, start: <16 months back>, end: <day -3>, data_state:
    'final', dimensions: ['date'] })`, then `['query']`, `['page']`, `['query','page']`, each
@@ -82,7 +80,7 @@ account; the client's competitor list and GSC property string in hand.
    template; `url` first, `origin` when `field.available` is false; label field vs lab.
 8. Free gates: `seo_aeo_readiness({ domain })`, `seo_entity_check({ query: '<Brand Name>' })`; a
    blocked AI crawler or no Knowledge Graph entity is a headline finding. The llms.txt generator is
-   [INCOMING, see `references/aeo.md` Availability].
+   `seo_llms_txt_generate` (see `references/aeo.md`; WEBSITE project id).
 9. `backlinks_summary({ target })` for the client and each rival [SPENDS D, one per domain];
    report `referring_domains`, never `total_backlinks`.
 10. `dataforseo_labs_google_competitors_domain({ target, location_code: 2840 })` [SPENDS B x1;
@@ -115,8 +113,9 @@ universe in a sheet tab from `/hiveku:seo-keywords`, business value per cluster 
 1. `seo_keyword_clusters({ project_id })` reads STORED rows (empty = nothing saved). Audit the
    draft grouping, then `seo_keyword_cluster_create` per agreed cluster [CONFIRM the list, one
    write each; `cluster_name` unique, 409 = exists]; pillars via `seo_topic_clusters` then
-   `seo_topic_cluster_create` [CONFIRM]. Read back both. Editing or deleting a cluster is
-   [INCOMING, see `references/keyword-research.md` Availability]; today recreate under a new name.
+   `seo_topic_cluster_create` [CONFIRM]. Read back both. Edit or delete a cluster with
+   `seo_keyword_cluster_update` / `seo_keyword_cluster_delete` and the topic-cluster twins
+   (deletes ask-gated; `references/keyword-research.md`).
 2. Priority matrix: SKILL.md's formula plus `references/keyword-research.md` 1.5. Tear down each
    top head: `seo_serp_get({ keyword })` for stored rows, `seo_research({ action: 'serp', keyword,
    location_code })` for the live SERP [SPENDS C, one per head].
@@ -163,13 +162,13 @@ convention); `pm_tasks_create` for month 1 with due dates inside the month.
    `['page']`. `summary.keys_in_both` first (a collapse vs `keys_in_a` is coverage); totals come
    from `summary`, not the 50-row lists; deltas are signed Google-style, negative = improved,
    never flipped. Then `['query','page']`: one query moving between two pages is a URL
-   swap, not a loss. The query x page archive reader is [INCOMING, see
-   `references/rankings-and-search-console.md` Availability].
+   swap, not a loss. The query x page archive reader is `seo_query_page_metrics`
+   (`references/rankings-and-search-console.md`).
 4. `seo_new_lost_backlinks({})` reads the MANUAL link-building tracker (no `project_id` first;
    `since` is ignored, filter `created_at`). DataForSEO's lost links:
    `backlinks_bulk_new_lost_backlinks({ targets: [domain] })` [SPENDS D x1]. Classify with
-   `web_scrape` per `references/link-building-and-competitors.md` Play B. Logging a won link is
-   [INCOMING, see that file's Availability]; the PM task is the record.
+   `web_scrape` per `references/link-building-and-competitors.md` Play B. Log a won link with
+   `seo_backlink_tracker_add` (see that file); mirror it in a PM task.
 5. Audit delta: `seo_list_audits({ project_id })` vs last week; no re-crawl without a deploy.
    After any deploy: `seo_gsc_inspect_url({ site_url, inspection_url })` on home and two money
    pages.
@@ -215,7 +214,7 @@ wipes it all).
      preset: 'channel_sessions' })` (rows include an "AI Assistant" channel group; report it on
      its own line), `seo_ga4_report({ connection_id, preset: 'landing_pages' })`. A 429 is the
      hourly quota: partial, no retry. No connection: "not measurable yet" plus the task. Organic
-     leads by channel is [INCOMING, see that file's Availability].
+     leads come from `seo_organic_leads` (see that file's cross-check).
    - Authority: `backlinks_summary({ target })` [SPENDS D x1] vs last month's stored figure,
      `referring_domains` first; links won from tasks; losses from Recipe 3 step 4.
    - Local (clients with locations): `seo_gbp_overview({ connection_id, days: 30 })` per location,
@@ -247,16 +246,17 @@ consolidate memory, without deleting history anyone reports on.
 1. `seo_tracked_keywords_list({ project_id })` against the last two quarters' reports; candidates
    go to the client as a list, then `seo_tracked_keyword_delete` [CONFIRM, one keyword at a time,
    by name; the history dies with it]. Never a keyword reported in the last two quarters; if the
-   list is merely long, stop adding. In-place edits of lanes, location or target URL are
-   [INCOMING, see `references/keyword-research.md` Availability]; delete and re-track loses
-   history.
+   list is merely long, stop adding. In-place edits of lanes, location or target URL:
+   `seo_tracked_keyword_update` and `seo_rankings_platforms_set`
+   (`references/keyword-research.md`); delete and re-track loses history.
 2. Re-qualification (`references/keyword-research.md` Play 9): re-run the SAME expansion calls on
    the same seeds, location and language [SPENDS B, name the count], diff against the stored
    universe tab, `seo_keyword_cluster_create` for agreed additions [CONFIRM].
 3. `seo_list_competitors({ project_id })` (`last_analyzed` older than 60 days is history);
    `dataforseo_labs_google_competitors_domain({ target, location_code: 2840 })` [SPENDS B x1]; add
-   with `seo_add_competitor` [CONFIRM by name]. Editing or removing one is [INCOMING, see
-   `references/link-building-and-competitors.md` Availability]; memory holds the agreed set.
+   with `seo_add_competitor` [CONFIRM by name]. Edit one with `seo_competitor_update`, remove with
+   `seo_competitor_delete` (ask-gated; `references/link-building-and-competitors.md`); memory
+   holds the agreed set.
 4. `backlinks_anchors({ target })` [SPENDS D x1]; exact-match commercial above 10 percent means
    stop requesting them. No disavow exists; escalate with evidence.
 5. `seo_deliverable_list({ limit: 50 })`; superseded rows get `seo_deliverable_update({ id,
@@ -302,9 +302,9 @@ full-profile key (`project_*`, `cms_*`, `deploy_site` are not visible to a marke
    `project_files_bulk_save` in ONE call -> `project_test_build({ use_db_state: true })` ->
    `project_vcs_commit` [CONFIRM] -> `deploy_site({ environment })` [CONFIRM, commit is not live].
    `seo_project_update({ robots_txt_content })` is STORED, never served: robots.txt ships as
-   `public/robots.txt`, verified with `fetch_url`. Per-page SEO field and schema writes are
-   [INCOMING, see `references/on-page-optimization.md` Availability]; today `pages_update` or the
-   code lane.
+   `public/robots.txt`, verified with `fetch_url`. Per-page SEO field and schema writes:
+   `seo_page_seo_set` and `seo_page_schema_set` (`references/on-page-optimization.md`);
+   `pages_update` and the code lane still work.
 5. `seo_generate_sitemap({ project_id: <website id> })` returns `{ file_path: 'public/sitemap.xml',
    content }`; save via `project_files_bulk_save`, commit, deploy, `fetch_url` it live, then
    `seo_gsc_submit_sitemap({ site_url, sitemap_url })` and `seo_bing_submit_sitemap({ site_url,
@@ -317,8 +317,8 @@ full-profile key (`project_*`, `cms_*`, `deploy_site` are not visible to a marke
    changed); `seo_bing_period_comparison({ site_url, period_a, period_b })`
    as the control; `backlinks_bulk_new_lost_backlinks({ targets: [domain] })` [SPENDS D x1].
 7. Mechanical follow-ups on a hosted site: `seo_task_implement` two-step, human
-   `agent_approval_approve`, never auto-approved; the staged-diff reader is [INCOMING, see
-   `references/reporting-and-delivery.md` Availability].
+   `agent_approval_approve`, never auto-approved; read the staged diff with `seo_task_changes`
+   (`references/reporting-and-delivery.md`).
 
 **Tell the client:** the map and what each old URL now does, redirects live on production with
 fetch evidence, what the sitemap lists, re-evaluation over 2 to 6 weeks with the first two watched
@@ -362,8 +362,8 @@ publishing nothing to Google the client did not approve. `references/local-seo.m
 8. 30-day watch: `seo_local_rank_changes({ days: 28, min_drop: 2 })` weekly,
    `seo_local_rank_history({ keyword, domain, days: 90 })` on movers, `seo_gbp_insights({
    connection_id })` for calls and directions. GBP posts publish via `social_create_post` with
-   platform `google_business_profile`; reading posts and the listings scan are [INCOMING, see
-   `references/local-seo.md` Availability].
+   platform `google_business_profile`; read posts back with `seo_gbp_posts`; the listings
+   scan is `seo_listings_scan` (ask-gated, spends; `references/local-seo.md`).
 
 **Tell the client:** which location binds to which branch, the Listing Score and gaps, citations
 consistent / inconsistent / unverified, the page URL, pack positions at a named city and device.
@@ -418,8 +418,8 @@ section 6 open.
    empties or a 403, not an error); (b) every row's status and
    `last_error`; (c) `seo_sync({ project_id })` and re-read; (d) GSC's ~3-day lag: end at day -3
    with `data_state: 'final'`; (e) if reading locally, `hiveku-data/STATUS.json` `failed[]` and
-   `fetched_at`; (f) a GA4-side drop: `seo_gtm_install_status`. A connection test that writes
-   status is [INCOMING, see `references/outcomes-and-measurement.md` Availability].
+   `fetched_at`; (f) a GA4-side drop: `seo_gtm_install_status`. `seo_connection_test` (ask-gated)
+   writes connection_status (`references/outcomes-and-measurement.md`).
 2. `seo_gsc_time_series({ site_url, start: <90 days back>, end: <day -3>, data_state: 'final' })`
    unfiltered for the cliff date, then `seo_gsc_period_comparison` on `['page']` across it.
 3. `seo_gsc_inspect_url({ site_url, inspection_url })` on home and the top losers, then
@@ -464,8 +464,8 @@ diagnosis in the body, and for any rung you could not close (headers, server log
    `seo_cannibalization({ project_id })`. Refresh the earning page; write new only when no URL sits
    in the top 50 or every URL serves another intent.
 5. The 12-step protocol (`/hiveku:seo-onpage <url>`), shipped through the path section 1 assigns
-   [CONFIRM per write], verified with `fetch_url`. Per-page SEO field writes are [INCOMING, see that
-   file's Availability]; today `pages_update` or the code lane.
+   [CONFIRM per write], verified with `fetch_url`. Per-page SEO field writes: `seo_page_seo_set`
+   (see that file); `pages_update` and the code lane still work.
 6. Link gap: `backlinks_page_intersection` with the top-ranking URLs as targets and ours excluded
    [SPENDS D x1; check the schema for the targets shape]; hand the segmented list and one angle per
    segment to Outbound via `talk_to_department({ domain: 'outbound', message })` [CONFIRM the
@@ -507,7 +507,7 @@ cannibalization, each with a cause, tier, brief, ship date and 28-day proof.
    A consolidation is a merge plus `project_redirect_create({ project_id, from_path, to_path,
    status_code: 301 })` per losing URL [CONFIRM, every source and the target] then
    `project_redirects_deploy` [CONFIRM]; never delete without a redirect. Per-page SEO field
-   writes are [INCOMING, see that file's Availability].
+   writes: `seo_page_seo_set` (see that file).
 6. Re-date honestly (`dateModified` reflects a real change), re-point internal links, verify with
    `fetch_url`, record the ship date.
 7. Proof at 28 days: `seo_gsc_time_series({ site_url, start: <28 days before ship>, end: <day -3>,
