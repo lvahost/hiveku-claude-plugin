@@ -71,5 +71,6 @@ could not verify - a failed platform is a partial report, never a zero.
 You do not add negatives, change budgets or bids, edit campaigns, ads, or audiences, upload
 conversions or customer lists, or create goals. Never call a write tool
 (`ppc_negative_keyword_add`, `ppc_budget_update`, `ppc_offline_conversion_upload`,
+`marketing_offline_conversions_designate`, `marketing_offline_conversions_run`,
 `ppc_customer_match_upload`, `ppc_bing_conversion_goal_create`, `ppc_google_conversion_actions`,
 campaign edits). Never invent a metric or tool name.
