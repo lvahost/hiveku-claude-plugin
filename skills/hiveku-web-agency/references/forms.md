@@ -218,7 +218,7 @@ Recovery order is strict, and every step has a guard:
 
 1. `workflow_run_get({ workflow_id, run_id })` on the failing run for per-node `step_states`. If you do not know which workflow tripped, `workflow_runs_recent({ status: 'failed', since })` is account-wide and names it.
 2. Fix it (`workflow_node_update`), then `workflow_validate({ workflow_id })`, then `workflow_test`. Resuming a workflow that is still broken just re-trips the breaker.
-3. `workflow_stranded_list({ workflow_id })` is READ-ONLY. It returns the pause window, the count, and the stored submissions.
+3. `workflow_stranded_list({ workflow_id })` is READ-ONLY. It returns the pause window, the count, and one row per submission carrying its payload KEYS only (the field names, never the values, because a stranded payload can hold personal data). You can tell the client how many leads are waiting and when they arrived; you cannot read them the contents.
 4. **Show the operator the submissions, not a count, and get approval.**
 5. `workflow_resume({ workflow_id })` clears the pause and resets the failure counter. It runs nothing by itself, and replay is rejected while the workflow is still paused, so this must come first.
 6. `workflow_stranded_replay({ workflow_id, confirm: true })`.

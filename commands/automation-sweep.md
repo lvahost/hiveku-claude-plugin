@@ -50,7 +50,7 @@ moment a check fails). When one automation is already known to be broken, run
    `project_cron_logs` for `failure` or `timeout` rows piling up.
 6. **Paused workflows and the leads behind them.** `workflow_stranded_list({ workflow_id })` on
    anything paused or recently failing. It is READ-ONLY and returns the pause window, the count,
-   and the stored submissions. Five consecutive failures trip the circuit breaker and pause a
+   and one row per submission with its payload KEYS only (field names, never values: report the count and the arrival dates, not the leads' details). Five consecutive failures trip the circuit breaker and pause a
    workflow; a paused workflow rejects triggers and writes NO run row, while its webhook keeps
    accepting and storing deliveries, so the client's form still says "Thanks!" and their leads are
    invisible rather than lost. Nothing un-pauses itself, even after the bug is fixed. A non-zero

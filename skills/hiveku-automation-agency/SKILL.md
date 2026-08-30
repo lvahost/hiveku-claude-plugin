@@ -433,7 +433,7 @@ Recovery order is strict, and each step has a guard:
 2. Fix it (`workflow_node_update`), then `workflow_validate`, then `workflow_test`.
    Resuming a workflow that is still broken just trips the breaker again.
 3. `workflow_stranded_list({ workflow_id })` - READ-ONLY. Returns the pause window,
-   the count, and the stored submissions.
+   the count, and one row per submission carrying trigger_run_id, received_at, form_name and payload KEYS - the field NAMES only. The values are deliberately withheld because a stranded payload can hold personal data, so you can tell the operator how many leads are waiting and when they arrived, and you cannot read them the contents. Capped at 200 rows.
 4. **Show the operator what would run, and get approval.** Not a count - the list.
 5. `workflow_resume({ workflow_id })` - clears the pause and resets the failure
    counter. Replay is REJECTED while the workflow is still paused, so this must come

@@ -28,7 +28,7 @@ submissions, the wrong cron rail, and a UTC schedule the client reads as local.
 3. **Is it paused, and why?** The highest-yield step on the ladder and the one most often skipped,
    because a paused workflow produces the least evidence of anything being wrong.
    `workflow_stranded_list({ workflow_id })` is READ-ONLY and returns the pause window, the count,
-   and the stored submissions. Five consecutive failures trip the circuit breaker and pause the
+   and one row per submission with its trigger_run_id, arrival time, form name and payload KEYS (field names only, never the values: a stranded payload can hold personal data, so you can say how many leads are waiting and which form they came from, but you cannot read the operator their names). Five consecutive failures trip the circuit breaker and pause the
    workflow; a paused workflow REJECTS triggers and the rejection writes NO run row, which is the
    exact signature of "it just stopped and there are no errors", while the webhook keeps accepting
    and storing deliveries so the client's form still returns a success page. The count is a LEAD

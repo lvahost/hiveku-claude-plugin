@@ -61,7 +61,7 @@ page, because the webhook keeps accepting and storing the delivery. Mechanics an
 recovery: Part 6.
 
 ```
-workflow_stranded_list({ workflow_id })    # read-only: the pause window, the count, the stored submissions
+workflow_stranded_list({ workflow_id })    # read-only: pause window, count, payload KEYS only (no values)
 ```
 
 - A pause window with a count is proof of a pause, and the count is a LEAD count. Those
