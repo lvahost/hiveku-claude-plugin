@@ -27,15 +27,22 @@ in your reply so nobody reads "committed" as "shipped" - deploying is `/hiveku:d
 4. If pages moved: `project_files_validate_orphan_routes({ project_id })` and read
    `route_collisions[]`, not the orphan count - `orphans: 0` does not mean routing is healthy.
 
-5. COMMIT: `project_vcs_commit({ project_id: <the project_id>, message })`. Imperative,
-   present-tense message ("Add pricing section", not "Added"). `project_vcs_history` /
-   `project_version_log` show the trail; `project_vcs_compare` diffs two points.
+5. COMMIT: `project_vcs_commit({ project_id: <the project_id>, message, branch })`. Imperative,
+   present-tense message ("Add pricing section", not "Added"). **Pass the branch you created in
+   step 2 - omitting `branch` commits straight to `main`, which changes the live project and
+   defeats the branch you just made.** `project_vcs_history` / `project_version_log` show the
+   trail; `project_vcs_compare` diffs two points.
 
-6. MERGE when the branch is reviewed: `project_vcs_merge({ project_id, branch, message? })`. It
-   applies the non-conflicting changes and returns `{ applied, deleted, conflicts, commit }`. Files
-   changed on BOTH the branch and main come back in `conflicts` and are NOT overwritten - resolve
-   them yourself and merge again. The branch survives, so a partial merge is recoverable. To let a
-   client sign off before the merge, use the branch preview in `/hiveku:preview`.
+6. MERGE when the branch is reviewed: `project_vcs_merge({ project_id, branch, into?, message? })`.
+   `into` defaults to `main`; pass another branch to update it instead (merging into main is what
+   changes the live project). It applies the non-conflicting changes and returns
+   `{ merged_into, applied, deleted, conflicts, commit }`. Files changed on BOTH sides come back
+   in `conflicts` and are NOT overwritten - resolve them yourself and merge again. The branch
+   survives, so a partial merge is recoverable. For reviewed work prefer the atomic path: open a
+   native PR (`project_vcs_pr_create({ project_id, source_branch, title, target_branch? })`) and
+   merge it with `project_vcs_pr_merge({ project_id, number })` - STRICT: any conflict refuses the
+   whole merge, nothing half-applied. To let a client sign off before the merge, use the branch
+   preview in `/hiveku:preview`.
 
 GitHub-connected projects are a different path: if `project_deployment_mode_get` reports
 `mode: "github_sync"`, the repo is the source of truth and a save without a `project_commit` gets

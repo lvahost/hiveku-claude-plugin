@@ -1,487 +1,507 @@
 {
-  "_comment": "Tools the plugin's INSTALL.md names LITERALLY in a permissions ask rule. Claude Code ask rules do NOT accept wildcards, so these must be exact. If any is renamed or removed without updating INSTALL.md, the rule stops matching SILENTLY and the tool becomes blanket-allowed. Assert every name below still exists in the tool registry; fail the build if one does not.",
-  "consumed_by": "hiveku-claude-plugin/INSTALL.md -> permissions.ask",
-  "prefixes": [
-    "mcp__plugin_hiveku_hk__",
-    "mcp__hiveku__"
-  ],
-  "plugin_version": "0.17.0",
-  "count": 95,
-  "tools": [
-    {
-      "name": "deploy_site",
-      "method": "POST",
-      "why_gated": "publishes a site to a real domain"
-    },
-    {
-      "name": "deploy_run",
-      "method": "POST",
-      "why_gated": "runs a deploy"
-    },
-    {
-      "name": "project_files_bulk_save",
-      "method": "POST",
-      "why_gated": "overwrites project source"
-    },
-    {
-      "name": "project_vcs_commit",
-      "method": "POST",
-      "why_gated": "writes a commit"
-    },
-    {
-      "name": "project_vcs_merge",
-      "method": "POST",
-      "why_gated": "merges a branch"
-    },
-    {
-      "name": "site_delete",
-      "method": "DELETE",
-      "why_gated": "destroys a site"
-    },
-    {
-      "name": "content_publish_to_site",
-      "method": "POST",
-      "why_gated": "publishes content publicly"
-    },
-    {
-      "name": "content_schedule",
-      "method": "POST",
-      "why_gated": "queues a public publish"
-    },
-    {
-      "name": "email_campaign_send_now",
-      "method": "POST",
-      "why_gated": "sends email to real recipients"
-    },
-    {
-      "name": "email_campaign_schedule",
-      "method": "POST",
-      "why_gated": "queues a real send"
-    },
-    {
-      "name": "email_campaign_resend_non_openers",
-      "method": "POST",
-      "why_gated": "re-sends to real recipients"
-    },
-    {
-      "name": "crm_envelope_send",
-      "method": "POST",
-      "why_gated": "sends a signature request"
-    },
-    {
-      "name": "crm_estimate_send",
-      "method": "POST",
-      "why_gated": "sends an estimate to a client"
-    },
-    {
-      "name": "helpdesk_ticket_send_reply",
-      "method": "POST",
-      "why_gated": "replies to a customer"
-    },
-    {
-      "name": "marketing_report_send",
-      "method": "POST",
-      "why_gated": "emails a report to a client"
-    },
-    {
-      "name": "ppc_budget_update",
-      "method": "POST",
-      "why_gated": "changes ad spend"
-    },
-    {
-      "name": "ppc_platform_budget_update",
-      "method": "POST",
-      "why_gated": "changes ad spend"
-    },
-    {
-      "name": "ppc_bid_modifier_update",
-      "method": "POST",
-      "why_gated": "changes ad spend"
-    },
-    {
-      "name": "ppc_keyword_bid_update",
-      "method": "POST",
-      "why_gated": "changes ad spend"
-    },
-    {
-      "name": "ppc_platform_keyword_bid_update",
-      "method": "POST",
-      "why_gated": "changes ad spend"
-    },
-    {
-      "name": "ppc_bidding_strategy_update",
-      "method": "POST",
-      "why_gated": "changes how spend is allocated"
-    },
-    {
-      "name": "ppc_platform_bidding_strategy_update",
-      "method": "POST",
-      "why_gated": "changes how spend is allocated"
-    },
-    {
-      "name": "ppc_campaign_create",
-      "method": "POST",
-      "why_gated": "creates a spending campaign"
-    },
-    {
-      "name": "accounting_bill_record_payment",
-      "method": "POST",
-      "why_gated": "records money moving"
-    },
-    {
-      "name": "accounting_invoice_record_payment",
-      "method": "POST",
-      "why_gated": "records money moving"
-    },
-    {
-      "name": "crm_contact_email_send",
-      "method": "POST",
-      "why_gated": "sends a real email from the connected inbox, no draft or recall"
-    },
-    {
-      "name": "crm_enroll_sequence",
-      "method": "POST",
-      "why_gated": "enrolling into an active sequence queues real email"
-    },
-    {
-      "name": "crm_sequence_enroll_bulk",
-      "method": "POST",
-      "why_gated": "bulk-enrolls into an active sequence - real email at batch scale"
-    },
-    {
-      "name": "email_sequence_enroll",
-      "method": "POST",
-      "why_gated": "enrolls real recipients into a drip that sends on a schedule"
-    },
-    {
-      "name": "email_sequence_activate",
-      "method": "POST",
-      "why_gated": "turns a drip on - every enrollment starts sending"
-    },
-    {
-      "name": "voice_sms_send",
-      "method": "POST",
-      "why_gated": "sends a real SMS, no draft or recall"
-    },
-    {
-      "name": "voice_sms_send_to_contact",
-      "method": "POST",
-      "why_gated": "sends a real SMS to a CRM contact"
-    },
-    {
-      "name": "voice_sms_thread_reply",
-      "method": "POST",
-      "why_gated": "sends a real SMS reply into a live thread"
-    },
-    {
-      "name": "crm_remove_dnc",
-      "method": "DELETE",
-      "why_gated": "reverses a do-not-contact suppression"
-    },
-    {
-      "name": "outbound_campaign_status_set",
-      "method": "POST",
-      "why_gated": "starts or stops cold-email sending for a whole campaign (PAUSED executes with no confirm step)"
-    },
-    {
-      "name": "outbound_campaign_sequences_save",
-      "method": "PUT",
-      "why_gated": "full-replaces the campaign's steps on the provider - on an ACTIVE campaign that is the live sending copy"
-    },
-    {
-      "name": "outbound_reply_draft_send",
-      "method": "POST",
-      "why_gated": "emails a prospect - sends a saved draft as a real reply through the provider"
-    },
-    {
-      "name": "voice_number_purchase",
-      "method": "POST",
-      "why_gated": "buys a phone number - real money, billed monthly until released"
-    },
-    {
-      "name": "voice_number_release",
-      "method": "DELETE",
-      "why_gated": "returns a number to the carrier - unrecoverable, callers get dead air"
-    },
-    {
-      "name": "voice_e911_address_create",
-      "method": "POST",
-      "why_gated": "registers a legal emergency (E911) address with the carrier"
-    },
-    {
-      "name": "voice_extension_delete",
-      "method": "DELETE",
-      "why_gated": "deletes a phone extension - that person's phone stops ringing"
-    },
-    {
-      "name": "voice_ivr_create",
-      "method": "POST",
-      "why_gated": "creates a live phone menu and spends TTS money rendering it"
-    },
-    {
-      "name": "voice_ivr_update",
-      "method": "PATCH",
-      "why_gated": "rewrites a live phone menu - every save re-renders paid TTS audio"
-    },
-    {
-      "name": "voice_ivr_delete",
-      "method": "DELETE",
-      "why_gated": "deletes a live phone menu and its audio - callers routed to it hit nothing"
-    },
-    {
-      "name": "voice_ring_group_delete",
-      "method": "DELETE",
-      "why_gated": "deletes a ring group - lines routed to it stop ringing anyone"
-    },
-    {
-      "name": "voice_queue_delete",
-      "method": "DELETE",
-      "why_gated": "deletes a call queue callers may be waiting in"
-    },
-    {
-      "name": "voice_pool_delete",
-      "method": "DELETE",
-      "why_gated": "deletes a DNI tracking pool - live ad attribution stops"
-    },
-    {
-      "name": "voice_call_tracking_setup",
-      "method": "POST",
-      "why_gated": "can buy tracking numbers (did_count) - real recurring money"
-    },
-    {
-      "name": "voice_call_originate",
-      "method": "POST",
-      "why_gated": "rings a real phone and bills per minute"
-    },
-    {
-      "name": "voice_sms_bulk_send",
-      "method": "POST",
-      "why_gated": "sends real SMS to up to 200 recipients, no draft or recall"
-    },
-    {
-      "name": "voice_sms_brand_submit",
-      "method": "POST",
-      "why_gated": "files the business's legal identity with the 10DLC carrier registry"
-    },
-    {
-      "name": "voice_sms_campaign_submit",
-      "method": "POST",
-      "why_gated": "files a 10DLC campaign - carrier fee (~$15), no withdrawal"
-    },
-    {
-      "name": "voice_sms_campaign_resubmit",
-      "method": "POST",
-      "why_gated": "re-files a 10DLC campaign with the carrier registry"
-    },
-    {
-      "name": "voice_sms_campaign_delete",
-      "method": "DELETE",
-      "why_gated": "deletes a texting registration - assigned numbers can stop sending"
-    },
-    {
-      "name": "voice_sms_number_assign_campaign",
-      "method": "POST",
-      "why_gated": "binds a number to a 10DLC campaign at the carrier"
-    },
-    {
-      "name": "voice_sms_toll_free_verification_submit",
-      "method": "POST",
-      "why_gated": "resubmitting a VERIFIED number overwrites its approval - texting stops for weeks"
-    },
-    {
-      "name": "voice_port_order_create",
-      "method": "POST",
-      "why_gated": "files a number-port order with the carrier"
-    },
-    {
-      "name": "voice_port_order_action",
-      "method": "POST",
-      "why_gated": "confirm is the legal act under the LOA; cancel/activate move real numbers"
-    },
-    {
-      "name": "voice_settings_update",
-      "method": "PATCH",
-      "why_gated": "rewrites tenant-wide phone behavior for every line at once"
-    },
-    {
-      "name": "voice_number_update",
-      "method": "PATCH",
-      "why_gated": "rewrites where a live phone number routes"
-    },
-    {
-      "name": "voice_blocked_numbers_remove",
-      "method": "DELETE",
-      "why_gated": "unblocks a caller someone deliberately blocked"
-    },
-    {
-      "name": "voice_tenant_repair",
-      "method": "POST",
-      "why_gated": "reprovisions the whole PBX tenant - a last resort, not a routine fix"
-    },
-    {
-      "name": "seo_gbp_review_reply",
-      "method": "POST",
-      "why_gated": "posts a public owner reply on the live Google listing, replacing any existing reply"
-    },
-    {
-      "name": "seo_gbp_review_reply_delete",
-      "method": "POST",
-      "why_gated": "removes the public owner reply from the live Google listing"
-    },
-    {
-      "name": "seo_gbp_location_update",
-      "method": "POST",
-      "why_gated": "edits the live Google Business Profile customers see - name/address/category edits can trigger re-verification"
-    },
-    {
-      "name": "seo_gbp_attributes_update",
-      "method": "POST",
-      "why_gated": "changes the live listing's attributes - alters how the business appears in filtered local searches"
-    },
-    {
-      "name": "seo_gsc_delete_sitemap",
-      "method": "POST",
-      "why_gated": "removes a sitemap from Search Console"
-    },
-    {
-      "name": "seo_report_clear",
-      "method": "POST",
-      "why_gated": "wipes every Report Preview section in the account's single workspace"
-    },
-    {
-      "name": "seo_deliverable_delete",
-      "method": "DELETE",
-      "why_gated": "permanently deletes a client deliverable, no undo"
-    },
-    {
-      "name": "seo_task_implement",
-      "method": "POST",
-      "why_gated": "spends a paid coder turn and stages a production deploy"
-    },
-    {
-      "name": "seo_connection_delete",
-      "method": "DELETE",
-      "why_gated": "deactivates a data source so downstream reads stop finding it"
-    },
-    {
-      "name": "seo_gbp_services_update",
-      "method": "POST",
-      "why_gated": "REPLACES the live listing's whole service menu - every service missing from the call is removed, an empty array removes all"
-    },
-    {
-      "name": "seo_gbp_media_add",
-      "method": "POST",
-      "why_gated": "publishes a photo on the live listing - COVER / PROFILE / LOGO replace the primary imagery"
-    },
-    {
-      "name": "seo_gbp_media_delete",
-      "method": "POST",
-      "why_gated": "permanently removes a photo from the live public gallery"
-    },
-    {
-      "name": "seo_gtm_publish",
-      "method": "POST",
-      "why_gated": "publishes a GTM container version - every tag in it starts serving to the client's real visitors immediately"
-    },
-    {
-      "name": "seo_gtm_install",
-      "method": "POST",
-      "why_gated": "writes the GTM snippet into a tier's site-wide custom code"
-    },
-    {
-      "name": "seo_ga4_key_event_delete",
-      "method": "POST",
-      "why_gated": "un-marks a GA4 conversion - any Google Ads conversion imported from it flatlines silently, irreversible"
-    },
-    {
-      "name": "seo_ga4_event_create_rule_delete",
-      "method": "POST",
-      "why_gated": "GA4 stops creating the destination event - every key event and imported Ads conversion on that name records nothing, irreversible"
-    },
-    {
-      "name": "seo_tracking_project_delete",
-      "method": "DELETE",
-      "why_gated": "deletes an SEO tracking project and cascades its keyword analyses, competitors and audit history"
-    },
-    {
-      "name": "seo_rankings_platforms_set",
-      "method": "PUT",
-      "why_gated": "removing a lane deletes that lane's rank history with it - unrecoverable"
-    },
-    {
-      "name": "seo_listings_scan",
-      "method": "POST",
-      "why_gated": "spends a metered DataForSEO Business Listings search against the account's monthly research cap"
-    },
-    {
-      "name": "seo_connection_test",
-      "method": "POST",
-      "why_gated": "writes connection_status - a transient failure demotes a healthy connection and pauses its 6-hour sync until a passing test"
-    },
-    {
-      "name": "seo_competitor_delete",
-      "method": "DELETE",
-      "why_gated": "deletes a tracked competitor row and its analysis history"
-    },
-    {
-      "name": "seo_keyword_cluster_delete",
-      "method": "DELETE",
-      "why_gated": "deletes a persisted keyword cluster, no undo"
-    },
-    {
-      "name": "seo_topic_cluster_delete",
-      "method": "DELETE",
-      "why_gated": "deletes a persisted topic cluster, no undo"
-    },
-    {
-      "name": "seo_backlink_tracker_delete",
-      "method": "DELETE",
-      "why_gated": "deletes a manually tracked backlink row from the link-building ledger"
-    },
-    {
-      "name": "seo_backlink_opportunity_delete",
-      "method": "DELETE",
-      "why_gated": "deletes a link prospect and its outreach history"
-    },
-    {
-      "name": "seo_automated_report_delete",
-      "method": "DELETE",
-      "why_gated": "deletes a scheduled client report - the standing delivery stops"
-    },
-    {
-      "name": "seo_page_schema_delete",
-      "method": "DELETE",
-      "why_gated": "removes a page's stored JSON-LD"
-    },
-    {
-      "name": "workflow_run",
-      "method": "POST",
-      "why_gated": "runs a workflow FOR REAL - fires its emails, SMS, CRM writes and external calls. workflow_test is the dry run"
-    },
-    {
-      "name": "workflow_enable",
-      "method": "PATCH",
-      "why_gated": "arms a live webhook or cron: from this call the automation reaches customers unattended"
-    },
-    {
-      "name": "workflow_delete",
-      "method": "DELETE",
-      "why_gated": "hard-deletes a workflow and cascades its triggers, schedules, versions and run history - there is no soft archive"
-    },
-    {
-      "name": "workflow_delete_schedule",
-      "method": "DELETE",
-      "why_gated": "stops a scheduled automation running, and orphans the nodes hanging off the schedule trigger"
-    },
-    {
-      "name": "workflow_stranded_replay",
-      "method": "POST",
-      "why_gated": "re-sends real notifications for submissions banked while the workflow was paused, to contacts who may be days old"
-    },
-    {
-      "name": "workflow_set_recipient",
-      "method": "POST",
-      "why_gated": "rewrites the recipient on EVERY sendEmail node in the graph at once"
-    }
-  ]
+ "_comment": "Tools the plugin's INSTALL.md names LITERALLY in a permissions ask rule. Claude Code ask rules do NOT accept wildcards, so these must be exact. If any is renamed or removed without updating INSTALL.md, the rule stops matching SILENTLY and the tool becomes blanket-allowed. Assert every name below still exists in the tool registry; fail the build if one does not.",
+ "consumed_by": "hiveku-claude-plugin/INSTALL.md -> permissions.ask",
+ "prefixes": [
+  "mcp__plugin_hiveku_hk__",
+  "mcp__hiveku__"
+ ],
+ "plugin_version": "0.17.1",
+ "count": 99,
+ "tools": [
+  {
+   "name": "deploy_site",
+   "method": "POST",
+   "why_gated": "publishes a site to a real domain"
+  },
+  {
+   "name": "deploy_run",
+   "method": "POST",
+   "why_gated": "runs a deploy"
+  },
+  {
+   "name": "project_files_bulk_save",
+   "method": "POST",
+   "why_gated": "overwrites project source"
+  },
+  {
+   "name": "project_vcs_commit",
+   "method": "POST",
+   "why_gated": "writes a commit"
+  },
+  {
+   "name": "project_vcs_merge",
+   "method": "POST",
+   "why_gated": "merges a branch"
+  },
+  {
+   "name": "project_vcs_pr_merge",
+   "method": "POST",
+   "why_gated": "merges a pull request (atomic branch merge)"
+  },
+  {
+   "name": "project_vcs_env_bind",
+   "method": "POST",
+   "why_gated": "changes which branch an environment deploys"
+  },
+  {
+   "name": "project_vcs_branch_delete",
+   "method": "DELETE",
+   "why_gated": "deletes a branch ref"
+  },
+  {
+   "name": "project_vcs_stash",
+   "method": "POST",
+   "why_gated": "moves pending work to a branch and resets the environment source (dry-run is the default, apply rewrites main/branch heads)"
+  },
+  {
+   "name": "site_delete",
+   "method": "DELETE",
+   "why_gated": "destroys a site"
+  },
+  {
+   "name": "content_publish_to_site",
+   "method": "POST",
+   "why_gated": "publishes content publicly"
+  },
+  {
+   "name": "content_schedule",
+   "method": "POST",
+   "why_gated": "queues a public publish"
+  },
+  {
+   "name": "email_campaign_send_now",
+   "method": "POST",
+   "why_gated": "sends email to real recipients"
+  },
+  {
+   "name": "email_campaign_schedule",
+   "method": "POST",
+   "why_gated": "queues a real send"
+  },
+  {
+   "name": "email_campaign_resend_non_openers",
+   "method": "POST",
+   "why_gated": "re-sends to real recipients"
+  },
+  {
+   "name": "crm_envelope_send",
+   "method": "POST",
+   "why_gated": "sends a signature request"
+  },
+  {
+   "name": "crm_estimate_send",
+   "method": "POST",
+   "why_gated": "sends an estimate to a client"
+  },
+  {
+   "name": "helpdesk_ticket_send_reply",
+   "method": "POST",
+   "why_gated": "replies to a customer"
+  },
+  {
+   "name": "marketing_report_send",
+   "method": "POST",
+   "why_gated": "emails a report to a client"
+  },
+  {
+   "name": "ppc_budget_update",
+   "method": "POST",
+   "why_gated": "changes ad spend"
+  },
+  {
+   "name": "ppc_platform_budget_update",
+   "method": "POST",
+   "why_gated": "changes ad spend"
+  },
+  {
+   "name": "ppc_bid_modifier_update",
+   "method": "POST",
+   "why_gated": "changes ad spend"
+  },
+  {
+   "name": "ppc_keyword_bid_update",
+   "method": "POST",
+   "why_gated": "changes ad spend"
+  },
+  {
+   "name": "ppc_platform_keyword_bid_update",
+   "method": "POST",
+   "why_gated": "changes ad spend"
+  },
+  {
+   "name": "ppc_bidding_strategy_update",
+   "method": "POST",
+   "why_gated": "changes how spend is allocated"
+  },
+  {
+   "name": "ppc_platform_bidding_strategy_update",
+   "method": "POST",
+   "why_gated": "changes how spend is allocated"
+  },
+  {
+   "name": "ppc_campaign_create",
+   "method": "POST",
+   "why_gated": "creates a spending campaign"
+  },
+  {
+   "name": "accounting_bill_record_payment",
+   "method": "POST",
+   "why_gated": "records money moving"
+  },
+  {
+   "name": "accounting_invoice_record_payment",
+   "method": "POST",
+   "why_gated": "records money moving"
+  },
+  {
+   "name": "crm_contact_email_send",
+   "method": "POST",
+   "why_gated": "sends a real email from the connected inbox, no draft or recall"
+  },
+  {
+   "name": "crm_enroll_sequence",
+   "method": "POST",
+   "why_gated": "enrolling into an active sequence queues real email"
+  },
+  {
+   "name": "crm_sequence_enroll_bulk",
+   "method": "POST",
+   "why_gated": "bulk-enrolls into an active sequence - real email at batch scale"
+  },
+  {
+   "name": "email_sequence_enroll",
+   "method": "POST",
+   "why_gated": "enrolls real recipients into a drip that sends on a schedule"
+  },
+  {
+   "name": "email_sequence_activate",
+   "method": "POST",
+   "why_gated": "turns a drip on - every enrollment starts sending"
+  },
+  {
+   "name": "voice_sms_send",
+   "method": "POST",
+   "why_gated": "sends a real SMS, no draft or recall"
+  },
+  {
+   "name": "voice_sms_send_to_contact",
+   "method": "POST",
+   "why_gated": "sends a real SMS to a CRM contact"
+  },
+  {
+   "name": "voice_sms_thread_reply",
+   "method": "POST",
+   "why_gated": "sends a real SMS reply into a live thread"
+  },
+  {
+   "name": "crm_remove_dnc",
+   "method": "DELETE",
+   "why_gated": "reverses a do-not-contact suppression"
+  },
+  {
+   "name": "outbound_campaign_status_set",
+   "method": "POST",
+   "why_gated": "starts or stops cold-email sending for a whole campaign (PAUSED executes with no confirm step)"
+  },
+  {
+   "name": "outbound_campaign_sequences_save",
+   "method": "PUT",
+   "why_gated": "full-replaces the campaign's steps on the provider - on an ACTIVE campaign that is the live sending copy"
+  },
+  {
+   "name": "outbound_reply_draft_send",
+   "method": "POST",
+   "why_gated": "emails a prospect - sends a saved draft as a real reply through the provider"
+  },
+  {
+   "name": "voice_number_purchase",
+   "method": "POST",
+   "why_gated": "buys a phone number - real money, billed monthly until released"
+  },
+  {
+   "name": "voice_number_release",
+   "method": "DELETE",
+   "why_gated": "returns a number to the carrier - unrecoverable, callers get dead air"
+  },
+  {
+   "name": "voice_e911_address_create",
+   "method": "POST",
+   "why_gated": "registers a legal emergency (E911) address with the carrier"
+  },
+  {
+   "name": "voice_extension_delete",
+   "method": "DELETE",
+   "why_gated": "deletes a phone extension - that person's phone stops ringing"
+  },
+  {
+   "name": "voice_ivr_create",
+   "method": "POST",
+   "why_gated": "creates a live phone menu and spends TTS money rendering it"
+  },
+  {
+   "name": "voice_ivr_update",
+   "method": "PATCH",
+   "why_gated": "rewrites a live phone menu - every save re-renders paid TTS audio"
+  },
+  {
+   "name": "voice_ivr_delete",
+   "method": "DELETE",
+   "why_gated": "deletes a live phone menu and its audio - callers routed to it hit nothing"
+  },
+  {
+   "name": "voice_ring_group_delete",
+   "method": "DELETE",
+   "why_gated": "deletes a ring group - lines routed to it stop ringing anyone"
+  },
+  {
+   "name": "voice_queue_delete",
+   "method": "DELETE",
+   "why_gated": "deletes a call queue callers may be waiting in"
+  },
+  {
+   "name": "voice_pool_delete",
+   "method": "DELETE",
+   "why_gated": "deletes a DNI tracking pool - live ad attribution stops"
+  },
+  {
+   "name": "voice_call_tracking_setup",
+   "method": "POST",
+   "why_gated": "can buy tracking numbers (did_count) - real recurring money"
+  },
+  {
+   "name": "voice_call_originate",
+   "method": "POST",
+   "why_gated": "rings a real phone and bills per minute"
+  },
+  {
+   "name": "voice_sms_bulk_send",
+   "method": "POST",
+   "why_gated": "sends real SMS to up to 200 recipients, no draft or recall"
+  },
+  {
+   "name": "voice_sms_brand_submit",
+   "method": "POST",
+   "why_gated": "files the business's legal identity with the 10DLC carrier registry"
+  },
+  {
+   "name": "voice_sms_campaign_submit",
+   "method": "POST",
+   "why_gated": "files a 10DLC campaign - carrier fee (~$15), no withdrawal"
+  },
+  {
+   "name": "voice_sms_campaign_resubmit",
+   "method": "POST",
+   "why_gated": "re-files a 10DLC campaign with the carrier registry"
+  },
+  {
+   "name": "voice_sms_campaign_delete",
+   "method": "DELETE",
+   "why_gated": "deletes a texting registration - assigned numbers can stop sending"
+  },
+  {
+   "name": "voice_sms_number_assign_campaign",
+   "method": "POST",
+   "why_gated": "binds a number to a 10DLC campaign at the carrier"
+  },
+  {
+   "name": "voice_sms_toll_free_verification_submit",
+   "method": "POST",
+   "why_gated": "resubmitting a VERIFIED number overwrites its approval - texting stops for weeks"
+  },
+  {
+   "name": "voice_port_order_create",
+   "method": "POST",
+   "why_gated": "files a number-port order with the carrier"
+  },
+  {
+   "name": "voice_port_order_action",
+   "method": "POST",
+   "why_gated": "confirm is the legal act under the LOA; cancel/activate move real numbers"
+  },
+  {
+   "name": "voice_settings_update",
+   "method": "PATCH",
+   "why_gated": "rewrites tenant-wide phone behavior for every line at once"
+  },
+  {
+   "name": "voice_number_update",
+   "method": "PATCH",
+   "why_gated": "rewrites where a live phone number routes"
+  },
+  {
+   "name": "voice_blocked_numbers_remove",
+   "method": "DELETE",
+   "why_gated": "unblocks a caller someone deliberately blocked"
+  },
+  {
+   "name": "voice_tenant_repair",
+   "method": "POST",
+   "why_gated": "reprovisions the whole PBX tenant - a last resort, not a routine fix"
+  },
+  {
+   "name": "seo_gbp_review_reply",
+   "method": "POST",
+   "why_gated": "posts a public owner reply on the live Google listing, replacing any existing reply"
+  },
+  {
+   "name": "seo_gbp_review_reply_delete",
+   "method": "POST",
+   "why_gated": "removes the public owner reply from the live Google listing"
+  },
+  {
+   "name": "seo_gbp_location_update",
+   "method": "POST",
+   "why_gated": "edits the live Google Business Profile customers see - name/address/category edits can trigger re-verification"
+  },
+  {
+   "name": "seo_gbp_attributes_update",
+   "method": "POST",
+   "why_gated": "changes the live listing's attributes - alters how the business appears in filtered local searches"
+  },
+  {
+   "name": "seo_gsc_delete_sitemap",
+   "method": "POST",
+   "why_gated": "removes a sitemap from Search Console"
+  },
+  {
+   "name": "seo_report_clear",
+   "method": "POST",
+   "why_gated": "wipes every Report Preview section in the account's single workspace"
+  },
+  {
+   "name": "seo_deliverable_delete",
+   "method": "DELETE",
+   "why_gated": "permanently deletes a client deliverable, no undo"
+  },
+  {
+   "name": "seo_task_implement",
+   "method": "POST",
+   "why_gated": "spends a paid coder turn and stages a production deploy"
+  },
+  {
+   "name": "seo_connection_delete",
+   "method": "DELETE",
+   "why_gated": "deactivates a data source so downstream reads stop finding it"
+  },
+  {
+   "name": "seo_gbp_services_update",
+   "method": "POST",
+   "why_gated": "REPLACES the live listing's whole service menu - every service missing from the call is removed, an empty array removes all"
+  },
+  {
+   "name": "seo_gbp_media_add",
+   "method": "POST",
+   "why_gated": "publishes a photo on the live listing - COVER / PROFILE / LOGO replace the primary imagery"
+  },
+  {
+   "name": "seo_gbp_media_delete",
+   "method": "POST",
+   "why_gated": "permanently removes a photo from the live public gallery"
+  },
+  {
+   "name": "seo_gtm_publish",
+   "method": "POST",
+   "why_gated": "publishes a GTM container version - every tag in it starts serving to the client's real visitors immediately"
+  },
+  {
+   "name": "seo_gtm_install",
+   "method": "POST",
+   "why_gated": "writes the GTM snippet into a tier's site-wide custom code"
+  },
+  {
+   "name": "seo_ga4_key_event_delete",
+   "method": "POST",
+   "why_gated": "un-marks a GA4 conversion - any Google Ads conversion imported from it flatlines silently, irreversible"
+  },
+  {
+   "name": "seo_ga4_event_create_rule_delete",
+   "method": "POST",
+   "why_gated": "GA4 stops creating the destination event - every key event and imported Ads conversion on that name records nothing, irreversible"
+  },
+  {
+   "name": "seo_tracking_project_delete",
+   "method": "DELETE",
+   "why_gated": "deletes an SEO tracking project and cascades its keyword analyses, competitors and audit history"
+  },
+  {
+   "name": "seo_rankings_platforms_set",
+   "method": "PUT",
+   "why_gated": "removing a lane deletes that lane's rank history with it - unrecoverable"
+  },
+  {
+   "name": "seo_listings_scan",
+   "method": "POST",
+   "why_gated": "spends a metered DataForSEO Business Listings search against the account's monthly research cap"
+  },
+  {
+   "name": "seo_connection_test",
+   "method": "POST",
+   "why_gated": "writes connection_status - a transient failure demotes a healthy connection and pauses its 6-hour sync until a passing test"
+  },
+  {
+   "name": "seo_competitor_delete",
+   "method": "DELETE",
+   "why_gated": "deletes a tracked competitor row and its analysis history"
+  },
+  {
+   "name": "seo_keyword_cluster_delete",
+   "method": "DELETE",
+   "why_gated": "deletes a persisted keyword cluster, no undo"
+  },
+  {
+   "name": "seo_topic_cluster_delete",
+   "method": "DELETE",
+   "why_gated": "deletes a persisted topic cluster, no undo"
+  },
+  {
+   "name": "seo_backlink_tracker_delete",
+   "method": "DELETE",
+   "why_gated": "deletes a manually tracked backlink row from the link-building ledger"
+  },
+  {
+   "name": "seo_backlink_opportunity_delete",
+   "method": "DELETE",
+   "why_gated": "deletes a link prospect and its outreach history"
+  },
+  {
+   "name": "seo_automated_report_delete",
+   "method": "DELETE",
+   "why_gated": "deletes a scheduled client report - the standing delivery stops"
+  },
+  {
+   "name": "seo_page_schema_delete",
+   "method": "DELETE",
+   "why_gated": "removes a page's stored JSON-LD"
+  },
+  {
+   "name": "workflow_run",
+   "method": "POST",
+   "why_gated": "runs a workflow FOR REAL - fires its emails, SMS, CRM writes and external calls. workflow_test is the dry run"
+  },
+  {
+   "name": "workflow_enable",
+   "method": "PATCH",
+   "why_gated": "arms a live webhook or cron: from this call the automation reaches customers unattended"
+  },
+  {
+   "name": "workflow_delete",
+   "method": "DELETE",
+   "why_gated": "hard-deletes a workflow and cascades its triggers, schedules, versions and run history - there is no soft archive"
+  },
+  {
+   "name": "workflow_delete_schedule",
+   "method": "DELETE",
+   "why_gated": "stops a scheduled automation running, and orphans the nodes hanging off the schedule trigger"
+  },
+  {
+   "name": "workflow_stranded_replay",
+   "method": "POST",
+   "why_gated": "re-sends real notifications for submissions banked while the workflow was paused, to contacts who may be days old"
+  },
+  {
+   "name": "workflow_set_recipient",
+   "method": "POST",
+   "why_gated": "rewrites the recipient on EVERY sendEmail node in the graph at once"
+  }
+ ]
 }

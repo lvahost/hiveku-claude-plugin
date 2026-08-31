@@ -80,7 +80,7 @@ instead: `COPYFILE_DISABLE=1 tar czf site.tar.gz -C <dir> .` excluding `node_mod
 → `project_import_finalize` → verify the returned per-file sha256 manifest against your local hashes.
 Nothing goes through the model on that path, so no escaping, newline, or truncation corruption, and
 binaries are lane-routed automatically. Archive cap 200MB compressed. Then
-`project_vcs_commit({ project_id, message })` to version on `main`. Commit ≠ live.
+`project_vcs_commit({ project_id, message })` to version on `main` (add `branch` to version work off to the side instead — see /hiveku:commit). Commit ≠ live.
 
 **7. Deploy when asked.** `deploy_site({ project_id, environment })` - `environment` is required and is
 the TIER: `development` (default, safe, ship here first), `staging` (412 `staging_not_enabled` unless

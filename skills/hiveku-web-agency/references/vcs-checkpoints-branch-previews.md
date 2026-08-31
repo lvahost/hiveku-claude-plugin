@@ -12,12 +12,46 @@ point-in-time, or single-file), or touching the GitHub connection.
 - Commit green states: `project_vcs_commit({ project_id, message, ... })` after a passing
   build. Imperative present-tense messages. `project_commit` and `project_version_log` /
   `project_vcs_history` show and record history; `project_vcs_compare` diffs two points.
-- Merge back with `project_vcs_merge({ project_id, branch, message? })` once the branch
-  builds and is reviewed. It applies the non-conflicting branch changes and returns
-  `{ applied, deleted, conflicts, commit }`. Files changed on BOTH the branch and main are
-  returned in `conflicts` and are NOT overwritten - resolve them yourself and merge again.
-  The branch is not deleted, so a partial merge is recoverable. `project_vcs_compare` shows
-  what a branch changed before you merge it.
+- Merge back with `project_vcs_merge({ project_id, branch, into?, message? })` once the
+  branch builds and is reviewed. `into` defaults to `main` and may be ANY branch - merging
+  into main is what changes the live project; merging into another branch just updates it.
+  It applies the non-conflicting changes and returns `{ merged_into, applied, deleted,
+  conflicts, commit }`. Files changed on BOTH sides are returned in `conflicts` and are NOT
+  overwritten - resolve them yourself and merge again. The branch is not deleted, so a
+  partial merge is recoverable. `project_vcs_compare` shows what a branch changed before
+  you merge it. Delete a finished branch with `project_vcs_branch_delete({ project_id,
+  branch })` - refused while it is bound to an environment or has an open PR.
+
+## Native pull requests (reviewable, atomic merges)
+
+- `project_vcs_pr_create({ project_id, source_branch, title, target_branch?, description? })`
+  records merge INTENT (target defaults to `main`); `project_vcs_pr_list` / `project_vcs_pr_get`
+  (live diff on every read) review it; `project_vcs_pr_merge({ project_id, number })` merges
+  STRICT and atomic - any conflict refuses the WHOLE merge (409 with the conflict list, PR
+  stays open), unlike project_vcs_merge's partial semantics. `project_vcs_pr_close` /
+  `project_vcs_pr_reopen` manage the queue; merged is terminal. These are Hiveku-native
+  (project_pull_requests) - the `github_pr_*` family is the separate GitHub surface and
+  400s without a connected repo.
+
+## Environment branches (development/staging serve a branch)
+
+- `main` IS production, permanently - production can never be rebound. development and
+  staging can each SERVE a branch: `project_vcs_env_bindings({ project_id })` reads the
+  bindings; `project_vcs_env_bind({ project_id, environment, branch })` sets one
+  (branch null/""/"main" clears it back to tracking main). Binding does NOT deploy - the
+  tier's next deploy ships the branch's PINNED tree. Do not confuse with
+  `project_env_matrix` (environment VARIABLES) or the GitHub branch-deployments mapping.
+
+## Stash: scoop pending work onto a branch
+
+- `project_vcs_stash({ project_id, environment })` DRY-RUNS by default: it reports what
+  differs from what is PROVABLY live on that environment ({ status, fileCount, modified,
+  ... }) with zero writes. With `dry_run: false` it moves that pending work to a new branch
+  and resets the environment's source to exactly what is live (production: aligns `main`;
+  a bound dev/staging tier: resets its branch to the deployed pin). Nothing is deleted -
+  merge the branch back later (production stash -> into main; branch stash -> into ITS
+  bound branch, never main). It refuses when what-is-live cannot be proven; an unbound
+  tier answers 409 tier_tracks_main (its pending work IS main's - stash production).
 
 ## Branch previews (show the client before it merges)
 
