@@ -413,12 +413,17 @@ Two things you need to know about it:
   graduate: the step cap compares the new `daily_budget` against the BASE campaign's synced budget.
 
 There is also a per-connection MONTHLY guardrail, armed by configuration rather than always-on:
-`ppc_connection_update` with `settings.monthly_budget_target_cents` (integer cents) arms a daily budget
+`ppc_budget_target_set({ id, monthly_budget_target_cents })` (integer CENTS — 500000 is $5,000/month) arms a daily budget
 sweep; `settings.guardrail.alert_at_pct` (default 85) files inbox alerts at that % of target, and
 `settings.guardrail.pause_at_pct` (opt-in) auto-pauses live campaigns at that % of target. Arm it at
 onboarding with the client's explicit consent - an auto-pause is a spend change the client must have
-pre-approved. The PATCH replaces the WHOLE `settings` object: read the connection first and merge, or
-every other settings key is silently lost.
+pre-approved.
+
+`settings` is now MERGED, not replaced — a `ppc_connection_update` PATCH keeps the keys you do not
+send, and `null` deletes one. It used to replace the whole object, so setting a budget target
+silently disarmed `guardrail.pause_at_pct`; that is fixed, and `settings_replace: true` is the
+deliberate opt-in if you really want the old object gone. Prefer `ppc_budget_target_set` for the
+target itself: it merges only that key and cannot touch the guardrail settings at all.
 
 ### 4.2 Tools with a real two-step confirm gate (code, verified)
 
