@@ -228,12 +228,15 @@ test('unknown department fails loudly, not silently', async () => {
   await assert.rejects(() => runPullData({ ...OPTS(rootDir), argv: ['nope'] }), /Unknown department/);
 });
 
-test('the vendored manifest is real: 25 departments, 100+ datasets, every dataset names a tool', async () => {
+test('the vendored manifest is real: 26 departments, 100+ datasets, every dataset names a tool', async () => {
   const { readFile } = await import('node:fs/promises');
   const vendored = JSON.parse(
     await readFile(new URL('../lib/dept-manifest.json', import.meta.url), 'utf8'),
   );
-  assert.equal(vendored.departments.length, 25);
+  // 26 since the Client Review department landed (2026-08-31). An exact count,
+  // not a floor, on purpose: it catches a HALF-synced manifest, which is the
+  // real failure mode here - the extension and the plugin each vendor a copy.
+  assert.equal(vendored.departments.length, 26);
   const datasets = vendored.departments.flatMap((d) => d.datasets);
   assert.ok(datasets.length >= 100, `expected 100+ datasets, got ${datasets.length}`);
   for (const ds of datasets) {
