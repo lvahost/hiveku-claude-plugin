@@ -40,9 +40,18 @@ tier, and why, then wait for the confirmation before calling `deploy_site`.
 4. CONFIRM with the user: the tier, the pages/routes affected, and anything in `warnings`.
 
 5. SHIP: `deploy_site({ project_id: <the project_id>, environment })`. It returns a deployment id.
-   Watch it with `deploy_status({ project_id })` / `deploy_get({ project_id, deployment_id })`, or
-   subscribe with `deploy_subscribe` (SSE, capped at 10 min - some MCP runtimes cannot hold a stream,
-   so fall back to polling `deploy_get` every 5-10s when it fails). Read `data.warnings[]` on the
+   Watch it with `deploy_subscribe({ project_id: <the project_id>, deployment_id, wait_seconds: 20 })`.
+   It is a JSON LONG POLL, not a stream: the server holds the request (max `wait_seconds` 25),
+   checks every 1.5s, and answers the moment the deployment is terminal - so call it in a LOOP until
+   `data.terminal` is true, then read `data.succeeded` as a SEPARATE question, because a FAILED
+   deploy is terminal too. Never branch on the status string: the vocabulary includes ready,
+   deployed, completed, success, succeeded and partial, and getting that list subtly wrong is how a
+   finished deploy gets polled forever. `include_log_lines`, `max_seconds` and heartbeat intervals
+   are NOT parameters of this tool - the SSE endpoint they belonged to still exists for browser
+   clients and is not reachable from here, and an undeclared argument is silently dropped rather
+   than erroring. Omit `deployment_id` to track the project's most recent deployment.
+   `deploy_status({ project_id })` / `deploy_get({ project_id, deployment_id })` return the same
+   per-deployment field set for a single point-in-time check. Read `data.warnings[]` on the
    response.
 
 6. VERIFY. The pipeline itself requests the live URL (homepage + sample routes) through the CDN and

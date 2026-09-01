@@ -575,15 +575,28 @@ Inventorying the asset lane (section 8's other half):
   empty diff as "nothing will change" without checking which of the three you got.
   `deploy_diff` can also preview an unsaved push via `local: [{ path, sha256 }]`.
   `deploy_changes` is the coarser "files changed since the last deploy of this tier".
-- Watch it land with `deploy_status`, or subscribe to live deploy + build-log events with
-  `deploy_subscribe` (Server-Sent Events read as long-poll; event types are `status` per
-  builder_deployments transition, `log` per build-log line when `include_log_lines=true`,
-  `ping` heartbeats, and `end`). Pinning `deployment_id` auto-closes the stream as soon as
-  the deployment reaches a terminal status; without it the stream covers all the project's
-  deployments until `max_seconds` (capped at 10 minutes) elapses. This replaces burning a
-  `deploy_status` poll every 15s. `deploy_get({ project_id, deployment_id })` for one
-  deploy's detail (project_id is required, and deployment_id accepts either the UUID
-  deploy_id or the string deployment_id form). Read `data.warnings[]` on the response.
+- Watch it land with `deploy_subscribe({ project_id, deployment_id, wait_seconds: 20 })`.
+  ★ IT IS NOT A STREAM ANY MORE. It is a JSON long poll: the SERVER holds the request up to
+  `wait_seconds` (max 25), re-checks every 1.5s, and answers the moment the deployment
+  reaches a terminal status. One call replaces a client-side sleep-and-poll loop over
+  `deploy_get`; several calls in a row cover a production build. The tool takes exactly
+  three arguments - `project_id`, `deployment_id`, `wait_seconds`. There is NO
+  `include_log_lines`, NO `max_seconds`, NO heartbeat interval and no `status`/`log`/`ping`/
+  `end` event vocabulary; those belonged to the Server-Sent Events contract, which still
+  exists for browser clients and is NOT reachable from here. An argument the schema does not
+  declare is dropped silently, so passing one buys nothing and reports nothing.
+- The response is `{ data: { id, deploy_id, deployment_id, environment, status, url, error,
+  started_at, completed_at, build_time_ms, waited_seconds, terminal, succeeded, hint } }` -
+  the same per-deployment field set as `deploy_get`, so one parser handles both.
+  ★ `data.terminal` is the canonical stop-polling signal and `data.succeeded` is a SEPARATE
+  question: a failed deploy is terminal too. Do NOT match on the status string - the
+  vocabulary includes ready, deployed, completed, success, succeeded and partial, and
+  getting that list subtly wrong is exactly how the old stream never closed on ready. Omit
+  `deployment_id` to track the project's most recent deployment.
+- `deploy_status({ project_id })` is the point-in-time read, and
+  `deploy_get({ project_id, deployment_id })` is one deploy's detail (project_id is
+  required, and deployment_id accepts either the UUID deploy_id or the string deployment_id
+  form). Read `data.warnings[]` on the response.
 
 ## 16. project_files_bulk_get completeness traps
 

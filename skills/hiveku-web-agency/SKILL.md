@@ -279,8 +279,13 @@ only `deploy_site` does.
    diff as "nothing will change" without checking which of the three you got. Full
    semantics: `references/build-and-deploy.md` section 15.
 2. Ship: `deploy_site({ project_id, environment })` (or `deploy_run`). Watch with
-   `deploy_status`, or `deploy_subscribe` streams live status events (pass `deployment_id`
-   so the stream auto-closes at a terminal status). Read `data.warnings[]`.
+   `deploy_subscribe({ project_id, deployment_id, wait_seconds: 20 })` - a JSON LONG POLL,
+   not a stream: it returns the moment `data.terminal` is true (or the wait elapses), so
+   call it in a LOOP until terminal, then read `data.succeeded` separately - a FAILED deploy
+   is terminal too. Never branch on the status string. It takes only `project_id`,
+   `deployment_id` and `wait_seconds` (max 25); there is no log-line, max-seconds or
+   heartbeat knob, and an undeclared argument is silently dropped. `deploy_status` is the
+   point-in-time read of the same fields. Read `data.warnings[]`.
 3. Confirm live: load the live URL and spot-check the pages you changed. `deploy_history`
    records the trail; `deploy_doctor` diagnoses a failed deploy or stale serving.
 4. Regression shipped? Roll back by restoring the prior good checkpoint (dry-run first) and
