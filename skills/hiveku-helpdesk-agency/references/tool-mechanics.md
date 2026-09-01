@@ -161,9 +161,10 @@ is_active. `helpdesk_macros_list` filters: `is_active`, `tag`, `search`; sorted 
 ## KB mechanics
 `helpdesk_kb_article_create({ title, body, excerpt, category_id, tags, visibility })` defaults
 to `visibility: 'draft'` with `publish: false`, which is HIDDEN from search: creating an article
-does not publish it, so never report a create as "published". `category_id` is required, and on
-a fresh account with no categories, create one first with `helpdesk_kb_categories_create({
-name, parent_id? })` (slug auto-derives from the name). The publish moment is
+does not publish it, so never report a create as "published". `category_id` is OPTIONAL — an
+uncategorised article is valid and common (5 of the 7 articles in production have no category),
+so do not block on creating a category first; if you do want one,
+`helpdesk_kb_categories_create({ name, parent_id? })` auto-derives the slug from the name. The publish moment is
 `helpdesk_kb_article_update({ id, visibility: 'public' })`, which AUTO-PUBLISHES to customers
 immediately with no staging step; `internal` is agents-only. Publishing fires on the TRANSITION
 into public, so re-saving an already-public article never moves its publish date, and an
@@ -177,7 +178,13 @@ are not worth reporting).
 
 `helpdesk_kb_search({ q, visibility })` takes `public | internal | draft | all` and defaults to
 `all`, which means public + internal - DRAFTS ARE EXCLUDED unless you ask for `visibility:
-'draft'`. It still returns INTERNAL articles by default, so visibility-check by hand before
+'draft'`.
+
+OMIT `q` ENTIRELY TO LIST the knowledge base. There is no list-articles tool, so this is the
+only way to enumerate what exists - which is what you need for an audit, a duplicate hunt, or
+"what drafts are waiting on review?" (`helpdesk_kb_search({ visibility: 'draft' })`). The list
+form returns `total` and `has_more` and takes `offset`, so page it rather than assuming the
+first 20 are everything. It still returns INTERNAL articles by default, so visibility-check by hand before
 linking anything. `helpdesk_kb_suggest_articles({ q })` is the safe link-picker for outbound
 replies: it returns only articles that are BOTH public AND actually published, so it cannot
 surface an internal doc or an unpublished draft. Both take a natural-language question and match

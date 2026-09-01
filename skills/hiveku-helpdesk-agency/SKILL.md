@@ -196,8 +196,9 @@ Match the brand voice from `account_context_get`, not a generic support tone.
 ## Play 3 - Knowledge base and deflection
 The KB answers tickets before they are opened and gives macros something to link to. Skeleton:
 - Writing queue = top contact reasons with no article; check coverage first
-  (`helpdesk_kb_categories_list`, `helpdesk_kb_search`). On a fresh account categories come
-  first (`helpdesk_kb_categories_create`) - article creation requires a `category_id`.
+  (`helpdesk_kb_categories_list`, `helpdesk_kb_search`). `helpdesk_kb_search` with NO `q` lists
+  the whole KB - the only way to enumerate it - and `{ visibility: 'draft' }` is the review
+  queue. `category_id` on an article is optional; uncategorised is valid.
 - `helpdesk_kb_suggest_articles({ q })` returns only articles that are public AND published -
   the safe link-picker for outbound replies. `helpdesk_kb_search` defaults to `all`, which means
   public + internal (drafts excluded): it still returns INTERNAL docs, so hand-check first.
