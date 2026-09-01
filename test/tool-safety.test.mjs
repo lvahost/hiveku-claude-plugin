@@ -286,3 +286,119 @@ test('every override name is real and consistent with the generated lists', () =
     }
   }
 });
+
+// ── Wrapper tools carry other calls (0.19.2) ───────────────────────────────
+//
+// hiveku_batch put the real calls in tool_input.calls[].tool while every gate in
+// tool-safety.mjs read the one name on the payload. A batch of denied tools
+// therefore matched no rule, returned null ("no opinion"), and fell through to
+// the user's own `allow: mcp__plugin_hiveku_hk__*` settings entry — so calls that
+// prompt or are refused individually ran with no prompt at all.
+//
+// These drive the real decision functions. Deleting batchMemberNames from
+// tool-safety.mjs fails every assertion below.
+const batch = (calls, cwd) => ({
+  tool_name: 'mcp__plugin_hiveku_hk__hiveku_batch',
+  tool_input: { calls },
+  cwd,
+});
+
+test('a batch cannot launder a guardrail-DENIED tool', () => {
+  const cwd = folderWith({ version: 1, mode: 'full', deny_tools: ['site_delete'] });
+  // The direct call is refused...
+  assert.equal(decision(decideWithGuardrails(payload('site_delete', cwd))), 'deny');
+  // ...so the batched one must be too, and must name the member, not the wrapper.
+  const r = decideWithGuardrails(batch([
+    { tool: 'list_projects', args: {} },
+    { tool: 'site_delete', args: { site_id: 'x' } },
+  ], cwd));
+  assert.equal(decision(r), 'deny');
+  assert.match(r.hookSpecificOutput.permissionDecisionReason, /site_delete/);
+  assert.match(r.hookSpecificOutput.permissionDecisionReason, /inside hiveku_batch/);
+});
+
+test('a batch cannot launder a guardrail ASK tool', () => {
+  const cwd = folderWith({ version: 1, mode: 'full', ask_tools: ['email_campaign_send_now'] });
+  const r = decideWithGuardrails(batch([{ tool: 'email_campaign_send_now', args: {} }], cwd));
+  assert.equal(decision(r), 'ask');
+  assert.match(r.hookSpecificOutput.permissionDecisionReason, /email_campaign_send_now/);
+});
+
+test('a reads-only ceiling holds against a batched write', () => {
+  const cwd = folderWith({ version: 1, mode: 'reads-only' });
+  const r = decideWithGuardrails(batch([
+    { tool: 'list_projects', args: {} },
+    { tool: 'ppc_budget_update', args: {} },
+  ], cwd));
+  assert.equal(decision(r), 'deny');
+  assert.match(r.hookSpecificOutput.permissionDecisionReason, /ppc_budget_update/);
+});
+
+test('a batch of writes ASKS even with no guardrails file', () => {
+  // The bypass did not need a guardrails file: null meant the wildcard allow in
+  // the user's settings decided it. An explicit ask is the whole fix on the
+  // default install.
+  const cwd = folderWith(undefined);
+  const r = decideWithGuardrails(batch([
+    { tool: 'site_delete', args: {} },
+    { tool: 'deploy_site', args: {} },
+  ], cwd));
+  assert.equal(decision(r), 'ask');
+});
+
+test('a batch of pure reads is still auto-approved', () => {
+  // The gate must not make batching useless: an all-read batch is exactly the
+  // case the tool exists for and still costs no prompt.
+  const cwd = folderWith(undefined);
+  assert.equal(decision(decideWithGuardrails(batch([
+    { tool: 'list_projects', args: {} },
+    { tool: 'get_project', args: {} },
+  ], cwd))), 'allow');
+});
+
+test('per-member ARGUMENT gates apply inside a batch', () => {
+  // voice_voicemails_list is a read only when it is not minting audio links.
+  // The gate has to see THAT member's args, not the batch's.
+  const cwd = folderWith(undefined);
+  assert.equal(decision(decideWithGuardrails(batch(
+    [{ tool: 'voice_voicemails_list', args: {} }], cwd))), 'ask');
+  assert.equal(decision(decideWithGuardrails(batch(
+    [{ tool: 'voice_voicemails_list', args: { audio_urls: 'false' } }], cwd))), 'allow');
+});
+
+test('NEVER_AUTO_APPROVE survives being batched', () => {
+  const cwd = folderWith(undefined);
+  assert.equal(decision(decideWithGuardrails(batch([
+    { tool: 'list_projects', args: {} },
+    { tool: 'voice_recording_url_get', args: {} },
+  ], cwd))), 'ask');
+});
+
+test('an unreadable batch fails CLOSED, and harder when a ceiling exists', () => {
+  // "Not a batch" and "a batch I cannot inspect" must not take the same branch.
+  const bare = folderWith(undefined);
+  assert.equal(decision(decideWithGuardrails(batch([{ tool: '', args: {} }], bare))), 'ask');
+  const ceilinged = folderWith({ version: 1, mode: 'full', deny_tools: ['site_delete'] });
+  assert.equal(decision(decideWithGuardrails(batch([{ args: {} }], ceilinged))), 'deny');
+  // An empty calls list is unreadable too - it must not read as "nothing to check".
+  assert.equal(decision(decideWithGuardrails(batch([], ceilinged))), 'deny');
+});
+
+test('a prefixed member name is matched the same as a bare one', () => {
+  // The model may spell a member either way; requiring one spelling is how a
+  // gate quietly stops matching.
+  const cwd = folderWith({ version: 1, mode: 'full', deny_tools: ['site_delete'] });
+  assert.equal(decision(decideWithGuardrails(batch(
+    [{ tool: 'mcp__plugin_hiveku_hk__site_delete', args: {} }], cwd))), 'deny');
+});
+
+test('non-batch tools are unaffected by member expansion', () => {
+  // A regular tool that happens to carry a `calls` argument must still be judged
+  // on its own name.
+  const cwd = folderWith(undefined);
+  assert.equal(decision(decideForPayload({
+    tool_name: 'mcp__plugin_hiveku_hk__list_projects',
+    tool_input: { calls: [{ tool: 'site_delete', args: {} }] },
+    cwd,
+  })), 'allow');
+});
