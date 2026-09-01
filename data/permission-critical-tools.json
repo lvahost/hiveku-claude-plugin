@@ -6,7 +6,7 @@
     "mcp__hiveku__"
   ],
   "plugin_version": "0.19.2",
-  "count": 99,
+  "count": 106,
   "tools": [
     {
       "name": "deploy_site",
@@ -502,6 +502,41 @@
       "name": "workflow_set_recipient",
       "method": "POST",
       "why_gated": "rewrites the recipient on EVERY sendEmail node in the graph at once"
+    },
+    {
+      "name": "customer_avatar_version_restore",
+      "method": "POST",
+      "why_gated": "OVERWRITES a live customer avatar from a snapshot on the FIRST call; no confirm parameter and no body is parsed"
+    },
+    {
+      "name": "before_after_grid_version_restore",
+      "method": "POST",
+      "why_gated": "OVERWRITES a live before/after grid from a snapshot on the FIRST call; no confirm parameter"
+    },
+    {
+      "name": "customer_journey_version_restore",
+      "method": "POST",
+      "why_gated": "OVERWRITES a live journey from a snapshot, and restoring stages restores its stage_id values, orphaning that stage assets and checkpoints"
+    },
+    {
+      "name": "customer_avatar_delete",
+      "method": "DELETE",
+      "why_gated": "deletes a persona and detaches every journey and grid pointing at it"
+    },
+    {
+      "name": "customer_journey_delete",
+      "method": "DELETE",
+      "why_gated": "deletes a journey and everything keyed to its stages"
+    },
+    {
+      "name": "before_after_grid_delete",
+      "method": "DELETE",
+      "why_gated": "deletes a grid and its generated imagery"
+    },
+    {
+      "name": "customer_journey_stage_delete",
+      "method": "DELETE",
+      "why_gated": "removes a stage; stage-asset rows keyed to it are filtered out on read and become unreachable"
     }
   ]
 }

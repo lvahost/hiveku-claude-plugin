@@ -165,16 +165,30 @@ function collect() {
   return byName;
 }
 
-// GET is necessary but NOT sufficient. A read that RETURNS SECRET MATERIAL
-// must never be silently pre-approved, because the PreToolUse hook's approval
-// bypasses the user's own permission rules (a hook decision does not consult
-// settings.json, so a user's ask rule for one of these would be neutralized).
+// GET is necessary but NOT sufficient, for two different reasons.
+//
+// One: a read that RETURNS SECRET MATERIAL must never be silently pre-approved,
+// because the PreToolUse hook's approval bypasses the user's own permission
+// rules (a hook decision does not consult settings.json, so a user's ask rule
+// for one of these would be neutralized).
+//
+// Two: a GET that WRITES. The method is the only signal this generator has, and
+// a route is free to mutate on the way past. Such a tool is pre-approved as a
+// read while changing data, which is strictly worse than a write that prompts.
+//
 // Each exclusion names its reason; add here only after reading the tool's
-// registered description, and never remove one without re-reading it.
+// registered description AND its route, and never remove one without
+// re-reading both.
 const SENSITIVE_READ_EXCLUSIONS = new Map([
   ['project_secrets_list',
     'returns { secrets: { KEY: value } } - PLAINTEXT env values for everything not ' +
     'opt-in flagged sensitive. Reading credentials silently is not a read-only act.'],
+  // 2026-09-01. Its own registered description says so: "This GET is not purely
+  // a read: it first backfills the legacy target_avatar_id into the link
+  // table." A GET that writes was being auto-approved as a read.
+  ['customer_journey_avatar_list',
+    'the route BACKFILLS customer_journey_maps.target_avatar_id into the ' +
+    'customer_journey_avatars link table before returning. A GET, but not a read.'],
 ]);
 
 // The mirror image: a POST that is a pure read. Some routes dispatch reads and

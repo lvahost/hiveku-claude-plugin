@@ -65,6 +65,11 @@ artifacts; no production without a calendar slot and brief)?
 
 - `references/brand-foundation-api.md` - before creating, enriching, or purging any brand
   guide, avatar, journey, or grid (seed call, populate grounding, field traps).
+- `references/customer-journey.md` - before creating, restructuring, or auditing a customer
+  journey, and before proposing assets against one. The awareness spine, the
+  TRAFFIC/HOOK/CONVERT rule for every transition, the brief-versus-link coverage model,
+  checkpoints and what makes a funnel measured rather than estimated, and how to quote ROI
+  without overclaiming.
 - `references/site-publishing.md` - before publishing to a site, taking a page down, refreshing
   a live piece, importing CMS entries, minting a client share link, reading or answering client
   comments on a shared draft, or category/content-template work (the content->CMS bridge,

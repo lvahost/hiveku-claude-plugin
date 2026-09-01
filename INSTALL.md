@@ -203,7 +203,14 @@ Put this in `.claude/settings.json` (per project) or `~/.claude/settings.json` (
       "mcp__plugin_hiveku_hk__workflow_delete",
       "mcp__plugin_hiveku_hk__workflow_delete_schedule",
       "mcp__plugin_hiveku_hk__workflow_stranded_replay",
-      "mcp__plugin_hiveku_hk__workflow_set_recipient"
+      "mcp__plugin_hiveku_hk__workflow_set_recipient",
+      "mcp__plugin_hiveku_hk__customer_avatar_version_restore",
+      "mcp__plugin_hiveku_hk__before_after_grid_version_restore",
+      "mcp__plugin_hiveku_hk__customer_journey_version_restore",
+      "mcp__plugin_hiveku_hk__customer_avatar_delete",
+      "mcp__plugin_hiveku_hk__customer_journey_delete",
+      "mcp__plugin_hiveku_hk__before_after_grid_delete",
+      "mcp__plugin_hiveku_hk__customer_journey_stage_delete"
     ]
   }
 }

@@ -42,6 +42,13 @@ const SEO_SINCE = '2026-08-30';
 const seo = (batch) => ({ since: SEO_SINCE, batch });
 
 export const PENDING_TOOLS = new Map([
+  // Journey program (2026-09-01): per-stage CRUD, so one stage can be edited
+  // without rewriting the whole stages blob. Declared in marketing-tools.ts
+  // (hiveku-mcp-api-server 87d25fe) and ask-gated here because it strands the
+  // stage-asset rows keyed to the deleted stage; it lands in the index at the
+  // next live regen, at which point tool-names.test.mjs forces this line out.
+  ['customer_journey_stage_delete', { since: '2026-09-01', batch: 'journey-stage-crud' }],
+
   // S1
 
   // S2
