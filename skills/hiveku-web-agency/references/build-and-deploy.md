@@ -371,6 +371,34 @@ Corollary: a large set of packages is pre-installed and must NOT be re-installed
 react-dom, framer-motion, lucide-react, class-variance-authority, clsx, tailwind-merge, tailwindcss,
 postcss, autoprefixer, tailwindcss-animate, @tailwindcss/typography, @radix-ui primitives).
 
+**Rule 45. The platform runs Node 20 everywhere. A package that requires Node > 20 will not build.**
+
+All three surfaces are Node 20: the remote build (CodeBuild `runtime-versions: nodejs: 20`), the
+Lambda runtime (`nodejs20.x`), and the preview container (`node:20-slim`). Check `engines.node`
+before adding a dependency. Next 16 declares `>=20.9.0`, which this platform satisfies - so a Next 16
+upgrade is not blocked on the runtime, whatever else it may be blocked on.
+
+**Rule 46. Version choices are a security decision, not a preference.**
+
+- **Never invent a version number.** You have no live npm access. A plausible-looking version that
+  does not exist fails the build minutes later, after the user has walked away.
+- **Never downgrade to fix something.** This platform once auto-downgraded healthy Next 15 and 16
+  projects to 14.1.0 and straight into CVE-2025-29927. Lowering a version is not a fix. Next 14.x and
+  React 18.x are NOT a safe target.
+- **Never cross a major silently.** Say what will break and let the user decide before editing
+  `package.json`.
+- **Prefer an exact pin over a range.** `"15.5.24"` can be judged against an advisory; `"^15.5.0"`
+  cannot, because npm resolves it at install time. Range-pinned sites report as UNVERIFIED on the
+  Framework Risk board, which is not the same as safe.
+- **A version change is not live until the project is REDEPLOYED.** Editing `package.json` changes
+  nothing that is serving. Say so every time, or someone believes a site is fixed while it is still
+  running the old bundle. Ten production sites ran an unauthenticated RCE for 65 days partly on that
+  misunderstanding.
+
+The authoritative pin and advisory table live in the builder, at
+`src/lib/security/framework-advisories.ts`. The Framework Risk board in saas-admin renders the
+per-project upgrade target.
+
 
 ## 11. Deploy tiers and etiquette
 
