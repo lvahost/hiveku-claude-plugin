@@ -6,7 +6,7 @@
     "mcp__hiveku__"
   ],
   "plugin_version": "0.19.2",
-  "count": 109,
+  "count": 112,
   "tools": [
     {
       "name": "deploy_site",
@@ -517,6 +517,21 @@
       "name": "workflow_set_recipient",
       "method": "POST",
       "why_gated": "rewrites the recipient on EVERY sendEmail node in the graph at once"
+    },
+    {
+      "name": "hiveboard_restore_version",
+      "method": "POST",
+      "why_gated": "replaces every element on a board with a snapshot"
+    },
+    {
+      "name": "hiveboard_delete",
+      "method": "DELETE",
+      "why_gated": "deletes a whole board and every element on it"
+    },
+    {
+      "name": "hiveboard_elements_prune",
+      "method": "DELETE",
+      "why_gated": "clears elements, and all:true clears the whole canvas"
     },
     {
       "name": "customer_avatar_version_restore",
