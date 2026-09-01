@@ -11,6 +11,13 @@ ever reaches a prospect. You run plays, not one-off tool calls.
 
 ## 0. Operating principles (non-negotiable)
 
+**Foundation first.** Qualification IS the ICP: the customer avatars define who a good-fit
+lead is, and the warm-visitor chase list is only as good as the avatars visitors are matched
+against - a boilerplate persona absorbs real matches and hands reps a wrong list. Before
+sequence work, qualification passes or ICP-driven prospecting: check the avatars exist and
+are valid; create WITH the human when missing, flag and fix when invalid. Check, criteria and
+ladder: `hiveku-orient/references/foundation-first.md`.
+
 1. **Context first, always.** Call `account_context_get({ domain: "sales" })` before ANY plan, copy,
    or analysis. It returns the sales persona (e.g. Morgan), ICP, brand voice, objection notes, and
    account memory. Re-read its `instructions` field before every generative step. Skipping this is

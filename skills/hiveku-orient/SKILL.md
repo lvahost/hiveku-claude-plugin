@@ -137,6 +137,18 @@ them any more - it is always available on every profile):
   send, and sends need an explicit yes first.
 - Video generation is paid and capped: call `marketing_generate_video` with `dry_run: true` first.
 
+## Foundation first - avatars, journey, grids
+
+Before any persona-dependent work (content, ads, SEO, social, email, outbound, sequences,
+creative): check the account's customer avatars, customer journey and before/after grids
+exist, are LINKED, and are VALID - then reference them visibly in the work. Missing means
+CREATE with grounding (bill-worthy work, not a detour; the populate tools refuse ungrounded
+input and are right to). Invalid - boilerplate text, non-canonical behavior keys the
+dashboard cannot render, unlinked objects, stale claims - means FLAG and update with a
+snapshot. Valid means the deliverable names which persona and which journey stage it serves;
+work that cannot say that has not used the foundation. The full check, the validity criteria
+and the response ladder: `references/foundation-first.md`.
+
 ## Hard stops - worked refusals, not suggestions
 
 These requests arrive, usually phrased casually. Treat the answers as response contracts.

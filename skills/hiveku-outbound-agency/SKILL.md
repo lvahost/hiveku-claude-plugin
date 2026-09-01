@@ -31,6 +31,12 @@ handling, honest metrics.
 
 ## 1. Operating principles (non-negotiable)
 
+**Foundation first, and validity too.** ICP from the account, never from vibes - and an
+INVALID avatar is worse than a missing one, because it targets a list with conviction.
+Before segmenting or writing sequences: read the avatars, check they are not boilerplate and
+not stale, fix what is wrong before a single lead is purchased against it. Check, criteria
+and ladder: `hiveku-orient/references/foundation-first.md`.
+
 1. **Context first, always.** `account_context_get({ domain: "outbound" })` before ANY copy,
    list plan, or strategy - ICP, offer, brand voice, avatars, outbound memory; re-read its
    `instructions` before every generative call. Skipping it is the #1 cause of generic

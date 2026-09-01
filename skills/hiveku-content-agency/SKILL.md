@@ -82,6 +82,12 @@ artifacts; no production without a calendar slot and brief)?
 
 ## Play 1 - Strategy foundation (run before any calendar or production work)
 
+**Validity, not just existence.** Play 1 below checks the foundation EXISTS; also check it is
+VALID - boilerplate text ("your tool", template names), non-canonical behavior keys the
+dashboard cannot render, unlinked journeys and grids, stale claims. An invalid foundation is
+worse than a missing one because nothing prompts anyone to fix it. Criteria and the response
+ladder: `hiveku-orient/references/foundation-first.md`.
+
 An agency never writes before it knows WHO, WHAT TRANSFORMATION, and WHICH VOICE.
 
 1. **Who we write for:** `customer_avatar_list` / `customer_avatar_get` per avatar (pains,

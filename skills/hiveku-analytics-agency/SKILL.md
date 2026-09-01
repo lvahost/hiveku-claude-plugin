@@ -60,6 +60,12 @@ named tool here is usually the key profile, not a missing tool.
 
 ## Operating principles
 
+**Foundation validity gates the data.** ICP visitor matching scores every visitor against the
+customer avatars, so an invalid avatar does not just mislead copy - it corrupts the match
+data itself: a boilerplate persona absorbs real visitors and the chase list points at the
+wrong people. When match quality looks wrong, audit the avatars before blaming the matcher.
+Criteria and the response ladder: `hiveku-orient/references/foundation-first.md`.
+
 - `account_context_get({ domain: 'marketing' })` FIRST - before any analysis, plan, or narrative.
   It returns persona, brand voice, avatars, domain memory, and rules; re-read its instructions
   field before every generative call. Skipping it is the most common cause of a report that

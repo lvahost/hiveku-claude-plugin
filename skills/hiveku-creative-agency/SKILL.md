@@ -11,6 +11,14 @@ client can edit. Every tool named below is a real Hiveku MCP tool.
 
 ## The operating model
 
+**Foundation first.** This skill's own reference (`references/brand-and-assets.md`) owns the
+avatar and grid methodology; what it assumes is that someone CHECKED. Before creative work:
+the avatars and grids must exist, be linked, and be valid - boilerplate text, non-canonical
+behavior keys the dashboard cannot render, and unlinked grids all count as invalid, and
+creative made against an invalid persona is made for the wrong person with confidence.
+Create with grounding when missing, flag and fix when invalid, and name the persona in every
+brief. Check, criteria and ladder: `hiveku-orient/references/foundation-first.md`.
+
 **Claude is the worker. The Hiveku dashboard is where the human sees and edits.**
 
 A flat PNG pasted into chat is a dead end - the client cannot move the headline, swap the

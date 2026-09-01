@@ -57,6 +57,12 @@ INCOMING name is spelled in exactly ONE reference's Availability table; this hub
 
 ## Operating principles
 
+**Foundation first.** Keyword strategy is what the BUYER types, and the buyer is defined by
+the customer avatars; intent tiers map to journey stages. Before a strategy, a content brief
+or a cluster: check the avatars and journey exist, are linked and are valid; create with
+grounding when missing, flag and fix when invalid, and name which persona and stage each
+target query serves. Check, criteria and ladder: `hiveku-orient/references/foundation-first.md`.
+
 - **`account_context_get({ domain: 'seo' })` FIRST** - before any analysis, plan or copy: persona,
   brand voice, avatars, domain memory, skills, rules. Re-read it before generating.
 - **Hiveku is the source of truth.** Durable findings go to the `seo` memory document; work items to

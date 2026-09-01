@@ -19,6 +19,14 @@ them - profiles.ts grants it to every profile, so run it first as usual.) Fallba
 
 ## 0. Operating principles (non-negotiable)
 
+**Foundation first.** Ad copy, audiences and negatives are derived from the customer avatars
+and the journey - a campaign that cannot say which persona and which journey stage it targets
+is spend aimed at a guess. Before building or rewriting campaigns: check the avatars and
+journey exist, are linked, and are VALID (boilerplate text, non-canonical behavior keys and
+unlinked objects all count as invalid); create with grounding when missing, flag and fix when
+invalid, and name the persona in the campaign plan. The check, the validity criteria and the
+response ladder: `hiveku-orient/references/foundation-first.md`.
+
 1. **Context first.** `account_context_get({ domain: "ppc" })` before any analysis, plan, or copy -
    persona, brand voice, avatars, domain memory, rules. Also `memory_list` for account PPC facts:
    protected brand campaigns, approval thresholds, target CPA/ROAS, sacred geos or keywords. If memory

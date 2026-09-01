@@ -13,6 +13,13 @@ posts). Paid social lives in the PPC discipline, not here. Every tool named belo
 real Hiveku MCP tool.
 
 ## Operating principles
+
+**Foundation first.** Social creative is built from the persona and the transformation proof:
+the customer avatars say who scrolls past and why they stop, the before/after grids are the
+strongest content a service account owns. Before a calendar or a creative batch: check
+avatars and grids exist, are linked and are valid; create with grounding when missing, flag
+and fix when invalid, and name the persona each post serves. Check, criteria and ladder:
+`hiveku-orient/references/foundation-first.md`.
 - `account_context_get({ domain: 'social' })` FIRST - before any calendar, plan, or
   caption. It returns persona, brand voice, avatars, domain memory, skills, and rules.
   Re-read its instructions field before every generative call. It is served on every
