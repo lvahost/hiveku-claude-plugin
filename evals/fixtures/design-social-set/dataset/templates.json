@@ -1,0 +1,72 @@
+{
+  "_comment": "design_templates_list serves this verbatim: { presets, templates }, mirroring GET /api/olympus/marketing/design/templates (artboard presets grouped by category, plus brand-substituted templates each carrying a ready-to-use canvasData). The story template's per-layer animation uses the REAL renderer schema (enter / enter_delay_ms / enter_duration_ms / enter_distance_px / easing / loop) - templates teach the correct vocabulary.",
+  "presets": {
+    "Social Media": [
+      { "key": "instagram_post", "label": "Instagram Post", "width": 1080, "height": 1080 },
+      { "key": "instagram_story", "label": "Instagram Story", "width": 1080, "height": 1920 },
+      { "key": "facebook_post", "label": "Facebook Post", "width": 1200, "height": 630 },
+      { "key": "linkedin_banner", "label": "LinkedIn Banner", "width": 1584, "height": 396 },
+      { "key": "youtube_thumbnail", "label": "YouTube Thumbnail", "width": 1280, "height": 720 }
+    ],
+    "Email": [
+      { "key": "email_header", "label": "Email Header", "width": 600, "height": 200 }
+    ]
+  },
+  "templates": [
+    {
+      "id": "tpl_seasonal_sale_sq",
+      "name": "Seasonal Sale - Square",
+      "category": "Instagram Post",
+      "width": 1080,
+      "height": 1080,
+      "canvasData": {
+        "version": "6.0.0",
+        "background": "#1F3A5F",
+        "objects": [
+          { "type": "rect", "id": "tsq_bg", "name": "Background", "left": 0, "top": 0, "width": 1080, "height": 1080, "fill": "#1F3A5F" },
+          { "type": "textbox", "id": "tsq_label", "name": "Sale Label", "left": 84, "top": 140, "width": 912, "text": "SEASONAL SALE", "fontFamily": "Inter", "fontSize": 30, "fontWeight": "600", "fill": "#E8A13D", "charSpacing": 400, "textAlign": "left" },
+          { "type": "textbox", "id": "tsq_headline", "name": "Headline", "left": 84, "top": 220, "width": 912, "text": "UP TO 25% OFF", "fontFamily": "Archivo", "fontSize": 118, "fontWeight": "700", "fill": "#F5EFE4", "lineHeight": 1.05, "textAlign": "left" },
+          { "type": "textbox", "id": "tsq_details", "name": "Details", "left": 84, "top": 560, "width": 700, "text": "On the pieces that make a room feel finished.", "fontFamily": "Inter", "fontSize": 34, "fontWeight": "400", "fill": "#F5EFE4", "lineHeight": 1.45, "textAlign": "left" },
+          { "type": "rect", "id": "tsq_ctabtn", "name": "CTA Button", "left": 84, "top": 860, "width": 420, "height": 88, "fill": "#E8A13D", "rx": 44, "ry": 44 },
+          { "type": "textbox", "id": "tsq_ctatxt", "name": "CTA Text", "left": 84, "top": 884, "width": 420, "text": "SHOP THE SALE", "fontFamily": "Inter", "fontSize": 26, "fontWeight": "700", "fill": "#1F3A5F", "textAlign": "center" }
+        ]
+      }
+    },
+    {
+      "id": "tpl_story_promo_916",
+      "name": "Story Promo - 9:16",
+      "category": "Instagram Story",
+      "width": 1080,
+      "height": 1920,
+      "canvasData": {
+        "version": "6.0.0",
+        "background": "#1F3A5F",
+        "_animation": { "duration_ms": 6000, "fps": 30, "loop": true },
+        "objects": [
+          { "type": "rect", "id": "tst_bg", "name": "Background", "left": 0, "top": 0, "width": 1080, "height": 1920, "fill": "#1F3A5F", "animation": { "enter": "fade-in", "enter_duration_ms": 400 } },
+          { "type": "textbox", "id": "tst_headline", "name": "Headline", "left": 88, "top": 560, "width": 904, "text": "MAKE IT GLOW", "fontFamily": "Archivo", "fontSize": 104, "fontWeight": "700", "fill": "#F5EFE4", "lineHeight": 1.1, "animation": { "enter": "fade-up", "enter_delay_ms": 300, "enter_duration_ms": 600, "enter_distance_px": 60, "easing": "quart-out" } },
+          { "type": "textbox", "id": "tst_sub", "name": "Subhead", "left": 88, "top": 840, "width": 800, "text": "New arrivals in walnut and brass.", "fontFamily": "Inter", "fontSize": 40, "fontWeight": "400", "fill": "#F5EFE4", "lineHeight": 1.4, "animation": { "enter": "fade-up", "enter_delay_ms": 520, "enter_duration_ms": 600, "enter_distance_px": 60, "easing": "quart-out" } },
+          { "type": "textbox", "id": "tst_cta", "name": "CTA", "left": 88, "top": 1240, "width": 500, "text": "SEE THE COLLECTION", "fontFamily": "Inter", "fontSize": 30, "fontWeight": "700", "fill": "#E8A13D", "animation": { "enter": "pop", "enter_delay_ms": 1000, "enter_duration_ms": 500, "easing": "back-out", "loop": "pulse" } }
+        ]
+      }
+    },
+    {
+      "id": "tpl_link_post_fb",
+      "name": "Link Post - Facebook",
+      "category": "Facebook Post",
+      "width": 1200,
+      "height": 630,
+      "canvasData": {
+        "version": "6.0.0",
+        "background": "#F5EFE4",
+        "objects": [
+          { "type": "rect", "id": "tfb_bg", "name": "Background", "left": 0, "top": 0, "width": 1200, "height": 630, "fill": "#F5EFE4" },
+          { "type": "rect", "id": "tfb_panel", "name": "Navy Panel", "left": 0, "top": 0, "width": 720, "height": 630, "fill": "#1F3A5F" },
+          { "type": "textbox", "id": "tfb_headline", "name": "Headline", "left": 72, "top": 140, "width": 580, "text": "A HEADLINE THAT EARNS THE CLICK", "fontFamily": "Archivo", "fontSize": 58, "fontWeight": "700", "fill": "#F5EFE4", "lineHeight": 1.12 },
+          { "type": "textbox", "id": "tfb_sub", "name": "Subhead", "left": 72, "top": 400, "width": 560, "text": "One supporting line, plain and specific.", "fontFamily": "Inter", "fontSize": 26, "fontWeight": "400", "fill": "#E8A13D", "lineHeight": 1.4 },
+          { "type": "image", "id": "tfb_photo", "name": "Photo slot", "left": 720, "top": 0, "width": 1600, "height": 1200, "scaleX": 0.3, "scaleY": 0.525, "src": "https://media.brightside-fixtures.example/media/acct_fixture_creative/showroom-pendant-wall.jpg" }
+        ]
+      }
+    }
+  ]
+}

@@ -5,8 +5,8 @@
     "mcp__plugin_hiveku_hk__",
     "mcp__hiveku__"
   ],
-  "plugin_version": "0.20.0",
-  "count": 112,
+  "plugin_version": "0.21.0",
+  "count": 122,
   "tools": [
     {
       "name": "deploy_site",
@@ -567,6 +567,56 @@
       "name": "customer_journey_stage_delete",
       "method": "DELETE",
       "why_gated": "removes a stage; stage-asset rows keyed to it are filtered out on read and become unreachable"
+    },
+    {
+      "name": "media_delete",
+      "method": "DELETE",
+      "why_gated": "hard delete + S3 purge; force:true deletes an in-use asset and orphans the live content that references it"
+    },
+    {
+      "name": "media_folder_delete",
+      "method": "DELETE",
+      "why_gated": "deletes a media library folder; the 409 refusal on contents is one bulk-move away from destruction"
+    },
+    {
+      "name": "brand_guide_delete",
+      "method": "DELETE",
+      "why_gated": "soft-deletes the brand guide every template substitution and brand-aware generation reads from"
+    },
+    {
+      "name": "brand_guide_purge",
+      "method": "DELETE",
+      "why_gated": "hard-deletes a soft-deleted brand guide; no undo"
+    },
+    {
+      "name": "marketing_storyboard_delete",
+      "method": "DELETE",
+      "why_gated": "irreversibly destroys a priced storyboard; the deletable states are exactly the ones a human has not approved yet"
+    },
+    {
+      "name": "marketing_generate_video",
+      "method": "POST",
+      "why_gated": "each call spends ~$1 of a 20-clip monthly cap"
+    },
+    {
+      "name": "marketing_video_pipeline_retry_scene",
+      "method": "POST",
+      "why_gated": "re-spends a metered clip on a failed scene; gated with marketing_generate_video so the whole clip-spend surface prompts"
+    },
+    {
+      "name": "design_voiceover_create",
+      "method": "POST",
+      "why_gated": "paid Cartesia narration; writes a billing row per uncached render"
+    },
+    {
+      "name": "generate_image_set",
+      "method": "POST",
+      "why_gated": "up to 10 metered image generations in one call, quota debited per success"
+    },
+    {
+      "name": "marketing_testimonial_media_replace",
+      "method": "POST",
+      "why_gated": "swaps the published video on every public surface instantly; no staging step and no undo"
     }
   ]
 }

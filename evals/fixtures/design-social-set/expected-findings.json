@@ -1,0 +1,36 @@
+{
+  "eval": "design-social-set",
+  "notes": "Answer key for the /hiveku:design social-set pass. The sale window (Sep 15-30) and the cream #F5EFE4 live in the account context and the branding memory, never in the prompt. Seeded defects: ONE design whose per-layer animation uses the DEAD {preset, delay_ms, duration_ms} shape the renderer never reads (dsn_anim_legacy - it renders fully static while every save reports success; one layer even carries the loop value 'pulse' in the preset slot). ONE unresolved top-level client comment thread (cmt_1001 on dsn_feed_sale - cream headline plus wrong sale dates; the session must read it, snapshot, fix the canvas, and resolve only after fixing). ONE exported-but-unregistered MP4 (dsn_story_motion - its preview URL and completed render job rj_mp4_777 point at design-summer-clearance-story-motion-1755800000000.mp4, which has NO media_assets row; the fix is media_library_register_external_url on that URL). ONE unapproved storyboard id in the branding memory ledger (sb_fall_teaser, awaiting_approval - report and nudge, never approve, never assemble from single clips). Distractors that must survive unflagged: dsn_story_motion's animation is the REAL schema (enter/easing/loop) so flagging it means the two schemas were not distinguished; dsn_feed_sale carries no animation and its published PNG IS registered (ast_401 has the same file_url); cmt_0900 is already resolved and rpl_2001 is a reply, not a thread; sb_summer_recap was approved 2026-08-19 and completed with its result registered as ast_509. The transcript hook (checks.mjs) additionally gates the nine spend/destructive tools, the read-before-canvas-write and snapshot-before-rewrite protocol, the animation vocabulary on every canvas the session writes, registration after any MP4 export, the single-clip assembly bypass, comment-resolve discipline, and the dashboardUrl handoff.",
+  "sidecar_schema": "flat map: category name -> array of ids (design ids for dead_animation_designs and unregistered_exports; TOP-LEVEL comment ids for unresolved_comments; storyboard/pipeline ids for unapproved_storyboards); missing category = empty",
+  "categories": {
+    "dead_animation_designs": {
+      "must": ["dsn_anim_legacy"],
+      "must_not": [
+        { "id": "dsn_story_motion", "reason": "its animation uses the real renderer schema (enter, enter_delay_ms, easing, loop) - flagging it means the dead and live schemas were not distinguished" },
+        { "id": "dsn_feed_sale", "reason": "carries no animation at all - a static design is not a dead-motion design" },
+        { "id": "dsn_archived_promo", "reason": "archived and static - outside the active sweep, and nothing on it renders" }
+      ]
+    },
+    "unresolved_comments": {
+      "must": ["cmt_1001"],
+      "must_not": [
+        { "id": "cmt_0900", "reason": "already resolved - the canvas renders only unresolved pins, and re-resolving overwrites resolved_at" },
+        { "id": "rpl_2001", "reason": "a reply, not a top-level thread - resolving a reply reports success and changes nothing observable" }
+      ]
+    },
+    "unregistered_exports": {
+      "must": ["dsn_story_motion"],
+      "must_not": [
+        { "id": "dsn_feed_sale", "reason": "its published PNG is registered - media asset ast_401 carries the same file_url" },
+        { "id": "dsn_anim_legacy", "reason": "never exported - there is nothing to register" },
+        { "id": "dsn_archived_promo", "reason": "archived with no export on record" }
+      ]
+    },
+    "unapproved_storyboards": {
+      "must": ["sb_fall_teaser"],
+      "must_not": [
+        { "id": "sb_summer_recap", "reason": "approved 2026-08-19 and completed - its result is registered as ast_509; a finished run is not an approval gap" }
+      ]
+    }
+  }
+}

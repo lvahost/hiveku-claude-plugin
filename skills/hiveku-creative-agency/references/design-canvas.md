@@ -27,8 +27,10 @@ Why it needs a manual: this is the one place where Claude and the human write to
   block 240s; `generate_image` and `generate_image_set` cost money.
 - **D7. THE AGENT CANNOT APPROVE: after creating, submit for approval and stop.** A multi-scene video is
   `marketing_storyboard_create`, not this lane, and it stops at the human gate.
-- **D8. One write path.** `design_update` with `canvasData` REPLACES the canvas wholesale. There is no
-  per-layer patch tool in the grounded surface, so the merge happens in your context, not on the server.
+- **D8. One write path, one token.** `design_update` with `canvasData` REPLACES the canvas wholesale.
+  There is no per-layer patch tool in the grounded surface, so the merge happens in your context, not on
+  the server - and every canvas write carries `expectedSectionsVersion` (Part 4) so a concurrent human
+  save surfaces as a 409 instead of silent loss.
 - **D9. Never invent a Fabric property.** Anything outside the Part 2 vocabulary (gradients, shadows, clip
   paths, blend modes) is unverified: copy the shape a template emits, or use a Part 2 fallback.
 
@@ -60,27 +62,60 @@ no `zIndex`; reordering means moving the element in the array. Canonical stack, 
 background fill/photo -> scrim -> supporting shapes -> imagery -> body text -> headline -> logo/CTA
 ```
 
-**Per-layer motion.** Any layer may carry
-`"animation": { "preset": "fade-up", "delay_ms": 300, "duration_ms": 600 }`. `duration_ms` is optional.
-`preset` is exactly one of:
+**Per-layer motion.** Any layer may carry an `animation` object. THE KEY NAMES AND ENUM VALUES BELOW ARE
+EXACT: the renderer reads them literally and ignores anything unrecognized IN SILENCE, so one misspelled
+key or enum value is a silent no-motion - the design renders static while every tool reports success. The
+full shape:
+
+```
+"animation": {
+  "enter": "fade-up",         // one of the 15 entrance values below; omit = visible from t=0
+  "enter_delay_ms": 300,      // default 0
+  "enter_duration_ms": 600,   // default 800
+  "enter_distance_px": 60,    // default 60; used by the directional fades and slides
+  "easing": "expo-out",       // one of the 6 easing values below
+  "exit": "fade-down",        // same 15-value list as enter; omit = visible to the end
+  "exit_at_ms": 4500,
+  "exit_duration_ms": 400,    // default 600
+  "loop": "breathe"           // one of the 6 loop values below; a SEPARATE field, never an enter value
+}
+```
+
+Every field is optional. `enter` and `exit` take exactly one of:
 
 ```
 fade-in, fade-up, fade-down, fade-left, fade-right, scale-in, pop,
 slide-up, slide-down, slide-left, slide-right, wipe-up, wipe-down,
-pulse, wiggle, rotate-slow, breathe
+blur-in, rotate-in
 ```
 
-Nothing outside that list; a misspelled preset is a silent no-motion. Three families: ENTRANCES fire once
-then hold (`fade-*`, `slide-*`, `scale-in`, `pop`, `wipe-*`) and carry the reveal, so everything a viewer
-must read gets one and nothing else; AMBIENTS run continuously (`pulse`, `breathe`, `rotate-slow`,
-`wiggle`) and belong on a background, a badge, or one accent, and two on an artboard is already noise;
-EMPHASIS is `pop` or `pulse` on the CTA, once, after everything else has landed.
+`easing` is exactly one of `cubic-out`, `quart-out`, `expo-out`, `back-out`, `ease-in-out`, `elastic`,
+and applies per layer. `loop` is exactly one of `pulse`, `wiggle`, `rotate-slow`, `breathe`, `float`,
+`shimmer`.
+
+Three families, three fields. ENTRANCES (`enter`, timed by `enter_delay_ms` and `enter_duration_ms`,
+shaped by `easing`) fire once then hold and carry the reveal, so everything a viewer must read gets one
+and nothing else. AMBIENT LOOPS (`loop`) run continuously for the whole timeline and belong on a
+background, a badge, or one accent - two on an artboard is already noise. EXITS (`exit`, firing at
+`exit_at_ms` for `exit_duration_ms`) clear a layer before the cut. `loop` is a SEPARATE field from
+`enter`: `pulse`, `wiggle`, `rotate-slow` and `breathe` were once listed among the entrance presets, and
+putting one of them in `enter` produces no entrance at all, silently.
+
+**The dead shape.** Older copies of this manual taught an animation object whose keys were `preset`,
+`delay_ms` and `duration_ms`. None of those keys is read by the renderer: a design carrying that shape is
+completely static, and `design_state_get` echoes the dead object back as if it were motion. When you meet
+it on an existing design, flag it and rewrite it into the shape above - never copy it forward.
+
+**Emphasis.** `pulse` is a continuous loop, so a CTA carrying it throbs for the entire runtime. Once-only
+emphasis is a LATE ENTRANCE instead: `enter: 'pop'` (or `scale-in` with `easing: 'back-out'`) with an
+`enter_delay_ms` that lands after everything else has settled.
 
 **Canvas-level motion** sits on the root: `"_animation": { "duration_ms": 6000, "fps": 30, "loop": true }`.
-This is what `design_export_mp4` renders and what `design_export_image({ frame })` indexes into, via
-`frame = seconds * fps`: at `fps: 30`, frame 60 is 2.0s. **Every entrance must finish before
-`duration_ms`.** The last-firing layer's `delay_ms + duration_ms` should land by roughly 60 percent of the
-runtime so the held frame can be read. A headline still fading in when the loop restarts is never read.
+This is what `design_export_mp4` renders and what `design_export_image`'s `frame` indexes into, via
+`frame = seconds * fps`: at `fps: 30`, frame 60 is 2.0s. **Every entrance and exit must land inside
+`duration_ms`.** The last-firing layer's `enter_delay_ms + enter_duration_ms` should land by roughly 60
+percent of the runtime so the held frame can be read, and any `exit_at_ms + exit_duration_ms` must finish
+before the cut. A headline still fading in when the loop restarts is never read.
 
 ## Part 3: Composing an artboard that works
 
@@ -108,7 +143,7 @@ Tighten `lineHeight` as `fontSize` rises. Small positive `charSpacing` on all-ca
 Two type sizes reads as deliberate; five reads as a document. Take `fontFamily` from a template or the
 brand guide: the grounding does not say which families the render worker has installed, so an arbitrary
 family may silently fall back and the export will not match the editor. Check any new one with
-`design_export_image({ id, frame: 0 })` before shipping.
+`design_export_image({ id, canvas_json, width, height, frame: 0 })` before shipping.
 
 **Contrast.** 4.5:1 for body text against what is directly behind it; 3:1 for large text (roughly 24px+
 bold or 30px+ regular at these scales). Text over a photograph fails by default, because a photo is not
@@ -138,21 +173,33 @@ putting a logo on an artboard means setting an image layer's `src`, registered f
 4. **`design_version_create({ id, versionName, changeSummary, isMilestone })`** before anything
    destructive. Use `isMilestone: true` for save points a client would return to ("Pre-rebrand",
    "Client-approved v2"). `design_versions_list` reads the index.
-5. **`design_update({ id, canvasData })`.** The dashboard editor reads from the same column, so the user's
-   later edits are preserved on the next save. The hazard is the corollary: your write is authoritative
-   over everything in that column right now.
+5. **`design_update({ id, canvasData, expectedSectionsVersion })`.** The dashboard editor reads from the
+   same column, so the user's later edits are preserved on the next save. The hazard is the corollary:
+   your write is authoritative over everything in that column right now. `expectedSectionsVersion` is the
+   compare-and-swap token that makes the concurrency survivable: every canvas write bumps the design's
+   version, and the response returns the new `sectionsVersion` - send that back on your next canvas
+   write. If a human (or another agent) saved in between, the write is REFUSED with 409
+   `sections_version_conflict` carrying `serverVersion` and `serverCanvasData`: re-apply your change on
+   top of `serverCanvasData`, then resend with `expectedSectionsVersion: serverVersion`. Never resend
+   your original payload unmodified - that is exactly the overwrite the 409 just prevented. The token
+   starts at the read: `design_state_get` and `design_get` both return `sectionsVersion`, so the
+   round-trip is read -> reason -> write-with-the-read's-token. A canvas write that omits the token still
+   lands and still bumps the counter, so the human's next autosave is warned about you - but nothing
+   warns you about them.
 6. **Hand back the `dashboardUrl`.** The deliverable is the editable design, not the JSON or the PNG.
 
 **Metadata updates are safe and separate.** `title`, `description`, `status`, `tags`, `featuredImageUrl`,
 and `artboard` update independently of the canvas. A `design_update` omitting `canvasData` touches no
-layers, so it is how you retitle, retag, or restatus a design a human is actively editing.
+layers, so it is how you retitle, retag, or restatus a design a human is actively editing. `status` takes
+`draft | published | archived`, and `status: 'archived'` is the removal verb on this surface.
 
 **Be honest about rollback.** `design_version_create` writes the snapshot, `design_versions_list` reads
 the index, and `design_version_get` returns one snapshot in full, frozen canvas blob included - but no
 tool RESTORES one server-side: restoring is a human action in the dashboard's Version History panel, or
 you read the snapshot with `design_version_get` and re-apply it yourself with `design_update` (which is a
 new write over the live canvas, so it follows the same round-trip rules). Skip the snapshot and there is
-no rollback for anyone. **No design DELETE tool exists** - removing a design is a dashboard action.
+no rollback for anyone. **There is NO design_delete and no DELETE route, deliberately.** The removal verb
+is `design_update({ id, status: 'archived' })`; hard removal stays a dashboard action.
 
 **The client's revision requests live in comment threads, not in chat.** `design_comments_list` returns
 the review thread pinned to a design - every comment with its canvas `position`, `userId`, `isResolved`,
@@ -194,17 +241,29 @@ roughly x 88-880, y 250-1440 on 1080 x 1920 as the trustworthy zone. On feed por
 crops, so keep subject and hook centered. On a carousel, never bleed an image across a slide boundary.
 The Part 3 margin is the floor; the safe area sits INSIDE it, never instead of it.
 
-**One design is one artboard.** `design_create` takes a single `artboard` and nothing in the grounded
-surface describes a multi-page design object, so a five-slide carousel is five designs unless a
-`design_templates_list` carousel template's `canvasData` proves otherwise. Check before assuming.
+**One artboard, one or many pages.** `design_create` takes a single `artboard`, and a design's
+`canvasData` is usually one Fabric canvas - but the column also legally holds a multi-page shape:
+`{ pages: [{ id, name, canvasData }] }`, each page carrying its own full Fabric canvas while every page
+shares the design's artboard. Read one page with `design_state_get({ id, page_id })` - the response also
+carries the `pages` roster and `activePageId`, and an unknown `page_id` is a 400 naming the real pages -
+and publish one page with `design_publish_to_library({ id, page_id })`. `design_export_image` renders
+whatever `canvas_json` you pass, so for a pages-shaped design pass ONE page's inner `canvasData` (the
+object holding `objects[]`), never the pages wrapper. A five-slide carousel is therefore either one
+five-page design (slides share the artboard) or five sibling designs (independent version histories) -
+and a pages-shaped `canvasData` write follows the same round-trip and CAS rules as any canvas write.
 
 ## Part 6: Exporting
 
-`design_export_image({ id, canvas_json, frame })` flattens a design to a PNG through the Remotion worker,
-using the same CanvasComposition the MP4 path uses, so `frame: 0` matches what `canvas.toDataURL` produces
-in the dashboard editor. For a motion design, `frame` captures a moment: at `fps: 30`, `frame: 60` is 2s
-in. **That makes `frame` your cheap preview:** before an MP4, export two or three frames across the
-timeline (0, 45, 120) and check that the stagger reads and nothing is occluded mid-flight.
+`design_export_image({ id, canvas_json, width, height, frame? })` flattens a design to a PNG through the
+Remotion worker, using the same CanvasComposition the MP4 path uses, so `frame: 0` matches what
+`canvas.toDataURL` produces in the dashboard editor. **`canvas_json`, `width` and `height` are REQUIRED -
+it does not render a stored design from its id alone.** Pass the canvas you just wrote (or `design_get`'s
+`canvasData`) plus the artboard's dimensions; the `id` is for audit and tenancy. It returns `imageUrl`
+(an S3 PNG URL) plus `jobId`, runs ~5-15s with a 90s budget, and refuses early on an empty canvas. For a
+motion design, `frame` captures a moment: at `fps: 30`, `frame: 60` is 2s in. **That makes `frame` your
+cheap preview:** before an MP4, export two or three frames across the timeline (0, 45, 120) and check
+that the stagger reads and nothing is occluded mid-flight. Then LOOK at the PNG - download it, view it,
+and judge it against the checklist in `references/self-review.md` before anything ships.
 
 `design_export_mp4` renders a motion design to MP4 or GIF. Pass the full `canvas_json` snapshot the user
 has been editing, with per-layer `animation` metadata; the worker uses the same animation vocabulary as
@@ -213,8 +272,11 @@ and refuses early if the canvas has no objects. The social lane's call shape is
 `design_export_mp4({ id, canvas_json, width, height, duration_seconds })`. Confirm first and say it takes
 up to four minutes. It returns `mp4Url` plus a `jobId`, and the job outlives the call: on a timeout or
 dropped connection, poll `design_render_job_get({ job_id })` before re-rendering - the poll itself
-advances the job, and only `completed`, `failed`, and `abandoned` are terminal (full failure playbook in
-the video reference). `design_video_rerender({ id, template_id, props })` re-renders one Remotion-template
+ADVANCES the job (a write in read clothing, so it can prompt for permission; a refused poll loses
+nothing, the reconcile cron finishes jobs on its own), and only `completed`, `failed`, and `abandoned`
+are terminal. A job id you lost is findable with `design_render_jobs_list`, a plain read that advances
+nothing (full failure playbook in the video reference).
+`design_video_rerender({ id, template_id, props })` re-renders one Remotion-template
 clip inside a design and swaps the MP4 in place; it blocks 240s too.
 
 **Then register the output.** Generated images and video clips auto-register. Design exports and
@@ -224,13 +286,19 @@ carousel's worth in one call. An unregistered export has no media asset id, cann
 downstream, and the URL in your hand is its only handle.
 
 **For a static PNG there is a one-call alternative:** `design_publish_to_library` reads the design's
-canvas STRAIGHT FROM THE DB (send no canvas_json), renders one settled frame, uploads the PNG to the
-account's S3 media path, and creates the library row (tagged creative-studio + published) - returning
-`fileUrl` and `mediaAssetId` in one shot. TREAT IT AS CREATE, NEVER AS SYNC: nothing dedupes, so
-publishing the same design twice leaves two S3 objects and two library entries, and a retry after its
-504 timeout duplicates the same way (the worker may still finish and orphan a still). One publish per
-finished design, and check `media_library_list` before retrying a timeout. It does not cover MP4s - a
-motion render still goes through export-then-register.
+canvas STRAIGHT FROM THE DB (send no canvas_json), renders THE SETTLED FRAME - after enter animations
+finish, which is frame 0 only for a design with no animation - uploads the PNG to the account's S3 media
+path, and creates the library row (tagged creative-studio + published), returning `fileUrl` and
+`mediaAssetId` in one shot. For a multi-page design, `page_id` picks the page (omitted = first page).
+**`set_as_featured: true` is THE thumbnail path:** nothing sets `featuredImageUrl` automatically, so an
+agent-created design has NO gallery thumbnail until this flag points it at the published PNG (or a
+metadata `design_update` sets one by hand). The render can succeed while that one extra write fails: a
+`featured_image_error` on the success payload means the PNG and library row are real and only the
+thumbnail write is not - report it, never re-publish for it. TREAT THE TOOL AS CREATE, NEVER AS SYNC:
+nothing dedupes, so publishing the same design twice leaves two S3 objects and two library entries, and
+a retry after its 504 timeout duplicates the same way (the worker may still finish and orphan a still).
+One publish per finished design, and check `media_library_list` before retrying a timeout. It does not
+cover MP4s - a motion render still goes through export-then-register.
 
 ## Part 7: Failure modes
 
@@ -239,6 +307,18 @@ motion render still goes through export-then-register.
 - **`previewVideoUrl` ONLY fires when `canvasData` is omitted.** Setting the autoplay thumbnail is
   therefore always a SECOND `design_update` carrying `previewVideoUrl` and no canvas. Send both in one
   call and the preview silently does not take, with no error.
+- **The dead animation keys `preset` / `delay_ms` / `duration_ms`.** No key of that shape is read; the
+  design renders static while every call reports success. Rewrite into the Part 2 shape on sight - and
+  remember the whole `animation` object is silent-on-error: an unknown key or enum value is a no-motion,
+  not a 400.
+- **A `design_export_image` call without `canvas_json`, `width` and `height` is a refusal, not a render.**
+  The tool never renders a stored design from its id alone; `design_publish_to_library` is the call that
+  reads the DB.
+- **`featuredImageUrl` is never set automatically.** An agent-created design shows no gallery thumbnail
+  until `design_publish_to_library({ id, set_as_featured: true })` or a metadata `design_update` sets one.
+- **A 409 `sections_version_conflict` is a save, not a failure.** The CAS token did its job: someone else
+  wrote first. Merge onto the returned `serverCanvasData` and resend with the returned `serverVersion` -
+  resending the original payload is the data loss the 409 prevented.
 - **Exports do not auto-register** (Part 6). The most common way a finished asset becomes unattachable.
 - **`design_*` versus `marketing_design_*`.** A parallel naming exists (`marketing_design_list`,
   `marketing_design_get`, `marketing_design_export_image`, `marketing_design_export_mp4`, and
@@ -267,7 +347,8 @@ motion render still goes through export-then-register.
 5. Keep slide-invariant layers byte-identical across all five (same margin, `fontSize`, logo `left`/`top`,
    background): a carousel reads as a set only if the frame does not move. Slide 1 carries the hook alone
    and earns the swipe, slides 2 to 4 one idea each, slide 5 one CTA.
-6. `design_export_image({ id, frame: 0 })` per slide, look at all five together at thumbnail size, then
+6. `design_export_image({ id, canvas_json, width: 1080, height: 1350, frame: 0 })` per slide, each with
+   that slide's own canvas as `canvas_json`, look at all five together at thumbnail size, then
    `media_library_register_external_url_batch` in slide order (or one `design_publish_to_library` per
    finished slide - once each, it never dedupes).
 7. Hand back the five `dashboardUrl`s in slide order. Handoff to the social lane is `social_create_post`
@@ -288,8 +369,9 @@ motion render still goes through export-then-register.
    `media_library_register_external_url` or `media_upload` first if needed, and recompute `scaleX`/`scaleY`
    for its new intrinsic size.
 6. **Re-check contrast.** The new palette will have broken at least one pairing. Fix it, then
-   `design_update({ id, canvasData })`, `design_export_image({ id, frame: 0 })`, and hand back the
-   `dashboardUrl` with the before and after.
+   `design_update({ id, canvasData, expectedSectionsVersion })`,
+   `design_export_image({ id, canvas_json, width, height, frame: 0 })` with the canvas you just wrote,
+   and hand back the `dashboardUrl` with the before and after.
 
 ### Play C: animate a static design for a Reel
 
@@ -300,15 +382,18 @@ motion render still goes through export-then-register.
 2. `design_state_get({ id })` for the layer inventory and z-order, then `design_version_create` if this is
    an existing design rather than a fresh one.
 3. Add `animation` bottom-up, in `objects[]` order, so the reveal follows the eye:
- - background `{ preset: 'fade-in', delay_ms: 0, duration_ms: 400 }`, or `breathe` for a slow ambient
- - hero image `{ preset: 'scale-in', delay_ms: 200, duration_ms: 600 }`
- - headline lines `fade-up`, staggered 120 to 180ms apart starting around 500ms
- - body `fade-up` after the headline lands
- - CTA and logo last, `pop` or `fade-up`, then at most one `pulse`
+ - background `{ enter: 'fade-in', enter_duration_ms: 400 }`, or `{ loop: 'breathe' }` for a slow ambient
+ - hero image `{ enter: 'scale-in', enter_delay_ms: 200, enter_duration_ms: 600, easing: 'expo-out' }`
+ - headline lines `{ enter: 'fade-up', enter_delay_ms: 500 }`, staggered 120 to 180ms apart
+ - body `{ enter: 'fade-up' }`, delayed until after the headline lands
+ - CTA and logo last: `{ enter: 'pop', easing: 'back-out' }` with a late `enter_delay_ms` for once-only
+   emphasis - and at most ONE `loop` ambient on the whole artboard.
 4. Root: `_animation: { duration_ms: 6000, fps: 30, loop: true }`. Verify the last layer's
-   `delay_ms + duration_ms` lands by about 3.5s so the finished frame holds before the loop restarts.
-5. Preview cheaply with `design_export_image({ id, frame: 45 })` (1.5s at 30fps) and `frame: 120` (4s),
-   then `design_update({ id, canvasData })`.
+   `enter_delay_ms + enter_duration_ms` lands by about 3.5s so the finished frame holds before the loop
+   restarts.
+5. Preview cheaply with `design_export_image({ id, canvas_json, width: 1080, height: 1920, frame: 45 })`
+   (1.5s at 30fps) and the same call at `frame: 120` (4s), then
+   `design_update({ id, canvasData, expectedSectionsVersion })`.
 6. **Confirm, then render.** `design_export_mp4({ id, canvas_json, width: 1080, height: 1920,
    duration_seconds: 6 })`. Say it blocks up to 240s before you start.
 7. `media_library_register_external_url` on the MP4. It did not auto-register. Optional autoplay
@@ -320,3 +405,34 @@ motion render still goes through export-then-register.
    `marketing_storyboard_update` on `validation.errors`, restyled with `marketing_storyboard_set_look`,
    then `marketing_storyboard_submit_for_approval`.
    THE AGENT CANNOT APPROVE: after creating, submit for approval and stop.
+
+---
+
+# Tool index for this reference
+
+**Canvas round-trip:** `design_state_get` (compact read; `page_id` reads one page of a multi-page
+design), `design_get` (raw `canvasData`), `design_update` (canvas via `canvasData` +
+`expectedSectionsVersion` CAS token; metadata independently; `status: 'archived'` is the removal verb -
+there is no design_delete), `design_create`, `design_list`, `design_templates_list`.
+
+**Versioning and review:** `design_version_create`, `design_versions_list`, `design_version_get`,
+`design_comments_list`, `design_comment_resolve`.
+
+**Export and publish:** `design_export_image` (REQUIRES `id, canvas_json, width, height`; optional
+`frame`, `fps`, `duration_frames`; returns `imageUrl` + `jobId`), `design_export_mp4`,
+`design_video_rerender`, `design_render_job_get` (polling ADVANCES the job - video reference),
+`design_render_jobs_list` (plain read of render jobs; advances nothing), `design_publish_to_library`
+(`page_id`, `set_as_featured`; settled frame; never dedupes).
+
+**Registration and libraries:** `media_library_register_external_url` / `_batch`, `media_upload`,
+`media_library_list`, `media_update`.
+
+**Brand and context:** `account_context_get({ domain: 'branding' })`, `talk_to_department`,
+`brand_guide_list`, `brand_guide_get`, `brand_guide_set_logo`.
+
+**Escalation lane:** `marketing_storyboard_create`, `marketing_storyboard_get`,
+`marketing_storyboard_update`, `marketing_storyboard_set_look`,
+`marketing_storyboard_submit_for_approval` (then STOP - the agent cannot approve).
+
+**Companion protocols:** the see-and-judge loop is `references/self-review.md`; memory write-back is
+`references/memory-protocol.md`.

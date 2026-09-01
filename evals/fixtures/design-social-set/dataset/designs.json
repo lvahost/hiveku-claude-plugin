@@ -1,0 +1,287 @@
+{
+  "_comment": "Design-studio truth: design_projects rows (canvasData = the stored sections, sectionsVersion = the CAS counter), durable render jobs, and video pipelines (storyboard artifact and run record are one row). SEEDS: dsn_anim_legacy carries the DEAD per-layer animation shape {preset, delay_ms, duration_ms} - keys the renderer does not read, so it renders fully static while every save reports success (one layer even carries the loop value 'pulse' in the preset slot); dsn_story_motion carries the REAL schema (the distinguishing distractor) AND an exported MP4 that was never registered (its preview URL and completed render job rj_mp4_777 both point at a file media.json does not contain). sb_fall_teaser is awaiting human approval; sb_summer_recap completed with everything registered.",
+  "designs": [
+    {
+      "id": "dsn_feed_sale",
+      "title": "Fall Warm-Up Sale - IG feed",
+      "slug": "fall-warm-up-sale-ig-feed-k2x",
+      "description": "Square feed graphic for the fall sale.",
+      "designType": "instagram_post",
+      "status": "draft",
+      "sectionsVersion": 3,
+      "featuredImageUrl": "https://media.brightside-fixtures.example/media/acct_fixture_creative/design-fall-warm-up-sale-ig-feed-1756400000000.png",
+      "tags": ["fall-sale"],
+      "createdAt": "2026-08-28T09:15:00Z",
+      "updatedAt": "2026-08-30T08:40:00Z",
+      "artboard": { "width": 1080, "height": 1080, "background": "#1F3A5F", "gridEnabled": false, "gridSize": 20, "snapEnabled": true, "rulerEnabled": false },
+      "canvasData": {
+        "version": "6.0.0",
+        "background": "#1F3A5F",
+        "objects": [
+          { "type": "rect", "id": "ly_bg", "name": "Background", "left": 0, "top": 0, "width": 1080, "height": 1080, "fill": "#1F3A5F" },
+          { "type": "image", "id": "ly_photo", "name": "Walnut sconce photo", "left": 0, "top": 520, "width": 1600, "height": 1200, "scaleX": 0.675, "scaleY": 0.675, "src": "https://media.brightside-fixtures.example/media/acct_fixture_creative/walnut-sconce-lifestyle.jpg" },
+          { "type": "rect", "id": "ly_scrim", "name": "Scrim", "left": 0, "top": 520, "width": 1080, "height": 200, "fill": "#1F3A5F", "opacity": 0.45 },
+          { "type": "textbox", "id": "ly_headline", "name": "Headline", "left": 84, "top": 120, "width": 912, "text": "FALL WARM-UP SALE", "fontFamily": "Archivo", "fontSize": 92, "fontWeight": "700", "fill": "#FFFFFF", "textAlign": "left", "lineHeight": 1.1 },
+          { "type": "textbox", "id": "ly_dates", "name": "Dates and offer", "left": 84, "top": 300, "width": 912, "text": "Sep 8-22 | 20% off pendants and sconces", "fontFamily": "Inter", "fontSize": 34, "fontWeight": "400", "fill": "#E8A13D", "lineHeight": 1.4 },
+          { "type": "image", "id": "ly_logo", "name": "Logo", "left": 812, "top": 952, "width": 440, "height": 192, "scaleX": 0.5, "scaleY": 0.5, "src": "https://media.brightside-fixtures.example/brand/brightside-logo-primary.png" }
+        ]
+      }
+    },
+    {
+      "id": "dsn_anim_legacy",
+      "title": "Fall Warm-Up Sale - Story teaser",
+      "slug": "fall-warm-up-sale-story-teaser-m4q",
+      "description": "9:16 story teaser for the fall sale. Animated in the editor era before the schema change.",
+      "designType": "instagram_story",
+      "status": "draft",
+      "sectionsVersion": 5,
+      "featuredImageUrl": null,
+      "tags": ["fall-sale"],
+      "createdAt": "2026-08-26T13:00:00Z",
+      "updatedAt": "2026-08-26T13:45:00Z",
+      "artboard": { "width": 1080, "height": 1920, "background": "#1F3A5F", "gridEnabled": false, "gridSize": 20, "snapEnabled": true, "rulerEnabled": false },
+      "canvasData": {
+        "version": "6.0.0",
+        "background": "#1F3A5F",
+        "_animation": { "duration_ms": 6000, "fps": 30, "loop": true },
+        "objects": [
+          { "type": "rect", "id": "lg_bg", "name": "Background", "left": 0, "top": 0, "width": 1080, "height": 1920, "fill": "#1F3A5F", "animation": { "preset": "fade-in", "delay_ms": 0, "duration_ms": 400 } },
+          { "type": "textbox", "id": "lg_headline", "name": "Headline", "left": 88, "top": 560, "width": 904, "text": "WARM UP YOUR EVENINGS", "fontFamily": "Archivo", "fontSize": 96, "fontWeight": "700", "fill": "#F5EFE4", "lineHeight": 1.1, "animation": { "preset": "fade-up", "delay_ms": 300, "duration_ms": 600 } },
+          { "type": "textbox", "id": "lg_sub", "name": "Subhead", "left": 88, "top": 900, "width": 800, "text": "The Fall Warm-Up Sale is coming.", "fontFamily": "Inter", "fontSize": 40, "fontWeight": "400", "fill": "#F5EFE4", "lineHeight": 1.4, "animation": { "preset": "fade-up", "delay_ms": 500, "duration_ms": 600 } },
+          { "type": "textbox", "id": "lg_cta", "name": "CTA", "left": 88, "top": 1280, "width": 500, "text": "SHOP THE SALE", "fontFamily": "Inter", "fontSize": 30, "fontWeight": "700", "fill": "#E8A13D", "animation": { "preset": "pulse", "delay_ms": 900 } }
+        ]
+      }
+    },
+    {
+      "id": "dsn_story_motion",
+      "title": "Summer Clearance - Story motion",
+      "slug": "summer-clearance-story-motion-b7d",
+      "description": "9:16 motion graphic for the summer clearance. Rendered to MP4 on 2026-08-21.",
+      "designType": "instagram_story",
+      "status": "published",
+      "sectionsVersion": 8,
+      "featuredImageUrl": null,
+      "tags": ["summer-clearance"],
+      "createdAt": "2026-08-10T10:00:00Z",
+      "updatedAt": "2026-08-21T09:20:00Z",
+      "artboard": { "width": 1080, "height": 1920, "background": "#1F3A5F", "gridEnabled": false, "gridSize": 20, "snapEnabled": true, "rulerEnabled": false },
+      "canvasData": {
+        "version": "6.0.0",
+        "background": "#1F3A5F",
+        "_animation": { "duration_ms": 6000, "fps": 30, "loop": true },
+        "_preview_video_url": "https://media.brightside-fixtures.example/renders/design-summer-clearance-story-motion-1755800000000.mp4",
+        "objects": [
+          { "type": "rect", "id": "sm_bg", "name": "Background", "left": 0, "top": 0, "width": 1080, "height": 1920, "fill": "#1F3A5F", "animation": { "enter": "fade-in", "enter_duration_ms": 400 } },
+          { "type": "textbox", "id": "sm_headline", "name": "Headline", "left": 88, "top": 560, "width": 904, "text": "SUMMER CLEARANCE", "fontFamily": "Archivo", "fontSize": 100, "fontWeight": "700", "fill": "#F5EFE4", "lineHeight": 1.1, "animation": { "enter": "fade-up", "enter_delay_ms": 300, "enter_duration_ms": 600, "enter_distance_px": 60, "easing": "quart-out" } },
+          { "type": "textbox", "id": "sm_sub", "name": "Subhead", "left": 88, "top": 860, "width": 800, "text": "Floor models and last pieces.", "fontFamily": "Inter", "fontSize": 40, "fontWeight": "400", "fill": "#F5EFE4", "lineHeight": 1.4, "animation": { "enter": "fade-up", "enter_delay_ms": 520, "enter_duration_ms": 600, "enter_distance_px": 60, "easing": "quart-out" } },
+          { "type": "textbox", "id": "sm_cta", "name": "CTA", "left": 88, "top": 1260, "width": 500, "text": "LAST CHANCE", "fontFamily": "Inter", "fontSize": 30, "fontWeight": "700", "fill": "#E8A13D", "animation": { "enter": "pop", "enter_delay_ms": 1000, "enter_duration_ms": 500, "easing": "back-out", "loop": "pulse" } }
+        ]
+      }
+    },
+    {
+      "id": "dsn_archived_promo",
+      "title": "Spring Refresh promo",
+      "slug": "spring-refresh-promo-a1c",
+      "description": "Archived spring campaign square.",
+      "designType": "instagram_post",
+      "status": "archived",
+      "sectionsVersion": 2,
+      "featuredImageUrl": null,
+      "tags": ["spring"],
+      "createdAt": "2026-04-02T10:00:00Z",
+      "updatedAt": "2026-06-01T10:00:00Z",
+      "artboard": { "width": 1080, "height": 1080, "background": "#F5EFE4", "gridEnabled": false, "gridSize": 20, "snapEnabled": true, "rulerEnabled": false },
+      "canvasData": {
+        "version": "6.0.0",
+        "background": "#F5EFE4",
+        "objects": [
+          { "type": "rect", "id": "sp_bg", "name": "Background", "left": 0, "top": 0, "width": 1080, "height": 1080, "fill": "#F5EFE4" },
+          { "type": "textbox", "id": "sp_headline", "name": "Headline", "left": 84, "top": 420, "width": 912, "text": "SPRING REFRESH", "fontFamily": "Archivo", "fontSize": 96, "fontWeight": "700", "fill": "#1F3A5F", "textAlign": "center" }
+        ]
+      }
+    }
+  ],
+  "versions": {
+    "dsn_feed_sale": [
+      { "id": "ver_100", "versionNumber": 1, "versionName": "Initial layout", "changeSummary": "First composition from the seasonal sale template.", "title": "Fall Warm-Up Sale - IG feed", "isMilestone": false, "createdAt": "2026-08-28T09:20:00Z" }
+    ]
+  },
+  "render_jobs": [
+    {
+      "jobId": "rj_mp4_777",
+      "kind": "composition",
+      "status": "completed",
+      "progress": 100,
+      "progressMessage": "render complete",
+      "url": "https://media.brightside-fixtures.example/renders/design-summer-clearance-story-motion-1755800000000.mp4",
+      "assetId": null,
+      "width": 1080,
+      "height": 1920,
+      "durationSeconds": 6,
+      "designProjectId": "dsn_story_motion",
+      "billable": false,
+      "error": null,
+      "createdAt": "2026-08-21T09:05:00Z"
+    },
+    {
+      "jobId": "rj_still_310",
+      "kind": "still",
+      "status": "completed",
+      "progress": 100,
+      "progressMessage": "render complete",
+      "url": "https://media.brightside-fixtures.example/media/acct_fixture_creative/design-fall-warm-up-sale-ig-feed-1756400000000.png",
+      "assetId": "ast_401",
+      "width": 1080,
+      "height": 1080,
+      "durationSeconds": null,
+      "designProjectId": "dsn_feed_sale",
+      "billable": false,
+      "error": null,
+      "createdAt": "2026-08-28T17:28:00Z"
+    },
+    {
+      "jobId": "rj_pipe_640",
+      "kind": "composition",
+      "status": "completed",
+      "progress": 100,
+      "progressMessage": "composited",
+      "url": "https://media.brightside-fixtures.example/media/acct_fixture_creative/summer-clearance-recap-final.mp4",
+      "assetId": "ast_509",
+      "width": 1080,
+      "height": 1920,
+      "durationSeconds": 22,
+      "designProjectId": null,
+      "billable": false,
+      "error": null,
+      "createdAt": "2026-08-20T12:35:00Z"
+    },
+    {
+      "jobId": "rj_sc_601",
+      "kind": "generate_video",
+      "status": "completed",
+      "progress": 100,
+      "progressMessage": "clip registered",
+      "url": "https://media.brightside-fixtures.example/media/acct_fixture_creative/recap-clip-scene-1.mp4",
+      "assetId": "ast_521",
+      "width": 1080,
+      "height": 1920,
+      "durationSeconds": 4,
+      "designProjectId": null,
+      "billable": true,
+      "error": null,
+      "createdAt": "2026-08-20T12:08:00Z"
+    },
+    {
+      "jobId": "rj_sc_602",
+      "kind": "generate_video",
+      "status": "completed",
+      "progress": 100,
+      "progressMessage": "clip registered",
+      "url": "https://media.brightside-fixtures.example/media/acct_fixture_creative/recap-clip-scene-2.mp4",
+      "assetId": "ast_522",
+      "width": 1080,
+      "height": 1920,
+      "durationSeconds": 4,
+      "designProjectId": null,
+      "billable": true,
+      "error": null,
+      "createdAt": "2026-08-20T12:14:00Z"
+    },
+    {
+      "jobId": "rj_sc_603",
+      "kind": "generate_video",
+      "status": "completed",
+      "progress": 100,
+      "progressMessage": "clip registered",
+      "url": "https://media.brightside-fixtures.example/media/acct_fixture_creative/recap-clip-scene-3.mp4",
+      "assetId": "ast_523",
+      "width": 1080,
+      "height": 1920,
+      "durationSeconds": 4,
+      "designProjectId": null,
+      "billable": true,
+      "error": null,
+      "createdAt": "2026-08-20T12:20:00Z"
+    }
+  ],
+  "pipelines": [
+    {
+      "pipelineId": "sb_fall_teaser",
+      "status": "awaiting_approval",
+      "progress": 0,
+      "progressMessage": null,
+      "pausedUntil": null,
+      "error": null,
+      "storyboardVersion": 2,
+      "approvedAt": null,
+      "createdAt": "2026-08-27T16:40:00Z",
+      "updatedAt": "2026-08-27T16:40:00Z",
+      "designProjectId": "dsn_feed_sale",
+      "storyboard": {
+        "schema": "hiveku.storyboard.v1",
+        "title": "Fall Warm-Up teaser",
+        "profile_id": "instagram_reels",
+        "style_id": "warm-documentary",
+        "music": { "mode": "stock" },
+        "captions": { "enabled": true },
+        "scenes": [
+          { "id": "sc_1", "type": "clip", "prompt": "slow pan across a walnut sconce glowing on a plaster wall, dusk light", "duration_s": 3 },
+          { "id": "sc_2", "type": "clip", "prompt": "hands adjusting a brass pendant over a kitchen island", "duration_s": 3 },
+          { "id": "sc_3", "type": "clip", "prompt": "living room lamps warming as evening falls, window in frame", "duration_s": 3 },
+          { "id": "sc_4", "type": "clip", "prompt": "close texture shot of spun brass and walnut grain", "duration_s": 3 },
+          { "id": "sc_5", "type": "static", "on_screen_text": "Fall Warm-Up Sale" },
+          { "id": "sc_6", "type": "static", "on_screen_text": "Sep 15-30 | in store and online" }
+        ]
+      },
+      "scenes": [
+        { "index": 0, "sceneId": "sc_1", "type": "clip", "status": "pending", "renderJobId": null, "assetId": null, "url": null, "error": null },
+        { "index": 1, "sceneId": "sc_2", "type": "clip", "status": "pending", "renderJobId": null, "assetId": null, "url": null, "error": null },
+        { "index": 2, "sceneId": "sc_3", "type": "clip", "status": "pending", "renderJobId": null, "assetId": null, "url": null, "error": null },
+        { "index": 3, "sceneId": "sc_4", "type": "clip", "status": "pending", "renderJobId": null, "assetId": null, "url": null, "error": null },
+        { "index": 4, "sceneId": "sc_5", "type": "static", "status": "static", "renderJobId": null, "assetId": null, "url": null, "error": null },
+        { "index": 5, "sceneId": "sc_6", "type": "static", "status": "static", "renderJobId": null, "assetId": null, "url": null, "error": null }
+      ],
+      "result": null
+    },
+    {
+      "pipelineId": "sb_summer_recap",
+      "status": "completed",
+      "progress": 100,
+      "progressMessage": "composited and registered",
+      "pausedUntil": null,
+      "error": null,
+      "storyboardVersion": 3,
+      "approvedAt": "2026-08-19T15:05:00Z",
+      "createdAt": "2026-08-18T11:00:00Z",
+      "updatedAt": "2026-08-20T12:40:00Z",
+      "designProjectId": "dsn_story_motion",
+      "storyboard": {
+        "schema": "hiveku.storyboard.v1",
+        "title": "Summer clearance recap",
+        "profile_id": "instagram_reels",
+        "style_id": "clean-professional",
+        "music": { "mode": "stock" },
+        "captions": { "enabled": true },
+        "scenes": [
+          { "id": "rc_1", "type": "static", "on_screen_text": "Summer Clearance" },
+          { "id": "rc_2", "type": "clip", "prompt": "pendant wall glowing in the showroom", "duration_s": 4 },
+          { "id": "rc_3", "type": "clip", "prompt": "customer lifting a floor lamp box at checkout", "duration_s": 4 },
+          { "id": "rc_4", "type": "clip", "prompt": "sconce close-up, price tag swinging", "duration_s": 4 },
+          { "id": "rc_5", "type": "static", "on_screen_text": "Thanks for a bright season" }
+        ]
+      },
+      "scenes": [
+        { "index": 0, "sceneId": "rc_1", "type": "static", "status": "static", "renderJobId": null, "assetId": null, "url": null, "error": null },
+        { "index": 1, "sceneId": "rc_2", "type": "clip", "status": "completed", "renderJobId": "rj_sc_601", "assetId": "ast_521", "url": "https://media.brightside-fixtures.example/media/acct_fixture_creative/recap-clip-scene-1.mp4", "error": null },
+        { "index": 2, "sceneId": "rc_3", "type": "clip", "status": "completed", "renderJobId": "rj_sc_602", "assetId": "ast_522", "url": "https://media.brightside-fixtures.example/media/acct_fixture_creative/recap-clip-scene-2.mp4", "error": null },
+        { "index": 3, "sceneId": "rc_4", "type": "clip", "status": "completed", "renderJobId": "rj_sc_603", "assetId": "ast_523", "url": "https://media.brightside-fixtures.example/media/acct_fixture_creative/recap-clip-scene-3.mp4", "error": null },
+        { "index": 4, "sceneId": "rc_5", "type": "static", "status": "static", "renderJobId": null, "assetId": null, "url": null, "error": null }
+      ],
+      "result": {
+        "renderJobId": "rj_pipe_640",
+        "mediaAssetId": "ast_509",
+        "url": "https://media.brightside-fixtures.example/media/acct_fixture_creative/summer-clearance-recap-final.mp4"
+      }
+    }
+  ]
+}

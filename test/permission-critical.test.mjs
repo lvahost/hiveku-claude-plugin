@@ -92,10 +92,6 @@ const REEXEC_NOT_GATED = new Map([
     're-ARMS rows so a LATER run uploads them; this call itself dispatches nothing, and it 409s ' +
     'until a human takes the account live in the dashboard. The tool that actually sends is ' +
     'marketing_offline_conversions_run — gate that one, not this one'],
-  ['marketing_video_pipeline_retry_scene',
-    're-generates ONE clip scene whose last attempt FAILED; the route refuses a retry on a scene ' +
-    'that already landed, so it cannot double-bill, and it reaches no recipient. Gating it while ' +
-    'the far larger first-run spend (marketing_generate_video) is ungated would be incoherent'],
   ['project_domain_retry_certificate',
     'requests a fresh SSL cert after a FAILED issuance. Nothing is sent to anyone and no live ' +
     'cert is touched; the usual outcome of a careless call is that it fails again identically ' +

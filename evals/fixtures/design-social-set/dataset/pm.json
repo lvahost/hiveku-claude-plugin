@@ -1,0 +1,6 @@
+{
+  "projects": [
+    { "id": "proj_fixture_ops", "name": "Fixture Ops", "status": "active", "project_type": "operations" },
+    { "id": "proj_fixture_creative", "name": "Brightside Creative Studio", "status": "active", "project_type": "marketing" }
+  ]
+}

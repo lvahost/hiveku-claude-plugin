@@ -222,6 +222,22 @@ test('vetoed reads never auto-approve, even while the server lists them as reads
   }
 });
 
+test('design_render_job_get is a write in read clothing and never rides the readonly list', () => {
+  // Its own registered description: calling it "does not just read the row, it
+  // ADVANCES it" - the handler runs the same pollAndAdvance as the reconcile
+  // cron, so a "poll" finishes a paid render and registers the asset in the
+  // media library. The generator excludes it (SENSITIVE_READ_EXCLUSIONS,
+  // 2026-09-01); the NEVER_AUTO_APPROVE veto backstops a mis-generated list.
+  assert.equal(isReadOnlyTool('design_render_job_get'), false,
+    'design_render_job_get must not classify as a read - if this fails, regenerate lib/readonly-tools.json');
+  assert.equal(isAutoApprovable('design_render_job_get', { job_id: 'x' }), false);
+  assert.equal(
+    decideForPayload({ tool_name: `${HIVEKU_TOOL_PREFIX}design_render_job_get`, tool_input: { job_id: 'x' } }),
+    null,
+    'the plugin must decline to vouch for it and stay silent on a direct call',
+  );
+});
+
 test('voice_voicemails_list auto-approves ONLY the explicit metadata form', () => {
   // The route returns a presigned recording URL per voicemail unless
   // audio_urls === 'false'. Fail closed: no input, empty input, or the wrong
@@ -245,10 +261,30 @@ test('voice_voicemails_list auto-approves ONLY the explicit metadata form', () =
   );
 });
 
+/**
+ * GETs the generator deliberately drops from readonly-tools.json
+ * (SENSITIVE_READ_EXCLUSIONS in scripts/gen-readonly-tools.mjs) - a read whose
+ * ROUTE writes, or whose response is itself the hazard. Parsed from the
+ * generator source so the exclusion stays declared in exactly one place: for
+ * these names, ABSENCE from the readonly list is the correct state, not drift.
+ */
+function generatorExcludedReads() {
+  const src = readFileSync(new URL('../scripts/gen-readonly-tools.mjs', import.meta.url), 'utf8');
+  const block = src.match(/SENSITIVE_READ_EXCLUSIONS = new Map\(\[([\s\S]*?)\]\);/);
+  const names = new Set();
+  for (const m of (block?.[1] ?? '').matchAll(/\[\s*'([a-z0-9_]+)'/g)) names.add(m[1]);
+  return names;
+}
+
 test('every override name is real and consistent with the generated lists', () => {
   // A veto on a name that exists nowhere is a typo that protects nothing; a
   // veto on a name the readonly list carries but the index says is not a GET
   // means one of the generated files is stale. Both must fail loudly.
+  const excluded = generatorExcludedReads();
+  assert.ok(
+    excluded.has('project_secrets_list'),
+    'could not parse SENSITIVE_READ_EXCLUSIONS out of scripts/gen-readonly-tools.mjs - fix the parse before trusting this test',
+  );
   const readonly = new Set(
     JSON.parse(readFileSync(new URL('../lib/readonly-tools.json', import.meta.url), 'utf8')).tools,
   );
@@ -276,13 +312,17 @@ test('every override name is real and consistent with the generated lists', () =
         `${name} is in the readonly list yet its override does not bite — stale override`,
       );
     } else if (index.has(name)) {
-      // Not in the readonly list: fine for a write, but a GET missing from
-      // the readonly list means the generated list has drifted.
-      assert.notEqual(
-        index.get(name),
-        'GET',
-        `${name} is a GET in the index but absent from readonly-tools.json — regenerate the list`,
-      );
+      // Not in the readonly list: fine for a write, and CORRECT for a GET the
+      // generator deliberately excludes (design_render_job_get advances a paid
+      // render on the way past). Any OTHER GET missing from the readonly list
+      // means the generated list has drifted.
+      if (index.get(name) === 'GET') {
+        assert.ok(
+          excluded.has(name),
+          `${name} is a GET in the index, absent from readonly-tools.json, and not a ` +
+            'SENSITIVE_READ_EXCLUSIONS entry - one of the generated files is stale; regenerate the list',
+        );
+      }
     }
   }
 });

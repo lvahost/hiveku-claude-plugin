@@ -1,0 +1,72 @@
+{
+  "_comment": "account_context_get({domain:'branding'}) response, in the REAL route shape: the Olympus /api/olympus/account-context route wraps the bundle under `data` and returns account / domain / identity / brand / memory / rules / avatars / instructions / has / sections_included. The sale window (Sep 15-30) and the cream-on-navy pairing are planted HERE and in memory, never in the prompt, exactly like ppc-optimize plants its target CPA.",
+  "data": {
+    "account": {
+      "id": "acct_fixture_creative",
+      "name": "Brightside Fixtures",
+      "company_name": "Brightside Fixtures LLC",
+      "industry": "Home lighting retail",
+      "website": "https://brightside-fixtures.example"
+    },
+    "domain": "branding",
+    "identity": {
+      "domain": "_identity:branding",
+      "content": "Brightside creative desk. Warm, practical, craft-first. No hype, no exclamation marks, no emoji. Photography of real fixtures over illustration; the cream-on-navy pairing carries every sale message."
+    },
+    "brand": {
+      "id": "bg_7c1f",
+      "name": "Brightside Fixtures Brand",
+      "brand_voice": "warm, practical, craft-first; no hype, no exclamation marks",
+      "color_primary": "#1F3A5F",
+      "color_secondary": "#E8A13D",
+      "color_accent": "#C25E2E",
+      "color_background": "#F5EFE4",
+      "color_text": "#23222B",
+      "font_heading_family": "Archivo",
+      "font_body_family": "Inter",
+      "logo_primary_url": "https://media.brightside-fixtures.example/brand/brightside-logo-primary.png",
+      "is_default": true,
+      "is_active": true
+    },
+    "memory": "Creative and branding record for Brightside Fixtures. The Fall Warm-Up Sale runs Sep 15-30, in store and online. Brand guide bg_7c1f is the single source for color and type; the house pairing for sale creative is the cream #F5EFE4 on the navy #1F3A5F. Storyboard ledger, recorded at submit time because spend is tracked here: 2026-08-27 sb_fall_teaser, Fall Warm-Up teaser, six scenes, est $5.40, submitted for approval and NOT approved yet; 2026-08-19 sb_summer_recap, Summer clearance recap, five scenes, est $4.10, approved the same day, run completed, result registered as ast_509. Spend ledger: August AI clips used 3 of 20; voiceover seconds used 0. Standing practice: register every design export before attaching it anywhere, and archive designs (status 'archived') rather than expecting a delete tool - none exists.",
+    "memory_updated_at": "2026-08-27T16:45:00Z",
+    "rules": [
+      {
+        "slug": "creative-approval",
+        "content": "Storyboards are submitted for approval and never approved from an agent surface. Approval is the billing moment and belongs to a signed-in human in the dashboard. Never assemble the same video from single generated clips to route around the approval card."
+      },
+      {
+        "slug": "export-registration",
+        "content": "Every design export, PNG or MP4, is registered in the Media Library before it is attached anywhere. An export URL with no media_assets row cannot be attached by id and counts as an open finding."
+      },
+      {
+        "slug": "clip-spend",
+        "content": "AI video clips cost about a dollar each against a 20 clip monthly cap. No clip is generated without its own written confirmation naming the cost and the remaining quota."
+      }
+    ],
+    "avatars": [
+      {
+        "id": "av_01",
+        "name": "Room-at-a-time renovator",
+        "summary": "Homeowners 35-60 upgrading one room at a time; they buy on warmth, craft and fit, not on discount depth. Photography of real fixtures beats illustration for this buyer.",
+        "occupation": "Homeowner",
+        "primary_goals": ["a warmer living space"],
+        "pain_points": ["big-box sameness"],
+        "typical_quote": "I want it to feel like it was always there.",
+        "updated_at": "2026-08-14T10:00:00Z"
+      }
+    ],
+    "instructions": "You have loaded the account context for domain=\"branding\". Use it for every piece of creative output. Brand tokens come from the brand guide, never from memory of another account. Re-read the rules before any generative or spending call; numbers come from tool results. Sections loaded: identity, brand, memory, rules, avatars.",
+    "has": {
+      "memory": true,
+      "identity": true,
+      "brand": true,
+      "avatars": true,
+      "journeys": false,
+      "skills": false,
+      "rules": true,
+      "content_examples": false
+    },
+    "sections_included": ["identity", "brand", "memory", "rules", "avatars"]
+  }
+}

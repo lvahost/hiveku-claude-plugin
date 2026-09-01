@@ -1,0 +1,6 @@
+{
+  "dead_animation_designs": ["dsn_anim_legacy"],
+  "unresolved_comments": ["cmt_1001"],
+  "unregistered_exports": ["dsn_story_motion"],
+  "unapproved_storyboards": ["sb_fall_teaser"]
+}

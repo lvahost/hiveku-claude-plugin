@@ -216,7 +216,17 @@ Put this in `.claude/settings.json` (per project) or `~/.claude/settings.json` (
       "mcp__plugin_hiveku_hk__customer_avatar_delete",
       "mcp__plugin_hiveku_hk__customer_journey_delete",
       "mcp__plugin_hiveku_hk__before_after_grid_delete",
-      "mcp__plugin_hiveku_hk__customer_journey_stage_delete"
+      "mcp__plugin_hiveku_hk__customer_journey_stage_delete",
+      "mcp__plugin_hiveku_hk__media_delete",
+      "mcp__plugin_hiveku_hk__media_folder_delete",
+      "mcp__plugin_hiveku_hk__brand_guide_delete",
+      "mcp__plugin_hiveku_hk__brand_guide_purge",
+      "mcp__plugin_hiveku_hk__marketing_storyboard_delete",
+      "mcp__plugin_hiveku_hk__marketing_generate_video",
+      "mcp__plugin_hiveku_hk__marketing_video_pipeline_retry_scene",
+      "mcp__plugin_hiveku_hk__design_voiceover_create",
+      "mcp__plugin_hiveku_hk__generate_image_set",
+      "mcp__plugin_hiveku_hk__marketing_testimonial_media_replace"
     ]
   }
 }

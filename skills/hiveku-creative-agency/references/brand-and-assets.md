@@ -50,12 +50,12 @@ Tools: `brand_guide_list`, `brand_guide_get`, `brand_guide_create`, `brand_guide
 Treat the guide as a live configuration object with three consumers, not a PDF:
 
 1. **Template substitution.** `design_templates_list` returns the 52-template library already substituted with the active guide, plus artboard presets by category (Social Media / Presentation / Print / Ads / Email). Each template carries a ready-to-use `canvasData` payload you pipe straight into `design_create`'s `initialCanvasData`, so the guide decides what colors and type land on the canvas before you touch it. A generic-looking template is a symptom: fix the guide, do not repaint layer by layer.
-2. **Image generation.** `generate_image` is brand-aware by default and `generate_image_set` shares one brand context across up to ten prompts. That awareness comes from the account's brand system, not your prompt string: strengthening the guide improves every future generation, stuffing colors into one prompt improves one image.
+2. **Image generation.** `generate_image` is brand-aware by default (`use_brand: false` opts out) and `generate_image_set` shares one brand context across up to ten prompts. That awareness comes from the account's brand system, not your prompt string: strengthening the guide improves every future generation, stuffing colors into one prompt improves one image.
 3. **The branding agent.** `talk_to_department({ domain: 'branding' })` runs with the guide hydrated, so a palette rationale or type pairing comes back inside the client's system rather than generic.
 
 **Read before writing.** `brand_guide_list`, then `brand_guide_get` on the one that matters. Do not assume the field shape from this manual - read the tool's own schema and an existing guide's payload. A field the schema does not declare is a silent no-op on mutating calls, not an error.
 
-**The logo is its own call**, because it is an asset reference, not a text field. Get the file into the library first (`media_upload`, or `media_library_register_external_url` for one already at a URL), then `brand_guide_set_logo` - it names the slots explicitly (`logo_primary_url`, `logo_secondary_url`, `logo_wordmark_url`, `logo_icon_url`, `logo_dark_url`), updates only the fields supplied, and clearing a slot takes an explicit `null`, not an omission. URLs must be http(s) and should point at library assets. R7 stands: the logo comes from the client.
+**The logo is its own call**, because it is an asset reference, not a text field. Get the file into the library first (`media_upload`, or `media_library_register_external_url` for one already at a URL), then `brand_guide_set_logo` - it names the six slots explicitly (`logo_primary_url`, `logo_secondary_url`, `logo_wordmark_url`, `logo_icon_url`, `logo_dark_url` for light backgrounds, `logo_light_url` for dark backgrounds), updates only the fields supplied, and clearing a slot takes an explicit `null`, not an omission. URLs must be http(s) and should point at library assets. R7 stands: the logo comes from the client.
 
 **Custom fonts are toolable** - a five-tool family, with three silent traps worth knowing before the first call:
 
@@ -89,7 +89,7 @@ The first hour on a new account. Nothing downstream is worth doing until this is
 
 **7 - Build one artifact as proof.** Pipe one substituted template's `canvasData` into `design_create` and hand back the `dashboardUrl`. It is immediately editable there, which is the point: the client sees the system applied and can push on it while it is cheap to change.
 
-**8 - Capture the avatars and the proof grids** (Part 5), then **record the decisions**: palette, type, logo rules, and reasoning to `memory_create`; follow-up work (missing lockups, photo shoot, font licensing) as `pm_tasks_create` items, not a line in a chat message.
+**8 - Capture the avatars and the proof grids** (Part 5), then **record the decisions**: palette, type, logo rules, and reasoning into the `branding` memory document via the read-merge-write in `references/memory-protocol.md` (a bare `memory_create` on an account with history 409s, or worse, forks the document); follow-up work (missing lockups, photo shoot, font licensing) as `pm_tasks_create` items, not a line in a chat message.
 
 ---
 
@@ -125,7 +125,7 @@ One item, many collections. People reach for folders to do a collection's job, a
 
 ## Part 7. Getting pixels in: four lanes
 
-**Lane 1 - Generate.** `generate_image` for a single visual: brand-aware by default, auto-registers a media asset, returns a `media_asset_id` you can attach immediately. `generate_image_set` runs up to ten prompts on one brand context, and per-prompt failures land in `errors[]` rather than failing the batch - read `errors[]` and report a partial set as partial. Billable: confirm first (R8).
+**Lane 1 - Generate.** `generate_image` for a single visual: brand-aware by default (`use_brand: false` opts out), auto-registers a media asset, returns a `media_asset_id` you can attach immediately. `target_width` / `target_height` produce exact output dimensions - an email header at 1200x600, a LinkedIn banner at 1584x396 - instead of the nearest aspect bucket. `mode: 'modify'` with `reference_media_asset_ids` (1 to 4 Media Library image ids) edits FROM references rather than inventing: restage a real product shot, extend a real background, relight a real photo. References must be library assets, so register an external image first via `media_library_register_external_url`. The `model` list also carries `flux`, `flux-pro` and `recraft`; `seed` and `negative_prompt` work on those lanes only and are an `invalid_request` error elsewhere, never silently dropped. One rule above all of it: generated TEXT AND LOGOS ARE GARBAGE - every word, price, and mark belongs on a canvas layer, and prompts name photographic subjects only. `generate_image_set` runs up to ten prompts on one brand context, and per-prompt failures land in `errors[]` rather than failing the batch - read `errors[]` and report a partial set as partial. Billable: confirm first (R8).
 
 **Lane 2 - Client-supplied files.** `media_upload` for a file you have, `marketing_media_upload_base64` for bytes. Both land in the library with an id.
 
@@ -160,7 +160,7 @@ Order of preference:
 3. **Stock**, via `stock_photos_search` plus registration, for generic context - backgrounds, textures, anything with no brand specificity.
 4. **Generation**, for concepts, illustrations, and composites that cannot be photographed. That is where `generate_image` earns its cost.
 
-One more lever: a still can be animated rather than re-shot. `marketing_generate_video` takes an existing asset as `reference_media_asset_id`, and the design canvas animates a still per layer at no generation cost at all.
+Two more levers before a from-scratch generation: a still can be animated rather than re-shot (`marketing_generate_video` takes an existing asset as `reference_media_asset_id`, and the design canvas animates a still per layer at no generation cost at all), and a real photo can be modified rather than replaced (`generate_image` with `mode: 'modify'` and `reference_media_asset_ids` restages or relights the client's actual product instead of inventing a lookalike).
 
 When generation IS the right rung and the prompt matters, `media_ai_enhance_prompt` turns a rough post idea into one generation-ready prompt - but be honest about its price: it COSTS MONEY ON EVERY CALL (a full tool-enabled agent turn hydrated with the account's memory and brand voice, metered against AI spend, seconds to tens of seconds of latency) and WRITES NOTHING itself - no asset, no post. Use it before a batch or a high-stakes hero image, where one better prompt saves several paid re-generations; never reflexively in front of every `generate_image`.
 
@@ -213,8 +213,10 @@ Every trap here is silent.
 
 **Media library:** `media_library_list`, `media_library_get`, `media_upload`, `media_update`, `media_delete`, `media_usage_get`, `media_bulk_move`, `media_library_register_external_url`, `media_library_register_external_url_batch`, `media_folders_list`, `media_folder_create` / `_update` / `_delete`, `media_collections_list`, `media_collection_create` / `_get` / `_update` / `_delete` / `_add_item` / `_remove_item`; parallel surface `marketing_media_list` / `_get` / `_folders` / `_register_external_url` / `_upload_base64`.
 
-**Images and stock:** `generate_image`, `generate_image_set`, `media_ai_enhance_prompt`, `stock_photos_search` (Unsplash + Pexels), `stock_photos_pixabay_search`, `media_stock_video_search`, `stock_photos_download` (website-project lane; `project_id` from `sites_list`).
+**Images and stock:** `generate_image` (brand-aware by default via `use_brand`; `target_width` / `target_height` for exact dims; `mode: 'modify'` + `reference_media_asset_ids`; models incl. `flux` / `flux-pro` / `recraft` with fal-only `seed` / `negative_prompt`), `generate_image_set`, `media_ai_enhance_prompt`, `stock_photos_search` (Unsplash + Pexels), `stock_photos_pixabay_search`, `media_stock_video_search`, `stock_photos_download` (website-project lane; `project_id` from `sites_list`).
 
-**Design canvas, referenced across the boundary:** `design_templates_list`, `design_create`, `design_state_get`, `design_version_create`, `design_versions_list`, `design_export_image`, `design_export_mp4`, `design_publish_to_library`.
+**Design canvas, referenced across the boundary:** `design_templates_list`, `design_create`, `design_state_get`, `design_version_create`, `design_versions_list`, `design_export_image` (requires `id, canvas_json, width, height`), `design_export_mp4`, `design_publish_to_library` (`set_as_featured` is the thumbnail path).
+
+**Memory write-back:** `memory_list` -> merge -> `memory_update` (`memory_create` once; 409 = exists), per `references/memory-protocol.md`; recovery via `memory_list_versions` + `memory_restore_version`.
 
 **Named as NOT existing, with the fallback stated:** `brand_guide_set_active` (verify via `design_templates_list`, activate in the dashboard), palette extraction (read the guide or ask), media bulk delete (one `media_delete` per named id), a brand-compliance scorer (diff by hand via `design_state_get`, mark as judgment), and any creative approval tool.

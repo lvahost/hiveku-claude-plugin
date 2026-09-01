@@ -154,7 +154,7 @@ test('localseo and aeo aliases match the manifest department ids', () => {
 });
 
 test('deptMatches: the alias table is explicit and never widens an unaliased department', () => {
-  assert.deepEqual(Object.keys(DEPT_ALIASES).sort(), ['aeo', 'localseo', 'seo']);
+  assert.deepEqual(Object.keys(DEPT_ALIASES).sort(), ['aeo', 'creative', 'design', 'localseo', 'media', 'seo']);
   assert.equal(deptMatches('crawl', 'seo'), true);
   assert.equal(deptMatches('crawl', 'ppc'), false);
   assert.equal(deptMatches('content_analysis_summary', 'seo'), true);
@@ -167,6 +167,24 @@ test('deptMatches: the alias table is explicit and never widens an unaliased dep
   assert.equal(deptMatches('seo_rankings_list', ''), false);
   assert.ok(expandDept('seo').includes('backlinks'));
   assert.deepEqual(expandDept('ppc'), ['ppc']);
+});
+
+test('★ the creative/design/media aliases reach the split creative surface', () => {
+  // Measured 2026-09-01: department 'creative' matched ZERO tools and 'design'
+  // only 21 of the ~140 the creative department calls (lib/dept-aliases.mjs).
+  // The storyboard/video lane hides under marketing_, the library under media_,
+  // brand under brand_ - so an unaliased creative focus advertised nothing.
+  assert.equal(deptMatches('marketing_storyboard_create', 'creative'), true);
+  assert.equal(deptMatches('marketing_report_send', 'creative'), false,
+    'marketing_ is reached by PREFIX only - the report/ops surface must not ride along');
+  assert.equal(deptMatches('generate_image', 'media'), true, 'a bare-names alias, not a dept token');
+  assert.equal(deptMatches('media_library_list', 'creative'), true);
+  assert.equal(deptMatches('brand_guide_get', 'creative'), true);
+  assert.equal(deptMatches('marketing_generate_video', 'creative'), true);
+  assert.equal(deptMatches('marketing_generate_video', 'design'), true);
+  assert.equal(deptMatches('marketing_video_pipeline_status', 'design'), true);
+  assert.equal(deptMatches('marketing_media_list', 'media'), true);
+  assert.equal(deptMatches('media_upload', 'ppc'), false, 'aliases only widen the aliased word');
 });
 
 test('ALWAYS_AVAILABLE covers the five every key can call', () => {

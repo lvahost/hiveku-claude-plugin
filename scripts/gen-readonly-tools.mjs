@@ -189,6 +189,10 @@ const SENSITIVE_READ_EXCLUSIONS = new Map([
   ['customer_journey_avatar_list',
     'the route BACKFILLS customer_journey_maps.target_avatar_id into the ' +
     'customer_journey_avatars link table before returning. A GET, but not a read.'],
+  ['design_render_job_get',
+    "2026-09-01. Its own registered description: calling it 'does not just read the row, it " +
+    "ADVANCES it' - same pollAndAdvance as the reconcile cron, finishing a paid render and " +
+    'registering the asset. A GET, but not a read.'],
 ]);
 
 // The mirror image: a POST that is a pure read. Some routes dispatch reads and

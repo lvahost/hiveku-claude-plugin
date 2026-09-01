@@ -1,0 +1,11 @@
+{
+  "_comment": "account_ai_memory rows served by memory_list. The branding document carries the storyboard-id ledger (one id NOT approved - the seed) and the spend ledger; its content matches context.json data.memory byte for byte, the way ppc-optimize plants its target in both places. memory_create on an existing (domain) pair answers 409 - the write-back protocol is list, merge, update.",
+  "entries": [
+    {
+      "memory_id": "mem_branding_1",
+      "type": "memory",
+      "name": "branding",
+      "content": "Creative and branding record for Brightside Fixtures. The Fall Warm-Up Sale runs Sep 15-30, in store and online. Brand guide bg_7c1f is the single source for color and type; the house pairing for sale creative is the cream #F5EFE4 on the navy #1F3A5F. Storyboard ledger, recorded at submit time because spend is tracked here: 2026-08-27 sb_fall_teaser, Fall Warm-Up teaser, six scenes, est $5.40, submitted for approval and NOT approved yet; 2026-08-19 sb_summer_recap, Summer clearance recap, five scenes, est $4.10, approved the same day, run completed, result registered as ast_509. Spend ledger: August AI clips used 3 of 20; voiceover seconds used 0. Standing practice: register every design export before attaching it anywhere, and archive designs (status 'archived') rather than expecting a delete tool - none exists."
+    }
+  ]
+}

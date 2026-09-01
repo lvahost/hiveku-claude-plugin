@@ -58,6 +58,16 @@ const GATED_PREFIXES = [
   // console note rather than a failure - the exact way a skill starts teaching a
   // tool that does not exist.
   'workflow_',
+  // 2026-09-01. The creative program: the design/media/brand surface plus the
+  // storyboard and video-pipeline lanes. The widening pass over existing prose
+  // found one fabricated name already being taught around (brand_guide_set_active,
+  // see KNOWN_NON_TOOLS) - exactly the class this gate exists for.
+  'design_',
+  'media_',
+  'brand_guide_',
+  'marketing_storyboard_',
+  'marketing_video_pipeline_',
+  'stock_photos_',
 ];
 
 /**
@@ -66,7 +76,18 @@ const GATED_PREFIXES = [
  * more than 150 voice_ mentions and far more than 400 seo_ mentions; the vendor
  * prefixes are too sparse in prose to pin a floor on, and ride on these two.
  */
-const MIN_CHECKED = { voice_: 150, seo_: 400, workflow_: 120 };
+const MIN_CHECKED = {
+  voice_: 150,
+  seo_: 400,
+  workflow_: 120,
+  // Creative footprint measured 2026-09-01: design_ 125, media_ 126,
+  // brand_guide_ 71 tokens in prose. Floors sit near half so a rewrite does
+  // not false-fail; the sparser creative prefixes (marketing_storyboard_ 36,
+  // marketing_video_pipeline_ 15, stock_photos_ 24) ride on these three.
+  design_: 60,
+  media_: 60,
+  brand_guide_: 30,
+};
 
 /**
  * Snake tokens that LOOK like tools but are not, each with the one-word reason
@@ -127,6 +148,18 @@ const KNOWN_NON_TOOLS = new Map([
   // seo_connection_test is NOT here on purpose: orient's integrations.md names
   // it as "does not exist" (true today) but it is contracted in SEO batch S3,
   // so it lives in PENDING_TOOLS, and that prose flips when S3 lands.
+
+  // Creative program (gate widened 2026-09-01). Request/response fields the
+  // prose names by their real identity; none is callable.
+  ['media_asset_id', 'field'],
+  ['media_asset_ids', 'field'],
+  ['brand_guide_id', 'field'],
+  ['design_project_id', 'field'],
+  // Named in prose ONLY as "does not exist": brand-and-assets.md teaches the
+  // design_templates_list check and the dashboard fallback precisely because
+  // there is no activation tool. Move to PENDING_TOOLS if it is ever
+  // contracted; delete here when it ships.
+  ['brand_guide_set_active', 'unbuilt'],
 ]);
 
 /**

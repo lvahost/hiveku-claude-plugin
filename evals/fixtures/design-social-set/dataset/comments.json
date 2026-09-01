@@ -1,0 +1,33 @@
+{
+  "_comment": "design_comments_list truth, keyed by design id. Shape mirrors GET /api/olympus/marketing/design/:id/comments: top-level comments only, replies nested, RESOLVED COMMENTS INCLUDED. Seeds and traps: cmt_1001 is the one unresolved thread the session must work; cmt_0900 is already resolved (re-resolving overwrites resolved_at); rpl_2001 is a reply, and resolving a reply reports success while changing nothing observable.",
+  "dsn_feed_sale": [
+    {
+      "id": "cmt_0900",
+      "commentText": "Swap the hero for the walnut sconce shot - the pendant photo reads too cool for this campaign.",
+      "position": { "x": 50, "y": 62 },
+      "userId": "usr_client_dana",
+      "isResolved": true,
+      "createdAt": "2026-08-28T15:40:00Z",
+      "replies": []
+    },
+    {
+      "id": "cmt_1001",
+      "commentText": "Two things before this ships. The headline is white but our guide says the cream (#F5EFE4) on navy. And the dates are wrong - the Fall Warm-Up Sale runs Sep 15-30, not Sep 8-22.",
+      "position": { "x": 48, "y": 24 },
+      "userId": "usr_client_dana",
+      "isResolved": false,
+      "createdAt": "2026-08-30T19:12:00Z",
+      "replies": [
+        {
+          "id": "rpl_2001",
+          "commentText": "Agreed on the cream. Keep the logo bottom-right where it is.",
+          "userId": "usr_owner_marc",
+          "createdAt": "2026-08-30T20:03:00Z"
+        }
+      ]
+    }
+  ],
+  "dsn_anim_legacy": [],
+  "dsn_story_motion": [],
+  "dsn_archived_promo": []
+}
