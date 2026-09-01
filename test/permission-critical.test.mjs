@@ -28,10 +28,79 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const permFile = JSON.parse(
   fs.readFileSync(path.join(root, 'data', 'permission-critical-tools.json'), 'utf8'),
 );
-const indexMethods = new Map(
-  JSON.parse(fs.readFileSync(path.join(root, 'lib', 'tool-index.json'), 'utf8'))
-    .tools.map((t) => [t.name, t.method]),
-);
+const indexTools = JSON.parse(
+  fs.readFileSync(path.join(root, 'lib', 'tool-index.json'), 'utf8'),
+).tools;
+const indexMethods = new Map(indexTools.map((t) => [t.name, t.method]));
+
+/**
+ * ── The re-execution class ────────────────────────────────────────────────
+ *
+ * ★ THE INCIDENT THIS EARNED. workflow_run_replay, workflow_run_retry and
+ * workflow_dead_letter_resolve landed in lib/tool-index.json and were never
+ * added to the ask list, while the strictly milder workflow_stranded_replay
+ * was gated. On a machine configured per INSTALL.md — `allow:
+ * mcp__plugin_hiveku_hk__*` plus the literal ask names — that is not "one
+ * missing entry", it is blanket-allowed: an unattended session that finds a
+ * failed run calls workflow_run_retry({ run_id, confirm: true }) and the whole
+ * graph re-executes with no prompt. Every sendEmail and sendSms node fires a
+ * second time at the same contacts, because the engine's send-once guard is
+ * keyed PER RUN and a retry is a new run.
+ *
+ * A tool's own `confirm: true` is NOT a gate. It is a field the model fills in
+ * itself, from the same description that told it the field exists — it stops a
+ * malformed call, never an unattended one. The only thing that puts a human in
+ * the loop is the ask rule, so re-execution belongs there by class, not by
+ * whoever remembers.
+ *
+ * Two independent detectors, because either one alone would have missed one of
+ * the three: the NAME rule does not see workflow_dead_letter_resolve (it
+ * replays under an `action` argument), and the DESCRIPTION rule does not see a
+ * tool whose author never shouted. A tool is in the class if EITHER fires.
+ */
+
+/**
+ * Names that declare re-execution. Matched on underscore-delimited tokens, so
+ * a tool merely CONTAINING "retry" in prose is not swept in.
+ */
+const REEXEC_NAME = /(^|_)(replay|replays|retry|retries|resend|rerun|requeue|reprocess|redeliver|reexecute|resubmit)(_|$)/;
+
+/**
+ * Descriptions that SHOUT re-execution. Deliberately case-sensitive: this
+ * codebase upper-cases exactly the sentence a caller must not skim past
+ * ("RE-RUNS A PAST RUN'S INPUT FOR REAL"), and matching case-insensitively
+ * here pulls in ~90 tools whose prose merely mentions a retry in passing —
+ * a rule that noisy gets an exemption entry per failure and stops meaning
+ * anything.
+ */
+const REEXEC_SHOUT = /(?:^|[^A-Za-z])(RE-?RUNS?|RE-?EXECUTES?|RE-?FIRES?|RE-?SENDS?|REPLAYS?|RETRIES)(?:[^A-Za-z]|$)/;
+
+function reExecutionSignals(tool) {
+  const signals = [];
+  if (REEXEC_NAME.test(tool.name)) signals.push('name');
+  if (REEXEC_SHOUT.test(tool.description || '')) signals.push('description');
+  return signals;
+}
+
+/**
+ * Re-execution tools deliberately left OFF the ask list. Added ONE AT A TIME,
+ * each with the reason it is not the hazard the class describes — never to
+ * quiet a failure. If you cannot write the reason, gate the tool instead.
+ */
+const REEXEC_NOT_GATED = new Map([
+  ['marketing_offline_conversions_requeue',
+    're-ARMS rows so a LATER run uploads them; this call itself dispatches nothing, and it 409s ' +
+    'until a human takes the account live in the dashboard. The tool that actually sends is ' +
+    'marketing_offline_conversions_run — gate that one, not this one'],
+  ['marketing_video_pipeline_retry_scene',
+    're-generates ONE clip scene whose last attempt FAILED; the route refuses a retry on a scene ' +
+    'that already landed, so it cannot double-bill, and it reaches no recipient. Gating it while ' +
+    'the far larger first-run spend (marketing_generate_video) is ungated would be incoherent'],
+  ['project_domain_retry_certificate',
+    'requests a fresh SSL cert after a FAILED issuance. Nothing is sent to anyone and no live ' +
+    'cert is touched; the usual outcome of a careless call is that it fails again identically ' +
+    'because the CAA record is still wrong'],
+]);
 
 test('count matches and no name is duplicated', () => {
   assert.equal(
@@ -105,4 +174,52 @@ test('plugin_version matches the shipped plugin version', () => {
     'data/permission-critical-tools.json plugin_version is stale — scripts/release.mjs stamps it; ' +
       'run the release script rather than editing the number by hand',
   );
+});
+
+test('every re-execution tool in the index is on the ask list', () => {
+  const gated = new Set(permFile.tools.map((t) => t.name));
+  // GETs are out of scope by construction: an ask rule on a read stalls every
+  // sweep that touches it, which is why the file forbids them outright above.
+  // A GET that re-executes would be a mapping bug on the server, not a missing
+  // ask entry.
+  const missing = indexTools
+    .filter((t) => t.method && t.method !== 'GET')
+    .filter((t) => reExecutionSignals(t).length > 0)
+    .filter((t) => !gated.has(t.name) && !REEXEC_NOT_GATED.has(t.name))
+    .map((t) => `${t.name} (${t.method}, matched by ${reExecutionSignals(t).join(' + ')})`);
+  assert.deepEqual(
+    missing,
+    [],
+    're-execution tools that are NOT on the ask list. On a machine configured per INSTALL.md ' +
+      '(allow: mcp__plugin_hiveku_hk__* plus the literal ask names) these run unprompted, and ' +
+      'the send-once guard is keyed per run so every send in the graph fires again. Add each to ' +
+      'data/permission-critical-tools.json AND the INSTALL.md ask block, or add it to ' +
+      'REEXEC_NOT_GATED with the reason it is not that hazard:\n  ' + missing.join('\n  '),
+  );
+});
+
+test('every re-execution exemption is still live and still an exemption', () => {
+  const byName = new Map(indexTools.map((t) => [t.name, t]));
+  const gated = new Set(permFile.tools.map((t) => t.name));
+  const stale = [];
+  for (const [name, reason] of REEXEC_NOT_GATED) {
+    const tool = byName.get(name);
+    if (!tool) {
+      stale.push(`${name}: no longer in the tool index — a renamed tool carries its exemption ` +
+        'nowhere, so the new name is unexamined. Delete this entry and re-judge the new one');
+      continue;
+    }
+    if (reExecutionSignals(tool).length === 0) {
+      stale.push(`${name}: no longer matches the re-execution class, so this entry exempts ` +
+        'nothing. Delete it');
+    }
+    if (gated.has(name)) {
+      stale.push(`${name}: is BOTH exempted here and on the ask list. The ask list wins; delete ` +
+        'the exemption so the reason cannot be read as a decision not to gate it');
+    }
+    if (!reason || reason.length < 40) {
+      stale.push(`${name}: exemption reason is missing or too thin to review`);
+    }
+  }
+  assert.deepEqual(stale, [], `stale re-execution exemptions:\n  ${stale.join('\n  ')}`);
 });

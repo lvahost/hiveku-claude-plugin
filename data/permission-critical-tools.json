@@ -6,7 +6,7 @@
     "mcp__hiveku__"
   ],
   "plugin_version": "0.19.2",
-  "count": 106,
+  "count": 109,
   "tools": [
     {
       "name": "deploy_site",
@@ -497,6 +497,21 @@
       "name": "workflow_stranded_replay",
       "method": "POST",
       "why_gated": "re-sends real notifications for submissions banked while the workflow was paused, to contacts who may be days old"
+    },
+    {
+      "name": "workflow_run_replay",
+      "method": "POST",
+      "why_gated": "re-runs a past run's input as a NEW run, so the engine's send-once guard - which is keyed PER RUN - does not dedupe it: every sendEmail and sendSms node in the graph fires again at the same contacts. Its own confirm:true is not a gate, because the model fills that field in itself"
+    },
+    {
+      "name": "workflow_run_retry",
+      "method": "POST",
+      "why_gated": "re-executes a failed run for real. A run that sent an email before failing on a later node sends it a second time, because the send-once guard is keyed PER RUN and a retry is a new run. Its own confirm:true is not a gate, because the model fills that field in itself"
+    },
+    {
+      "name": "workflow_dead_letter_resolve",
+      "method": "POST",
+      "why_gated": "action 'replay' re-executes a quarantined run for real - every send in the graph fires, at an event that has been sitting in the dead-letter queue long enough to be stale. Its own confirm:true is not a gate, because the model fills that field in itself"
     },
     {
       "name": "workflow_set_recipient",
