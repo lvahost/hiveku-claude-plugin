@@ -9,7 +9,8 @@ Ticket pass. 1. `helpdesk_tickets_overdue({ kind: "first_response", limit: 500 }
 2. Per ticket: `helpdesk_ticket_get` + `helpdesk_ticket_messages` for context; find a fitting macro
    (`helpdesk_macros_list` → `helpdesk_macros_get({ id })` to see its `{{placeholders}}` →
    `helpdesk_macros_render({ id, variables })` - YOU build the variables map from the ticket, the
-   render tool takes no ticket argument, and its response lists any placeholder you left unfilled;
+   render tool takes no ticket argument, and `unfilled_placeholders` lists what you left blank
+   (an empty string counts, and unsupplied placeholders render as blanks, not visible tokens);
    non-empty means do not send) or draft fresh; use `helpdesk_kb_suggest_articles({ q })` for
    citable articles because it returns public-only, while `helpdesk_kb_search` defaults to
    `visibility: "all"` and will hand you internal docs you must never link to a customer.

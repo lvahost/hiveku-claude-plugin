@@ -18,18 +18,20 @@ gives macros something to link to.
   sub-category) before drafting the first article.
 - Let the system point at gaps too: `helpdesk_kb_suggest_articles({ q })` surfaces articles the
   system believes are relevant (use it against a ticket to see whether an answer already exists,
-  and where it returns nothing for a common question, that is a gap). It returns PUBLIC articles
-  only, which is exactly why it is the tool to use when picking links for an outbound reply - you
-  cannot accidentally link an internal doc to a customer. `helpdesk_kb_search({ q, visibility })`
-  takes `public | internal | all` and defaults to `all`, so search results you paste into a
-  customer reply must be visibility-checked by hand.
+  and where it returns nothing for a common question, that is a gap). It returns only articles that are
+  PUBLIC and PUBLISHED, which is exactly why it is the tool to use when picking links for an
+  outbound reply - you cannot accidentally link an internal doc, or a draft written in the open,
+  to a customer. `helpdesk_kb_search({ q, visibility })` takes `public | internal | draft | all`
+  and defaults to `all`, which means public + internal (drafts excluded) - so search results you
+  paste into a customer reply must still be visibility-checked by hand.
 - Draft articles yourself against `agent_identity_get({ domain: 'helpdesk' })` - the question, the
   correct answer, and the audience - then create with
   `helpdesk_kb_article_create({ title, body, excerpt, category_id, tags, visibility })`. It
   defaults to `visibility: 'draft'` with `publish: false`, which is HIDDEN from search: creating an
   article does not publish it, so never report a create as "published". Create as a draft, get the
   client's sign-off, then `helpdesk_kb_article_update({ id, visibility: 'public' })` - and know
-  that setting `public` AUTO-PUBLISHES to customers immediately, so that flip is the live moment,
+  that the flip INTO `public` AUTO-PUBLISHES to customers immediately, so that flip is the live
+  moment (re-saving an already-public article does not move its publish date),
   not a staging step. `internal` is agents-only. Always write an `excerpt`; it is what customers
   see in search results. Confirm title, category, body, and visibility before the call.
 - To pull an article back down: `helpdesk_kb_article_update({ id, published_at: null })`

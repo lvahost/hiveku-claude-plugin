@@ -109,30 +109,50 @@ only `send_reply` stamps `first_response_at`. `add_message` with `direction: 'ou
 NOT, so the ticket keeps showing up in `helpdesk_tickets_overdue` as a first-response breach
 even though the customer was answered - permanently skewing the SLA attainment number the
 retainer is sold on. Customer-facing text goes through `send_reply`, always. `add_message` also
-defaults `author_kind` to `ai_agent`; pass `author_kind` / `author_id` when logging on behalf
-of a human.
+defaults `author_kind` to `ai_agent`; pass `author_kind: 'user'` plus `author_id` when logging
+on behalf of a human. Use `'user'`, not `'human'` - an unrecognised value falls back to
+`ai_agent`, and a human reply stored as `ai_agent` is shown to the CUSTOMER as the bot and
+replayed to the model as its own prior turn.
+
+The first-response clock stops only for an outbound message that a human or the AI wrote AND
+that was actually delivered. An auto-acknowledgement never stops it, an internal note never
+stops it, and a row recording a failed or skipped send never stops it - so a first-response
+number now measures a real person answering, not the autoresponder.
 
 Verify after sending: a success response from `send_reply` proves the write, not the delivery.
 Re-read `helpdesk_ticket_messages` and confirm the outbound row is in the thread and
 `first_response_at` is now set (via `helpdesk_ticket_get`) before you report the customer
-answered or move to the next ticket.
+answered or move to the next ticket. `send_reply` refuses with 422 `no_recipient` when an email
+or SMS ticket has no reachable address - pass `to` to override the recipient rather than
+recording a reply nobody receives.
 
 ## helpdesk_ticket_merge
 `helpdesk_ticket_merge({ id, merge_into_id })` is hard to unwind - `id` is the SOURCE and gets
-closed with a merge note, `merge_into_id` is the TARGET that receives the messages. Get them
-backwards and you close the wrong ticket. Confirm the two really are one issue and one customer,
-and confirm which one survives, before merging.
+closed, `merge_into_id` is the TARGET that receives the messages. Get them backwards and you
+close the wrong ticket. Confirm the two really are one issue and one customer, and confirm which
+one survives, before merging.
+
+A system note is written on BOTH threads recording the merge, and the response returns
+`messages_moved` plus `messages_deduplicated` - two tickets ingested from the same email thread
+can carry the same provider message, and the duplicate is discarded rather than duplicated into
+the target. Moved messages keep their original timestamps, so they interleave into the target
+thread in real chronological order; the system note is what tells a reader where they came
+from. A self-merge is refused.
 
 ## Macro mechanics
 `helpdesk_macros_get({ id })` - the argument is `id`, not `macro_id` - returns the raw body with
 all its `{{placeholders}}` showing; that raw body is how you learn which variables the render
 needs. `helpdesk_macros_render({ id, variables })`: YOU build the variables map, from what
 `helpdesk_ticket_get` gave you - the render tool has no awareness of tickets and takes no ticket
-argument. The response returns the filled body plus a list of any placeholder you failed to
-supply: if that list is non-empty, DO NOT send, fill it and re-render. Rendering does not send -
-it returns the resolved text for you to review - but it does bump the macro's `usage_count`,
-which is the most-used sort order (test once, not in a loop), and it refuses with 400 on an
-`is_active=false` macro. `helpdesk_macros_create({ title, body, description, tags })` - the
+argument. The response returns `rendered_body`, `required_placeholders` (everything the
+template asks for) and `unfilled_placeholders`: if that last list is non-empty, DO NOT send,
+fill it and re-render. A variable you supplied as an EMPTY STRING counts as unfilled - sending
+"Hi ," to a customer is the hazard this exists to catch. Do not try to eyeball the rendered body
+instead: an unsupplied placeholder renders as a blank, not as a visible `{{token}}`, so a
+half-filled macro looks like clean prose. Rendering does not send - it returns the resolved text
+for you to review - but it does bump the macro's `usage_count`, which is the most-used sort
+order, so pass `count_usage: false` for a dry run. It refuses with 400 on an `is_active=false`
+macro. `helpdesk_macros_create({ title, body, description, tags })` - the
 field is `title`, not `name`, and `title` + `body` are the required pair; supported template
 vars are `{{contact_first_name}}`, `{{ticket_short_id}}`, `{{account_name}}`, `{{agent_name}}`,
 `{{portal_url}}`. `helpdesk_macros_update` allow-lists title, body, description, tags,
@@ -145,13 +165,29 @@ does not publish it, so never report a create as "published". `category_id` is r
 a fresh account with no categories, create one first with `helpdesk_kb_categories_create({
 name, parent_id? })` (slug auto-derives from the name). The publish moment is
 `helpdesk_kb_article_update({ id, visibility: 'public' })`, which AUTO-PUBLISHES to customers
-immediately with no staging step; `internal` is agents-only. `published_at` is tri-state -
-`null` to unpublish, `true` to publish now, or an ISO datetime to backdate. Update allow-lists:
-title, body, excerpt, visibility, category_id, tags, slug, published_at. Read before you edit
-(`helpdesk_kb_read_article`) so an update is a surgical edit, not a blind overwrite - and note
-that read increments the article's view counter. `helpdesk_kb_search({ q, visibility })` takes
-`public | internal | all` and defaults to `all`; `helpdesk_kb_suggest_articles({ q })` returns
-PUBLIC articles only, which is why it is the safe link-picker for outbound replies.
+immediately with no staging step; `internal` is agents-only. Publishing fires on the TRANSITION
+into public, so re-saving an already-public article never moves its publish date, and an
+explicit `published_at` in the same call always wins. `published_at` is tri-state - `null` to
+unpublish, `true` to publish now, or an ISO datetime to backdate. Update allow-lists: title,
+body, excerpt, visibility, category_id, tags, slug, publish, published_at. Read before you edit
+(`helpdesk_kb_read_article`) so an update is a surgical edit, not a blind overwrite - it returns
+the article at any visibility, so check the `is_customer_safe` flag before linking one to a
+customer, and note that reading increments the view counter (which is why article view counts
+are not worth reporting).
+
+`helpdesk_kb_search({ q, visibility })` takes `public | internal | draft | all` and defaults to
+`all`, which means public + internal - DRAFTS ARE EXCLUDED unless you ask for `visibility:
+'draft'`. It still returns INTERNAL articles by default, so visibility-check by hand before
+linking anything. `helpdesk_kb_suggest_articles({ q })` is the safe link-picker for outbound
+replies: it returns only articles that are BOTH public AND actually published, so it cannot
+surface an internal doc or an unpublished draft. Both take a natural-language question and match
+on tokens, not on the sentence as one literal string, and both return `matched_keywords`.
+
+Categories are full CRUD: `helpdesk_kb_categories_create` / `_update` / `_delete` / `_list`.
+Renaming does NOT change the slug - that slug is a live help-centre URL - so pass `slug`
+explicitly or `regenerate_slug: true` when you mean to change it. Deleting a category that still
+holds articles or subcategories is refused with 409 and the counts; pass `reassign_to` to move
+the contents, or `force: true` to accept that articles become uncategorised.
 `helpdesk_kb_article_delete` permanently deletes - prefer `published_at: null`; delete only
 named junk or duplicates, never targets derived by age or pattern.
 
@@ -161,18 +197,30 @@ is `round_robin` (cycle members) | `least_busy` (the member with the fewest open
 `fixed_user` (always `fixed_user_id`, which is REQUIRED for that strategy or the create fails),
 defaulting to `round_robin`. `helpdesk_queues_update` patches the same strategy fields, so a
 load-balance problem is often a one-field fix from `round_robin` to `least_busy` rather than a
-new queue. `helpdesk_queues_add_member({ queue_id, user_id, role? })` returns 409 if already a
-member; `helpdesk_queues_remove_member({ queue_id, user_id })` does NOT unassign that user's
+new queue. `helpdesk_queues_add_member({ queue_id, user_id, role? })` accepts any user on the
+account, including teammates who joined by invitation; it returns 409 if they are already a
+member, and 400 `user_not_in_account` if they are not on the account at all. Assignment targets
+(`helpdesk_ticket_assign`, `queues_create({ fixed_user_id })`) are validated the same way and
+reject an unknown user rather than silently dropping the field; `helpdesk_queues_remove_member({ queue_id, user_id })` does NOT unassign that user's
 existing tickets - they stay with the person after they leave the queue.
 `helpdesk_queues_delete` orphans every ticket still pointing at the queue - reassign them first,
 and prefer `is_active: false`. `helpdesk_queues_get({ id })` shows one queue's current active
 member list; `helpdesk_queues_list` filters `is_active`.
 
 ## helpdesk_automations_get
-Returns exactly `auto_acknowledge`, `auto_assign`, `sla`, `csat_survey`, `auto_close`,
-`team_notifications`, plus the widget config (color, greeting, position). There is no
-auto-tagging config in that payload. It is read-only via Olympus - writes go through the
-dashboard because misconfiguring these has tenant-wide impact.
+Returns `auto_acknowledge`, `auto_assign`, `notify_team`, `first_response_sla` and
+`resolve_sla` (TWO separate SLA configs, not one `sla` key), `sla_escalation`, `csat_survey`,
+`csat_review_ask`, `auto_close`, `reply_channel` and `reply_routing`, plus the widget config.
+There is no auto-tagging config in that payload.
+
+Defaults are applied, so an account that has never opened its settings still reports what is
+actually running - `auto_acknowledge`, both SLA configs, `sla_escalation` and `auto_close` all
+default to ENABLED. Do not read a quiet config as "nothing is automated here".
+
+`notify_team.slack_webhook_url` is never returned - it is a credential, and this is a read whose
+output lands in your transcript. You get `slack_webhook_configured` and `slack_webhook_last4`
+instead, which is enough to answer "will escalating this ping the team?". It is read-only via
+Olympus - writes go through the dashboard because misconfiguring these has tenant-wide impact.
 
 ## CSAT mechanics
 Ratings are `great | ok | not_great` and `csat_score = great / total`, so an "ok" counts

@@ -167,8 +167,10 @@ Every reply is the client's brand talking to a customer. The bar is high.
    knowing what was already promised by email.
 2. Macro first: `helpdesk_macros_list` -> `helpdesk_macros_get({ id })` for the raw body ->
    `helpdesk_macros_render({ id, variables })`. YOU build the variables map from the ticket -
-   the render tool has no awareness of tickets. The response lists any placeholder you failed
-   to supply: non-empty means DO NOT send; fill and re-render. Rendering does not send. A good
+   the render tool has no awareness of tickets. `unfilled_placeholders` lists any placeholder
+   you failed to supply - non-empty means DO NOT send; fill and re-render. An empty string
+   counts as unfilled, and an unsupplied placeholder renders as a BLANK rather than a visible
+   `{{token}}`, so do not eyeball the body instead. Rendering does not send. A good
    macro answers 80 percent of the reply; you personalize the rest. Render mechanics:
    `references/tool-mechanics.md`.
 3. Anything non-routine (a complaint, an outage apology, a nuanced how-to): load
@@ -196,12 +198,15 @@ The KB answers tickets before they are opened and gives macros something to link
 - Writing queue = top contact reasons with no article; check coverage first
   (`helpdesk_kb_categories_list`, `helpdesk_kb_search`). On a fresh account categories come
   first (`helpdesk_kb_categories_create`) - article creation requires a `category_id`.
-- `helpdesk_kb_suggest_articles({ q })` returns PUBLIC articles only - the safe link-picker for
-  outbound replies. `helpdesk_kb_search` defaults to `all` visibilities: hand-check first.
+- `helpdesk_kb_suggest_articles({ q })` returns only articles that are public AND published -
+  the safe link-picker for outbound replies. `helpdesk_kb_search` defaults to `all`, which means
+  public + internal (drafts excluded): it still returns INTERNAL docs, so hand-check first.
 - Create as draft (`helpdesk_kb_article_create` defaults to `visibility: 'draft'` - a create is
   NOT a publish), get sign-off, then `helpdesk_kb_article_update({ id, visibility: 'public' })`
-  which auto-publishes immediately. `published_at: null` unpublishes; prefer that over
-  `helpdesk_kb_article_delete` (permanent; only for junk/duplicates named by id).
+  which auto-publishes immediately on the transition into public. `published_at: null`
+  unpublishes; prefer that over `helpdesk_kb_article_delete` (permanent; only for
+  junk/duplicates named by id). Categories are full CRUD now (`_create` / `_update` / `_delete`)
+  - renaming does not change the slug, and deleting a non-empty category is refused.
 Program design, gap-finding, visibility rules, retire-vs-delete: `references/kb-macro-playbooks.md`.
 
 ## Play 4 - Macros (canned responses that scale the team)
@@ -219,8 +224,11 @@ Knowing when to escalate is as valuable as knowing how to answer.
 - To a human specialist: `helpdesk_ticket_escalate_to_human({ id, assigned_to_id?, queue_id? })`
   when the issue needs judgement or authority the agent cannot supply. It is NOT just a
   reassignment: it FORCES `priority=urgent` and adds an `escalated` tag - it re-clocks the
-  ticket onto the tightest SLA rung and can manufacture a breach on a ticket that was fine, so
-  use it only when the issue genuinely is urgent-tier. Add a clean internal summary via
+  ticket onto the tightest SLA rung, anchored on the ticket's creation time, so escalating
+  something several days old can surface it as breached the moment you do it. Use it only when
+  the issue genuinely is urgent-tier. Deadlines only ever tighten, so de-escalating afterwards
+  does not hand the ticket its old window back. Omitting `assigned_to_id` leaves the current
+  assignee in place. Add a clean internal summary via
   `helpdesk_ticket_add_message` first, confirm before escalating, and footnote escalated
   tickets in monthly SLA attainment.
 - Decisions that belong to the client are not tickets to route: a refund above policy, a legal

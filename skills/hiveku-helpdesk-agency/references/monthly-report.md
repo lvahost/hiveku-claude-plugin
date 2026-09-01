@@ -105,11 +105,17 @@ the dashboard; flag the boundary rather than fishing.)
 Before explaining any metric move (satisfaction fell, backlog spiked, SLA slipped), rule out
 measurement artifacts first, in this order, and only then reach for a causal story:
 - Truncation: was last month's figure paged to the end and this month's capped at a limit?
-- Config change: did `csat_survey`, `auto_close`, or the `sla` ladder change mid-period?
+- Config change: did `csat_survey`, `auto_close`, or either SLA ladder (`first_response_sla` /
+  `resolve_sla`) change mid-period?
   `auto_close` sweeping aged pending tickets can masquerade as a resolution improvement.
 - Priority mix: `helpdesk_ticket_escalate_to_human` forces `priority=urgent`, so a month with
   heavy escalation re-clocks tickets onto the tightest SLA rung and can manufacture breaches -
   footnote escalated tickets in attainment.
+- A first-response figure measures a real human or AI reply that was actually DELIVERED.
+  Auto-acknowledgements, internal notes and failed sends do not stop the clock. Any comparison
+  against a period before 2026-09 is comparing two different definitions: attainment was
+  previously satisfied by the autoresponder seconds after a ticket opened, so historical
+  first-response numbers were flattered and a drop here is a change of measure, not of service.
 - Recording misuse: an outbound `helpdesk_ticket_add_message` answers the customer without
   stamping `first_response_at`, permanently skewing first-response attainment downward - it
   shows up as breached rows in `helpdesk_sla_history` too; check
