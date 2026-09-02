@@ -367,9 +367,12 @@ you actually update it.** Write the import first and the container installs noth
 module-not-found that looks like a resolution bug and is a missing dependency. The install is
 triggered by the file change, not the import, which is why order is the rule.
 
-Corollary: a large set of packages is pre-installed and must NOT be re-installed (next, react,
-react-dom, framer-motion, lucide-react, class-variance-authority, clsx, tailwind-merge, tailwindcss,
-postcss, autoprefixer, tailwindcss-animate, @tailwindcss/typography, @radix-ui primitives).
+Corollary (updated 2026-09-02): there is NO "pre-installed set" beyond what `package.json` declares —
+the project's `package.json` is the ONLY source of truth, and the preview installs exactly what it
+declares. A new project's manifest already declares the starter stack (next, react, framer-motion,
+lucide-react, tailwindcss, the @radix-ui primitives, ...), which is why you rarely add those; but if
+a project's `package.json` does NOT declare a package you import, the import fails — on preview AND
+on deploy — until you declare it. Declaring a package that is already declared is harmless.
 
 **Rule 45. The platform runs Node 20 everywhere. A package that requires Node > 20 will not build.**
 
@@ -434,9 +437,11 @@ different bundler, Node baseline, and env injection. Preview-green is not deploy
   resolve its own relative file is a broken install. This tool is ASYNC - it kicks the install off
   detached and returns immediately. Poll `preview_read_file({ path: '/tmp/hiveku-reinstall.log',
   tail_lines: 40 })` every ~15s until a line containing `hiveku-reinstall: exit=` appears (`exit=0` is
-  success). Installs typically run 1-4 minutes. Always reinstall after
-  `preview_force_recompile({ refresh_image: true })`, because a recreated machine boots with the
-  SCAFFOLD's baked `node_modules`, not the project's.
+  success). Installs typically run 1-4 minutes. (Updated 2026-09-02: a recreated machine of a
+  project WITH files no longer seeds the starter or its `node_modules` — it waits for the project's
+  own files and installs exactly what `package.json` declares, so a routine reinstall after
+  `refresh_image: true` is no longer required; reach for `preview_reinstall_deps` only when the
+  install itself is broken.)
 
 A third state, when the dev compile cache has diverged (a route serves old code despite a fresh save,
 a white screen after a restore): `preview_force_recompile({ project_id })` - stops and restarts the Fly
@@ -517,7 +522,8 @@ interactivity is dead, or you touched anything on the SSR/client boundary.
 Triage an empty result in this order:
 1. `capture_installed: false` -> capture is not wired on this container (an image predating the
    feature, or a static/nginx preview). Recreate it with
-   `preview_force_recompile({ refresh_image: true })`, then reinstall deps (Rule 48).
+   `preview_force_recompile({ refresh_image: true })` — since 2026-09-02 a recreated machine of a
+   project with files installs the project's own dependencies itself; no routine reinstall after.
 2. `capture_installed: true` and still empty -> nobody has loaded the preview in a browser since the
    last restart. Errors are only recorded when the page actually runs. Load it with
    `preview_screenshot({ path })`, then re-check.

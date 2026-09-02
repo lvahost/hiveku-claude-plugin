@@ -10,7 +10,7 @@ Read these first. The mechanism behind each is in the parts that follow, so you 
 
 **Do not:**
 
-- **R1.** Do not `npm install` anything on the pre-installed list (Part 2). Adding a package that already ships is a build risk for zero gain.
+- **R1.** Do not re-add a package the project's `package.json` already declares (Part 2). The manifest is the only source of truth; re-adding declared packages is churn for zero gain.
 - **R8.** Do not modify `next.config.*` to fix a build. The deployment system patches the config for production builds; your edit conflicts with the patch and breaks the preview *and* the build.
 - **R21/R22.** Do not create a root-level `images/` folder, and never save into `public/src/`.
 - **R23.** Do not reference `imported/images/...` as a URL. It is source storage, not a served path.
@@ -34,13 +34,19 @@ Read these first. The mechanism behind each is in the parts that follow, so you 
 
 ---
 
-## Part 2. The stack, and what is already installed
+## Part 2. The stack, and what the project declares
 
-Next.js 15/16 App Router, React 19, TypeScript 5, Tailwind 3.4 with shadcn/ui CSS variables, Framer Motion, Lucide icons, `cn()` from `lib/utils.ts`, path alias `@/*` pointing at the project root.
+Next.js 16 App Router, React 19, TypeScript 5, Tailwind 3.4 with shadcn/ui CSS variables, Framer Motion, Lucide icons, `cn()` from `lib/utils.ts`, path alias `@/*` pointing at the project root.
 
-**Pre-installed. Never `npm install` these (R1):** `next`, `react`, `react-dom`, `framer-motion`, `lucide-react`, `class-variance-authority`, `clsx`, `tailwind-merge`, `tailwindcss`, `postcss`, `autoprefixer`, `tailwindcss-animate`, `@tailwindcss/typography`, and the `@radix-ui` primitives.
+**The project's `package.json` is the ONLY source of truth for dependencies (updated 2026-09-02).**
+A new project's manifest already declares the starter stack — `next`, `react`, `react-dom`,
+`framer-motion`, `lucide-react`, `class-variance-authority`, `clsx`, `tailwind-merge`, `tailwindcss`,
+`postcss`, `autoprefixer`, `tailwindcss-animate`, `@tailwindcss/typography`, the `@radix-ui`
+primitives — which is why you rarely add those (R1: re-adding one that is already declared is churn
+for zero gain). There is no "pre-installed" set beyond the manifest: preview AND deploy install
+exactly what `package.json` declares, nothing more.
 
-**R2.** For anything genuinely new, update `package.json` *before* you write the import. The preview container auto-runs `npm install` when `package.json` changes, but only if you actually change it. An import of a package that is not in `package.json` is a module-not-found error waiting for the next container start.
+**R2.** For anything genuinely new, update `package.json` *before* you write the import. The preview container auto-runs `npm install` when `package.json` changes, but only if you actually change it. An import of a package that is not in `package.json` fails on preview and on deploy — declaring it is the fix, not recreating the preview.
 
 **R3.** Class merging is `cn()` from `lib/utils.ts`. Do not re-implement it or reach for a second merge helper; `clsx` and `tailwind-merge` are already wired through it.
 
