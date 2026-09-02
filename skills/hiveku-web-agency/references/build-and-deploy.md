@@ -426,28 +426,50 @@ environment. Only `deploy_site` does.
 **Rule 47. A build error that does not surface in the live preview can still kill a deploy** -
 different bundler, Node baseline, and env injection. Preview-green is not deploy-green.
 
-**Rule 48. Two preview failures are CONTAINER STATE, not code** - do not edit source for either:
+**Rule 48. Preview failures divide into four classes - classify FIRST, then route; only one class is
+fixed by editing.** Read the error, decide which class you are in, then act:
 
-- **Missing images** for files that DO exist in the media library, typical after a machine was
-  recreated following long idle -> `preview_assets_resync({ project_id })`. `preview_sync` pushes code
-  and only very recent assets; this reconciles the FULL asset set. Never ask a client to re-upload
-  files the library already has.
-- **`Module not found: Can't resolve './x'` where the importer is inside `node_modules/<pkg>/`** ->
-  `preview_reinstall_deps({ project_id })`. The giveaway is the importer path: a package failing to
-  resolve its own relative file is a broken install. This tool is ASYNC - it kicks the install off
-  detached and returns immediately. Poll `preview_read_file({ path: '/tmp/hiveku-reinstall.log',
-  tail_lines: 40 })` every ~15s until a line containing `hiveku-reinstall: exit=` appears (`exit=0` is
-  success). Installs typically run 1-4 minutes. (Updated 2026-09-02: a recreated machine of a
-  project WITH files no longer seeds the starter or its `node_modules` — it waits for the project's
-  own files and installs exactly what `package.json` declares, so a routine reinstall after
-  `refresh_image: true` is no longer required; reach for `preview_reinstall_deps` only when the
-  install itself is broken.)
+- **Class 1 - the error names a file that is NOT in the project.** `Module not found: Can't resolve
+  '@radix-ui/react-label'` from `./components/ui/label.tsx`, or `Cannot find module
+  'tailwindcss-animate'` from `tailwind.config.ts`, with neither file in the project's saved file
+  list. That is a starter leftover on the container, not the customer's code ->
+  `preview_force_recompile({ project_id })`. NEVER add the starter's package to the customer's
+  `package.json`, and NEVER delete or edit the container file by hand - container edits reverse-sync
+  into the saved project. If the identical error persists, run
+  `preview_force_recompile({ refresh_image: true })` once - only the full recreate lane prunes
+  leftovers.
+- **Class 2 - `Module not found: Can't resolve './x'` where the importer is inside
+  `node_modules/<pkg>/`** -> `preview_reinstall_deps({ project_id })`. The giveaway is the importer
+  path: a package failing to resolve its own relative file is a broken install. This tool is ASYNC -
+  it kicks the install off detached and returns immediately. Poll
+  `preview_read_file({ path: '/tmp/hiveku-reinstall.log', tail_lines: 40 })` every ~15s until a line
+  containing `hiveku-reinstall: exit=` appears (`exit=0` is success). Installs typically run 1-4
+  minutes. (Updated 2026-09-02: a recreated machine of a project WITH files no longer seeds the
+  starter or its `node_modules` — it waits for the project's own files and installs exactly what
+  `package.json` declares, so a routine reinstall after `refresh_image: true` is no longer required;
+  reach for `preview_reinstall_deps` only when the install itself is broken.)
+- **Class 3 - the error points at a file the project OWNS** (the path IS in the saved file list). Fix
+  the code. This is the only class where editing is the answer.
+- **Class 4 - blank page, or the HTML serves but interactivity is dead** ->
+  `preview_client_errors({ project_id })`; this is hydration territory, see Rule 63.
+  `capture_installed: false` in the result means an old container image ->
+  `preview_force_recompile({ refresh_image: true })`.
 
-A third state, when the dev compile cache has diverged (a route serves old code despite a fresh save,
-a white screen after a restore): `preview_force_recompile({ project_id })` - stops and restarts the Fly
-machine, ~30-90s of downtime. The default reuses the existing image and only clears the Next.js
-compile cache; `refresh_image: true` destroys and recreates the machine to re-pull the container image,
-which you only need when Hiveku shipped a container-level fix.
+Related container state, same discipline: **missing images** for files that DO exist in the media
+library, typical after a machine was recreated following long idle ->
+`preview_assets_resync({ project_id })`. `preview_sync` pushes code and only very recent assets; this
+reconciles the FULL asset set. Never ask a client to re-upload files the library already has. And on
+`preview_force_recompile` itself: it stops and restarts the Fly machine, ~30-90s of downtime. The
+default reuses the existing image and only clears the Next.js compile cache - which also covers a
+diverged dev compile cache (a route serving old code despite a fresh save, a white screen after a
+restore); `refresh_image: true` destroys and recreates the machine to re-pull the container image,
+needed only for starter leftovers that survive a plain recompile (Class 1) or when Hiveku shipped a
+container-level fix.
+
+The boot phase is not a failure. `preview_health` reports a `phase`; `installing` or `downloading`
+means a dependency install that runs 2-5 minutes - WAIT and re-check, never diagnose a healthy
+install as a failure. And `ready: true` does NOT prove the project's files landed: a preview
+rendering the starter while reporting `ready: true` is Class 1.
 
 **Rule 49. Commit is not deploy, and neither is silent.** Say what is going live, to which tier, and
 why, and get an explicit yes. Log the deploy afterward.
@@ -558,6 +580,10 @@ USER. A good question beats a 50-turn spiral.** Asking is not a failure state. T
 - **Renders in preview, missing in production** - code lane, or an excluded path.
 - **Deployed but live verification fails** - serving path, not the build. `deploy_doctor`, no retry.
 - **Route 404s in preview this turn** - normal; files sync at end of turn. Do not restart.
+- **Error cites a file that is not in the project** (e.g. `Can't resolve '@radix-ui/react-label'`
+  from `components/ui/label.tsx`, neither in the saved file list) - starter leftover:
+  `preview_force_recompile` (never add the package, never delete the container file by hand);
+  persists - `refresh_image: true` once.
 - **`Module not found: './x'` from inside `node_modules/<pkg>/`** - `preview_reinstall_deps` (async;
   poll `/tmp/hiveku-reinstall.log` for `exit=`). Missing preview images - `preview_assets_resync`. For
   a package you just imported - `package.json` first, which triggers the install.
