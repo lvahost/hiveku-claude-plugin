@@ -247,6 +247,15 @@ Commit is versioning; it is NOT deploying. Load
 checkpoints, or ANY restore. The invariants that cannot wait for the reference:
 - Branch for real work (`feature/`, `fix/`, `task-<id>/`); commit green states; merged
   `conflicts` are NOT overwritten - resolve and merge again.
+- The working branch is a PARAMETER, not a switch: `project_vcs_checkout` is a read that
+  changes nothing server-side, and no tool switches the project. Pass `branch` on every file,
+  build and preview tool to work on a branch's WORKING TREE (`project_files_bulk_get`,
+  `project_file_save`, `project_files_bulk_save`, `project_file_delete`, `project_test_build`,
+  `preview_screenshot`); omit it and you are on `main`, the live project. Writes with `branch`
+  are not commits: `project_vcs_commit({ project_id, branch, message })` with no files
+  PROMOTES the working tree (409 `nothing_to_commit` = clean; 409 `branch_changed` = re-read
+  `project_vcs_branches` and retry). Record `working_tree_etag` at pull, compare before push.
+  Branch rollback is `project_vcs_revert`, never a checkpoint. `/hiveku:branch`, `/hiveku:pr`.
 - Snapshot BEFORE risky work: `checkpoint_create` before any bulk refactor,
   `delete_missing` tree replace, dependency bump, DB migration - and immediately before
   any production deploy. There is no `project_checkpoint_create` - do not guess it.
@@ -267,6 +276,13 @@ file change you want in production needs its own
 `deploy_site({ environment: 'production' })` call; there is no auto-promote. And file
 saves / `preview_sync` reach the Fly PREVIEW instantly and touch NO Lambda environment;
 only `deploy_site` does.
+Two invariants govern WHICH TREE ships: (1) the environment BINDINGS decide, never the call
+- read `project_vcs_env_bindings` first; a bound development/staging tier ships its branch
+(unsaved branch edits are promoted into a commit server-side first), an unbound tier ships
+`main`; `branch` on `deploy_site` is only an assertion, refused on mismatch (409
+`branch_not_bound`, 400 `production_immutable`, 409 `binding_source_conflict`). (2)
+Production IS `main`, permanently: branch work reaches production only through a PR merge
+(`/hiveku:pr`), then `deploy_site({ environment: 'production' })`.
 1. Pre-flight: build green (Play 5), changes committed (Play 6), explicit approval. For a
    PRODUCTION deploy, `checkpoint_create` now - the rollback plan in step 4 assumes a prior
    good checkpoint; make it minutes old, not hoped-for. Then `project_deploy_preflight`
@@ -464,7 +480,7 @@ incidents behind every rule. Read the relevant one BEFORE writing code, not afte
 | `references/cms-and-database.md` | Any CMS collection or entry; publish scheduling; deletion preflights and bulk purge; the project database, RLS, Supabase extras. |
 | `references/conventions.md` | Writing a page or section: the stack, server/client boundary, images, metadata/SEO, accessibility, design tokens, client-facing voice. |
 | `references/site-scaffolding.md` | Creating or cloning a site, laying in pages, or injecting prebuilt sections - modes, caps, and arg shapes. |
-| `references/vcs-checkpoints-branch-previews.md` | Branch previews, merges/conflicts, checkpoints, checkpoint/point-in-time/single-file restores, the GitHub source-of-truth axis. |
+| `references/vcs-checkpoints-branch-previews.md` | Working on a branch (the `branch` parameter model, promote, etag, per-file diff, revert), environment bindings, PRs, branch previews, merges/conflicts, checkpoints, checkpoint/point-in-time/single-file restores, the GitHub source-of-truth axis. |
 | `references/domains-dns-redirects.md` | Attaching, verifying, migrating, or removing a domain; apex/CAA/cert issues; creating or deploying redirects. |
 | `references/custom-code-cdn-secrets.md` | Injected scripts and GTM tags, CDN invalidation or config, scheduled functions (crons), project secrets. |
 | `references/framework-conversion-cdn-repair.md` | Any framework conversion; a live site 403ing/404ing on some routes while the app works; behavior sweep/prune; `project_site_orphan_sweep`. |

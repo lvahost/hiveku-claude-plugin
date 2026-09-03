@@ -90,6 +90,58 @@ and there is no auto-promote: every change you want in production needs its own
 `deploy_site({ environment: "production" })` call. Saving files reaches the Fly preview instantly and
 touches no deployed tier.
 
-Rules: never deploy an unverified or red build. Never skip the step-5 handoff check before a save.
-Show the diff and confirm before committing or deploying.
+**Working on a BRANCH instead of `main`.** Everything above is the `main` loop and stays
+byte-identical when `branch` is omitted. When the user names a branch, or the work must not touch
+the live project until it is reviewed, run the same loop with `branch` on every file tool. There is
+no switch: `project_vcs_checkout` is a read, nothing server-side changes, and the working branch is
+whatever `branch` you pass (see `/hiveku:commit` for the model). Create it first if needed:
+`project_vcs_branch_create({ project_id, name, from? })`.
+ - 2b. PULL: `project_files_bulk_get({ project_id, branch })` - same 1MB/20MB caps and the same
+     `next_cursor` rule; entries carry `version: null` (tree entries, not builder_code_versions rows);
+     the response carries `branch` and `basis: { kind: "branch", working_tree_etag }`.
+     Write `projects/<slug>/.hiveku-pull.json` with `branch`, the ISO `pulled_at`, that
+     `working_tree_etag` (confirm it matches the branch's row in `project_vcs_branches`), and each
+     file's sha256 hashed from the BYTES you wrote to disk (as the main loop's step 5 does - do not
+     rely on a per-entry `hash` field). Step 5b is impossible without the etag.
+ - 4b. VERIFY: `verify_typecheck` / `verify_lint` / `verify_run_tests` on your local copy, then
+     `project_test_build({ project_id, use_db_state: true, branch })` polled to `succeeded`; `files[]`
+     + `branch` is refused with 400. `preview_logs` / `preview_runtime_errors` / `preview_client_errors`
+     read the MAIN container, which never sees branch edits - a branch has its own preview session
+     (`/hiveku:preview`).
+ - 5b. HANDOFF CHECK on the branch - you are still not the only writer. `project_vcs_branches` and
+     compare the branch's `working_tree_etag` with the one you recorded: a changed etag means someone
+     saved or committed on this branch since your pull. Then `project_files_status({ project_id,
+     target: "branch:<name>", local })` with your `[{path, sha256}]` manifest - `basis` is `branch`,
+     `confidence` `exact`. Same verdicts as step 5: CLEAN → save; DRIFT → re-pull with
+     `project_files_bulk_get({ branch })`, merge the foreign change into your local copy, re-check.
+     `project_version_log` and `project_chat_history_list` are `main` signals; on a branch the etag
+     and the status diff are the truth.
+ - 6b. SAVE + PROMOTE: `project_files_bulk_save({ project_id, files, branch })` in ONE call. It
+     writes the branch's working tree only - response `uncommitted: true`, a new `working_tree_etag`
+     (record it), `checkpoint_hash: null` with a `note`, and `preview_effect` (synced a live branch
+     preview if one exists, else start one). `delete_missing` on a branch takes NO checkpoint - the
+     branch's last commit is the rollback. One file: `project_file_save({ project_id, file_path,
+     content, branch, expected_hash })` - `expected_hash` is the sha256 you read, and a 409
+     `content_conflict` ({ path, expected, actual }) means someone wrote it since. Tools without a
+     `branch` parameter (the tarball import lane, `project_file_move`, `project_file_restore`,
+     `project_files_bulk_delete`, `project_folder_delete`) are `main`-only: passing `branch` to them
+     is refused (`branch_unsupported_for_tool`) rather than silently writing `main`; express a move
+     on a branch as a save plus a `project_file_delete({ branch })`. Then PROMOTE:
+     `project_vcs_commit({ project_id, branch, message })` with no `files` - the working tree becomes
+     a commit (`data.promoted: true`). 409 `nothing_to_commit` = clean, nothing to do; 409
+     `branch_changed` = re-read `project_vcs_branches` and retry; 409 `branch_busy` = retry shortly.
+ - 7b. DEPLOY: `project_vcs_env_bindings({ project_id })` FIRST - the bindings decide which tree a
+     tier ships, not the call. `production` always ships `main`; `development` / `staging` ship the
+     branch they are bound to, else `main`. Bound to your branch → `deploy_site({ project_id,
+     environment, branch })` - `branch` is an assertion, and the server refuses a mismatch (409
+     `branch_not_bound`, 400 `production_immutable`) instead of shipping the wrong tree. A bound
+     branch with unsaved (uncommitted) edits is promoted server-side before its tree is pinned, and
+     the deploy response says so in its `note`. Not bound → `/hiveku:branch bind <tier>
+     <branch>` (relay its CMS warning) or open a PR with `/hiveku:pr`. Production from a branch is
+     ALWAYS PR merge into `main`, then `deploy_site({ environment: "production" })`.
+ - Shared, not per-branch: the project database, secrets, media assets and CMS entries are one set
+     for the whole project. A branch versions FILES; CMS writes land on `main`.
+
+Rules: never deploy an unverified or red build. Never skip the step-5 (or 5b) handoff check before a
+save. Show the diff and confirm before committing or deploying.
 Keep `projects/` out of anything you push elsewhere - it holds the account's code.

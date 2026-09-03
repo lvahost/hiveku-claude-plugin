@@ -19,7 +19,27 @@ tier, and why, then wait for the confirmation before calling `deploy_site`.
 `middleware.ts` and `next.config.js` included - needs its own `deploy_site({ environment:
 "production" })` call. Saving files reaches the Fly preview instantly and touches no deployed tier.
 
-1. GATE: the build is green (`/hiveku:commit` step 3) and the work is committed.
+0. WHICH TREE SHIPS: `project_vcs_env_bindings({ project_id: <the project_id> })` before anything
+   else. The environment BINDINGS decide, not the call. `production` ALWAYS ships `main` and can
+   never be pointed at a branch. `development` and `staging` ship the branch they are bound to, or
+   `main` when unbound. A bound tier ships that branch's tree, and the deploy first COMMITS the
+   branch's unsaved (uncommitted working-tree) edits server-side before pinning it, so what ships is
+   always a commit - the response's `note` says so when that happened (the field name
+   `promotedCommitId` belongs to the builder's own deploy lanes, not to `deploy_site`). State the tree in
+   the confirmation ("development will ship `feature/x` at its current head"). To put branch work
+   into production, promote it through `/hiveku:pr` (merge into `main`) and then deploy
+   `production`; to point a tier at a branch, `/hiveku:branch bind`. On `deploy_site`, `branch` is an
+   ASSERTION, never a selector: pass the branch you believe the tier serves and the server refuses a
+   mismatch instead of shipping the wrong tree - 409 `branch_not_bound` (the tier is bound elsewhere
+   or unbound and tracking `main`; the hint names `project_vcs_env_bind`), 400
+   `production_immutable` (any non-`main` branch on production), 409 `binding_source_conflict` (a
+   bound tier refuses a GitHub-source deploy). Omit `branch` to ship whatever the binding says.
+   GitHub-connected projects keep the legacy meaning of `branch` (a GitHub branch label).
+
+1. GATE: the build is green (`/hiveku:commit` step 3 - with `branch` when a bound branch ships) and
+   the work is committed. On a bound branch the deploy promotes uncommitted edits itself, but a
+   deliberate `project_vcs_commit({ project_id, branch, message })` first gives the commit a
+   message you chose.
 
 2. PREFLIGHT: `project_deploy_preflight({ project_id: <the project_id> })` → `{ ready, blockers[],
    hints[] }`. Surface `blockers[]` VERBATIM to the user - only they can fix those. Read `hints[]` for
@@ -39,7 +59,9 @@ tier, and why, then wait for the confirmation before calling `deploy_site`.
 
 4. CONFIRM with the user: the tier, the pages/routes affected, and anything in `warnings`.
 
-5. SHIP: `deploy_site({ project_id: <the project_id>, environment })`. It returns a deployment id.
+5. SHIP: `deploy_site({ project_id: <the project_id>, environment, branch? })` - `branch` only as the
+   step-0 assertion. It returns a deployment id; on a bound tier whose branch had unsaved edits the
+   response `note` says they were committed first (tell the user).
    Watch it with `deploy_subscribe({ project_id: <the project_id>, deployment_id, wait_seconds: 20 })`.
    It is a JSON LONG POLL, not a stream: the server holds the request (max `wait_seconds` 25),
    checks every 1.5s, and answers the moment the deployment is terminal - so call it in a LOOP until
@@ -71,7 +93,9 @@ tier, and why, then wait for the confirmation before calling `deploy_site`.
    `_next/static` hashed bundles.
 
 8. REGRESSION: roll back by restoring the prior good checkpoint (`/hiveku:restore`, dry-run first) and
-   re-deploying. Do not hot-patch production under pressure.
+   re-deploying. On a tier bound to a branch there is no checkpoint: `project_vcs_revert({ project_id,
+   branch, commit_id, expected_head_commit_id })` moves the branch back to an earlier commit of its
+   own, then re-deploy the tier. Do not hot-patch production under pressure.
 
 Afterwards, log what shipped and the deployment id with `memory_create` or on the `pm_tasks_complete`
 note, so the monthly report writes itself.

@@ -6,7 +6,7 @@
     "mcp__hiveku__"
   ],
   "plugin_version": "0.21.2",
-  "count": 122,
+  "count": 125,
   "tools": [
     {
       "name": "deploy_site",
@@ -52,6 +52,21 @@
       "name": "project_vcs_stash",
       "method": "POST",
       "why_gated": "moves pending work to a branch and resets the environment source (dry-run is the default, apply rewrites main/branch heads)"
+    },
+    {
+      "name": "project_vcs_prune",
+      "method": "POST",
+      "why_gated": "permanently destroys orphaned S3 tree bytes (dry_run defaults true; apply is unrecoverable)"
+    },
+    {
+      "name": "project_vcs_branch_preview_teardown",
+      "method": "DELETE",
+      "why_gated": "destroys a live branch preview app a client may be looking at - irreversible"
+    },
+    {
+      "name": "project_vcs_revert",
+      "method": "POST",
+      "why_gated": "moves a branch head back to an earlier commit and discards its uncommitted working-tree edits"
     },
     {
       "name": "site_delete",

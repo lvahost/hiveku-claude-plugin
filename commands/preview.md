@@ -9,14 +9,25 @@ For THIS project, refresh + view the live preview. This project's id is `<the pr
 If you just changed files, `preview_sync({ project_id: <the project_id> })` first. Then `preview_overview({ project_id: <the project_id> })`
 for the URL and `preview_screenshot({ project_id: <the project_id>, path: "$ARGUMENTS" })` (default "/") so we can see it.
 
-**Showing a client work-in-progress that is NOT ready for the shared preview:** commit it on a feature
-branch, then `project_vcs_branch_preview({ project_id: <the project_id>, branch })`. That spins the
-branch up at its own URL in its own isolated app - the project's main preview is untouched and the
-branch tree never enters the project's files. It returns `{ previewUrl, status, previewSessionId }`.
-On `status: "starting"` do NOT call it again (that spawns a second app) - poll
-`project_vcs_branch_preview_status({ project_id, session_id })`, usually another 30-90s. Send
-`previewUrl` for sign-off, then merge, then `project_vcs_branch_preview_teardown({ project_id,
-session_id })` to free it (irreversible; they are also reaped automatically).
+**Showing a client work-in-progress that is NOT ready for the shared preview:** do the work on a
+branch (edits through the file tools with `branch`, see `/hiveku:commit`), then
+`project_vcs_branch_preview({ project_id: <the project_id>, branch })`. That spins the branch's
+WORKING TREE (uncommitted edits included) up at its own URL in its own isolated app - the project's
+main preview is untouched and the branch tree never enters the project's files. It returns
+`{ previewUrl, status, previewSessionId }`. On `status: "starting"` do NOT call it again (that spawns
+a second app) - poll `project_vcs_branch_preview_status({ project_id, session_id })`, usually another
+30-90s. While it runs, `project_files_bulk_save({ project_id, files, branch })` syncs it (read
+`preview_effect`); a single `project_file_save({ branch })` does not report whether it reached the
+session - batch through bulk save, or re-run the branch preview. Look at it with the same tools as
+the main preview plus `branch`: `preview_screenshot({ project_id: <the project_id>, path, branch })`
+and `preview_http_get({ project_id: <the project_id>, path, branch })` (`port` is ignored on a
+branch). Both need a LIVE branch preview: with none they answer 409 `branch_preview_not_running` -
+start one, poll it to `ready`, retry. The branch session runs the branch's code against the
+project's SHARED database, secrets and assets, so data you see there is the same data `main` sees.
+Send `previewUrl` for sign-off, then merge (`/hiveku:pr`), then
+`project_vcs_branch_preview_teardown({ project_id, session_id })` to free it (irreversible; they are
+also reaped automatically). Without `branch`, `preview_screenshot` / `preview_http_get` /
+`preview_sync` / `preview_logs` are the MAIN container and never show branch edits.
 
 **If the page renders but behaves wrong** (dead interactivity, a hydration mismatch), the server log is
 the wrong place to look - it stays completely clean. Use `preview_client_errors({ project_id })`. An

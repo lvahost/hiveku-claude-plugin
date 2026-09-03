@@ -37,9 +37,18 @@
  *     S5  rank-lane platforms set, GBP posts reader, listings get/scan, the
  *         permanent GSC query-page archive reader, per-page SEO get/set and
  *         per-page schema get/set/delete
+ *
+ *   Working-branch program (2026-09-02, the branch-parameter model across the
+ *   MCP file/build/preview tools):
+ *     VCS-1  project_vcs_diff_file (GET, both sides of one file across two
+ *            branches) and project_vcs_revert (POST, move a branch head back
+ *            to one of its own commits; on the ask list). Delete both entries
+ *            once the tool index is regenerated from the live server.
  */
 const SEO_SINCE = '2026-08-30';
 const seo = (batch) => ({ since: SEO_SINCE, batch });
+const VCS_SINCE = '2026-09-02';
+const vcs = (batch) => ({ since: VCS_SINCE, batch });
 
 export const PENDING_TOOLS = new Map([
   // S1
@@ -55,4 +64,7 @@ export const PENDING_TOOLS = new Map([
 
   // S5
 
+  // VCS-1
+  ['project_vcs_diff_file', vcs('VCS-1')],
+  ['project_vcs_revert', vcs('VCS-1')],
 ]);

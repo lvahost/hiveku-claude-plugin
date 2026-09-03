@@ -4,43 +4,128 @@ The full mechanism behind Play 6, plus the GitHub source-of-truth axis from Play
 Load this before branch previews, merges, checkpoint work, ANY restore (checkpoint,
 point-in-time, or single-file), or touching the GitHub connection.
 
-## Branching, committing, merging
+## Branching: the working-branch model
 
-- Branch for real work: `project_vcs_branch_create({ project_id, name })` (use `feature/`,
-  `fix/`, `task-<id>/`), `project_vcs_checkout` to switch, `project_vcs_branches` to list.
-  Do not do risky work straight on the main line.
-- Commit green states: `project_vcs_commit({ project_id, message, ... })` after a passing
-  build. Imperative present-tense messages. `project_commit` and `project_version_log` /
-  `project_vcs_history` show and record history; `project_vcs_compare` diffs two points.
+Two invariants first. (1) **Bindings decide which tree a tier ships**, never the deploy call.
+(2) **Production is `main`, and branch work reaches it only through a PR merge.**
+
+- Working tree vs commits. Every branch, `main` included, has a WORKING TREE (the current
+  files) and a commit history. `main`'s working tree IS the live project
+  (`builder_code_versions`); a branch's working tree lives off to the side in S3 and never
+  enters the live project until it is merged. A branch's working tree may run AHEAD of its
+  last commit - that is `uncommitted: true` on `project_vcs_branches`.
+- There is no switch. `project_vcs_checkout({ project_id, branch })` is a READ: it returns the
+  branch's full tree (`{ files: [{path, content, encoding}] }` plus `head_commit_id`,
+  `working_tree_etag`, `uncommitted`) so you can materialize it locally, and it changes
+  nothing server-side - not the editor, not any tier, and no tool does. The working branch is
+  the `branch` parameter you pass on every file tool: `project_files_bulk_get` /
+  `project_file_get` read a branch's working tree; `project_file_save` /
+  `project_files_bulk_save` / `project_file_delete` write it; `project_files_status({
+  target: "branch:<name>" })` diffs a local copy against it (basis `branch`, confidence
+  `exact`); `project_test_build({ use_db_state: true, branch })` builds it; `preview_screenshot`
+  / `preview_http_get` with `branch` look at its branch preview; `project_vcs_history({ branch })`
+  lists its commits. Omit `branch` (or pass `"main"`) and each of those is the live project,
+  byte-identical to before. A write with `branch` never touches `main`.
+- Branch for real work: `project_vcs_branch_create({ project_id, name, from? })` (`feature/`,
+  `fix/`, `task-<id>/`; short names - preview machines cap them). Branching off a branch with
+  uncommitted edits promotes them first. `project_vcs_branches` lists every branch with
+  `ahead` / `behind` (null on `main` and on a branch with no base: "does not apply", not "in
+  sync"), `uncommitted`, and `working_tree_etag`.
+- Promote. Writes with `branch` update the working tree only (`uncommitted: true`,
+  `working_tree_etag`, `checkpoint_hash: null` with a `note`). `project_vcs_commit({
+  project_id, branch, message })` with NO `files` / `deletedFiles` PROMOTES the working tree
+  into a commit - no bytes re-uploaded, the tree pointer becomes the commit, `data.promoted`
+  true. With `files` it saves and commits in one call (omit `branch` and it commits to
+  `main`, which changes the live project). 409 `nothing_to_commit` = the branch is clean, not
+  a retry; 409 `branch_changed` = the head moved mid-call, re-read `project_vcs_branches` and
+  retry; 409 `branch_busy` = another writer holds the lock, retry shortly. Envelope `{ data:
+  <commit>, preview_effect }`. Promotion also happens server-side, without you: a deploy of a
+  bound tier promotes the branch's unsaved edits before pinning (`deploy_site` says so in its
+  response `note`), a merge promotes its source, a delete promotes first ("Snapshot before delete").
+- The etag is the concurrency rail. You are not the only writer on a branch either.
+  `project_files_bulk_get({ branch })` returns `basis: { kind: "branch", working_tree_etag }`
+  - RECORD it at pull; before a push, COMPARE it with the branch's row in
+  `project_vcs_branches`: a changed etag means someone saved or committed on the branch since
+  your pull, so re-pull and reconcile instead of overwriting. Per file, `project_file_save({
+  branch, expected_hash })` refuses with 409 `content_conflict` ({ path, expected, actual })
+  when the stored content moved (on `main` too). `project_version_log` and the chat-history
+  tools are `main` signals; on a branch the etag and `project_files_status` are the truth.
+- Diff one file: `project_vcs_diff_file({ project_id, from, to, path })` (both sides of ONE
+  file; `from` defaults to `main`; `to` and `path` required) returns `{ data: { from, to,
+  path, status, base, head } }` - `base` is the file on `from`, `head` on `to`, null where the
+  path does not exist, `status` `added` / `removed` / `modified` / `same`, sides over 1 MB
+  come back `tooLarge`. `project_vcs_compare({ from, to })` lists the paths and statuses
+  first; both include uncommitted working-tree edits.
+- Revert a branch: `project_vcs_revert({ project_id, branch, commit_id,
+  expected_head_commit_id, message? })` writes a NEW commit (kind `revert`) whose tree is the
+  target commit's and moves the head there - linear history, nothing deleted, and the
+  branch's uncommitted edits are DISCARDED as part of the move. `commit_id` must be on this
+  branch (400 `not_revertable`); `main` is refused (400 `main_not_allowed` - `main` rolls back
+  through `project_checkpoint_restore` with a commit's `checkpoint_hash`); always pass
+  `expected_head_commit_id` so a concurrent save answers 409 `branch_changed` instead of
+  being thrown away. A live branch preview is not resynced - restart it.
+- Tools without a `branch` parameter are `main`-only and REFUSE `branch` rather than silently
+  writing `main` (`branch_unsupported_for_tool`): the tarball import lane,
+  `project_file_move`, `project_file_restore`, `project_files_bulk_delete`,
+  `project_folder_delete`, `project_checkpoint_restore`, `project_file_save_async`. Express a
+  move on a branch as a save plus `project_file_delete({ branch })`.
 - Merge back with `project_vcs_merge({ project_id, branch, into?, message? })` once the
   branch builds and is reviewed. `into` defaults to `main` and may be ANY branch - merging
   into main is what changes the live project; merging into another branch just updates it.
   It applies the non-conflicting changes and returns `{ merged_into, applied, deleted,
   conflicts, commit }`. Files changed on BOTH sides are returned in `conflicts` and are NOT
   overwritten - resolve them yourself and merge again. The branch is not deleted, so a
-  partial merge is recoverable. `project_vcs_compare` shows what a branch changed before
-  you merge it. Delete a finished branch with `project_vcs_branch_delete({ project_id,
-  branch })` - refused while it is bound to an environment or has an open PR.
+  partial merge is recoverable. A `main` merge commit carries a `checkpoint_hash`, so the
+  whole branch's work can be undone in one restore. Reviewed work takes the PR lane below.
+- Delete a finished branch with `project_vcs_branch_delete({ project_id, branch, confirm:
+  true })` - `confirm` is a query parameter and required (400 `confirm_required`). Refused for
+  `main` (400), while bound to an environment (409 - clear the binding first), with an open
+  PR (409 - merge or close it first), and for stash branches `pending/*` / `stash/*` (409;
+  `force: true` only when the user explicitly discards scooped work). Destructive: a later
+  `project_vcs_prune` (storage GC, `dry_run` default true) destroys the orphaned tree bytes.
+
+## Shared across branches: the database, assets and CMS
+
+- A branch versions FILES. One physical database per project (the DB tools' `branch` is a
+  TIER, not a VCS branch), one secret set, one media library, one CMS. A branch preview runs
+  the branch's code against that shared data. CMS writes land on `main` with no branch
+  awareness: an entry edited while a tier serves a branch will not appear on that tier, and
+  a scheduled publish is HELD while the tier is bound. Per-branch databases are a follow-up.
 
 ## Native pull requests (reviewable, atomic merges)
 
 - `project_vcs_pr_create({ project_id, source_branch, title, target_branch?, description? })`
-  records merge INTENT (target defaults to `main`); `project_vcs_pr_list` / `project_vcs_pr_get`
-  (live diff on every read) review it; `project_vcs_pr_merge({ project_id, number })` merges
-  STRICT and atomic - any conflict refuses the WHOLE merge (409 with the conflict list, PR
-  stays open), unlike project_vcs_merge's partial semantics. `project_vcs_pr_close` /
-  `project_vcs_pr_reopen` manage the queue; merged is terminal. These are Hiveku-native
-  (project_pull_requests) - the `github_pr_*` family is the separate GitHub surface and
-  400s without a connected repo.
+  records merge INTENT (target defaults to `main`). `project_vcs_pr_list` (read
+  `source_branch_recreated`: `true` = the name was deleted and reused after the PR, `null` =
+  not checked, never an assurance) and `project_vcs_pr_get` (`{ data: { pr, diff, diff_error }
+  }` - the path-level diff is live on every read; a non-null `diff_error` is not "no
+  changes") review it; read each changed path with `project_vcs_diff_file({ from:
+  <target_branch>, to: <source_branch>, path })`. `project_vcs_pr_merge({ project_id, number,
+  message? })` merges STRICT and atomic - if ANY file conflicts NOTHING is merged, the PR
+  stays open, and the call answers 409 `merge_conflicts` with the list at
+  `details.conflicts` (also `details.conflict_details` / `details.conflict_count`, and still
+  under `details.data.conflicts` for older callers - look in both before reporting a
+  conflict-free failure). Success is `{ data: { pr, merge, relabel_failed? } }`;
+  `relabel_failed` means the merge is real but the PR label could not be updated - do not
+  retry. Uncommitted edits on the source are promoted server-side as part of the merge. The
+  source branch is NOT deleted. `project_vcs_pr_close` / `project_vcs_pr_reopen` manage the
+  queue; merged is terminal. These are Hiveku-native (project_pull_requests) - the
+  `github_pr_*` family is the separate GitHub surface and 400s without a connected repo.
 
 ## Environment branches (development/staging serve a branch)
 
 - `main` IS production, permanently - production can never be rebound. development and
   staging can each SERVE a branch: `project_vcs_env_bindings({ project_id })` reads the
-  bindings; `project_vcs_env_bind({ project_id, environment, branch })` sets one
-  (branch null/""/"main" clears it back to tracking main). Binding does NOT deploy - the
-  tier's next deploy ships the branch's PINNED tree. Do not confuse with
-  `project_env_matrix` (environment VARIABLES) or the GitHub branch-deployments mapping.
+  bindings; `project_vcs_env_bind({ project_id, environment, branch })` sets one (`branch`
+  is required; `"main"` or `""` clears it back to tracking main; `production` answers 400
+  `production_immutable`). RELAY the response `warning` verbatim when present - it is the CMS
+  trap above. Binding does NOT deploy - the tier's next deploy ships the branch's PINNED tree,
+  promoting unsaved edits first. On `deploy_site`, `branch` is an ASSERTION, not a selector:
+  a mismatch is refused - 409 `branch_not_bound` (dev/staging bound elsewhere or unbound), 400
+  `production_immutable` (non-main on production), 409 `binding_source_conflict` (a bound
+  tier refuses a GitHub-source deploy). Omit it to ship whatever the binding says. A delete is
+  refused while a binding points at the branch. Do not confuse with `project_env_matrix`
+  (environment VARIABLES) or the GitHub branch-deployments mapping.
 
 ## Stash: scoop pending work onto a branch
 
@@ -56,14 +141,19 @@ point-in-time, or single-file), or touching the GitHub connection.
 ## Branch previews (show the client before it merges)
 
 - Show the client the branch BEFORE it merges, without touching the shared main preview:
-  `project_vcs_branch_preview({ project_id, branch })` spins the branch up at its own URL in
-  its own isolated app (the project's main preview is untouched and the branch tree never
-  enters the project's files). It returns `{ previewUrl, status, previewSessionId }`. On
-  `status: 'starting'` do NOT call it again - that spawns a second app; poll
-  `project_vcs_branch_preview_status({ project_id, session_id })` instead, usually another
-  30-90s. Send `previewUrl` for sign-off, then merge, then
-  `project_vcs_branch_preview_teardown({ project_id, session_id })` (irreversible - start a
-  fresh preview to look again; they are also reaped automatically).
+  `project_vcs_branch_preview({ project_id, branch })` spins the branch's WORKING TREE
+  (uncommitted edits included) up at its own URL in its own isolated app (the project's main
+  preview is untouched and the branch tree never enters the project's files). It returns
+  `{ previewUrl, status, previewSessionId }`. On `status: 'starting'` do NOT call it again -
+  that spawns a second app; poll `project_vcs_branch_preview_status({ project_id, session_id })`
+  instead, usually another 30-90s. While it runs, `project_files_bulk_save({ branch })` syncs
+  it (`preview_effect` says so); `preview_screenshot({ branch })` and `preview_http_get({
+  branch })` target the session (`port` ignored) and answer 409 `branch_preview_not_running`
+  when none is live - start one, poll to ready, retry. It serves the branch's code against the
+  project's SHARED database, secrets and assets. Send `previewUrl` for sign-off, then merge,
+  then `project_vcs_branch_preview_teardown({ project_id, session_id })` (irreversible - start
+  a fresh preview to look again; they are also reaped automatically). Without `branch` the
+  `preview_*` tools are the MAIN container and never show branch edits.
 
 ## Checkpoints
 
