@@ -1,0 +1,112 @@
+[
+  {
+    "id": "pil_educate",
+    "name": "Educate",
+    "description": "How-to, care and maintenance, materials and hardware explained in plain words.",
+    "color": "#2E7D32",
+    "icon": "book",
+    "target_posts_per_week": 2,
+    "target_percentage": 40,
+    "auto_tags": [
+      "howto",
+      "care"
+    ],
+    "example_topics": [
+      "re-seating a sagging cabinet door",
+      "lacquer versus oil finishes",
+      "why solid wood moves with the seasons"
+    ],
+    "content_guidelines": "One problem, one fix, no jargon. End with what to do next, not with a sales line.",
+    "hashtags": [
+      "#BrightsideBuilt",
+      "#CabinetCare"
+    ],
+    "is_active": true,
+    "sort_order": 1,
+    "account_id": "acct_fixture_social",
+    "created_at": "2026-05-28T17:00:00Z",
+    "updated_at": "2026-05-28T17:00:00Z"
+  },
+  {
+    "id": "pil_authority",
+    "name": "Authority",
+    "description": "Case studies, awards, press, and the craft process that earns the trade's trust.",
+    "color": "#1565C0",
+    "icon": "award",
+    "target_posts_per_week": 1,
+    "target_percentage": 25,
+    "auto_tags": [
+      "casestudy",
+      "process"
+    ],
+    "example_topics": [
+      "a refit delivered on schedule",
+      "how a door gets finished",
+      "press mentions"
+    ],
+    "content_guidelines": "Show the work and name the outcome. No superlatives.",
+    "hashtags": [
+      "#BrightsideBuilt"
+    ],
+    "is_active": true,
+    "sort_order": 2,
+    "account_id": "acct_fixture_social",
+    "created_at": "2026-05-28T17:00:00Z",
+    "updated_at": "2026-05-28T17:00:00Z"
+  },
+  {
+    "id": "pil_connection",
+    "name": "Connection",
+    "description": "The team, the workshop, customers and the community around the shop.",
+    "color": "#EF6C00",
+    "icon": "users",
+    "target_posts_per_week": 1,
+    "target_percentage": 20,
+    "auto_tags": [
+      "team",
+      "workshop"
+    ],
+    "example_topics": [
+      "a Saturday at the bench",
+      "a team member's story",
+      "a thank-you to a trade partner"
+    ],
+    "content_guidelines": "People first, product second. Real names with permission only.",
+    "hashtags": [
+      "#BrightsideBuilt",
+      "#ShopLife"
+    ],
+    "is_active": true,
+    "sort_order": 3,
+    "account_id": "acct_fixture_social",
+    "created_at": "2026-05-28T17:00:00Z",
+    "updated_at": "2026-05-28T17:00:00Z"
+  },
+  {
+    "id": "pil_promotion",
+    "name": "Promotion",
+    "description": "Offers, new collections, showroom hours and events, direct calls to action.",
+    "color": "#6A1B9A",
+    "icon": "tag",
+    "target_posts_per_week": 1,
+    "target_percentage": 15,
+    "auto_tags": [
+      "offer",
+      "showroom"
+    ],
+    "example_topics": [
+      "a new collection in the showroom",
+      "Saturday showroom hours",
+      "a seasonal sale"
+    ],
+    "content_guidelines": "One clear ask per post. Keep it to the agreed share of the week.",
+    "hashtags": [
+      "#BrightsideBuilt"
+    ],
+    "is_active": true,
+    "sort_order": 4,
+    "account_id": "acct_fixture_social",
+    "created_at": "2026-05-28T17:00:00Z",
+    "updated_at": "2026-05-28T17:00:00Z"
+  }
+]

@@ -1,0 +1,3304 @@
+[
+  {
+    "id": "post_q_01",
+    "title": "Harlow Street bathroom refit, delivered",
+    "content": "The Harlow Street bathroom went in this week. Painted shaker fronts, brass pulls, and a vanity that had to clear a heating pipe nobody had drawn. It did. #BrightsideBuilt",
+    "content_type": "image",
+    "media_urls": [
+      "https://cdn.fixture.invalid/social/post_q_01.jpg"
+    ],
+    "media_types": [
+      "image"
+    ],
+    "thumbnail_url": null,
+    "link_url": null,
+    "target_platforms": [
+      "linkedin",
+      "facebook"
+    ],
+    "target_accounts": [
+      "sacc_linkedin_01",
+      "sacc_facebook_01"
+    ],
+    "status": "published",
+    "scheduled_at": "2026-06-02T14:00:00Z",
+    "published_at": "2026-06-02T14:00:12Z",
+    "approval_status": "not_required",
+    "ai_generated": false,
+    "ai_model": null,
+    "tags": [
+      "casestudy",
+      "persona:contractor",
+      "stage:decide",
+      "hook:before-after",
+      "format:single-image"
+    ],
+    "category": null,
+    "pillar_id": "pil_authority",
+    "avatar_id": "av_contractor",
+    "journey_stage": "decide",
+    "created_at": "2026-05-29T16:00:00Z",
+    "updated_at": "2026-06-02T14:00:12Z",
+    "created_by_user": {
+      "id": "user_sam",
+      "first_name": "Sam",
+      "last_name": "Okafor"
+    },
+    "content_pillar": {
+      "id": "pil_authority",
+      "name": "Authority",
+      "color": "#1565C0"
+    },
+    "_count": {
+      "post_versions": 2
+    },
+    "versions": [
+      {
+        "id": "spv_001",
+        "platform": "linkedin",
+        "social_account_id": "sacc_linkedin_01",
+        "status": "published",
+        "platform_post_id": "li_0101",
+        "platform_post_url": "https://www.linkedin.com/feed/update/urn:li:share:li_0101",
+        "published_at": "2026-06-02T14:00:12Z",
+        "error_message": null,
+        "retry_count": 0,
+        "analytics": {
+          "impressions": 1840,
+          "reach": 1509,
+          "engagements": 76,
+          "likes": 61,
+          "comments_count": 9,
+          "shares": 6,
+          "saves": 0,
+          "clicks": 44,
+          "video_views": 0,
+          "engagement_rate": 4.13,
+          "click_through_rate": 2.39,
+          "snapshot_at": "2026-08-25T14:00:12Z"
+        },
+        "analytics_last_synced_at": "2026-08-25T14:00:12Z",
+        "analytics_next_sync_at": null,
+        "analytics_sync_failures": 0
+      },
+      {
+        "id": "spv_002",
+        "platform": "facebook",
+        "social_account_id": "sacc_facebook_01",
+        "status": "published",
+        "platform_post_id": "fa_0102",
+        "platform_post_url": "https://www.facebook.com/brightsidefixtures/posts/fa_0102",
+        "published_at": "2026-06-02T14:00:12Z",
+        "error_message": null,
+        "retry_count": 0,
+        "analytics": {
+          "impressions": 1210,
+          "reach": 992,
+          "engagements": 47,
+          "likes": 38,
+          "comments_count": 5,
+          "shares": 4,
+          "saves": 0,
+          "clicks": 22,
+          "video_views": 0,
+          "engagement_rate": 3.88,
+          "click_through_rate": 1.82,
+          "snapshot_at": "2026-08-25T14:00:12Z"
+        },
+        "analytics_last_synced_at": "2026-08-25T14:00:12Z",
+        "analytics_next_sync_at": null,
+        "analytics_sync_failures": 0
+      }
+    ]
+  },
+  {
+    "id": "post_q_02",
+    "title": "Why solid-wood doors move with the seasons",
+    "content": "A door that sticks in August and rattles in January is not a defect. Wood takes on moisture and lets it go. Here is what to adjust, and what to leave alone. #BrightsideBuilt #CabinetCare",
+    "content_type": "text",
+    "media_urls": [],
+    "media_types": [],
+    "thumbnail_url": null,
+    "link_url": null,
+    "target_platforms": [
+      "linkedin"
+    ],
+    "target_accounts": [
+      "sacc_linkedin_01"
+    ],
+    "status": "published",
+    "scheduled_at": "2026-06-05T14:00:00Z",
+    "published_at": "2026-06-05T14:00:10Z",
+    "approval_status": "not_required",
+    "ai_generated": false,
+    "ai_model": null,
+    "tags": [
+      "howto",
+      "persona:homeowner",
+      "stage:consider",
+      "hook:how-to",
+      "format:text"
+    ],
+    "category": null,
+    "pillar_id": "pil_educate",
+    "avatar_id": "av_homeowner",
+    "journey_stage": "consider",
+    "created_at": "2026-06-04T12:00:10Z",
+    "updated_at": "2026-06-05T14:00:10Z",
+    "created_by_user": {
+      "id": "user_sam",
+      "first_name": "Sam",
+      "last_name": "Okafor"
+    },
+    "content_pillar": {
+      "id": "pil_educate",
+      "name": "Educate",
+      "color": "#2E7D32"
+    },
+    "_count": {
+      "post_versions": 1
+    },
+    "versions": [
+      {
+        "id": "spv_003",
+        "platform": "linkedin",
+        "social_account_id": "sacc_linkedin_01",
+        "status": "published",
+        "platform_post_id": "li_0203",
+        "platform_post_url": "https://www.linkedin.com/feed/update/urn:li:share:li_0203",
+        "published_at": "2026-06-05T14:00:10Z",
+        "error_message": null,
+        "retry_count": 0,
+        "analytics": {
+          "impressions": 2210,
+          "reach": 1812,
+          "engagements": 93,
+          "likes": 74,
+          "comments_count": 11,
+          "shares": 8,
+          "saves": 0,
+          "clicks": 51,
+          "video_views": 0,
+          "engagement_rate": 4.21,
+          "click_through_rate": 2.31,
+          "snapshot_at": "2026-08-28T14:00:10Z"
+        },
+        "analytics_last_synced_at": "2026-08-28T14:00:10Z",
+        "analytics_next_sync_at": "2026-09-04T14:00:10Z",
+        "analytics_sync_failures": 0
+      }
+    ]
+  },
+  {
+    "id": "post_q_03",
+    "title": "Saturday at the bench",
+    "content": "Saturday in the shop. Two doors hung, one coffee gone cold, and the showroom open until two. Come by. #BrightsideBuilt #ShopLife",
+    "content_type": "image",
+    "media_urls": [
+      "https://cdn.fixture.invalid/social/post_q_03.jpg"
+    ],
+    "media_types": [
+      "image"
+    ],
+    "thumbnail_url": null,
+    "link_url": null,
+    "target_platforms": [
+      "facebook"
+    ],
+    "target_accounts": [
+      "sacc_facebook_01"
+    ],
+    "status": "published",
+    "scheduled_at": "2026-06-09T16:00:00Z",
+    "published_at": "2026-06-09T16:00:14Z",
+    "approval_status": "not_required",
+    "ai_generated": false,
+    "ai_model": null,
+    "tags": [
+      "team",
+      "persona:homeowner",
+      "stage:consider",
+      "hook:story",
+      "format:single-image"
+    ],
+    "category": null,
+    "pillar_id": "pil_connection",
+    "avatar_id": "av_homeowner",
+    "journey_stage": "consider",
+    "created_at": "2026-06-08T14:00:14Z",
+    "updated_at": "2026-06-09T16:00:14Z",
+    "created_by_user": {
+      "id": "user_sam",
+      "first_name": "Sam",
+      "last_name": "Okafor"
+    },
+    "content_pillar": {
+      "id": "pil_connection",
+      "name": "Connection",
+      "color": "#EF6C00"
+    },
+    "_count": {
+      "post_versions": 1
+    },
+    "versions": [
+      {
+        "id": "spv_004",
+        "platform": "facebook",
+        "social_account_id": "sacc_facebook_01",
+        "status": "published",
+        "platform_post_id": "fa_0304",
+        "platform_post_url": "https://www.facebook.com/brightsidefixtures/posts/fa_0304",
+        "published_at": "2026-06-09T16:00:14Z",
+        "error_message": null,
+        "retry_count": 0,
+        "analytics": {
+          "impressions": 980,
+          "reach": 804,
+          "engagements": 62,
+          "likes": 52,
+          "comments_count": 7,
+          "shares": 3,
+          "saves": 0,
+          "clicks": 9,
+          "video_views": 0,
+          "engagement_rate": 6.33,
+          "click_through_rate": 0.92,
+          "snapshot_at": "2026-08-25T16:00:14Z"
+        },
+        "analytics_last_synced_at": "2026-08-25T16:00:14Z",
+        "analytics_next_sync_at": "2026-09-01T16:00:14Z",
+        "analytics_sync_failures": 0
+      }
+    ]
+  },
+  {
+    "id": "post_q_04",
+    "title": "Three signs your drawer slides are done",
+    "content": "A drawer that drops when it opens, a slide that squeals, a runner that has gone shiny on one side. Any one of these and the slide is finished, not the drawer. #BrightsideBuilt #CabinetCare",
+    "content_type": "image",
+    "media_urls": [
+      "https://cdn.fixture.invalid/social/post_q_04.jpg"
+    ],
+    "media_types": [
+      "image"
+    ],
+    "thumbnail_url": null,
+    "link_url": null,
+    "target_platforms": [
+      "linkedin",
+      "twitter"
+    ],
+    "target_accounts": [
+      "sacc_linkedin_01",
+      "sacc_twitter_01"
+    ],
+    "status": "published",
+    "scheduled_at": "2026-06-12T14:00:00Z",
+    "published_at": "2026-06-12T14:00:09Z",
+    "approval_status": "not_required",
+    "ai_generated": false,
+    "ai_model": null,
+    "tags": [
+      "howto",
+      "persona:homeowner",
+      "stage:consider",
+      "hook:how-to",
+      "format:carousel"
+    ],
+    "category": null,
+    "pillar_id": "pil_educate",
+    "avatar_id": "av_homeowner",
+    "journey_stage": "consider",
+    "created_at": "2026-06-11T12:00:09Z",
+    "updated_at": "2026-06-12T14:00:09Z",
+    "created_by_user": {
+      "id": "user_sam",
+      "first_name": "Sam",
+      "last_name": "Okafor"
+    },
+    "content_pillar": {
+      "id": "pil_educate",
+      "name": "Educate",
+      "color": "#2E7D32"
+    },
+    "_count": {
+      "post_versions": 2
+    },
+    "versions": [
+      {
+        "id": "spv_005",
+        "platform": "linkedin",
+        "social_account_id": "sacc_linkedin_01",
+        "status": "published",
+        "platform_post_id": "li_0405",
+        "platform_post_url": "https://www.linkedin.com/feed/update/urn:li:share:li_0405",
+        "published_at": "2026-06-12T14:00:09Z",
+        "error_message": null,
+        "retry_count": 0,
+        "analytics": {
+          "impressions": 2480,
+          "reach": 2034,
+          "engagements": 109,
+          "likes": 88,
+          "comments_count": 12,
+          "shares": 9,
+          "saves": 0,
+          "clicks": 63,
+          "video_views": 0,
+          "engagement_rate": 4.4,
+          "click_through_rate": 2.54,
+          "snapshot_at": "2026-08-28T14:00:09Z"
+        },
+        "analytics_last_synced_at": "2026-08-28T14:00:09Z",
+        "analytics_next_sync_at": "2026-09-04T14:00:09Z",
+        "analytics_sync_failures": 0
+      },
+      {
+        "id": "spv_006",
+        "platform": "twitter",
+        "social_account_id": "sacc_twitter_01",
+        "status": "published",
+        "platform_post_id": "tw_0406",
+        "platform_post_url": "https://x.com/brightsidefix/status/tw_0406",
+        "published_at": "2026-06-12T14:00:09Z",
+        "error_message": null,
+        "retry_count": 0,
+        "analytics": {
+          "impressions": 610,
+          "reach": 500,
+          "engagements": 21,
+          "likes": 14,
+          "comments_count": 2,
+          "shares": 5,
+          "saves": 0,
+          "clicks": 11,
+          "video_views": 0,
+          "engagement_rate": 3.44,
+          "click_through_rate": 1.8,
+          "snapshot_at": "2026-08-19T05:30:00Z"
+        },
+        "analytics_last_synced_at": "2026-08-19T05:30:00Z",
+        "analytics_next_sync_at": "2026-09-04T14:00:09Z",
+        "analytics_sync_failures": 0
+      }
+    ]
+  },
+  {
+    "id": "post_q_05",
+    "title": "Summer showroom hours",
+    "content": "Summer hours start this week: Tuesday to Friday nine to five, Saturday nine to two. Bring a door if you want to see a pull against it. #BrightsideBuilt",
+    "content_type": "image",
+    "media_urls": [
+      "https://cdn.fixture.invalid/social/post_q_05.jpg"
+    ],
+    "media_types": [
+      "image"
+    ],
+    "thumbnail_url": null,
+    "link_url": null,
+    "target_platforms": [
+      "facebook"
+    ],
+    "target_accounts": [
+      "sacc_facebook_01"
+    ],
+    "status": "published",
+    "scheduled_at": "2026-06-16T15:00:00Z",
+    "published_at": "2026-06-16T15:00:08Z",
+    "approval_status": "not_required",
+    "ai_generated": false,
+    "ai_model": null,
+    "tags": [
+      "offer",
+      "persona:homeowner",
+      "stage:consider",
+      "hook:cta",
+      "format:single-image"
+    ],
+    "category": null,
+    "pillar_id": "pil_promotion",
+    "avatar_id": "av_homeowner",
+    "journey_stage": "consider",
+    "created_at": "2026-06-15T13:00:08Z",
+    "updated_at": "2026-06-16T15:00:08Z",
+    "created_by_user": {
+      "id": "user_sam",
+      "first_name": "Sam",
+      "last_name": "Okafor"
+    },
+    "content_pillar": {
+      "id": "pil_promotion",
+      "name": "Promotion",
+      "color": "#6A1B9A"
+    },
+    "_count": {
+      "post_versions": 1
+    },
+    "versions": [
+      {
+        "id": "spv_007",
+        "platform": "facebook",
+        "social_account_id": "sacc_facebook_01",
+        "status": "published",
+        "platform_post_id": "fa_0507",
+        "platform_post_url": "https://www.facebook.com/brightsidefixtures/posts/fa_0507",
+        "published_at": "2026-06-16T15:00:08Z",
+        "error_message": null,
+        "retry_count": 0,
+        "analytics": {
+          "impressions": 720,
+          "reach": 590,
+          "engagements": 22,
+          "likes": 19,
+          "comments_count": 2,
+          "shares": 1,
+          "saves": 0,
+          "clicks": 14,
+          "video_views": 0,
+          "engagement_rate": 3.06,
+          "click_through_rate": 1.94,
+          "snapshot_at": "2026-08-25T15:00:08Z"
+        },
+        "analytics_last_synced_at": "2026-08-25T15:00:08Z",
+        "analytics_next_sync_at": "2026-09-01T15:00:08Z",
+        "analytics_sync_failures": 0
+      }
+    ]
+  },
+  {
+    "id": "post_q_06",
+    "title": "How a door gets finished here, in four passes",
+    "content": "Four passes: a sanding sealer, a sand by hand, the first lacquer coat, a second sand, the final coat. The sand between coats is the step people skip and the reason our doors feel the way they do. #BrightsideBuilt",
+    "content_type": "image",
+    "media_urls": [
+      "https://cdn.fixture.invalid/social/post_q_06.jpg"
+    ],
+    "media_types": [
+      "image"
+    ],
+    "thumbnail_url": null,
+    "link_url": null,
+    "target_platforms": [
+      "linkedin"
+    ],
+    "target_accounts": [
+      "sacc_linkedin_01"
+    ],
+    "status": "published",
+    "scheduled_at": "2026-06-19T14:00:00Z",
+    "published_at": "2026-06-19T14:00:11Z",
+    "approval_status": "not_required",
+    "ai_generated": false,
+    "ai_model": null,
+    "tags": [
+      "casestudy",
+      "persona:contractor",
+      "stage:decide",
+      "hook:number",
+      "format:carousel"
+    ],
+    "category": null,
+    "pillar_id": "pil_authority",
+    "avatar_id": "av_contractor",
+    "journey_stage": "decide",
+    "created_at": "2026-06-18T12:00:11Z",
+    "updated_at": "2026-06-19T14:00:11Z",
+    "created_by_user": {
+      "id": "user_sam",
+      "first_name": "Sam",
+      "last_name": "Okafor"
+    },
+    "content_pillar": {
+      "id": "pil_authority",
+      "name": "Authority",
+      "color": "#1565C0"
+    },
+    "_count": {
+      "post_versions": 1
+    },
+    "versions": [
+      {
+        "id": "spv_008",
+        "platform": "linkedin",
+        "social_account_id": "sacc_linkedin_01",
+        "status": "published",
+        "platform_post_id": "li_0608",
+        "platform_post_url": "https://www.linkedin.com/feed/update/urn:li:share:li_0608",
+        "published_at": "2026-06-19T14:00:11Z",
+        "error_message": null,
+        "retry_count": 0,
+        "analytics": {
+          "impressions": 2960,
+          "reach": 2427,
+          "engagements": 170,
+          "likes": 131,
+          "comments_count": 17,
+          "shares": 22,
+          "saves": 0,
+          "clicks": 70,
+          "video_views": 0,
+          "engagement_rate": 5.74,
+          "click_through_rate": 2.36,
+          "snapshot_at": "2026-08-28T14:00:11Z"
+        },
+        "analytics_last_synced_at": "2026-08-28T14:00:11Z",
+        "analytics_next_sync_at": "2026-09-04T14:00:11Z",
+        "analytics_sync_failures": 0
+      }
+    ]
+  },
+  {
+    "id": "post_q_07",
+    "title": "Lacquer or oil: which finish survives a working kitchen",
+    "content": "Lacquer gives you a hard shell that wipes clean and chips if you hit it. Oil gives you a soft surface that scratches and repairs with a rag. Neither is wrong; pick the one you will live with. #BrightsideBuilt #CabinetCare",
+    "content_type": "text",
+    "media_urls": [],
+    "media_types": [],
+    "thumbnail_url": null,
+    "link_url": null,
+    "target_platforms": [
+      "facebook"
+    ],
+    "target_accounts": [
+      "sacc_facebook_01"
+    ],
+    "status": "published",
+    "scheduled_at": "2026-06-23T15:00:00Z",
+    "published_at": "2026-06-23T15:00:07Z",
+    "approval_status": "not_required",
+    "ai_generated": false,
+    "ai_model": null,
+    "tags": [
+      "howto",
+      "persona:homeowner",
+      "stage:consider",
+      "hook:contrarian",
+      "format:text"
+    ],
+    "category": null,
+    "pillar_id": "pil_educate",
+    "avatar_id": "av_homeowner",
+    "journey_stage": "consider",
+    "created_at": "2026-06-22T13:00:07Z",
+    "updated_at": "2026-06-23T15:00:07Z",
+    "created_by_user": {
+      "id": "user_sam",
+      "first_name": "Sam",
+      "last_name": "Okafor"
+    },
+    "content_pillar": {
+      "id": "pil_educate",
+      "name": "Educate",
+      "color": "#2E7D32"
+    },
+    "_count": {
+      "post_versions": 1
+    },
+    "versions": [
+      {
+        "id": "spv_009",
+        "platform": "facebook",
+        "social_account_id": "sacc_facebook_01",
+        "status": "published",
+        "platform_post_id": "fa_0709",
+        "platform_post_url": "https://www.facebook.com/brightsidefixtures/posts/fa_0709",
+        "published_at": "2026-06-23T15:00:07Z",
+        "error_message": null,
+        "retry_count": 0,
+        "analytics": {
+          "impressions": 1330,
+          "reach": 1091,
+          "engagements": 72,
+          "likes": 57,
+          "comments_count": 9,
+          "shares": 6,
+          "saves": 0,
+          "clicks": 31,
+          "video_views": 0,
+          "engagement_rate": 5.41,
+          "click_through_rate": 2.33,
+          "snapshot_at": "2026-08-25T15:00:07Z"
+        },
+        "analytics_last_synced_at": "2026-08-25T15:00:07Z",
+        "analytics_next_sync_at": "2026-09-01T15:00:07Z",
+        "analytics_sync_failures": 0
+      }
+    ]
+  },
+  {
+    "id": "post_q_08",
+    "title": "Meet Tomas, our finishing lead",
+    "content": "Tomas has sprayed every door that left this shop for six years. Ask him about lacquer and clear an afternoon. #BrightsideBuilt #ShopLife",
+    "content_type": "image",
+    "media_urls": [
+      "https://cdn.fixture.invalid/social/post_q_08.jpg"
+    ],
+    "media_types": [
+      "image"
+    ],
+    "thumbnail_url": null,
+    "link_url": null,
+    "target_platforms": [
+      "linkedin"
+    ],
+    "target_accounts": [
+      "sacc_linkedin_01"
+    ],
+    "status": "published",
+    "scheduled_at": "2026-06-26T14:00:00Z",
+    "published_at": "2026-06-26T14:00:13Z",
+    "approval_status": "not_required",
+    "ai_generated": false,
+    "ai_model": null,
+    "tags": [
+      "team",
+      "persona:contractor",
+      "stage:decide",
+      "hook:story",
+      "format:single-image"
+    ],
+    "category": null,
+    "pillar_id": "pil_connection",
+    "avatar_id": "av_contractor",
+    "journey_stage": "decide",
+    "created_at": "2026-06-25T12:00:13Z",
+    "updated_at": "2026-06-26T14:00:13Z",
+    "created_by_user": {
+      "id": "user_sam",
+      "first_name": "Sam",
+      "last_name": "Okafor"
+    },
+    "content_pillar": {
+      "id": "pil_connection",
+      "name": "Connection",
+      "color": "#EF6C00"
+    },
+    "_count": {
+      "post_versions": 1
+    },
+    "versions": [
+      {
+        "id": "spv_010",
+        "platform": "linkedin",
+        "social_account_id": "sacc_linkedin_01",
+        "status": "published",
+        "platform_post_id": "li_0810",
+        "platform_post_url": "https://www.linkedin.com/feed/update/urn:li:share:li_0810",
+        "published_at": "2026-06-26T14:00:13Z",
+        "error_message": null,
+        "retry_count": 0,
+        "analytics": {
+          "impressions": 2040,
+          "reach": 1673,
+          "engagements": 118,
+          "likes": 97,
+          "comments_count": 14,
+          "shares": 7,
+          "saves": 0,
+          "clicks": 12,
+          "video_views": 0,
+          "engagement_rate": 5.78,
+          "click_through_rate": 0.59,
+          "snapshot_at": "2026-08-28T14:00:13Z"
+        },
+        "analytics_last_synced_at": "2026-08-28T14:00:13Z",
+        "analytics_next_sync_at": "2026-09-04T14:00:13Z",
+        "analytics_sync_failures": 0
+      }
+    ]
+  },
+  {
+    "id": "post_q_09",
+    "title": "The hinge, not the door: which screw fixes a droop",
+    "content": "A cabinet door that droops on one side is nearly always a hinge, not the door. One screwdriver, two adjustment screws, five minutes. Here is which screw does what. #BrightsideBuilt #CabinetCare",
+    "content_type": "video",
+    "media_urls": [
+      "https://cdn.fixture.invalid/social/post_q_09.mp4"
+    ],
+    "media_types": [
+      "video"
+    ],
+    "thumbnail_url": null,
+    "link_url": null,
+    "target_platforms": [
+      "linkedin",
+      "facebook"
+    ],
+    "target_accounts": [
+      "sacc_linkedin_01",
+      "sacc_facebook_01"
+    ],
+    "status": "published",
+    "scheduled_at": "2026-06-30T14:00:00Z",
+    "published_at": "2026-06-30T14:00:10Z",
+    "approval_status": "not_required",
+    "ai_generated": false,
+    "ai_model": null,
+    "tags": [
+      "howto",
+      "hook:how-to",
+      "format:video"
+    ],
+    "category": null,
+    "pillar_id": "pil_educate",
+    "avatar_id": null,
+    "journey_stage": null,
+    "created_at": "2026-06-29T12:00:10Z",
+    "updated_at": "2026-06-30T14:00:10Z",
+    "created_by_user": {
+      "id": "user_sam",
+      "first_name": "Sam",
+      "last_name": "Okafor"
+    },
+    "content_pillar": {
+      "id": "pil_educate",
+      "name": "Educate",
+      "color": "#2E7D32"
+    },
+    "_count": {
+      "post_versions": 2
+    },
+    "versions": [
+      {
+        "id": "spv_011",
+        "platform": "linkedin",
+        "social_account_id": "sacc_linkedin_01",
+        "status": "published",
+        "platform_post_id": "li_0911",
+        "platform_post_url": "https://www.linkedin.com/feed/update/urn:li:share:li_0911",
+        "published_at": "2026-06-30T14:00:10Z",
+        "error_message": null,
+        "retry_count": 0,
+        "analytics": {
+          "impressions": 5120,
+          "reach": 4198,
+          "engagements": 287,
+          "likes": 212,
+          "comments_count": 31,
+          "shares": 44,
+          "saves": 0,
+          "clicks": 118,
+          "video_views": 3900,
+          "engagement_rate": 5.61,
+          "click_through_rate": 2.3,
+          "snapshot_at": "2026-09-01T14:00:10Z"
+        },
+        "analytics_last_synced_at": "2026-09-01T14:00:10Z",
+        "analytics_next_sync_at": "2026-09-08T14:00:10Z",
+        "analytics_sync_failures": 0
+      },
+      {
+        "id": "spv_012",
+        "platform": "facebook",
+        "social_account_id": "sacc_facebook_01",
+        "status": "published",
+        "platform_post_id": "fa_0912",
+        "platform_post_url": "https://www.facebook.com/brightsidefixtures/posts/fa_0912",
+        "published_at": "2026-06-30T14:00:10Z",
+        "error_message": null,
+        "retry_count": 0,
+        "analytics": {
+          "impressions": 2210,
+          "reach": 1812,
+          "engagements": 126,
+          "likes": 96,
+          "comments_count": 13,
+          "shares": 17,
+          "saves": 0,
+          "clicks": 38,
+          "video_views": 1700,
+          "engagement_rate": 5.7,
+          "click_through_rate": 1.72,
+          "snapshot_at": "2026-09-01T14:00:10Z"
+        },
+        "analytics_last_synced_at": "2026-09-01T14:00:10Z",
+        "analytics_next_sync_at": "2026-09-08T14:00:10Z",
+        "analytics_sync_failures": 0
+      }
+    ]
+  },
+  {
+    "id": "post_q_10",
+    "title": "Fall hardware run opens for pre-order",
+    "content": "The fall hardware run is open for pre-order: aged brass, matte black, and the bronze. Trade accounts get first call on quantities. Link below. #BrightsideBuilt",
+    "content_type": "image",
+    "media_urls": [
+      "https://cdn.fixture.invalid/social/post_q_10.jpg"
+    ],
+    "media_types": [
+      "image"
+    ],
+    "thumbnail_url": null,
+    "link_url": "https://brightsidefixtures.example/post_q_10?utm_source=social&utm_medium=social",
+    "target_platforms": [
+      "linkedin",
+      "twitter"
+    ],
+    "target_accounts": [
+      "sacc_linkedin_01",
+      "sacc_twitter_01"
+    ],
+    "status": "published",
+    "scheduled_at": "2026-07-03T14:00:00Z",
+    "published_at": "2026-07-03T14:00:08Z",
+    "approval_status": "not_required",
+    "ai_generated": false,
+    "ai_model": null,
+    "tags": [
+      "offer",
+      "persona:contractor",
+      "stage:decide",
+      "hook:cta",
+      "format:link"
+    ],
+    "category": null,
+    "pillar_id": "pil_promotion",
+    "avatar_id": "av_contractor",
+    "journey_stage": "decide",
+    "created_at": "2026-07-02T12:00:08Z",
+    "updated_at": "2026-07-03T14:00:08Z",
+    "created_by_user": {
+      "id": "user_sam",
+      "first_name": "Sam",
+      "last_name": "Okafor"
+    },
+    "content_pillar": {
+      "id": "pil_promotion",
+      "name": "Promotion",
+      "color": "#6A1B9A"
+    },
+    "_count": {
+      "post_versions": 2
+    },
+    "versions": [
+      {
+        "id": "spv_013",
+        "platform": "linkedin",
+        "social_account_id": "sacc_linkedin_01",
+        "status": "published",
+        "platform_post_id": "li_1013",
+        "platform_post_url": "https://www.linkedin.com/feed/update/urn:li:share:li_1013",
+        "published_at": "2026-07-03T14:00:08Z",
+        "error_message": null,
+        "retry_count": 0,
+        "analytics": {
+          "impressions": 1150,
+          "reach": 943,
+          "engagements": 34,
+          "likes": 29,
+          "comments_count": 3,
+          "shares": 2,
+          "saves": 0,
+          "clicks": 57,
+          "video_views": 0,
+          "engagement_rate": 2.96,
+          "click_through_rate": 4.96,
+          "snapshot_at": "2026-08-28T14:00:08Z"
+        },
+        "analytics_last_synced_at": "2026-08-28T14:00:08Z",
+        "analytics_next_sync_at": "2026-09-04T14:00:08Z",
+        "analytics_sync_failures": 0
+      },
+      {
+        "id": "spv_014",
+        "platform": "twitter",
+        "social_account_id": "sacc_twitter_01",
+        "status": "published",
+        "platform_post_id": "tw_1014",
+        "platform_post_url": "https://x.com/brightsidefix/status/tw_1014",
+        "published_at": "2026-07-03T14:00:08Z",
+        "error_message": null,
+        "retry_count": 0,
+        "analytics": {
+          "impressions": 540,
+          "reach": 443,
+          "engagements": 13,
+          "likes": 9,
+          "comments_count": 1,
+          "shares": 3,
+          "saves": 0,
+          "clicks": 19,
+          "video_views": 0,
+          "engagement_rate": 2.41,
+          "click_through_rate": 3.52,
+          "snapshot_at": "2026-08-19T05:30:00Z"
+        },
+        "analytics_last_synced_at": "2026-08-19T05:30:00Z",
+        "analytics_next_sync_at": "2026-09-04T14:00:08Z",
+        "analytics_sync_failures": 0
+      }
+    ]
+  },
+  {
+    "id": "post_q_11",
+    "title": "Soft-close hinges fail one way, and it is not the spring",
+    "content": "When a soft-close door starts slamming, the spring is fine. The damper, the small piston at the hinge cup, has lost its oil. Swap the damper before you swap the hinge. #BrightsideBuilt #CabinetCare",
+    "content_type": "text",
+    "media_urls": [],
+    "media_types": [],
+    "thumbnail_url": null,
+    "link_url": null,
+    "target_platforms": [
+      "linkedin"
+    ],
+    "target_accounts": [
+      "sacc_linkedin_01"
+    ],
+    "status": "published",
+    "scheduled_at": "2026-07-07T14:00:00Z",
+    "published_at": "2026-07-07T14:00:12Z",
+    "approval_status": "not_required",
+    "ai_generated": false,
+    "ai_model": null,
+    "tags": [
+      "howto",
+      "persona:homeowner",
+      "stage:consider",
+      "hook:contrarian",
+      "format:text"
+    ],
+    "category": null,
+    "pillar_id": "pil_educate",
+    "avatar_id": "av_homeowner",
+    "journey_stage": "consider",
+    "created_at": "2026-07-06T12:00:12Z",
+    "updated_at": "2026-07-07T14:00:12Z",
+    "created_by_user": {
+      "id": "user_sam",
+      "first_name": "Sam",
+      "last_name": "Okafor"
+    },
+    "content_pillar": {
+      "id": "pil_educate",
+      "name": "Educate",
+      "color": "#2E7D32"
+    },
+    "_count": {
+      "post_versions": 1
+    },
+    "versions": [
+      {
+        "id": "spv_015",
+        "platform": "linkedin",
+        "social_account_id": "sacc_linkedin_01",
+        "status": "published",
+        "platform_post_id": "li_1115",
+        "platform_post_url": "https://www.linkedin.com/feed/update/urn:li:share:li_1115",
+        "published_at": "2026-07-07T14:00:12Z",
+        "error_message": null,
+        "retry_count": 0,
+        "analytics": {
+          "impressions": 2670,
+          "reach": 2189,
+          "engagements": 131,
+          "likes": 104,
+          "comments_count": 15,
+          "shares": 12,
+          "saves": 0,
+          "clicks": 58,
+          "video_views": 0,
+          "engagement_rate": 4.91,
+          "click_through_rate": 2.17,
+          "snapshot_at": "2026-09-01T14:00:12Z"
+        },
+        "analytics_last_synced_at": "2026-09-01T14:00:12Z",
+        "analytics_next_sync_at": "2026-09-08T14:00:12Z",
+        "analytics_sync_failures": 0
+      }
+    ]
+  },
+  {
+    "id": "post_q_12",
+    "title": "What the award judges wrote about the inset doors",
+    "content": "The judges called the inset doors on the Pine Street kitchen the tightest tolerances in the category. The family called them the doors that finally close. Both are true. #BrightsideBuilt",
+    "content_type": "image",
+    "media_urls": [
+      "https://cdn.fixture.invalid/social/post_q_12.jpg"
+    ],
+    "media_types": [
+      "image"
+    ],
+    "thumbnail_url": null,
+    "link_url": null,
+    "target_platforms": [
+      "facebook"
+    ],
+    "target_accounts": [
+      "sacc_facebook_01"
+    ],
+    "status": "published",
+    "scheduled_at": "2026-07-10T15:00:00Z",
+    "published_at": "2026-07-10T15:00:09Z",
+    "approval_status": "not_required",
+    "ai_generated": false,
+    "ai_model": null,
+    "tags": [
+      "casestudy",
+      "persona:contractor",
+      "stage:decide",
+      "hook:quote",
+      "format:single-image"
+    ],
+    "category": null,
+    "pillar_id": "pil_authority",
+    "avatar_id": "av_contractor",
+    "journey_stage": "decide",
+    "created_at": "2026-07-09T13:00:09Z",
+    "updated_at": "2026-07-10T15:00:09Z",
+    "created_by_user": {
+      "id": "user_sam",
+      "first_name": "Sam",
+      "last_name": "Okafor"
+    },
+    "content_pillar": {
+      "id": "pil_authority",
+      "name": "Authority",
+      "color": "#1565C0"
+    },
+    "_count": {
+      "post_versions": 1
+    },
+    "versions": [
+      {
+        "id": "spv_016",
+        "platform": "facebook",
+        "social_account_id": "sacc_facebook_01",
+        "status": "published",
+        "platform_post_id": "fa_1216",
+        "platform_post_url": "https://www.facebook.com/brightsidefixtures/posts/fa_1216",
+        "published_at": "2026-07-10T15:00:09Z",
+        "error_message": null,
+        "retry_count": 0,
+        "analytics": {
+          "impressions": 1490,
+          "reach": 1222,
+          "engagements": 88,
+          "likes": 71,
+          "comments_count": 8,
+          "shares": 9,
+          "saves": 0,
+          "clicks": 27,
+          "video_views": 0,
+          "engagement_rate": 5.91,
+          "click_through_rate": 1.81,
+          "snapshot_at": "2026-08-28T15:00:09Z"
+        },
+        "analytics_last_synced_at": "2026-08-28T15:00:09Z",
+        "analytics_next_sync_at": "2026-09-04T15:00:09Z",
+        "analytics_sync_failures": 0
+      }
+    ]
+  },
+  {
+    "id": "post_q_13",
+    "title": "A thank-you to the trade school class",
+    "content": "Twenty-two students spent Thursday in the finishing booth asking why we sand between coats. The answer is the next post. Thank you for the questions. #BrightsideBuilt #ShopLife",
+    "content_type": "image",
+    "media_urls": [
+      "https://cdn.fixture.invalid/social/post_q_13.jpg"
+    ],
+    "media_types": [
+      "image"
+    ],
+    "thumbnail_url": null,
+    "link_url": null,
+    "target_platforms": [
+      "linkedin"
+    ],
+    "target_accounts": [
+      "sacc_linkedin_01"
+    ],
+    "status": "published",
+    "scheduled_at": "2026-07-14T14:00:00Z",
+    "published_at": "2026-07-14T14:00:11Z",
+    "approval_status": "not_required",
+    "ai_generated": false,
+    "ai_model": null,
+    "tags": [
+      "team",
+      "persona:contractor",
+      "stage:decide",
+      "hook:story",
+      "format:single-image"
+    ],
+    "category": null,
+    "pillar_id": "pil_connection",
+    "avatar_id": "av_contractor",
+    "journey_stage": "decide",
+    "created_at": "2026-07-13T12:00:11Z",
+    "updated_at": "2026-07-14T14:00:11Z",
+    "created_by_user": {
+      "id": "user_sam",
+      "first_name": "Sam",
+      "last_name": "Okafor"
+    },
+    "content_pillar": {
+      "id": "pil_connection",
+      "name": "Connection",
+      "color": "#EF6C00"
+    },
+    "_count": {
+      "post_versions": 1
+    },
+    "versions": [
+      {
+        "id": "spv_017",
+        "platform": "linkedin",
+        "social_account_id": "sacc_linkedin_01",
+        "status": "published",
+        "platform_post_id": "li_1317",
+        "platform_post_url": "https://www.linkedin.com/feed/update/urn:li:share:li_1317",
+        "published_at": "2026-07-14T14:00:11Z",
+        "error_message": null,
+        "retry_count": 0,
+        "analytics": {
+          "impressions": 1720,
+          "reach": 1410,
+          "engagements": 100,
+          "likes": 83,
+          "comments_count": 12,
+          "shares": 5,
+          "saves": 0,
+          "clicks": 8,
+          "video_views": 0,
+          "engagement_rate": 5.81,
+          "click_through_rate": 0.47,
+          "snapshot_at": "2026-09-01T14:00:11Z"
+        },
+        "analytics_last_synced_at": "2026-09-01T14:00:11Z",
+        "analytics_next_sync_at": "2026-09-08T14:00:11Z",
+        "analytics_sync_failures": 0
+      }
+    ]
+  },
+  {
+    "id": "post_q_14",
+    "title": "Brass pulls: clean them without stripping the patina",
+    "content": "Warm water, a drop of dish soap, a soft cloth. That is the whole method for brass pulls. The bottle under the sink takes the patina off in one wipe and it does not come back. #BrightsideBuilt #CabinetCare",
+    "content_type": "image",
+    "media_urls": [
+      "https://cdn.fixture.invalid/social/post_q_14.jpg"
+    ],
+    "media_types": [
+      "image"
+    ],
+    "thumbnail_url": null,
+    "link_url": null,
+    "target_platforms": [
+      "facebook",
+      "twitter"
+    ],
+    "target_accounts": [
+      "sacc_facebook_01",
+      "sacc_twitter_01"
+    ],
+    "status": "published",
+    "scheduled_at": "2026-07-17T15:00:00Z",
+    "published_at": "2026-07-17T15:00:10Z",
+    "approval_status": "not_required",
+    "ai_generated": false,
+    "ai_model": null,
+    "tags": [
+      "howto",
+      "persona:homeowner",
+      "stage:consider",
+      "hook:how-to",
+      "format:single-image"
+    ],
+    "category": null,
+    "pillar_id": "pil_educate",
+    "avatar_id": "av_homeowner",
+    "journey_stage": "consider",
+    "created_at": "2026-07-16T13:00:10Z",
+    "updated_at": "2026-07-17T15:00:10Z",
+    "created_by_user": {
+      "id": "user_sam",
+      "first_name": "Sam",
+      "last_name": "Okafor"
+    },
+    "content_pillar": {
+      "id": "pil_educate",
+      "name": "Educate",
+      "color": "#2E7D32"
+    },
+    "_count": {
+      "post_versions": 2
+    },
+    "versions": [
+      {
+        "id": "spv_018",
+        "platform": "facebook",
+        "social_account_id": "sacc_facebook_01",
+        "status": "published",
+        "platform_post_id": "fa_1418",
+        "platform_post_url": "https://www.facebook.com/brightsidefixtures/posts/fa_1418",
+        "published_at": "2026-07-17T15:00:10Z",
+        "error_message": null,
+        "retry_count": 0,
+        "analytics": {
+          "impressions": 1610,
+          "reach": 1320,
+          "engagements": 86,
+          "likes": 69,
+          "comments_count": 10,
+          "shares": 7,
+          "saves": 0,
+          "clicks": 25,
+          "video_views": 0,
+          "engagement_rate": 5.34,
+          "click_through_rate": 1.55,
+          "snapshot_at": "2026-08-28T15:00:10Z"
+        },
+        "analytics_last_synced_at": "2026-08-28T15:00:10Z",
+        "analytics_next_sync_at": "2026-09-04T15:00:10Z",
+        "analytics_sync_failures": 0
+      },
+      {
+        "id": "spv_019",
+        "platform": "twitter",
+        "social_account_id": "sacc_twitter_01",
+        "status": "published",
+        "platform_post_id": "tw_1419",
+        "platform_post_url": "https://x.com/brightsidefix/status/tw_1419",
+        "published_at": "2026-07-17T15:00:10Z",
+        "error_message": null,
+        "retry_count": 0,
+        "analytics": {
+          "impressions": 590,
+          "reach": 484,
+          "engagements": 17,
+          "likes": 12,
+          "comments_count": 1,
+          "shares": 4,
+          "saves": 0,
+          "clicks": 10,
+          "video_views": 0,
+          "engagement_rate": 2.88,
+          "click_through_rate": 1.69,
+          "snapshot_at": "2026-08-19T05:30:00Z"
+        },
+        "analytics_last_synced_at": "2026-08-19T05:30:00Z",
+        "analytics_next_sync_at": "2026-09-04T15:00:10Z",
+        "analytics_sync_failures": 0
+      }
+    ]
+  },
+  {
+    "id": "post_q_15",
+    "title": "Inset versus overlay doors, in one picture",
+    "content": "Inset or overlay? Inset sits inside the frame and costs you tolerance; overlay sits on the frame and forgives a wall that is not square. One picture, both answers. #BrightsideBuilt #CabinetCare",
+    "content_type": "image",
+    "media_urls": [
+      "https://cdn.fixture.invalid/social/post_q_15.jpg"
+    ],
+    "media_types": [
+      "image"
+    ],
+    "thumbnail_url": null,
+    "link_url": null,
+    "target_platforms": [
+      "linkedin"
+    ],
+    "target_accounts": [
+      "sacc_linkedin_01"
+    ],
+    "status": "published",
+    "scheduled_at": "2026-07-21T14:00:00Z",
+    "published_at": "2026-07-21T14:00:08Z",
+    "approval_status": "not_required",
+    "ai_generated": false,
+    "ai_model": null,
+    "tags": [
+      "howto",
+      "persona:homeowner",
+      "stage:consider",
+      "hook:question",
+      "format:carousel"
+    ],
+    "category": null,
+    "pillar_id": "pil_educate",
+    "avatar_id": "av_homeowner",
+    "journey_stage": "consider",
+    "created_at": "2026-07-20T12:00:08Z",
+    "updated_at": "2026-07-21T14:00:08Z",
+    "created_by_user": {
+      "id": "user_sam",
+      "first_name": "Sam",
+      "last_name": "Okafor"
+    },
+    "content_pillar": {
+      "id": "pil_educate",
+      "name": "Educate",
+      "color": "#2E7D32"
+    },
+    "_count": {
+      "post_versions": 1
+    },
+    "versions": [
+      {
+        "id": "spv_020",
+        "platform": "linkedin",
+        "social_account_id": "sacc_linkedin_01",
+        "status": "published",
+        "platform_post_id": "li_1520",
+        "platform_post_url": "https://www.linkedin.com/feed/update/urn:li:share:li_1520",
+        "published_at": "2026-07-21T14:00:08Z",
+        "error_message": null,
+        "retry_count": 0,
+        "analytics": {
+          "impressions": 3120,
+          "reach": 2558,
+          "engagements": 163,
+          "likes": 128,
+          "comments_count": 19,
+          "shares": 16,
+          "saves": 0,
+          "clicks": 74,
+          "video_views": 0,
+          "engagement_rate": 5.22,
+          "click_through_rate": 2.37,
+          "snapshot_at": "2026-09-01T14:00:08Z"
+        },
+        "analytics_last_synced_at": "2026-09-01T14:00:08Z",
+        "analytics_next_sync_at": "2026-09-08T14:00:08Z",
+        "analytics_sync_failures": 0
+      }
+    ]
+  },
+  {
+    "id": "post_q_16",
+    "title": "Ridgeway kitchen: eleven weeks from template to install",
+    "content": "Ridgeway went from template to install in eleven weeks, with a range hood that changed size twice. The cabinets did not. Before and after in the frames. #BrightsideBuilt",
+    "content_type": "image",
+    "media_urls": [
+      "https://cdn.fixture.invalid/social/post_q_16.jpg"
+    ],
+    "media_types": [
+      "image"
+    ],
+    "thumbnail_url": null,
+    "link_url": null,
+    "target_platforms": [
+      "linkedin"
+    ],
+    "target_accounts": [
+      "sacc_linkedin_01"
+    ],
+    "status": "published",
+    "scheduled_at": "2026-07-24T14:00:00Z",
+    "published_at": "2026-07-24T14:00:12Z",
+    "approval_status": "not_required",
+    "ai_generated": false,
+    "ai_model": null,
+    "tags": [
+      "casestudy",
+      "persona:contractor",
+      "stage:decide",
+      "hook:before-after",
+      "format:carousel"
+    ],
+    "category": null,
+    "pillar_id": "pil_authority",
+    "avatar_id": "av_contractor",
+    "journey_stage": "decide",
+    "created_at": "2026-07-23T12:00:12Z",
+    "updated_at": "2026-07-24T14:00:12Z",
+    "created_by_user": {
+      "id": "user_sam",
+      "first_name": "Sam",
+      "last_name": "Okafor"
+    },
+    "content_pillar": {
+      "id": "pil_authority",
+      "name": "Authority",
+      "color": "#1565C0"
+    },
+    "_count": {
+      "post_versions": 1
+    },
+    "versions": [
+      {
+        "id": "spv_021",
+        "platform": "linkedin",
+        "social_account_id": "sacc_linkedin_01",
+        "status": "published",
+        "platform_post_id": "li_1621",
+        "platform_post_url": "https://www.linkedin.com/feed/update/urn:li:share:li_1621",
+        "published_at": "2026-07-24T14:00:12Z",
+        "error_message": null,
+        "retry_count": 0,
+        "analytics": {
+          "impressions": 2830,
+          "reach": 2321,
+          "engagements": 147,
+          "likes": 117,
+          "comments_count": 16,
+          "shares": 14,
+          "saves": 0,
+          "clicks": 66,
+          "video_views": 0,
+          "engagement_rate": 5.19,
+          "click_through_rate": 2.33,
+          "snapshot_at": "2026-08-28T14:00:12Z"
+        },
+        "analytics_last_synced_at": "2026-08-28T14:00:12Z",
+        "analytics_next_sync_at": "2026-09-04T14:00:12Z",
+        "analytics_sync_failures": 0
+      }
+    ]
+  },
+  {
+    "id": "post_q_17",
+    "title": "Two showroom slots open for August consults",
+    "content": "Two consult slots are open in August for kitchens starting this fall. Call the shop and ask for Dana. #BrightsideBuilt",
+    "content_type": "text",
+    "media_urls": [],
+    "media_types": [],
+    "thumbnail_url": null,
+    "link_url": null,
+    "target_platforms": [
+      "facebook"
+    ],
+    "target_accounts": [
+      "sacc_facebook_01"
+    ],
+    "status": "published",
+    "scheduled_at": "2026-07-28T15:00:00Z",
+    "published_at": "2026-07-28T15:00:09Z",
+    "approval_status": "not_required",
+    "ai_generated": false,
+    "ai_model": null,
+    "tags": [
+      "offer",
+      "persona:homeowner",
+      "stage:consider",
+      "hook:cta",
+      "format:text"
+    ],
+    "category": null,
+    "pillar_id": "pil_promotion",
+    "avatar_id": "av_homeowner",
+    "journey_stage": "consider",
+    "created_at": "2026-07-27T13:00:09Z",
+    "updated_at": "2026-07-28T15:00:09Z",
+    "created_by_user": {
+      "id": "user_sam",
+      "first_name": "Sam",
+      "last_name": "Okafor"
+    },
+    "content_pillar": {
+      "id": "pil_promotion",
+      "name": "Promotion",
+      "color": "#6A1B9A"
+    },
+    "_count": {
+      "post_versions": 1
+    },
+    "versions": [
+      {
+        "id": "spv_022",
+        "platform": "facebook",
+        "social_account_id": "sacc_facebook_01",
+        "status": "published",
+        "platform_post_id": "fa_1722",
+        "platform_post_url": "https://www.facebook.com/brightsidefixtures/posts/fa_1722",
+        "published_at": "2026-07-28T15:00:09Z",
+        "error_message": null,
+        "retry_count": 0,
+        "analytics": {
+          "impressions": 690,
+          "reach": 566,
+          "engagements": 20,
+          "likes": 17,
+          "comments_count": 2,
+          "shares": 1,
+          "saves": 0,
+          "clicks": 21,
+          "video_views": 0,
+          "engagement_rate": 2.9,
+          "click_through_rate": 3.04,
+          "snapshot_at": "2026-08-25T15:00:09Z"
+        },
+        "analytics_last_synced_at": "2026-08-25T15:00:09Z",
+        "analytics_next_sync_at": "2026-09-01T15:00:09Z",
+        "analytics_sync_failures": 0
+      }
+    ]
+  },
+  {
+    "id": "post_q_18",
+    "title": "The bench on a Saturday, part two",
+    "content": "Saturday again. The showroom is open, the second bench is hanging doors, and the coffee is fresh for once. Come and ask us anything about your kitchen. #BrightsideBuilt #ShopLife",
+    "content_type": "image",
+    "media_urls": [
+      "https://cdn.fixture.invalid/social/post_q_18.jpg"
+    ],
+    "media_types": [
+      "image"
+    ],
+    "thumbnail_url": null,
+    "link_url": null,
+    "target_platforms": [
+      "facebook"
+    ],
+    "target_accounts": [
+      "sacc_facebook_01"
+    ],
+    "status": "published",
+    "scheduled_at": "2026-07-31T16:00:00Z",
+    "published_at": "2026-07-31T16:00:13Z",
+    "approval_status": "not_required",
+    "ai_generated": false,
+    "ai_model": null,
+    "tags": [
+      "team",
+      "persona:homeowner",
+      "stage:consider",
+      "hook:story",
+      "format:single-image"
+    ],
+    "category": null,
+    "pillar_id": "pil_connection",
+    "avatar_id": "av_homeowner",
+    "journey_stage": "consider",
+    "created_at": "2026-07-30T14:00:13Z",
+    "updated_at": "2026-07-31T16:00:13Z",
+    "created_by_user": {
+      "id": "user_sam",
+      "first_name": "Sam",
+      "last_name": "Okafor"
+    },
+    "content_pillar": {
+      "id": "pil_connection",
+      "name": "Connection",
+      "color": "#EF6C00"
+    },
+    "_count": {
+      "post_versions": 1
+    },
+    "versions": [
+      {
+        "id": "spv_023",
+        "platform": "facebook",
+        "social_account_id": "sacc_facebook_01",
+        "status": "published",
+        "platform_post_id": "fa_1823",
+        "platform_post_url": "https://www.facebook.com/brightsidefixtures/posts/fa_1823",
+        "published_at": "2026-07-31T16:00:13Z",
+        "error_message": null,
+        "retry_count": 0,
+        "analytics": {
+          "impressions": 1040,
+          "reach": 853,
+          "engagements": 69,
+          "likes": 58,
+          "comments_count": 8,
+          "shares": 3,
+          "saves": 0,
+          "clicks": 7,
+          "video_views": 0,
+          "engagement_rate": 6.63,
+          "click_through_rate": 0.67,
+          "snapshot_at": "2026-08-28T16:00:13Z"
+        },
+        "analytics_last_synced_at": "2026-08-28T16:00:13Z",
+        "analytics_next_sync_at": "2026-09-04T16:00:13Z",
+        "analytics_sync_failures": 0
+      }
+    ]
+  },
+  {
+    "id": "post_q_19",
+    "title": "Why we sand between coats",
+    "content": "The trade school class asked why we sand between coats. Because the first coat raises the grain, and a second coat over raised grain feels like a fence post. Ninety seconds in the booth. #BrightsideBuilt #CabinetCare",
+    "content_type": "video",
+    "media_urls": [
+      "https://cdn.fixture.invalid/social/post_q_19.mp4"
+    ],
+    "media_types": [
+      "video"
+    ],
+    "thumbnail_url": null,
+    "link_url": null,
+    "target_platforms": [
+      "linkedin",
+      "twitter"
+    ],
+    "target_accounts": [
+      "sacc_linkedin_01",
+      "sacc_twitter_01"
+    ],
+    "status": "published",
+    "scheduled_at": "2026-08-04T14:00:00Z",
+    "published_at": "2026-08-04T14:00:10Z",
+    "approval_status": "not_required",
+    "ai_generated": false,
+    "ai_model": null,
+    "tags": [
+      "howto",
+      "persona:contractor",
+      "stage:decide",
+      "hook:how-to",
+      "format:video"
+    ],
+    "category": null,
+    "pillar_id": "pil_educate",
+    "avatar_id": "av_contractor",
+    "journey_stage": "decide",
+    "created_at": "2026-08-03T12:00:10Z",
+    "updated_at": "2026-08-04T14:00:10Z",
+    "created_by_user": {
+      "id": "user_sam",
+      "first_name": "Sam",
+      "last_name": "Okafor"
+    },
+    "content_pillar": {
+      "id": "pil_educate",
+      "name": "Educate",
+      "color": "#2E7D32"
+    },
+    "_count": {
+      "post_versions": 2
+    },
+    "versions": [
+      {
+        "id": "spv_024",
+        "platform": "linkedin",
+        "social_account_id": "sacc_linkedin_01",
+        "status": "published",
+        "platform_post_id": "li_1924",
+        "platform_post_url": "https://www.linkedin.com/feed/update/urn:li:share:li_1924",
+        "published_at": "2026-08-04T14:00:10Z",
+        "error_message": null,
+        "retry_count": 0,
+        "analytics": {
+          "impressions": 3460,
+          "reach": 2837,
+          "engagements": 181,
+          "likes": 141,
+          "comments_count": 21,
+          "shares": 19,
+          "saves": 0,
+          "clicks": 82,
+          "video_views": 2600,
+          "engagement_rate": 5.23,
+          "click_through_rate": 2.37,
+          "snapshot_at": "2026-09-01T05:30:00Z"
+        },
+        "analytics_last_synced_at": "2026-09-01T05:30:00Z",
+        "analytics_next_sync_at": "2026-09-02T05:30:00Z",
+        "analytics_sync_failures": 0
+      },
+      {
+        "id": "spv_025",
+        "platform": "twitter",
+        "social_account_id": "sacc_twitter_01",
+        "status": "published",
+        "platform_post_id": "tw_1925",
+        "platform_post_url": "https://x.com/brightsidefix/status/tw_1925",
+        "published_at": "2026-08-04T14:00:10Z",
+        "error_message": null,
+        "retry_count": 0,
+        "analytics": {
+          "impressions": 640,
+          "reach": 525,
+          "engagements": 22,
+          "likes": 15,
+          "comments_count": 2,
+          "shares": 5,
+          "saves": 0,
+          "clicks": 12,
+          "video_views": 380,
+          "engagement_rate": 3.44,
+          "click_through_rate": 1.88,
+          "snapshot_at": "2026-08-19T05:30:00Z"
+        },
+        "analytics_last_synced_at": "2026-08-19T05:30:00Z",
+        "analytics_next_sync_at": "2026-09-02T05:30:00Z",
+        "analytics_sync_failures": 0
+      }
+    ]
+  },
+  {
+    "id": "post_q_20",
+    "title": "Press: the county magazine on the workshop",
+    "content": "The county magazine spent a morning in the shop and wrote about the sanding room. The line we kept: a workshop that measures twice and finishes three times. Link below. #BrightsideBuilt",
+    "content_type": "image",
+    "media_urls": [
+      "https://cdn.fixture.invalid/social/post_q_20.jpg"
+    ],
+    "media_types": [
+      "image"
+    ],
+    "thumbnail_url": null,
+    "link_url": "https://brightsidefixtures.example/post_q_20?utm_source=social&utm_medium=social",
+    "target_platforms": [
+      "facebook"
+    ],
+    "target_accounts": [
+      "sacc_facebook_01"
+    ],
+    "status": "published",
+    "scheduled_at": "2026-08-07T15:00:00Z",
+    "published_at": "2026-08-07T15:00:08Z",
+    "approval_status": "not_required",
+    "ai_generated": false,
+    "ai_model": null,
+    "tags": [
+      "casestudy",
+      "persona:contractor",
+      "stage:decide",
+      "hook:quote",
+      "format:link"
+    ],
+    "category": null,
+    "pillar_id": "pil_authority",
+    "avatar_id": "av_contractor",
+    "journey_stage": "decide",
+    "created_at": "2026-08-06T13:00:08Z",
+    "updated_at": "2026-08-07T15:00:08Z",
+    "created_by_user": {
+      "id": "user_sam",
+      "first_name": "Sam",
+      "last_name": "Okafor"
+    },
+    "content_pillar": {
+      "id": "pil_authority",
+      "name": "Authority",
+      "color": "#1565C0"
+    },
+    "_count": {
+      "post_versions": 1
+    },
+    "versions": [
+      {
+        "id": "spv_026",
+        "platform": "facebook",
+        "social_account_id": "sacc_facebook_01",
+        "status": "published",
+        "platform_post_id": "fa_2026",
+        "platform_post_url": "https://www.facebook.com/brightsidefixtures/posts/fa_2026",
+        "published_at": "2026-08-07T15:00:08Z",
+        "error_message": null,
+        "retry_count": 0,
+        "analytics": {
+          "impressions": 1370,
+          "reach": 1123,
+          "engagements": 81,
+          "likes": 63,
+          "comments_count": 7,
+          "shares": 11,
+          "saves": 0,
+          "clicks": 49,
+          "video_views": 0,
+          "engagement_rate": 5.91,
+          "click_through_rate": 3.58,
+          "snapshot_at": "2026-09-01T05:30:00Z"
+        },
+        "analytics_last_synced_at": "2026-09-01T05:30:00Z",
+        "analytics_next_sync_at": "2026-09-02T05:30:00Z",
+        "analytics_sync_failures": 0
+      }
+    ]
+  },
+  {
+    "id": "post_q_21",
+    "title": "What a cabinet quote should show you, line by line",
+    "content": "Five lines every cabinet quote should show: box construction, door style, finish system, hardware brand, and who installs. A quote that hides one of them is hiding the price. #BrightsideBuilt #CabinetCare",
+    "content_type": "text",
+    "media_urls": [],
+    "media_types": [],
+    "thumbnail_url": null,
+    "link_url": null,
+    "target_platforms": [
+      "linkedin"
+    ],
+    "target_accounts": [
+      "sacc_linkedin_01"
+    ],
+    "status": "published",
+    "scheduled_at": "2026-08-11T14:00:00Z",
+    "published_at": "2026-08-11T14:00:11Z",
+    "approval_status": "not_required",
+    "ai_generated": false,
+    "ai_model": null,
+    "tags": [
+      "howto",
+      "persona:homeowner",
+      "stage:consider",
+      "hook:number",
+      "format:text"
+    ],
+    "category": null,
+    "pillar_id": "pil_educate",
+    "avatar_id": "av_homeowner",
+    "journey_stage": "consider",
+    "created_at": "2026-08-10T12:00:11Z",
+    "updated_at": "2026-08-11T14:00:11Z",
+    "created_by_user": {
+      "id": "user_sam",
+      "first_name": "Sam",
+      "last_name": "Okafor"
+    },
+    "content_pillar": {
+      "id": "pil_educate",
+      "name": "Educate",
+      "color": "#2E7D32"
+    },
+    "_count": {
+      "post_versions": 1
+    },
+    "versions": [
+      {
+        "id": "spv_027",
+        "platform": "linkedin",
+        "social_account_id": "sacc_linkedin_01",
+        "status": "published",
+        "platform_post_id": "li_2127",
+        "platform_post_url": "https://www.linkedin.com/feed/update/urn:li:share:li_2127",
+        "published_at": "2026-08-11T14:00:11Z",
+        "error_message": null,
+        "retry_count": 0,
+        "analytics": {
+          "impressions": 2890,
+          "reach": 2370,
+          "engagements": 150,
+          "likes": 119,
+          "comments_count": 18,
+          "shares": 13,
+          "saves": 0,
+          "clicks": 61,
+          "video_views": 0,
+          "engagement_rate": 5.19,
+          "click_through_rate": 2.11,
+          "snapshot_at": "2026-09-01T05:30:00Z"
+        },
+        "analytics_last_synced_at": "2026-09-01T05:30:00Z",
+        "analytics_next_sync_at": "2026-09-02T05:30:00Z",
+        "analytics_sync_failures": 0
+      }
+    ]
+  },
+  {
+    "id": "post_q_22",
+    "title": "Meet Dana, who answers the phone",
+    "content": "When you call the shop you get Dana, who has taken every order here for four years and can tell you which finish you asked for last time before you remember. #BrightsideBuilt #ShopLife",
+    "content_type": "image",
+    "media_urls": [
+      "https://cdn.fixture.invalid/social/post_q_22.jpg"
+    ],
+    "media_types": [
+      "image"
+    ],
+    "thumbnail_url": null,
+    "link_url": null,
+    "target_platforms": [
+      "linkedin"
+    ],
+    "target_accounts": [
+      "sacc_linkedin_01"
+    ],
+    "status": "published",
+    "scheduled_at": "2026-08-14T14:00:00Z",
+    "published_at": "2026-08-14T14:00:09Z",
+    "approval_status": "not_required",
+    "ai_generated": false,
+    "ai_model": null,
+    "tags": [
+      "team",
+      "persona:homeowner",
+      "stage:consider",
+      "hook:story",
+      "format:single-image"
+    ],
+    "category": null,
+    "pillar_id": "pil_connection",
+    "avatar_id": "av_homeowner",
+    "journey_stage": "consider",
+    "created_at": "2026-08-13T12:00:09Z",
+    "updated_at": "2026-08-14T14:00:09Z",
+    "created_by_user": {
+      "id": "user_sam",
+      "first_name": "Sam",
+      "last_name": "Okafor"
+    },
+    "content_pillar": {
+      "id": "pil_connection",
+      "name": "Connection",
+      "color": "#EF6C00"
+    },
+    "_count": {
+      "post_versions": 1
+    },
+    "versions": [
+      {
+        "id": "spv_028",
+        "platform": "linkedin",
+        "social_account_id": "sacc_linkedin_01",
+        "status": "published",
+        "platform_post_id": "li_2228",
+        "platform_post_url": "https://www.linkedin.com/feed/update/urn:li:share:li_2228",
+        "published_at": "2026-08-14T14:00:09Z",
+        "error_message": null,
+        "retry_count": 0,
+        "analytics": {
+          "impressions": 1980,
+          "reach": 1624,
+          "engagements": 124,
+          "likes": 102,
+          "comments_count": 16,
+          "shares": 6,
+          "saves": 0,
+          "clicks": 10,
+          "video_views": 0,
+          "engagement_rate": 6.26,
+          "click_through_rate": 0.51,
+          "snapshot_at": "2026-09-01T05:30:00Z"
+        },
+        "analytics_last_synced_at": "2026-09-01T05:30:00Z",
+        "analytics_next_sync_at": "2026-09-02T05:30:00Z",
+        "analytics_sync_failures": 0
+      }
+    ]
+  },
+  {
+    "id": "post_q_23",
+    "title": "Humidity and your cabinets: the August checklist",
+    "content": "August is when doors stick. Check the gap at the top rail, run the range fan while you cook, and leave the hinge screws alone until October. Four frames, four checks. #BrightsideBuilt #CabinetCare",
+    "content_type": "image",
+    "media_urls": [
+      "https://cdn.fixture.invalid/social/post_q_23.jpg"
+    ],
+    "media_types": [
+      "image"
+    ],
+    "thumbnail_url": null,
+    "link_url": null,
+    "target_platforms": [
+      "facebook"
+    ],
+    "target_accounts": [
+      "sacc_facebook_01"
+    ],
+    "status": "published",
+    "scheduled_at": "2026-08-18T14:00:00Z",
+    "published_at": "2026-08-18T14:00:12Z",
+    "approval_status": "not_required",
+    "ai_generated": false,
+    "ai_model": null,
+    "tags": [
+      "howto",
+      "persona:homeowner",
+      "stage:consider",
+      "hook:how-to",
+      "format:carousel"
+    ],
+    "category": null,
+    "pillar_id": "pil_educate",
+    "avatar_id": "av_homeowner",
+    "journey_stage": "consider",
+    "created_at": "2026-08-17T12:00:12Z",
+    "updated_at": "2026-08-18T14:00:12Z",
+    "created_by_user": {
+      "id": "user_sam",
+      "first_name": "Sam",
+      "last_name": "Okafor"
+    },
+    "content_pillar": {
+      "id": "pil_educate",
+      "name": "Educate",
+      "color": "#2E7D32"
+    },
+    "_count": {
+      "post_versions": 1
+    },
+    "versions": [
+      {
+        "id": "spv_029",
+        "platform": "facebook",
+        "social_account_id": "sacc_facebook_01",
+        "status": "published",
+        "platform_post_id": "fa_2329",
+        "platform_post_url": "https://www.facebook.com/brightsidefixtures/posts/fa_2329",
+        "published_at": "2026-08-18T14:00:12Z",
+        "error_message": null,
+        "retry_count": 0,
+        "analytics": {
+          "impressions": 1520,
+          "reach": 1246,
+          "engagements": 80,
+          "likes": 66,
+          "comments_count": 9,
+          "shares": 5,
+          "saves": 0,
+          "clicks": 28,
+          "video_views": 0,
+          "engagement_rate": 5.26,
+          "click_through_rate": 1.84,
+          "snapshot_at": "2026-09-01T05:30:00Z"
+        },
+        "analytics_last_synced_at": "2026-09-01T05:30:00Z",
+        "analytics_next_sync_at": "2026-09-02T05:30:00Z",
+        "analytics_sync_failures": 0
+      }
+    ]
+  },
+  {
+    "id": "post_q_24",
+    "title": "Before and after: the Linden Avenue pantry",
+    "content": "The Linden Avenue pantry had a chimney breast in the middle of it. The new run wraps it and gains a shelf. Before and after side by side. #BrightsideBuilt",
+    "content_type": "image",
+    "media_urls": [
+      "https://cdn.fixture.invalid/social/post_q_24.jpg"
+    ],
+    "media_types": [
+      "image"
+    ],
+    "thumbnail_url": null,
+    "link_url": null,
+    "target_platforms": [
+      "linkedin"
+    ],
+    "target_accounts": [
+      "sacc_linkedin_01"
+    ],
+    "status": "published",
+    "scheduled_at": "2026-08-19T14:00:00Z",
+    "published_at": "2026-08-19T14:00:10Z",
+    "approval_status": "not_required",
+    "ai_generated": false,
+    "ai_model": null,
+    "tags": [
+      "casestudy",
+      "persona:contractor",
+      "stage:decide",
+      "hook:before-after",
+      "format:single-image"
+    ],
+    "category": null,
+    "pillar_id": "pil_authority",
+    "avatar_id": "av_contractor",
+    "journey_stage": "decide",
+    "created_at": "2026-08-18T12:00:10Z",
+    "updated_at": "2026-08-19T14:00:10Z",
+    "created_by_user": {
+      "id": "user_sam",
+      "first_name": "Sam",
+      "last_name": "Okafor"
+    },
+    "content_pillar": {
+      "id": "pil_authority",
+      "name": "Authority",
+      "color": "#1565C0"
+    },
+    "_count": {
+      "post_versions": 1
+    },
+    "versions": [
+      {
+        "id": "spv_030",
+        "platform": "linkedin",
+        "social_account_id": "sacc_linkedin_01",
+        "status": "published",
+        "platform_post_id": "li_2430",
+        "platform_post_url": "https://www.linkedin.com/feed/update/urn:li:share:li_2430",
+        "published_at": "2026-08-19T14:00:10Z",
+        "error_message": null,
+        "retry_count": 0,
+        "analytics": {
+          "impressions": 2540,
+          "reach": 2083,
+          "engagements": 134,
+          "likes": 108,
+          "comments_count": 14,
+          "shares": 12,
+          "saves": 0,
+          "clicks": 59,
+          "video_views": 0,
+          "engagement_rate": 5.28,
+          "click_through_rate": 2.32,
+          "snapshot_at": "2026-09-01T05:30:00Z"
+        },
+        "analytics_last_synced_at": "2026-09-01T05:30:00Z",
+        "analytics_next_sync_at": "2026-09-02T05:30:00Z",
+        "analytics_sync_failures": 0
+      }
+    ]
+  },
+  {
+    "id": "post_q_25",
+    "title": "September consult calendar opens Monday",
+    "content": "The September consult calendar opens Monday morning. Trade accounts can book the early slots through the link below. #BrightsideBuilt",
+    "content_type": "image",
+    "media_urls": [
+      "https://cdn.fixture.invalid/social/post_q_25.jpg"
+    ],
+    "media_types": [
+      "image"
+    ],
+    "thumbnail_url": null,
+    "link_url": "https://brightsidefixtures.example/post_q_25?utm_source=social&utm_medium=social",
+    "target_platforms": [
+      "linkedin"
+    ],
+    "target_accounts": [
+      "sacc_linkedin_01"
+    ],
+    "status": "published",
+    "scheduled_at": "2026-08-20T14:00:00Z",
+    "published_at": "2026-08-20T14:00:08Z",
+    "approval_status": "not_required",
+    "ai_generated": false,
+    "ai_model": null,
+    "tags": [
+      "offer",
+      "persona:contractor",
+      "stage:decide",
+      "hook:cta",
+      "format:link"
+    ],
+    "category": null,
+    "pillar_id": "pil_promotion",
+    "avatar_id": "av_contractor",
+    "journey_stage": "decide",
+    "created_at": "2026-08-19T12:00:08Z",
+    "updated_at": "2026-08-20T14:00:08Z",
+    "created_by_user": {
+      "id": "user_sam",
+      "first_name": "Sam",
+      "last_name": "Okafor"
+    },
+    "content_pillar": {
+      "id": "pil_promotion",
+      "name": "Promotion",
+      "color": "#6A1B9A"
+    },
+    "_count": {
+      "post_versions": 1
+    },
+    "versions": [
+      {
+        "id": "spv_031",
+        "platform": "linkedin",
+        "social_account_id": "sacc_linkedin_01",
+        "status": "published",
+        "platform_post_id": "li_2531",
+        "platform_post_url": "https://www.linkedin.com/feed/update/urn:li:share:li_2531",
+        "published_at": "2026-08-20T14:00:08Z",
+        "error_message": null,
+        "retry_count": 0,
+        "analytics": {
+          "impressions": 1230,
+          "reach": 1009,
+          "engagements": 37,
+          "likes": 31,
+          "comments_count": 4,
+          "shares": 2,
+          "saves": 0,
+          "clicks": 64,
+          "video_views": 0,
+          "engagement_rate": 3.01,
+          "click_through_rate": 5.2,
+          "snapshot_at": "2026-09-01T05:30:00Z"
+        },
+        "analytics_last_synced_at": "2026-09-01T05:30:00Z",
+        "analytics_next_sync_at": "2026-09-02T05:30:00Z",
+        "analytics_sync_failures": 0
+      }
+    ]
+  },
+  {
+    "id": "post_q_26",
+    "title": "Soft-close, part two: the damper swap in four photos",
+    "content": "The damper swap, in four photos: unclip the old piston, note which way the flat side faced, clip the new one on, close the door twice. If it still slams, the hinge cup is bent, not the damper. #BrightsideBuilt #CabinetCare",
+    "content_type": "image",
+    "media_urls": [
+      "https://cdn.fixture.invalid/social/post_q_26.jpg"
+    ],
+    "media_types": [
+      "image"
+    ],
+    "thumbnail_url": null,
+    "link_url": null,
+    "target_platforms": [
+      "linkedin",
+      "twitter"
+    ],
+    "target_accounts": [
+      "sacc_linkedin_01",
+      "sacc_twitter_01"
+    ],
+    "status": "published",
+    "scheduled_at": "2026-08-21T14:00:00Z",
+    "published_at": "2026-08-21T14:00:11Z",
+    "approval_status": "not_required",
+    "ai_generated": false,
+    "ai_model": null,
+    "tags": [
+      "howto",
+      "persona:homeowner",
+      "stage:consider",
+      "hook:how-to",
+      "format:carousel"
+    ],
+    "category": null,
+    "pillar_id": "pil_educate",
+    "avatar_id": "av_homeowner",
+    "journey_stage": "consider",
+    "created_at": "2026-08-20T12:00:11Z",
+    "updated_at": "2026-08-21T14:00:11Z",
+    "created_by_user": {
+      "id": "user_sam",
+      "first_name": "Sam",
+      "last_name": "Okafor"
+    },
+    "content_pillar": {
+      "id": "pil_educate",
+      "name": "Educate",
+      "color": "#2E7D32"
+    },
+    "_count": {
+      "post_versions": 2
+    },
+    "versions": [
+      {
+        "id": "spv_032",
+        "platform": "linkedin",
+        "social_account_id": "sacc_linkedin_01",
+        "status": "published",
+        "platform_post_id": "li_2632",
+        "platform_post_url": "https://www.linkedin.com/feed/update/urn:li:share:li_2632",
+        "published_at": "2026-08-21T14:00:11Z",
+        "error_message": null,
+        "retry_count": 0,
+        "analytics": {
+          "impressions": 2710,
+          "reach": 2222,
+          "engagements": 141,
+          "likes": 113,
+          "comments_count": 17,
+          "shares": 11,
+          "saves": 0,
+          "clicks": 57,
+          "video_views": 0,
+          "engagement_rate": 5.2,
+          "click_through_rate": 2.1,
+          "snapshot_at": "2026-09-01T05:30:00Z"
+        },
+        "analytics_last_synced_at": "2026-09-01T05:30:00Z",
+        "analytics_next_sync_at": "2026-09-02T05:30:00Z",
+        "analytics_sync_failures": 0
+      },
+      {
+        "id": "spv_033",
+        "platform": "twitter",
+        "social_account_id": "sacc_twitter_01",
+        "status": "failed",
+        "platform_post_id": null,
+        "platform_post_url": null,
+        "published_at": null,
+        "error_message": "OAuth token refresh failed (invalid_grant): reconnect the X account before retrying",
+        "retry_count": 3,
+        "analytics": null,
+        "analytics_last_synced_at": null,
+        "analytics_next_sync_at": null,
+        "analytics_sync_failures": 0
+      }
+    ]
+  },
+  {
+    "id": "post_q_27",
+    "title": "Shop dog, shop rules",
+    "content": "Biscuit has three rules: no sawdust in the water bowl, no barking at the spray booth, and every visitor gets greeted. Saturday hours as usual. #BrightsideBuilt #ShopLife",
+    "content_type": "image",
+    "media_urls": [
+      "https://cdn.fixture.invalid/social/post_q_27.jpg"
+    ],
+    "media_types": [
+      "image"
+    ],
+    "thumbnail_url": null,
+    "link_url": null,
+    "target_platforms": [
+      "facebook"
+    ],
+    "target_accounts": [
+      "sacc_facebook_01"
+    ],
+    "status": "published",
+    "scheduled_at": "2026-08-26T16:00:00Z",
+    "published_at": "2026-08-26T16:00:09Z",
+    "approval_status": "not_required",
+    "ai_generated": false,
+    "ai_model": null,
+    "tags": [
+      "team",
+      "persona:homeowner",
+      "stage:consider",
+      "hook:story",
+      "format:single-image"
+    ],
+    "category": null,
+    "pillar_id": "pil_connection",
+    "avatar_id": "av_homeowner",
+    "journey_stage": "consider",
+    "created_at": "2026-08-25T14:00:09Z",
+    "updated_at": "2026-08-26T16:00:09Z",
+    "created_by_user": {
+      "id": "user_sam",
+      "first_name": "Sam",
+      "last_name": "Okafor"
+    },
+    "content_pillar": {
+      "id": "pil_connection",
+      "name": "Connection",
+      "color": "#EF6C00"
+    },
+    "_count": {
+      "post_versions": 1
+    },
+    "versions": [
+      {
+        "id": "spv_034",
+        "platform": "facebook",
+        "social_account_id": "sacc_facebook_01",
+        "status": "published",
+        "platform_post_id": "fa_2734",
+        "platform_post_url": "https://www.facebook.com/brightsidefixtures/posts/fa_2734",
+        "published_at": "2026-08-26T16:00:09Z",
+        "error_message": null,
+        "retry_count": 0,
+        "analytics": {
+          "impressions": 1120,
+          "reach": 918,
+          "engagements": 87,
+          "likes": 71,
+          "comments_count": 12,
+          "shares": 4,
+          "saves": 0,
+          "clicks": 6,
+          "video_views": 0,
+          "engagement_rate": 7.77,
+          "click_through_rate": 0.54,
+          "snapshot_at": "2026-09-01T12:00:00Z"
+        },
+        "analytics_last_synced_at": "2026-09-01T12:00:00Z",
+        "analytics_next_sync_at": "2026-09-01T16:00:00Z",
+        "analytics_sync_failures": 0
+      }
+    ]
+  },
+  {
+    "id": "post_q_28",
+    "title": "Seasonal wood movement: what to do before the heat comes on",
+    "content": "Before the heat comes on, wipe the door edges, check the top-rail gap, and write down which doors stick now. In January the same doors will rattle, and the note tells you nothing moved but the air. #BrightsideBuilt #CabinetCare",
+    "content_type": "text",
+    "media_urls": [],
+    "media_types": [],
+    "thumbnail_url": null,
+    "link_url": null,
+    "target_platforms": [
+      "linkedin",
+      "facebook"
+    ],
+    "target_accounts": [
+      "sacc_linkedin_01",
+      "sacc_facebook_01"
+    ],
+    "status": "published",
+    "scheduled_at": "2026-08-26T14:00:00Z",
+    "published_at": "2026-08-26T14:00:10Z",
+    "approval_status": "not_required",
+    "ai_generated": false,
+    "ai_model": null,
+    "tags": [
+      "howto",
+      "persona:homeowner",
+      "stage:consider",
+      "hook:how-to",
+      "format:text"
+    ],
+    "category": null,
+    "pillar_id": "pil_educate",
+    "avatar_id": "av_homeowner",
+    "journey_stage": "consider",
+    "created_at": "2026-08-25T12:00:10Z",
+    "updated_at": "2026-08-26T14:00:10Z",
+    "created_by_user": {
+      "id": "user_sam",
+      "first_name": "Sam",
+      "last_name": "Okafor"
+    },
+    "content_pillar": {
+      "id": "pil_educate",
+      "name": "Educate",
+      "color": "#2E7D32"
+    },
+    "_count": {
+      "post_versions": 2
+    },
+    "versions": [
+      {
+        "id": "spv_035",
+        "platform": "linkedin",
+        "social_account_id": "sacc_linkedin_01",
+        "status": "published",
+        "platform_post_id": "li_2835",
+        "platform_post_url": "https://www.linkedin.com/feed/update/urn:li:share:li_2835",
+        "published_at": "2026-08-26T14:00:10Z",
+        "error_message": null,
+        "retry_count": 0,
+        "analytics": {
+          "impressions": 3140,
+          "reach": 2575,
+          "engagements": 151,
+          "likes": 118,
+          "comments_count": 19,
+          "shares": 14,
+          "saves": 0,
+          "clicks": 58,
+          "video_views": 0,
+          "engagement_rate": 4.81,
+          "click_through_rate": 1.85,
+          "snapshot_at": "2026-09-01T12:00:00Z"
+        },
+        "analytics_last_synced_at": "2026-09-01T12:00:00Z",
+        "analytics_next_sync_at": "2026-09-01T16:00:00Z",
+        "analytics_sync_failures": 0
+      },
+      {
+        "id": "spv_036",
+        "platform": "facebook",
+        "social_account_id": "sacc_facebook_01",
+        "status": "published",
+        "platform_post_id": "fa_2836",
+        "platform_post_url": "https://www.facebook.com/brightsidefixtures/posts/fa_2836",
+        "published_at": "2026-08-26T14:00:10Z",
+        "error_message": null,
+        "retry_count": 0,
+        "analytics": {
+          "impressions": 1330,
+          "reach": 1091,
+          "engagements": 66,
+          "likes": 52,
+          "comments_count": 8,
+          "shares": 6,
+          "saves": 0,
+          "clicks": 24,
+          "video_views": 0,
+          "engagement_rate": 4.96,
+          "click_through_rate": 1.8,
+          "snapshot_at": "2026-09-01T12:00:00Z"
+        },
+        "analytics_last_synced_at": "2026-09-01T12:00:00Z",
+        "analytics_next_sync_at": "2026-09-01T16:00:00Z",
+        "analytics_sync_failures": 0
+      }
+    ]
+  },
+  {
+    "id": "post_q_29",
+    "title": "First post from the bench on Instagram",
+    "content": "The bench, the booth and the showroom are on Instagram now. Same doors, closer pictures. #BrightsideBuilt #ShopLife",
+    "content_type": "image",
+    "media_urls": [
+      "https://cdn.fixture.invalid/social/post_q_29.jpg"
+    ],
+    "media_types": [
+      "image"
+    ],
+    "thumbnail_url": null,
+    "link_url": null,
+    "target_platforms": [
+      "instagram"
+    ],
+    "target_accounts": [
+      "sacc_instagram_01"
+    ],
+    "status": "published",
+    "scheduled_at": "2026-08-27T16:00:00Z",
+    "published_at": "2026-08-27T16:00:12Z",
+    "approval_status": "not_required",
+    "ai_generated": false,
+    "ai_model": null,
+    "tags": [
+      "team",
+      "persona:homeowner",
+      "stage:consider",
+      "hook:story",
+      "format:single-image"
+    ],
+    "category": null,
+    "pillar_id": "pil_connection",
+    "avatar_id": "av_homeowner",
+    "journey_stage": "consider",
+    "created_at": "2026-08-26T14:00:12Z",
+    "updated_at": "2026-08-27T16:00:12Z",
+    "created_by_user": {
+      "id": "user_sam",
+      "first_name": "Sam",
+      "last_name": "Okafor"
+    },
+    "content_pillar": {
+      "id": "pil_connection",
+      "name": "Connection",
+      "color": "#EF6C00"
+    },
+    "_count": {
+      "post_versions": 1
+    },
+    "versions": [
+      {
+        "id": "spv_037",
+        "platform": "instagram",
+        "social_account_id": "sacc_instagram_01",
+        "status": "published",
+        "platform_post_id": "in_2937",
+        "platform_post_url": "https://www.instagram.com/p/in_2937/",
+        "published_at": "2026-08-27T16:00:12Z",
+        "error_message": null,
+        "retry_count": 0,
+        "analytics": null,
+        "analytics_last_synced_at": null,
+        "analytics_next_sync_at": "2026-08-27T16:30:12Z",
+        "analytics_sync_failures": 0
+      }
+    ]
+  },
+  {
+    "id": "post_q_30",
+    "title": "Brass pulls, the close-up",
+    "content": "Brass after two years of hands, next to brass out of the box. Warm water and a cloth keeps the left one looking like the left one. #BrightsideBuilt #CabinetCare",
+    "content_type": "image",
+    "media_urls": [
+      "https://cdn.fixture.invalid/social/post_q_30.jpg"
+    ],
+    "media_types": [
+      "image"
+    ],
+    "thumbnail_url": null,
+    "link_url": null,
+    "target_platforms": [
+      "instagram"
+    ],
+    "target_accounts": [
+      "sacc_instagram_01"
+    ],
+    "status": "published",
+    "scheduled_at": "2026-08-30T15:00:00Z",
+    "published_at": "2026-08-30T15:00:08Z",
+    "approval_status": "not_required",
+    "ai_generated": false,
+    "ai_model": null,
+    "tags": [
+      "howto",
+      "persona:homeowner",
+      "stage:consider",
+      "hook:how-to",
+      "format:single-image"
+    ],
+    "category": null,
+    "pillar_id": "pil_educate",
+    "avatar_id": "av_homeowner",
+    "journey_stage": "consider",
+    "created_at": "2026-08-29T13:00:08Z",
+    "updated_at": "2026-08-30T15:00:08Z",
+    "created_by_user": {
+      "id": "user_sam",
+      "first_name": "Sam",
+      "last_name": "Okafor"
+    },
+    "content_pillar": {
+      "id": "pil_educate",
+      "name": "Educate",
+      "color": "#2E7D32"
+    },
+    "_count": {
+      "post_versions": 1
+    },
+    "versions": [
+      {
+        "id": "spv_038",
+        "platform": "instagram",
+        "social_account_id": "sacc_instagram_01",
+        "status": "published",
+        "platform_post_id": "in_3038",
+        "platform_post_url": "https://www.instagram.com/p/in_3038/",
+        "published_at": "2026-08-30T15:00:08Z",
+        "error_message": null,
+        "retry_count": 0,
+        "analytics": null,
+        "analytics_last_synced_at": null,
+        "analytics_next_sync_at": "2026-08-30T15:30:08Z",
+        "analytics_sync_failures": 0
+      }
+    ]
+  },
+  {
+    "id": "post_d_01",
+    "title": "Drawer slide replacement: measuring for the new pair",
+    "content": "Drawer slide replacement: measuring for the new pair. Draft copy pending the client's read. #BrightsideBuilt",
+    "content_type": "text",
+    "media_urls": [],
+    "media_types": [],
+    "thumbnail_url": null,
+    "link_url": null,
+    "target_platforms": [
+      "linkedin"
+    ],
+    "target_accounts": [
+      "sacc_linkedin_01"
+    ],
+    "status": "draft",
+    "scheduled_at": null,
+    "published_at": null,
+    "approval_status": "not_required",
+    "ai_generated": true,
+    "ai_model": "fixture",
+    "tags": [
+      "howto",
+      "persona:homeowner",
+      "stage:consider",
+      "hook:how-to",
+      "format:text"
+    ],
+    "category": null,
+    "pillar_id": "pil_educate",
+    "avatar_id": "av_homeowner",
+    "journey_stage": "consider",
+    "created_at": "2026-08-28T15:10:00Z",
+    "updated_at": "2026-08-28T15:10:00Z",
+    "created_by_user": {
+      "id": "user_sam",
+      "first_name": "Sam",
+      "last_name": "Okafor"
+    },
+    "content_pillar": {
+      "id": "pil_educate",
+      "name": "Educate",
+      "color": "#2E7D32"
+    },
+    "_count": {
+      "post_versions": 1
+    },
+    "versions": [
+      {
+        "id": "spv_post_d_01_1",
+        "platform": "linkedin",
+        "social_account_id": "sacc_linkedin_01",
+        "status": "draft",
+        "platform_post_id": null,
+        "platform_post_url": null,
+        "published_at": null,
+        "error_message": null,
+        "retry_count": 0,
+        "analytics": null,
+        "analytics_last_synced_at": null,
+        "analytics_next_sync_at": null,
+        "analytics_sync_failures": 0
+      }
+    ]
+  },
+  {
+    "id": "post_d_02",
+    "title": "Door bumpers: the two-dollar fix for slamming",
+    "content": "Door bumpers: the two-dollar fix for slamming. Draft copy pending the client's read. #BrightsideBuilt",
+    "content_type": "text",
+    "media_urls": [],
+    "media_types": [],
+    "thumbnail_url": null,
+    "link_url": null,
+    "target_platforms": [
+      "facebook"
+    ],
+    "target_accounts": [
+      "sacc_facebook_01"
+    ],
+    "status": "draft",
+    "scheduled_at": null,
+    "published_at": null,
+    "approval_status": "not_required",
+    "ai_generated": true,
+    "ai_model": "fixture",
+    "tags": [
+      "howto",
+      "persona:homeowner",
+      "stage:consider",
+      "hook:how-to",
+      "format:text"
+    ],
+    "category": null,
+    "pillar_id": "pil_educate",
+    "avatar_id": "av_homeowner",
+    "journey_stage": "consider",
+    "created_at": "2026-08-29T15:40:00Z",
+    "updated_at": "2026-08-29T15:40:00Z",
+    "created_by_user": {
+      "id": "user_sam",
+      "first_name": "Sam",
+      "last_name": "Okafor"
+    },
+    "content_pillar": {
+      "id": "pil_educate",
+      "name": "Educate",
+      "color": "#2E7D32"
+    },
+    "_count": {
+      "post_versions": 1
+    },
+    "versions": [
+      {
+        "id": "spv_post_d_02_1",
+        "platform": "facebook",
+        "social_account_id": "sacc_facebook_01",
+        "status": "draft",
+        "platform_post_id": null,
+        "platform_post_url": null,
+        "published_at": null,
+        "error_message": null,
+        "retry_count": 0,
+        "analytics": null,
+        "analytics_last_synced_at": null,
+        "analytics_next_sync_at": null,
+        "analytics_sync_failures": 0
+      }
+    ]
+  },
+  {
+    "id": "post_s_01",
+    "title": "Wood movement, part two: the winter gap",
+    "content": "Wood movement, part two: the winter gap. Draft copy pending the client's read. #BrightsideBuilt",
+    "content_type": "text",
+    "media_urls": [],
+    "media_types": [],
+    "thumbnail_url": null,
+    "link_url": null,
+    "target_platforms": [
+      "linkedin"
+    ],
+    "target_accounts": [
+      "sacc_linkedin_01"
+    ],
+    "status": "scheduled",
+    "scheduled_at": "2026-09-02T14:00:00Z",
+    "published_at": null,
+    "approval_status": "approved",
+    "ai_generated": true,
+    "ai_model": "fixture",
+    "tags": [
+      "howto",
+      "persona:homeowner",
+      "stage:consider",
+      "hook:how-to",
+      "format:text"
+    ],
+    "category": null,
+    "pillar_id": "pil_educate",
+    "avatar_id": "av_homeowner",
+    "journey_stage": "consider",
+    "created_at": "2026-08-29T16:00:00Z",
+    "updated_at": "2026-08-29T16:00:00Z",
+    "created_by_user": {
+      "id": "user_sam",
+      "first_name": "Sam",
+      "last_name": "Okafor"
+    },
+    "content_pillar": {
+      "id": "pil_educate",
+      "name": "Educate",
+      "color": "#2E7D32"
+    },
+    "_count": {
+      "post_versions": 1
+    },
+    "versions": [
+      {
+        "id": "spv_post_s_01_1",
+        "platform": "linkedin",
+        "social_account_id": "sacc_linkedin_01",
+        "status": "scheduled",
+        "platform_post_id": null,
+        "platform_post_url": null,
+        "published_at": null,
+        "error_message": null,
+        "retry_count": 0,
+        "analytics": null,
+        "analytics_last_synced_at": null,
+        "analytics_next_sync_at": null,
+        "analytics_sync_failures": 0
+      }
+    ]
+  },
+  {
+    "id": "post_s_02",
+    "title": "Which screwdriver: the hinge kit we keep in the truck",
+    "content": "Which screwdriver: the hinge kit we keep in the truck. Draft copy pending the client's read. #BrightsideBuilt",
+    "content_type": "text",
+    "media_urls": [],
+    "media_types": [],
+    "thumbnail_url": null,
+    "link_url": null,
+    "target_platforms": [
+      "linkedin"
+    ],
+    "target_accounts": [
+      "sacc_linkedin_01"
+    ],
+    "status": "scheduled",
+    "scheduled_at": "2026-09-04T14:00:00Z",
+    "published_at": null,
+    "approval_status": "approved",
+    "ai_generated": true,
+    "ai_model": "fixture",
+    "tags": [
+      "howto",
+      "persona:homeowner",
+      "stage:consider",
+      "hook:how-to",
+      "format:text"
+    ],
+    "category": null,
+    "pillar_id": "pil_educate",
+    "avatar_id": "av_homeowner",
+    "journey_stage": "consider",
+    "created_at": "2026-08-30T16:20:00Z",
+    "updated_at": "2026-08-30T16:20:00Z",
+    "created_by_user": {
+      "id": "user_sam",
+      "first_name": "Sam",
+      "last_name": "Okafor"
+    },
+    "content_pillar": {
+      "id": "pil_educate",
+      "name": "Educate",
+      "color": "#2E7D32"
+    },
+    "_count": {
+      "post_versions": 1
+    },
+    "versions": [
+      {
+        "id": "spv_post_s_02_1",
+        "platform": "linkedin",
+        "social_account_id": "sacc_linkedin_01",
+        "status": "scheduled",
+        "platform_post_id": null,
+        "platform_post_url": null,
+        "published_at": null,
+        "error_message": null,
+        "retry_count": 0,
+        "analytics": null,
+        "analytics_last_synced_at": null,
+        "analytics_next_sync_at": null,
+        "analytics_sync_failures": 0
+      }
+    ]
+  },
+  {
+    "id": "post_pa_01",
+    "title": "Toe-kick heights: the number that is almost always wrong",
+    "content": "Toe-kick heights: the number that is almost always wrong. Draft copy pending the client's read. #BrightsideBuilt",
+    "content_type": "text",
+    "media_urls": [],
+    "media_types": [],
+    "thumbnail_url": null,
+    "link_url": null,
+    "target_platforms": [
+      "linkedin",
+      "facebook"
+    ],
+    "target_accounts": [
+      "sacc_linkedin_01",
+      "sacc_facebook_01"
+    ],
+    "status": "pending_approval",
+    "scheduled_at": "2026-08-25T14:00:00Z",
+    "published_at": null,
+    "approval_status": "pending",
+    "ai_generated": true,
+    "ai_model": "fixture",
+    "tags": [
+      "howto",
+      "persona:homeowner",
+      "stage:consider",
+      "hook:how-to",
+      "format:text"
+    ],
+    "category": null,
+    "pillar_id": "pil_educate",
+    "avatar_id": "av_homeowner",
+    "journey_stage": "consider",
+    "created_at": "2026-08-18T15:30:00Z",
+    "updated_at": "2026-08-18T15:30:00Z",
+    "created_by_user": {
+      "id": "user_sam",
+      "first_name": "Sam",
+      "last_name": "Okafor"
+    },
+    "content_pillar": {
+      "id": "pil_educate",
+      "name": "Educate",
+      "color": "#2E7D32"
+    },
+    "_count": {
+      "post_versions": 2
+    },
+    "versions": [
+      {
+        "id": "spv_post_pa_01_1",
+        "platform": "linkedin",
+        "social_account_id": "sacc_linkedin_01",
+        "status": "pending",
+        "platform_post_id": null,
+        "platform_post_url": null,
+        "published_at": null,
+        "error_message": null,
+        "retry_count": 0,
+        "analytics": null,
+        "analytics_last_synced_at": null,
+        "analytics_next_sync_at": null,
+        "analytics_sync_failures": 0
+      },
+      {
+        "id": "spv_post_pa_01_2",
+        "platform": "facebook",
+        "social_account_id": "sacc_facebook_01",
+        "status": "pending",
+        "platform_post_id": null,
+        "platform_post_url": null,
+        "published_at": null,
+        "error_message": null,
+        "retry_count": 0,
+        "analytics": null,
+        "analytics_last_synced_at": null,
+        "analytics_next_sync_at": null,
+        "analytics_sync_failures": 0
+      }
+    ]
+  },
+  {
+    "id": "post_d_03",
+    "title": "Ridgeway kitchen: the client's own words",
+    "content": "Ridgeway kitchen: the client's own words. Draft copy pending the client's read. #BrightsideBuilt",
+    "content_type": "text",
+    "media_urls": [],
+    "media_types": [],
+    "thumbnail_url": null,
+    "link_url": null,
+    "target_platforms": [
+      "linkedin"
+    ],
+    "target_accounts": [
+      "sacc_linkedin_01"
+    ],
+    "status": "draft",
+    "scheduled_at": null,
+    "published_at": null,
+    "approval_status": "not_required",
+    "ai_generated": true,
+    "ai_model": "fixture",
+    "tags": [
+      "casestudy",
+      "persona:homeowner",
+      "stage:consider",
+      "hook:how-to",
+      "format:text"
+    ],
+    "category": null,
+    "pillar_id": "pil_authority",
+    "avatar_id": "av_homeowner",
+    "journey_stage": "consider",
+    "created_at": "2026-08-27T15:00:00Z",
+    "updated_at": "2026-08-27T15:00:00Z",
+    "created_by_user": {
+      "id": "user_sam",
+      "first_name": "Sam",
+      "last_name": "Okafor"
+    },
+    "content_pillar": {
+      "id": "pil_authority",
+      "name": "Authority",
+      "color": "#1565C0"
+    },
+    "_count": {
+      "post_versions": 1
+    },
+    "versions": [
+      {
+        "id": "spv_post_d_03_1",
+        "platform": "linkedin",
+        "social_account_id": "sacc_linkedin_01",
+        "status": "draft",
+        "platform_post_id": null,
+        "platform_post_url": null,
+        "published_at": null,
+        "error_message": null,
+        "retry_count": 0,
+        "analytics": null,
+        "analytics_last_synced_at": null,
+        "analytics_next_sync_at": null,
+        "analytics_sync_failures": 0
+      }
+    ]
+  },
+  {
+    "id": "post_s_03",
+    "title": "Press: the second feature",
+    "content": "Press: the second feature. Draft copy pending the client's read. #BrightsideBuilt",
+    "content_type": "text",
+    "media_urls": [],
+    "media_types": [],
+    "thumbnail_url": null,
+    "link_url": null,
+    "target_platforms": [
+      "facebook"
+    ],
+    "target_accounts": [
+      "sacc_facebook_01"
+    ],
+    "status": "scheduled",
+    "scheduled_at": "2026-09-03T14:00:00Z",
+    "published_at": null,
+    "approval_status": "approved",
+    "ai_generated": true,
+    "ai_model": "fixture",
+    "tags": [
+      "casestudy",
+      "persona:homeowner",
+      "stage:consider",
+      "hook:how-to",
+      "format:text"
+    ],
+    "category": null,
+    "pillar_id": "pil_authority",
+    "avatar_id": "av_homeowner",
+    "journey_stage": "consider",
+    "created_at": "2026-08-30T17:00:00Z",
+    "updated_at": "2026-08-30T17:00:00Z",
+    "created_by_user": {
+      "id": "user_sam",
+      "first_name": "Sam",
+      "last_name": "Okafor"
+    },
+    "content_pillar": {
+      "id": "pil_authority",
+      "name": "Authority",
+      "color": "#1565C0"
+    },
+    "_count": {
+      "post_versions": 1
+    },
+    "versions": [
+      {
+        "id": "spv_post_s_03_1",
+        "platform": "facebook",
+        "social_account_id": "sacc_facebook_01",
+        "status": "scheduled",
+        "platform_post_id": null,
+        "platform_post_url": null,
+        "published_at": null,
+        "error_message": null,
+        "retry_count": 0,
+        "analytics": null,
+        "analytics_last_synced_at": null,
+        "analytics_next_sync_at": null,
+        "analytics_sync_failures": 0
+      }
+    ]
+  },
+  {
+    "id": "post_d_04",
+    "title": "Dana's desk, a year in",
+    "content": "Dana's desk, a year in. Draft copy pending the client's read. #BrightsideBuilt",
+    "content_type": "text",
+    "media_urls": [],
+    "media_types": [],
+    "thumbnail_url": null,
+    "link_url": null,
+    "target_platforms": [
+      "linkedin"
+    ],
+    "target_accounts": [
+      "sacc_linkedin_01"
+    ],
+    "status": "draft",
+    "scheduled_at": null,
+    "published_at": null,
+    "approval_status": "not_required",
+    "ai_generated": true,
+    "ai_model": "fixture",
+    "tags": [
+      "team",
+      "persona:homeowner",
+      "stage:consider",
+      "hook:how-to",
+      "format:text"
+    ],
+    "category": null,
+    "pillar_id": "pil_connection",
+    "avatar_id": "av_homeowner",
+    "journey_stage": "consider",
+    "created_at": "2026-08-30T18:00:00Z",
+    "updated_at": "2026-08-30T18:00:00Z",
+    "created_by_user": {
+      "id": "user_sam",
+      "first_name": "Sam",
+      "last_name": "Okafor"
+    },
+    "content_pillar": {
+      "id": "pil_connection",
+      "name": "Connection",
+      "color": "#EF6C00"
+    },
+    "_count": {
+      "post_versions": 1
+    },
+    "versions": [
+      {
+        "id": "spv_post_d_04_1",
+        "platform": "linkedin",
+        "social_account_id": "sacc_linkedin_01",
+        "status": "draft",
+        "platform_post_id": null,
+        "platform_post_url": null,
+        "published_at": null,
+        "error_message": null,
+        "retry_count": 0,
+        "analytics": null,
+        "analytics_last_synced_at": null,
+        "analytics_next_sync_at": null,
+        "analytics_sync_failures": 0
+      }
+    ]
+  },
+  {
+    "id": "post_s_04",
+    "title": "Showroom Saturday: September hours",
+    "content": "Showroom Saturday: September hours. Draft copy pending the client's read. #BrightsideBuilt",
+    "content_type": "text",
+    "media_urls": [],
+    "media_types": [],
+    "thumbnail_url": null,
+    "link_url": null,
+    "target_platforms": [
+      "facebook"
+    ],
+    "target_accounts": [
+      "sacc_facebook_01"
+    ],
+    "status": "scheduled",
+    "scheduled_at": "2026-09-05T15:00:00Z",
+    "published_at": null,
+    "approval_status": "approved",
+    "ai_generated": true,
+    "ai_model": "fixture",
+    "tags": [
+      "offer",
+      "persona:homeowner",
+      "stage:consider",
+      "hook:how-to",
+      "format:text"
+    ],
+    "category": null,
+    "pillar_id": "pil_promotion",
+    "avatar_id": "av_homeowner",
+    "journey_stage": "consider",
+    "created_at": "2026-08-31T15:00:00Z",
+    "updated_at": "2026-08-31T15:00:00Z",
+    "created_by_user": {
+      "id": "user_sam",
+      "first_name": "Sam",
+      "last_name": "Okafor"
+    },
+    "content_pillar": {
+      "id": "pil_promotion",
+      "name": "Promotion",
+      "color": "#6A1B9A"
+    },
+    "_count": {
+      "post_versions": 1
+    },
+    "versions": [
+      {
+        "id": "spv_post_s_04_1",
+        "platform": "facebook",
+        "social_account_id": "sacc_facebook_01",
+        "status": "scheduled",
+        "platform_post_id": null,
+        "platform_post_url": null,
+        "published_at": null,
+        "error_message": null,
+        "retry_count": 0,
+        "analytics": null,
+        "analytics_last_synced_at": null,
+        "analytics_next_sync_at": null,
+        "analytics_sync_failures": 0
+      }
+    ]
+  },
+  {
+    "id": "post_d_05",
+    "title": "October consult calendar",
+    "content": "October consult calendar. Draft copy pending the client's read. #BrightsideBuilt",
+    "content_type": "text",
+    "media_urls": [],
+    "media_types": [],
+    "thumbnail_url": null,
+    "link_url": null,
+    "target_platforms": [
+      "linkedin"
+    ],
+    "target_accounts": [
+      "sacc_linkedin_01"
+    ],
+    "status": "draft",
+    "scheduled_at": null,
+    "published_at": null,
+    "approval_status": "not_required",
+    "ai_generated": true,
+    "ai_model": "fixture",
+    "tags": [
+      "offer",
+      "persona:homeowner",
+      "stage:consider",
+      "hook:how-to",
+      "format:text"
+    ],
+    "category": null,
+    "pillar_id": "pil_promotion",
+    "avatar_id": "av_homeowner",
+    "journey_stage": "consider",
+    "created_at": "2026-08-31T16:30:00Z",
+    "updated_at": "2026-08-31T16:30:00Z",
+    "created_by_user": {
+      "id": "user_sam",
+      "first_name": "Sam",
+      "last_name": "Okafor"
+    },
+    "content_pillar": {
+      "id": "pil_promotion",
+      "name": "Promotion",
+      "color": "#6A1B9A"
+    },
+    "_count": {
+      "post_versions": 1
+    },
+    "versions": [
+      {
+        "id": "spv_post_d_05_1",
+        "platform": "linkedin",
+        "social_account_id": "sacc_linkedin_01",
+        "status": "draft",
+        "platform_post_id": null,
+        "platform_post_url": null,
+        "published_at": null,
+        "error_message": null,
+        "retry_count": 0,
+        "analytics": null,
+        "analytics_last_synced_at": null,
+        "analytics_next_sync_at": null,
+        "analytics_sync_failures": 0
+      }
+    ]
+  }
+]

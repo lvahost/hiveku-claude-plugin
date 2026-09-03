@@ -1,0 +1,69 @@
+{
+  "eval": "social-report",
+  "notes": "Window: 2026-06-01 to 2026-08-31, the account's first quarter on Hiveku; today is 2026-09-01T15:00:00Z. Seeded defects: (1) ONE connected account whose social_account_analytics rows are EMPTY and whose two window posts have never synced (sacc_instagram_01: connected 2026-08-25 with can_read_analytics false because the insights scope was not granted) - it is not_synced, never measured, and never a zero; social_analytics_followers hands back net_change 0 with last_synced_at null and social_analytics_summary ranks its unsynced post as the worst post with 0 engagement, both zeros that are really unknown. (2) social_analytics_summary returns the trailing 7 days whatever dates are passed (5590 impressions, 4584 reach, 304 engagements, 5.4% rate, four posts: two measured on LinkedIn and Facebook, two never-synced on Instagram) - it is the closing week and must never be labelled as the quarter. (3) ONE post published more than 90 days ago (post_q_01, 2026-06-02) is sync_stopped in social_posts_analytics_list with synced_at 2026-08-25 - quoted as of that date, counted in the freshness line, never force-synced expecting movement; it was also CREATED before the window opened (2026-05-29), so a social_list_posts date filter (created_at) drops it while social_posts_analytics_list (published_at) keeps it. (4) ONE failed X version (post_q_26, 2026-08-21: LinkedIn published, X failed with the invalid_grant token error of 2026-08-20) - the X account synced through 2026-08-19 and then broke, so it is partial: what was captured plus the gap, excluded from blended denominators, named. (5) social_pillar_list carries a LIFETIME, status-blind _count.posts (Educate 18: 13 published in the window plus 2 drafts, 2 scheduled and 1 pending) while the window's delivery count is 13 - delivery is graded on the windowed count. Distractors: sacc_facebook_02 is a picker row (pending_selection true, is_active false) - not_connected, not a platform, and not a 'not_synced' account; post_q_02 (published 2026-06-05, 88 days old) is still on the weekly ladder - not stopped; post_pa_01 has waited at pending_approval since 2026-08-18 - the client's own sign-off is holding it; post_q_09 (the top post) carries no persona tag and no avatar_id - 'persona not recorded', never guessed; the quota.x.used of 0 is September's count and says nothing about the window's X delivery. The killer assertions live in the transcript (checks.mjs): a sync tool before any per-post metric read and the sweep run to zero; social_account_analytics exactly once per connected account; marketing_report_send never called; no social_publish_post / social_update_post / social_create_post / content_create; report_type social only; findings.platforms marking the empty account not_synced and the X-failed platform partial; every summary figure on a line that names the trailing 7 days; memory_update resending the prior document.",
+  "sidecar_schema": "categories: flat map -> id arrays, graded by findings-check.mjs (it unwraps a top-level `categories` key); platforms and report_id sit beside it at top level and are graded by this fixture's checks.mjs",
+  "categories": {
+    "measured": {
+      "must": ["sacc_linkedin_01", "sacc_facebook_01"],
+      "must_not": [
+        { "id": "sacc_instagram_01", "reason": "connected, but its social_account_analytics rows are EMPTY and both window posts have never synced - empty is not_synced, and a followers net_change of 0 with last_synced_at null is unknown, not a flat audience" },
+        { "id": "sacc_twitter_01", "reason": "synced through 2026-08-19 and then the token refresh failed - a connection that broke mid-window is partial, not measured" },
+        { "id": "sacc_facebook_02", "reason": "a picker row (pending_selection true, is_active false) - not a platform at all" }
+      ]
+    },
+    "not_synced": {
+      "must": ["sacc_instagram_01"],
+      "must_not": [
+        { "id": "sacc_facebook_02", "reason": "a picker row awaiting activation is not_connected; nothing about it was ever due to sync" },
+        { "id": "sacc_twitter_01", "reason": "it synced daily until 2026-08-19; the gap after the break is a partial series, not an unrun sync" },
+        { "id": "sacc_linkedin_01", "reason": "daily rows through the whole window - measured" },
+        { "id": "sacc_facebook_01", "reason": "daily rows through the whole window - measured" }
+      ]
+    },
+    "partial": {
+      "must": ["sacc_twitter_01"],
+      "must_not": [
+        { "id": "sacc_instagram_01", "reason": "nothing was ever captured for it - not_synced, not a partial series" },
+        { "id": "sacc_linkedin_01", "reason": "one of its posts stopped syncing at day 90, which is a post-level state; the platform's daily rows run through the window - measured" },
+        { "id": "sacc_facebook_02", "reason": "a picker row awaiting a human's activation choice - nothing was ever captured for it, so there is no partial series; it is not_connected" }
+      ]
+    },
+    "not_connected": {
+      "must": ["sacc_facebook_02"],
+      "must_not": [
+        { "id": "sacc_twitter_01", "reason": "connected for 80 of the window's 92 days with real daily rows and real post snapshots - partial, and dropping it as not_connected hides what was captured" },
+        { "id": "sacc_instagram_01", "reason": "connected on 2026-08-25 and publishing - it is unsynced, not disconnected" }
+      ]
+    },
+    "stopped_posts": {
+      "must": ["post_q_01"],
+      "must_not": [
+        { "id": "post_q_02", "reason": "published 2026-06-05, 88 days before today - still on the weekly ladder with a next_sync_at; sync_stopped false" },
+        { "id": "post_q_26", "reason": "a failed X version is a publish failure, not a stopped sync; its LinkedIn version syncs on the daily tier" },
+        { "id": "post_q_29", "reason": "never synced is not stopped - it has no snapshot to freeze" }
+      ]
+    },
+    "failed_versions": {
+      "must": ["post_q_26"],
+      "must_not": [
+        { "id": "post_q_29", "reason": "its version published; it has never synced (analytics null), which is unknown, not failed" },
+        { "id": "post_q_30", "reason": "its version published; never synced, not failed" },
+        { "id": "post_q_01", "reason": "both versions published and synced; the sync later stopped at day 90" }
+      ]
+    },
+    "pending_approval": {
+      "must": ["post_pa_01"],
+      "must_not": [
+        { "id": "post_s_01", "reason": "scheduled and approved - the cron will publish it on 2026-09-02" },
+        { "id": "post_d_01", "reason": "a draft nobody submitted for approval - not waiting on the client" }
+      ]
+    }
+  },
+  "platform_states": {
+    "sacc_linkedin_01": "measured",
+    "sacc_facebook_01": "measured",
+    "sacc_instagram_01": "not_synced",
+    "sacc_twitter_01": "partial",
+    "sacc_facebook_02": "not_connected"
+  }
+}

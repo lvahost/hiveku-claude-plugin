@@ -1,0 +1,57 @@
+{
+  "identity": {
+    "domain": "social",
+    "persona": "Brightside social - plain-spoken and craft-proud, first person plural, no exclamation marks, no emojis"
+  },
+  "avatars": {
+    "av_homeowner": {
+      "id": "av_homeowner",
+      "name": "Renovating homeowner",
+      "slug": "homeowner",
+      "summary": "Mid-project, budget-aware, wants to avoid a mistake more than find a bargain.",
+      "pain_points": [
+        "doors that stick",
+        "a quote that hides the price"
+      ],
+      "motivations": [
+        "avoid a costly mistake",
+        "a kitchen that lasts"
+      ],
+      "is_primary": true
+    },
+    "av_contractor": {
+      "id": "av_contractor",
+      "name": "Trade contractor",
+      "slug": "contractor",
+      "summary": "Buys repeatedly, cares about lead times and finish durability.",
+      "pain_points": [
+        "finish that fails on site",
+        "lead times that slip"
+      ],
+      "motivations": [
+        "a supplier that hits the date"
+      ],
+      "is_primary": false
+    }
+  },
+  "memory": {
+    "entries": [
+      {
+        "memory_id": "mem_social_1",
+        "type": "memory",
+        "name": "social",
+        "content": "Social notes for Brightside Fixtures: Hiveku went live for social at the end of May 2026. Pillar targets agreed in June are Educate 40 / Authority 25 / Connection 20 / Promotion 15. Cadence is five posts a week across LinkedIn and Facebook, X on top when it works. Branded tag #BrightsideBuilt. Showroom open Saturdays. Instagram connected 2026-08-25; the first two posts went out the same week."
+      }
+    ]
+  },
+  "pm": {
+    "projects": [
+      {
+        "id": "proj_fixture_ops",
+        "name": "Fixture Ops",
+        "status": "active",
+        "project_type": "marketing"
+      }
+    ]
+  }
+}
