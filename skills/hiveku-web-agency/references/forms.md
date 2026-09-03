@@ -40,6 +40,10 @@ Every item is enforced by real platform behavior and has an incident behind it.
 - **F18. Prefer parallel to series.** Notification and CRM write as siblings off the trigger; set `on_error` deliberately.
 - **F19. Never provision a database, or reach for an external service, to store a lead.** Native CRM nodes exist for exactly this.
 
+**File uploads**
+
+- **F20. File inputs need only a name; never wire an uploader.** `<input type="file" name="resume">` inside a captured form is the whole feature: Hiveku uploads the file in the background, holds the submit until it is ready, and attaches it to the lead. Never write an upload handler, an S3 client, a presigned-URL route, or Supabase storage for a form. Opt one input or one form out with `data-hiveku-uploads="off"`.
+
 ## Part 2: The mechanism
 
 ### Identity resolution, and why F1 and F2 matter
@@ -78,7 +82,7 @@ The same mechanism, one field earlier: **"mazcnc.com: the site's own handler pos
 
 F5 and F6 compound: that month required both a second writer and a field one of them could not see.
 
-Input types skipped entirely by capture: `password`, `hidden`, `file`, `submit`, `button`, `reset`, `image`. Never rely on them to carry data.
+Input types skipped entirely by capture: `password`, `hidden`, `submit`, `button`, `reset`, `image`. Never rely on them to carry data. A `file` input is different: its bytes never travel in the capture beacon, but the upload helper stores the file in Hiveku's private attachment store first and capture then carries a reference, so the submission arrives with the file bound to it and the field shows as `name (size)` in the Forms tab (F20).
 
 ### Field naming (F9, F10)
 
@@ -232,6 +236,12 @@ That last call SENDS REAL NOTIFICATIONS through the workflow's CURRENT definitio
 ### Never a database for leads (F19)
 
 `crmCreateContact`, `crmUpsertContact`, `crmCreateDeal` and `crmCreateCompany` write to Hiveku's built-in CRM with no database and no setup. Never use `dbCreateRow`, and never provision or suggest a project database, to store a contact, lead, or form submission: `dbCreateRow` is only for a user's own custom app tables. The canonical shape of "contact form, save the lead, notify us" is `webhookTrigger -> crmCreateContact` and `sendEmail` as siblings. No database, ever.
+
+### File uploads (F20)
+
+A file input inside a captured form is handled by the platform. The visitor picks a file, a small helper uploads it to Hiveku in the background with a plain status line, the submit button waits until every upload is ready, and the form then submits exactly as it would without the file. The site needs no route, no client library, no storage, and no environment variable. Limits are per project (a default of 5 files and 10 MB per file, a fixed extension list, and a retention window of 30 to 365 days) and the owner sets them under Analytics > Forms > Notifications. The uploaded files land on the submission in the Forms tab, on the notification email as real attachments, and on the CRM contact's Attachments section; a workflow reads them as `{{trigger.attachments}}`.
+
+**Reading what visitors uploaded.** `marketing_form_attachments_list` lists attachment metadata by `submission_id`, `contact_id`, or `project_id` (file name, size, mime, state; never a link). `marketing_form_attachment_download_url` mints a short-lived signed link for ONE attachment id, only when the operator explicitly asks for that file, and the link must never be pasted into a document, a task, a note, or a report. `marketing_form_upload_settings_get` reads a project's upload policy and quota usage, which is the first call when a client says an upload was refused. `marketing_form_upload_settings_update` narrows that policy (disable, allowed extensions, size, count, retention) and is a confirmed write: shortening retention purges files on the next sweep. `marketing_form_conversion_audit` accepts `include_attachments` to show the metadata inline per submission.
 
 ## Part 4: Diagnosis
 

@@ -229,7 +229,8 @@ Put this in `.claude/settings.json` (per project) or `~/.claude/settings.json` (
       "mcp__plugin_hiveku_hk__marketing_video_pipeline_retry_scene",
       "mcp__plugin_hiveku_hk__design_voiceover_create",
       "mcp__plugin_hiveku_hk__generate_image_set",
-      "mcp__plugin_hiveku_hk__marketing_testimonial_media_replace"
+      "mcp__plugin_hiveku_hk__marketing_testimonial_media_replace",
+      "mcp__plugin_hiveku_hk__marketing_form_upload_settings_update"
     ]
   }
 }

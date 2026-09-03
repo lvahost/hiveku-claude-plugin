@@ -44,11 +44,19 @@
  *            branches) and project_vcs_revert (POST, move a branch head back
  *            to one of its own commits; on the ask list). Delete both entries
  *            once the tool index is regenerated from the live server.
+ *
+ *   Form attachments program (2026-09-03, file uploads on captured forms):
+ *     FA-1  marketing_form_attachments_list (GET), marketing_form_attachment_download_url
+ *           (POST, signed link; NEVER_AUTO_APPROVE), marketing_form_upload_settings_get
+ *           (GET), marketing_form_upload_settings_update (PATCH). Delete all four
+ *           once the tool index is regenerated from the live server.
  */
 const SEO_SINCE = '2026-08-30';
 const seo = (batch) => ({ since: SEO_SINCE, batch });
 const VCS_SINCE = '2026-09-02';
 const vcs = (batch) => ({ since: VCS_SINCE, batch });
+const FORM_ATTACHMENTS_SINCE = '2026-09-03';
+const formAttachments = (batch) => ({ since: FORM_ATTACHMENTS_SINCE, batch });
 
 export const PENDING_TOOLS = new Map([
   // S1
@@ -67,4 +75,10 @@ export const PENDING_TOOLS = new Map([
   // VCS-1
   ['project_vcs_diff_file', vcs('VCS-1')],
   ['project_vcs_revert', vcs('VCS-1')],
+
+  // FA-1
+  ['marketing_form_attachments_list', formAttachments('FA-1')],
+  ['marketing_form_attachment_download_url', formAttachments('FA-1')],
+  ['marketing_form_upload_settings_get', formAttachments('FA-1')],
+  ['marketing_form_upload_settings_update', formAttachments('FA-1')],
 ]);

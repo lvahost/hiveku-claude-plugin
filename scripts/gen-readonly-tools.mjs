@@ -193,6 +193,13 @@ const SENSITIVE_READ_EXCLUSIONS = new Map([
     "2026-09-01. Its own registered description: calling it 'does not just read the row, it " +
     "ADVANCES it' - same pollAndAdvance as the reconcile cron, finishing a paid render and " +
     'registering the asset. A GET, but not a read.'],
+  // 2026-09-03. A POST today, listed here so that a future readOnlyHint or a
+  // method change can never sweep it into the pre-approved list: the response
+  // is a short-lived signed URL to a document a site visitor uploaded through a
+  // form. Minting the link is distribution, exactly like voice_recording_url_get.
+  ['marketing_form_attachment_download_url',
+    'returns a signed, unrevocable download link to a visitor-uploaded document (resume, ID, ' +
+    'intake form). Minting it is distribution, not a read; it must be an explicit operator ask.'],
 ]);
 
 // The mirror image: a POST that is a pure read. Some routes dispatch reads and

@@ -6,7 +6,7 @@
     "mcp__hiveku__"
   ],
   "plugin_version": "0.21.2",
-  "count": 125,
+  "count": 126,
   "tools": [
     {
       "name": "deploy_site",
@@ -632,6 +632,11 @@
       "name": "marketing_testimonial_media_replace",
       "method": "POST",
       "why_gated": "swaps the published video on every public surface instantly; no staging step and no undo"
+    },
+    {
+      "name": "marketing_form_upload_settings_update",
+      "method": "PATCH",
+      "why_gated": "changes a site's file-upload policy; shortening retention purges visitor documents on the next sweep"
     }
   ]
 }
