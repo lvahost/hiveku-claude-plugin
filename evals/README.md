@@ -173,13 +173,15 @@ shapes - and run `grade.mjs`.
 
 ## What this covers, and what it does not
 
-Covered: **7 of the plugin's 109 commands** - `/hiveku:ap-screen` and
+Covered: **10 of the plugin's 135 commands** - `/hiveku:ap-screen` and
 `/hiveku:support-sweep` from v1, `/hiveku:ppc-optimize` plus the
 `tracking-check` and `social-plan` fixtures landing in the same release,
-`/hiveku:phone-check` (2026-08-29), and `/hiveku:local` (2026-08-30) - chosen
-because each has a crisp defect model. That exercises slices of 7 of the 19
-skills' disciplines (books, helpdesk, paid media, conversion tracking, social,
-telephony, local SEO). `ppc-optimize` is the first case whose grade also
+`/hiveku:phone-check` (2026-08-29), `/hiveku:local` (2026-08-30),
+`/hiveku:automation-sweep`, and the social program's `/hiveku:social-post` and
+`/hiveku:engage` (2026-09-03; a `social-report` fixture is in progress) - chosen because each
+has a crisp defect model. That exercises slices of 8 of the 19 skills'
+disciplines (books, helpdesk, paid media, conversion tracking, social,
+telephony, local SEO, automation). `ppc-optimize` is the first case whose grade also
 depends on which tools the session did NOT call.
 
 `phone-check`: a five-DID voice tenant for "the phones aren't ringing and one
@@ -248,7 +250,7 @@ gateway (Kimi/GLM) comparison has been run yet.
 
 Not covered, no pretense otherwise:
 
-- the other 102 commands, 12 skills, and **all 11 agents** (0 of 11);
+- the other 125 commands, 11 skills, and **all 14 agents** (0 of 14);
 - the plugin's real MCP plumbing (binding, credentials, tool promotion) -
   the mock server replaces it; `test/*.mjs` owns that layer;
 - send/approval behavior beyond "the fixture refuses gate-crossing writes,

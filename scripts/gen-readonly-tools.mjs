@@ -189,6 +189,13 @@ const SENSITIVE_READ_EXCLUSIONS = new Map([
   ['customer_journey_avatar_list',
     'the route BACKFILLS customer_journey_maps.target_avatar_id into the ' +
     'customer_journey_avatars link table before returning. A GET, but not a read.'],
+  // 2026-09-03. A GET whose route may CREATE a media_assets row: when the source
+  // content item's hero image has no library row yet, repurpose/source registers a
+  // pointer asset (reported as hero.registered). Its MCP mapping deliberately
+  // carries no readOnlyHint; the GET method alone must not pre-approve it.
+  ['social_repurpose_source',
+    'registers the hero image as a media_assets pointer row when none exists ' +
+    '(hero.registered: true). A GET, but it can write a library row.'],
   ['design_render_job_get',
     "2026-09-01. Its own registered description: calling it 'does not just read the row, it " +
     "ADVANCES it' - same pollAndAdvance as the reconcile cron, finishing a paid render and " +

@@ -172,7 +172,7 @@ defects, traced every report number to a tool result, and synthesized rather
 than restated. Deterministic layer: `node --test 'evals/self-test/*.test.mjs'`
 (no model, CI-safe). Model-in-the-loop: `bash evals/bin/run-eval.sh <case>` -
 it works against any gateway the environment points at, so the same evals run
-on non-Claude models. Honest scope: 2 of 90+ commands, 0 of 9 agents - this
+on non-Claude models. Honest scope: 10 of 135 commands, 0 of 14 agents - this
 proves the pattern, it does not claim coverage. `claude plugin eval` is
 early-access/org-gated and unavailable here, so the harness is plain
 executable fixtures; see `evals/README.md` for the design and migration path.

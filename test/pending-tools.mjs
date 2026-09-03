@@ -71,8 +71,6 @@
  */
 const SEO_SINCE = '2026-08-30';
 const seo = (batch) => ({ since: SEO_SINCE, batch });
-const SOCIAL_SINCE = '2026-09-03';
-const social = (batch) => ({ since: SOCIAL_SINCE, batch });
 
 export const PENDING_TOOLS = new Map([
   // S1
@@ -92,18 +90,5 @@ export const PENDING_TOOLS = new Map([
 
   // FA-1: landed 2026-09-03, nothing pending.
 
-  // SOCIAL-1: the twelve social hands mapped on 2026-09-03. Delete each entry
-  // the moment the regenerated index carries it; the stale-entry test forces it.
-  ['social_post_validate', social('SOCIAL-1')],
-  ['social_post_preview', social('SOCIAL-1')],
-  ['social_posts_analytics_list', social('SOCIAL-1')],
-  ['social_analytics_by_dimension', social('SOCIAL-1')],
-  ['social_calendar_gaps', social('SOCIAL-1')],
-  ['social_comments_digest', social('SOCIAL-1')],
-  ['social_repurpose_source', social('SOCIAL-1')],
-  ['social_post_duplicate', social('SOCIAL-1')],
-  ['social_posts_bulk_create', social('SOCIAL-1')],
-  ['social_post_retry', social('SOCIAL-1')],
-  ['social_comments_sync_recent', social('SOCIAL-1')],
-  ['social_hashtags_bulk_upsert', social('SOCIAL-1')],
+  // SOCIAL-1: landed in the live index on 2026-09-03 (MCP d322d74), entries deleted.
 ]);
