@@ -402,6 +402,34 @@ The authoritative pin and advisory table live in the builder, at
 `src/lib/security/framework-advisories.ts`. The Framework Risk board in saas-admin renders the
 per-project upgrade target.
 
+### Lockfile is not the truth
+
+**Rule 66. Judge a project's versions from `package.json` only. A lockfile is evidence of a PAST
+install, and on this platform it is routinely stale.** Manifests are edited in the browser and by
+agents with no local npm, so nothing regenerates `pnpm-lock.yaml` / `yarn.lock` /
+`package-lock.json` when `package.json` changes. Reading the lock and reporting "the project is on
+Next 16.3.4 with a matching lockfile" while `package.json` declares 14.2.35 is the exact mistake this
+rule exists for: the preview and the deploy install what `package.json` declares, so the lockfile
+described nothing that was serving.
+
+- The platform enforces this. `deploy_site` (and the dashboard deploy buttons) refuse with 422
+  `{ code: "lockfile_out_of_sync", hint, mismatches: [{ package, declared, locked }] }` when the
+  lockfile resolves a different framework version (`next`, `react`, `react-dom`, `vite`) than
+  `package.json` declares. `project_deploy_preflight` reports the same verdict in `blockers[]`
+  (codebase mode) or `hints[]` (github_sync mode, because the GitHub build installs from the
+  repo's own lockfile), and `project_test_build` refuses before any build spend with the log line
+  `[Test Build] refused before any build spend: ...`. Only a PROVABLE disagreement refuses; an
+  unparseable lockfile is reported as uncertain and never blocks.
+- The fix is IN THE PROJECT, and there are exactly two: update `package.json` to the versions the
+  user actually intends, or delete the lockfile. A project with no lockfile deploys with a plain
+  install and stays lockfile-free; the preview never writes a lockfile back.
+- Never "fix" a refusal by editing the lockfile by hand, and never downgrade `package.json` to
+  match the lockfile. The second one is Rule 46's downgrade in disguise: it is how a healthy Next
+  16 project gets pinned back into a CVE.
+- When the preview or the build reconciles an install to `package.json` over a stale lock, it says
+  so: `preview_logs` prints `LOCKFILE OUT OF SYNC` and the build log prints `LOCKFILE NOT HONORED`. Read either line as "the
+  lockfile lied", not as an install failure.
+
 
 ## 11. Deploy tiers and etiquette
 
@@ -625,7 +653,9 @@ Inventorying the asset lane (section 8's other half):
   and `hints[]`. Surface `blockers[]` verbatim to the user; only they can fix those.
   Read `hints[]` for `reserved_cdn_prefix_page_collision`, which means a shipping page
   route sits under a reserved CDN asset prefix (videos/, media/, images/, ...) and WILL
-  403 on the deployed URL - rename the route before shipping.
+  403 on the deployed URL - rename the route before shipping. In codebase mode `blockers[]`
+  also carries the engines.node and `lockfile_out_of_sync` verdicts (Rules 45 and 66); the
+  matching `hints[]` entry is the fix, so surface both together and never retry unchanged.
 - `deploy_diff({ project_id, environment })` to see the file + route delta versus what is
   live. Read `data.has_changes` as a TRI-STATE, not a boolean: `false` is a confident
   all-clear (exact baseline, code and assets match - safe to skip the deploy); `true` is

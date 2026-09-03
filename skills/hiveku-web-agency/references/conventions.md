@@ -11,6 +11,7 @@ Read these first. The mechanism behind each is in the parts that follow, so you 
 **Do not:**
 
 - **R1.** Do not re-add a package the project's `package.json` already declares (Part 2). The manifest is the only source of truth; re-adding declared packages is churn for zero gain.
+- **Lockfile.** Judge a project's versions from `package.json` only. A lockfile (`pnpm-lock.yaml` / `yarn.lock` / `package-lock.json`) is evidence of a PAST install and is routinely stale on this platform, because manifests are edited without a local npm; `preview_logs` prints `LOCKFILE OUT OF SYNC` when the container reconciles an install to `package.json` over it, and the build log prints `LOCKFILE NOT HONORED` when a strict install from the lockfile fails and the build falls back to `package.json`. A deploy refused with `lockfile_out_of_sync` is fixed in the project (update `package.json` to the intended versions, or delete the lockfile), never by hand-editing the lockfile or downgrading `package.json` to match it. Full doctrine: `references/build-and-deploy.md` Rule 66.
 - **R8.** Do not modify `next.config.*` to fix a build. The deployment system patches the config for production builds; your edit conflicts with the patch and breaks the preview *and* the build.
 - **R21/R22.** Do not create a root-level `images/` folder, and never save into `public/src/`.
 - **R23.** Do not reference `imported/images/...` as a URL. It is source storage, not a served path.
