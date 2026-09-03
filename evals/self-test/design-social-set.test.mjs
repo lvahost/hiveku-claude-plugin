@@ -103,11 +103,12 @@ test('design-social-set: every served and gated tool name exists in the tool ind
     assert.ok(known.has(name), `${name} is gated but not in the tool index`);
     assert.ok(name in tools, `${name} is gated but not served - an attempt would not be logged as a refusal`);
   }
-  // The gate list is the spec's nine spend/destructive creative tools, exactly.
+  // The gate list is the spec's ten spend/destructive creative tools, exactly
+  // (media_upscale joined it with the creative media hands, 2026-09-03).
   assert.deepEqual([...GATED_WRITES].sort(), [
     'brand_guide_delete', 'brand_guide_purge', 'design_voiceover_create', 'generate_image_set',
     'marketing_generate_video', 'marketing_storyboard_delete', 'marketing_testimonial_media_replace',
-    'marketing_video_pipeline_retry_scene', 'media_delete',
+    'marketing_video_pipeline_retry_scene', 'media_delete', 'media_upscale',
   ]);
 });
 
