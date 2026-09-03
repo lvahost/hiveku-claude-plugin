@@ -1,0 +1,124 @@
+[
+  {
+    "id": "cjm_trade_01",
+    "account_id": "acct_fixture_social",
+    "name": "Trade contractor journey",
+    "description": "How a remodeling contractor moves from a failed finish on a competitor's doors to a standing order with Brightside.",
+    "target_avatar_ids": [
+      "avt_marcus_01"
+    ],
+    "stages": [
+      {
+        "name": "Unaware",
+        "description": "Blames the homeowner's cleaning products for a lifted finish.",
+        "emotions": [
+          "annoyed"
+        ],
+        "pain_points": [
+          "call-backs he cannot explain"
+        ],
+        "touchpoints": [
+          "Facebook trade groups"
+        ],
+        "content_types": [
+          "persona callout",
+          "story"
+        ],
+        "opportunities": [
+          "name the call-back in his words"
+        ]
+      },
+      {
+        "name": "Problem Aware",
+        "description": "Knows the finish schedule is where doors fail; does not know what a good one looks like.",
+        "emotions": [
+          "burned",
+          "curious"
+        ],
+        "pain_points": [
+          "a finish that lifts inside a year and lands on his invoice"
+        ],
+        "touchpoints": [
+          "LinkedIn at 6am",
+          "Facebook trade groups"
+        ],
+        "content_types": [
+          "myth-truth",
+          "mistake confession",
+          "contrarian"
+        ],
+        "opportunities": [
+          "show the failure mechanism: no key between coats"
+        ]
+      },
+      {
+        "name": "Solution Aware",
+        "description": "Comparing shops on their finish room, not their showroom.",
+        "emotions": [
+          "evaluating"
+        ],
+        "pain_points": [
+          "every shop claims durability"
+        ],
+        "touchpoints": [
+          "LinkedIn",
+          "supplier reps"
+        ],
+        "content_types": [
+          "specific-number",
+          "list-promise",
+          "teardown"
+        ],
+        "opportunities": [
+          "numbers from the finish room"
+        ]
+      },
+      {
+        "name": "Product Aware",
+        "description": "Knows Brightside; wants proof the first year will be clean.",
+        "emotions": [
+          "cautious"
+        ],
+        "pain_points": [
+          "a longer finish schedule means a longer lead time"
+        ],
+        "touchpoints": [
+          "showroom walk-through",
+          "reference job"
+        ],
+        "content_types": [
+          "before-after",
+          "customer quote",
+          "proof teaser"
+        ],
+        "opportunities": [
+          "Harlow Street 18-month check"
+        ]
+      },
+      {
+        "name": "Most Aware",
+        "description": "Has a standing order; needs a reason to add the next job now.",
+        "emotions": [
+          "confident"
+        ],
+        "pain_points": [
+          "fall hardware run timing"
+        ],
+        "touchpoints": [
+          "text message",
+          "showroom Saturday"
+        ],
+        "content_types": [
+          "timely",
+          "direct offer"
+        ],
+        "opportunities": [
+          "the fall hardware run date"
+        ]
+      }
+    ],
+    "is_active": true,
+    "created_at": "2026-06-10T15:00:00Z",
+    "updated_at": "2026-08-11T15:50:00Z"
+  }
+]

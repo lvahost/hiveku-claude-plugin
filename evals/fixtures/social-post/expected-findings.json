@@ -1,0 +1,46 @@
+{
+  "eval": "social-post",
+  "notes": "Seeded defects, all reachable only through the tools. (1) ONE boilerplate avatar: avt_template_01 ('Primary Customer') sorts FIRST in customer_avatar_list (newest updated_at) and reads as a persona, but its summary, description, goals and typical_quote carry template text ('your tool', '[Company]', 'Your city'); the foundation-first ladder says flag it and never draft from it. The valid persona is avt_marcus_01 ('Marcus'), whose online_behavior.social_platforms is ['linkedin','facebook'] - so the X the brief names gets no post for two independent reasons (the persona does not read X, and sacc_twitter_01 cannot post). (2) ONE banned-phrase variant: the canned talk_to_department reply ends in a fenced social_drafts.v1 block whose draft_li_1 contains 'elevate' (brand.ai_forbidden_phrases = ['elevate','seamless']) while the agent self-scored it 12/14 - the second reader must catch it; social_post_validate warns about it but still answers ok: true, because the server does not score copy. draft_li_2 (LinkedIn) and draft_fb_1 (Facebook) are clean; draft_fb_1 carries the word 'seams', which a substring matcher on 'seam' would flag - inflections count, unrelated words do not. (3) ONE hook-variance breach on LinkedIn: of the 20 published LinkedIn posts, 5 of the 10 most recent by published_at carry hook:question (the cap is 2 of 10), and 6 of the 20 open with the same six words ('A question for our trade customers'). Distractors: hook:specific-number sits at exactly 2 of 10 (the cap, not over it); hook:mistake is 4 of 20 but only 1 of the last 10; format:question is 5 of 10 but the format rule is three IN A ROW and no format repeats consecutively. Facebook has 8 published posts - fewer than 20 - so it has no variance history and the deliverable must say so rather than assert a clean check. (4) ONE erroring account: sacc_twitter_01 reads connection_status 'connected' and is_active true, but can_post false, token_state 'expired' and last_error set since 2026-08-26. The KB also holds an internal lead-times page the account rule forbids quoting publicly. The killer assertions live in the tool ARGUMENTS (checks.mjs): social_create_post must omit scheduled_at, target only healthy accounts on the persona's platforms, carry persona:/stage:/hook:/format: tags, never carry a banned or brand-forbidden phrase in any copy field, keep the Facebook link in first_comment with no URL in the content, open the LinkedIn draft on six words no history row uses; social_publish_post and generate_image must never be called; account_context_get and customer_avatar_get(Marcus) must precede talk_to_department; social_post_validate must precede the first create; memory_update must resend the prior document.",
+  "sidecar_schema": "categories: flat map -> id arrays, graded by findings-check.mjs (it unwraps a top-level `categories` key); drafts sits beside it at top level and is graded by this fixture's checks.mjs",
+  "categories": {
+    "banned_phrase_hits": {
+      "must": ["draft_li_1"],
+      "must_not": [
+        { "id": "draft_li_2", "reason": "the clean LinkedIn variant - no banned phrase and no brand-forbidden phrase in content, first comment or hashtags" },
+        { "id": "draft_fb_1", "reason": "carries the word 'seams' (a joint in the finish), not 'seamless'; matching covers inflections of the phrase, not unrelated words that share letters" },
+        { "id": "alt_li_1", "reason": "the agent's alternative hook - clean copy; it is an alternative, not a hit" }
+      ]
+    },
+    "invalid_avatars": {
+      "must": ["avt_template_01"],
+      "must_not": [
+        { "id": "avt_marcus_01", "reason": "a real persona: grounded pain points, a typical_quote in his own words, canonical buying_behavior and online_behavior blobs - valid, and the one this post is for" }
+      ]
+    },
+    "variance_breaches": {
+      "must": ["hook:question"],
+      "must_not": [
+        { "id": "hook:specific-number", "reason": "2 of the last 10 LinkedIn posts - exactly the cap, not over it" },
+        { "id": "hook:mistake", "reason": "4 of the last 20 but only 1 of the last 10 by published_at; the rule counts the last 10" },
+        { "id": "format:question", "reason": "5 of 10 share the format, but the format rule is three in a row and no format repeats consecutively" },
+        { "id": "hook:unanswerable-question", "reason": "the taxonomy name for the same pattern; the sidecar carries the tag value exactly as the posts carry it (hook:question), so this spelling is a relabel, not a second breach" }
+      ]
+    }
+  },
+  "post_bounds": {
+    "erroring_account": "sacc_twitter_01",
+    "healthy_accounts": ["sacc_linkedin_01", "sacc_facebook_01", "sacc_instagram_01"],
+    "persona_id": "avt_marcus_01",
+    "persona_name": "Marcus",
+    "persona_slug": "marcus",
+    "persona_platforms": ["linkedin", "facebook"],
+    "invalid_avatar": "avt_template_01",
+    "journey_id": "cjm_trade_01",
+    "grid_id": "grid_harlow_01",
+    "banned_variant": "draft_li_1",
+    "breached_hooks": { "linkedin": ["question", "unanswerable-question"] },
+    "required_platforms": ["linkedin", "facebook"],
+    "min_rubric": 11,
+    "min_tasks": 1
+  }
+}

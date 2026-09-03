@@ -6,7 +6,7 @@
     "mcp__hiveku__"
   ],
   "plugin_version": "0.22.1",
-  "count": 127,
+  "count": 139,
   "tools": [
     {
       "name": "deploy_site",
@@ -642,6 +642,66 @@
       "name": "marketing_form_upload_settings_update",
       "method": "PATCH",
       "why_gated": "changes a site's file-upload policy; shortening retention purges visitor documents on the next sweep"
+    },
+    {
+      "name": "social_publish_post",
+      "method": "POST",
+      "why_gated": "the publish entry point: an external key stages the post into the human approval queue and a released post ships to every target platform with no recall"
+    },
+    {
+      "name": "social_delete_post",
+      "method": "DELETE",
+      "why_gated": "deletes a post and its per-platform versions; a scheduled post silently stops shipping and there is no undo"
+    },
+    {
+      "name": "social_comment_reply",
+      "method": "POST",
+      "why_gated": "posts a public reply on the platform under the account's name the moment it is called; it cannot be unsent"
+    },
+    {
+      "name": "social_linkedin_comment_add",
+      "method": "POST",
+      "why_gated": "publishes a public LinkedIn comment from the connected page instantly"
+    },
+    {
+      "name": "social_linkedin_reaction_add",
+      "method": "POST",
+      "why_gated": "adds a public LinkedIn reaction from the connected page, visible to the post's audience immediately"
+    },
+    {
+      "name": "social_linkedin_comment_delete",
+      "method": "DELETE",
+      "why_gated": "removes a live LinkedIn comment from the platform; gone for the audience with no restore"
+    },
+    {
+      "name": "social_post_reject",
+      "method": "DELETE",
+      "why_gated": "pulls a post out of the human approval queue back to draft, discarding a pending release decision"
+    },
+    {
+      "name": "social_pillar_delete",
+      "method": "DELETE",
+      "why_gated": "deletes a content pillar the calendar and analytics group by; posts lose the tag with no undo"
+    },
+    {
+      "name": "social_hashtags_delete",
+      "method": "DELETE",
+      "why_gated": "deletes a tracked hashtag set the account's posts and reporting reuse"
+    },
+    {
+      "name": "social_calendar_delete",
+      "method": "DELETE",
+      "why_gated": "deletes a calendar event the week plan is built around; no restore"
+    },
+    {
+      "name": "social_schedule_slot_delete",
+      "method": "DELETE",
+      "why_gated": "deletes a recurring schedule slot, so posts queued to it stop being placed"
+    },
+    {
+      "name": "social_post_retry",
+      "method": "POST",
+      "why_gated": "re-runs the publish for a failed post version; a second call publishes for real a second time on the platform"
     }
   ]
 }

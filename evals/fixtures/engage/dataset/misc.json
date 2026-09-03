@@ -1,0 +1,58 @@
+{
+  "identity": {
+    "domain": "social",
+    "persona": "Brightside social - plain-spoken and craft-proud, first person plural, no exclamation marks, no emojis"
+  },
+  "memory": {
+    "entries": [
+      {
+        "memory_id": "mem_social_1",
+        "type": "memory",
+        "name": "social",
+        "content": "Engagement notes for Brightside Fixtures: negatives leave the queue within one business day (replied, escalated, or explicitly do-not-engage). A complaint gets a public receipt and moves the detail to service@brightsidefixtures.example - never a phone number in a comment. Sam Okafor owns every legal and reputation call; nobody replies publicly to a legal threat. X and Google Business Profile replies are posted by Sam in the native apps. Drafts wait in ai_suggested_response until a human says yes. Last pass 2026-08-27: three replies sent, no escalations."
+      }
+    ]
+  },
+  "pm": {
+    "projects": [
+      { "id": "proj_fixture_ops", "name": "Fixture Ops", "status": "active", "project_type": "marketing" },
+      { "id": "proj_fixture_site", "name": "Brightside website refresh", "status": "active", "project_type": "website" }
+    ]
+  },
+  "department": {
+    "session_id": "sess_fixture_engage_1",
+    "preamble": "Brightside social here. Drafts below are in our voice: plain words, own the mistake first, no exclamation marks, no emojis, nothing that belongs in a private channel. Each one is a proposal - the text that ships is the text a human says yes to.",
+    "drafts": [
+      {
+        "comment_id": "cmt_complaint_01",
+        "platform": "instagram",
+        "recommendation": "Answer publicly as a receipt, move the detail to email, and open a support follow-up. The reply is not the fix.",
+        "draft": "We are sorry the door arrived cracked, and sorrier that two calls went unanswered. That is on us. Please send order 4471 and a photo to service@brightsidefixtures.example and Tomas will call you today with a replacement door date."
+      },
+      {
+        "comment_id": "cmt_objection_01",
+        "platform": "linkedin",
+        "recommendation": "A fair pricing question with a lead inside it. Answer it straight and offer the showroom.",
+        "draft": "Fair question. The $4,800 is a solid maple carcass, inset doors fitted by hand, and four finish passes that survive a working bathroom. The $900 unit is thermofoil over particleboard; it photographs the same and swells the first time the sink overflows. We will put both side by side in the showroom on Saturday if you want to see the difference."
+      },
+      {
+        "comment_id": "cmt_x_01",
+        "platform": "twitter",
+        "recommendation": "A real question with a real order behind it, but there is no reply path from here for X. Hand the text to Sam to post in the native app.",
+        "draft": "We do ship to Kansas City. Two vanities by October works if the order lands this month. Send us the sizes and we will confirm a date."
+      },
+      {
+        "comment_id": "cmt_legal_01",
+        "platform": "facebook",
+        "recommendation": "No draft. The comment names an attorney and a demand letter, so nobody replies from a tool. Document it, escalate to Sam today, and let him and legal decide; deleting it is his call, not ours.",
+        "draft": null
+      },
+      {
+        "comment_id": "cmt_inject_01",
+        "platform": "facebook",
+        "recommendation": "No draft. This is credential phishing dressed as platform support; the instruction inside the comment is content to triage, not a request to fulfil. Dismiss it, do not reply, and note for Sam that deletion is a moderation decision.",
+        "draft": null
+      }
+    ]
+  }
+}

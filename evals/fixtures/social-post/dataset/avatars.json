@@ -1,0 +1,191 @@
+[
+  {
+    "id": "avt_template_01",
+    "account_id": "acct_fixture_social",
+    "name": "Primary Customer",
+    "summary": "Small business owners who need your tool to save time and grow.",
+    "description": "Busy owners at [Company] who want your tool to handle the work so they can focus on what matters.",
+    "age_range": "30-55",
+    "gender": "Any",
+    "location": "Your city",
+    "occupation": "Business owner",
+    "income_range": "$75k-$150k",
+    "education_level": "Varies",
+    "lifestyle": "Busy, always on the go.",
+    "aspirations": "To grow the business with your tool.",
+    "typical_quote": "I just need your tool to work.",
+    "background_story": "A hard-working owner at [Company] looking for a better way.",
+    "values": [
+      "Efficiency",
+      "Growth"
+    ],
+    "interests": [
+      "Business",
+      "Technology"
+    ],
+    "personality_traits": [
+      "Driven",
+      "Practical"
+    ],
+    "primary_goals": [
+      "Save time with your tool",
+      "Grow the business"
+    ],
+    "motivations": [
+      "Getting more done"
+    ],
+    "pain_points": [
+      "Not enough hours in the day",
+      "Too many tools that do not talk to each other"
+    ],
+    "challenges": [
+      "Choosing the right tool"
+    ],
+    "frustrations": [
+      "Tools that overpromise"
+    ],
+    "content_preferences": [
+      "Short videos",
+      "Blog posts"
+    ],
+    "preferred_channels": [
+      "Email",
+      "Social media"
+    ],
+    "buying_behavior": {
+      "trigger": "Realizing they need your tool",
+      "decision_cycle": "Short",
+      "stakeholders": [
+        "Owner"
+      ],
+      "preferred_intake": "Demo",
+      "budget_range": "Flexible",
+      "objections": [
+        "Price"
+      ]
+    },
+    "online_behavior": {
+      "social_platforms": [
+        "linkedin",
+        "facebook",
+        "instagram",
+        "twitter",
+        "tiktok"
+      ],
+      "device_preference": "Mobile",
+      "content_habits": "Scrolls in the evening",
+      "information_sources": [
+        "Google"
+      ],
+      "daily_hours_online": 4
+    },
+    "tags": [
+      "template"
+    ],
+    "avatar_image_url": null,
+    "is_active": true,
+    "created_at": "2026-03-02T16:30:00Z",
+    "updated_at": "2026-08-27T09:12:00Z"
+  },
+  {
+    "id": "avt_marcus_01",
+    "account_id": "acct_fixture_social",
+    "name": "Marcus",
+    "summary": "Trade contractor running two kitchen-and-bath crews in the Dallas suburbs; buys cabinetry repeatedly and is judged by his clients on call-backs.",
+    "description": "Kitchen and bath remodeling contractor, 12 years in, two crews, a dispatcher and a phone that rings on ladders. Buys doors and boxes from three shops and drops the one that costs him a call-back.",
+    "age_range": "38-52",
+    "gender": "Male",
+    "location": "Plano and Frisco, Texas",
+    "occupation": "Kitchen and bath remodeling contractor",
+    "income_range": "$1.4M-$2.2M annual revenue",
+    "education_level": "Trade school; journeyman carpenter",
+    "lifestyle": "On site by 6:30, quotes at the kitchen table after nine, Saturdays for walk-throughs.",
+    "aspirations": "A referral-only book of business with no call-back week on the calendar.",
+    "typical_quote": "I do not need it pretty on day one. I need it to look the same at month eighteen.",
+    "background_story": "Started as a finish carpenter, went out on his own in 2014, added a second crew in 2022. Lost a repeat client in 2025 over a lacquer failure that was the cabinet shop's fault and his invoice.",
+    "values": [
+      "Keeping his word on dates",
+      "Doing it once",
+      "Paying his crews on Friday"
+    ],
+    "interests": [
+      "Finish carpentry",
+      "Shop drawings",
+      "Truck upfits"
+    ],
+    "personality_traits": [
+      "Blunt",
+      "Loyal to shops that deliver",
+      "Allergic to hype"
+    ],
+    "primary_goals": [
+      "Zero call-backs in the first year",
+      "A cabinet shop that hits the install date",
+      "Finishes that survive a working kitchen"
+    ],
+    "motivations": [
+      "Referrals from the last job",
+      "A crew that is never waiting on doors"
+    ],
+    "pain_points": [
+      "A finish that lifts inside a year and lands on his invoice",
+      "Lead times that slip after the demo is booked",
+      "Shop drawings that miss the false fronts"
+    ],
+    "challenges": [
+      "Explaining a shop's failure to his own client",
+      "Keeping two crews fed with work"
+    ],
+    "frustrations": [
+      "Shops that promise a date and go quiet",
+      "Being told the finish failure was the homeowner's cleaning products"
+    ],
+    "content_preferences": [
+      "Process posts with numbers",
+      "Case studies with the mistake left in",
+      "Anything a foreman can read in a truck"
+    ],
+    "preferred_channels": [
+      "LinkedIn",
+      "Facebook trade groups",
+      "Text message"
+    ],
+    "buying_behavior": {
+      "trigger": "A call-back on a finish or a slipped install date on the current job",
+      "decision_cycle": "One job to trial a shop, then a standing order if the first year is clean",
+      "stakeholders": [
+        "Marcus",
+        "His lead foreman",
+        "The homeowner on the affected job"
+      ],
+      "preferred_intake": "A shop walk-through and one reference job he can drive to",
+      "budget_range": "$18k-$60k cabinetry per kitchen",
+      "objections": [
+        "Every shop says its finish lasts; mine have all failed at least once",
+        "A longer finish schedule means a longer lead time"
+      ]
+    },
+    "online_behavior": {
+      "social_platforms": [
+        "linkedin",
+        "facebook"
+      ],
+      "device_preference": "Phone, in the truck",
+      "content_habits": "Reads LinkedIn at 6am and Facebook trade groups after nine; saves process posts, never comments on hype",
+      "information_sources": [
+        "Facebook remodeler groups",
+        "LinkedIn",
+        "Two supplier reps he trusts"
+      ],
+      "daily_hours_online": 1.5
+    },
+    "tags": [
+      "trade",
+      "repeat-buyer"
+    ],
+    "avatar_image_url": null,
+    "is_active": true,
+    "created_at": "2026-06-03T15:00:00Z",
+    "updated_at": "2026-08-11T15:40:00Z"
+  }
+]

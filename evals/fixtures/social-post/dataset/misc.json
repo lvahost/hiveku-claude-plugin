@@ -1,0 +1,175 @@
+{
+  "identity": {
+    "domain": "social",
+    "persona": "Brightside social - plain-spoken and craft-proud, first person plural, no exclamation marks, no emojis"
+  },
+  "memory": {
+    "entries": [
+      {
+        "memory_id": "mem_social_1",
+        "type": "memory",
+        "name": "social",
+        "content": "Social notes for Brightside Fixtures: pillar targets agreed in June are Educate 40 / Authority 25 / Connection 20 / Promotion 15. Branded tag #BrightsideBuilt. Showroom open Saturdays. Persona slugs: marcus (trade contractor, avt_marcus_01). The Harlow Street grid (grid_harlow_01) is the proof source for finish-durability posts; the 18-month check is the number to lead with. Links go in the first comment on LinkedIn and Facebook with utm_medium=social."
+      }
+    ]
+  },
+  "pm": {
+    "projects": [
+      {
+        "id": "proj_fixture_ops",
+        "name": "Fixture Ops",
+        "status": "active",
+        "project_type": "marketing"
+      }
+    ]
+  },
+  "testimonials": [
+    {
+      "id": "tst_dana_01",
+      "status": "approved",
+      "is_public": true,
+      "rating": 5,
+      "author": {
+        "name": "Dana Whitfield",
+        "title": "Owner",
+        "company": "Whitfield Renovations"
+      },
+      "content": "I stopped scheduling a call-back week. Eighteen months on the Harlow Street doors and not one has lifted.",
+      "created_at": "2026-07-01T15:00:00Z"
+    },
+    {
+      "id": "tst_private_01",
+      "status": "approved",
+      "is_public": false,
+      "rating": 5,
+      "author": {
+        "name": "Ruth Okonkwo",
+        "title": "Homeowner",
+        "company": null
+      },
+      "content": "The kitchen looks the same as the day it went in.",
+      "created_at": "2026-07-20T15:00:00Z"
+    }
+  ],
+  "department": {
+    "session_id": "sess_fixture_social_post_1",
+    "preamble": "Brightside social here. Three variants on the finish-schedule brief for Marcus at Problem Aware, Educate pillar, proof from the finish-schedule handbook page and the Harlow Street grid. Self-scored below; you are the second reader. Links sit in the first comment on both platforms, the X version is omitted because the persona does not read X, and the Facebook variant carries a plain proof photo from the library rather than a designed card.",
+    "drafts_block": {
+      "version": "social_drafts.v1",
+      "persona": {
+        "id": "avt_marcus_01",
+        "name": "Marcus"
+      },
+      "stage": "Problem Aware",
+      "pillar_id": "pil_educate",
+      "source": {
+        "kb_document_id": "kbdoc_finish_schedule_01",
+        "before_after_grid_id": "grid_harlow_01"
+      },
+      "drafts": [
+        {
+          "id": "draft_li_1",
+          "platform": "linkedin",
+          "content": "Stop asking your cabinet shop for a third coat. Two coats keyed with 320 grit outlast four that are not, and the 41 Harlow Street doors are 18 months in with zero call-backs. If you want to elevate the finish on a working kitchen, ask what happened between the coats, not how many there were. Save this for the next finish schedule you sign.",
+          "first_comment": "The finish schedule we follow, coat by coat: https://brightsidefixtures.example/finish-schedule?utm_source=linkedin&utm_medium=social",
+          "link_url": null,
+          "hook_type": "contrarian",
+          "format": "pov",
+          "cta": "save",
+          "hashtags": [
+            "#BrightsideBuilt",
+            "#CabinetCare"
+          ],
+          "alt_text": null,
+          "media_brief": null,
+          "rubric": {
+            "specificity": 2,
+            "one_idea": 2,
+            "proof": 2,
+            "voice": 1,
+            "native": 2,
+            "hook": 2,
+            "cta": 1,
+            "total": 12
+          }
+        },
+        {
+          "id": "draft_li_2",
+          "platform": "linkedin",
+          "content": "Myth: the lacquer failed. Truth: the coat under it was never sanded. Of 312 doors through our finish room in July, the 4 that came back had skipped the 320 pass between coats on one rush order. The 41 Harlow Street doors got the pass and are 18 months in with zero call-backs. Ask your shop what happens between coats, then save this for the next finish schedule you sign.",
+          "first_comment": "The finish schedule, coat by coat, with flash times for a Texas August: https://brightsidefixtures.example/finish-schedule?utm_source=linkedin&utm_medium=social",
+          "link_url": null,
+          "hook_type": "myth-truth",
+          "format": "myth-truth",
+          "cta": "save",
+          "hashtags": [
+            "#BrightsideBuilt",
+            "#CabinetCare"
+          ],
+          "alt_text": null,
+          "media_brief": null,
+          "rubric": {
+            "specificity": 2,
+            "one_idea": 2,
+            "proof": 2,
+            "voice": 2,
+            "native": 2,
+            "hook": 2,
+            "cta": 1,
+            "total": 13
+          }
+        },
+        {
+          "id": "draft_fb_1",
+          "platform": "facebook",
+          "content": "We used to skip the sand between coats on rush jobs. Then 4 doors from one July kitchen came back with the top coat lifting at the seams, and the fix cost more than the day we saved. Every coat gets the 320 pass now, rush or not, and the 41 Harlow Street doors are 18 months in with zero call-backs. Comment with the finish failure you see most and we will answer it in the next post.",
+          "first_comment": "The finish schedule we follow, coat by coat: https://brightsidefixtures.example/finish-schedule?utm_source=facebook&utm_medium=social",
+          "link_url": null,
+          "hook_type": "mistake",
+          "format": "story",
+          "cta": "comment",
+          "hashtags": [
+            "#BrightsideBuilt",
+            "#CabinetCare"
+          ],
+          "alt_text": "A finisher scuff-sanding a lacquered cabinet door with 320 grit paper in the Brightside finish room.",
+          "media_brief": {
+            "media_role": "proof photo",
+            "library_asset_id": "ma_finish_room_01",
+            "note": "a plain photograph; no words on the canvas"
+          },
+          "rubric": {
+            "specificity": 2,
+            "one_idea": 2,
+            "proof": 2,
+            "voice": 2,
+            "native": 2,
+            "hook": 1,
+            "cta": 1,
+            "total": 12
+          }
+        }
+      ],
+      "alternatives": [
+        {
+          "id": "alt_li_1",
+          "platform": "linkedin",
+          "content": "4 of 312 doors came back in July. All four skipped the 320 pass between coats on one rush order; the other 308 are in kitchens. The number that predicts a call-back is the grit between coats, not the coat count.",
+          "hook_type": "specific-number",
+          "format": "data-point",
+          "cta": "save",
+          "rubric": {
+            "specificity": 2,
+            "one_idea": 2,
+            "proof": 2,
+            "voice": 2,
+            "native": 1,
+            "hook": 2,
+            "cta": 1,
+            "total": 12
+          }
+        }
+      ]
+    }
+  }
+}

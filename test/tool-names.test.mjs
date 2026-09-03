@@ -23,6 +23,9 @@
  *     `ai_optimization_` (the 2026-08-30 SEO program). The SEO surface is
  *     spread across those prefixes, so gating `seo_` alone would still let a
  *     fabricated `backlinks_new_lost_summary` through.
+ *   - `workflow_` (2026-08-30), the creative prefixes (2026-09-01) and
+ *     `social_` (2026-09-03, the social program); each widening came with a
+ *     KNOWN_NON_TOOLS pass and a floor, see the arrays below.
  *
  * And the bridge cannot rot: a PENDING entry that the regenerated index now
  * contains FAILS, forcing its deletion from test/pending-tools.mjs.
@@ -68,6 +71,12 @@ const GATED_PREFIXES = [
   'marketing_storyboard_',
   'marketing_video_pipeline_',
   'stock_photos_',
+  // 2026-09-03. The social program: 57 live social_ tools plus the twelve
+  // SOCIAL-1 hands. The widening pass over existing prose found one refused
+  // name taught as absent (social_approve_post, see KNOWN_NON_TOOLS) and two
+  // field names (social_account_id, social_account_ids) - nothing fabricated,
+  // but the gate is what keeps it that way.
+  'social_',
 ];
 
 /**
@@ -87,6 +96,11 @@ const MIN_CHECKED = {
   design_: 60,
   media_: 60,
   brand_guide_: 30,
+  // Social footprint measured 2026-09-03 by this test's own extractor: 339
+  // social_ tokens before the social program's references landed, 722 after.
+  // The floor sits near half of the pre-wave count so a prose rewrite does not
+  // false-fail while a broken walk still does.
+  social_: 170,
 };
 
 /**
@@ -153,7 +167,15 @@ const KNOWN_NON_TOOLS = new Map([
   // prose names by their real identity; none is callable.
   ['media_asset_id', 'field'],
   ['media_asset_ids', 'field'],
+  // Social program (2026-09-03): the alt-text array on social_create_post and
+  // social_update_post, index-aligned with media_urls. A column, not a call.
+  ['media_alt_texts', 'field'],
   ['brand_guide_id', 'field'],
+  // Social program (2026-09-03): the object wrapper brand_guide_update forwards
+  // (its MCP schema declares only id/guide_id/name/description/brand_data/
+  // brand_guide_data, so a flat ai_forbidden_phrases is dropped). anti-fluff.md
+  // teaches the wrapper by name because the write is silent without it.
+  ['brand_guide_data', 'field'],
   ['design_project_id', 'field'],
   // Named in prose ONLY as "does not exist": brand-and-assets.md teaches the
   // design_templates_list check and the dashboard fallback precisely because
@@ -166,6 +188,36 @@ const KNOWN_NON_TOOLS = new Map([
   // provider_operation column is the ONLY previous_interaction_id ownership proof.
   ['media_storage_limit_mb', 'column'],
   ['design_render_jobs', 'table'],
+
+  // Social program (gate widened 2026-09-03). Request/response fields the
+  // prose names by their real identity: the connected-account id on a post
+  // and the array form on the analytics and calendar readers.
+  ['social_account_id', 'field'],
+  ['social_account_ids', 'field'],
+  // repurpose.md names the row social_posts_bulk_create's calendar_event
+  // creates; a Prisma model (prisma/schema.prisma), not a call.
+  ['social_calendar_events', 'table'],
+  // Named in prose ONLY as the tool that does NOT exist, on purpose.
+  // notes/departments/social.md ("No approve tool"): social_publish_post
+  // stages an external agent's post to pending_approval and a human releases
+  // it in the dashboard queue; a tool over the approve route would let the
+  // same agent release what it just staged in the same turn. The MCP server
+  // pins the refusal in src/tools/__tests__/profiles.test.ts ("no approve tool
+  // exists for social posts, in any profile"). This entry must NEVER move to
+  // PENDING_TOOLS: it is refused, not incoming.
+  ['social_approve_post', 'refused'],
+  // The DEPARTMENT AGENT's own tool vocabulary, which commands/social-onboard.md
+  // spells on purpose when it writes `_command:` recipe rows for the agent
+  // (real names in hiveku_agent_marketing_server/app/mcp_server/tools/social.py
+  // and design.py; the prose says in the same sentence that they are "not the
+  // MCP names"). None is callable from this plugin: the MCP twins are
+  // social_create_post / social_update_post / social_list_posts /
+  // social_publish_post, and design_to_post has no MCP twin at all.
+  ['social_post_create', 'agent-tool'],
+  ['social_post_update', 'agent-tool'],
+  ['social_post_list', 'agent-tool'],
+  ['social_post_publish', 'agent-tool'],
+  ['design_to_post', 'agent-tool'],
 ]);
 
 /**
@@ -184,7 +236,7 @@ const TOKEN = /(?<![\w/.\-])([a-z][a-z0-9]*(?:_[a-z0-9]+){2,})(?![\w*])/g;
  * Prose must spell every name in full; the extra bytes buy verifiability.
  * Same prefixes as the gate.
  */
-const SHORTHAND_PREFIX = '(?:voice|seo|backlinks|dataforseo_labs|serp|on_page|keywords_data|content_analysis|domain_analytics|business_data|ai_optimization)';
+const SHORTHAND_PREFIX = '(?:voice|seo|backlinks|dataforseo_labs|serp|on_page|keywords_data|content_analysis|domain_analytics|business_data|ai_optimization|social)';
 const SHORTHAND = new RegExp(`${SHORTHAND_PREFIX}_[a-z0-9]+(?:_[a-z0-9]+)+\`?\\s*\\/\\s*\`?_[a-z_]+`);
 
 function walkMarkdown() {

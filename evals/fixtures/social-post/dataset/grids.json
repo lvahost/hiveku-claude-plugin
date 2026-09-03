@@ -1,0 +1,64 @@
+[
+  {
+    "id": "grid_harlow_01",
+    "account_id": "acct_fixture_social",
+    "name": "Harlow Street refit - Whitfield Renovations",
+    "description": "A 41-door kitchen and bath refit for a repeat trade client, delivered June 2025 and checked at 18 months.",
+    "target_avatar_id": "avt_marcus_01",
+    "audience_context": "Trade contractors judged on first-year call-backs.",
+    "key_benefits": [
+      "No call-back week on the contractor's calendar",
+      "The homeowner stopped asking about the finish",
+      "A standing order for the next three kitchens"
+    ],
+    "measurable_results": [
+      "41 doors finished with the 320 scuff pass between every coat",
+      "Zero call-backs at the 18-month check (December 2026 site visit)",
+      "Install landed on the booked date, 2025-06-12"
+    ],
+    "transformation_story": "Whitfield Renovations came to Brightside after a lacquer failure on another shop's doors cost them a repeat client. Harlow Street was the trial job: 41 doors, a vanity boxed around a heating pipe the drawing never showed, and a finish schedule with a scuff pass between every coat. Eighteen months on, every door closes and none has lifted.",
+    "transformation_story_before_image_url": "https://cdn.fixture.invalid/grids/harlow-before.jpg",
+    "transformation_story_after_image_url": "https://cdn.fixture.invalid/grids/harlow-after.jpg",
+    "grid_items": [
+      {
+        "before": {
+          "title": "Before",
+          "description": "A repeat client lost over a lifted lacquer finish on another shop's doors; the contractor ate the invoice.",
+          "pain_points": [
+            "finish lifted at 11 months",
+            "call-back week every quarter",
+            "shop blamed the cleaning products"
+          ],
+          "images": [
+            {
+              "id": "img_harlow_before_01",
+              "url": "https://cdn.fixture.invalid/grids/harlow-before.jpg",
+              "prompt": null
+            }
+          ]
+        },
+        "after": {
+          "title": "After",
+          "description": "41 doors, scuff-sanded between every coat, 18 months in with zero call-backs and a standing order.",
+          "benefits": [
+            "zero call-backs at 18 months",
+            "install on the booked date",
+            "standing order for three kitchens"
+          ],
+          "images": [
+            {
+              "id": "img_harlow_after_01",
+              "url": "https://cdn.fixture.invalid/grids/harlow-after.jpg",
+              "prompt": null
+            }
+          ]
+        },
+        "transformation_details": "The difference was the finish schedule: a 320-grit scuff pass between coats gives the next coat a mechanical key. The doors were checked on site at 18 months."
+      }
+    ],
+    "metadata": {},
+    "is_active": true,
+    "created_at": "2026-06-20T15:00:00Z",
+    "updated_at": "2026-08-11T16:00:00Z"
+  }
+]

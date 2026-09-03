@@ -231,7 +231,19 @@ Put this in `.claude/settings.json` (per project) or `~/.claude/settings.json` (
       "mcp__plugin_hiveku_hk__generate_image_set",
       "mcp__plugin_hiveku_hk__media_upscale",
       "mcp__plugin_hiveku_hk__marketing_testimonial_media_replace",
-      "mcp__plugin_hiveku_hk__marketing_form_upload_settings_update"
+      "mcp__plugin_hiveku_hk__marketing_form_upload_settings_update",
+      "mcp__plugin_hiveku_hk__social_publish_post",
+      "mcp__plugin_hiveku_hk__social_delete_post",
+      "mcp__plugin_hiveku_hk__social_comment_reply",
+      "mcp__plugin_hiveku_hk__social_linkedin_comment_add",
+      "mcp__plugin_hiveku_hk__social_linkedin_reaction_add",
+      "mcp__plugin_hiveku_hk__social_linkedin_comment_delete",
+      "mcp__plugin_hiveku_hk__social_post_reject",
+      "mcp__plugin_hiveku_hk__social_pillar_delete",
+      "mcp__plugin_hiveku_hk__social_hashtags_delete",
+      "mcp__plugin_hiveku_hk__social_calendar_delete",
+      "mcp__plugin_hiveku_hk__social_schedule_slot_delete",
+      "mcp__plugin_hiveku_hk__social_post_retry"
     ]
   }
 }
@@ -255,6 +267,52 @@ Do not go by HTTP verb alone. `verify_typecheck`, `verify_lint` and `project_tes
 POSTs because they run something, but they only report; there is no reason to gate them.
 Equally, plenty of PATCH tools edit a draft nobody sees. The question is not the verb, it is
 whether anyone outside the session notices.
+
+### Per-folder ceilings: `.hiveku/guardrails.json`
+
+The ask list above is per machine. A ceiling per FOLDER is `.hiveku/guardrails.json`, written
+next to the folder's `account.json` by whoever owns the account. It declares what sessions
+opened in that folder may do, regardless of who opens it: a junior opening a client folder gets
+the ceiling, not the full write surface. The plugin's PreToolUse hook reads it on every Hiveku
+tool call, walking up from the working directory to the first file it finds.
+
+```json
+{
+  "version": 1,
+  "mode": "full",
+  "ask_tools": ["social_create_post", "social_update_post"],
+  "arg_ask": {
+    "social_create_post": ["scheduled_at", "scheduled_at_local"],
+    "social_update_post": ["scheduled_at", "scheduled_at_local"]
+  }
+}
+```
+
+- `version`: `1`.
+- `mode`: `full` (the default) or `reads-only`. In `reads-only` every write is refused and
+  reads still pass, which is the right shape for a folder somebody should look at but not touch
+  from here.
+- `deny_tools`: bare tool names (no `mcp__` prefix) that are always refused in this folder.
+- `ask_tools`: bare tool names that always prompt in this folder, whatever the arguments.
+- `arg_ask`: `{ "<tool>": ["<argument>", ...] }`. The tool prompts only when one of the listed
+  arguments is present with a value other than `null` or an empty string. This is for writes
+  whose danger lives in one field. The social example is the canonical case: creating a draft is
+  harmless, but setting `scheduled_at` IS the publish: the every-minute cron ships it. With
+  `arg_ask` a week of drafts flows without a prompt and the one call that puts a time on a post
+  stops for a human. In the example the two blocks overlap on purpose, belt and braces; a folder
+  that wants drafts to flow freely drops the two names from `ask_tools` and keeps `arg_ask`.
+
+Precedence, strictest first: `deny_tools`, then the `reads-only` ceiling, then `ask_tools`, then
+`arg_ask`, then the plugin's read-only auto-allow. Inside `hiveku_batch` every rule is applied to
+each member on that member's own arguments and the strictest member decides, so a batch cannot
+launder a ceilinged call. A file that does not parse fails closed: every write in the folder is
+refused as if `mode` were `reads-only` until the JSON is fixed, and reads still pass. A malformed
+`arg_ask` value (not an object, or an entry that is not an array of names) is ignored while the
+rest of the file stands.
+
+**This is a client-side rail.** It beats convention and stops accidents; it does not stop a user
+who edits the file. The wall is a read-only key: connect the account read-only during
+`/hiveku:connect` and the server refuses writes no matter what the client asks for.
 
 ### If you also run the VS Code extension
 

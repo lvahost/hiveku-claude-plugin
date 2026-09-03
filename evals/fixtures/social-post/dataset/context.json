@@ -1,0 +1,120 @@
+{
+  "account": "Brightside Fixtures",
+  "account_id": "acct_fixture_social",
+  "domain": "social",
+  "timezone": "America/Chicago",
+  "sections_included": [
+    "identity",
+    "brand",
+    "memory",
+    "rules",
+    "avatars",
+    "journeys"
+  ],
+  "has": {
+    "skills": true,
+    "content_examples": true,
+    "grids": true,
+    "social": true
+  },
+  "size": {
+    "approx_chars": 6200
+  },
+  "persona": "Brightside Fixtures - a Midwest cabinet and fixture workshop that sells to renovating homeowners and trade contractors. Craft-proud, plain-spoken, generous with know-how.",
+  "brand_voice": "plain-spoken, warm, craft-proud; first person plural; short sentences; no exclamation marks; no emojis; no hype words",
+  "brand": {
+    "id": "bg_brightside_01",
+    "name": "Brightside Fixtures brand guide",
+    "is_active": true,
+    "brand_is": [
+      "plain-spoken",
+      "specific",
+      "craft-proud",
+      "patient"
+    ],
+    "brand_is_not": [
+      "hyped",
+      "salesy",
+      "vague",
+      "breathless"
+    ],
+    "cta_primary": "Book a showroom visit",
+    "copy_donts": [
+      "exclamation marks",
+      "emojis",
+      "promising a lead time in public"
+    ],
+    "ai_forbidden_phrases": [
+      "elevate",
+      "seamless"
+    ],
+    "updated_at": "2026-07-30T16:00:00Z"
+  },
+  "avatars": [
+    {
+      "id": "avt_template_01",
+      "name": "Primary Customer",
+      "summary": "Small business owners who need your tool to save time and grow.",
+      "description": "Busy owners at [Company] who want your tool to handle the work so they can focus on what matters.",
+      "tags": [
+        "template"
+      ],
+      "occupation": "Business owner",
+      "primary_goals": [
+        "Save time with your tool",
+        "Grow the business"
+      ],
+      "pain_points": [
+        "Not enough hours in the day",
+        "Too many tools that do not talk to each other"
+      ],
+      "typical_quote": "I just need your tool to work.",
+      "updated_at": "2026-08-27T09:12:00Z"
+    },
+    {
+      "id": "avt_marcus_01",
+      "name": "Marcus",
+      "summary": "Trade contractor running two kitchen-and-bath crews in the Dallas suburbs; buys cabinetry repeatedly and is judged by his clients on call-backs.",
+      "description": "Kitchen and bath remodeling contractor, 12 years in, two crews, a dispatcher and a phone that rings on ladders. Buys doors and boxes from three shops and drops the one that costs him a call-back.",
+      "tags": [
+        "trade",
+        "repeat-buyer"
+      ],
+      "occupation": "Kitchen and bath remodeling contractor",
+      "primary_goals": [
+        "Zero call-backs in the first year",
+        "A cabinet shop that hits the install date",
+        "Finishes that survive a working kitchen"
+      ],
+      "pain_points": [
+        "A finish that lifts inside a year and lands on his invoice",
+        "Lead times that slip after the demo is booked",
+        "Shop drawings that miss the false fronts"
+      ],
+      "typical_quote": "I do not need it pretty on day one. I need it to look the same at month eighteen.",
+      "updated_at": "2026-08-11T15:40:00Z"
+    }
+  ],
+  "journeys": [
+    {
+      "id": "cjm_trade_01",
+      "name": "Trade contractor journey",
+      "stages": [
+        "Unaware",
+        "Problem Aware",
+        "Solution Aware",
+        "Product Aware",
+        "Most Aware"
+      ]
+    }
+  ],
+  "memory_notes": "Pillar targets agreed in June: Educate 40 / Authority 25 / Connection 20 / Promotion 15. Branded tag is #BrightsideBuilt. Showroom is open Saturdays. Persona slugs in use: marcus (trade), homeowner (renovating homeowner, avatar retired in July pending rewrite).",
+  "rules": [
+    "Every post ladders to exactly one content pillar.",
+    "Lead with the hook - the first line decides the post.",
+    "Never promise a lead time in a public post; send those to the sales inbox.",
+    "No emojis and no exclamation marks anywhere in published copy.",
+    "Every post names the persona and the stage it serves."
+  ],
+  "instructions": "Write in the brand voice above. Re-read it before every caption. One pillar per post, hook first, plain words. Name who the post is for. Nothing publishes without the client's yes."
+}

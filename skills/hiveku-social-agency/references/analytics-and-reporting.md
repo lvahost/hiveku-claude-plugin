@@ -1,8 +1,11 @@
 # Analytics and reporting - the metric-source map and the monthly report
 
 Load this before quoting ANY number: the baseline, the weekly performance check, the
-monthly report, or an answer to "how did that post do". Every metric source here has a
-window, a denominator, and a failure mode, and mixing them produces confident nonsense.
+monthly report, the creative performance loop (which hooks, formats and personas earn),
+or an answer to "how did that post do". Every metric source here has a window, a
+denominator, and a failure mode, and mixing them produces confident nonsense. How old
+each number is, and the freshness lines a report ends with, are in
+references/connection-health-and-syncs.md.
 
 ## Sync before read (the freshness discipline)
 
@@ -65,6 +68,37 @@ understates the post. Nothing downstream is current until a sync runs:
   own engagement history, returned as concrete future timestamps ready to pass as
   `scheduled_at`. Empty list on thin data = schedule by the calendar; that is the
   honest answer, not a failure.
+
+## Bulk reads (many posts in one call, and the creative performance loop)
+
+- `social_posts_analytics_list({ post_ids, from_date, to_date, limit })` - the latest
+  analytics snapshot per version for MANY posts in one call (limit 100), each with
+  `synced_at` and a `sync_stopped` flag. It replaces a loop of `social_post_analytics`
+  calls for a month's top-content pass and for the freshness lines. Rules: an unsynced
+  version comes back with no numbers, never zeros; `sync_stopped: true` means the post
+  is past the 90-day sync ladder and its numbers are frozen at `synced_at` - quote them
+  "as of <synced_at>", never as current, and do not force-sync a stopped post expecting
+  movement. The dates filter the posts, not the snapshots.
+- `social_analytics_by_dimension({ group_by, from_date, to_date })` - engagement,
+  impressions and engagement rate grouped by `hook`, `format`, `pillar`, `persona`,
+  `stage`, `platform` or `asset`: the `hook:` / `format:` / `persona:` / `stage:` tags,
+  `pillar_id`, `avatar_id`, the platform, or `settings.media_asset_ids` ("which
+  creative earned"). Every group carries N (the posts that contributed) and the
+  window; an unsynced post is never counted as zero, so an N below the number you
+  published in the window means unsynced or stopped posts, and the report says so.
+  Read it before the format bets in the audit and the monthly report. A group with N
+  under 5 is a hint, not a finding, and the report says N. A misspelled tag is its own
+  group of one, which is the fastest way to find a tagging slip. Its rate and the
+  `avg_engagement_rate` on `social_account_analytics` rows are computed differently;
+  name the denominator each time (the comparability gate below).
+- Where the 90-day stop applies: the per-post ladder (`social-analytics-sync`, every
+  30 minutes on day one, then 4-hourly, daily, weekly, and off at day 90) freezes a
+  version 90 days after it published, so both reads above go stale per post and say so
+  (`sync_stopped`). It does NOT apply to `social_account_analytics` or
+  `social_analytics_followers`: the daily account snapshots keep accruing while the
+  connection is healthy. Comments have their own 14-day window
+  (references/connection-health-and-syncs.md). A comparison that reaches back past 90
+  days compares a frozen number with a live one; say so in the line that makes it.
 
 ## The real-feed baseline (what Hiveku's tables cannot see)
 
@@ -173,7 +207,12 @@ Build it from named tool calls only - every number must be reproducible.
      once PER connected account - the month's real per-platform daily series.
    - `social_analytics_followers({ period })` for the follower-growth rollup
      (gained/lost/net) per account; check `last_synced_at` before trusting a flat line.
-   - `social_post_analytics({ post_id })` on the top posts, one call each.
+   - `social_posts_analytics_list({ post_ids })` for the month's published posts in one
+     call (read `sync_stopped` and `synced_at` per post), then
+     `social_post_analytics({ post_id })` on the top few for the per-platform version
+     breakdown and the platform URLs.
+   - `social_analytics_by_dimension({ group_by: 'hook' })`, then `'format'` and
+     `'persona'`, for the creative loop: which patterns earned this month, with N.
    - `social_list_posts({ status: 'published', from_date, to_date, limit: 100 })` for
      the delivery count (dates filter `created_at` - say so).
    - `social_analytics_summary` as the closing-week snapshot, never the month's topline.
@@ -244,11 +283,15 @@ Build it from named tool calls only - every number must be reproducible.
 
 ## Data pitfalls
 
-- No tool here returns per-post metrics except `social_post_analytics`, one post per
-  call. `social_list_posts` returns no metrics at all. `social_analytics_summary` is
+- Per-post metrics come from `social_post_analytics` (one post, with the per-platform
+  breakdown) or `social_posts_analytics_list` (many posts, with `synced_at` and
+  `sync_stopped`); the grouped view is `social_analytics_by_dimension`.
+  `social_list_posts` returns no metrics at all. `social_analytics_summary` is
   7 days, `social_analytics_timeseries` is a fixed 30 and may be empty. If a number the
   report calls for is not obtainable from one of those, say it is unavailable and why -
   never estimate it into the deliverable.
+- A post older than 90 days is frozen (`sync_stopped`). Its number is dated, not
+  current, and the freshness line names how many such posts the report includes.
 - `hiveku-data/social/` snapshots go stale the moment the account posts or a metric
   updates - read them for orientation and voice recall, but confirm anything
   decision-grade (live status, current followers, today's engagement) with a live tool.

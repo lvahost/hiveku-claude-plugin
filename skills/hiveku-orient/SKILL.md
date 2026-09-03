@@ -349,6 +349,17 @@ for producer tuning - do not use it to tidy the queue.
 Visibility: `agent_approval_` and `agent_inbox_` reach full, marketing, marketing-seo and
 workflows keys - the profiles able to start the rails that stage things.
 
+**Folder ceilings** (`.hiveku/guardrails.json`, beside the folder's `account.json`) are the rail
+the account owner writes once for everyone who opens that folder: a reads-only mode, tools that
+are always refused there, tools that always prompt there, and `arg_ask`, a prompt that fires
+only when a named argument is SET, for the writes whose danger lives in one field (a social
+draft is harmless; the same draft with a schedule time is a publish, because the every-minute
+cron ships it). The plugin's hook applies the file to every Hiveku tool call made from that
+folder, batches included, and a file that does not parse fails closed to reads-only. It is a
+client-side rail: it stops accidents, not a user who edits the file - the wall is a read-only
+key. The shape, the precedence and the worked social example are in INSTALL.md under
+"Per-folder ceilings".
+
 **Escalating to a human.** Anything public-facing or irreversible without an explicit human yes -
 emails, SMS, social posts, production deploys, payments - is raised as a decision, not done. The
 mechanics: `mc_task_create` with `status: 'awaiting_human'` and `decision_options`, then poll

@@ -442,3 +442,91 @@ test('non-batch tools are unaffected by member expansion', () => {
     cwd,
   })), 'allow');
 });
+
+// -- arg_ask: a ceiling on an ARGUMENT, not a tool (2026-09-03 social program) --
+//
+// Creating a social draft is harmless; setting scheduled_at IS the publish,
+// because the every-minute cron ships whatever carries a time. An ask_tools
+// entry would prompt on every draft of a week plan, so the folder names the
+// field instead. These drive decideWithGuardrails with a real tool_input.
+// Deleting the presence check in argPresent fails the "absent or empty" case.
+const SOCIAL_RAILS = { version: 1, mode: 'full',
+  arg_ask: { social_create_post: ['scheduled_at', 'scheduled_at_local'] } };
+const call = (tool, input, cwd) => ({ tool_name: `mcp__plugin_hiveku_hk__${tool}`, tool_input: input, cwd });
+const ARG_ASK_REASON = /^guardrails: social_create_post called with scheduled_at \(this folder asks before that\)/;
+
+test('arg_ask fires when a listed argument is set', () => {
+  const cwd = folderWith(SOCIAL_RAILS);
+  const r = decideWithGuardrails(call('social_create_post',
+    { content: 'x', scheduled_at: '2026-09-04T09:00:00Z' }, cwd));
+  assert.equal(decision(r), 'ask');
+  assert.match(r.hookSpecificOutput.permissionDecisionReason, ARG_ASK_REASON);
+  // the second listed key fires too, and a falsy-but-set value still counts
+  assert.equal(decision(decideWithGuardrails(call('social_create_post',
+    { scheduled_at_local: '2026-09-04T09:00' }, cwd))), 'ask');
+  assert.equal(decision(decideWithGuardrails(call('social_create_post',
+    { scheduled_at: 0 }, cwd))), 'ask', '0 is a value, not an absence');
+});
+
+test('arg_ask stays silent when the argument is absent or empty', () => {
+  const cwd = folderWith(SOCIAL_RAILS);
+  // A write with no guardrail hit is null - "no opinion" - exactly as before.
+  assert.equal(decideWithGuardrails(call('social_create_post', { content: 'x' }, cwd)), null);
+  for (const empty of [null, undefined, '']) {
+    assert.equal(decideWithGuardrails(call('social_create_post',
+      { content: 'x', scheduled_at: empty }, cwd)), null, `scheduled_at=${String(empty)} is not "set"`);
+  }
+  assert.equal(decideWithGuardrails(call('social_create_post', undefined, cwd)), null);
+  assert.equal(decideWithGuardrails(call('social_create_post', 'not an object', cwd)), null);
+});
+
+test('arg_ask does not reach a tool it does not list', () => {
+  const cwd = folderWith(SOCIAL_RAILS);
+  assert.equal(decideWithGuardrails(call('social_update_post',
+    { scheduled_at: '2026-09-04T09:00:00Z' }, cwd)), null);
+  // a read carrying the same key still auto-approves
+  assert.equal(decision(decideWithGuardrails(call('crm_list_contacts', { scheduled_at: 'x' }, cwd))), 'allow');
+});
+
+test('arg_ask propagates inside hiveku_batch on the member\'s own args', () => {
+  const cwd = folderWith(SOCIAL_RAILS);
+  const r = decideWithGuardrails(batch([
+    { tool: 'list_projects', args: {} },
+    { tool: 'social_create_post', args: { content: 'x', scheduled_at: '2026-09-04T09:00:00Z' } },
+  ], cwd));
+  assert.equal(decision(r), 'ask');
+  assert.match(r.hookSpecificOutput.permissionDecisionReason, ARG_ASK_REASON);
+  assert.match(r.hookSpecificOutput.permissionDecisionReason, /inside hiveku_batch/);
+  // the args are read per member: a key on the WRONG member is not a hit
+  const wrong = decideWithGuardrails(batch([
+    { tool: 'list_projects', args: { scheduled_at: 'x' } },
+    { tool: 'get_project', args: {} },
+  ], cwd));
+  assert.equal(decision(wrong), 'allow');
+});
+
+test('a malformed arg_ask is ignored while the rest of the file stands', () => {
+  for (const bad of ['scheduled_at', ['social_create_post'], 42, null,
+                     { social_create_post: 'scheduled_at' }, { social_create_post: { scheduled_at: true } },
+                     { social_create_post: [null, '', 7] }]) {
+    const cwd = folderWith({ version: 1, mode: 'full', ask_tools: ['email_campaign_send_now'], arg_ask: bad });
+    assert.equal(decideWithGuardrails(call('social_create_post', { scheduled_at: 'x' }, cwd)), null,
+      `arg_ask=${JSON.stringify(bad)} must be ignored, not applied and not fatal`);
+    assert.equal(decision(decideWithGuardrails(payload('email_campaign_send_now', cwd))), 'ask', 'ask_tools still applies');
+    assert.equal(decision(decideWithGuardrails(payload('crm_list_contacts', cwd))), 'allow', 'reads still pass');
+  }
+});
+
+test('precedence: deny beats reads-only beats ask_tools beats arg_ask beats the read auto-allow', () => {
+  const cwd = folderWith({ version: 1, mode: 'full',
+    deny_tools: ['social_delete_post'],
+    ask_tools: ['social_update_post'],
+    arg_ask: { social_delete_post: ['post_id'], social_update_post: ['scheduled_at'] } });
+  assert.equal(decision(decideWithGuardrails(call('social_delete_post', { post_id: 'p1' }, cwd))), 'deny');
+  const r = decideWithGuardrails(call('social_update_post', { scheduled_at: 'x' }, cwd));
+  assert.equal(decision(r), 'ask');
+  assert.match(r.hookSpecificOutput.permissionDecisionReason, /always-ask list/,
+    'a tool the folder always prompts for is reported as that, not as an argument hit');
+  const ro = folderWith({ version: 1, mode: 'reads-only', arg_ask: { social_create_post: ['scheduled_at'] } });
+  assert.equal(decision(decideWithGuardrails(call('social_create_post', { scheduled_at: 'x' }, ro))), 'deny');
+});

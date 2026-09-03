@@ -1,0 +1,1525 @@
+[
+  {
+    "content_type": "text",
+    "media_urls": [],
+    "media_types": [],
+    "thumbnail_url": null,
+    "link_url": null,
+    "first_comment": null,
+    "status": "published",
+    "approval_status": "not_required",
+    "ai_generated": false,
+    "ai_model": null,
+    "category": null,
+    "avatar_id": "avt_marcus_01",
+    "journey_id": "cjm_trade_01",
+    "journey_stage": null,
+    "before_after_grid_id": null,
+    "created_by_user": {
+      "id": "user_sam",
+      "first_name": "Sam",
+      "last_name": "Okafor"
+    },
+    "id": "post_li_01",
+    "title": "When a lacquer coat lifts inside a year",
+    "content": "A question for our trade customers: when a lacquer coat lifts inside a year, what was under it? Nine times in ten, a coat nobody scuffed. The finish did not fail. The key did. #BrightsideBuilt #CabinetCare",
+    "target_platforms": [
+      "linkedin"
+    ],
+    "target_accounts": [
+      "sacc_linkedin_01"
+    ],
+    "tags": [
+      "hook:question",
+      "format:question",
+      "persona:marcus"
+    ],
+    "pillar_id": "pil_educate",
+    "content_pillar": {
+      "id": "pil_educate",
+      "name": "Educate",
+      "color": "#2E7D32"
+    },
+    "scheduled_at": "2026-08-28T14:00:00Z",
+    "published_at": "2026-08-28T14:00:12Z",
+    "created_at": "2026-08-28T13:35:00Z",
+    "updated_at": "2026-08-28T14:00:12Z",
+    "_count": {
+      "post_versions": 1
+    }
+  },
+  {
+    "content_type": "text",
+    "media_urls": [],
+    "media_types": [],
+    "thumbnail_url": null,
+    "link_url": null,
+    "first_comment": null,
+    "status": "published",
+    "approval_status": "not_required",
+    "ai_generated": false,
+    "ai_model": null,
+    "category": null,
+    "avatar_id": "avt_marcus_01",
+    "journey_id": "cjm_trade_01",
+    "journey_stage": null,
+    "before_after_grid_id": null,
+    "created_by_user": {
+      "id": "user_sam",
+      "first_name": "Sam",
+      "last_name": "Okafor"
+    },
+    "id": "post_li_02",
+    "title": "312 doors in July, four back",
+    "content": "312 doors went through the finish room in July. Four came back, all from one job, all the same cause: a rush order that skipped the 320 pass between coats. The other 308 are in kitchens. #BrightsideBuilt",
+    "target_platforms": [
+      "linkedin"
+    ],
+    "target_accounts": [
+      "sacc_linkedin_01"
+    ],
+    "tags": [
+      "hook:specific-number",
+      "format:data-point",
+      "persona:marcus"
+    ],
+    "pillar_id": "pil_authority",
+    "content_pillar": {
+      "id": "pil_authority",
+      "name": "Authority",
+      "color": "#1565C0"
+    },
+    "scheduled_at": "2026-08-26T14:00:00Z",
+    "published_at": "2026-08-26T14:00:12Z",
+    "created_at": "2026-08-26T13:35:00Z",
+    "updated_at": "2026-08-26T14:00:12Z",
+    "_count": {
+      "post_versions": 1
+    }
+  },
+  {
+    "content_type": "text",
+    "media_urls": [],
+    "media_types": [],
+    "thumbnail_url": null,
+    "link_url": null,
+    "first_comment": null,
+    "status": "published",
+    "approval_status": "not_required",
+    "ai_generated": false,
+    "ai_model": null,
+    "category": null,
+    "avatar_id": "avt_marcus_01",
+    "journey_id": "cjm_trade_01",
+    "journey_stage": null,
+    "before_after_grid_id": null,
+    "created_by_user": {
+      "id": "user_sam",
+      "first_name": "Sam",
+      "last_name": "Okafor"
+    },
+    "id": "post_li_03",
+    "title": "How many call-backs did your last kitchen cost",
+    "content": "A question for our trade customers: how many call-backs did your last kitchen cost you? We count ours in the shop log. Tell us yours and we will say what we would have done differently. #BrightsideBuilt",
+    "target_platforms": [
+      "linkedin"
+    ],
+    "target_accounts": [
+      "sacc_linkedin_01"
+    ],
+    "tags": [
+      "hook:question",
+      "format:question",
+      "persona:marcus"
+    ],
+    "pillar_id": "pil_connection",
+    "content_pillar": {
+      "id": "pil_connection",
+      "name": "Connection",
+      "color": "#EF6C00"
+    },
+    "scheduled_at": "2026-08-24T14:00:00Z",
+    "published_at": "2026-08-24T14:00:12Z",
+    "created_at": "2026-08-24T13:35:00Z",
+    "updated_at": "2026-08-24T14:00:12Z",
+    "_count": {
+      "post_versions": 1
+    }
+  },
+  {
+    "content_type": "text",
+    "media_urls": [],
+    "media_types": [],
+    "thumbnail_url": null,
+    "link_url": null,
+    "first_comment": null,
+    "status": "published",
+    "approval_status": "not_required",
+    "ai_generated": false,
+    "ai_model": null,
+    "category": null,
+    "avatar_id": "avt_marcus_01",
+    "journey_id": "cjm_trade_01",
+    "journey_stage": null,
+    "before_after_grid_id": null,
+    "created_by_user": {
+      "id": "user_sam",
+      "first_name": "Sam",
+      "last_name": "Okafor"
+    },
+    "id": "post_li_04",
+    "title": "Harlow Street: the wrong reveal",
+    "content": "We hung a full run of inset doors at Harlow Street with the wrong reveal and did not see it until the light changed at four o'clock. We rehung eleven doors the next morning before the contractor arrived. The reveal gauge now lives on the install cart. #BrightsideBuilt",
+    "target_platforms": [
+      "linkedin"
+    ],
+    "target_accounts": [
+      "sacc_linkedin_01"
+    ],
+    "tags": [
+      "hook:mistake",
+      "format:story",
+      "persona:marcus"
+    ],
+    "pillar_id": "pil_authority",
+    "content_pillar": {
+      "id": "pil_authority",
+      "name": "Authority",
+      "color": "#1565C0"
+    },
+    "scheduled_at": "2026-08-21T14:00:00Z",
+    "published_at": "2026-08-21T14:00:12Z",
+    "created_at": "2026-08-21T13:35:00Z",
+    "updated_at": "2026-08-21T14:00:12Z",
+    "_count": {
+      "post_versions": 1
+    }
+  },
+  {
+    "content_type": "text",
+    "media_urls": [],
+    "media_types": [],
+    "thumbnail_url": null,
+    "link_url": null,
+    "first_comment": null,
+    "status": "published",
+    "approval_status": "not_required",
+    "ai_generated": false,
+    "ai_model": null,
+    "category": null,
+    "avatar_id": "avt_marcus_01",
+    "journey_id": "cjm_trade_01",
+    "journey_stage": null,
+    "before_after_grid_id": null,
+    "created_by_user": {
+      "id": "user_sam",
+      "first_name": "Sam",
+      "last_name": "Okafor"
+    },
+    "id": "post_li_05",
+    "title": "Who signs off the finish schedule",
+    "content": "A question for our trade customers: who signs off the finish schedule on your jobs, the painter or the cabinet shop? If the answer is nobody, that is where the call-back starts. #BrightsideBuilt #CabinetCare",
+    "target_platforms": [
+      "linkedin"
+    ],
+    "target_accounts": [
+      "sacc_linkedin_01"
+    ],
+    "tags": [
+      "hook:question",
+      "format:question",
+      "persona:marcus"
+    ],
+    "pillar_id": "pil_educate",
+    "content_pillar": {
+      "id": "pil_educate",
+      "name": "Educate",
+      "color": "#2E7D32"
+    },
+    "scheduled_at": "2026-08-19T14:00:00Z",
+    "published_at": "2026-08-19T14:00:12Z",
+    "created_at": "2026-08-19T13:35:00Z",
+    "updated_at": "2026-08-19T14:00:12Z",
+    "_count": {
+      "post_versions": 1
+    }
+  },
+  {
+    "content_type": "text",
+    "media_urls": [],
+    "media_types": [],
+    "thumbnail_url": null,
+    "link_url": null,
+    "first_comment": null,
+    "status": "published",
+    "approval_status": "not_required",
+    "ai_generated": false,
+    "ai_model": null,
+    "category": null,
+    "avatar_id": "avt_marcus_01",
+    "journey_id": "cjm_trade_01",
+    "journey_stage": null,
+    "before_after_grid_id": null,
+    "created_by_user": {
+      "id": "user_sam",
+      "first_name": "Sam",
+      "last_name": "Okafor"
+    },
+    "id": "post_li_06",
+    "title": "Three numbers from the finish room",
+    "content": "Three numbers from the finish room: 320 grit between coats, 4 hours flash time in August, 12 months before an unsanded coat lifts in a working kitchen. Save this for the next finish schedule you sign. #BrightsideBuilt #CabinetCare",
+    "target_platforms": [
+      "linkedin"
+    ],
+    "target_accounts": [
+      "sacc_linkedin_01"
+    ],
+    "tags": [
+      "hook:specific-number",
+      "format:listicle",
+      "persona:marcus"
+    ],
+    "pillar_id": "pil_educate",
+    "content_pillar": {
+      "id": "pil_educate",
+      "name": "Educate",
+      "color": "#2E7D32"
+    },
+    "scheduled_at": "2026-08-17T14:00:00Z",
+    "published_at": "2026-08-17T14:00:12Z",
+    "created_at": "2026-08-17T13:35:00Z",
+    "updated_at": "2026-08-17T14:00:12Z",
+    "_count": {
+      "post_versions": 1
+    }
+  },
+  {
+    "content_type": "text",
+    "media_urls": [],
+    "media_types": [],
+    "thumbnail_url": null,
+    "link_url": null,
+    "first_comment": null,
+    "status": "published",
+    "approval_status": "not_required",
+    "ai_generated": false,
+    "ai_model": null,
+    "category": null,
+    "avatar_id": "avt_marcus_01",
+    "journey_id": "cjm_trade_01",
+    "journey_stage": null,
+    "before_after_grid_id": null,
+    "created_by_user": {
+      "id": "user_sam",
+      "first_name": "Sam",
+      "last_name": "Okafor"
+    },
+    "id": "post_li_07",
+    "title": "Stop asking for more coats",
+    "content": "Stop asking for more coats. Two coats keyed to each other outlast four that are not. The number that matters is the grit between them, not the count. #BrightsideBuilt",
+    "target_platforms": [
+      "linkedin"
+    ],
+    "target_accounts": [
+      "sacc_linkedin_01"
+    ],
+    "tags": [
+      "hook:contrarian",
+      "format:pov",
+      "persona:marcus"
+    ],
+    "pillar_id": "pil_authority",
+    "content_pillar": {
+      "id": "pil_authority",
+      "name": "Authority",
+      "color": "#1565C0"
+    },
+    "scheduled_at": "2026-08-14T14:00:00Z",
+    "published_at": "2026-08-14T14:00:12Z",
+    "created_at": "2026-08-14T13:35:00Z",
+    "updated_at": "2026-08-14T14:00:12Z",
+    "_count": {
+      "post_versions": 1
+    }
+  },
+  {
+    "content_type": "text",
+    "media_urls": [],
+    "media_types": [],
+    "thumbnail_url": null,
+    "link_url": null,
+    "first_comment": null,
+    "status": "published",
+    "approval_status": "not_required",
+    "ai_generated": false,
+    "ai_model": null,
+    "category": null,
+    "avatar_id": "avt_marcus_01",
+    "journey_id": "cjm_trade_01",
+    "journey_stage": null,
+    "before_after_grid_id": null,
+    "created_by_user": {
+      "id": "user_sam",
+      "first_name": "Sam",
+      "last_name": "Okafor"
+    },
+    "id": "post_li_08",
+    "title": "What does your lead time promise cost you",
+    "content": "A question for our trade customers: what does your lead time promise cost you when the finish room is the bottleneck? We moved ours to a two-shift schedule in July. Ask us what changed. #BrightsideBuilt",
+    "target_platforms": [
+      "linkedin"
+    ],
+    "target_accounts": [
+      "sacc_linkedin_01"
+    ],
+    "tags": [
+      "hook:question",
+      "format:question",
+      "persona:marcus"
+    ],
+    "pillar_id": "pil_connection",
+    "content_pillar": {
+      "id": "pil_connection",
+      "name": "Connection",
+      "color": "#EF6C00"
+    },
+    "scheduled_at": "2026-08-12T14:00:00Z",
+    "published_at": "2026-08-12T14:00:12Z",
+    "created_at": "2026-08-12T13:35:00Z",
+    "updated_at": "2026-08-12T14:00:12Z",
+    "_count": {
+      "post_versions": 1
+    }
+  },
+  {
+    "content_type": "text",
+    "media_urls": [],
+    "media_types": [],
+    "thumbnail_url": null,
+    "link_url": null,
+    "first_comment": null,
+    "status": "published",
+    "approval_status": "not_required",
+    "ai_generated": false,
+    "ai_model": null,
+    "category": null,
+    "avatar_id": "avt_marcus_01",
+    "journey_id": "cjm_trade_01",
+    "journey_stage": null,
+    "before_after_grid_id": "grid_harlow_01",
+    "created_by_user": {
+      "id": "user_sam",
+      "first_name": "Sam",
+      "last_name": "Okafor"
+    },
+    "id": "post_li_09",
+    "title": "Harlow Street, March and June",
+    "content": "Harlow Street, March: a vanity boxed around a heating pipe the drawing never showed. Harlow Street, June: twelve millimetres of clearance and a door that closes. Nothing changed but the shop drawing. #BrightsideBuilt",
+    "target_platforms": [
+      "linkedin"
+    ],
+    "target_accounts": [
+      "sacc_linkedin_01"
+    ],
+    "tags": [
+      "hook:before-after",
+      "format:before-after",
+      "persona:marcus",
+      "grid:grid_harlow_01"
+    ],
+    "pillar_id": "pil_authority",
+    "content_pillar": {
+      "id": "pil_authority",
+      "name": "Authority",
+      "color": "#1565C0"
+    },
+    "scheduled_at": "2026-08-10T14:00:00Z",
+    "published_at": "2026-08-10T14:00:12Z",
+    "created_at": "2026-08-10T13:35:00Z",
+    "updated_at": "2026-08-10T14:00:12Z",
+    "_count": {
+      "post_versions": 1
+    }
+  },
+  {
+    "content_type": "text",
+    "media_urls": [],
+    "media_types": [],
+    "thumbnail_url": null,
+    "link_url": null,
+    "first_comment": null,
+    "status": "published",
+    "approval_status": "not_required",
+    "ai_generated": false,
+    "ai_model": null,
+    "category": null,
+    "avatar_id": "avt_marcus_01",
+    "journey_id": "cjm_trade_01",
+    "journey_stage": null,
+    "before_after_grid_id": null,
+    "created_by_user": {
+      "id": "user_sam",
+      "first_name": "Sam",
+      "last_name": "Okafor"
+    },
+    "id": "post_li_10",
+    "title": "When did you last see the finish room",
+    "content": "A question for our trade customers: when did you last see the inside of your cabinet shop's finish room? Ours is open Saturdays. Come and watch a scuff pass. #BrightsideBuilt #ShopLife",
+    "target_platforms": [
+      "linkedin"
+    ],
+    "target_accounts": [
+      "sacc_linkedin_01"
+    ],
+    "tags": [
+      "hook:question",
+      "format:question",
+      "persona:marcus"
+    ],
+    "pillar_id": "pil_connection",
+    "content_pillar": {
+      "id": "pil_connection",
+      "name": "Connection",
+      "color": "#EF6C00"
+    },
+    "scheduled_at": "2026-08-07T14:00:00Z",
+    "published_at": "2026-08-07T14:00:12Z",
+    "created_at": "2026-08-07T13:35:00Z",
+    "updated_at": "2026-08-07T14:00:12Z",
+    "_count": {
+      "post_versions": 1
+    }
+  },
+  {
+    "content_type": "text",
+    "media_urls": [],
+    "media_types": [],
+    "thumbnail_url": null,
+    "link_url": null,
+    "first_comment": null,
+    "status": "published",
+    "approval_status": "not_required",
+    "ai_generated": false,
+    "ai_model": null,
+    "category": null,
+    "avatar_id": "avt_marcus_01",
+    "journey_id": "cjm_trade_01",
+    "journey_stage": null,
+    "before_after_grid_id": null,
+    "created_by_user": {
+      "id": "user_sam",
+      "first_name": "Sam",
+      "last_name": "Okafor"
+    },
+    "id": "post_li_11",
+    "title": "Quoted 14 doors, built 16",
+    "content": "We quoted a Denton kitchen at 14 doors and built 16. The takeoff missed the two false fronts under the sink. We ate the difference and changed the takeoff sheet. #BrightsideBuilt",
+    "target_platforms": [
+      "linkedin"
+    ],
+    "target_accounts": [
+      "sacc_linkedin_01"
+    ],
+    "tags": [
+      "hook:mistake",
+      "format:story",
+      "persona:marcus"
+    ],
+    "pillar_id": "pil_authority",
+    "content_pillar": {
+      "id": "pil_authority",
+      "name": "Authority",
+      "color": "#1565C0"
+    },
+    "scheduled_at": "2026-08-05T14:00:00Z",
+    "published_at": "2026-08-05T14:00:12Z",
+    "created_at": "2026-08-05T13:35:00Z",
+    "updated_at": "2026-08-05T14:00:12Z",
+    "_count": {
+      "post_versions": 1
+    }
+  },
+  {
+    "content_type": "text",
+    "media_urls": [],
+    "media_types": [],
+    "thumbnail_url": null,
+    "link_url": null,
+    "first_comment": null,
+    "status": "published",
+    "approval_status": "not_required",
+    "ai_generated": false,
+    "ai_model": null,
+    "category": null,
+    "avatar_id": "avt_marcus_01",
+    "journey_id": "cjm_trade_01",
+    "journey_stage": null,
+    "before_after_grid_id": null,
+    "created_by_user": {
+      "id": "user_sam",
+      "first_name": "Sam",
+      "last_name": "Okafor"
+    },
+    "id": "post_li_12",
+    "title": "The toe kick mistake",
+    "content": "The mistake in most shop drawings is the toe kick. Four inches on paper becomes three and a half on a floor that is not flat, and the dishwasher no longer fits. Here is the line we check first. #BrightsideBuilt #CabinetCare",
+    "target_platforms": [
+      "linkedin"
+    ],
+    "target_accounts": [
+      "sacc_linkedin_01"
+    ],
+    "tags": [
+      "hook:mistake",
+      "format:teardown",
+      "persona:marcus"
+    ],
+    "pillar_id": "pil_educate",
+    "content_pillar": {
+      "id": "pil_educate",
+      "name": "Educate",
+      "color": "#2E7D32"
+    },
+    "scheduled_at": "2026-08-03T14:00:00Z",
+    "published_at": "2026-08-03T14:00:12Z",
+    "created_at": "2026-08-03T13:35:00Z",
+    "updated_at": "2026-08-03T14:00:12Z",
+    "_count": {
+      "post_versions": 1
+    }
+  },
+  {
+    "content_type": "text",
+    "media_urls": [],
+    "media_types": [],
+    "thumbnail_url": null,
+    "link_url": null,
+    "first_comment": null,
+    "status": "published",
+    "approval_status": "not_required",
+    "ai_generated": false,
+    "ai_model": null,
+    "category": null,
+    "avatar_id": "avt_marcus_01",
+    "journey_id": "cjm_trade_01",
+    "journey_stage": null,
+    "before_after_grid_id": null,
+    "created_by_user": {
+      "id": "user_sam",
+      "first_name": "Sam",
+      "last_name": "Okafor"
+    },
+    "id": "post_li_13",
+    "title": "We used to spray drawer boxes",
+    "content": "We used to spray the inside of drawer boxes. It looked finished and it trapped the solvent smell for a month. Now the insides are oiled and the smell is gone in a day. #BrightsideBuilt #CabinetCare",
+    "target_platforms": [
+      "linkedin"
+    ],
+    "target_accounts": [
+      "sacc_linkedin_01"
+    ],
+    "tags": [
+      "hook:mistake",
+      "format:pov",
+      "persona:marcus"
+    ],
+    "pillar_id": "pil_educate",
+    "content_pillar": {
+      "id": "pil_educate",
+      "name": "Educate",
+      "color": "#2E7D32"
+    },
+    "scheduled_at": "2026-07-31T14:00:00Z",
+    "published_at": "2026-07-31T14:00:12Z",
+    "created_at": "2026-07-31T13:35:00Z",
+    "updated_at": "2026-07-31T14:00:12Z",
+    "_count": {
+      "post_versions": 1
+    }
+  },
+  {
+    "content_type": "text",
+    "media_urls": [],
+    "media_types": [],
+    "thumbnail_url": null,
+    "link_url": null,
+    "first_comment": null,
+    "status": "published",
+    "approval_status": "not_required",
+    "ai_generated": false,
+    "ai_model": null,
+    "category": null,
+    "avatar_id": "avt_marcus_01",
+    "journey_id": "cjm_trade_01",
+    "journey_stage": null,
+    "before_after_grid_id": null,
+    "created_by_user": {
+      "id": "user_sam",
+      "first_name": "Sam",
+      "last_name": "Okafor"
+    },
+    "id": "post_li_14",
+    "title": "The one hardware failure clients call about",
+    "content": "A question for our trade customers: what is the one hardware failure your clients call about first? For us it is the soft-close damper, and it is never the spring. #BrightsideBuilt",
+    "target_platforms": [
+      "linkedin"
+    ],
+    "target_accounts": [
+      "sacc_linkedin_01"
+    ],
+    "tags": [
+      "hook:question",
+      "format:question",
+      "persona:marcus"
+    ],
+    "pillar_id": "pil_connection",
+    "content_pillar": {
+      "id": "pil_connection",
+      "name": "Connection",
+      "color": "#EF6C00"
+    },
+    "scheduled_at": "2026-07-28T14:00:00Z",
+    "published_at": "2026-07-28T14:00:12Z",
+    "created_at": "2026-07-28T13:35:00Z",
+    "updated_at": "2026-07-28T14:00:12Z",
+    "_count": {
+      "post_versions": 1
+    }
+  },
+  {
+    "content_type": "text",
+    "media_urls": [],
+    "media_types": [],
+    "thumbnail_url": null,
+    "link_url": null,
+    "first_comment": null,
+    "status": "published",
+    "approval_status": "not_required",
+    "ai_generated": false,
+    "ai_model": null,
+    "category": null,
+    "avatar_id": "avt_marcus_01",
+    "journey_id": "cjm_trade_01",
+    "journey_stage": null,
+    "before_after_grid_id": null,
+    "created_by_user": {
+      "id": "user_sam",
+      "first_name": "Sam",
+      "last_name": "Okafor"
+    },
+    "id": "post_li_15",
+    "title": "5 things we ask before we quote",
+    "content": "5 things we ask a contractor before we quote a kitchen (number 4 changes the price most): the floor, the ceiling height, the appliance list, the finish schedule, the install date. #BrightsideBuilt",
+    "target_platforms": [
+      "linkedin"
+    ],
+    "target_accounts": [
+      "sacc_linkedin_01"
+    ],
+    "tags": [
+      "hook:list-promise",
+      "format:listicle",
+      "persona:marcus"
+    ],
+    "pillar_id": "pil_educate",
+    "content_pillar": {
+      "id": "pil_educate",
+      "name": "Educate",
+      "color": "#2E7D32"
+    },
+    "scheduled_at": "2026-07-25T14:00:00Z",
+    "published_at": "2026-07-25T14:00:12Z",
+    "created_at": "2026-07-25T13:35:00Z",
+    "updated_at": "2026-07-25T14:00:12Z",
+    "_count": {
+      "post_versions": 1
+    }
+  },
+  {
+    "content_type": "text",
+    "media_urls": [],
+    "media_types": [],
+    "thumbnail_url": null,
+    "link_url": null,
+    "first_comment": null,
+    "status": "published",
+    "approval_status": "not_required",
+    "ai_generated": false,
+    "ai_model": null,
+    "category": null,
+    "avatar_id": "avt_marcus_01",
+    "journey_id": "cjm_trade_01",
+    "journey_stage": null,
+    "before_after_grid_id": null,
+    "created_by_user": {
+      "id": "user_sam",
+      "first_name": "Sam",
+      "last_name": "Okafor"
+    },
+    "id": "post_li_16",
+    "title": "Fall hardware run lands September 12",
+    "content": "Fall hardware run lands September 12. Three finishes, two pull lengths, on the showroom wall that Saturday. Book a showroom visit. #BrightsideBuilt",
+    "target_platforms": [
+      "linkedin"
+    ],
+    "target_accounts": [
+      "sacc_linkedin_01"
+    ],
+    "tags": [
+      "hook:timely",
+      "format:faq",
+      "persona:marcus"
+    ],
+    "pillar_id": "pil_promotion",
+    "content_pillar": {
+      "id": "pil_promotion",
+      "name": "Promotion",
+      "color": "#6A1B9A"
+    },
+    "scheduled_at": "2026-07-22T14:00:00Z",
+    "published_at": "2026-07-22T14:00:12Z",
+    "created_at": "2026-07-22T13:35:00Z",
+    "updated_at": "2026-07-22T14:00:12Z",
+    "_count": {
+      "post_versions": 1
+    }
+  },
+  {
+    "content_type": "text",
+    "media_urls": [],
+    "media_types": [],
+    "thumbnail_url": null,
+    "link_url": null,
+    "first_comment": null,
+    "status": "published",
+    "approval_status": "not_required",
+    "ai_generated": false,
+    "ai_model": null,
+    "category": null,
+    "avatar_id": null,
+    "journey_id": null,
+    "journey_stage": null,
+    "before_after_grid_id": null,
+    "created_by_user": {
+      "id": "user_sam",
+      "first_name": "Sam",
+      "last_name": "Okafor"
+    },
+    "id": "post_li_17",
+    "title": "Dana Whitfield on call-back week",
+    "content": "\"I stopped scheduling a call-back week.\" - Dana Whitfield, Whitfield Renovations, eighteen months after the Harlow Street refit. 41 doors, none lifted. #BrightsideBuilt",
+    "target_platforms": [
+      "linkedin"
+    ],
+    "target_accounts": [
+      "sacc_linkedin_01"
+    ],
+    "tags": [
+      "casestudy"
+    ],
+    "pillar_id": "pil_authority",
+    "content_pillar": {
+      "id": "pil_authority",
+      "name": "Authority",
+      "color": "#1565C0"
+    },
+    "scheduled_at": "2026-07-18T14:00:00Z",
+    "published_at": "2026-07-18T14:00:12Z",
+    "created_at": "2026-07-18T13:35:00Z",
+    "updated_at": "2026-07-18T14:00:12Z",
+    "_count": {
+      "post_versions": 1
+    }
+  },
+  {
+    "content_type": "text",
+    "media_urls": [],
+    "media_types": [],
+    "thumbnail_url": null,
+    "link_url": null,
+    "first_comment": null,
+    "status": "published",
+    "approval_status": "not_required",
+    "ai_generated": false,
+    "ai_model": null,
+    "category": null,
+    "avatar_id": null,
+    "journey_id": null,
+    "journey_stage": null,
+    "before_after_grid_id": null,
+    "created_by_user": {
+      "id": "user_sam",
+      "first_name": "Sam",
+      "last_name": "Okafor"
+    },
+    "id": "post_li_18",
+    "title": "The moisture meter read 14 percent",
+    "content": "The spray gun was already loaded when the moisture meter read 14 percent. We put the gun down and the doors back in the kiln for two days. The contractor was not happy on Tuesday and was glad in December. #BrightsideBuilt",
+    "target_platforms": [
+      "linkedin"
+    ],
+    "target_accounts": [
+      "sacc_linkedin_01"
+    ],
+    "tags": [
+      "process"
+    ],
+    "pillar_id": "pil_authority",
+    "content_pillar": {
+      "id": "pil_authority",
+      "name": "Authority",
+      "color": "#1565C0"
+    },
+    "scheduled_at": "2026-07-14T14:00:00Z",
+    "published_at": "2026-07-14T14:00:12Z",
+    "created_at": "2026-07-14T13:35:00Z",
+    "updated_at": "2026-07-14T14:00:12Z",
+    "_count": {
+      "post_versions": 1
+    }
+  },
+  {
+    "content_type": "text",
+    "media_urls": [],
+    "media_types": [],
+    "thumbnail_url": null,
+    "link_url": null,
+    "first_comment": null,
+    "status": "published",
+    "approval_status": "not_required",
+    "ai_generated": false,
+    "ai_model": null,
+    "category": null,
+    "avatar_id": null,
+    "journey_id": null,
+    "journey_stage": null,
+    "before_after_grid_id": null,
+    "created_by_user": {
+      "id": "user_sam",
+      "first_name": "Sam",
+      "last_name": "Okafor"
+    },
+    "id": "post_li_19",
+    "title": "Zero call-backs on 41 doors",
+    "content": "Zero call-backs on 41 doors in eighteen months. The method is a piece of 320 grit paper between every coat, which is why nobody puts it in a brochure. #BrightsideBuilt",
+    "target_platforms": [
+      "linkedin"
+    ],
+    "target_accounts": [
+      "sacc_linkedin_01"
+    ],
+    "tags": [
+      "casestudy"
+    ],
+    "pillar_id": "pil_authority",
+    "content_pillar": {
+      "id": "pil_authority",
+      "name": "Authority",
+      "color": "#1565C0"
+    },
+    "scheduled_at": "2026-07-10T14:00:00Z",
+    "published_at": "2026-07-10T14:00:12Z",
+    "created_at": "2026-07-10T13:35:00Z",
+    "updated_at": "2026-07-10T14:00:12Z",
+    "_count": {
+      "post_versions": 1
+    }
+  },
+  {
+    "content_type": "text",
+    "media_urls": [],
+    "media_types": [],
+    "thumbnail_url": null,
+    "link_url": null,
+    "first_comment": null,
+    "status": "published",
+    "approval_status": "not_required",
+    "ai_generated": false,
+    "ai_model": null,
+    "category": null,
+    "avatar_id": null,
+    "journey_id": null,
+    "journey_stage": null,
+    "before_after_grid_id": null,
+    "created_by_user": {
+      "id": "user_sam",
+      "first_name": "Sam",
+      "last_name": "Okafor"
+    },
+    "id": "post_li_20",
+    "title": "Running two crews and a ringing phone",
+    "content": "Running two crews and a phone that rings while you are on a ladder: this one is for you. The shop drawing checklist we send contractors is one page, and it is in the first comment. #BrightsideBuilt",
+    "target_platforms": [
+      "linkedin"
+    ],
+    "target_accounts": [
+      "sacc_linkedin_01"
+    ],
+    "tags": [
+      "howto"
+    ],
+    "pillar_id": "pil_connection",
+    "content_pillar": {
+      "id": "pil_connection",
+      "name": "Connection",
+      "color": "#EF6C00"
+    },
+    "scheduled_at": "2026-07-06T14:00:00Z",
+    "published_at": "2026-07-06T14:00:12Z",
+    "created_at": "2026-07-06T13:35:00Z",
+    "updated_at": "2026-07-06T14:00:12Z",
+    "_count": {
+      "post_versions": 1
+    }
+  },
+  {
+    "content_type": "text",
+    "media_urls": [],
+    "media_types": [],
+    "thumbnail_url": null,
+    "link_url": null,
+    "first_comment": "Showroom hours and the address: https://brightsidefixtures.example/showroom?utm_source=facebook&utm_medium=social",
+    "status": "published",
+    "approval_status": "not_required",
+    "ai_generated": false,
+    "ai_model": null,
+    "category": null,
+    "avatar_id": "avt_marcus_01",
+    "journey_id": "cjm_trade_01",
+    "journey_stage": null,
+    "before_after_grid_id": null,
+    "created_by_user": {
+      "id": "user_sam",
+      "first_name": "Sam",
+      "last_name": "Okafor"
+    },
+    "id": "post_fb_01",
+    "title": "Saturday at the bench",
+    "content": "Saturday in the shop. Two doors hung, one coffee gone cold, and the showroom open until two. Come by. #BrightsideBuilt #ShopLife",
+    "target_platforms": [
+      "facebook"
+    ],
+    "target_accounts": [
+      "sacc_facebook_01"
+    ],
+    "tags": [
+      "hook:in-medias-res",
+      "format:story",
+      "persona:marcus"
+    ],
+    "pillar_id": "pil_connection",
+    "content_pillar": {
+      "id": "pil_connection",
+      "name": "Connection",
+      "color": "#EF6C00"
+    },
+    "scheduled_at": "2026-08-27T16:00:00Z",
+    "published_at": "2026-08-27T16:00:12Z",
+    "created_at": "2026-08-27T15:35:00Z",
+    "updated_at": "2026-08-27T16:00:12Z",
+    "_count": {
+      "post_versions": 1
+    }
+  },
+  {
+    "content_type": "text",
+    "media_urls": [],
+    "media_types": [],
+    "thumbnail_url": null,
+    "link_url": null,
+    "first_comment": null,
+    "status": "published",
+    "approval_status": "not_required",
+    "ai_generated": false,
+    "ai_model": null,
+    "category": null,
+    "avatar_id": "avt_marcus_01",
+    "journey_id": "cjm_trade_01",
+    "journey_stage": null,
+    "before_after_grid_id": null,
+    "created_by_user": {
+      "id": "user_sam",
+      "first_name": "Sam",
+      "last_name": "Okafor"
+    },
+    "id": "post_fb_02",
+    "title": "Myth: more coats last longer",
+    "content": "Myth: more coats last longer. Truth: two coats keyed with 320 grit outlast four that are not. The finish room log says so. #BrightsideBuilt #CabinetCare",
+    "target_platforms": [
+      "facebook"
+    ],
+    "target_accounts": [
+      "sacc_facebook_01"
+    ],
+    "tags": [
+      "hook:myth-truth",
+      "format:myth-truth",
+      "persona:marcus"
+    ],
+    "pillar_id": "pil_educate",
+    "content_pillar": {
+      "id": "pil_educate",
+      "name": "Educate",
+      "color": "#2E7D32"
+    },
+    "scheduled_at": "2026-08-22T16:00:00Z",
+    "published_at": "2026-08-22T16:00:12Z",
+    "created_at": "2026-08-22T15:35:00Z",
+    "updated_at": "2026-08-22T16:00:12Z",
+    "_count": {
+      "post_versions": 1
+    }
+  },
+  {
+    "content_type": "text",
+    "media_urls": [],
+    "media_types": [],
+    "thumbnail_url": null,
+    "link_url": null,
+    "first_comment": null,
+    "status": "published",
+    "approval_status": "not_required",
+    "ai_generated": false,
+    "ai_model": null,
+    "category": null,
+    "avatar_id": "avt_marcus_01",
+    "journey_id": "cjm_trade_01",
+    "journey_stage": null,
+    "before_after_grid_id": "grid_harlow_01",
+    "created_by_user": {
+      "id": "user_sam",
+      "first_name": "Sam",
+      "last_name": "Okafor"
+    },
+    "id": "post_fb_03",
+    "title": "Harlow Street bathroom refit, delivered",
+    "content": "The Harlow Street bathroom went in this week: a vanity built around a heating pipe the drawing never showed. Photos before and after. #BrightsideBuilt",
+    "target_platforms": [
+      "facebook"
+    ],
+    "target_accounts": [
+      "sacc_facebook_01"
+    ],
+    "tags": [
+      "hook:before-after",
+      "format:before-after",
+      "persona:marcus",
+      "grid:grid_harlow_01"
+    ],
+    "pillar_id": "pil_authority",
+    "content_pillar": {
+      "id": "pil_authority",
+      "name": "Authority",
+      "color": "#1565C0"
+    },
+    "scheduled_at": "2026-08-15T16:00:00Z",
+    "published_at": "2026-08-15T16:00:12Z",
+    "created_at": "2026-08-15T15:35:00Z",
+    "updated_at": "2026-08-15T16:00:12Z",
+    "_count": {
+      "post_versions": 1
+    }
+  },
+  {
+    "content_type": "text",
+    "media_urls": [],
+    "media_types": [],
+    "thumbnail_url": null,
+    "link_url": null,
+    "first_comment": null,
+    "status": "published",
+    "approval_status": "not_required",
+    "ai_generated": false,
+    "ai_model": null,
+    "category": null,
+    "avatar_id": "avt_marcus_01",
+    "journey_id": "cjm_trade_01",
+    "journey_stage": null,
+    "before_after_grid_id": null,
+    "created_by_user": {
+      "id": "user_sam",
+      "first_name": "Sam",
+      "last_name": "Okafor"
+    },
+    "id": "post_fb_04",
+    "title": "Three signs your drawer slides are done",
+    "content": "A drawer that drops when it opens, a slide that squeals, a runner that has gone shiny on one side. Any one of these and the slide is finished, not the drawer. #BrightsideBuilt #CabinetCare",
+    "target_platforms": [
+      "facebook"
+    ],
+    "target_accounts": [
+      "sacc_facebook_01"
+    ],
+    "tags": [
+      "hook:specific-number",
+      "format:checklist",
+      "persona:marcus"
+    ],
+    "pillar_id": "pil_educate",
+    "content_pillar": {
+      "id": "pil_educate",
+      "name": "Educate",
+      "color": "#2E7D32"
+    },
+    "scheduled_at": "2026-08-08T16:00:00Z",
+    "published_at": "2026-08-08T16:00:12Z",
+    "created_at": "2026-08-08T15:35:00Z",
+    "updated_at": "2026-08-08T16:00:12Z",
+    "_count": {
+      "post_versions": 1
+    }
+  },
+  {
+    "content_type": "text",
+    "media_urls": [],
+    "media_types": [],
+    "thumbnail_url": null,
+    "link_url": null,
+    "first_comment": "Directions and parking: https://brightsidefixtures.example/showroom?utm_source=facebook&utm_medium=social",
+    "status": "published",
+    "approval_status": "not_required",
+    "ai_generated": false,
+    "ai_model": null,
+    "category": null,
+    "avatar_id": "avt_marcus_01",
+    "journey_id": "cjm_trade_01",
+    "journey_stage": null,
+    "before_after_grid_id": null,
+    "created_by_user": {
+      "id": "user_sam",
+      "first_name": "Sam",
+      "last_name": "Okafor"
+    },
+    "id": "post_fb_05",
+    "title": "Showroom open Saturday",
+    "content": "Showroom open Saturday, nine to two. The summer floor models are on the wall. Book a showroom visit. #BrightsideBuilt",
+    "target_platforms": [
+      "facebook"
+    ],
+    "target_accounts": [
+      "sacc_facebook_01"
+    ],
+    "tags": [
+      "hook:timely",
+      "format:faq",
+      "persona:marcus"
+    ],
+    "pillar_id": "pil_promotion",
+    "content_pillar": {
+      "id": "pil_promotion",
+      "name": "Promotion",
+      "color": "#6A1B9A"
+    },
+    "scheduled_at": "2026-08-01T16:00:00Z",
+    "published_at": "2026-08-01T16:00:12Z",
+    "created_at": "2026-08-01T15:35:00Z",
+    "updated_at": "2026-08-01T16:00:12Z",
+    "_count": {
+      "post_versions": 1
+    }
+  },
+  {
+    "content_type": "text",
+    "media_urls": [],
+    "media_types": [],
+    "thumbnail_url": null,
+    "link_url": null,
+    "first_comment": null,
+    "status": "published",
+    "approval_status": "not_required",
+    "ai_generated": false,
+    "ai_model": null,
+    "category": null,
+    "avatar_id": "avt_marcus_01",
+    "journey_id": "cjm_trade_01",
+    "journey_stage": null,
+    "before_after_grid_id": null,
+    "created_by_user": {
+      "id": "user_sam",
+      "first_name": "Sam",
+      "last_name": "Okafor"
+    },
+    "id": "post_fb_06",
+    "title": "Meet the person who answers the phone",
+    "content": "Meet Rosa, who answers the phone and has hung more doors than most of the crew. Say hello on Saturday. #BrightsideBuilt #ShopLife",
+    "target_platforms": [
+      "facebook"
+    ],
+    "target_accounts": [
+      "sacc_facebook_01"
+    ],
+    "tags": [
+      "hook:persona-callout",
+      "format:story",
+      "persona:marcus"
+    ],
+    "pillar_id": "pil_connection",
+    "content_pillar": {
+      "id": "pil_connection",
+      "name": "Connection",
+      "color": "#EF6C00"
+    },
+    "scheduled_at": "2026-07-24T16:00:00Z",
+    "published_at": "2026-07-24T16:00:12Z",
+    "created_at": "2026-07-24T15:35:00Z",
+    "updated_at": "2026-07-24T16:00:12Z",
+    "_count": {
+      "post_versions": 1
+    }
+  },
+  {
+    "content_type": "text",
+    "media_urls": [],
+    "media_types": [],
+    "thumbnail_url": null,
+    "link_url": null,
+    "first_comment": null,
+    "status": "published",
+    "approval_status": "not_required",
+    "ai_generated": false,
+    "ai_model": null,
+    "category": null,
+    "avatar_id": "avt_marcus_01",
+    "journey_id": "cjm_trade_01",
+    "journey_stage": null,
+    "before_after_grid_id": null,
+    "created_by_user": {
+      "id": "user_sam",
+      "first_name": "Sam",
+      "last_name": "Okafor"
+    },
+    "id": "post_fb_07",
+    "title": "The one line on a shop drawing to read first",
+    "content": "The one line on a shop drawing most contractors never read is the toe kick height, and it is the line that decides whether the dishwasher fits. #BrightsideBuilt #CabinetCare",
+    "target_platforms": [
+      "facebook"
+    ],
+    "target_accounts": [
+      "sacc_facebook_01"
+    ],
+    "tags": [
+      "hook:curiosity-gap",
+      "format:faq",
+      "persona:marcus"
+    ],
+    "pillar_id": "pil_educate",
+    "content_pillar": {
+      "id": "pil_educate",
+      "name": "Educate",
+      "color": "#2E7D32"
+    },
+    "scheduled_at": "2026-07-16T16:00:00Z",
+    "published_at": "2026-07-16T16:00:12Z",
+    "created_at": "2026-07-16T15:35:00Z",
+    "updated_at": "2026-07-16T16:00:12Z",
+    "_count": {
+      "post_versions": 1
+    }
+  },
+  {
+    "content_type": "text",
+    "media_urls": [],
+    "media_types": [],
+    "thumbnail_url": null,
+    "link_url": null,
+    "first_comment": null,
+    "status": "published",
+    "approval_status": "not_required",
+    "ai_generated": false,
+    "ai_model": null,
+    "category": null,
+    "avatar_id": "avt_marcus_01",
+    "journey_id": "cjm_trade_01",
+    "journey_stage": null,
+    "before_after_grid_id": null,
+    "created_by_user": {
+      "id": "user_sam",
+      "first_name": "Sam",
+      "last_name": "Okafor"
+    },
+    "id": "post_fb_08",
+    "title": "Dana Whitfield, in her words",
+    "content": "\"I stopped checking the doors every quarter.\" - Dana Whitfield, Whitfield Renovations. #BrightsideBuilt",
+    "target_platforms": [
+      "facebook"
+    ],
+    "target_accounts": [
+      "sacc_facebook_01"
+    ],
+    "tags": [
+      "hook:customer-quote",
+      "format:quote-card",
+      "persona:marcus"
+    ],
+    "pillar_id": "pil_authority",
+    "content_pillar": {
+      "id": "pil_authority",
+      "name": "Authority",
+      "color": "#1565C0"
+    },
+    "scheduled_at": "2026-07-08T16:00:00Z",
+    "published_at": "2026-07-08T16:00:12Z",
+    "created_at": "2026-07-08T15:35:00Z",
+    "updated_at": "2026-07-08T16:00:12Z",
+    "_count": {
+      "post_versions": 1
+    }
+  },
+  {
+    "content_type": "image",
+    "media_urls": [
+      "https://cdn.fixture.invalid/social/post_ig_01.jpg"
+    ],
+    "media_types": [
+      "image/jpeg"
+    ],
+    "thumbnail_url": null,
+    "link_url": null,
+    "first_comment": null,
+    "status": "published",
+    "approval_status": "not_required",
+    "ai_generated": false,
+    "ai_model": null,
+    "category": null,
+    "avatar_id": null,
+    "journey_id": null,
+    "journey_stage": null,
+    "before_after_grid_id": null,
+    "created_by_user": {
+      "id": "user_sam",
+      "first_name": "Sam",
+      "last_name": "Okafor"
+    },
+    "id": "post_ig_01",
+    "title": "Two screws, one even gap",
+    "content": "Two screws, one even gap. Swipe for which one fixes a droop. #BrightsideBuilt #CabinetCare",
+    "target_platforms": [
+      "instagram"
+    ],
+    "target_accounts": [
+      "sacc_instagram_01"
+    ],
+    "tags": [
+      "hook:specific-number",
+      "format:carousel"
+    ],
+    "pillar_id": "pil_educate",
+    "content_pillar": {
+      "id": "pil_educate",
+      "name": "Educate",
+      "color": "#2E7D32"
+    },
+    "scheduled_at": "2026-08-25T13:30:00Z",
+    "published_at": "2026-08-25T13:30:12Z",
+    "created_at": "2026-08-25T13:05:00Z",
+    "updated_at": "2026-08-25T13:30:12Z",
+    "_count": {
+      "post_versions": 1
+    }
+  },
+  {
+    "content_type": "image",
+    "media_urls": [
+      "https://cdn.fixture.invalid/social/post_ig_02.jpg"
+    ],
+    "media_types": [
+      "image/jpeg"
+    ],
+    "thumbnail_url": null,
+    "link_url": null,
+    "first_comment": null,
+    "status": "published",
+    "approval_status": "not_required",
+    "ai_generated": false,
+    "ai_model": null,
+    "category": null,
+    "avatar_id": null,
+    "journey_id": null,
+    "journey_stage": null,
+    "before_after_grid_id": null,
+    "created_by_user": {
+      "id": "user_sam",
+      "first_name": "Sam",
+      "last_name": "Okafor"
+    },
+    "id": "post_ig_02",
+    "title": "Saturday, second bench",
+    "content": "Saturday, second bench, third coffee. #BrightsideBuilt #ShopLife",
+    "target_platforms": [
+      "instagram"
+    ],
+    "target_accounts": [
+      "sacc_instagram_01"
+    ],
+    "tags": [
+      "hook:in-medias-res",
+      "format:behind-the-scenes"
+    ],
+    "pillar_id": "pil_connection",
+    "content_pillar": {
+      "id": "pil_connection",
+      "name": "Connection",
+      "color": "#EF6C00"
+    },
+    "scheduled_at": "2026-08-18T13:30:00Z",
+    "published_at": "2026-08-18T13:30:12Z",
+    "created_at": "2026-08-18T13:05:00Z",
+    "updated_at": "2026-08-18T13:30:12Z",
+    "_count": {
+      "post_versions": 1
+    }
+  },
+  {
+    "content_type": "image",
+    "media_urls": [
+      "https://cdn.fixture.invalid/social/post_ig_03.jpg"
+    ],
+    "media_types": [
+      "image/jpeg"
+    ],
+    "thumbnail_url": null,
+    "link_url": null,
+    "first_comment": null,
+    "status": "published",
+    "approval_status": "not_required",
+    "ai_generated": false,
+    "ai_model": null,
+    "category": null,
+    "avatar_id": null,
+    "journey_id": null,
+    "journey_stage": null,
+    "before_after_grid_id": "grid_harlow_01",
+    "created_by_user": {
+      "id": "user_sam",
+      "first_name": "Sam",
+      "last_name": "Okafor"
+    },
+    "id": "post_ig_03",
+    "title": "Harlow Street, both images",
+    "content": "Harlow Street, before and after. Twelve millimetres of clearance. #BrightsideBuilt",
+    "target_platforms": [
+      "instagram"
+    ],
+    "target_accounts": [
+      "sacc_instagram_01"
+    ],
+    "tags": [
+      "hook:before-after",
+      "format:before-after",
+      "grid:grid_harlow_01"
+    ],
+    "pillar_id": "pil_authority",
+    "content_pillar": {
+      "id": "pil_authority",
+      "name": "Authority",
+      "color": "#1565C0"
+    },
+    "scheduled_at": "2026-08-11T13:30:00Z",
+    "published_at": "2026-08-11T13:30:12Z",
+    "created_at": "2026-08-11T13:05:00Z",
+    "updated_at": "2026-08-11T13:30:12Z",
+    "_count": {
+      "post_versions": 1
+    }
+  }
+]

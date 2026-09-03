@@ -154,7 +154,7 @@ test('localseo and aeo aliases match the manifest department ids', () => {
 });
 
 test('deptMatches: the alias table is explicit and never widens an unaliased department', () => {
-  assert.deepEqual(Object.keys(DEPT_ALIASES).sort(), ['aeo', 'creative', 'design', 'localseo', 'media', 'seo']);
+  assert.deepEqual(Object.keys(DEPT_ALIASES).sort(), ['aeo', 'creative', 'design', 'localseo', 'media', 'seo', 'social']);
   assert.equal(deptMatches('crawl', 'seo'), true);
   assert.equal(deptMatches('crawl', 'ppc'), false);
   assert.equal(deptMatches('content_analysis_summary', 'seo'), true);
@@ -185,6 +185,27 @@ test('★ the creative/design/media aliases reach the split creative surface', (
   assert.equal(deptMatches('marketing_video_pipeline_status', 'design'), true);
   assert.equal(deptMatches('marketing_media_list', 'media'), true);
   assert.equal(deptMatches('media_upload', 'ppc'), false, 'aliases only widen the aliased word');
+});
+
+test('the social alias reaches the surface the social plays actually call', () => {
+  // Measured 2026-09-03: department 'social' matched only the 57 social_ tools,
+  // while the plays call content_*, media_*, brand_guide_*, generate_*,
+  // customer_avatar_*, before_after_grid_*, marketing_report_* and
+  // marketing_testimonials_list (lib/dept-aliases.mjs).
+  assert.equal(deptMatches('social_create_post', 'social'), true);
+  assert.equal(deptMatches('marketing_report_create', 'social'), true);
+  assert.equal(deptMatches('before_after_grid_list', 'social'), true);
+  assert.equal(deptMatches('customer_avatar_get', 'social'), true);
+  assert.equal(deptMatches('content_list', 'social'), true);
+  assert.equal(deptMatches('media_library_list', 'social'), true);
+  assert.equal(deptMatches('marketing_testimonials_list', 'social'), true);
+  assert.equal(deptMatches('sites_list', 'social'), true, 'a bare-names alias, not a dept token');
+  assert.equal(deptMatches('project_get', 'social'), true, 'a bare-names alias, not a dept token');
+  assert.equal(deptMatches('marketing_offline_conversions_run', 'social'), false,
+    'marketing_ is reached by PREFIX only - the rest of marketing stays off a social menu');
+  assert.equal(deptMatches('ppc_budget_update', 'social'), false);
+  assert.equal(deptMatches('cms_entries_list', 'social'), false, 'cms is read through the page, not aliased');
+  assert.equal(deptMatches('social_create_post', 'ppc'), false, 'aliases only widen the aliased word');
 });
 
 test('ALWAYS_AVAILABLE covers the five every key can call', () => {

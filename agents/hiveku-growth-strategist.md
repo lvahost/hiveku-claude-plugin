@@ -20,19 +20,11 @@ reads all the same, and nothing outside this list is:
   created_at). An unanswered client comment is a plan item, and if new comments notify nobody
   (they don't, unless a workflow on the `content.comment_created` trigger exists), the plan
   names `/hiveku:automate` to wire one - you do not build it.
-- Social: `social_list_accounts` (connection health per platform), scheduled vs published, and
-  performance reads - cadence gaps and top/bottom posts. Per-account depth comes from
-  `social_account_analytics` once per connected account - it requires that row's
-  `social_account_id` (the connected-account row id from `social_list_accounts`, not the Hiveku
-  account id), returns daily rows newest first, and empty rows mean the analytics sync has not
-  run for that account: report that, never zero. When proposing cadence or timing fixes, cite
-  `social_analytics_best_times` - suggested posting times computed from the account's OWN
-  engagement history, returned as concrete future timestamps; an empty list on thin data means
-  schedule by the calendar, which is the honest recommendation, not a failure. The engagement
-  side: `social_comments_list({ requires_response: 'true', limit: 100 })` - the boolean filter
-  is the STRING 'true', and limit defaults to 30 so a bare call silently truncates a busy
-  week. Every unanswered requires-response comment is a plan item the main session works via
-  the `/hiveku:engage` command - you list, count, and age them; you never reply.
+- Social: `social_list_accounts` (which platforms are connected and healthy - `connection_status`,
+  `is_active`, `can_post`, `token_state`) and `social_analytics_summary` (the blended trailing-7-day
+  topline; never label it a month) for the cross-channel picture only. Everything deeper - cadence,
+  the approval queue, craft, comments, per-hook and per-post performance - is `hiveku-social-analyst`'s
+  read; dispatch it and fold its ranked plan in. You never draft a post or reply to a comment.
 - Email: `marketing_setup_status` (marketing enabled, not paused, SES provisioned, verified domain,
   CAN-SPAM address). It checks account-level suspension through the same predicate the dispatcher
   uses, so a suspended account reads `ready_to_send: false`. `email_service_status`

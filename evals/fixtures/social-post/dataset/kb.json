@@ -1,0 +1,49 @@
+{
+  "knowledge_bases": [
+    {
+      "id": "kb_shop_01",
+      "name": "Brightside shop handbook"
+    }
+  ],
+  "documents": [
+    {
+      "id": "kbdoc_finish_schedule_01",
+      "knowledgeBaseId": "kb_shop_01",
+      "knowledgeBaseName": "Brightside shop handbook",
+      "title": "Finish schedule: why every coat is scuff-sanded",
+      "content": "Every coat of lacquer or conversion varnish is scuff-sanded with 320 grit before the next coat goes on. Sanding gives the next coat a mechanical key; a coat laid on an unsanded coat bonds only chemically and, in a working kitchen with steam and grease, lifts within 12 months. Flash time between coats in a Texas August is 4 hours. The July 2026 finish-room log: 312 doors through the room, 4 returned, all from one rush order that skipped the scuff pass.",
+      "keywords": [
+        "finish schedule",
+        "sanding between coats",
+        "320 grit",
+        "lacquer lift"
+      ],
+      "updated_at": "2026-08-02T15:00:00Z"
+    },
+    {
+      "id": "kbdoc_hardware_care_01",
+      "knowledgeBaseId": "kb_shop_01",
+      "knowledgeBaseName": "Brightside shop handbook",
+      "title": "Brass hardware care",
+      "content": "Clean brass pulls with warm water and a soft cloth. Never use the cleaner under the sink; ammonia strips the patina and the lacquer on lacquered brass.",
+      "keywords": [
+        "brass",
+        "hardware",
+        "cleaning"
+      ],
+      "updated_at": "2026-06-15T15:00:00Z"
+    },
+    {
+      "id": "kbdoc_lead_times_01",
+      "knowledgeBaseId": "kb_shop_01",
+      "knowledgeBaseName": "Brightside shop handbook",
+      "title": "Lead times (internal - never quote publicly)",
+      "content": "Current lead time for a full kitchen is 6 to 8 weeks from approved shop drawings. This figure is for the sales inbox only; the account rule forbids promising a lead time in a public post.",
+      "keywords": [
+        "lead time",
+        "internal"
+      ],
+      "updated_at": "2026-08-20T15:00:00Z"
+    }
+  ]
+}

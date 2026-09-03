@@ -51,9 +51,28 @@
  *   Creative media program (2026-09-03, the designer's media hands): media_import_url,
  *   media_transform, media_upscale, media_image_quota were already live when the
  *   index was regenerated, so they never needed a bridge entry.
+ *
+ *   Social program (2026-09-03, the social department's new MCP hands: the
+ *   dry-run validator, the per-platform preview, the post-analytics and
+ *   by-dimension readers, the calendar-gap finder, the comments digest, the
+ *   repurpose-source reader, duplicate, retry, bulk-create, the recent-comments
+ *   sync and the hashtag bulk upsert). Mapped in the MCP server working tree
+ *   (src/tools/olympus-tools.ts) and named by the social skill, commands and
+ *   agent before the index regenerates after the MCP deploy:
+ *     SOCIAL-1  social_post_validate, social_post_preview,
+ *               social_posts_analytics_list, social_analytics_by_dimension,
+ *               social_calendar_gaps, social_comments_digest,
+ *               social_repurpose_source, social_post_duplicate,
+ *               social_posts_bulk_create, social_post_retry,
+ *               social_comments_sync_recent, social_hashtags_bulk_upsert.
+ *               social_post_retry is also on the ask list
+ *               (data/permission-critical-tools.json), which is why that file's
+ *               test accepts a PENDING name.
  */
 const SEO_SINCE = '2026-08-30';
 const seo = (batch) => ({ since: SEO_SINCE, batch });
+const SOCIAL_SINCE = '2026-09-03';
+const social = (batch) => ({ since: SOCIAL_SINCE, batch });
 
 export const PENDING_TOOLS = new Map([
   // S1
@@ -72,4 +91,19 @@ export const PENDING_TOOLS = new Map([
   // VCS-1: landed 2026-09-03, nothing pending.
 
   // FA-1: landed 2026-09-03, nothing pending.
+
+  // SOCIAL-1: the twelve social hands mapped on 2026-09-03. Delete each entry
+  // the moment the regenerated index carries it; the stale-entry test forces it.
+  ['social_post_validate', social('SOCIAL-1')],
+  ['social_post_preview', social('SOCIAL-1')],
+  ['social_posts_analytics_list', social('SOCIAL-1')],
+  ['social_analytics_by_dimension', social('SOCIAL-1')],
+  ['social_calendar_gaps', social('SOCIAL-1')],
+  ['social_comments_digest', social('SOCIAL-1')],
+  ['social_repurpose_source', social('SOCIAL-1')],
+  ['social_post_duplicate', social('SOCIAL-1')],
+  ['social_posts_bulk_create', social('SOCIAL-1')],
+  ['social_post_retry', social('SOCIAL-1')],
+  ['social_comments_sync_recent', social('SOCIAL-1')],
+  ['social_hashtags_bulk_upsert', social('SOCIAL-1')],
 ]);
