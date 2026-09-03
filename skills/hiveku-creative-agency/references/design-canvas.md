@@ -18,13 +18,14 @@ Why it needs a manual: this is the one place where Claude and the human write to
   full canvas blind over the top of a user's edits.**
 - **D3. Snapshot before destructive edits** with `design_version_create`, so the user can roll back from
   the dashboard's Version History panel. Restyles, re-layouts, deletions, and artboard changes count.
-- **D4. Start from `design_templates_list`, not a blank artboard.** Its 52 templates come back
+- **D4. Start from `design_templates_list`, not a blank artboard.** Its 58 templates come back
   brand-substituted with the account's active brand guide. A blank artboard means you pick the colors and
   fonts, which means off-brand.
 - **D5. Generated images and video clips auto-register. Design exports and stock-photo URLs do NOT -
   register those explicitly before attaching them anywhere.**
-- **D6. Confirm before anything billable or blocking.** `design_export_mp4` and `design_video_rerender`
-  block 240s; `generate_image` and `generate_image_set` cost money.
+- **D6. Confirm before anything billable or blocking.** `design_export_mp4` blocks up to 280s and
+  `design_video_rerender` 240s; `generate_image`, `generate_image_set` and `media_upscale` cost money
+  (`media_image_quota` is the free quote first).
 - **D7. THE AGENT CANNOT APPROVE: after creating, submit for approval and stop.** A multi-scene video is
   `marketing_storyboard_create`, not this lane, and it stops at the human gate.
 - **D8. One write path, one token.** `design_update` with `canvasData` REPLACES the canvas wholesale.
@@ -141,9 +142,14 @@ on a 1080 artboard) and make every gap a multiple of it.
 
 Tighten `lineHeight` as `fontSize` rises. Small positive `charSpacing` on all-caps labels, never on body.
 Two type sizes reads as deliberate; five reads as a document. Take `fontFamily` from a template or the
-brand guide: the grounding does not say which families the render worker has installed, so an arbitrary
-family may silently fall back and the export will not match the editor. Check any new one with
-`design_export_image({ id, canvas_json, width, height, frame: 0 })` before shipping.
+brand guide. Google-hosted families ride the canvas's `fonts` list, and the account's CUSTOM brand fonts
+(`brand_custom_fonts` rows with a `css_font_face`) are attached to every server render automatically,
+matched on `font_family`, so an uploaded family renders in exports, MP4s and publishes. A family the
+worker cannot load - not on Google, no usable `css_font_face` - falls back to the default stack and is
+reported as a line in the export's `warnings`, never as a failed render. Check any new family with
+`design_export_image({ id, canvas_json, width, height, frame: 0 })` before shipping, and read
+`warnings` on that response: the fix for a font warning is the font row (`brand_guide_font_update`
+`css_font_face`, brand-and-assets Part 3), not the canvas.
 
 **Contrast.** 4.5:1 for body text against what is directly behind it; 3:1 for large text (roughly 24px+
 bold or 30px+ regular at these scales). Text over a photograph fails by default, because a photo is not
@@ -164,7 +170,13 @@ putting a logo on an artboard means setting an image layer's `src`, registered f
 
 1. **`design_state_get({ id })`.** A human-readable plus structured summary: element-by-element position,
    size, style, text, and animation, a one-line summary, and `featuredImageUrl` when a preview thumbnail
-   exists. Reason over this compact view, not raw Fabric JSON.
+   exists. Reason over this compact view, not raw Fabric JSON. Inline payloads are elided, never
+   shipped: an image `src` or a pattern fill/stroke `source` that is a `data:` URI reads
+   `[embedded image]`, and a `data:` thumbnail comes back as `featuredImageUrl` null with
+   `featured_image_inline: true` (`design_list` and `design_get` screen the thumbnail the same way, and
+   the lists flag an inline `previewVideoUrl` as `preview_video_inline: true`). Null plus the flag means
+   a thumbnail exists only inline; the real URL is `design_publish_to_library` with `set_as_featured`.
+   `design_get`'s `canvasData` is deliberately unscreened, because it is the blob you PATCH back.
 2. **Diff in your head.** Name every layer you will change, every layer you will keep, and every layer a
    HUMAN put there. Those are the ones you risk deleting.
 3. **If the compact view cannot faithfully reconstruct a layer,** fall back to `design_get({ id })` for
@@ -210,15 +222,27 @@ NOT an empty thread. Work the thread into the round-trip: read comments, fix wha
 `design_comment_resolve` per thread you actually addressed. Resolve is ONE WAY - nothing un-resolves, and
 a comment resolved by mistake vanishes from the designer's view - so resolve only what is fixed, never to
 tidy a queue. Resolving a REPLY reports success and changes nothing observable: resolve the parent
-comment. It is a read-and-resolve surface only - no tool creates a comment.
+comment. It is a read-and-resolve surface only - no tool creates a comment, and that is what makes the
+ears trustworthy: every new client comment also files ONE open agent-ops inbox item per design and
+thread (category `design.comment`, severity suggestion, metadata `design_project_id`, `design_title`,
+`comment_id`, `thread_root_id`, `dashboard_url`), so `agent_inbox_list({ category: 'design.comment' })`
+is how a session learns which designs have new feedback without reading every thread. Work the thread
+through `design_comments_list` as above, then `agent_inbox_resolve` the item - it only closes the row.
+Key-profile fact: `agent_inbox_` is not on the `marketing-design` profile (full and `marketing` keys
+see it), so on a scoped key the per-design read stays the sweep.
 
 ## Part 5: Templates and artboard sizing
 
-`design_templates_list` takes no arguments and returns the 52-template library brand-substituted with the
-account's active brand guide, plus artboard size presets grouped by category (Social Media, Presentation,
-Print, Ads, Email). Each template carries a ready-to-use `canvasData` payload: pipe it into
-`design_create`'s `initialCanvasData`, then swap text and imagery. It is also the reference for how the
-platform structures a group, a path, or a text layer. `design_list` reads existing designs; check there
+`design_templates_list` takes no arguments and returns the 58-template library (14 canvas sizes)
+brand-substituted with the account's active brand guide, plus artboard size presets grouped by category
+(Social Media, Presentation, Print, Ads, Email). Each template carries a ready-to-use `canvasData`
+payload: pipe it into `design_create`'s `initialCanvasData`, then swap text and imagery. It is also the
+reference for how the platform structures a group, a path, or a text layer. The six wide formats added
+2026-09-02 are templates, not just presets, each with its text as textbox layers: two 1200x600 email
+headers (photo-led with a scrim, and typographic; category Email Header), an Open Graph 1200x630 card
+(Blog Hero / Open Graph), a YouTube 1280x720 split thumbnail (YouTube Thumbnail), a LinkedIn 1584x396
+banner with its content clear of the avatar overlap (LinkedIn Banner) and an X 1500x500 header that
+clears the bottom-left avatar (X / Twitter Header). `design_list` reads existing designs; check there
 for something to reuse first.
 
 **Prefer the presets that tool returns over the table below,** which is guidance for when none matches:
@@ -229,10 +253,14 @@ for something to reuse first.
 | Instagram feed portrait, carousel | 1080 x 1350 | Most feed real estate. Carousel default |
 | Reels, TikTok, Stories | 1080 x 1920 | 9:16 |
 | LinkedIn feed | 1200 x 627, or 1080 x 1350 | Portrait outperforms in-feed |
-| X | 1600 x 900 | |
+| LinkedIn profile / page banner | 1584 x 396 | Template; keep type clear of the avatar overlap |
+| X post | 1600 x 900 | |
+| X header | 1500 x 500 | Template; clears the bottom-left avatar |
+| Open Graph / link preview | 1200 x 630 | Template; one headline, the domain, no small type |
+| YouTube thumbnail | 1280 x 720 | Template; reads at 25 percent, three words max |
 | Google Business Profile post | 1200 x 900 | Legible text, one clear subject |
 | Presentation slide | 1920 x 1080 | |
-| Email header | 1200 x 600 | Assume it renders at half width |
+| Email header | 1200 x 600 | Two templates; assume it renders at half width |
 
 **Safe areas.** Platform chrome covers your artboard; these are approximations that shift with app
 versions. On 9:16 (Reels, TikTok, Stories) budget the top 250px for status and header UI, the bottom 400
@@ -263,21 +291,29 @@ it does not render a stored design from its id alone.** Pass the canvas you just
 motion design, `frame` captures a moment: at `fps: 30`, `frame: 60` is 2s in. **That makes `frame` your
 cheap preview:** before an MP4, export two or three frames across the timeline (0, 45, 120) and check
 that the stagger reads and nothing is occluded mid-flight. Then LOOK at the PNG - download it, view it,
-and judge it against the checklist in `references/self-review.md` before anything ships.
+and judge it against the checklist in `references/self-review.md` before anything ships. The full
+response is `{ success, imageUrl, jobId, warnings? }`: `warnings` carries the worker's notes, and since
+2026-09-02 that includes every custom brand font that could not load and fell back (brand-and-assets
+Part 3). A success with a font warning is a brand-wrong PNG; fix the font row and re-export. Budgets:
+the route polls 60s and re-arms once for 25s inside a 95s ceiling, and the tool waits 100s.
 
 `design_export_mp4` renders a motion design to MP4 or GIF. Pass the full `canvas_json` snapshot the user
 has been editing, with per-layer `animation` metadata; the worker uses the same animation vocabulary as
-the editor, so the output matches the in-browser preview exactly. It is SYNCHRONOUS, blocks up to 240s,
-and refuses early if the canvas has no objects. The social lane's call shape is
-`design_export_mp4({ id, canvas_json, width, height, duration_seconds })`. Confirm first and say it takes
-up to four minutes. It returns `mp4Url` plus a `jobId`, and the job outlives the call: on a timeout or
+the editor, so the output matches the in-browser preview exactly. It is SYNCHRONOUS (the route polls
+180s and re-arms once for 60s inside a 270s ceiling; the tool waits 280s) and refuses early if the
+canvas has no objects. The social lane's call shape is
+`design_export_mp4({ id, canvas_json, width, height, duration_seconds })`. Confirm first and say it can
+take close to five minutes. It returns `{ success, mp4Url, jobId, warnings? }` - read `warnings` for
+font degrades here too - and the job outlives the call: on a timeout or
 dropped connection, poll `design_render_job_get({ job_id })` before re-rendering - the poll itself
 ADVANCES the job (a write in read clothing, so it can prompt for permission; a refused poll loses
 nothing, the reconcile cron finishes jobs on its own), and only `completed`, `failed`, and `abandoned`
 are terminal. A job id you lost is findable with `design_render_jobs_list`, a plain read that advances
 nothing (full failure playbook in the video reference).
 `design_video_rerender({ id, template_id, props })` re-renders one Remotion-template
-clip inside a design and swaps the MP4 in place; it blocks 240s too.
+clip inside a design and swaps the MP4 in place; it blocks up to 240s (the tool waits 290s), and it is
+the one render that does NOT carry custom brand fonts - the worker's template lane takes no font
+manifest, so a template clip set in an uploaded family renders in the fallback stack.
 
 **Then register the output.** Generated images and video clips auto-register. Design exports and
 stock-photo URLs do NOT - register those explicitly before attaching them anywhere. Use
@@ -297,8 +333,10 @@ metadata `design_update` sets one by hand). The render can succeed while that on
 thumbnail write is not - report it, never re-publish for it. TREAT THE TOOL AS CREATE, NEVER AS SYNC:
 nothing dedupes, so publishing the same design twice leaves two S3 objects and two library entries, and
 a retry after its 504 timeout duplicates the same way (the worker may still finish and orphan a still).
-One publish per finished design, and check `media_library_list` before retrying a timeout. It does not
-cover MP4s - a motion render still goes through export-then-register.
+One publish per finished design, and check `media_library_list` before retrying a timeout (the route's
+ceiling is 120s and the tool waits 130s). It renders with the brand's custom fonts like the exports do
+and reports a degrade the same way, on `warnings`. It does not cover MP4s - a motion render still goes
+through export-then-register.
 
 ## Part 7: Failure modes
 
@@ -316,6 +354,12 @@ cover MP4s - a motion render still goes through export-then-register.
   reads the DB.
 - **`featuredImageUrl` is never set automatically.** An agent-created design shows no gallery thumbnail
   until `design_publish_to_library({ id, set_as_featured: true })` or a metadata `design_update` sets one.
+- **Null plus `featured_image_inline: true` is not a missing thumbnail.** The dashboard editor stores a
+  multi-MB `data:` snapshot in `featured_image_url`; the reads screen it whole. A metadata `design_update`
+  echoing that null back would clear the editor's snapshot - the honest move is the publish with
+  `set_as_featured`, which replaces it with a real URL.
+- **A font warning on a 200 is a brand-wrong render.** Custom fonts degrade to the fallback stack and
+  say so only in `warnings`; nothing about the status changes. Read it on every export and publish.
 - **A 409 `sections_version_conflict` is a save, not a failure.** The CAS token did its job: someone else
   wrote first. Merge onto the returned `serverCanvasData` and resend with the returned `serverVersion` -
   resending the original payload is the data loss the 409 prevented.
@@ -352,7 +396,10 @@ cover MP4s - a motion render still goes through export-then-register.
    `media_library_register_external_url_batch` in slide order (or one `design_publish_to_library` per
    finished slide - once each, it never dedupes).
 7. Hand back the five `dashboardUrl`s in slide order. Handoff to the social lane is `social_create_post`
-   with `media_urls` in that order, under that lane's confirm rules.
+   with the published `fileUrl`s as `media_urls` in that order plus an index-aligned `media_types`
+   (`image/png` each), under that lane's confirm rules; onto a post that is already drafted or
+   scheduled, `social_update_post({ post_id, media_urls, media_types })` - it replaces the post's whole
+   media list, so send every URL, and a published post is edit-locked (400).
 
 ### Play B: restyle a design to a new brand
 
@@ -416,16 +463,19 @@ design), `design_get` (raw `canvasData`), `design_update` (canvas via `canvasDat
 there is no design_delete), `design_create`, `design_list`, `design_templates_list`.
 
 **Versioning and review:** `design_version_create`, `design_versions_list`, `design_version_get`,
-`design_comments_list`, `design_comment_resolve`.
+`design_comments_list`, `design_comment_resolve`, `agent_inbox_list` (category `design.comment` is the
+ears; full and `marketing` keys only), `agent_inbox_resolve` (closes the row, nothing more).
 
 **Export and publish:** `design_export_image` (REQUIRES `id, canvas_json, width, height`; optional
-`frame`, `fps`, `duration_frames`; returns `imageUrl` + `jobId`), `design_export_mp4`,
-`design_video_rerender`, `design_render_job_get` (polling ADVANCES the job - video reference),
-`design_render_jobs_list` (plain read of render jobs; advances nothing), `design_publish_to_library`
-(`page_id`, `set_as_featured`; settled frame; never dedupes).
+`frame`, `fps`, `duration_frames`; returns `imageUrl` + `jobId` + `warnings?`), `design_export_mp4`
+(`mp4Url` + `jobId` + `warnings?`), `design_video_rerender` (no custom fonts), `design_render_job_get`
+(polling ADVANCES the job - video reference), `design_render_jobs_list` (plain read of render jobs;
+advances nothing), `design_publish_to_library` (`page_id`, `set_as_featured`; settled frame; never
+dedupes; `warnings?`).
 
-**Registration and libraries:** `media_library_register_external_url` / `_batch`, `media_upload`,
-`media_library_list`, `media_update`.
+**Registration, libraries and delivery:** `media_library_register_external_url` / `_batch`,
+`media_upload`, `media_import_url`, `media_library_list`, `media_update`, `social_create_post` and
+`social_update_post` (`media_urls` + index-aligned `media_types`; update replaces the whole list).
 
 **Brand and context:** `account_context_get({ domain: 'branding' })`, `talk_to_department`,
 `brand_guide_list`, `brand_guide_get`, `brand_guide_set_logo`.

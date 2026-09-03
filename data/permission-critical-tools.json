@@ -5,8 +5,8 @@
     "mcp__plugin_hiveku_hk__",
     "mcp__hiveku__"
   ],
-  "plugin_version": "0.21.2",
-  "count": 126,
+  "plugin_version": "0.22.0",
+  "count": 127,
   "tools": [
     {
       "name": "deploy_site",
@@ -627,6 +627,11 @@
       "name": "generate_image_set",
       "method": "POST",
       "why_gated": "up to 10 metered image generations in one call, quota debited per success"
+    },
+    {
+      "name": "media_upscale",
+      "method": "POST",
+      "why_gated": "spends one image_generations slot AND real fal dollars ($0.03 per output megapixel, up to 32MP) per call; billed even when the output later fails to upload or register"
     },
     {
       "name": "marketing_testimonial_media_replace",

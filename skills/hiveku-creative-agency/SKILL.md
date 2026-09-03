@@ -35,6 +35,9 @@ EXACT and an unknown key is ignored in silence: a design saved with the retired 
 
 **You can see your own work.** `design_export_image({ id, canvas_json, width, height })` returns a PNG
 URL; download it and look at it before a human does. Self-judging is a rule, not a nicety (section 4).
+Every server render (export-image, export-mp4, publish, the storyboard's final cut) now sets the
+account's custom brand fonts too; a font that fails to load degrades to the fallback stack and says so
+as a line in the response's `warnings`, so a 200 with a font warning is a brand-wrong render, not a pass.
 
 ## 2. Context first, and there is no creative domain
 
@@ -58,23 +61,41 @@ already-soft-deleted guide and refuses anything still active. Both are destructi
 
 Stop at the first rung that fits; rung 3 where rung 1 fits is paying for imagery the account already owns.
 
-**1. Reuse.** `media_library_list`, `media_library_get`, `media_folders_list`, `media_collections_list`,
-and `design_list` for a design to restyle. The account's real photos beat AI every time, and generation
-costs money. Approved testimonials (`marketing_testimonials_list`) are proof the account already owns.
+**1. Reuse, import, derive.** `media_library_list`, `media_library_get`, `media_folders_list`,
+`media_collections_list`, and `design_list` for a design to restyle. The account's real photos beat AI
+every time, and generation costs money. Approved testimonials (`marketing_testimonials_list`) are proof
+the account already owns. A client image at a URL comes in as BYTES with `media_import_url` (the file
+outlives its origin; `media_library_register_external_url` only stores a pointer that dies with it). An
+asset at the wrong size is `media_transform` (crop, resize, re-encode; FREE, no quota slot) before it is
+ever a regeneration; too small for its slot is `media_upscale` (fal clarity, 1-4x, a 32 output-megapixel
+cap), which COSTS TWICE: one `image_generations` slot plus real dollars per output megapixel, billed once
+the worker accepts the job even when the output later fails to land. Every op creates a NEW library row
+and never touches the source; bytes are immutable (`media_update` refuses `file_url`, `file_path`,
+`width`, `height`, `duration`, `ai_metadata` with a 400 `immutable_field`).
 
 **2. One-off image.** A single visual with no copy, no layout, no future edits: `generate_image` for one,
 `generate_image_set` for up to 10 prompts on one brand context (per-prompt failures land in `errors[]` -
-read it). Both auto-register a media asset and return its id. `generate_image` is brand-aware by default
-(`use_brand: false` opts out), takes exact `target_width` / `target_height`, and `mode: 'modify'` with
-`reference_media_asset_ids` (1 to 4 library ids) edits an existing still. `seed` and `negative_prompt`
-apply only to the fal models (`flux`, `flux-pro`, `recraft`); the default gemini lane rejects them rather
-than silently dropping them. Prompts name photographic subjects only - generated text and logos are
-garbage, so words are a rung 3 layer. `media_ai_enhance_prompt` COSTS MONEY, writes nothing - batch use only.
+read it). `media_image_quota` FIRST before any set or upscale: `{ used, limit, unlimited, remaining,
+period }`, always a 200; `remaining` is null when unlimited or when the read failed (`reason:
+'read_failed'`), and null means UNKNOWN, never "nothing left"; a lapsed period is reported honestly with
+`period.lapsed`. Both generators auto-register a media asset and return its id. Both are brand-aware by
+default (`use_brand: false` opts out; the set takes a top-level `use_brand` plus `target_width` /
+`target_height` that a per-prompt frame REPLACES, never merges) and both SAY whether the brand landed:
+`brand_applied` true, or `brand_skipped_reason: 'no_active_brand_guide'` meaning the image is UNBRANDED
+and the slot was still spent - tell the client so. A failed brand READ is 503 `brand_unavailable`
+before any slot is reserved, never a silent unbranded render. `generate_image` takes exact
+`target_width` / `target_height`, and `mode: 'modify'` with `reference_media_asset_ids` (1 to 4 library
+ids) edits an existing still. `seed` and `negative_prompt` apply only to the fal models (`flux`,
+`flux-pro`, `recraft`); the default gemini lane rejects them rather than silently dropping them. Prompts
+name photographic subjects only - generated text and logos are garbage, so words are a rung 3 layer.
+`media_ai_enhance_prompt` COSTS MONEY, writes nothing - batch use only.
 
 **3. Editable design project.** The default for anything the client will ever tweak: social graphics,
 carousels, thumbnails, banners, ad creative, newsletter headers, one-pagers. `design_templates_list`
-first - 52 templates already brand-substituted with the account's brand guide, plus artboard presets,
-each carrying a `canvasData` payload you pipe into `design_create`'s `initialCanvasData`. Then
+first - 58 templates across 14 sizes, already brand-substituted with the account's brand guide, plus
+artboard presets, each carrying a `canvasData` payload you pipe into `design_create`'s
+`initialCanvasData`; the wide formats are templates now (two 1200x600 email headers, OG 1200x630,
+YouTube 1280x720, LinkedIn banner 1584x396, X header 1500x500), filed under their categories. Then
 `design_create({ title, designType, artboard, initialCanvasData, description, tags })` and hand back the
 `dashboardUrl`. A carousel is N sibling designs (`design_list` is the grouping read) or one multi-page
 design whose `canvasData` is `{ pages: [{ id, name, canvasData }] }`, read per page with
@@ -82,7 +103,7 @@ design whose `canvasData` is `{ pages: [{ id, name, canvasData }] }`, read per p
 
 **4. Motion design.** Branded cards, type, and layout that move: same design project plus the section 1
 `animation` and `_animation` fields, rendered with `design_export_mp4` (MP4 or GIF). No generation cost,
-output matches the in-editor preview; SYNCHRONOUS, blocks up to 240s, refuses on an empty canvas - say so
+output matches the in-editor preview; SYNCHRONOUS, blocks up to 280s, refuses on an empty canvas - say so
 first. On a dead call the JOB survives: poll the returned `jobId` with `design_render_job_get` before ever
 re-rendering. `design_voiceover_estimate` prices free; `design_voiceover_create` SPENDS MONEY (`references/video.md`).
 
@@ -99,8 +120,11 @@ a failed provider as PARTIAL, never "nothing matched". `stock_photos_download` i
 lane only (into that project's S3, NOT the library); the library path is `media_library_register_external_url`.
 
 No tool covers these, so do not promise them: nothing **draws** a logo (`brand_guide_set_logo` stores one
-the client supplied); nothing approves a storyboard or a post; nothing attaches a design to a post by
-itself; nothing sources music; nothing trims, crops, or concatenates an arbitrary MP4.
+the client supplied); nothing approves a storyboard or a post; nothing sources music; nothing trims,
+crops, or concatenates an arbitrary MP4 (`media_transform` is stills only). Attaching IS covered: a
+finished creative goes on a post via `media_urls` plus index-aligned `media_types` on
+`social_create_post`, or onto an existing or scheduled post with `social_update_post`, which REPLACES
+the post's media list wholesale (send the full list) and 400s on a published post.
 
 **Replacement ad creative has a rung zero: the performance read.** "Our ads are tired" starts at
 /hiveku:ad-refresh, which classifies each loser (weak_hook, weak_hold, fatigue, offer_or_lp, structure)
@@ -112,7 +136,10 @@ The human edits the same canvas you write to. `design_update` with `canvasData` 
 wholesale and the dashboard editor reads that same column, so a blind full-canvas write over someone's
 afternoon of edits destroys it silently. The read half is always `design_state_get` (compact per-element
 summary plus `featuredImageUrl` when a preview exists; `design_get` only for raw Fabric JSON) -> reason
--> `design_update` with `expectedSectionsVersion`. Both reads return the token: `design_state_get`
+-> `design_update` with `expectedSectionsVersion`. The reads screen inline payloads: a `data:` thumbnail
+comes back as `featuredImageUrl` null with `featured_image_inline: true` (a thumbnail exists, only
+inline; the real URL is `design_publish_to_library` with `set_as_featured`), and `design_state_get`
+shows an inline image `src` or pattern fill as `[embedded image]`. Both reads return the token: `design_state_get`
 and `design_get` carry `sectionsVersion`, so the read you plan from already holds it. A later
 `design_update` response (`sectionsVersion`) or a 409's `serverVersion` refreshes it. A 409
 `sections_version_conflict` means someone saved between your read and your write, and its
@@ -135,15 +162,20 @@ question (the `marketing-design` profile grants both prefixes). Prefer `design_*
    Never assemble scenes from single `marketing_generate_video` clips to route around it.
 5. **Self-judge before handoff.** `design_update` -> `design_export_image({ id, canvas_json, width,
    height })` -> download the PNG and LOOK at it (you are multimodal) -> check hierarchy, contrast,
-   margins, overflow, brand tokens -> fix -> re-export. Two or three passes, then hand off naming what
-   still needs a human eye. Motion: frames 0, mid, last before any MP4 (`references/self-review.md`).
+   margins, overflow, brand tokens -> fix -> re-export. Read the response's `warnings` every time: a
+   custom brand font that could not load degraded to the fallback stack, and the fix is the font row
+   (`brand_guide_font_update` with a valid `css_font_face`), not the canvas. Two or three passes, then
+   hand off naming what still needs a human eye. Motion: frames 0, mid, last before any MP4
+   (`references/self-review.md`).
 6. **The thumbnail is yours to set.** `featuredImageUrl` is NOT auto-set: no gallery thumbnail until
-   `design_publish_to_library({ id, set_as_featured: true })` or a metadata-only `design_update`.
+   `design_publish_to_library({ id, set_as_featured: true })` or a metadata-only `design_update`. A read
+   that answers null plus `featured_image_inline: true` is an inline editor snapshot, not a missing
+   thumbnail; the same publish call is what replaces it with a real URL.
 7. **Register what does not auto-register.** Generated images and clips auto-register; design exports and
    stock URLs do NOT. `design_publish_to_library` is the one-call PNG publish and it is CREATE, never
    sync: no dedupe, once per finished design, never a blind retry.
 8. **Reuse before generating.** No estimate, no voiceover; no dry run, no clip.
-9. **Confirm before anything irreversible or billable**, and say what you are doing before a 240s render.
+9. **Confirm before anything irreversible or billable**, and say what you are doing before a 280s render.
 
 ## 5. Plays
 
@@ -164,14 +196,18 @@ Trigger: "make our social graphics", a campaign batch, a carousel. Rung 3, sibli
    every `mediaAssetId` and `fileUrl`. Resize variants are sibling designs re-laid-out, never stretches.
 Benchmarks: three hierarchy levels; margin 6-8% of the short edge; body text 28px+ on 1080; contrast
 4.5:1 body / 3:1 large; one accent color per slide, on the thing you want tapped.
-Exit: `dashboardUrl` per slide in order, registered asset ids (the social lane attaches them via
-`social_create_post` `media_urls` at create time, under its own confirm rules), one memory line.
+Exit: `dashboardUrl` per slide in order, registered asset ids, one memory line. Delivery is the social
+lane's call under its own confirm rules: `social_create_post` with the `fileUrl`s as `media_urls` plus
+index-aligned `media_types` (`image/png` here), or `social_update_post({ post_id, media_urls,
+media_types })` onto a post already drafted or scheduled - it replaces the whole media list, so send
+every URL the post should carry, and a published post is edit-locked (400).
 
 ### Play 2: Email newsletter header
 
 Trigger: "we need a header for the newsletter". Rung 3, a 1200x600 artboard that renders at HALF width in
 most email clients, so nothing on it may be smaller than it would be at 600 wide.
-1. Brand load as in Play 1; `design_templates_list`, pick from the Email category, then
+1. Brand load as in Play 1; `design_templates_list`, pick from the Email Header category (two 1200x600
+   templates live there: photo-led with a scrim, and typographic), then
    `design_create({ title, designType, artboard: { width: 1200, height: 600 }, initialCanvasData })`.
    One idea, one line of type, one image, the logo as a layer, everything inside a 72-96px margin.
 2. Self-judge: `design_export_image({ id, canvas_json, width: 1200, height: 600 })`, then view the PNG at
@@ -187,16 +223,23 @@ Exit: `dashboardUrl`, `mediaAssetId`, `fileUrl` handed to the email lane, memory
 ### Play 3: Site asset pack
 
 Trigger: "new site images" - hero, OG image, blog thumbnails, a LinkedIn banner. Rungs 1 then 2; text
-never goes into a generated image, so a hero with a headline is rung 3 exported at the slot size.
+never goes into a generated image, so a hero with a headline is rung 3 exported at the slot size (the
+OG 1200x630, YouTube 1280x720, LinkedIn 1584x396 and X 1500x500 templates are the starting canvases).
 1. Reuse first: `media_library_list`, `media_collections_list`; the client's real premises and products
-   win. Read the page's actual slot dimensions before generating anything.
-2. Generate at exact dimensions: `generate_image({ prompt, use_brand: true, target_width, target_height })`
-   per slot, one photographic subject per prompt, no words. Defaults when the page does not say: hero
-   1920x1080, OG/share 1200x630, blog thumbnail 1200x800, LinkedIn banner 1584x396. `mode: 'modify'` with
-   `reference_media_asset_ids` when a real photo needs a background or an extension rather than an
-   invention. `generate_image_set` for a matched batch; read `errors[]`.
+   win. Read the page's actual slot dimensions before generating anything. A real photo at the wrong
+   size is `media_transform({ asset_id, resize: { width, height, fit: 'cover' } })` - free, a new row -
+   not a regeneration; a client photo still on their site is `media_import_url` so the bytes are ours.
+2. `media_image_quota` for the batch, then generate at exact dimensions: `generate_image({ prompt,
+   use_brand: true, target_width, target_height })` per slot, one photographic subject per prompt, no
+   words. Defaults when the page does not say: hero 1920x1080, OG/share 1200x630, blog thumbnail
+   1200x800, LinkedIn banner 1584x396. `mode: 'modify'` with `reference_media_asset_ids` when a real
+   photo needs a background or an extension rather than an invention. `generate_image_set` for a matched
+   batch with the top-level `target_width` / `target_height`; read `errors[]` and every row's
+   `brand_applied` - `no_active_brand_guide` means unbranded output, say so.
 3. Judge every output like a canvas: fetch and view it, reject rendered text, extra fingers, wrong brand
    mood. File it: `media_folder_create` per site or campaign, `media_update` for title, alt text, tags.
+   A keeper that is too small for its slot is one confirmed `media_upscale` (slot plus dollars per
+   output megapixel), never a blanket pass over the folder.
 4. Store split: the Media Library and a website project's asset store are SEPARATE. A page needs the file
    in the project - download the library URL and `assets_upload({ project_id, file_path:
    'public/images/<name>.jpg', content })`, `project_id` from `sites_list`, NOT from `list_projects`.
@@ -213,7 +256,11 @@ is `references/brand-and-assets.md` Part 4; this is the shape.
    second guide. Collect real values from the client or their site; never invent a hex or a typeface.
 2. Assets in first: `media_folder_create` skeleton, `media_upload` the logo lockups, then
    `brand_guide_create` or `brand_guide_update` with the agreed palette and type, `brand_guide_set_logo`
-   pointing at the library asset. Fonts: `brand_guide_font_create`, and only `css_font_face` is rendered.
+   pointing at the library asset. Fonts: `brand_guide_font_create`, and only `css_font_face` is
+   rendered - now in server exports too, so it is load-bearing: nothing but `@font-face` blocks, every
+   `url()` an http(s) URL without credentials or a `data:` font, no `@import`, no CSS escapes. The
+   create route stores it verbatim; the render worker screens it and drops a bad rule with a
+   `warnings` line, so prove a new font with one `design_export_image` and read `warnings`.
 3. Prove substitution: `design_templates_list`. The client's colors and type coming back on the templates
    is the only proof the guide is live. Generic templates mean fix the guide, not the canvases.
 4. Restyle existing designs one at a time: `design_state_get` inventory of every `fill`, `stroke`,
@@ -237,12 +284,18 @@ of something that cannot be drawn earns the paid lane.
 3. `marketing_generate_video({ prompt, aspect_ratio, dry_run: true })` for `{ allowed, used, limit }`.
    Tell the client the remaining quota before spending one.
 4. Confirm the spend: prompt, aspect ratio, `duration_seconds` (2 to 10, the cost lever at roughly $0.10
-   per second), cost, quota after. Then generate with `reference_media_asset_id` plus `reference_mode`
-   (`'animate'` moves the still; `'compose'` first builds a branded reference still, spending one image
-   credit and failing fatally rather than silently) and `design_project_id` when the clip belongs to a
-   design. `previous_interaction_id` only ever carries an `interaction_id` a previous response returned.
-5. Blocks 30-90s; the clip auto-registers. On a timeout, `design_render_job_get({ job_id })` with the
-   returned `render_job_id` BEFORE any second spend (the poll advances the job and can finish the
+   per second; a HINT that lanes snap - the default Kling lane renders only 5s or 10s, the fal Veo lanes
+   4/6/8s - and billing follows the rendered length), cost, quota after. Then generate with
+   `reference_media_asset_id` plus `reference_mode` (`'animate'` moves the still; `'compose'` first
+   builds a branded reference still, spending one image credit and failing fatally rather than
+   silently; a failure body then carries `composed_still_asset_id`, already paid for, so retry by
+   animating THAT) and `design_project_id` when the clip belongs to a design. `previous_interaction_id`
+   only ever carries an `interaction_id` a previous response returned to THIS account; anything else is
+   a 400 `invalid_request`, and a garbage `seed` is a 400 too, never a silent seed 0.
+5. Blocks 30-90s; the clip auto-registers. Report the length honestly: `duration_effective` is the
+   worker-measured length (null when unmeasured, never 0), `duration_requested` echoes the hint, and
+   `duration_note` says when the lane snapped it. On a timeout, `design_render_job_get({ job_id })` with
+   the returned `render_job_id` BEFORE any second spend (the poll advances the job and can finish the
    registration itself); lost the id, `design_render_jobs_list({ kind, status })` finds it - a plain read
    that advances nothing. NEVER retry a generation that succeeded.
 Benchmarks: about $1 per clip, 20 per account per month; one good prompt beats three retries.
@@ -266,7 +319,12 @@ Trigger: "make me a Reel / promo / explainer / listing tour". Rung 5, and the hu
    the storyboard id in the branding memory ledger (section 9) the same turn.
 6. After a human approves: `marketing_video_pipeline_status` checks in (no tight loop),
    `marketing_video_pipeline_retry_scene` re-runs exactly one FAILED scene,
-   `marketing_video_pipeline_cancel` stops a run. Verify in `media_library_list` before saying it exists.
+   `marketing_video_pipeline_cancel` stops a run. The run has ears: reaching `completed` or `failed`
+   files ONE agent-ops inbox item (category `design.video_completed`, or `design.video_failed` at
+   severity urgent) carrying `pipeline_id`, `design_project_id` and `result_media_asset_id` in its
+   metadata - `agent_inbox_list({ category })` finds it (full or `marketing` key; the `marketing-design`
+   profile does not see `agent_inbox_`, so there the check-in read is the ears). Verify in
+   `media_library_list` before saying it exists.
 Benchmarks: priced at create, billed at approval; one board per brief; voiceover estimate-first.
 Exit: storyboard id in the ledger, the approval card URL, a `pm_tasks_create` reminder when the approver
 is offline. An unapproved board is a deliverable that is not shipping, and that is the client's call.
@@ -281,28 +339,40 @@ is offline. An unapproved board is a deliverable that is not shipping, and that 
   of `_animation.duration_ms` with at least 800ms of hold; two loops on one artboard is already noise.
 - Renders: keep `design_export_mp4` at or under 20s, 1080p, 30fps before splitting into two designs.
 - Spend: clip about $1, 20 per account per month; storyboard priced at create, billed at approval;
-  voiceover estimate before create; every generation logged the same turn it happens.
+  voiceover estimate before create; images metered per account (`media_image_quota` before a set or an
+  upscale; an upscale is a slot plus $0.03 per output megapixel); every generation logged the same
+  turn it happens.
 - Sweeps state their N: designs checked, comments read, boards found, what was skipped and why. A design
   whose reads failed is UNKNOWN, never clean.
 
 ## 7. Weekly cadence and the monthly report
 
 **Weekly sweep (one session, in order).**
-1. `design_list({ status: 'draft' })` for designs left mid-revision; `design_comments_list` per active
-   design, filtering `isResolved` yourself (resolved threads come back too; a 404 is a wrong id, not an
-   empty thread). Fix, then `design_comment_resolve` only what is fixed - one way, parent not reply.
-2. `marketing_video_pipeline_list` for boards awaiting approval or paused mid-run, reconciled against the
-   memory ledger; chase approvals with `pm_tasks_create`, never with a workaround.
+1. The ears first: `agent_inbox_list({ category: 'design.comment' })` - a client comment on a design
+   files one open item per design and thread (metadata `design_project_id`, `comment_id`,
+   `thread_root_id`, `dashboard_url`), and it is never agent-authored. Then `design_list({ status:
+   'draft' })` for designs left mid-revision and `design_comments_list` per active design, filtering
+   `isResolved` yourself (resolved threads come back too; a 404 is a wrong id, not an empty thread).
+   Fix, then `design_comment_resolve` only what is fixed - one way, parent not reply - and
+   `agent_inbox_resolve` the item only after the thread is actually handled (it closes the row, nothing
+   more). On a `marketing-design` key `agent_inbox_` is tool-not-found: the per-design read is the sweep.
+2. `agent_inbox_list({ category: 'design.video_failed' })` and `design.video_completed` for runs that
+   finished unwatched, then `marketing_video_pipeline_list` for boards awaiting approval or paused
+   mid-run, reconciled against the memory ledger; chase approvals with `pm_tasks_create`, never with a
+   workaround.
 3. `design_render_jobs_list({ status })` for renders that died between export and registration; a null
    `assetId` on a completed job is an unregistered export.
 4. Register the week's unregistered exports and stock URLs, check the spend ledger (clips of 20,
-   voiceover seconds, generations), state the N for every step, and log the sweep to the PM task.
+   voiceover seconds, `media_image_quota` for generations used of limit), state the N for every step,
+   and log the sweep to the PM task.
 
 **Monthly report** (markdown to reports/creative-YYYY-MM.md, linked in the PM task):
 1. Assets shipped by type - designs, exports, generated images, clips, boards - each with its asset id.
 2. Designs delivered vs awaiting approval, and the unresolved `design_comments_list` count per design.
-3. Spend ledger: clips used of 20, voiceover seconds against the allowance, image generations. Every
-   number traces to a tool call or a ledger line, never to a model prior.
+3. Spend ledger: clips used of 20, voiceover seconds against the allowance, image generations
+   (`media_image_quota` `used` of `limit` plus `period.resets_at`; a null `remaining` is UNKNOWN, so
+   the line says so), upscales with their megapixels. Every number traces to a tool call or a ledger
+   line, never to a model prior.
 4. Library hygiene delta: assets filed vs loose in root, `media_bulk_move` batches, duplicates found
    (proposed for archive, never deleted by pattern).
 5. Proof refresh: `before_after_grid_list`, plus the grids populated or avatar-linked this month.
@@ -348,6 +418,9 @@ Do not generate, render, or spend in the onboarding session beyond the one proof
 - "Skip the dry run, we know we want all 20 clips." -> No. Clips are about $1 on a 20-clip monthly cap;
   `design_video_capabilities_get` and `dry_run: true` cost nothing and are the only honest quota quote.
   The confirm covers prompt, aspect ratio, duration, cost, remaining quota - per spend, not per session.
+  Images the same way: `media_image_quota` before a `generate_image_set`, and "just upscale the whole
+  folder" is refused - each `media_upscale` is a quota slot plus real dollars, one confirmed asset at
+  a time, after `media_transform` (free) has been ruled out.
 - "Just regenerate the image until the text is right." -> Refuse the loop: generated text and logos are
   garbage by nature and every pass is a paid roll of the dice. Text and logos are canvas layers - put
   the image on a design project, set the words as textbox layers and the logo as an image layer, export.
@@ -373,7 +446,20 @@ Do not generate, render, or spend in the onboarding session beyond the one proof
   `marketing_video_pipeline_list` for boards - plain reads that spend and approve nothing.
 - **`featuredImageUrl` is not auto-set** - no thumbnail until `set_as_featured` on publish or a metadata
   `design_update`; the publish response carries `featured_image_error` when the render succeeded but the
-  thumbnail write failed, so read it.
+  thumbnail write failed, so read it. And null with `featured_image_inline: true` on `design_list`,
+  `design_get` or `design_state_get` is an inline editor snapshot screened out of the response, not a
+  missing thumbnail - do not "fix" it with a metadata write; publish with `set_as_featured`.
+- **A font warning is a brand-wrong render.** Custom brand fonts render server-side from
+  `css_font_face`; a rule the worker cannot use (anything but `@font-face` blocks, a non-http(s) or
+  credentialed URL, a CSS escape, an empty `url()`, over 512KB or the 40-face cap) is dropped and the
+  layer falls back, reported only as a line in `warnings` on a 200. Read `warnings` on every export and
+  publish; fix the font row, then re-export.
+- **`media_upscale` bills at submit.** A 503 `provider_unavailable` whose `details.stage` is poll,
+  render or timeout, or a client-side timeout, is a job fal has usually already been paid for: check
+  `media_library_list` (newest, title ending `(upscaled)`) before calling again. Its quota refusal is
+  402 `quota_exceeded`; the generate tools answer 429 `budget_exceeded` on the same counter.
+- **`remaining: null` is not zero.** `media_image_quota` answers null when the plan is unlimited or the
+  read failed (`reason: 'read_failed'`); neither is "nothing left", and neither is "go ahead".
 - **Stock searches save nothing**, `stock_photos_download` writes to a website project, and the
   `marketing-design` key profile sees neither `sites_list` nor the website-project reads - say so
   instead of guessing a `project_id`.
@@ -386,8 +472,8 @@ Do not generate, render, or spend in the onboarding session beyond the one proof
 
 | Reference | Load it when |
 | --- | --- |
-| `references/design-canvas.md` | Before creating, editing, restyling, animating, or exporting ANY design: the layer model and every animation field, artboard and safe-area sizes per channel, template selection, composition, carousels and multi-page, the comment and revision loop, export, publish-to-library, versioning, and the worked canvas plays. |
-| `references/video.md` | Before ANY moving picture: the three lanes and their costs, storyboard shape and the approval gate, voiceover pricing and approved narrators, render-job recovery, the pipeline after approval, the paid single-clip lane and its dry-run discipline, the testimonial polish play. |
-| `references/brand-and-assets.md` | Standing up or refreshing a client's brand system (Part 4 is the full first-hour ladder), the Media Library model (folders, collections, bulk moves, registration, usage checks before deletion), avatars, brand-aware prompting, stock sourcing and attribution, before/after grids. |
-| `references/memory-protocol.md` | Before ANY `memory_create` / `memory_update`: read-merge-write on the `branding` document, recovery, the storyboard-id and spend ledger format, approved narrator voice ids. |
-| `references/self-review.md` | Before handing off any design or render: the see-and-judge protocol, the written checklist, the download-and-view mechanics, the pass limit, and the motion frame check (0, mid, last) before an MP4. |
+| `references/design-canvas.md` | Before creating, editing, restyling, animating, or exporting ANY design: the layer model and every animation field, artboard and safe-area sizes per channel, the 58-template library and the six wide formats, composition, carousels and multi-page, the comment loop and its inbox ears, export with its `warnings` channel and budgets, publish-to-library, versioning, the attach-to-post handoff, and the worked canvas plays. |
+| `references/video.md` | Before ANY moving picture: the three lanes and their costs, storyboard shape and the approval gate, voiceover pricing and approved narrators, render-job recovery, the pipeline after approval and its inbox ears, the paid single-clip lane with its dry-run discipline and duration honesty, attaching the finished clip to a post, the testimonial polish play. |
+| `references/brand-and-assets.md` | Standing up or refreshing a client's brand system (Part 4 is the full first-hour ladder), custom fonts that render and what `css_font_face` must contain, the Media Library model (folders, collections, bulk moves, registration, immutable bytes, usage checks before deletion), the quota pre-flight, the import / transform / upscale lanes and their costs, brand-applied honesty, avatars, stock sourcing and attribution, before/after grids. |
+| `references/memory-protocol.md` | Before ANY `memory_create` / `memory_update`: read-merge-write on the `branding` document, recovery, the storyboard-id and spend ledger format (clips, voiceover seconds, image generations and upscales), approved narrator voice ids. |
+| `references/self-review.md` | Before handing off any design or render: the see-and-judge protocol, the written checklist, the download-and-view mechanics, reading `warnings` for font degrades, the pass limit, and the motion frame check (0, mid, last) before an MP4. |

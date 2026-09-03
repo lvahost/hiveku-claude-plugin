@@ -8,11 +8,19 @@ id exists. Design exports and stock-photo URLs do NOT auto-register: register th
 `media_library_register_external_url` before attaching them anywhere.
 
 REUSE FIRST. `media_library_list` / `stock_photos_search` before generating - the user's real photos
-beat AI for authenticity (products, team, location shots), and generation costs money.
+beat AI for authenticity (products, team, location shots), and generation costs money. A real photo
+at the wrong size is a free `media_transform`, never a regeneration; a client image still on their
+site comes in as bytes with `media_import_url` (see MEDIA OPS below).
 
 REPLACING UNDERPERFORMING AD CREATIVE starts at /hiveku:ad-refresh, not here - the performance read (fatigue, hook, hold, structure) decides the brief this command then produces.
 
-IMAGES - cheap, iterate freely:
+IMAGES - cheap, iterate freely, but metered:
+- Pre-flight before any set or upscale: `media_image_quota` (no args, always 200) returns `{ used,
+  limit, unlimited, remaining, period }` from the same counter the generation reserve debits, so
+  `remaining` is how many images the next batch can still make. `remaining: null` means UNKNOWN -
+  the plan is unlimited (`unlimited: true`) or the read failed (`reason: 'read_failed'`) - never
+  "nothing left" and never a green light; `period.lapsed: true` means the counter has not rolled yet
+  and the post-reset posture is what the next call meets. Quote it to the user before spending.
 - One image: `generate_image({ prompt, ... })` - brand-aware by default (`use_brand: false` opts
   out), auto-registers a media_asset and returns `media_asset_id`. Use that id; do NOT re-upload the
   result. Exact dimensions via `target_width` / `target_height`. `mode: 'modify'` with
@@ -21,10 +29,19 @@ IMAGES - cheap, iterate freely:
   fal-lane only (a 400 on the gemini lane, never silently dropped). Prompts name photographic
   subjects only: generated-image text is garbage, so every word and every logo is a canvas layer in
   the design lane, never generated pixels.
+- Brand honesty on every response: `brand_applied: true` means the active guide reached the model;
+  `brand_skipped_reason: 'no_active_brand_guide'` means the image generated UNBRANDED and the slot
+  was still spent - say so, and fix it with /hiveku:brand, not with hex codes in the prompt. A failed
+  guide READ is 503 `brand_unavailable` before any slot is reserved: retry, or pass `use_brand: false`
+  on purpose.
 - A SET that must look consistent (ad variations, hero + before/after, carousel):
-  `generate_image_set` (up to 10 prompts, one shared brand context). Every success is auto-registered
-  too; per-prompt failures land in `errors[]` instead of failing the batch. Load
-  `account_context_get({ domain: 'branding' })` first and write all prompts from the same visual
+  `generate_image_set` (up to 10 prompts, one shared brand context). Top-level `use_brand` is the
+  batch default (a per-prompt `use_brand` beats it either way) and top-level `target_width` /
+  `target_height` frame every prompt without its own - a per-prompt pair REPLACES the top-level pair
+  entirely, never half-and-half. Every success is auto-registered too and carries its own
+  `brand_applied`; per-prompt failures land in `errors[]` instead of failing the batch (the status is
+  201 with any success, 502 only when all failed - read `summary` and `errors[]`, not the status).
+  Load `account_context_get({ domain: 'branding' })` first and write all prompts from the same visual
   language (there is no `creative` domain - `branding` is the visual-system one).
 - Stock: `stock_photos_search({ query, count, orientation })` returns `{ url, thumbnail, photographer,
   source, attribution }` - it SAVES NOTHING. To land a stock photo in the Media Library, register the
@@ -32,6 +49,26 @@ IMAGES - cheap, iterate freely:
   alt_text })` - no bytes move. `stock_photos_download` is the WEBSITE-PROJECT lane only: it requires
   `{ url, project_id, save_path }` (save_path is a path inside the project, e.g.
   'public/images/hero.jpg') and writes to that project's S3 assets, NOT the Media Library.
+
+MEDIA OPS - every one makes a NEW library row and never touches the source (bytes are immutable:
+`media_update` refuses `file_url`, `file_path`, `width`, `height`, `duration`, `ai_metadata` with a
+400 `immutable_field`). Cost shapes differ, so name the lane before you call:
+- `media_import_url({ url, folder_id?, title?, tags? })` copies the BYTES of an external image into
+  the library (SSRF-guarded, 25MB, image-only, SVG refused) so the asset outlives its origin - the
+  difference from `media_library_register_external_url`, which stores a pointer that dies with the
+  origin. Not a generation: no quota slot. Nothing dedupes on the URL, so import once; a 500
+  `register_failed` means the bytes ARE on S3 - check `media_library_list` before re-importing.
+- `media_transform({ asset_id, resize?, crop?, format?, quality? })` - crop (source pixels,
+  bounds-checked) then resize (`{ width, height, fit: 'cover' | 'contain' }`, max 4096 per side)
+  then encode (`png | jpeg | webp`; `quality` needs `format`). FREE, no model, no slot: the exact-slot
+  variant of a real photo is always this, never a regeneration.
+- [CONFIRM] `media_upscale({ asset_id, scale? })` - fal clarity at 1-4x (default 2), refused 400
+  before submit past 32 output megapixels. COSTS TWICE: one image-generation slot (402
+  `quota_exceeded` when spent; the generate tools say 429 `budget_exceeded` on the same counter) PLUS
+  $0.03 per output megapixel billed once the worker accepts the job, even if the output later fails
+  to land. `media_image_quota` first, one confirmed asset at a time, only after `media_transform`
+  cannot help. A timeout or a 503 `provider_unavailable` at stage poll/render/timeout is usually a
+  paid job: check `media_library_list` (newest, title ending `(upscaled)`) BEFORE calling again.
 
 VIDEO - three separate lanes. Pick the lane before you spend anything.
 
@@ -75,12 +112,16 @@ VIDEO - three separate lanes. Pick the lane before you spend anything.
  - "Animate this": generate or pick a still, then pass it as `reference_media_asset_id` for
      image-to-video (it wins over `reference_image_url`). Keep the motion prompt gentle (subtle
      camera drift, ambient motion).
- - Levers: `duration_seconds` (2-10; the price scales with the length), `reference_mode:
-     'compose' | 'animate'` for how a reference image is used ('compose' renders a branded reference
-     still first - that spends one image credit and the call fails if the still fails),
-     `design_project_id` to link the clip to a design project, and `previous_interaction_id` to
-     continue a prior clip - pass ONLY an `interaction_id` a previous call returned; anything else
-     is a fresh billed clip.
+ - Levers: `duration_seconds` (2-10; the price scales with the length, and it is a HINT the lane
+     snaps - the default Kling lane renders only 5s or 10s, the fal Veo lanes 4/6/8s - so quote the
+     snapped length and read back `duration_requested`, `duration_effective` (the measured length;
+     null when unmeasured, NEVER 0) and `duration_note`), `reference_mode: 'compose' | 'animate'` for
+     how a reference image is used ('compose' renders a branded reference still first - that spends
+     one image credit and the call fails if the still fails; a later video failure then carries
+     `composed_still_asset_id`, already paid for, so retry by animating THAT), `design_project_id` to
+     link the clip to a design project, and `previous_interaction_id` to continue a prior clip - pass
+     ONLY an `interaction_id` a previous call returned to THIS account; anything else is a 400
+     `invalid_request`, and so is a garbage `seed` (null / '' mean absent, never seed 0).
  - A 504 or dropped connection loses the response, NOT the paid job: recover with
      `design_render_job_get({ job_id })` using the returned `render_job_id`. That call ADVANCES the
      job (it runs the same poll-and-advance the reconcile cron uses, finishing the clip and
@@ -95,9 +136,10 @@ Duration ceilings at post time: Shorts 60s, Reels 90s, X 140s.
 
 DESIGN (Creative Studio) - zero marginal cost, the highest-volume creative lane (promo cards, quote
 graphics, carousels, ad variations):
-- `design_templates_list` - the 52-template library, already brand-substituted with the account's
-  active brand guide, plus artboard presets grouped by category. Each template carries a ready-to-use
-  `canvasData` payload.
+- `design_templates_list` - the 58-template library (14 sizes; the wide formats are templates now:
+  two 1200x600 email headers, OG 1200x630, YouTube 1280x720, LinkedIn banner 1584x396, X header
+  1500x500), already brand-substituted with the account's active brand guide, plus artboard presets
+  grouped by category. Each template carries a ready-to-use `canvasData` payload.
 - `design_create({ title, designType, artboard: { width, height, background }, initialCanvasData:
   <the template's canvasData> })` - only `title` is required. Returns `id` + `dashboardUrl`; hand the
   user that URL so they can keep editing in the browser.
@@ -131,9 +173,12 @@ graphics, carousels, ad variations):
   height, duration_seconds })` returns `mp4Url`; follow it with `design_update({ id, previewVideoUrl
   })` so the gallery gets an autoplay thumbnail (`previewVideoUrl` only takes effect when
   `canvasData` is NOT in the same call).
-- Both exports are SYNCHRONOUS (image ~5-15s typical, 90s budget; mp4 up to 240s), both REQUIRE the
-  full Fabric `canvas_json` plus width/height in the body - they do NOT render a stored design from
-  its id alone - and both refuse early on an empty canvas.
+- Both exports are SYNCHRONOUS (image ~5-15s typical, the tool waits 100s; mp4 up to 280s), both
+  REQUIRE the full Fabric `canvas_json` plus width/height in the body - they do NOT render a stored
+  design from its id alone - and both refuse early on an empty canvas. Both render the account's
+  custom brand fonts (rows with a `css_font_face`) and both return `warnings?`: a font that could not
+  load degraded to the fallback stack, so a 200 with a font warning is a brand-wrong render - fix the
+  font row via /hiveku:brand, then re-export.
 - Look at it before you hand it off: download the exported PNG and view it, judge hierarchy,
   contrast, margins, and brand tokens against the brief, fix and re-export - hard cap two to three
   passes, then name what remains (the hiveku-creative-agency skill's `references/self-review.md`
@@ -155,7 +200,9 @@ KEEP THE LIBRARY USABLE:
   `media_collection_create({ name, cover_asset_id })` + `media_collection_add_item({ collection_id,
   asset_id })`. File generated assets into it as you go, not later.
 - `media_update({ asset_id, alt_text, tags, title })` on everything you generate - accessibility and
-  every later search depend on it. It changes metadata only, never the underlying file.
+  every later search depend on it. It changes metadata only, never the underlying file: the physical
+  columns are refused with a 400 `immutable_field`, and a different-sized or re-encoded file is a
+  `media_transform` row, not an edit.
 - ALWAYS `media_usage_get({ asset_id })` before `media_delete`. It returns `{ usage_count, usage[] }`
  - every email, page section, and CMS entry that would break. `media_delete` is a HARD delete plus
   S3 purge; it refuses with 409 in_use, and `force: true` orphans live content. Never pass force
@@ -167,8 +214,13 @@ KEEP THE LIBRARY USABLE:
   does not exist.
 
 USE THE RESULT:
-- Social post: attach via `media_asset_ids` on the post-create call; check the platform's media rules
-  first (TikTok posts land as inbox drafts; X posting is Premium-gated).
+- Social post: `social_create_post` with `media_urls` (the asset's `file_url` / `mp4_url`, or a
+  design export URL) plus an index-aligned `media_types` (`image/png`, `image/jpeg`, `video/mp4` -
+  the publishers trust the declared type over the extension); onto a post that already exists or is
+  scheduled, `social_update_post({ post_id, media_urls, media_types })`, which REPLACES the whole
+  media list (send every URL; omitting `media_types` keeps the old types) and 400s on a published
+  post. Check the platform's media rules first (TikTok posts land as inbox drafts; X posting is
+  Premium-gated).
 - Ads: image sets sized per placement; note ad platforms re-crop - keep the subject centered.
 - Site: for website projects use `assets_upload` (the S3/CDN lane) - the marketing Media Library and
   website-project assets are SEPARATE stores; download + re-upload when moving between them.

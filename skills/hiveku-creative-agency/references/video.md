@@ -146,13 +146,19 @@ four-minute block. It is the cheap dry run for lane 1, and the frames are for LO
 via the Remotion worker. Pass the full canvas snapshot the user has been editing - layered Fabric JSON with
 the per-layer `animation` metadata. Three hard behaviors:
 
-- **SYNCHRONOUS, blocks up to 240 seconds.** Nothing else happens in the session while it runs. No progress
-  percentage mid-call and no cancel tool (`marketing_video_pipeline_status` and
+- **SYNCHRONOUS, blocks up to 280 seconds** (the route polls 180s, re-arms once for 60s if the worker
+  restarted, and stops at 270s; the tool waits 280s). Nothing else happens in the session while it runs.
+  No progress percentage mid-call and no cancel tool (`marketing_video_pipeline_status` and
   `marketing_video_pipeline_cancel` are lane 2 only and do nothing here).
 - **Refuses early if the canvas has no objects.** Usually a symptom, not the bug: you passed the wrong
   design id, or a `canvas_json` you built in memory and never saved. Run `design_state_get` and confirm the
   canvas holds the layers you think it does.
-- **Returns `mp4Url` plus a `jobId`, and the job outlives the call.** A 504 or a dropped connection loses
+- **Renders the brand's custom fonts, and confesses when one did not load.** The account's
+  `brand_custom_fonts` rows with a `css_font_face` are attached to the job automatically; a font the
+  worker cannot use degrades that layer to the fallback stack and is reported as a line in the
+  response's `warnings`, never as a failed render. A 200 with a font warning is a brand-wrong video:
+  fix the font row (brand-and-assets reference, Part 3) and re-render.
+- **Returns `{ success, mp4Url, jobId, warnings? }`, and the job outlives the call.** A 504 or a dropped connection loses
   the RESPONSE, not the render. `design_render_job_get({ job_id })` polls that job and returns `{ status,
   progress, progressMessage, url, assetId, warnings, error, ... }` - and calling it ADVANCES the job (the
   same pollAndAdvance the reconcile cron runs), so the clip can finish and register through the poll
@@ -169,8 +175,8 @@ Because it blocks, tell the user before you start, not after. Four things, one s
 1. What you are rendering and where it lands - design title, its `dashboardUrl`, destination platform and
    aspect ratio.
 2. The exact spec: width, height, fps, duration in seconds.
-3. That the render is synchronous and can block for up to four minutes, during which the session can do
-   nothing else, with no progress readout to report partway.
+3. That the render is synchronous and can block for close to five minutes, during which the session can
+   do nothing else, with no progress readout to report partway.
 4. What happens next: register the file, set it as the design's preview, hand back both URLs.
 
 Then get a yes. It is not billable, but four minutes of a dead session earns a confirmation, and it is the
@@ -195,8 +201,10 @@ two designs.
 
 `design_video_rerender({ id, template_id, props })` re-renders a single Remotion-template video clip with
 new prop values. It applies when a design contains a video element backed by a Remotion template: someone
-edits a slot, this re-runs the render, and the resulting MP4 swaps in place. It blocks up to 240 seconds,
-and the same pre-render message and failure playbook apply.
+edits a slot, this re-runs the render, and the resulting MP4 swaps in place. It blocks up to 240 seconds
+(the tool waits 290s), and the same pre-render message and failure playbook apply. It is the one render
+that carries NO custom brand fonts - the worker's template lane takes no font manifest - so a template
+clip set in an uploaded family comes back in the fallback stack; say so rather than re-rendering.
 
 The trap: canvas position, scale, and rotation are preserved by the caller on update, not by the tool. Read
 `left`, `top`, `scaleX`, `scaleY`, and `angle` with `design_state_get` before the rerender and write them
@@ -350,6 +358,18 @@ If a scene keeps failing after a retry, the fix is in the board - but the board 
 `marketing_storyboard_update` will 409. Cancel, fix, re-create, and the human approves again; say the cost
 of what already generated.
 
+**The run has ears.** The moment a pipeline reaches `completed` or `failed` the platform files exactly
+one agent-ops inbox item: category `design.video_completed` (severity info) or `design.video_failed`
+(severity urgent), deduped on pipeline id plus outcome, with `pipeline_id`, `design_project_id`,
+`design_title`, `result_media_asset_id` and `dashboard_url` in its metadata (a failure also carries a
+clipped `error`). `agent_inbox_list({ category: 'design.video_failed' })` at the start of a session finds
+the runs that died unwatched; `agent_inbox_get` reads one in full; `agent_inbox_resolve` closes the row
+once the result is registered or the retry is filed, and never does anything else. A canceled run files
+nothing (the person who canceled it was there). The item is visible on full and `marketing` keys; the
+`marketing-design` profile does not grant `agent_inbox_`, so on that key `marketing_video_pipeline_list`
+filtered by status is the equivalent sweep. The final render job's `warnings` (font degrades from the
+storyboard's own canvases included) live on `design_render_job_get` for the pipeline's `renderJobId`.
+
 ---
 
 ## 4. Lane 3: one generated clip
@@ -358,6 +378,18 @@ of what already generated.
 (2 to 10) sets the length, and cost scales with it at roughly $0.10 per second - the ten-second default
 is where the ~$1-per-clip figure comes from, and a 4-second cutdown is the cheap variant. PAID,
 Premium-plan only, capped at 20 clips per account per month.
+
+**Duration is a hint, and the response tells you what you got.** Several lanes snap the hint to the
+lengths their provider bills in, and billing follows the RENDERED length: kling-2.5-turbo (what `auto`
+resolves to when fal is configured) renders only 5s or 10s (a hint above 7 becomes 10s; omitted is 5s),
+the fal Veo lanes (veo-3.1-fast, veo-3.1-lite) render 4s, 6s or 8s (up to 5 is 4s, up to 7 is 6s, else
+8s; omitted is 8s), veo-3.1-google forwards the hint and enforces its own 4-8s upstream, omni-flash
+honors any 1-10s, and kling-avatar-v2 follows its driving audio. So quote the snapped length in the
+confirm ("a 9s ask bills as 10s on Kling"), and read back `duration_requested` (the clamped hint),
+`duration_effective` (the worker-MEASURED length; null when unmeasured, NEVER 0 - a 0 from the worker is
+its ffprobe failure sentinel, not a zero-length clip, so never regenerate off a null) and
+`duration_note` (present whenever the rendered length is not the one requested). `duration_seconds` on
+the response is the same measured value, null the same way.
 
 1. **Pre-flight with `design_video_capabilities_get`** - can this account generate a clip at all, right
    now? It answers `{ videoEnabled, plan, used, limit, reason, message }`, and EVERY blocked outcome is
@@ -374,14 +406,20 @@ Premium-plan only, capped at 20 clips per account per month.
    `reference_media_asset_id`. That is nearly always a better use of a paid clip than an invented scene:
    it is the client's real subject in motion. `aspect_ratio` follows the destination. `reference_mode`
    picks how the reference is used: `'animate'` moves the still itself; `'compose'` first builds a styled
-   still FROM the reference and animates that - it spends one image-generation credit before the clip,
-   and a failed compose is FATAL (the call fails without generating video; the image credit is the loss,
-   never a silent fallback to a different look).
+   still FROM the reference and animates that - it spends one image-generation credit before the clip
+   (gated by the image quota: 429 `image_generation_limit_reached`), and a failed compose is FATAL (the
+   call fails without generating video; the image credit is the loss, never a silent fallback to a
+   different look). When the compose succeeded and the VIDEO step then failed, the failure body carries
+   `composed_still_asset_id` - a still already paid for and in the library - so the retry animates THAT
+   (`reference_media_asset_id` plus `reference_mode: 'animate'`), never a second compose.
 5. Iterating on a clip: pass `previous_interaction_id` to continue from an earlier generation - but ONLY
-   an `interaction_id` that a previous `marketing_generate_video` response returned. It is not the render
-   job id and not any provider handle; a wrong or invented value does not error into a revision, it just
-   bills a fresh unrelated clip. And pass `design_project_id` to link the paid clip to the design project
-   it belongs to, so the spend shows up against the deliverable instead of floating free.
+   an `interaction_id` that a previous `marketing_generate_video` response returned to THIS account. It
+   is validated: a `fal|` handle and any handle that is not one of this account's own render jobs
+   (`design_render_jobs.provider_operation`) is a 400 `invalid_request`, so a guessed or foreign id no
+   longer becomes a fresh, separately billed clip. `seed` is honest the same way: `null` and `''` mean
+   absent, and anything else that is not a finite number is a 400 rather than a silent seed 0. And pass
+   `design_project_id` to link the paid clip to the design project it belongs to, so the spend shows up
+   against the deliverable instead of floating free.
 6. Log the clip against the monthly spend ledger (read-merge-write per `references/memory-protocol.md`):
    clips used, clips remaining, duration, what each was for. The 20-clip cap is managed from that ledger,
    not from whoever last remembered.
@@ -424,10 +462,15 @@ lane 1.
 `marketing_media_upload_base64`. Import is never a production credit.
 
 Attaching, once registered: social posts via `social_create_post` with `media_urls`, targeting connected
-accounts from `social_list_accounts`. `media_urls` is NOT on `social_update_post`'s schema, so media can
-only be attached at create - the proxy drops it on an update and the call returns 200 having changed
-nothing. Pick the asset before you create the post. The social lane's rules still apply - setting
-`scheduled_at` is publishing on a timer, and no tool can approve a post; cross-channel via `content_create`.
+accounts from `social_list_accounts`, or onto a post that already exists or is scheduled via
+`social_update_post({ post_id, media_urls, media_types })`. Two rules on both: `media_urls` and
+`media_types` are INDEX-ALIGNED (`video/mp4` for a clip, `image/png` for a still) and the publishers
+trust the declared type over the URL extension, so always send them together; and on the update the
+lists REPLACE the post's media wholesale - send every URL the post should carry, not a delta, and
+replacing `media_urls` without `media_types` leaves the old types in place. A published or publishing
+post is edit-locked (400). The URL is the asset's `mp4_url` / `file_url` from the library, or a design
+export URL. The social lane's rules still apply - setting `scheduled_at` is publishing on a timer, and
+no tool can approve a post; cross-channel via `content_create`.
 Decisions worth keeping (aspect ratio, the animation style signed off, the storyboard template that worked)
 go to the branding memory document (read-merge-write per `references/memory-protocol.md`), production
 work items to `pm_tasks_create`. `media_usage_get` says where an asset is
@@ -489,6 +532,9 @@ The one lane-1 play that ships straight to a PUBLIC surface, so it carries the s
   still lives in the memory ledger recorded at submit time (3.3, `references/memory-protocol.md`).
 - **No burned-in captions outside a storyboard.** `captions.style` is a storyboard field; animating your own
   text layers in a lane 1 design is not the same thing.
+- **No custom brand fonts in a template re-render.** `design_export_mp4`, `design_export_image`,
+  `design_publish_to_library` and the storyboard's final cut all carry the brand kit;
+  `design_video_rerender` submits a template job with no font manifest, so its clip falls back.
 - **No `creative` domain.** `branding` is the visual lane on both `account_context_get` and
   `talk_to_department`; `customer_avatar`, `before_after_grid`, and `website_design` are the other valid
   visual-adjacent domains.
@@ -517,15 +563,22 @@ nothing), `marketing_storyboard_create`, `marketing_storyboard_get`, `marketing_
 `marketing_video_pipeline_retry_scene`, `marketing_video_pipeline_cancel`.
 
 **Lane 3 (one clip):** `design_video_capabilities_get`, `marketing_generate_video` (`dry_run` first;
-`duration_seconds` 2-10; `reference_mode` compose|animate; `previous_interaction_id` only from a returned
-`interaction_id`; `design_project_id` links the spend).
+`duration_seconds` 2-10 as a hint the lane snaps, read back as `duration_requested` /
+`duration_effective` (null, never 0, when unmeasured) / `duration_note`; `reference_mode` compose|animate
+with `composed_still_asset_id` on a post-compose failure; `previous_interaction_id` only from a returned
+`interaction_id` and validated against this account; a garbage `seed` is a 400; `design_project_id`
+links the spend).
+
+**Ears:** `agent_inbox_list` (categories `design.video_completed` / `design.video_failed`; full and
+`marketing` keys), `agent_inbox_get`, `agent_inbox_resolve`.
 
 **Voiceover:** `brand_guide_voiceovers_get`, `design_voices_list`, `design_voiceover_estimate`,
 `design_voiceover_create`.
 
-**Sourcing and registration:** `media_stock_video_search`, `media_library_list`, `media_folders_list`,
-`media_library_register_external_url` / `_batch`, `media_upload`, `media_update`,
-`design_publish_to_library` (PNG only; settled frame; never dedupes), `social_create_post`.
+**Sourcing, registration and delivery:** `media_stock_video_search`, `media_library_list`,
+`media_folders_list`, `media_library_register_external_url` / `_batch`, `media_upload`, `media_update`,
+`design_publish_to_library` (PNG only; settled frame; never dedupes), `social_create_post` and
+`social_update_post` (`media_urls` + index-aligned `media_types`; the update replaces the whole list).
 
 **Persist and escalate:** memory write-back per `references/memory-protocol.md` (`memory_list` -> merge
 -> `memory_update`), `pm_tasks_create`, `audit_query`.

@@ -71,6 +71,9 @@ export const GATED_WRITES = [
   'marketing_storyboard_delete',
   'marketing_testimonial_media_replace',
   'generate_image_set',
+  // 2026-09-03: one image_generations slot plus real fal dollars per call,
+  // gated in data/permission-critical-tools.json alongside generate_image_set.
+  'media_upscale',
 ];
 
 const VALID_DOMAINS = [
@@ -761,6 +764,7 @@ export async function createTools() {
     marketing_storyboard_delete: () => refuse('marketing_storyboard_delete'),
     marketing_testimonial_media_replace: () => refuse('marketing_testimonial_media_replace'),
     generate_image_set: () => refuse('generate_image_set'),
+    media_upscale: () => refuse('media_upscale'),
 
     // ── Allowed write-backs ─────────────────────────────────────────────────
     memory_list({ domain } = {}) {

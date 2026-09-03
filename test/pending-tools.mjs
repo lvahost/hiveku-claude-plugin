@@ -40,23 +40,20 @@
  *
  *   Working-branch program (2026-09-02, the branch-parameter model across the
  *   MCP file/build/preview tools):
- *     VCS-1  project_vcs_diff_file (GET, both sides of one file across two
- *            branches) and project_vcs_revert (POST, move a branch head back
- *            to one of its own commits; on the ask list). Delete both entries
- *            once the tool index is regenerated from the live server.
+ *     VCS-1  project_vcs_diff_file and project_vcs_revert. Landed in the live
+ *            index on 2026-09-03; entries deleted.
  *
  *   Form attachments program (2026-09-03, file uploads on captured forms):
- *     FA-1  marketing_form_attachments_list (GET), marketing_form_attachment_download_url
- *           (POST, signed link; NEVER_AUTO_APPROVE), marketing_form_upload_settings_get
- *           (GET), marketing_form_upload_settings_update (PATCH). Delete all four
- *           once the tool index is regenerated from the live server.
+ *     FA-1  marketing_form_attachments_list, marketing_form_attachment_download_url,
+ *           marketing_form_upload_settings_get, marketing_form_upload_settings_update.
+ *           Landed in the live index on 2026-09-03; entries deleted.
+ *
+ *   Creative media program (2026-09-03, the designer's media hands): media_import_url,
+ *   media_transform, media_upscale, media_image_quota were already live when the
+ *   index was regenerated, so they never needed a bridge entry.
  */
 const SEO_SINCE = '2026-08-30';
 const seo = (batch) => ({ since: SEO_SINCE, batch });
-const VCS_SINCE = '2026-09-02';
-const vcs = (batch) => ({ since: VCS_SINCE, batch });
-const FORM_ATTACHMENTS_SINCE = '2026-09-03';
-const formAttachments = (batch) => ({ since: FORM_ATTACHMENTS_SINCE, batch });
 
 export const PENDING_TOOLS = new Map([
   // S1
@@ -72,13 +69,7 @@ export const PENDING_TOOLS = new Map([
 
   // S5
 
-  // VCS-1
-  ['project_vcs_diff_file', vcs('VCS-1')],
-  ['project_vcs_revert', vcs('VCS-1')],
+  // VCS-1: landed 2026-09-03, nothing pending.
 
-  // FA-1
-  ['marketing_form_attachments_list', formAttachments('FA-1')],
-  ['marketing_form_attachment_download_url', formAttachments('FA-1')],
-  ['marketing_form_upload_settings_get', formAttachments('FA-1')],
-  ['marketing_form_upload_settings_update', formAttachments('FA-1')],
+  // FA-1: landed 2026-09-03, nothing pending.
 ]);

@@ -160,6 +160,12 @@ const KNOWN_NON_TOOLS = new Map([
   // there is no activation tool. Move to PENDING_TOOLS if it is ever
   // contracted; delete here when it ships.
   ['brand_guide_set_active', 'unbuilt'],
+  // Creative wave 2026-09-03: the skill names the schema it reasons about.
+  // account_credits.media_storage_limit_mb is the per-account storage cap the
+  // import/transform routes pre-flight; design_render_jobs is the table whose
+  // provider_operation column is the ONLY previous_interaction_id ownership proof.
+  ['media_storage_limit_mb', 'column'],
+  ['design_render_jobs', 'table'],
 ]);
 
 /**

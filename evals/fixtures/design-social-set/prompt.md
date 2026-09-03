@@ -20,7 +20,7 @@ build new only where nothing fits. Overrides for this eval run only:
   `brand_guide_purge`, `marketing_generate_video`,
   `marketing_video_pipeline_retry_scene`, `design_voiceover_create`,
   `marketing_storyboard_delete`, `marketing_testimonial_media_replace`, and
-  `generate_image_set` stay UNCALLED - `marketing_generate_video` including
+  `generate_image_set`, and `media_upscale` stay UNCALLED - `marketing_generate_video` including
   `dry_run: true` (read the clip quota from `design_video_capabilities_get`
   instead). The fixture refuses them anyway, and the refusal is logged
   against the run.

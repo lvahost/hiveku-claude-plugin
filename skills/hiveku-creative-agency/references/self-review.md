@@ -16,7 +16,11 @@ before handing back any visual deliverable, and run it after every canvas write 
    arguments are required - the tool does not render a stored design from its id alone. `canvas_json` is
    the canvas you just wrote (or `design_get`'s `canvasData`; for a pages-shaped design, one page's
    inner canvas); `width` and `height` are the artboard's. It returns `imageUrl` (an S3 PNG) plus
-   `jobId`, typically in 5-15s.
+   `jobId`, typically in 5-15s, and optionally `warnings`. Read `warnings` BEFORE you look: a custom
+   brand font that could not load degraded to the fallback stack, and no amount of looking at the PNG
+   tells you which family you meant. A font warning is fixed on the font row (`brand_guide_font_update`
+   with a valid `css_font_face`; brand-and-assets Part 3), then re-exported - never by changing the
+   canvas to match the fallback.
 3. **Look.** Download the PNG and view it: the Read tool renders an image file, so
    `curl -sSL -o <scratchpad>/review.png "<imageUrl>"` then Read that file, or fetch the URL directly
    when no shell is available. Judging from the Fabric JSON is not review - the JSON already looked
@@ -32,8 +36,10 @@ before handing back any visual deliverable, and run it after every canvas write 
    once, never retried blind (it never dedupes, and it publishes the SETTLED frame, after enter
    animations finish). `set_as_featured` is the thumbnail path: without it an agent-created design shows
    no gallery thumbnail. A `featured_image_error` on the success payload means the PNG and library row
-   are real and only the thumbnail write failed - report it, do not re-publish. Hand back the
-   `dashboardUrl` and the `fileUrl`.
+   are real and only the thumbnail write failed - report it, do not re-publish. A later read answering
+   `featuredImageUrl` null with `featured_image_inline: true` is the editor's inline snapshot, not a
+   missing thumbnail; this same publish is what replaces it. Hand back the `dashboardUrl` and the
+   `fileUrl`.
 
 ## The checklist
 
@@ -57,7 +63,9 @@ Judge the downloaded PNG, not your intentions:
 - **Text integrity:** no overflow past a textbox, no orphaned single word on its own line, no clipped
   descenders, no template placeholder or `{slot}` braces left behind.
 - **Render fidelity:** letterforms that do not match the family you set mean the worker fell back to
-  another font - swap to a template-proven or guide font rather than shipping the fallback.
+  another font. The export's `warnings` names the dropped family and why (an oversized or clipped
+  `@font-face`, a blocked URL, a failed brand-kit read); fix that row, or swap to a template-proven or
+  Google-served guide font, rather than shipping the fallback.
 
 ## Motion designs: three frames before any MP4
 
@@ -82,7 +90,12 @@ frames were reviewed and the final MP4 was not.
   scene's `url`. Review scenes as they land (frame-pull as above when possible) so one bad scene is
   caught before the composite; the final asset appears on `result` once compositing finishes.
 - **Lane 3 (one clip):** the clip auto-registers; read the render job's `warnings`, and view a pulled
-  frame when you can. A clip you could not view ships only with that caveat attached.
+  frame when you can. A clip you could not view ships only with that caveat attached. Report the
+  length from `duration_effective` (null means unmeasured, never 0) and quote `duration_note` when the
+  lane snapped the hint.
+- **Generated stills:** `brand_applied` on the response is part of the judgment. `false` with
+  `brand_skipped_reason: 'no_active_brand_guide'` means the image is unbranded however good it looks,
+  and the handoff says so.
 
 ## What you cannot judge - say so instead of guessing
 
@@ -96,6 +109,7 @@ These go into the handoff as named caveats, not silent hopes.
 
 `design_update` (CAS write via `expectedSectionsVersion`), `design_get`, `design_state_get`,
 `design_export_image` (`{ id, canvas_json, width, height, frame?, fps?, duration_frames? }` returns
-`imageUrl` + `jobId`), `design_export_mp4`, `design_render_job_get` (the poll ADVANCES the job),
-`design_render_jobs_list`, `design_publish_to_library` (`set_as_featured`; settled frame; never
-dedupes), `marketing_video_pipeline_status`, `brand_guide_get`, `media_library_list`, `pm_tasks_create`.
+`imageUrl` + `jobId` + `warnings?`), `design_export_mp4` (`warnings?` too), `design_render_job_get` (the
+poll ADVANCES the job), `design_render_jobs_list`, `design_publish_to_library` (`set_as_featured`;
+settled frame; never dedupes), `brand_guide_font_update` (the fix for a font warning),
+`marketing_video_pipeline_status`, `brand_guide_get`, `media_library_list`, `pm_tasks_create`.

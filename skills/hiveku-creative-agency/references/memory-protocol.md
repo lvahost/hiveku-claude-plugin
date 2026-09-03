@@ -50,9 +50,12 @@ memory tools, then re-sync.
 - **The storyboard-id ledger, written at submit time:** board id, what it is for, price at create, date
   submitted, status when last checked. `marketing_video_pipeline_list` finds boards but not WHY they
   exist - the ledger is the intent record the weekly sweep works from.
-- **The monthly spend ledger:** clips used and remaining against the 20-clip cap (with durations),
-  voiceover seconds consumed against the plan allowance, image generations of note. The caps are managed
-  from this ledger, not from whoever last remembered.
+- **The monthly spend ledger:** clips used and remaining against the 20-clip cap (with the
+  `duration_effective` each rendered at), voiceover seconds consumed against the plan allowance, image
+  generations as `media_image_quota` reports them (`used` of `limit` and `period.resets_at`; a null
+  `remaining` is written as UNKNOWN, never as 0), and every `media_upscale` with its output megapixels
+  (each is a slot plus real dollars). The caps are managed from this ledger, not from whoever last
+  remembered.
 - **Signed-off conventions:** animation style (which entrances, which easing, the one-loop rule),
   aspect ratios per channel, export sizes.
 - **Open approvals:** boards awaiting the human, designs with unresolved comment threads, anything
