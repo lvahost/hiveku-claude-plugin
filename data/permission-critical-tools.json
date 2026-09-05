@@ -6,7 +6,7 @@
     "mcp__hiveku__"
   ],
   "plugin_version": "0.23.0",
-  "count": 139,
+  "count": 141,
   "tools": [
     {
       "name": "deploy_site",
@@ -702,6 +702,16 @@
       "name": "social_post_retry",
       "method": "POST",
       "why_gated": "re-runs the publish for a failed post version; a second call publishes for real a second time on the platform"
+    },
+    {
+      "name": "webflow_site_publish",
+      "method": "POST",
+      "why_gated": "publishes a Webflow site to its live custom domains; every staged page and CMS change goes live at once and Webflow allows one publish per minute"
+    },
+    {
+      "name": "webflow_cms_item_delete",
+      "method": "POST",
+      "why_gated": "deletes a staged Webflow CMS item permanently; the Data API has no restore, and unpublish (webflow_cms_item_unpublish) is the reversible alternative"
     }
   ]
 }

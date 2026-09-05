@@ -68,6 +68,17 @@
  *               social_post_retry is also on the ask list
  *               (data/permission-critical-tools.json), which is why that file's
  *               test accepts a PENDING name.
+ *
+ *   Webflow program (2026-09-05, the web department's Webflow Data API hands,
+ *   generated one tool per builder action by the MCP server's
+ *   scripts/gen-webflow-tools.py). Mapped in the MCP server working tree
+ *   (src/tools/webflow-tools.ts) before the index regenerates after the MCP
+ *   deploy:
+ *     WEBFLOW-1  webflow_site_publish, webflow_cms_item_delete. Both are on
+ *                the ask list (data/permission-critical-tools.json): publish
+ *                pushes staged changes live and delete destroys a staged CMS
+ *                item with no restore, so the ask-list test accepts them as
+ *                PENDING names until the index carries them.
  */
 const SEO_SINCE = '2026-08-30';
 const seo = (batch) => ({ since: SEO_SINCE, batch });
@@ -91,4 +102,8 @@ export const PENDING_TOOLS = new Map([
   // FA-1: landed 2026-09-03, nothing pending.
 
   // SOCIAL-1: landed in the live index on 2026-09-03 (MCP d322d74), entries deleted.
+
+  // WEBFLOW-1
+  ['webflow_site_publish', { since: '2026-09-05', batch: 'WEBFLOW-1' }],
+  ['webflow_cms_item_delete', { since: '2026-09-05', batch: 'WEBFLOW-1' }],
 ]);

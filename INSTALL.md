@@ -243,7 +243,9 @@ Put this in `.claude/settings.json` (per project) or `~/.claude/settings.json` (
       "mcp__plugin_hiveku_hk__social_hashtags_delete",
       "mcp__plugin_hiveku_hk__social_calendar_delete",
       "mcp__plugin_hiveku_hk__social_schedule_slot_delete",
-      "mcp__plugin_hiveku_hk__social_post_retry"
+      "mcp__plugin_hiveku_hk__social_post_retry",
+      "mcp__plugin_hiveku_hk__webflow_site_publish",
+      "mcp__plugin_hiveku_hk__webflow_cms_item_delete"
     ]
   }
 }
