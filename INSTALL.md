@@ -245,7 +245,24 @@ Put this in `.claude/settings.json` (per project) or `~/.claude/settings.json` (
       "mcp__plugin_hiveku_hk__social_schedule_slot_delete",
       "mcp__plugin_hiveku_hk__social_post_retry",
       "mcp__plugin_hiveku_hk__webflow_site_publish",
-      "mcp__plugin_hiveku_hk__webflow_cms_item_delete"
+      "mcp__plugin_hiveku_hk__webflow_cms_item_delete",
+      "mcp__plugin_hiveku_hk__webflow_page_customcode_delete",
+      "mcp__plugin_hiveku_hk__webflow_cms_collection_delete",
+      "mcp__plugin_hiveku_hk__webflow_cms_field_delete",
+      "mcp__plugin_hiveku_hk__webflow_cms_item_delete_bulk",
+      "mcp__plugin_hiveku_hk__webflow_asset_delete",
+      "mcp__plugin_hiveku_hk__webflow_site_customcode_delete",
+      "mcp__plugin_hiveku_hk__webflow_google_tag_delete",
+      "mcp__plugin_hiveku_hk__webflow_form_submission_delete",
+      "mcp__plugin_hiveku_hk__webflow_webhook_update",
+      "mcp__plugin_hiveku_hk__webflow_webhook_delete",
+      "mcp__plugin_hiveku_hk__webflow_order_fulfill",
+      "mcp__plugin_hiveku_hk__webflow_order_refund",
+      "mcp__plugin_hiveku_hk__webflow_redirect_delete",
+      "mcp__plugin_hiveku_hk__webflow_robots_replace",
+      "mcp__plugin_hiveku_hk__webflow_robots_delete",
+      "mcp__plugin_hiveku_hk__webflow_wellknown_delete",
+      "mcp__plugin_hiveku_hk__cms_publish"
     ]
   }
 }

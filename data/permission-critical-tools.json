@@ -6,7 +6,7 @@
     "mcp__hiveku__"
   ],
   "plugin_version": "0.23.0",
-  "count": 141,
+  "count": 158,
   "tools": [
     {
       "name": "deploy_site",
@@ -712,6 +712,91 @@
       "name": "webflow_cms_item_delete",
       "method": "POST",
       "why_gated": "deletes a staged Webflow CMS item permanently; the Data API has no restore, and unpublish (webflow_cms_item_unpublish) is the reversible alternative"
+    },
+    {
+      "name": "webflow_page_customcode_delete",
+      "method": "POST",
+      "why_gated": "removes every script Hiveku applied to a Webflow page, including the analytics and annotation snippets; tracking on that page stops after the next publish and nothing records which scripts were there"
+    },
+    {
+      "name": "webflow_cms_collection_delete",
+      "method": "POST",
+      "why_gated": "deletes a Webflow CMS collection and every item in it; the Data API has no restore, so the schema and the content are gone together"
+    },
+    {
+      "name": "webflow_cms_field_delete",
+      "method": "POST",
+      "why_gated": "deletes a Webflow CMS field and its value on every item in the collection; the Data API has no restore"
+    },
+    {
+      "name": "webflow_cms_item_delete_bulk",
+      "method": "POST",
+      "why_gated": "deletes up to 100 staged Webflow CMS items and their live copies in one call; the Data API has no restore, and webflow_cms_item_unpublish_bulk is the reversible alternative"
+    },
+    {
+      "name": "webflow_asset_delete",
+      "method": "POST",
+      "why_gated": "deletes an asset from the Webflow site; every page and CMS item that references it shows a broken file, and the Data API has no restore"
+    },
+    {
+      "name": "webflow_site_customcode_delete",
+      "method": "POST",
+      "why_gated": "removes every script applied to the whole Webflow site, including Hiveku's analytics and annotation snippets and any third-party tags; site-wide tracking stops after the next publish"
+    },
+    {
+      "name": "webflow_google_tag_delete",
+      "method": "POST",
+      "why_gated": "removes a Google tag (GA4, Ads, GTM) from the Webflow site; measurement through it stops on the next publish and conversion history is not rebuilt"
+    },
+    {
+      "name": "webflow_form_submission_delete",
+      "method": "POST",
+      "why_gated": "deletes a form submission from Webflow permanently; a lead the customer has not yet seen is gone unless Hiveku already routed a copy to Forms"
+    },
+    {
+      "name": "webflow_webhook_update",
+      "method": "POST",
+      "why_gated": "Webflow has no webhook update, so this deletes the webhook and registers a replacement; if the re-registration fails no webhook remains and the event stops arriving"
+    },
+    {
+      "name": "webflow_webhook_delete",
+      "method": "POST",
+      "why_gated": "deletes a Webflow webhook; every integration listening for that event (form routing, CMS sync, order alerts) stops receiving it silently"
+    },
+    {
+      "name": "webflow_order_fulfill",
+      "method": "POST",
+      "why_gated": "marks a Webflow ecommerce order fulfilled and, with send_email true, emails the customer a shipping notice they cannot be un-sent"
+    },
+    {
+      "name": "webflow_order_refund",
+      "method": "POST",
+      "why_gated": "refunds a Webflow ecommerce order through Stripe and sets its status to refunded; real money moves and the Data API cannot reverse it"
+    },
+    {
+      "name": "webflow_redirect_delete",
+      "method": "POST",
+      "why_gated": "deletes a 301 redirect on an Enterprise Webflow site; the old URL 404s after the next publish and any search ranking it carried is lost"
+    },
+    {
+      "name": "webflow_robots_replace",
+      "method": "POST",
+      "why_gated": "replaces the whole robots.txt of an Enterprise Webflow site; every rule not in the request is removed, and a wrong Disallow deindexes the site"
+    },
+    {
+      "name": "webflow_robots_delete",
+      "method": "POST",
+      "why_gated": "removes robots.txt rules from an Enterprise Webflow site; a user agent left with an empty rule set is dropped entirely and becomes unrestricted"
+    },
+    {
+      "name": "webflow_wellknown_delete",
+      "method": "POST",
+      "why_gated": "deletes well-known files (security.txt, app links, domain verifications) from an Enterprise Webflow site; a verification another service depends on breaks without notice"
+    },
+    {
+      "name": "cms_publish",
+      "method": "POST",
+      "why_gated": "Publishes CMS items (and optionally the whole site) on the customer's live Webflow site"
     }
   ]
 }
