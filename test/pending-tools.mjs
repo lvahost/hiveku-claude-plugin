@@ -98,9 +98,8 @@
  *                into the MCP server working tree from the builder's
  *                page-seo.ts and llms-txt.ts; spelled in prose only in
  *                hiveku-web-agency/references/webflow-sites.md's Availability
- *                table. webflow_llms_txt_delete is on the ask list, so that
- *                file's test accepts it as a PENDING name until the index
- *                carries it.
+ *                table. Landed in the live index on 2026-09-06 (MCP 4f0f0b7);
+ *                entries deleted.
  */
 const SEO_SINCE = '2026-08-30';
 const seo = (batch) => ({ since: SEO_SINCE, batch });
@@ -128,13 +127,6 @@ export const PENDING_TOOLS = new Map([
   // WEBFLOW-1 and WEBFLOW-2: landed in the live index on 2026-09-06 (MCP
   // registry ba4b74b7d8bb, 101 webflow_* tools); entries deleted.
 
-  // WEBFLOW-3: the beta SEO actions (page schema markup, bulk page metadata,
-  // page query, llms.txt) and with_bindings. Mapped by the MCP server's
-  // generator after the builder's page-seo.ts / llms-txt.ts landed; bridged
-  // until the index regenerates after that MCP deploy.
-  ...[
-    'webflow_page_schema_get', 'webflow_page_schema_set', 'webflow_page_schema_query',
-    'webflow_page_schema_update_bulk', 'webflow_page_metadata_update_bulk', 'webflow_page_query',
-    'webflow_llms_txt_get', 'webflow_llms_txt_set', 'webflow_llms_txt_delete',
-  ].map((name) => [name, { since: '2026-09-06', batch: 'WEBFLOW-3' }]),
+  // WEBFLOW-3: landed in the live index on 2026-09-06 (MCP 4f0f0b7, 110
+  // webflow_* tools, 2026 tools total); entries deleted.
 ]);
