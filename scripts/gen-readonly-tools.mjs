@@ -179,6 +179,14 @@ function collect() {
 // Each exclusion names its reason; add here only after reading the tool's
 // registered description AND its route, and never remove one without
 // re-reading both.
+//
+// 2026-09-06, the Webflow program: NO entry for webflow_form_submission_list,
+// webflow_form_submission_get, webflow_order_list or webflow_order_get. They
+// return visitor and buyer PII, which is the same class the pre-approved
+// crm_list_contacts already returns; for that class the wall is a read-only
+// key, not this list. webflow_token_introspect and webflow_token_authorized_by
+// return granted scopes and the authorizing user, never the token itself, so
+// they are ordinary reads. Decided with the design of the p8 round (Lane F).
 const SENSITIVE_READ_EXCLUSIONS = new Map([
   ['project_secrets_list',
     'returns { secrets: { KEY: value } } - PLAINTEXT env values for everything not ' +

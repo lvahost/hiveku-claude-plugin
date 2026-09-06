@@ -262,7 +262,12 @@ Put this in `.claude/settings.json` (per project) or `~/.claude/settings.json` (
       "mcp__plugin_hiveku_hk__webflow_robots_replace",
       "mcp__plugin_hiveku_hk__webflow_robots_delete",
       "mcp__plugin_hiveku_hk__webflow_wellknown_delete",
-      "mcp__plugin_hiveku_hk__cms_publish"
+      "mcp__plugin_hiveku_hk__webflow_llms_txt_delete",
+      "mcp__plugin_hiveku_hk__cms_publish",
+      "mcp__plugin_hiveku_hk__cms_delete_entry",
+      "mcp__plugin_hiveku_hk__cms_bulk_delete",
+      "mcp__plugin_hiveku_hk__cms_delete_collection",
+      "mcp__plugin_hiveku_hk__cms_remove_field"
     ]
   }
 }
@@ -349,6 +354,10 @@ nothing for the other. Cover both:
 
 Worth checking the prefix once on your own machine rather than trusting this file: run
 `/permissions`, or let a Hiveku tool prompt you and read the name it shows.
+
+The extension's scaffold carries allow and deny rules only, no ask list, so every `webflow_*`
+write prompts there by default; the names above are the ones to add if you want the same ask
+rail under `mcp__hiveku__`.
 
 ### For an org admin
 

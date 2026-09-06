@@ -34,5 +34,14 @@ manifest (e.g. `blog`), NOT a UUID.
      dangling references), 409 (a concurrent live edit landed - `force: true` overwrites it, which is
      a lost update), 404 (no draft exists). `locale` for localized collections.
  - Versioned - recover with `cms_list_entry_versions` → `cms_restore_entry_version`.
+ - WEBFLOW-BACKED project (the `sites_list` row has `external_platform: "webflow"` and
+     `cms_provider: "webflow"`): the same `cms_*` calls write the Webflow collections through the
+     provider seam, but every write is STAGED - the response carries `visibility.kind =
+     'publish_required'` - and `cms_publish({ project_id: <the project_id>, collection_id, slugs })`
+     is what makes the entries live (`site: true` also publishes the site; Webflow allows one site
+     publish per minute, a `429 publish_cooldown` carries `retry_after_seconds`). There is no draft
+     shadow, no version history and no restore on Webflow: `cms_delete_entry` unpublishes then
+     deletes the item for good, so confirm every delete with the exact slugs. The rest of the
+     Webflow surface is `/hiveku:webflow` and `hiveku-web-agency/references/webflow-sites.md`.
 Write brand-aligned copy (read `account_context_get` / the account memory first), confirm destructive
 changes, and after edits check the page in the browser or the live preview.

@@ -58,6 +58,10 @@ test('destructive tools remain FINDABLE, just not first', () => {
 });
 
 test('the ranking fixes from the A/B review hold', () => {
+  // 2026-09-06: project_review_link_get's live description grew a branch-aware
+  // paragraph (687 -> 1233 chars) that mentions all three words far apart and
+  // briefly took this pin. The proximity rule in score() (tightest window
+  // holding every term) keeps sites_list, which names the field verbatim, first.
   assert.equal(names('development environment url', 1)[0], 'sites_list');
   assert.equal(names('page speed', 1)[0], 'seo_core_web_vitals');
   assert.ok(names('voicemail transcription', 5).includes('voice_call_transcript_get'));

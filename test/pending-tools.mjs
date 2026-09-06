@@ -90,6 +90,17 @@
  *                robots, well-known files, the activity log). Sixteen of them
  *                are on the ask list; the rest are here so the web skill and
  *                commands can name them before the index carries them.
+ *                Both batches landed in the live index on 2026-09-06 (registry
+ *                ba4b74b7d8bb); entries deleted.
+ *     WEBFLOW-3  the nine beta SEO actions (2026-09-06): page schema markup
+ *                (get, set, query, bulk update), the bulk page metadata write,
+ *                the page query, and llms.txt (get, set, delete). Generated
+ *                into the MCP server working tree from the builder's
+ *                page-seo.ts and llms-txt.ts; spelled in prose only in
+ *                hiveku-web-agency/references/webflow-sites.md's Availability
+ *                table. webflow_llms_txt_delete is on the ask list, so that
+ *                file's test accepts it as a PENDING name until the index
+ *                carries it.
  */
 const SEO_SINCE = '2026-08-30';
 const seo = (batch) => ({ since: SEO_SINCE, batch });
@@ -114,99 +125,16 @@ export const PENDING_TOOLS = new Map([
 
   // SOCIAL-1: landed in the live index on 2026-09-03 (MCP d322d74), entries deleted.
 
-  // WEBFLOW-1
-  ['webflow_site_publish', { since: '2026-09-05', batch: 'WEBFLOW-1' }],
-  ['webflow_cms_item_delete', { since: '2026-09-05', batch: 'WEBFLOW-1' }],
-  // cms_publish: the generic CMS publish for a Webflow-backed project
-  // (Phase 4 provider seam, src/tools/olympus-tools.ts cmsTools). On the ask
-  // list because it puts staged items, and optionally the whole site, on the
-  // customer's live Webflow site.
-  ['cms_publish', { since: '2026-09-05', batch: 'WEBFLOW-1' }],
-  // WEBFLOW-2: one entry per generated tool, in the module order of the
-  // builder's dispatch merge (page content, components, fields, item
-  // extensions, assets, custom code, Google tags, forms, webhooks, comments,
-  // ecommerce, redirects, robots, well-known, activity).
+  // WEBFLOW-1 and WEBFLOW-2: landed in the live index on 2026-09-06 (MCP
+  // registry ba4b74b7d8bb, 101 webflow_* tools); entries deleted.
+
+  // WEBFLOW-3: the beta SEO actions (page schema markup, bulk page metadata,
+  // page query, llms.txt) and with_bindings. Mapped by the MCP server's
+  // generator after the builder's page-seo.ts / llms-txt.ts landed; bridged
+  // until the index regenerates after that MCP deploy.
   ...[
-    'webflow_page_dom_get',
-    'webflow_page_dom_update',
-    'webflow_page_customcode_get',
-    'webflow_page_customcode_set',
-    'webflow_page_customcode_delete',
-    'webflow_component_list',
-    'webflow_component_content_get',
-    'webflow_component_content_update',
-    'webflow_component_properties_get',
-    'webflow_component_properties_update',
-    'webflow_cms_collection_create',
-    'webflow_cms_collection_update',
-    'webflow_cms_collection_delete',
-    'webflow_cms_field_create',
-    'webflow_cms_field_update',
-    'webflow_cms_field_delete',
-    'webflow_cms_item_query',
-    'webflow_cms_item_update_bulk',
-    'webflow_cms_item_delete_bulk',
-    'webflow_cms_item_unpublish_bulk',
-    'webflow_asset_list',
-    'webflow_asset_get',
-    'webflow_asset_upload',
-    'webflow_asset_update',
-    'webflow_asset_delete',
-    'webflow_asset_folder_list',
-    'webflow_asset_folder_create',
-    'webflow_script_list',
-    'webflow_script_register_hosted',
-    'webflow_script_register_inline',
-    'webflow_site_customcode_get',
-    'webflow_site_customcode_set',
-    'webflow_site_customcode_delete',
-    'webflow_customcode_blocks_list',
-    'webflow_hiveku_snippet_install',
-    'webflow_hiveku_snippet_remove',
-    'webflow_google_tag_list',
-    'webflow_google_tag_upsert',
-    'webflow_google_tag_delete',
-    'webflow_form_list',
-    'webflow_form_get',
-    'webflow_form_submission_list',
-    'webflow_form_submission_get',
-    'webflow_form_submission_update',
-    'webflow_form_submission_delete',
-    'webflow_webhook_list',
-    'webflow_webhook_get',
-    'webflow_webhook_create',
-    'webflow_webhook_update',
-    'webflow_webhook_delete',
-    'webflow_comment_thread_list',
-    'webflow_comment_thread_get',
-    'webflow_comment_reply_list',
-    'webflow_comment_reply_create',
-    'webflow_comment_thread_resolve',
-    'webflow_ecommerce_settings_get',
-    'webflow_product_list',
-    'webflow_product_get',
-    'webflow_product_create',
-    'webflow_product_update',
-    'webflow_sku_create',
-    'webflow_sku_update',
-    'webflow_order_list',
-    'webflow_order_get',
-    'webflow_order_update',
-    'webflow_order_fulfill',
-    'webflow_order_unfulfill',
-    'webflow_order_refund',
-    'webflow_inventory_get',
-    'webflow_inventory_update',
-    'webflow_redirect_list',
-    'webflow_redirect_create',
-    'webflow_redirect_update',
-    'webflow_redirect_delete',
-    'webflow_robots_get',
-    'webflow_robots_replace',
-    'webflow_robots_update',
-    'webflow_robots_delete',
-    'webflow_wellknown_create',
-    'webflow_wellknown_delete',
-    'webflow_activity_log_list',
-  ].map((name) => [name, { since: '2026-09-05', batch: 'WEBFLOW-2' }]),
+    'webflow_page_schema_get', 'webflow_page_schema_set', 'webflow_page_schema_query',
+    'webflow_page_schema_update_bulk', 'webflow_page_metadata_update_bulk', 'webflow_page_query',
+    'webflow_llms_txt_get', 'webflow_llms_txt_set', 'webflow_llms_txt_delete',
+  ].map((name) => [name, { since: '2026-09-06', batch: 'WEBFLOW-3' }]),
 ]);

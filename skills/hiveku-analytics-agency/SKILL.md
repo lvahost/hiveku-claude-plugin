@@ -135,6 +135,13 @@ connected GA4 / Search Console properties, and these consequences shape every nu
   LLM, each with connection_status / last_synced_at) - social accounts are NOT included (that is
   `social_list_accounts`). On a marketing key it is invisible; fall back to
   `seo_connections_list` + `ppc_connection_list` and say so.
+- On a Webflow-hosted site (a `sites_list` row with `external_platform: "webflow"`) the embed is
+  installed as a registered script: `webflow_hiveku_snippet_install({ project_id, kind: "analytics" })`
+  (OAuth connections only; a site token answers `412 oauth_required`), live after
+  `webflow_site_publish`. Whether it is already installed is a two-read join (`webflow_script_list`
+  for the `HivekuAnalytics` entry, `webflow_site_customcode_get` for whether that script id is
+  applied); `analytics_diagnose_tracking` then says whether events arrive. Deeper doctrine:
+  `hiveku-web-agency/references/webflow-sites.md`.
 
 ## Engagement lifecycle (the agency arc)
 

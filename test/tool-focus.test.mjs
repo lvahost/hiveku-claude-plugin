@@ -154,9 +154,14 @@ test('localseo and aeo aliases match the manifest department ids', () => {
 });
 
 test('deptMatches: the alias table is explicit and never widens an unaliased department', () => {
-  assert.deepEqual(Object.keys(DEPT_ALIASES).sort(), ['aeo', 'creative', 'design', 'localseo', 'media', 'seo', 'social']);
+  assert.deepEqual(Object.keys(DEPT_ALIASES).sort(), ['aeo', 'creative', 'design', 'localseo', 'media', 'seo', 'social', 'webflow']);
   assert.equal(deptMatches('crawl', 'seo'), true);
   assert.equal(deptMatches('crawl', 'ppc'), false);
+  // 2026-09-06: the webflow alias reaches the Webflow hands and the project
+  // resolver, and never widens an unaliased department.
+  assert.equal(deptMatches('webflow_page_list', 'webflow'), true);
+  assert.equal(deptMatches('sites_list', 'webflow'), true);
+  assert.equal(deptMatches('webflow_page_list', 'ppc'), false);
   assert.equal(deptMatches('content_analysis_summary', 'seo'), true);
   assert.equal(deptMatches('content_create', 'seo'), false);
   assert.equal(deptMatches('ppc_digest', 'ppc'), true);

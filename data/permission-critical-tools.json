@@ -6,7 +6,7 @@
     "mcp__hiveku__"
   ],
   "plugin_version": "0.23.0",
-  "count": 158,
+  "count": 163,
   "tools": [
     {
       "name": "deploy_site",
@@ -794,9 +794,34 @@
       "why_gated": "deletes well-known files (security.txt, app links, domain verifications) from an Enterprise Webflow site; a verification another service depends on breaks without notice"
     },
     {
+      "name": "webflow_llms_txt_delete",
+      "method": "POST",
+      "why_gated": "deletes the llms.txt of an Enterprise Webflow site; AI crawlers lose the guidance file until one is written again"
+    },
+    {
       "name": "cms_publish",
       "method": "POST",
       "why_gated": "Publishes CMS items (and optionally the whole site) on the customer's live Webflow site"
+    },
+    {
+      "name": "cms_delete_entry",
+      "method": "DELETE",
+      "why_gated": "deletes a CMS entry and its draft shadow; on a Webflow-backed project the item is unpublished then deleted from Webflow, where there is no version history to restore from"
+    },
+    {
+      "name": "cms_bulk_delete",
+      "method": "POST",
+      "why_gated": "deletes many CMS entries in one call (each live file and its draft shadow); on a Webflow-backed project every item is removed from Webflow with no restore"
+    },
+    {
+      "name": "cms_delete_collection",
+      "method": "DELETE",
+      "why_gated": "removes a collection from the native CMS manifest, orphaning every entry file behind it (a Webflow-backed project answers 501; its collections are deleted by webflow_cms_collection_delete, gated above)"
+    },
+    {
+      "name": "cms_remove_field",
+      "method": "DELETE",
+      "why_gated": "removes a field from a native CMS collection's schema, which cannot be renamed back (a Webflow-backed project answers 501; its fields are deleted by webflow_cms_field_delete, gated above)"
     }
   ]
 }

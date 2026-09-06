@@ -23,9 +23,10 @@
  *     `ai_optimization_` (the 2026-08-30 SEO program). The SEO surface is
  *     spread across those prefixes, so gating `seo_` alone would still let a
  *     fabricated `backlinks_new_lost_summary` through.
- *   - `workflow_` (2026-08-30), the creative prefixes (2026-09-01) and
- *     `social_` (2026-09-03, the social program); each widening came with a
- *     KNOWN_NON_TOOLS pass and a floor, see the arrays below.
+ *   - `workflow_` (2026-08-30), the creative prefixes (2026-09-01),
+ *     `social_` (2026-09-03, the social program) and `webflow_` (2026-09-06,
+ *     the Webflow program); each widening came with a KNOWN_NON_TOOLS pass
+ *     and a floor, see the arrays below.
  *
  * And the bridge cannot rot: a PENDING entry that the regenerated index now
  * contains FAILS, forcing its deletion from test/pending-tools.mjs.
@@ -77,6 +78,10 @@ const GATED_PREFIXES = [
   // field names (social_account_id, social_account_ids) - nothing fabricated,
   // but the gate is what keeps it that way.
   'social_',
+  // 2026-09-06. The Webflow program: 101 live tools plus the nine WEBFLOW-3
+  // hands. A fabricated webflow_* name in prose is now a failure, not a report
+  // line.
+  'webflow_',
 ];
 
 /**
@@ -101,6 +106,11 @@ const MIN_CHECKED = {
   // The floor sits near half of the pre-wave count so a prose rewrite does not
   // false-fail while a broken walk still does.
   social_: 170,
+  // Webflow footprint measured 2026-09-06 by this test's own extractor: the
+  // web skill's webflow-sites.md Availability table alone contributes 110
+  // tokens, the command, the hub and the three sibling skills the rest. The
+  // floor sits near half of that table so a rewrite does not false-fail.
+  webflow_: 60,
 };
 
 /**
@@ -218,6 +228,14 @@ const KNOWN_NON_TOOLS = new Map([
   ['social_post_list', 'agent-tool'],
   ['social_post_publish', 'agent-tool'],
   ['design_to_post', 'agent-tool'],
+
+  // Webflow program (gate widened 2026-09-06). webflow_status is the
+  // DEPARTMENT AGENT's connection probe (hiveku_agent_server
+  // app/mcp_server/tools/webflow.py and the marketing server's twin), named
+  // in hiveku-web-agency/references/webflow-sites.md with "an agent-side
+  // name, not an MCP tool" in the same sentence. The MCP equivalents are
+  // webflow_site_get and webflow_token_introspect.
+  ['webflow_status', 'agent-tool'],
 ]);
 
 /**
@@ -236,7 +254,7 @@ const TOKEN = /(?<![\w/.\-])([a-z][a-z0-9]*(?:_[a-z0-9]+){2,})(?![\w*])/g;
  * Prose must spell every name in full; the extra bytes buy verifiability.
  * Same prefixes as the gate.
  */
-const SHORTHAND_PREFIX = '(?:voice|seo|backlinks|dataforseo_labs|serp|on_page|keywords_data|content_analysis|domain_analytics|business_data|ai_optimization|social)';
+const SHORTHAND_PREFIX = '(?:voice|seo|backlinks|dataforseo_labs|serp|on_page|keywords_data|content_analysis|domain_analytics|business_data|ai_optimization|social|webflow)';
 const SHORTHAND = new RegExp(`${SHORTHAND_PREFIX}_[a-z0-9]+(?:_[a-z0-9]+)+\`?\\s*\\/\\s*\`?_[a-z_]+`);
 
 function walkMarkdown() {
