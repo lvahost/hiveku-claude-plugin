@@ -13,6 +13,8 @@ import {
   decideForPayload,
   hivekuToolName,
   isReadOnlyTool,
+  isMeteredVendorRead,
+  isNonMutatingTool,
   readOnlyCount,
 } from '../lib/tool-safety.mjs';
 
@@ -572,4 +574,83 @@ test('precedence: deny beats reads-only beats ask_tools beats arg_ask beats the 
     'a tool the folder always prompts for is reported as that, not as an argument hit');
   const ro = folderWith({ version: 1, mode: 'reads-only', arg_ask: { social_create_post: ['scheduled_at'] } });
   assert.equal(decision(decideWithGuardrails(call('social_create_post', { scheduled_at: 'x' }, ro))), 'deny');
+});
+
+/**
+ * D13 — the DataForSEO vendor tools were invisible to the allowlist, so ~65
+ * pure reads prompted as if they mutated something and no sweep could cover
+ * them.
+ *
+ * The obvious fix — adding them to the read-only list — would have been worse
+ * than the bug: `isReadOnlyTool` is what sweep-tools.mjs calls, and the sweep
+ * invokes every tool it is given with `arguments: {}`. Several vendor tools
+ * have no required parameter at all, so `{}` is a valid BILLABLE call. Every
+ * sweep would have started spending DataForSEO credits.
+ *
+ * These tests pin the separation that prevents it.
+ */
+test('a metered vendor read is never sweepable', () => {
+  // The exact tool from the QA report.
+  assert.equal(isMeteredVendorRead('backlinks_summary'), true);
+  assert.equal(
+    isReadOnlyTool('backlinks_summary'),
+    false,
+    'a metered vendor tool in the sweep set would bill the account on every sweep',
+  );
+});
+
+test('a metered vendor read is not a writer, so a reads-only ceiling permits it', () => {
+  assert.equal(isNonMutatingTool('backlinks_summary'), true);
+});
+
+test('an ordinary Hiveku read is unaffected by the split', () => {
+  assert.equal(isReadOnlyTool('hiveku_tool_schema'), true);
+  assert.equal(isMeteredVendorRead('hiveku_tool_schema'), false);
+});
+
+test('an unclassified name is classified as nothing — the file fails closed', () => {
+  assert.equal(isMeteredVendorRead('backlinks_some_future_tool'), false);
+  assert.equal(isReadOnlyTool('backlinks_some_future_tool'), false);
+  assert.equal(isNonMutatingTool('backlinks_some_future_tool'), false);
+});
+
+test('no classified vendor name looks like a task-posting or write endpoint', () => {
+  // A standing guard: DataForSEO task_post endpoints ORDER WORK and bill for
+  // it. If one is ever added to the classification by copy-paste, this fails.
+  const doc = JSON.parse(
+    readFileSync(new URL('../data/vendor-tool-classification.json', import.meta.url), 'utf8'),
+  );
+  const classified = [...(doc.vendorFreeReads ?? []), ...(doc.vendorMeteredReads ?? [])];
+  const suspicious = classified.filter((n) => /task_post|task_get|_ready$|_create$|_delete$|_update$/.test(n));
+  assert.deepEqual(suspicious, [], `these look like writes and must not be classified: ${suspicious}`);
+});
+
+test('every classified vendor name is a tool the server actually serves', () => {
+  const doc = JSON.parse(
+    readFileSync(new URL('../data/vendor-tool-classification.json', import.meta.url), 'utf8'),
+  );
+  const idx = JSON.parse(readFileSync(new URL('../lib/tool-index.json', import.meta.url), 'utf8'));
+  const list = Array.isArray(idx.tools) ? idx.tools : [];
+  const served = new Set(list.map((t) => (typeof t === 'string' ? t : t?.name)).filter(Boolean));
+  assert.ok(served.size > 500, 'tool index did not load — this assertion would pass vacuously');
+  const classified = [
+    ...(doc.vendorFreeReads ?? []),
+    ...(doc.vendorMeteredReads ?? []),
+    ...(doc.vendorFreeCandidates ?? []),
+  ];
+  assert.ok(classified.length >= 60, 'classification did not load');
+  const stale = classified.filter((n) => !served.has(n));
+  assert.deepEqual(stale, [], `classified but no longer served: ${stale}`);
+});
+
+test('the free tier is empty until a billing report confirms it', () => {
+  // Names in vendorFreeReads are pre-approved AND swept, so a wrong entry
+  // bills the client on every sweep. The candidates are staged separately on
+  // purpose; moving one up is a deliberate act, not a default.
+  const doc = JSON.parse(
+    readFileSync(new URL('../data/vendor-tool-classification.json', import.meta.url), 'utf8'),
+  );
+  for (const n of doc.vendorFreeReads ?? []) {
+    assert.equal(isMeteredVendorRead(n), false, `${n} cannot be both free and metered`);
+  }
 });
