@@ -604,6 +604,32 @@ test('a metered vendor read is never sweepable', () => {
   );
 });
 
+test('NOT ONE metered vendor tool passes the gate the sweep actually calls', () => {
+  // ★ PINNED ON isAutoApprovable, NOT isReadOnlyTool, because that is what
+  // scripts/sweep-tools.mjs gates on now. Asserting the weaker predicate would
+  // let a future widening of isAutoApprovable start billing the account on
+  // every sweep run while this file still went green.
+  //
+  // The stakes are concrete: the sweep calls every tool it is given with
+  // `arguments: {}`, and domain_analytics_whois_overview has NO required
+  // parameter, so `{}` is a valid paid call.
+  const doc = JSON.parse(
+    readFileSync(new URL('../data/vendor-tool-classification.json', import.meta.url), 'utf8'),
+  );
+  assert.ok(doc.vendorMeteredReads.length > 50, 'classification did not load — would pass vacuously');
+  const billable = doc.vendorMeteredReads.filter((n) => isAutoApprovable(n, {}));
+  assert.deepEqual(billable, [], `these would be swept and billed: ${billable.slice(0, 5)}`);
+  assert.equal(isAutoApprovable('domain_analytics_whois_overview', {}), false);
+});
+
+test('a metered vendor read is still permitted by a reads-only ceiling', () => {
+  // The other half of the split: it cannot write, so a folder ceilinged to
+  // reads must not deny it — that would break SEO research in exactly the
+  // folders most likely to have a ceiling set.
+  assert.equal(isNonMutatingTool('backlinks_summary'), true);
+  assert.equal(isAutoApprovable('backlinks_summary', {}), false);
+});
+
 test('a metered vendor read is not a writer, so a reads-only ceiling permits it', () => {
   assert.equal(isNonMutatingTool('backlinks_summary'), true);
 });
