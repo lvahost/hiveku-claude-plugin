@@ -249,7 +249,7 @@ test('no guardrails file changes nothing', () => {
 // the CALL. These cases pin the two override rails added for the 2026-08-29
 // voice audit: a GET whose response is itself the hazard (an unauthenticated
 // recording URL) and a read whose safety depends on its arguments.
-import { ARG_GATED_READS, NEVER_AUTO_APPROVE, isAutoApprovable } from '../lib/tool-safety.mjs';
+import { ARG_GATED_READS, NEVER_AUTO_APPROVE, VETO_REASONS, isAutoApprovable } from '../lib/tool-safety.mjs';
 import { PENDING_TOOLS } from './pending-tools.mjs';
 
 test('vetoed reads never auto-approve, even while the server lists them as reads', () => {
@@ -807,4 +807,47 @@ test('every vendor tool the server serves is classified', () => {
       + 'invisible to the sweep. Add each to data/vendor-tool-classification.json — to '
       + `vendorMeteredReads unless a billing report proves it free: ${unclassified.join(', ')}`,
   );
+});
+
+/**
+ * Firecrawl is a SECOND metered vendor, and one of its tools is not a read.
+ *
+ * Found because a namespace rule cannot see it: `md`, `html`, `crawl` are bare
+ * names sharing no prefix with anything. They are safe today only because
+ * method:null also keeps them out of readonly-tools.json — an accident of the
+ * generator, not a decision.
+ */
+test('every Firecrawl tool is gated, and none can reach the sweep', () => {
+  const doc = JSON.parse(
+    readFileSync(new URL('../data/vendor-tool-classification.json', import.meta.url), 'utf8'),
+  );
+  const reads = doc.firecrawlMeteredReads ?? [];
+  const vetoed = doc.firecrawlNeverAutoApprove ?? [];
+  assert.ok(reads.length >= 5, 'firecrawl reads not classified — assertion would be vacuous');
+  for (const n of [...reads, ...vetoed]) {
+    assert.equal(isAutoApprovable(n, {}), false, `${n} would be called by the sweep with {}`);
+  }
+  // The reads are still non-mutating, so a reads-only ceiling permits them.
+  for (const n of reads) assert.equal(isNonMutatingTool(n), true);
+});
+
+test('execute_js is vetoed as EXECUTION, not classified as a read', () => {
+  // It is deliberately absent from the metered-read list: grouping it with md
+  // and html invites the next person to treat the whole family uniformly.
+  const doc = JSON.parse(
+    readFileSync(new URL('../data/vendor-tool-classification.json', import.meta.url), 'utf8'),
+  );
+  assert.ok(!(doc.firecrawlMeteredReads ?? []).includes('execute_js'));
+  assert.equal(isMeteredVendorRead('execute_js'), false);
+  // And the veto holds even if it is ever marked read-only upstream.
+  assert.ok(NEVER_AUTO_APPROVE.has('execute_js'));
+  assert.equal(isAutoApprovable('execute_js', {}), false);
+});
+
+test('a vetoed tool is explained by what makes IT dangerous', () => {
+  // The default ceiling sentence claims "its RESPONSE is the hazard". True of
+  // voice_recording_url_get; false of execute_js, where an operator told the
+  // danger is in the response would weigh the wrong risk.
+  assert.match(VETO_REASONS.execute_js, /ARBITRARY JAVASCRIPT/);
+  assert.ok(!/RESPONSE is the hazard/.test(VETO_REASONS.execute_js));
 });
