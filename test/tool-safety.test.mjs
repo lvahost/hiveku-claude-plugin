@@ -616,8 +616,14 @@ test('NOT ONE metered vendor tool passes the gate the sweep actually calls', () 
   const doc = JSON.parse(
     readFileSync(new URL('../data/vendor-tool-classification.json', import.meta.url), 'utf8'),
   );
-  assert.ok(doc.vendorMeteredReads.length > 50, 'classification did not load — would pass vacuously');
-  const billable = doc.vendorMeteredReads.filter((n) => isAutoApprovable(n, {}));
+  // ★ EVERY metered list, from the file's own _lists schema — not the one key
+  // name that existed when this was written. A second vendor arriving under
+  // firecrawlMeteredReads would otherwise have been outside the single most
+  // safety-critical assertion in this file while it stayed green.
+  const metered = (doc._lists?.metered ?? []).flatMap((k) => doc[k] ?? []);
+  assert.ok(metered.length > 50, 'classification did not load — would pass vacuously');
+  assert.ok((doc._lists?.metered ?? []).length >= 2, '_lists.metered lost a vendor');
+  const billable = metered.filter((n) => isAutoApprovable(n, {}));
   assert.deepEqual(billable, [], `these would be swept and billed: ${billable.slice(0, 5)}`);
   assert.equal(isAutoApprovable('domain_analytics_whois_overview', {}), false);
 });
@@ -813,17 +819,24 @@ test('every vendor tool the server serves is classified', () => {
   const served = list.map((t) => (typeof t === 'string' ? t : t?.name)).filter(Boolean);
   assert.ok(served.length > 500, 'tool index did not load — this assertion would pass vacuously');
 
-  const classified = new Set([
-    ...(doc.vendorFreeReads ?? []),
-    ...(doc.vendorMeteredReads ?? []),
-    ...(doc.vendorFreeCandidates ?? []),
-  ]);
-  // ★ READ the namespaces; do not DERIVE them. Deriving by first token turned
-  // content_analysis_* into 'content_' and matched 40 Hiveku content_* tools,
-  // content_delete among them — the same sample-fitted rule this whole file is
-  // a defence against, reintroduced in the detector guarding it.
+  // ★ EVERY ARRAY IN THE DOCUMENT, not three key names I happened to know about.
+  //
+  // This read vendorFreeReads / vendorMeteredReads / vendorFreeCandidates —
+  // fitted to the keys that existed the day it was written. When Firecrawl was
+  // classified under firecrawlMeteredReads and firecrawlNeverAutoApprove the
+  // test kept passing, having simply stopped looking at two thirds of the file.
+  // Same defect main-hiveku-nosync-ppc found in the sibling guard, and the same
+  // one this file is a defence against, one layer inside the detector.
+  //
+  // Closed over the file's SHAPE instead: add bingMeteredReads next week and it
+  // counts with no edit here. vendorNamespaces contributes nothing on its own,
+  // because a prefix is not a served tool name and cannot match one.
+  const classified = new Set(
+    Object.values(doc).filter(Array.isArray).flat().filter((v) => typeof v === 'string'),
+  );
   const prefixes = doc.vendorNamespaces ?? [];
   assert.ok(prefixes.length >= 5, 'vendorNamespaces missing — assertion would be vacuous');
+  assert.ok(classified.size >= 60, 'classification did not load — assertion would be vacuous');
 
   const unclassified = served
     .filter((n) => prefixes.some((p) => n.startsWith(p)))

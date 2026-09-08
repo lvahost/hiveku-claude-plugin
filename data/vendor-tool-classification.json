@@ -2,6 +2,22 @@
   "_comment": "Hand-maintained classification of the DataForSEO vendor tools. A vendor tool ABSENT from this file is not classified at all and gets no pre-approval - the file fails closed. These tools are READ-ONLY with respect to Hiveku data (every vendor endpoint served is /live or /available_filters; none posts a task or writes anything), but 57 of them BILL THE ACCOUNT per call. Read-only and safe-to-run-unattended are therefore NOT the same question here, and this file keeps them apart.",
   "_why_enumerated_not_pattern_matched": "The vendor tool list is fetched at RUNTIME from a remote microservice (mcp-seo.hiveku.com), not compiled from this repo. A namespace rule such as 'backlinks_* is a read' would silently classify a future backlinks_*_task_post the moment the vendor deploys one, with no plugin release and no review. An explicit list cannot do that.",
   "_source_of_truth": "lib/tool-index.json, which is generated from a live tools/list. src/modules/** in the MCP server is a PARTIAL, STALE local mirror - it defines no serp_youtube_* tools and no keywords_data trends tools, both of which the live server serves - so it must never be parsed as the registry.",
+  "_lists": {
+    "free": [
+      "vendorFreeReads"
+    ],
+    "metered": [
+      "vendorMeteredReads",
+      "firecrawlMeteredReads"
+    ],
+    "neverAutoApprove": [
+      "firecrawlNeverAutoApprove"
+    ],
+    "unclassifiedCandidates": [
+      "vendorFreeCandidates"
+    ]
+  },
+  "_lists_note": "WHICH KEY MEANS WHAT, stated as data. Both lib/tool-safety.mjs and the test suite read this instead of hardcoding key names. Two guards had already gone blind that way: each was fitted to the keys that existed when it was written, so adding firecrawlMeteredReads left them silently checking two thirds of the file. Adding a vendor now means adding its array AND naming the array here - and if you forget the second step, the 'every vendor tool the server serves is classified' test still fails, because that one is closed over every array in the document.",
   "vendorNamespaces": [
     "ai_optimization_",
     "backlinks_",
