@@ -215,6 +215,16 @@ const SENSITIVE_READ_EXCLUSIONS = new Map([
   ['marketing_form_attachment_download_url',
     'returns a signed, unrevocable download link to a visitor-uploaded document (resume, ID, ' +
     'intake form). Minting it is distribution, not a read; it must be an explicit operator ask.'],
+  // 2026-09-08. The exemplar the entry above compares itself to was never
+  // actually on this list. It is the FIRST name in NEVER_AUTO_APPROVE, yet it
+  // stayed in readonly-tools.json — and the reads-only guardrail ceiling reads
+  // isReadOnlyTool, not isAutoApprovable, so `mode: "reads-only"` on a client
+  // folder gave no protection at all against exactly the thing an owner sets
+  // it for. The two lists in this plugin disagreed about the same tool.
+  ['voice_recording_url_get',
+    'returns an UNAUTHENTICATED, non-revocable presigned URL to a call recording. Minting the ' +
+    'link is distribution: it lands in a transcript, a log or a pasted report and cannot be ' +
+    'taken back (2026-08-29 voice audit).'],
 ]);
 
 // The mirror image: a POST that is a pure read. Some routes dispatch reads and

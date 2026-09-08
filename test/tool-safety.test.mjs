@@ -192,6 +192,34 @@ test('a MALFORMED guardrails file fails CLOSED for writes, open for reads', () =
   assert.equal(decision(decideWithGuardrails(payload('crm_list_contacts', cwd))), 'allow');
 });
 
+test('a reads-only ceiling ASKS for a read whose response is the hazard', () => {
+  // The ceiling asks "does this tool write". voice_recording_url_get does not
+  // — it is a server-declared GET — so the ceiling had no opinion and the call
+  // fell through to the user's blanket allow and ran unprompted. An owner who
+  // set reads-only on a client folder to stop call recordings leaving got no
+  // protection from the one setting that looked like it was for exactly that.
+  //
+  // Ask, not deny: it is a legitimate read, so this makes minting the link an
+  // explicit operator decision, which is what NEVER_AUTO_APPROVE asks for.
+  const cwd = folderWith({ version: 1, mode: 'reads-only' });
+  const r = decideWithGuardrails(payload('voice_recording_url_get', cwd));
+  assert.equal(decision(r), 'ask');
+  assert.match(r.hookSpecificOutput.permissionDecisionReason, /RESPONSE is the hazard/);
+  // an ordinary read is untouched
+  assert.equal(decision(decideWithGuardrails(payload('crm_list_contacts', cwd))), 'allow');
+});
+
+test('the response-hazard ask applies inside a batch too', () => {
+  const cwd = folderWith({ version: 1, mode: 'reads-only' });
+  const r = decideWithGuardrails({
+    tool_name: 'mcp__plugin_hiveku_hk__hiveku_batch',
+    cwd,
+    tool_input: { calls: [{ tool: 'crm_list_contacts' }, { tool: 'voice_recording_url_get' }] },
+  });
+  assert.equal(decision(r), 'ask');
+  assert.match(r.hookSpecificOutput.permissionDecisionReason, /voice_recording_url_get/);
+});
+
 test('no guardrails file changes nothing', () => {
   const cwd = folderWith(undefined);
   assert.equal(decision(decideWithGuardrails(payload('crm_list_contacts', cwd))), 'allow');

@@ -15,10 +15,22 @@
  * afternoon.
  *
  * ── Safety ────────────────────────────────────────────────────────────────
- * ★ Only tools the SERVER declares `GET` are called, via the same
- * lib/readonly-tools.json the permission hook uses. Nothing here can create,
- * update, delete, send or publish. That is a property of the list, not of this
- * script's good intentions -- see lib/tool-safety.mjs.
+ * ★ Only tools this plugin would PRE-APPROVE are called -- readonly-tools.json
+ * (server-declared GETs, plus readOnlyHint declarations and the handful of
+ * POST-dispatched pure reads) MINUS NEVER_AUTO_APPROVE, and with the argument
+ * gates applied to the exact arguments this sweep sends. That is the same
+ * `isAutoApprovable` predicate the permission hook uses, so the sweep cannot
+ * reach anything the hook would decline to vouch for.
+ *
+ * It used to gate on `isReadOnlyTool` alone, which is the weaker, name-pure
+ * predicate. Two tools slipped through: voice_recording_url_get (on
+ * NEVER_AUTO_APPROVE) and voice_voicemails_list, whose route mints a presigned
+ * recording URL per row unless `audio_urls: 'false'` is passed -- so every
+ * sweep minted a page of unauthenticated, non-revocable voicemail audio links,
+ * which is precisely what that gate exists to prevent.
+ *
+ * Nothing here can create, update, delete, send or publish. That is a property
+ * of the list, not of this script's good intentions -- see lib/tool-safety.mjs.
  *
  * Usage:
  *   node scripts/sweep-tools.mjs [--dir <bound-account-dir>] [--limit N]
@@ -29,7 +41,8 @@ import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { isReadOnlyTool } from '../lib/tool-safety.mjs';
+import { isAutoApprovable } from '../lib/tool-safety.mjs';
+import { classify } from '../lib/sweep-classify.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const PLUGIN_ROOT = path.resolve(HERE, '..');
@@ -110,74 +123,23 @@ class McpClient {
   close() { this.proc.stdin.end(); this.proc.kill(); }
 }
 
-const short = (v, n = 160) => {
-  const s = typeof v === 'string' ? v : JSON.stringify(v);
-  return s && s.length > n ? s.slice(0, n) + '…' : s;
+/**
+ * Per-tool arguments the sweep sends. Empty for almost everything -- the point
+ * of the sweep is "does this answer at all", and inventing parameters would
+ * make a needs-params refusal look like coverage.
+ *
+ * The exception is a read whose SAFE form needs an explicit argument.
+ * voice_voicemails_list returns a presigned recording URL per row unless
+ * audio_urls is 'false' (the route reads `sp.get('audio_urls') !== 'false'`,
+ * so omitting it defaults to minting them). Passing the metadata form keeps
+ * the tool in the sweep's coverage without generating shareable audio links.
+ *
+ * ★ This table feeds BOTH the safety gate and the call. Do not split them.
+ */
+const SWEEP_ARGS = {
+  voice_voicemails_list: { audio_urls: 'false' },
 };
-
-const NEEDS_PARAMS_RE = /required|missing|invalid_?param|must provide|expected .* argument|validation|pass (?:exactly )?one of/i;
-
-/**
- * The top-level `error` a tool put in its own JSON body, or null.
- *
- * ★ A 200 IS NOT A PASS. The transport is healthy on every Hiveku tool call —
- * the Olympus routes answer 200 and put failures in the BODY, and the MCP
- * result carries no isError for them. Classifying on the envelope alone marked
- * ppc_campaign_get "ok" while its own recorded detail read
- * {"error":"Missing required parameter: id"}, and that tool turned out to 500
- * on every real input. A sweep that counts an error body as a pass does not
- * measure health, it manufactures it (Locus PPC report, PPC-12).
- */
-function bodyError(text) {
-  if (!text) return null;
-  const trimmed = text.trim();
-  if (!trimmed.startsWith('{') && !trimmed.startsWith('[')) return null;
-  let parsed;
-  try { parsed = JSON.parse(trimmed); } catch { return null; }
-  const node = Array.isArray(parsed) ? parsed[0] : parsed;
-  if (!node || typeof node !== 'object') return null;
-  // Some routes nest the payload under `data`; an error is always top-level.
-  const err = node.error ?? node.errors;
-  if (err === undefined || err === null || err === false) return null;
-  return typeof err === 'string' ? err : JSON.stringify(err);
-}
-
-/**
- * Classify one tool result.
- *
- * A tool that rejects empty arguments is NOT broken -- it wants parameters this
- * sweep has no business inventing. Reporting that as a failure would bury the
- * real ones, which is the whole reason a sweep is worth running.
- *
- * But "it wants parameters" and "it is fine" are different answers, and only
- * one of them may be counted as coverage. Three buckets, never two-and-a-half:
- *   needs-params — the tool refused for want of an argument the sweep withheld;
- *   error        — anything else that failed, INCLUDING a 200 with an error body;
- *   ok           — the tool answered.
- */
-function classify(msg) {
-  if (msg?.error) {
-    const text = `${msg.error.message || ''} ${JSON.stringify(msg.error.data || '')}`;
-    if (NEEDS_PARAMS_RE.test(text)) {
-      return { status: 'needs-params', detail: short(msg.error.message) };
-    }
-    return { status: 'error', detail: short(msg.error.message) };
-  }
-  const result = msg?.result;
-  const text = (result?.content || []).map((c) => c.text || '').join(' ');
-  if (result?.isError) {
-    const detail = short(text);
-    if (NEEDS_PARAMS_RE.test(detail)) return { status: 'needs-params', detail };
-    return { status: 'error', detail };
-  }
-  const inBody = bodyError(text);
-  if (inBody !== null) {
-    const detail = short(inBody);
-    if (NEEDS_PARAMS_RE.test(inBody)) return { status: 'needs-params', detail };
-    return { status: 'error', detail };
-  }
-  return { status: 'ok', detail: short(text, 80) };
-}
+const argsFor = (name) => SWEEP_ARGS[name] ?? {};
 
 async function main() {
   console.log(`Hiveku tool sweep — ${ARGS.dir}`);
@@ -215,8 +177,11 @@ async function main() {
     process.exit(1);
   }
 
-  // ★ The safety gate. Only server-declared reads.
-  let targets = all.map((t) => t.name).filter(isReadOnlyTool);
+  // ★ The safety gate: the same predicate the permission hook applies, fed the
+  // same arguments this sweep will actually send. Gating on one argument shape
+  // and calling with another is how the gate stops meaning anything, so both
+  // read from `argsFor`.
+  let targets = all.map((t) => t.name).filter((n) => isAutoApprovable(n, argsFor(n)));
   if (ARGS.only) targets = targets.filter((n) => n.includes(ARGS.only));
   if (ARGS.limit) targets = targets.slice(0, ARGS.limit);
 
@@ -270,7 +235,7 @@ async function main() {
     for (let attempt = 0; attempt < 3; attempt++) {
       await takeSlot();
       let msg;
-      try { msg = await mcp.send('tools/call', { name, arguments: {} }); }
+      try { msg = await mcp.send('tools/call', { name, arguments: argsFor(name) }); }
       catch (e) { msg = { error: { message: String(e.message || e) } }; }
       const c = classify(msg);
       const text = `${c.detail ?? ''}`;
