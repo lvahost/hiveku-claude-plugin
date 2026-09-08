@@ -685,3 +685,58 @@ test('the free tier is empty until a billing report confirms it', () => {
     assert.equal(isMeteredVendorRead(n), false, `${n} cannot be both free and metered`);
   }
 });
+
+/**
+ * ★ THE ENUMERATION MUST FAIL LOUDLY WHEN IT GOES STALE.
+ *
+ * data/vendor-tool-classification.json is a hand-maintained list of 65 vendor
+ * tools, and enumeration is the RIGHT choice there: the vendor registry is
+ * fetched at runtime from a remote microservice, so a namespace rule like
+ * "backlinks_* is a read" would classify a future backlinks_*_task_post the
+ * moment the vendor deploys one, with no plugin release and no review.
+ *
+ * But an enumeration has an OPEN domain — someone can add a valid new instance
+ * without editing it — which means it WILL go stale, silently, and the only
+ * question is whether anything notices. The sibling test above catches a
+ * classified name the server has STOPPED serving. Nothing caught the opposite
+ * and more likely direction: a name the server has STARTED serving that nobody
+ * classified.
+ *
+ * An unclassified tool is not dangerous — tool-safety fails closed, so it is
+ * simply not pre-approved. It is invisible that matters: the vendor surface
+ * grows, the classification silently covers less of it, and the file keeps
+ * looking complete. This turns that into a failing test naming the new tool.
+ */
+test('every vendor tool the server serves is classified', () => {
+  const doc = JSON.parse(
+    readFileSync(new URL('../data/vendor-tool-classification.json', import.meta.url), 'utf8'),
+  );
+  const idx = JSON.parse(readFileSync(new URL('../lib/tool-index.json', import.meta.url), 'utf8'));
+  const list = Array.isArray(idx.tools) ? idx.tools : [];
+  const served = list.map((t) => (typeof t === 'string' ? t : t?.name)).filter(Boolean);
+  assert.ok(served.length > 500, 'tool index did not load — this assertion would pass vacuously');
+
+  const classified = new Set([
+    ...(doc.vendorFreeReads ?? []),
+    ...(doc.vendorMeteredReads ?? []),
+    ...(doc.vendorFreeCandidates ?? []),
+  ]);
+  // ★ READ the namespaces; do not DERIVE them. Deriving by first token turned
+  // content_analysis_* into 'content_' and matched 40 Hiveku content_* tools,
+  // content_delete among them — the same sample-fitted rule this whole file is
+  // a defence against, reintroduced in the detector guarding it.
+  const prefixes = doc.vendorNamespaces ?? [];
+  assert.ok(prefixes.length >= 5, 'vendorNamespaces missing — assertion would be vacuous');
+
+  const unclassified = served
+    .filter((n) => prefixes.some((p) => n.startsWith(p)))
+    .filter((n) => !classified.has(n));
+
+  assert.deepEqual(
+    unclassified,
+    [],
+    'These vendor tools are served but unclassified, so they get no pre-approval and are '
+      + 'invisible to the sweep. Add each to data/vendor-tool-classification.json — to '
+      + `vendorMeteredReads unless a billing report proves it free: ${unclassified.join(', ')}`,
+  );
+});
