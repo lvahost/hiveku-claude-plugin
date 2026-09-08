@@ -674,6 +674,74 @@ test('every classified vendor name is a tool the server actually serves', () => 
   assert.deepEqual(stale, [], `classified but no longer served: ${stale}`);
 });
 
+/**
+ * ★ THE NAMESPACE GUARD ABOVE CANNOT SEE A VENDOR IT DOES NOT KNOW.
+ *
+ * `every vendor tool the server serves is classified` checks the nine
+ * DataForSEO namespaces, which are now data rather than derived — the right
+ * fix, and it catches a new tool in a KNOWN namespace. But the namespace list
+ * is itself an enumeration with an open domain: a new vendor arrives with new
+ * names, matches no namespace, and the guard cannot see it. One level up, same
+ * shape.
+ *
+ * `method: null` is the marker that does not depend on knowing the vendor. A
+ * tool with no Olympus route mapping is not served by this monorepo at all, so
+ * it is either a vendor's or answered locally — and that is true of a vendor
+ * nobody has heard of yet. All 65 classified names carry it and no mapped tool
+ * does.
+ *
+ * This found one: six Firecrawl-backed tools (`crawl`, `md`, `html`, `pdf`,
+ * `screenshot`, `execute_js`) — a SECOND metered vendor surface, sharing no
+ * prefix with anything, unclassified, and invisible to a namespace rule.
+ */
+test('★ every UNMAPPED tool is accounted for, including vendors we have not met', () => {
+  const doc = JSON.parse(
+    readFileSync(new URL('../data/vendor-tool-classification.json', import.meta.url), 'utf8'),
+  );
+  const idx = JSON.parse(readFileSync(new URL('../lib/tool-index.json', import.meta.url), 'utf8'));
+  const classified = new Set([
+    ...(doc.vendorFreeReads ?? []),
+    ...(doc.vendorMeteredReads ?? []),
+    ...(doc.vendorFreeCandidates ?? []),
+  ]);
+  assert.ok(classified.size >= 60, 'classification did not load — this would pass vacuously');
+
+  // Answered by the plugin itself or dispatched to a department agent: no
+  // vendor, no per-call charge.
+  const LOCAL = [
+    'hiveku_batch', 'hiveku_tool_schema', 'hiveku_find_tools',
+    'list_departments', 'talk_to_department',
+  ];
+  // Firecrawl-backed. NOT classified, and NOT currently sweepable — but only
+  // because `method: null` keeps them out of readonly-tools.json, which is an
+  // accident of the generator rather than a decision anyone took. Give any of
+  // them a readOnlyHint — and `md` / `html` genuinely ARE reads, so someone
+  // reasonably will — and the sweep starts calling a metered vendor with
+  // `arguments: {}` on every run. The test below pins that today; classifying
+  // them is the real fix.
+  const FIRECRAWL = ['crawl', 'md', 'html', 'pdf', 'screenshot', 'execute_js'];
+  const ACKNOWLEDGED = new Set([...LOCAL, ...FIRECRAWL]);
+
+  const unmapped = (idx.tools ?? []).filter((t) => t && t.name && !t.method).map((t) => t.name);
+  assert.ok(unmapped.length > 50, 'tool index did not load — this would pass vacuously');
+  const unaccounted = unmapped.filter((n) => !classified.has(n) && !ACKNOWLEDGED.has(n));
+  assert.deepEqual(
+    unaccounted, [],
+    `no Olympus route and no classification, so nothing says who serves these or what they cost: ${unaccounted.join(', ')}. ` +
+    'Classify them in data/vendor-tool-classification.json, or acknowledge them here with the reason.',
+  );
+});
+
+test('the Firecrawl tools stay out of the sweep while they are unclassified', () => {
+  // The negative control for the note above. If this fails, a metered vendor
+  // has just become reachable by a script that calls every tool it is given
+  // with empty arguments.
+  for (const n of ['crawl', 'md', 'html', 'pdf', 'screenshot', 'execute_js']) {
+    assert.equal(isAutoApprovable(n, {}), false,
+      `${n} is Firecrawl-backed and unclassified — it must not be auto-approvable or swept`);
+  }
+});
+
 test('the free tier is empty until a billing report confirms it', () => {
   // Names in vendorFreeReads are pre-approved AND swept, so a wrong entry
   // bills the client on every sweep. The candidates are staged separately on
