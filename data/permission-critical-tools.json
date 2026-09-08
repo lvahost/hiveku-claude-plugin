@@ -6,7 +6,7 @@
     "mcp__hiveku__"
   ],
   "plugin_version": "0.25.0",
-  "count": 163,
+  "count": 164,
   "tools": [
     {
       "name": "deploy_site",
@@ -702,6 +702,11 @@
       "name": "social_post_retry",
       "method": "POST",
       "why_gated": "re-runs the publish for a failed post version; a second call publishes for real a second time on the platform"
+    },
+    {
+      "name": "webflow_project_cms_provider_set",
+      "method": "POST",
+      "why_gated": "redirects every future content write for a project onto the customer's live Webflow CMS"
     },
     {
       "name": "webflow_site_publish",

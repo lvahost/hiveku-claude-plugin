@@ -258,6 +258,7 @@ Put this in `.claude/settings.json` (per project) or `~/.claude/settings.json` (
       "mcp__plugin_hiveku_hk__webflow_webhook_delete",
       "mcp__plugin_hiveku_hk__webflow_order_fulfill",
       "mcp__plugin_hiveku_hk__webflow_order_refund",
+      "mcp__plugin_hiveku_hk__webflow_project_cms_provider_set",
       "mcp__plugin_hiveku_hk__webflow_redirect_delete",
       "mcp__plugin_hiveku_hk__webflow_robots_replace",
       "mcp__plugin_hiveku_hk__webflow_robots_delete",

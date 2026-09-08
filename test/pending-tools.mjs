@@ -129,4 +129,12 @@ export const PENDING_TOOLS = new Map([
 
   // WEBFLOW-3: landed in the live index on 2026-09-06 (MCP 4f0f0b7, 110
   // webflow_* tools, 2026 tools total); entries deleted.
+
+  // WEBFLOW-4: the Olympus write path for website_projects.cms_provider (MCP
+  // 91e81ab, 111 webflow_* tools). It is the last step of an agent-driven
+  // Webflow handover - without it the connection binds and the project stays
+  // on the native CMS until a human switches it in the dashboard. Gated
+  // because flipping it points every subsequent content write at the
+  // customer's live site.
+  ['webflow_project_cms_provider_set', { since: '2026-09-08', batch: 'WEBFLOW-4' }],
 ]);
