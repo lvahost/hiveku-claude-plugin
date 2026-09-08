@@ -192,6 +192,21 @@ test('a MALFORMED guardrails file fails CLOSED for writes, open for reads', () =
   assert.equal(decision(decideWithGuardrails(payload('crm_list_contacts', cwd))), 'allow');
 });
 
+test('a reads-only folder can still DISCOVER tools', () => {
+  // hiveku_find_tools was denied with the reason "hiveku_find_tools writes" —
+  // a local lookup in lib/tool-index.json described to the model as a write.
+  // Worse, in index mode it is the ONLY route to the full surface, so a
+  // reads-only ceiling left the session with the core tools and no way to find
+  // anything else. A guardrails.json with a typo does the same, since a parse
+  // failure fails closed to reads-only.
+  const cwd = folderWith({ version: 1, mode: 'reads-only' });
+  assert.equal(decision(decideWithGuardrails(payload('hiveku_find_tools', cwd))), 'allow');
+  const broken = folderWith('{not json');
+  assert.equal(decision(decideWithGuardrails(payload('hiveku_find_tools', broken))), 'allow');
+  // ...while a tool that really does write is still refused.
+  assert.equal(decision(decideWithGuardrails(payload('ppc_budget_update', cwd))), 'deny');
+});
+
 test('a reads-only ceiling ASKS for a read whose response is the hazard', () => {
   // The ceiling asks "does this tool write". voice_recording_url_get does not
   // — it is a server-declared GET — so the ceiling had no opinion and the call

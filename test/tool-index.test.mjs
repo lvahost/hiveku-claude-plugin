@@ -89,7 +89,10 @@ test('results tell the model the found tools are now callable', () => {
   // found tools to the advertised list and emits tools/list_changed, so the
   // honest message says added to the session tool list AND warns some clients
   // surface them deferred (the "can be called now" claim was false on Claude Code).
-  const text = renderResults(searchTools('rankings', { limit: 2 }), 'rankings');
+  // The promotion set is passed EXPLICITLY: the sentence is a claim about what
+  // the shim actually added, and it must only render for names that were.
+  const matches = searchTools('rankings', { limit: 2 });
+  const text = renderResults(matches, 'rankings', { promoted: new Set(matches.map((m) => m.name)) });
   assert.match(text, /added to this session's tool list/i);
   assert.match(text, /DEFERRED/);
   assert.match(text, /select:mcp__plugin_hiveku_hk__/);
@@ -185,9 +188,36 @@ test('a read-only key gets annotations, never hidden results', () => {
 });
 
 test('renderResults promises promotion, not direct-call magic', () => {
-  const text = renderResults([{ name: 'crm_list_contacts', method: 'GET', description: 'x' }], 'contacts');
+  const one = [{ name: 'crm_list_contacts', method: 'GET', description: 'x' }];
+  const text = renderResults(one, 'contacts', { promoted: new Set(['crm_list_contacts']) });
   assert.match(text, /added to this session's tool list/);
   assert.doesNotMatch(text, /do not need to appear/);
+});
+
+test('a match that was NOT promoted is never claimed to be callable', () => {
+  // The claim used to be computed from `blockedByScope`, which is only ever set
+  // for a read-only key — so on a normal key EVERY match was asserted to have
+  // been added, including names the server does not serve to this connection.
+  // The model was then told to load a tool that cannot resolve: the
+  // findable-but-uncallable defect, as a false success claim.
+  const two = [
+    { name: 'crm_list_contacts', method: 'GET', description: 'x' },
+    { name: 'voice_call_place', method: 'POST', description: 'y' },
+  ];
+  const text = renderResults(two, 'contacts', { promoted: new Set(['crm_list_contacts']) });
+  assert.match(text, /1 callable/, 'only the promoted tool may be counted as callable');
+  assert.match(text, /NOT served to this connection/, 'the unpromoted match must be marked');
+  assert.match(text, /not added and cannot be\s+called/i);
+});
+
+test('a failed promotion says so instead of claiming the tools are loaded', () => {
+  // The upstream list fetch is caught with a debug line only. Zero tools were
+  // promoted and no tools/list_changed was sent, yet the model was still told
+  // they were in its list and instructed to select: them.
+  const one = [{ name: 'crm_list_contacts', method: 'GET', description: 'x' }];
+  const text = renderResults(one, 'contacts', { promoted: new Set(), promotionFailed: true });
+  assert.match(text, /could NOT be refreshed/i);
+  assert.doesNotMatch(text, /have just been added to this session's tool list/i);
 });
 
 test('★ naming a tool exactly returns THAT tool, not its near-anagram', () => {
