@@ -219,3 +219,57 @@ test('every re-execution exemption is still live and still an exemption', () => 
   }
   assert.deepEqual(stale, [], `stale re-execution exemptions:\n  ${stale.join('\n  ')}`);
 });
+
+/**
+ * ── The second-prefix blanket-allow ───────────────────────────────────────
+ *
+ * data/permission-critical-tools.json declares TWO prefixes, because the same
+ * tools are served under `mcp__plugin_hiveku_hk__` by the plugin and under
+ * `mcp__hiveku__` by the VS Code extension. The ask block in INSTALL.md is
+ * written under the plugin prefix ONLY, and Claude Code ask rules match a
+ * literal name: a rule for one prefix does nothing for the other.
+ *
+ * So a snippet that blanket-allows the extension's prefix while the ask list
+ * stays plugin-prefixed does not gate 162 of the 163 critical tools — it
+ * un-gates them. That is strictly worse than not mentioning the prefix at all,
+ * because a reader who copies it believes they have the rail. INSTALL.md
+ * shipped exactly that snippet until 2026-09-08, which put webflow_site_publish,
+ * webflow_cms_item_delete_bulk and webflow_order_refund one paste away from
+ * running unprompted.
+ *
+ * The safe shape is to leave the second prefix out of `allow` entirely, so
+ * everything under it prompts. Mirroring the full list under both prefixes is
+ * also correct, and the file shows how to generate it — but a partial mirror
+ * is not, which is why this asserts on the blanket allow rather than on the
+ * ask list.
+ */
+test('no INSTALL.md snippet blanket-allows a prefix the ask list does not cover', () => {
+  const install = fs.readFileSync(path.join(root, 'INSTALL.md'), 'utf8');
+  const blocks = [...install.matchAll(/```json\n([\s\S]*?)```/g)]
+    .map((m) => { try { return JSON.parse(m[1]); } catch { return null; } })
+    .filter((b) => Array.isArray(b?.permissions?.allow));
+
+  const jsonNames = permFile.tools.map((t) => t.name);
+  const offenders = [];
+  for (const block of blocks) {
+    const ask = Array.isArray(block.permissions.ask) ? block.permissions.ask : [];
+    for (const rule of block.permissions.allow) {
+      if (!rule.endsWith('*')) continue;
+      const prefix = rule.slice(0, -1);
+      if (!permFile.prefixes.includes(prefix)) continue;
+      const uncovered = jsonNames.filter((n) => !ask.includes(`${prefix}${n}`));
+      // The plugin prefix is covered by the main block, which the mirror test
+      // above already pins; illustrative snippets may repeat that allow.
+      if (prefix === 'mcp__plugin_hiveku_hk__') continue;
+      if (uncovered.length) offenders.push(`${rule} leaves ${uncovered.length} gated tools unmatched`);
+    }
+  }
+
+  assert.deepEqual(
+    offenders,
+    [],
+    'INSTALL.md blanket-allows a prefix its ask list does not spell out, which un-gates every ' +
+      'critical tool under that name. Either drop the prefix from allow (everything under it then ' +
+      'prompts), or mirror all ' + jsonNames.length + ' names under it: ' + offenders.join('; '),
+  );
+});

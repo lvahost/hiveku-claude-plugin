@@ -346,18 +346,30 @@ nothing for the other. Cover both:
 ```json
 {
   "permissions": {
-    "allow": ["mcp__plugin_hiveku_hk__*", "mcp__hiveku__*"],
+    "allow": ["mcp__plugin_hiveku_hk__*"],
     "ask": ["mcp__hiveku__deploy_site", "mcp__plugin_hiveku_hk__deploy_site"]
   }
 }
 ```
 
+**Note what is deliberately absent: `mcp__hiveku__*` is not in `allow`.** The ask list above is
+written entirely under the plugin prefix, and an ask rule for one prefix does not match the other
+one. Blanket-allowing the extension's prefix alongside a plugin-prefixed ask list is the worst of
+both worlds: every gated tool becomes reachable under a name no rule matches, so
+`webflow_site_publish`, `webflow_cms_item_delete_bulk` and `webflow_order_refund` all run
+unprompted. Leaving the prefix out of `allow` means anything under it prompts, which is the same
+default the extension's own scaffold relies on.
+
 Worth checking the prefix once on your own machine rather than trusting this file: run
 `/permissions`, or let a Hiveku tool prompt you and read the name it shows.
 
-The extension's scaffold carries allow and deny rules only, no ask list, so every `webflow_*`
-write prompts there by default; the names above are the ones to add if you want the same ask
-rail under `mcp__hiveku__`.
+If you do want a blanket allow on the extension's prefix, the ask list has to be mirrored under
+it in full. Generate both halves rather than retyping 163 names:
+
+```bash
+node -e "const t=require('./data/permission-critical-tools.json').tools.map(x=>x.name);
+console.log(JSON.stringify(['mcp__plugin_hiveku_hk__','mcp__hiveku__'].flatMap(p=>t.map(n=>p+n)),null,2))"
+```
 
 ### For an org admin
 
