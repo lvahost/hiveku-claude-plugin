@@ -136,5 +136,4 @@ export const PENDING_TOOLS = new Map([
   // on the native CMS until a human switches it in the dashboard. Gated
   // because flipping it points every subsequent content write at the
   // customer's live site.
-  ['webflow_project_cms_provider_set', { since: '2026-09-08', batch: 'WEBFLOW-4' }],
 ]);
