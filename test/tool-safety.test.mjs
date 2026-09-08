@@ -699,11 +699,26 @@ test('★ every UNMAPPED tool is accounted for, including vendors we have not me
     readFileSync(new URL('../data/vendor-tool-classification.json', import.meta.url), 'utf8'),
   );
   const idx = JSON.parse(readFileSync(new URL('../lib/tool-index.json', import.meta.url), 'utf8'));
-  const classified = new Set([
-    ...(doc.vendorFreeReads ?? []),
-    ...(doc.vendorMeteredReads ?? []),
-    ...(doc.vendorFreeCandidates ?? []),
-  ]);
+  // ★ Read EVERY name list in the file, not three hardcoded keys.
+  //
+  // Those three were themselves a rule fitted to the sample: when Firecrawl was
+  // classified under new keys (firecrawlMeteredReads,
+  // firecrawlNeverAutoApprove) this test kept passing — but on the strength of
+  // the hardcoded acknowledgement below, not because the tools were classified.
+  // Passing for the wrong reason, in the guard against exactly that.
+  //
+  // Collect every array in the document and keep the entries that name a served
+  // tool. That is closed over the file's shape: a `bingMeteredReads` key added
+  // next week counts with no edit here, and a non-name array like
+  // vendorNamespaces (prefixes such as 'backlinks_') contributes nothing
+  // because a prefix is not a served tool name.
+  const servedNames = new Set((idx.tools ?? []).map((t) => t?.name).filter(Boolean));
+  const classified = new Set(
+    Object.values(doc)
+      .filter(Array.isArray)
+      .flat()
+      .filter((n) => typeof n === 'string' && servedNames.has(n)),
+  );
   assert.ok(classified.size >= 60, 'classification did not load — this would pass vacuously');
 
   // Answered by the plugin itself or dispatched to a department agent: no
@@ -712,15 +727,10 @@ test('★ every UNMAPPED tool is accounted for, including vendors we have not me
     'hiveku_batch', 'hiveku_tool_schema', 'hiveku_find_tools',
     'list_departments', 'talk_to_department',
   ];
-  // Firecrawl-backed. NOT classified, and NOT currently sweepable — but only
-  // because `method: null` keeps them out of readonly-tools.json, which is an
-  // accident of the generator rather than a decision anyone took. Give any of
-  // them a readOnlyHint — and `md` / `html` genuinely ARE reads, so someone
-  // reasonably will — and the sweep starts calling a metered vendor with
-  // `arguments: {}` on every run. The test below pins that today; classifying
-  // them is the real fix.
-  const FIRECRAWL = ['crawl', 'md', 'html', 'pdf', 'screenshot', 'execute_js'];
-  const ACKNOWLEDGED = new Set([...LOCAL, ...FIRECRAWL]);
+  // Firecrawl was the first thing this guard found, and it is classified now
+  // (4fdc492) — so it is deliberately NOT acknowledged here. It has to pass on
+  // the strength of the classification, or this test is measuring its own list.
+  const ACKNOWLEDGED = new Set(LOCAL);
 
   const unmapped = (idx.tools ?? []).filter((t) => t && t.name && !t.method).map((t) => t.name);
   assert.ok(unmapped.length > 50, 'tool index did not load — this would pass vacuously');
@@ -732,14 +742,33 @@ test('★ every UNMAPPED tool is accounted for, including vendors we have not me
   );
 });
 
-test('the Firecrawl tools stay out of the sweep while they are unclassified', () => {
-  // The negative control for the note above. If this fails, a metered vendor
-  // has just become reachable by a script that calls every tool it is given
-  // with empty arguments.
-  for (const n of ['crawl', 'md', 'html', 'pdf', 'screenshot', 'execute_js']) {
-    assert.equal(isAutoApprovable(n, {}), false,
-      `${n} is Firecrawl-backed and unclassified — it must not be auto-approvable or swept`);
-  }
+test('no metered vendor read is ever auto-approvable, whichever vendor it is', () => {
+  // Was "the Firecrawl tools stay out of the sweep WHILE THEY ARE
+  // UNCLASSIFIED". They are classified now, so that premise is spent — and a
+  // test whose premise has quietly become false is the thing this file exists
+  // to catch. The durable invariant is the one that survived the change: the
+  // sweep calls every tool it is given with `arguments: {}`, so a metered read
+  // reaching isAutoApprovable bills the client on every run.
+  //
+  // Driven off the classification rather than a name list, so a vendor added
+  // later is covered without editing this test.
+  const doc = JSON.parse(
+    readFileSync(new URL('../data/vendor-tool-classification.json', import.meta.url), 'utf8'),
+  );
+  const metered = [...(doc.vendorMeteredReads ?? []), ...(doc.firecrawlMeteredReads ?? [])];
+  assert.ok(metered.length > 50, 'classification did not load — this would pass vacuously');
+  const billable = metered.filter((n) => isAutoApprovable(n, {}));
+  assert.deepEqual(billable, [], `these would be swept and billed: ${billable}`);
+});
+
+test('execute_js is gated as EXECUTION, not as a read', () => {
+  // It takes a `js_code` argument and runs it in a browser against a
+  // third-party page (index-unified-http.ts:1063). It shares method:null and a
+  // served group with md/html/screenshot, so the next person classifying that
+  // family by shape sweeps it in with the reads. Both gates, so an upstream
+  // readOnlyHint cannot reach it either.
+  assert.equal(isAutoApprovable('execute_js', {}), false);
+  assert.ok(NEVER_AUTO_APPROVE.has('execute_js'), 'execute_js must carry the veto, not just fail the read test');
 });
 
 test('the free tier is empty until a billing report confirms it', () => {
