@@ -253,9 +253,14 @@ import { ARG_GATED_READS, NEVER_AUTO_APPROVE, isAutoApprovable } from '../lib/to
 import { PENDING_TOOLS } from './pending-tools.mjs';
 
 test('vetoed reads never auto-approve, even while the server lists them as reads', () => {
-  // voice_recording_url_get IS a server-declared GET today; the veto must win.
-  // voice_tts_preview is a pending POST kept here as defence in depth against
-  // a mis-generated list — either way, neither may run unattended.
+  // voice_recording_url_get is a server-declared GET, so nothing about its HTTP
+  // method stops it — the veto must. It is now ALSO excluded from
+  // readonly-tools.json by the generator (2026-09-08), because the reads-only
+  // guardrail ceiling reads isReadOnlyTool, not isAutoApprovable, and so gave an
+  // owner no protection against exactly what they set it for. This assertion
+  // stays as defence in depth: it must never auto-approve however the list is
+  // generated. voice_tts_preview is a pending POST kept here for the same
+  // reason — either way, neither may run unattended.
   for (const t of ['voice_recording_url_get', 'voice_tts_preview']) {
     assert.equal(isAutoApprovable(t, {}), false, `${t} must never be auto-approvable`);
     assert.equal(isAutoApprovable(t, undefined), false, `${t} must never be auto-approvable (no input)`);
