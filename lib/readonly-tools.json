@@ -4,6 +4,13 @@
   "toolCount": 1952,
   "readOnlyCount": 804,
   "readOnlyHintCount": 64,
+  "vendorReads": {
+    "_comment": "Vendor tools are reads that COST MONEY. They are intentionally absent from `tools` so the sweep cannot call them; see data/vendor-tool-classification.json for the names and the reasoning. Counts are reported so their absence reads as a decision, not an omission.",
+    "meteredCount": 62,
+    "freeCount": 0,
+    "neverAutoApproveCount": 1,
+    "classification": "data/vendor-tool-classification.json"
+  },
   "tools": [
     "account_audit_health",
     "account_context_get",
