@@ -160,6 +160,13 @@ const KNOWN_NON_TOOLS = new Map([
   ['voice_call_completed_trigger', 'trigger'],
   ['voice_voicemail_trigger', 'trigger'],
   ['voice_missed_call_trigger', 'trigger'],
+  // Webflow workflow trigger NODE ids (event-triggers.md's webflow row, design
+  // p12): graph node types the engine fires from Hiveku's receiver, not tools.
+  ['webflow_site_published_trigger', 'trigger'],
+  ['webflow_cms_item_trigger', 'trigger'],
+  ['webflow_comment_created_trigger', 'trigger'],
+  ['webflow_form_submission_trigger', 'trigger'],
+  ['webflow_event_trigger', 'trigger'],
   // Named in prose ONLY as "does not exist" (the free 10DLC content re-review
   // PUT is Batch Z, unbuilt at every layer). Move to PENDING_TOOLS if it is
   // ever contracted; delete here when it ships.

@@ -9,8 +9,8 @@ webhook, scheduled, or database trigger.
 ## The catalog
 
 `workflow_event_trigger_types_list` is the authority at run time - always call it
-rather than trusting a list in a file. As of this writing it returns 35 trigger node
-types across 9 domains. Each entry carries `node_type` (snake_case canonical),
+rather than trusting a list in a file. As of this writing (2026-09-07) it returns 49
+trigger node types across 11 domains. Each entry carries `node_type` (snake_case canonical),
 `node_type_camel` (the alias the engine also accepts), `object_type`, `event_type`,
 a one-line description, and `output_shape_keys` - the keys that land in
 `trigger.output` for your templates.
@@ -24,8 +24,17 @@ a one-line description, and `output_shape_keys` - the keys that land in
 | `voice` | `voice_call_completed_trigger`, `voice_voicemail_trigger`, `voice_missed_call_trigger` |
 | `pm` | `pm_task_created_trigger`, `pm_task_updated_trigger`, `pm_project_trigger` |
 | `deploy` | `deploy_trigger` |
-| `form` | `form_submitted_trigger` |
+| `form` | `form_submitted_trigger` (also serves Webflow forms on a connected site: filter on `source: webflow`, or use the Webflow row's `webflow_form_submission_trigger`) |
 | `survey` | `survey_response_received_trigger` |
+| `content` | `content_comment_created_trigger` |
+| `webflow` | `webflow_site_published_trigger`, `webflow_cms_item_trigger`, `webflow_cms_item_{created,changed,deleted,published,unpublished}_trigger`, `webflow_page_{created,deleted,metadata_updated}_trigger`, `webflow_comment_created_trigger`, `webflow_form_submission_trigger`, `webflow_event_trigger` (catch-all with a `trigger_types` filter, for the ecommerce events) |
+
+The `webflow` row needs no webhook of yours: Hiveku registers its receiver on the
+site's connection, verifies and dedupes every delivery and resolves the bound
+project, then fires these nodes. `webflow_form_submission_trigger` is the `form`
+row's trigger narrowed to `source: webflow` (plus `site_id` and `form_name`
+filters), not a second event; never wire a connected Webflow site to a
+`webhookTrigger` or register your own hook with `webflow_webhook_create`.
 
 ## Node versus row
 

@@ -58,6 +58,13 @@ workflow: `workflow_bind_form`, `workflow_bulk_provision_for_project`,
 
 ## Payload shape: mixed-case vendor fields
 
+A Webflow site that is CONNECTED to Hiveku never posts to a `webhookTrigger`: its
+forms arrive through Hiveku's Webflow receiver and the Forms ledger and fire
+`formSubmittedTrigger` / `webflowFormSubmissionTrigger` (filters `site_id`,
+`form_name`), already normalised; a `webhookTrigger` wired for such a site never
+fires. The `webhookTrigger` + `workflow_normalize_payload` path below is only for
+sites that are NOT connected to Hiveku.
+
 The webhook trigger ingest auto-applies case-insensitive aliasing: when a
 Webflow/Squarespace/other source form posts mixed-case field names (Webflow's default
 is lowercase `name` but Title-Case `Email`/`Subject`/`Message`), the engine adds

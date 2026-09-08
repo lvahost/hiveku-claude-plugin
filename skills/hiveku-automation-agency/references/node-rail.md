@@ -3,7 +3,7 @@
 ## What this covers / when to load this
 
 The Hiveku MCP surface exposes roughly a thousand tools. The workflow palette exposes a
-**second, separate execution surface**: 402 node types, each with a server-side handler that
+**second, separate execution surface**: 525 node types (2026-09-07 count), each with a server-side handler that
 runs inside the client's account with the client's credentials. Most sessions never touch it,
 so a large slice of the platform reads as "not possible" when it is one four-call workflow away.
 
@@ -907,11 +907,40 @@ yes, then run once. Never loop a payment node.
 
 ### 6.5 Sites, content, and growth
 
-**Site triggers**: `formSubmittedTrigger` (a form on a managed website),
-`websiteVisitorTrigger` and `visitor_event_trigger` (page view, form view, session start),
-`deployTrigger` (fires when a deployment completes, per environment), `databaseTrigger` (any
-change in a watched table of a connected project database), `dbInsertTrigger`,
-`dbUpdateTrigger`, `dbDeleteTrigger`, `dbRowChange`.
+**Site triggers**: `formSubmittedTrigger` (a form on a managed website, and a form on a
+connected Webflow site: filter `source: webflow`), `websiteVisitorTrigger` and
+`visitor_event_trigger` (page view, form view, session start), `deployTrigger` (fires when
+a deployment completes, per environment), `databaseTrigger` (any change in a watched table
+of a connected project database), `dbInsertTrigger`, `dbUpdateTrigger`, `dbDeleteTrigger`,
+`dbRowChange`; and the `webflow*Trigger` family for a site connected to Hiveku:
+`webflowSitePublishedTrigger`, `webflowCmsItemTrigger` (umbrella) with the per-event
+`webflowCmsItem{Created,Changed,Deleted,Published,Unpublished}Trigger`,
+`webflowPage{Created,Deleted,MetadataUpdated}Trigger`, `webflowCommentCreatedTrigger`,
+`webflowFormSubmissionTrigger` (the form trigger narrowed to Webflow, filters `site_id`
+and `form_name`) and `webflowEventTrigger` (catch-all with a `trigger_types` filter).
+Hiveku registers the receiver on connect, so none of these needs a webhook of yours, and a
+write the workflow makes to the same item, page or site does not re-fire it (3-minute
+self-write window).
+
+**Webflow actions** (category `webflow`; `workflow_node_types_list` filtered to that category
+is the live list): 16 featured nodes with pickers (CMS item create / update / query / get /
+publish / unpublish / delete, page list, page metadata update, page schema set, asset
+upload, the analytics snippet install, llms.txt set, site publish, form submission get,
+collection list) plus 94 generated ones, one per Webflow ops action across 22 families
+(assets, CMS items, schema, pages, page SEO, page content, components, custom code,
+Google Tag, forms, webhooks, comments, ecommerce, redirects, robots, well-known, llms.txt,
+site, token, activity). A generated node's snake_case id equals the `webflow_<action>`
+tool name and takes the same args, so the tool's schema is the node's schema. Rules the
+handlers enforce: config lives in `data.config`; `project_id` / `site_id` resolve config,
+then the adjacent trigger's output, then the account's bound site; every write lands
+STAGED on Webflow (`publish_required: true` in the output) and reaches the live site
+only through `webflowSitePublish`, which is explicit-only, needs `confirm: true` (a
+`requiredTrue` checkbox on it and on the 18 other confirm-gated nodes - deletes, order
+moves, robots replace, webhook update and delete), and is allowed one publish per minute
+per site (`wait_for_cooldown` waits out a `publish_cooldown` once). `webflowCmsItemPublish`
+makes items live by id without a site publish, so never chain it into
+`webflowSitePublish`. Past ~50 item writes a minute use the `*_bulk` nodes; a `forEach`
+over the single-item node shares the connection's 60-a-minute budget with every agent.
 
 **Builder and deploy**: `builderListProjects`, `builderGetProject`, `builderListBranches`,
 `builderListChanges` (files modified but not committed), `builderListCommits`,

@@ -13,7 +13,7 @@ up rather than remembered, the step says "discover" and names the discovery tool
 1. **A shipped template covers it.** `workflow_templates_list`, read the chosen
    template's `variables[]`, then `workflow_create_from_template`. Already tested,
    already staged behind the approval queues (`references/templates.md`). Recipes 1, 9,
-   13 and 14 are template-first.
+   13, 14 and 15 are template-first.
 2. **A recipe below covers it.** These shapes are here because the tool surface
    genuinely supports them.
 3. **Neither.** Hand-build with the SKILL.md build loop, using the closest recipe as the
@@ -604,6 +604,65 @@ applied, spend does not change, and someone concludes the automation is broken a
 Resolving is not applying.
 
 ---
+
+---
+
+## R15. Webflow CMS item published to social draft
+
+**They say.** "Every time we publish a blog post on Webflow, draft the LinkedIn post" -
+or any "when something changes on the Webflow site, do X".
+
+**What this actually is.** An event-driven graph on the Webflow trigger family. Hiveku
+registered its receiver on the site when it was connected, so the event is already
+arriving; the workflow just listens. The shipped template
+`webflow-item-published-social-draft` is this recipe (`workflow_templates_list`, then
+`workflow_create_from_template`); build by hand only to change the shape.
+
+**Superseded, do not build.** `webflow_webhook_create` pointed at a `webhookTrigger` URL
+was the bring-your-own pattern before the trigger nodes shipped. For a site connected to
+Hiveku it is worse than redundant: it bypasses the receiver's signature verification, the
+event dedupe and the project binding, it double-delivers an event Hiveku already has, and
+a write the workflow makes does not carry the self-write guard, so an update node that
+re-fires its own trigger loops. `webflow_webhook_create` stays for FOREIGN URLs only.
+
+**Preconditions.** `sites_list` shows the project with `external_platform: "webflow"`;
+`webflow_site_get({ project_id })` answers (no `no_webflow_connection`). A site-token
+connection gets no auto-registered webhooks, so its trigger nodes never fire: the
+connection must be OAuth. The social account is connected (`social_list_accounts`).
+
+**Build.**
+1. Discover: `workflow_event_trigger_types_list` (domain `webflow`) and
+   `workflow_node_types_list` filtered to category `webflow`. Never a remembered id.
+2. `webflowCmsItemPublishedTrigger`, `data.config.collection_ids` set to the one
+   collection (`workflow_field_options({ endpoint: "webflow-collection-options" })`,
+   grouped by project id; empty until the project's CMS tab has been opened once, in
+   which case paste the id from `webflow_cms_collection_list`).
+3. `webflowCmsItemGet` with `project_id: "{{trigger.output.project_id}}"`,
+   `collection_id: "{{trigger.output.collection_id}}"`, `item_id: "{{trigger.output.item_id}}"`
+   - the trigger carries a `field_data` snapshot, the read carries the live item.
+4. `aiAgent` (`identityDepartment: "social"`, `outputFormat: "json"`) writing ONE post
+   from `{{item.name}}`, `{{item.slug}}` and `{{item.fieldData}}`, returning
+   `{"post_text": string, "hashtags": string[]}`.
+5. `socialCreatePost` with `status: "draft"`, `content: "{{draft.post_text}}"`. Draft
+   by construction; publishing is `socialApprovePost` then `socialPublishPost`, by a
+   person.
+6. `sendEmail` to the approver.
+
+**Prove it works.** `workflow_validate`, then `workflow_test`: the trigger's test data
+is the catalog's sample payload, the `webflowCmsItemGet` read runs FOR REAL against
+Webflow (reads are never mocked, and spend the connection's rate budget), and
+`socialCreatePost` is mocked - read its `would_have` for the platform, the content and
+`status: draft`. Then publish one real item and check `workflow_runs_recent` shows one
+run with `triggered_by: webflow_event`; a second run for the same item within three
+minutes is the self-write guard's job to prevent and must not appear.
+
+**Ship.** Enable on the operator's yes. Tell them it produces DRAFTS.
+
+**How this fails in the wild.** The collection filter is the wrong id (a Hiveku CMS
+collection id instead of the Webflow one), so nothing ever fires: the project's Webflow
+panel in the dashboard shows the event arrived and `workflow_runs_recent` shows nothing. The other failure is
+a site-token connection, whose trigger nodes are wired but never fire because the
+webhook was never registered; `webflow_webhook_list` shows no Hiveku receiver.
 
 ## Not a recipe here, and not verified
 
