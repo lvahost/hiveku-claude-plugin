@@ -6,12 +6,14 @@ turn a list of things and the relationships between them into rectangles at comp
 coordinates plus arrows in the gutters between them. Get the arithmetic right once and
 every board after it is a loop.
 
-The surface is 21 tools; this file covers the manual-build subset. The five one-call
+The surface is 28 tools; this file covers the manual-build subset. The five one-call
 scaffolds (sitemap, funnel, flow, grid, sequence) and the structural read/edit tools
 (`hiveboard_outline`, `hiveboard_elements_find`, `hiveboard_connect`,
-`hiveboard_elements_patch`, `hiveboard_elements_prune`) are in
+`hiveboard_elements_patch`, `hiveboard_align`, `hiveboard_elements_prune`) are in
 `references/scaffold-reference.md` and `references/manual-layout.md` — rule those out
-before hand-computing anything below.
+before hand-computing anything below. `hiveboard_frames` (what is inside each frame) is
+Part 6, and the five that check or undo your work (`hiveboard_render`, `hiveboard_validate`,
+`hiveboard_versions_list`, `hiveboard_version_get`, `hiveboard_restore_version`) are Part 9.
 
 | Tool | Use it for |
 |---|---|
@@ -19,7 +21,7 @@ before hand-computing anything below.
 | `hiveboard_list` | Find an existing board (`search` matches names server-side), or read `element_count` without pulling elements. |
 | `hiveboard_get` | Read a board back: metadata plus EVERY element, z-index ascending. Expensive — prefer `hiveboard_outline` / `hiveboard_elements_find`. |
 | `hiveboard_update` | Rename, change background, flip `is_public` (account-visible, not internet), attach/detach `project_id`. Metadata only, never elements. |
-| `hiveboard_delete` | Delete the board. Cascades to every element. |
+| `hiveboard_delete` | Delete the board. Requires `confirm: true`, and cascades to every element AND the whole version history — the only operation here with no way back. The refusal names `element_count` and `version_count` so you can tell the human what they are about to lose. |
 | `hiveboard_duplicate` | Clone a board and all its elements. Use it as a "save point" before a risky pass. |
 | `hiveboard_element_create` | One element. Use for a fix-up, never for a build. |
 | `hiveboard_elements_bulk_create` | Up to 5000 elements in one call. This is the build path. |
@@ -94,9 +96,12 @@ At the recipe defaults below (W=240, labelSize=16) that is 25 characters. Budget
 the label overhangs the card.
 
 **7. `color` and `fill_color` are `VarChar(20)`, `stroke_width` and `font_size` are `Int`.**
-A 7-character hex is safe. `rgba(15, 23, 42, 0.85)` is 22 characters and returns a 500 from
-the database, not a validation error. A fractional `stroke_width` is a Prisma type error.
-`rotation` is `Decimal(6,2)`, so it caps at 9999.99.
+A 7-character hex is safe. `rgba(15, 23, 42, 0.85)` is 22 characters and is REFUSED at build
+time with a sentence naming the field — it is not truncated and it never reaches Postgres,
+because one over-long value in a 5000-row `createMany` aborts the whole batch as an unhandled
+500 and the per-row errors never reach you. `rotation` is `Decimal(6,2)` and is clamped to
++/-360 at two decimals; `stroke_width` is clamped to 0-100 and `font_size` to 1-400. Every
+clamp comes back in `coercions`. Full rules in `references/element-reference.md`, Colours.
 
 **8. Layers are not one flat z-order.**
 Shapes, text, and pen drawings share ONE pool sorted by `element_data.zIndex` ascending.
@@ -187,7 +192,8 @@ with whatever is up there.
 `hiveboard_sitemap_scaffold` does the whole tree in one call. Parameters:
 `board_id`, `pages`, `layout` (`'vertical'` default, root at top, or `'horizontal'`),
 `spacing_x` (default 240), `spacing_y` (default 160), `pack_subtrees` (see below),
-`origin` (default `{x: 0, y: 0}`).
+`origin` (default `{x: 0, y: 0}`), `dry_run` (derive the layout and write nothing — see
+`references/scaffold-reference.md`).
 
 `pages` accepts EITHER shape and the server detects which you sent:
 
@@ -199,23 +205,25 @@ with whatever is up there.
 ] }
 ```
 
-or nested with `children: [...]`. Max 500 pages. It is additive: it never deletes existing
-board content. It returns `title_to_element_id`, which is the map you need to patch
-individual frames afterwards, so keep it.
+or nested with `children: [...]` — one shape for the whole array, never both, because a
+payload that mixes them is now a 400 naming both offending pages. Max 500 pages. It is
+additive: it never deletes existing board content. It returns `title_to_element_id`, which is
+the map you need to patch individual frames afterwards, so keep it.
 
 What it produces, with numbers you should know before you look at the result:
 - Each page becomes a `frame` **180 wide by 90 tall** (not your grid, its own constants),
   stroke `#94A3B8`, fill `#0F172A`, `labelSize: 14`.
-- The label is `title` when there is no path, and `"<title>\n<path>"` when there is.
+- The label is the `title`. A `path` is a SEPARATE `text` element under the frame, 13px, wrapped
+  to the frame width — so a page with a path costs two elements and `pages_created` counts only
+  the frames.
 - Parent to child arrows, `lineStyle: 'curved'`, colour `#64748B`, `z_index: 10000`, bound
   at both ends with `point: 'edge'`.
 
 **Titles are the primary key.** The server keys parent-of by title, so a duplicate title
 fails the whole call with `duplicate page title "<t>"`. A `parent` naming a page that is not
-in the list is silently treated as a root, so a typo in `parent` does not error, it just
-produces an orphan at depth 0. Check the returned `pages_created` and `arrows_created`:
-`arrows_created` should equal the number of pages that have a resolvable parent. If it is
-lower than you expect, you have typos in `parent`.
+in the list is still treated as a root — but it is REPORTED, in `dangling_parents` as
+`{title, parent}`. Read that array rather than reverse-engineering a low `arrows_created`:
+it is the field that tells you a typo turned a child into a second top-level page.
 
 **Worked scaffold, defaults, so you know what the output looks like.**
 Pages: Home; About, Services, Contact (children of Home); Team (child of About).
@@ -256,7 +264,7 @@ no `controlPoint`, and the renderer's fallback control point is
 Every connector arcs back over its parent. It reads as decoration on a small tree and as a
 tangle on a wide one.
 
-Fix either by patching each arrow's `element_data` with an explicit `controlPoint` (Part 6
+Fix either by patching each arrow's `element_data` with an explicit `controlPoint` (Part 10
 tells you how to patch without destroying the element), or by skipping the scaffold and
 building manually with `lineStyle: 'straight'`.
 
@@ -290,7 +298,7 @@ costs you the fixed-width arithmetic, so only do it if asked.
 **Elements**
 - One `rectangle` per stage, `label` = stage name, `labelSize: 16`.
 - One `arrow` per transition, `label` = the conversion rate. Arrow labels render on a
-  hardcoded white pill, so they stay readable on the dark default board background.
+  hardcoded white pill, so they stay readable over any board ground.
 - One `text` per stage for the metric, placed right of the card. Multi-line via `\n` when you
   need a number and a unit.
 - One `sticky-note` per insight or open question, outside the column.
@@ -308,19 +316,20 @@ metric text : (264, i*200 + 66)
 `i*200 + 60`: a text element's `y` is the BASELINE of its first line, with no
 `dominant-baseline`, so vertical centring is `centreY + fontSize * 0.35`.
 
-**Colours.** The default board background is `#1F2937`, a dark slate, so light strokes and
-near-black fills read best. A shape with no `fill_color` renders `fill: none`, fully
-transparent, which on a dark board means the label floats with only an outline around it.
-That is a legitimate look, but decide it rather than discover it.
+**Colours.** The board's ground comes from `background_type` alone: `dark` paints `#1F2937`
+and every other type paints `#FAFAFA`. A shape with no `fill_color` renders `fill: none`,
+fully transparent, so its label floats over whichever ground it sits on with only an outline
+around it. That is a legitimate look, but decide it rather than discover it.
 
-A palette that works on the default background, all within `VarChar(20)`:
+A palette that carries its own dark fill, so it reads on either ground, all within
+`VarChar(20)`:
 
 | Role | stroke (`color`) | fill (`fill_color`) | `labelColor` |
 |---|---|---|---|
 | Stage card | `#94A3B8` | `#0F172A` | `#E2E8F0` |
 | Highlighted stage | `#F59E0B` | `#1C1917` | `#FDE68A` |
 | Connector | `#64748B` | none | `#000000` (on the white pill) |
-| Frame | `#94A3B8` | `#0F172A` | ignored, see Part 7 |
+| Frame | `#94A3B8` | `#0F172A` | ignored, see Part 10 |
 
 **Where the funnel data comes from.** `crm_pipeline_stage_summary` gives per-stage open-deal
 counts and dollar totals for a pipeline (defaults to the oldest pipeline when `pipeline_id`
@@ -442,10 +451,15 @@ the 24px title tab of the NEXT lane's frame plus a cross-lane connector.
 | `arrow` | Flow. |
 | `sticky-note` | An owner, an SLA, an open question. |
 
-**Frames do not contain anything.** A frame is a rectangle with a title tab. Elements inside
-its bounds are not children of it in any data sense: deleting the frame leaves them,
-duplicating the board copies everything independently. Frames are a visual grouping only.
-Do not build logic on top of them.
+**A frame has no parent column, but it does have members.** There is no parent field on the
+row: deleting a frame leaves what is inside it, and duplicating the board copies everything
+independently. But membership is knowable and always was — the editor has always dragged a
+frame's contents with it, by a majority-of-area rule, and `hiveboard_frames` now answers that
+same question from the API: per frame, its `box`, `child_ids` (at least half the element's area
+inside), and `straddler_ids` (overlapping but mostly outside, so they will NOT come along —
+almost always an accident, and invisible until someone drags the frame). Pair it with
+`include_children: true` on `hiveboard_elements_patch` to move a lane and its steps together.
+A frame inside a frame is a layout device, not a child, and is never listed as one.
 
 **Cross-lane connectors** run vertically between lanes and land in the inter-lane space by
 construction, since a card occupies `LANE_PAD` to `LANE_PAD + CARD_H` inside a `LANE_H` band.
@@ -471,13 +485,17 @@ hiveboard_create({
   name: "Q3 Lead Funnel",
   description: "Awareness to closed-won, Q3 actuals",
   project_id: "<optional website project uuid>",
-  background_type: "dot",
-  background_color: "#1F2937"
+  background_type: "dot"
 })
 ```
 
 Returns `data.id`. That is `board_id` for everything below. `project_id` is optional; pass it
 when the board belongs to a site so `hiveboard_list({ project_id })` finds it later.
+
+`background_type` is one of `honeycomb`, `dot` (default), `line`, `blank`, `dark`. The old
+`grid` and `none` are legacy aliases, still accepted and mapped to `line` and `blank`. Do not
+pass `background_color`: it is stored on the row and rendered by nothing, and the response
+says so in `background_color_note`. For a dark canvas, `background_type: "dark"`.
 
 ### Step 2: the cards, frame, labels, and callout, in ONE bulk call
 
@@ -529,19 +547,26 @@ Check the arithmetic once:
   from x=264 to x=408, inside the frame's right edge at x=440.
 - The sticky at x=480 sits 40px clear of the frame.
 
-The response is `{ created, invalid, errors[], ids[] }`. **`ids` contains one entry per
-VALID row, in input order.** If `invalid > 0`, indexes no longer align with your input array
-and any id you pull out is the wrong element. Assert `invalid === 0` before you index into
-`ids`. If it is not zero, read `errors[]` (each is `{ row, error }`, 1-based), fix, and
+The response is `{ created, invalid, errors[], ids[], ids_alignable, results[] }`.
+**Map ids through `results`, not `ids`.** `results` has one entry per INPUT row in input order
+— `{row, ok, id?, error?, ignored_keys?, coercions?}` — so an id maps back to the thing you
+sent. `ids` holds only the rows that were written, compacted, so one bad row shifts every id
+after it and any id you pull out is the wrong element; `ids_alignable` is true only when
+`invalid` is 0. When it is not zero, read `errors[]` (each `{row, error}`, 1-based), fix, and
 because the call is ADDITIVE, delete the elements it did create before retrying, or you get
 duplicates on top of each other.
+
+Read `ignored_keys` and `coercions` on the rows that DID succeed, too: they name a key this
+element type never read (a `content` on a rectangle, which is a blank card) and a value that
+was rewritten (a sticky colour that was not one of the six names and became yellow).
 
 If EVERY row is invalid you get 422 with `validation_errors` and nothing is written.
 
 ### Step 3: the arrows, in a SECOND bulk call
 
 Arrows need the card ids, and you cannot reference an id created in the same call. So cards
-first, then arrows. With `ids[1]` = Awareness, `ids[2]` = Consideration, `ids[3]` = Decision:
+first, then arrows. Taking the ids from `results[]` rows 2, 3 and 4 — Awareness, Consideration,
+Decision — which is safe whether or not a row failed:
 
 ```
 hiveboard_elements_bulk_create({
@@ -552,16 +577,16 @@ hiveboard_elements_bulk_create({
       element_data: {
         start: { x: 120, y: 120 }, end: { x: 120, y: 200 },
         lineStyle: "straight", label: "9.5%", labelSize: 14,
-        startConnection: { shapeId: "<ids[1]>", point: "edge" },
-        endConnection:   { shapeId: "<ids[2]>", point: "edge" }
+        startConnection: { shapeId: "<awareness id>", point: "edge" },
+        endConnection:   { shapeId: "<consideration id>", point: "edge" }
       } },
     { type: "arrow", position: { x: 120, y: 320 }, z_index: 10000,
       color: "#64748B", stroke_width: 2,
       element_data: {
         start: { x: 120, y: 320 }, end: { x: 120, y: 400 },
         lineStyle: "straight", label: "8.0%", labelSize: 14,
-        startConnection: { shapeId: "<ids[2]>", point: "edge" },
-        endConnection:   { shapeId: "<ids[3]>", point: "edge" }
+        startConnection: { shapeId: "<consideration id>", point: "edge" },
+        endConnection:   { shapeId: "<decision id>", point: "edge" }
       } }
   ]
 })
@@ -606,11 +631,18 @@ the order: every layer of cards before the arrows that reference them.
 5. Sticky notes last. They paint above everything anyway, so their `z_index` is only about
    ordering them against each other.
 
-**Take a save point before a risky pass.** `hiveboard_duplicate({ board_id, name })` clones
-the board and every element. If a 2000-element pass comes out wrong, the recovery is
-`hiveboard_elements_prune` on the bad pass's region or ids (`confirm: true`; it snapshots to
-version history first and returns `snapshot_version_id` — NULL means NOT recoverable, say
-so). Duplicating first still turns the worst case into a rename.
+**Plan the pass before you write it, then take a save point.** Every scaffold takes
+`dry_run: true`, which returns the geometry, the extent, and `would_collide_with` for the
+elements already on the board — one call that tells you whether a 2000-element pass will land
+on top of the last one. For a hand-built pass there is no dry run, so
+`hiveboard_duplicate({ board_id, name })` clones the board and every element and turns the
+worst case into a rename.
+
+If it comes out wrong anyway, the recovery is `hiveboard_elements_prune` on the bad pass's
+region or ids (`confirm: true`; it snapshots to version history first and returns
+`snapshot_version_id` — NULL means NOT recoverable, say so), or `hiveboard_restore_version` if
+the board had a saved version before the pass. Never `hiveboard_delete`: it takes the version
+history with it.
 
 **Growing the grid.** Every number in Part 2 derives from `CARD_W`, `CARD_H`, and `GUTTER`.
 To fit more on screen, shrink `CARD_W` and re-derive `maxChars = floor(CARD_W / (labelSize *
@@ -625,44 +657,70 @@ name.
 
 ---
 
-## Part 9: Verifying by reading the board back
+## Part 9: Verifying, and getting the board back
 
-Never declare a board done without reading it back. The canvas is the only place layout bugs
-are visible to a human, and you cannot see it.
+Never declare a board done without checking it. Almost every defect this surface produces
+returns 200 and looks successful, so counting elements proves nothing. There are three checks
+and they answer different questions; run the first two on anything you built.
 
-**Cheap check first.** `hiveboard_list({ project_id })` returns summary cards including
-`element_count` for each board. If that number does not match what you created, stop and
-investigate before pulling elements. Treat `element_count` as a hint, not truth: bulk create
-increments it by the created count, single delete decrements by one, and the dashboard's own
-save path overwrites it wholesale. The length of the `elements` array from `hiveboard_get` is
-the real count.
+**1. What is WRONG with it: `hiveboard_validate({ board_id })`.** A lint pass, read-only and
+free. Seven checks: `malformed_elements` (no derivable box — act on this first; the renderer
+dereferences `shape.start.x` and the WHOLE board fails to render), `invisible_elements` (an
+element the colour of the ground it sits on, including the default near-black on a `dark`
+board), `text_overflow` (with `visibility`: `visible_bleed` a reader will notice,
+`hidden_scroll` a sticky scrolling internally that nobody will), `dangling_connectors` (bound
+to an id no longer on the board), `unbound_connectors`, `collisions`, `backwards_edges`.
+`ok` is true when nothing structural is broken; warnings can be fine, and `backwards_edges` is
+INFO — author intent is recorded nowhere, so a deliberate feedback loop and a mistake look
+identical. It works on a board far too large to photograph legibly.
 
-**Structural check second.** `hiveboard_outline({ board_id })` returns the node list, the
-edge list, `unbound_connectors` (arrows with no bindings — they do not survive a human drag),
-`orphan_count`, and the board extent, at a fraction of the token cost of a full pull. It
-answers "is everything connected to what I meant" directly. For one element,
-`hiveboard_elements_find` by type, text, or region.
+**2. What it LOOKS like: `hiveboard_render({ board_id })`.** Returns a PNG of the real canvas
+— the same renderer a human opens — and inlines it, so you look at what you built instead of
+verifying it by coordinate arithmetic. Overlapping labels, text bleeding out of a card and a
+funnel that does not read as a funnel are invisible to any amount of checking x/y/w/h. Frame
+part of a big board with `region` or `element_ids` (not both) rather than fitting everything
+until the text is unreadable. `overflow[]` comes back measured in the real browser from the
+same paint. A FAILED render never returns an image: you get a non-2xx with a `reason` and a
+`hint`, because a blank picture beside a 200 is indistinguishable from an empty board;
+`blank: true` on a SUCCESS means the board genuinely has no elements. It costs a headless
+capture and 5-15s, so it is a deliberate call, not a free read.
 
-**Full check, last resort.** `hiveboard_get({ board_id })` returns metadata plus every
+**3. What it MEANS: `hiveboard_outline({ board_id })`.** The node list, the edge list,
+`unbound_connectors`, `orphan_count`, the board `extent` and `next_origin`, at a fraction of
+the token cost of a full pull. It answers "is everything connected to what I meant", which is
+the one question a picture cannot answer precisely. For one element, `hiveboard_elements_find`
+by type, text, or region.
+
+**The cheap pre-check.** `hiveboard_list({ project_id })` returns summary cards including
+`element_count`. Treat it as a hint, not truth: bulk create increments it by the created count,
+single delete decrements by one, and the dashboard's own save path overwrites it wholesale.
+
+**Full pull, last resort.** `hiveboard_get({ board_id })` returns metadata plus every
 element ordered by `z_index` ascending, each as `{ id, element_type, element_data, position,
-z_index, rotation, color, fill_color, stroke_width, font_size, locked, hidden }`.
+z_index, rotation, color, fill_color, stroke_width, font_size, locked, hidden }`. It also
+carries `workshop_state`, which holds the dot-vote ledger and the session timer — a frozen
+tally is what a facilitated workshop leaves behind, so that is how you report what the room
+chose.
 
-Assertions worth running over that array:
+Assertions still worth running by hand over that array — the ones `hiveboard_validate` does
+not make for you:
 
 | Check | Why |
 |---|---|
 | Count and per-`element_type` counts match your plan | Catches a dropped chunk or a silent `invalid` row. |
-| No shape has `start.x === end.x && start.y === end.y` | A zero-size shape means `width`/`height` never arrived. |
+| No shape has `start.x === end.x && start.y === end.y` | A zero-size shape means `width`/`height` never arrived. It is drawable, so validate does not call it malformed. |
 | Every card's `element_data.start` equals its `position` | They diverge only if something patched one and not the other. |
-| No two cards' bounding boxes intersect | Catches a pitch or centring error. |
-| Every arrow's `start` and `end` land in a gutter, not inside a card box | The single most common layout bug. |
-| Every `startConnection.shapeId` / `endConnection.shapeId` exists in the element ids | A stale or hallucinated id leaves the arrow unbound and in the wrong paint layer. |
-| Every shape `label` satisfies `len * labelSize * 0.6 <= width` | Catches overhanging labels. |
-| Every `sticky-note` has `element_data.color` in the six names | See Part 10. |
+| Every arrow's `start` and `end` land in a gutter, not inside a card box | The single most common layout bug, and geometry validate does not judge. |
 
-Compute the board's bounding box from every element while you are there and report it. It is
-what tells you whether the board fits a screen or needs splitting, and a wildly wrong min or
-max is a fast way to spot one element left at `(0, 0)` by a missing `position`.
+Overlapping cards, connectors bound to ids that are gone, and labels wider than their box are
+all `hiveboard_validate` findings (`collisions`, `dangling_connectors`, `text_overflow`) — ask
+it rather than recomputing them. A sticky colour outside the six names can no longer reach the
+database at all: create coerces it, the patch paths refuse it.
+
+Compute the board's bounding box from every element while you are there and report it — or
+just read `extent` from `hiveboard_outline`. It is what tells you whether the board fits a
+screen or needs splitting, and a wildly wrong min or max is a fast way to spot one element
+left at `(0, 0)` by a missing `position`.
 
 **One more thing to check before you write, not after.** If a teammate has the board open in
 the dashboard, its autosave can PATCH the whole element array, which the dashboard route
@@ -670,40 +728,65 @@ implements as a delete-then-recreate of every element on the board. A stale open
 therefore wipe elements you just added over MCP. Ask the user to close or reload the board
 tab before a large build, and re-read afterwards to confirm your elements survived.
 
+**When the check comes back bad, the board is not necessarily a rebuild.**
+`hiveboard_versions_list` is the undo this surface used to lack. Versions are written by the
+dashboard autosave and by the pre-prune snapshot, so an agent-built board nobody has opened may
+legitimately have none — check before you promise a rollback. The page size is 50 and is not
+configurable; `truncated` says when you are seeing only the newest.
+
+`hiveboard_version_get` tells you what a restore would COST before you take it. Read
+`would_degrade`: a snapshot can hold rows whose type no renderer draws, which restore as
+database rows that never appear, plus rows that would stack at the origin for want of a
+position and rows that would fall back to black. `snapshot_format` is `columns | wire | mixed`;
+both formats are real and restore takes either, and `mixed` means the same board was written
+through both paths. The snapshot payload itself is off by default because it is unbounded.
+
+`hiveboard_restore_version` needs `confirm: true` and deletes every element before recreating
+from the snapshot — and **it is itself reversible**: the current canvas is snapshotted first,
+in the same transaction, and comes back as `pre_restore_version_id`. It refuses with a 409
+`restore_would_be_lossy` when more than a fifth of the snapshot will not draw; `accept_lossy:
+true` takes the partial restore anyway, which is often the right call but should be a decision.
+Check `restored` (what was actually inserted) and `degraded` afterwards: a 200 does not mean
+the board looks like it did.
+
 ---
 
 ## Part 10: Pitfalls, ranked by how much they cost
 
-**1. Patching `element_data` through `hiveboard_element_update` destroys the element.**
-That tool writes each allow-listed field verbatim into its column. It does NOT merge
-`element_data`, and it does NOT run the builder that synthesizes `start`/`end`. Sending
-`element_data: { label: "New name" }` replaces the whole object, dropping `id`, `type`,
-`shapeType`, `start`, and `end`, and the renderer then crashes on that board with
-"Cannot read properties of undefined (reading 'x')".
+**1. A partial `element_data` through `hiveboard_element_update` is a 409 now, not a 200.**
+That tool REPLACES `element_data` wholesale; it does not merge and it does not synthesize
+`start`/`end`. Sending `element_data: { label: "New name" }` to a rectangle is a replacement
+with no geometry, and it is refused with an error naming the missing keys and pointing at
+`hiveboard_elements_patch`. It used to be stored, and it cost two elements rather than one:
+the row survived with the element gone from the canvas, and because the renderer de-duplicates
+on `element_data.id`, two id-stripped elements collapsed into one and a second element
+disappeared. `id`, `type` and `shapeType` are re-injected from the stored row.
 
-The default fix is to not use it: `hiveboard_elements_patch` MERGES `element_data`, so a
-label change cannot strip geometry. When you must replace wholesale, the procedure is
-read-modify-write: `hiveboard_elements_find` with `include_data: true` (or `hiveboard_get`),
-copy the ENTIRE `element_data`, change the one key, send the whole object back.
+The default fix is still to not use it: `hiveboard_elements_patch` MERGES, so a label change
+cannot strip geometry. When you must replace wholesale, the procedure is read-modify-write:
+`hiveboard_elements_find` with `include_data: true` (or `hiveboard_get`), copy the ENTIRE
+`element_data`, change the one key, send the whole object back.
 
 **2. Patching `position` alone does not move anything on screen.**
-The renderer reads `element_data.start` and `element_data.end` for shapes; the `position`
-column is a mirror. A real move is `hiveboard_elements_patch` with `move: {dx, dy}` — it
-shifts each element by its correct per-type fields AND translates every bound connector by
-the same delta. Moving through `hiveboard_element_update` requires updating `start`, `end`,
-and `position` together yourself, and still strands the attached arrows.
+The renderer reads `element_data.start` and `element_data.end` for shapes and
+`element_data.position` for everything else; the `position` column is a mirror no renderer
+reads. The write returns 200 against an unchanged canvas. A real move is
+`hiveboard_elements_patch` with `move: {dx, dy}` — it shifts each element by its correct
+per-type fields AND translates every bound connector by the same delta, board-wide. Add
+`include_children: true` to bring a frame's contents. To space a row evenly, `hiveboard_align`,
+whose returned `deltas` are their own undo.
 
 **3. Sticky note colour is a NAME, not a hex.**
 `element_data.color` for a `sticky-note` must be one of `yellow`, `blue`, `green`, `pink`,
-`purple`, `orange`. Anything else — a hex, most obviously — is coerced to yellow: the
-renderer looks the value up in a six-key table, and a miss used to crash the whole board on
-open, so the create path now coerces instead. Note also that the TOP-LEVEL `color` and
-`fill_color` are ignored for sticky notes entirely; only `element_data.color` is read.
+`purple`, `orange`. The renderer looks the value up in a six-key table and dereferences the
+miss, which takes the whole board's render down — so create COERCES anything else to yellow
+and reports it in `coercions`, and the patch paths REFUSE it outright rather than mirror it.
+The top-level `color` / `fill_color` columns are stored null for a sticky either way.
 
 **4. `font_size` is ignored on shapes.** For a shape, label size comes from
 `element_data.labelSize` (default 16) and label colour from `element_data.labelColor`
-(default `#000000`, which is invisible on a dark board). The top-level `font_size` is
-discarded for shapes. It applies to `text` only, where it is interchangeable with
+(the renderer falls back to `#000000`, which disappears into a dark fill). The top-level
+`font_size` is discarded for shapes, and comes back in `ignored_keys` when you send it. It applies to `text` only, where it is interchangeable with
 `element_data.fontSize`.
 
 **5. A frame's `labelColor` does nothing.** The frame title renders hardcoded white on a tab
@@ -712,21 +795,28 @@ title on a white tab. The renderer computes a title colour from `labelColor` and
 uses it. Pick a mid-tone `color` for any frame whose title must be readable.
 
 **6. `\n` in a shape or frame label does not break the line.** SVG `<text>` does not honour
-newlines. `hiveboard_sitemap_scaffold` builds its frame labels as `"<title>\n<path>"` and
-they render on ONE line. If you need two lines on a card, use a separate `text` element
-positioned below the label, with a higher `z_index` than the card.
+newlines: it collapses one to a space, so `"Home\n/"` reads as "Home /". That is why
+`hiveboard_sitemap_scaffold` stopped putting a page's path in the frame label and gives it its
+own `text` element underneath. Do the same: a separate `text` element below the label, with a
+higher `z_index` than the card.
 
-**7. The 20-character colour column.** `color` and `fill_color` are `VarChar(20)`. Hex is
-safe; `rgba(...)`, `hsl(...)`, and long named colours are not, and the failure is a 500 from
-the database in the middle of a bulk call, not a validation error naming the row.
+**7. The 20-character colour column.** `color` and `fill_color` are `VarChar(20)`. Hex, CSS
+names and short `rgb()`/`hsl()` forms are accepted; anything longer or unrecognised is REFUSED
+at build time with a sentence naming the field, because a value that reached the column would
+abort the entire `createMany` — up to 5000 rows — as an unhandled 500 with no per-row errors.
+It is never truncated: a truncated colour is still a colour, just the wrong one, forever.
 
-**8. `ids` and `invalid` in the bulk response.** Covered in Part 7 and repeated because it is
-the failure that silently produces a board where every arrow points at the wrong card:
-`ids` skips invalid rows, so a nonzero `invalid` breaks index alignment with your input.
+**8. `results[]`, `ids[]` and `invalid` in the bulk response.** Covered in Part 7 and repeated
+because it is the failure that silently produces a board where every arrow points at the wrong
+card: `ids` holds only the rows that were written, compacted, so a nonzero `invalid` breaks
+index alignment with your input. `results` has one entry per input row and is the array to zip
+against; `ids_alignable` tells you which situation you are in.
 
 **9. Nothing here is idempotent by content.** Re-running a bulk create makes a second copy of
 every element, stacked exactly on the first, which is nearly invisible on screen and doubles
-`element_count`. If a call times out and you do not know whether it landed, READ THE BOARD
+`element_count`. Every scaffold takes `dry_run: true`, which returns the geometry and
+`would_collide_with` before anything is written — that is the remedy for "a second call stacks
+a duplicate". If a call times out and you do not know whether it landed, READ THE BOARD
 (`hiveboard_outline`, or `audit_query` for what your calls actually wrote) before you retry.
 
 **10. `hiveboard_get` has no pagination.** Every element, every time. Use `hiveboard_outline`
@@ -736,8 +826,10 @@ giant one.
 **11. Bulk cleanup goes through `hiveboard_elements_prune`, not board deletion.** It removes
 by ids, type, region, or `all: true`, requires `confirm: true`, refuses an empty filter as
 "everything", and snapshots to version history first (`snapshot_version_id` NULL = not
-recoverable — report it). A bad large pass is one prune of that pass's region, not
-`hiveboard_delete` and a rebuild.
+recoverable — report it). A bad large pass is one prune of that pass's region, or a
+`hiveboard_restore_version` back to what was there before. `hiveboard_delete` is the opposite
+of a recovery: it cascades the version history along with the elements, so it destroys the
+restore path too, and it now requires `confirm: true` for exactly that reason.
 
 ---
 

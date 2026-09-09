@@ -31,10 +31,14 @@ fits in a gutter.
 Follow the scaffold's convention: shapes at 0 and up, connectors at 10000 so they always paint
 over the boxes they join, annotations above that.
 
-Colour is not decoration here. The default board background is `#1F2937` and the default
-element stroke is `#000000`, so an element created without a `color` is black on dark slate
-and effectively invisible. The scaffold's palette is a safe starting point: stroke `#94A3B8`,
-fill `#0F172A`, connectors `#64748B`. Always pass `color` explicitly.
+Colour is not decoration here. The ground comes from `background_type` alone: `dark` paints
+`#1F2937` and every other type paints `#FAFAFA` (`background_color` is stored and rendered by
+nothing). The default element stroke is `#000000`, which reads on the default near-white ground
+and is invisible on a `dark` board — that is the case `hiveboard_validate`'s
+`invisible_elements` check catches. The scaffold palette works on either, because every card
+carries its own fill: stroke `#94A3B8`, fill `#0F172A`, label `#E2E8F0`, connectors `#64748B`.
+Always pass `color` explicitly, and keep every value inside 20 characters (see
+`references/element-reference.md`, Colours).
 
 ## A hand-placed funnel column
 
@@ -132,9 +136,10 @@ someone moves a box in the editor. Omit the coordinates and you get an arrow at 
 
 On the hand-built path, wiring is two passes because element ids are generated server-side:
 
-1. Bulk-create the shapes. Read the returned id list, in the order of your valid input rows.
-   Check `invalid: 0` first: rejected rows are skipped in that list, so a single bad row
-   shifts every id after it and you silently wire the wrong boxes together.
+1. Bulk-create the shapes. Map ids back through `results[]`, which carries one entry per INPUT
+   row in input order — not through `ids[]`, which holds only what was created, compacted, so a
+   single bad row shifts every id after it and you silently wire the wrong boxes together.
+   `ids_alignable` in the response is true only when `invalid` is 0.
 2. Bulk-create the arrows, each with computed `start` / `end` coordinates AND the two
    connection objects. (`hiveboard_connect` exists precisely to remove this id-zipping
    hazard — prefer it whenever server-solved anchors are acceptable.)
@@ -143,6 +148,35 @@ If you lost the ids (a scaffold map you did not capture, or an import), do NOT p
 board: `hiveboard_elements_find` queries by type, text, or region, and `hiveboard_outline`
 returns every node with its id and label plus the edge list.
 
+## Re-spacing a row: hiveboard_align
+
+Stop hand-computing deltas for this. `hiveboard_align` aligns and distributes in ONE call,
+because both take the same inputs and produce the same deltas.
+
+| Arg | Shape |
+|---|---|
+| `board_id` | required |
+| `element_ids` OR `region` | what to move. Exactly one of the two; both is a 400, neither is a 400. `region` is `{x, y, w, h}` and takes anything OVERLAPPING it. |
+| `align` | `left`, `right`, `top`, `bottom`, `center_x`, `center_y` |
+| `distribute` | `horizontal` or `vertical` — even GAPS between the current extremes |
+| `spacing` | a fixed gap for `distribute` instead of even gaps |
+| `dry_run` | return the deltas without writing |
+
+Pass `align`, `distribute`, or both; neither is a 400 naming the valid values. Both together
+applies align first and distributes the aligned result, which is the order every editor uses.
+The selection needs at least two elements with usable geometry and caps at 500.
+
+Connectors are excluded from the SELECTION — aligning a line independently detaches it from
+what it joins — but every connector bound to something that moved is re-anchored, so the arrows
+follow. The response is `{matched, moved, connectors_reanchored, applied, failed, deltas}`.
+
+**`deltas` is the undo.** No snapshot is taken, unlike a prune, and that is deliberate: the
+move is fully specified by your own selection, and replaying `deltas` negated puts the board
+back. It lists only what ACTUALLY moved, so a row the database rejected (reported in `failed`,
+which is why one bad row no longer abandons the batch) is not in it and cannot be un-moved into
+a position it never held. Use `dry_run` to read the deltas before committing — every delta is
+RELATIVE, so running the same alignment twice shifts the selection twice.
+
 ## The edit-tool decision rule
 
 `hiveboard_elements_patch` is the default for every edit: it MERGES `element_data` instead of
@@ -150,22 +184,28 @@ replacing it, a `move: {dx, dy}` is a real move with the correct per-type semant
 carry position in `start`/`end`, stickies/text/images in `position`, a pen in every point),
 and every arrow bound to something that moved has its endpoints translated by the same delta
 across the WHOLE board. Use its `text` field rather than guessing: it writes `label` on a
-shape and `content` on a text or sticky. Returns `updated`, `connectors_repaired`, `skipped`
-(with reasons) and `not_found`.
+shape and `content` on a text or sticky. Pass `include_children: true` to drag a frame's
+contents with it — `hiveboard_frames` tells you what that is first, and its `straddler_ids`
+tells you what will be left behind. Returns `updated`, `connectors_repaired`, `skipped` (this
+route declined, with reasons), `failed` (the database rejected that row; the rest of the batch
+still landed) and `not_found`.
 
 `hiveboard_element_update` is a RAW allow-listed column write, kept for exactly two jobs:
 replacing an element's ENTIRE `element_data` deliberately (a merge cannot remove keys), and
 flipping the raw columns `element_type`, `locked`, or `hidden` (`hidden` is read by no
-renderer at all, per the tool's own description). Its two traps, still live:
+renderer at all, per the tool's own description). Its two traps, now both loud:
 
-- `element_data` is replaced wholesale, not merged. The renderer expects the complete typed
-  element (`id`, `type`, `shapeType`, `start`, `end`, `color`, `strokeWidth`, `zIndex`, and
-  any label fields). Sending a partial object such as `{ label: 'New name' }` strips `start`
-  and `end`, and the renderer then crashes on that element. Read the element first
-  (`hiveboard_elements_find` with `include_data: true`), change the one field, send the whole
-  object back.
-- Patching `position` alone does not move a shape. Shapes are drawn from
-  `element_data.start` / `.end`; the `position` column is a redundant convenience copy. And a
-  move through `element_update` strands every bound arrow at its old coordinates — nothing
-  recomputes them on that path. That is the whole reason `hiveboard_elements_patch` exists;
-  use it for every move.
+- `element_data` is replaced wholesale, not merged, and an INCOMPLETE replacement is a **409**
+  rather than a stored row. `{ label: 'New name' }` on a rectangle would leave it with no
+  `start` or `end`, so the refusal names the missing keys and points at
+  `hiveboard_elements_patch`. It
+  used to be accepted, which cost two elements rather than one: the row stored, the element
+  vanished, and the renderer's de-duplication on `element_data.id` collapsed two id-stripped
+  elements into one. Read the element first (`hiveboard_elements_find` with
+  `include_data: true`), change the one field, send the whole object back.
+- Patching `position` alone does not move a shape, and returns 200 while doing it. Shapes are
+  drawn from `element_data.start` / `.end`, everything else from `element_data.position`; the
+  `position` column is a redundant convenience copy that no renderer reads. A move through
+  `element_update` also strands every bound arrow at its old coordinates. Use
+  `hiveboard_elements_patch` with `move` for every move, and `hiveboard_align` when the move
+  is "space these evenly".

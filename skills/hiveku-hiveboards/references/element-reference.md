@@ -7,9 +7,9 @@ color, fill_color, stroke_width, font_size, locked, hidden }`. The server normal
 the COMPLETE typed element the dashboard renderer expects, synthesizing the fields you did not
 supply. That full normalization only runs on CREATE. `hiveboard_elements_patch` merges into
 the stored object (safe for partial edits); `hiveboard_element_update` replaces
-`element_data` wholesale, which is why a patch through IT has to send the whole typed object.
-Both edit tools now mirror top-level style fields into `element_data`; neither synthesizes
-geometry.
+`element_data` wholesale, which is why a patch through IT has to send the whole typed object
+and is refused with a 409 when it does not. Both edit tools now mirror top-level style fields
+into `element_data`; neither synthesizes geometry.
 
 Source of truth: `hiveku_builder/src/lib/hiveboards/element-builder.ts`.
 
@@ -28,6 +28,38 @@ inside `element_data`, with size carried separately where it applies. There is n
 
 That split is the reason patching `position` alone does not move a shape: the renderer never
 reads the `position` column for a shape, only `element_data.start` and `.end`.
+
+## Colours
+
+The one contract on this surface that takes a whole board down. Two separate rules.
+
+**Every element except a sticky note and an image.** (An `image` runs no colour
+validation at all: it stores both columns null and reports `color` / `fill_color` back in
+`ignored_keys`.) `color` and `fill_color` must be a hex value (`#RGB`,
+`#RRGGBB`, `#RRGGBBAA`), a CSS colour name like `slategray`, or an `rgb()` / `rgba()` / `hsl()`
+/ `hsla()` value — and the whole string must fit **20 characters**, because
+`hiveboard_elements.color` and `.fill_color` are `VarChar(20)`. An over-long or unrecognised
+value is REFUSED with a sentence naming the field, never truncated: `#1F2937AA` cut to fit is
+still a colour, just not the one you asked for, and `rgba(255, 255, 255, 0.5)` (24 characters)
+cut to fit is garbage. The refusal is the point — an over-long value that reached Postgres
+would be a database error that aborts the ENTIRE bulk write of up to 5000 rows, and the
+per-row `errors` array would never reach you. `lightgoldenrodyellow` is exactly 20 characters,
+so every CSS name fits; `rgba(...)` with spaces usually does not.
+
+**A sticky note.** `element_data.color` is a NAME from `yellow`, `blue`, `green`, `pink`,
+`purple`, `orange` and nothing else. The renderer looks the name up in a table and
+dereferences the result, so a miss is `undefined.bg` — it throws and takes the whole board's
+render down, not just that note. On CREATE an unrecognised value is coerced to `yellow` and
+the swap is reported in `coercions`. On the PATCH paths it is REFUSED rather than mirrored,
+and the merge that already copied it into `element_data` is undone, because a 200 that leaves
+a board unopenable is worse than a refusal. The top-level `color` / `fill_color` columns are
+written null for a sticky either way.
+
+**The ground it all sits on.** `background_type` alone decides the canvas colour: `dark` paints
+`#1F2937`, and `honeycomb`, `dot` (the default), `line` and `blank` all paint `#FAFAFA`.
+`background_color` is stored on the board and rendered by nothing. So the default board is
+near-white — the black default stroke is visible there and invisible on a `dark` board, which
+is the case `hiveboard_validate`'s `invisible_elements` check exists to catch.
 
 ## Shapes
 
@@ -53,7 +85,7 @@ Inputs that shape it:
 | `position` | Becomes `start`, and the top-left corner of the element. |
 | `element_data.width` / `.height` | Drives `end`. Falls back to the type default. |
 | `element_data.start` / `.end` | Explicit override. If you pass `start` with a numeric `x`, it wins over `position`. Pass both `start` and `end` to place a connector exactly. |
-| `color` (top level) or `element_data.color` | Stroke. Defaults to `#000000`, which is invisible on the default `#1F2937` board. |
+| `color` (top level) or `element_data.color` | Stroke. Defaults to `#000000`. Safe on the default near-white ground, invisible on a `background_type: 'dark'` board. See Colours above. |
 | `fill_color` (top level) or `element_data.fillColor` / `.fill_color` | Fill. Omitted entirely when unset, so the shape renders unfilled. |
 | `stroke_width` or `element_data.strokeWidth` | Defaults to 2. |
 | `z_index` | Copied to `element_data.zIndex` as well as the column. |
@@ -65,25 +97,32 @@ horizontal 200 pixel line, which is almost never what you wanted. Always give a 
 explicit `start` and `end`.
 
 Optional pass-through fields, copied verbatim onto the shape only when present: `label`,
-`labelSize`, `labelColor`, `labelPosition`, `lineStyle`, `controlPoint`, `controlPoint2`,
-`angleDirection`, `startConnection`, `endConnection`, `strokeStyle`, `opacity`. Anything not on
-that list is dropped silently, so a misspelled key produces an element that looks created and
-renders without your styling.
+`text` (an accepted alias for `label`; `label` wins when both are sent), `labelSize`,
+`labelColor`, `labelPosition`, `lineStyle`, `controlPoint`, `controlPoint2`, `angleDirection`,
+`startConnection`, `endConnection`, `strokeStyle`, `opacity`, `linkTargetBoardId`,
+`linkTargetUrl`. Anything not on that list is dropped — but no longer in silence: it comes back
+in `ignored_keys` (see below), which is how you learn that `{content: 'Checkout'}` on a
+rectangle produced a blank card.
 
-`font_size` is ignored on shapes: the built element stores `font_size: null` regardless. Label
-size goes in `element_data.labelSize`.
+`font_size` is ignored on shapes: the built element stores `font_size: null` regardless, and
+sending it puts `font_size` in `ignored_keys`. Label size goes in `element_data.labelSize`.
 
 ### Labels on shapes
 
 Every shape type accepts `label`, including `arrow` and `line`, which is how a funnel gets
-conversion rates on its connectors and a sequence gets its delays. Labels honour `\n` for a
-second line, which is exactly how `hiveboard_sitemap_scaffold` renders a page title above its
-path.
+conversion rates on its connectors and a sequence gets its delays.
 
-The scaffold's own label styling is `labelSize: 14`, `labelColor: '#374151'` on a `fillColor`
-of `#0F172A`. That colour pairing is dark text on a dark fill. If scaffolded frame labels read
-faint on a given board background, patch `labelColor` to something lighter rather than assuming
-the label failed to write.
+**A shape label does NOT honour `\n`.** It is a single SVG `<text>` node and SVG collapses the
+newline to a space, so `"Home\n/"` reads as "Home /" on one line, sized for a character that
+never appears. `hiveboard_sitemap_scaffold` used to build its frame labels that way; it now
+writes the `path` as its own `text` element under the frame, which is the only primitive that
+honours `\n`. Do the same for a second line of your own.
+
+The scaffolds label through the diagram engine, which sets `labelSize: 16` and
+`labelColor: '#E2E8F0'` on a `fillColor` of `#0F172A` — light text on a dark card, readable on
+either board ground. A `frame` is the exception: its tab text is hardcoded `#FFFFFF` in the
+renderer and `labelColor` on a frame is computed and then never used, so the tab's readability
+comes from the frame's `color`, which paints the tab behind it.
 
 ### Connections
 
@@ -120,7 +159,7 @@ free-floating.
 - `fontSize` comes from top-level `font_size` or `element_data.fontSize`, defaulting to 16.
 - Optional pass-throughs: `fontFamily`, `fontWeight`, `fontStyle`, `textAlign`,
   `textDecoration`.
-- There is no width or height. Text does not wrap. Budget roughly 8 pixels per character at
+- There is no width or height, and text does not wrap BY DEFAULT — but it wraps to `maxWidth` when you send one, and the scaffolds set it. Budget roughly 8 pixels per character at
   the default size when deciding whether a label fits in a gutter, and split long annotations
   into several text elements stacked about 24 pixels apart.
 
@@ -139,11 +178,10 @@ free-floating.
 }
 ```
 
-- Colour is a NAME (`'yellow'` by default), read from `element_data.color`, one of `yellow`,
-  `blue`, `green`, `pink`, `purple`, `orange`. The top-level `color` field is NOT used for
-  sticky notes: the built element stores `color: null`. Anything outside the six names — a
-  hex, most obviously — is coerced to yellow on create (the renderer looks the name up in a
-  table and used to crash the whole board on a miss).
+- Colour is a NAME (`'yellow'` by default), read from `element_data.color` — or from the
+  top-level `color` when `element_data.color` is absent, though the column itself is stored
+  null. Anything outside the six names is coerced to yellow on create and refused on the patch
+  paths. Full rules under Colours above; it is the failure that takes the board down.
 - Size comes from `element_data.size.width` / `.height`, falling back to
   `element_data.width` / `.height`, then to 200 x 200.
 - Content accepts `content` or `text`.
@@ -186,30 +224,60 @@ shorter stroke with no error. The element's `position` is derived from the first
 point, not from the `position` you sent. Pen is for freehand annotation; do not use it to fake
 connectors, because a pen stroke cannot carry a connection binding.
 
+## What the builder reports back: ignored_keys and coercions
+
+Every branch of the builder copies from a FIXED list of keys — `element_data` is a typed
+renderer contract, not a free bag — and a key the branch does not read used to disappear under
+a 201 with no trace. `{type: 'rectangle', element_data: {content: 'Checkout'}}` was a
+successful request that produced a blank card. Two fields close that:
+
+- **`ignored_keys`** — every `element_data` key this type does not read (reported under the
+  name you used) plus every top-level style field this type writes as null anyway. The read
+  lists are: shapes as above; `text` reads `content`/`text`, `fontSize`, `color`, `fontFamily`,
+  `fontWeight`, `fontStyle`, `textAlign`, `textDecoration`, `maxWidth`; `sticky-note` reads
+  `content`/`text`, `size`, `width`, `height`, `color`; `pen` reads `points`, `color`,
+  `strokeWidth`; `image` reads `src`, `size`, `width`, `height`.
+- **`coercions`** — every value accepted but CHANGED on the way in, each
+  `{field, from, to, reason}`. The common one is a sticky colour that was not one of the six
+  names and became yellow. The rest are column clamps: `rotation` to +/-360 at two decimals
+  (`Decimal(6,2)`), `stroke_width` to 0-100, `font_size` to 1-400, `z_index` to int4.
+  Where the clamped value lands differs by field, and it matters because `element_data` is
+  what draws: `stroke_width` and `font_size` are clamped on the COLUMN only and `element_data`
+  keeps what you sent, while `rotation` and `z_index` are clamped BEFORE the element is built,
+  so the clamped value is what reaches `element_data` too.
+
+Neither ever fails the build. Where they appear: beside `data` on a single create, and inside
+each `results[]` row on a bulk create.
+
 ## Validation and failure modes
 
-`buildElement` returns an error in exactly two cases: a missing `type`, and a `type` outside
-the twelve-name vocabulary (`unsupported element type "<x>"`). Everything else is coerced or
-defaulted.
+`buildElement` returns an error in three cases: a missing `type`, a `type` outside the
+twelve-name vocabulary (`unsupported element type "<x>"`), and a `color` or `fill_color` that
+is not a valid colour under 20 characters. Everything else is coerced or defaulted.
 
-That is a wide funnel, and it is why bad boards look successful:
+That is still a wide funnel, and it is why bad boards look successful:
 
 - A missing `width` silently becomes the type default.
-- A misspelled pass-through key is dropped without comment.
-- A missing `color` becomes black on a dark board.
+- A missing `color` becomes black — invisible only on a `dark` board.
 - A malformed pen point vanishes from the stroke.
 - An empty `content` or `src` creates a real row that renders as nothing.
+
+A misspelled pass-through key is the one that no longer hides: it comes back in
+`ignored_keys`. Read that array; nobody has ever read it and then shipped a blank card.
 
 Route-level behaviour on top of that:
 
 - Single create returns 400 with the builder's error message on an invalid element.
-- Bulk create validates row by row. Valid rows are inserted, invalid ones are collected into
-  `errors[]` as `{row, error}` with a 1-indexed row number. If EVERY row is invalid the call
-  returns 422 with `validation_errors` and nothing is created. If some succeed you get 201 with
-  `created`, `invalid`, `errors`, and the created ids.
-- The returned id list covers valid rows only, in input order. One rejected row shifts every id
-  after it, so check `invalid: 0` before zipping ids back to your input array to wire
-  connections. This is the failure that silently connects the wrong boxes.
+- Bulk create validates row by row. Valid rows are inserted, invalid ones collected into
+  `errors[]` as `{row, error}`, 1-indexed. If EVERY row is invalid the call returns 422 with
+  `validation_errors` and nothing is created. Otherwise 201 with `created`, `invalid`,
+  `errors`, `ids`, `ids_alignable`, and `results`.
+- **Read `results[]`, not `ids[]`.** `results` carries one entry per INPUT row, in input order,
+  each `{row, ok, id?, error?, ignored_keys?, coercions?}`, so an id maps back to the thing you
+  sent. `ids` holds only what was created, compacted, so one rejected row shifts every id after
+  it and hand-wiring from that array attaches your arrows to the wrong boxes. `ids_alignable`
+  is the response saying so itself: it is true only when `invalid` is 0, and a call with
+  failures also carries a `hint` pointing you at `results`.
 - Board ids and element ids must be UUIDs or the route returns 400 before touching anything.
 - A board id that does not belong to the calling account returns 404, not 403.
 
@@ -219,29 +287,51 @@ Route-level behaviour on top of that:
 partial payload cannot strip geometry), `move: {dx, dy}` moves each type by its real
 position fields, its `text` field writes `label` on a shape and `content` on a text or
 sticky, and every bound connector attached to a moved element is translated by the same
-delta board-wide. Read the current data first with `hiveboard_elements_find` and
-`include_data: true`, then patch, then check `updated` / `connectors_repaired` / `skipped` /
-`not_found` in the return.
+delta board-wide. Pass `include_children: true` on a frame's update and everything inside it
+moves too, by the majority-of-area rule; call `hiveboard_frames` first to see what would come
+along. Read the current data first with `hiveboard_elements_find` and `include_data: true`,
+then patch, then read the four headings in the return, which mean four different things:
+`updated` landed, `skipped` this route declined and says why, `failed` the database rejected
+(that row is unchanged, the batch continued), `not_found` is not on this board. It returns
+`failed[]` rather than throwing mid-batch, so a rejected row can no longer abandon a write you
+cannot account for. Cap is 1000 updates per call.
 
-`hiveboard_element_update` writes the allow-listed columns raw. It does not run the builder
-and it does not merge JSON. Use it only to replace an element's ENTIRE `element_data`
-deliberately (a merge cannot remove keys) or to flip the raw `element_type` / `locked` /
-`hidden` columns (`hidden` is read by no renderer). The safe procedure on that path:
+`hiveboard_element_update` writes the allow-listed columns raw. It does not merge JSON. Use it
+only to replace an element's ENTIRE `element_data` deliberately (a merge cannot remove keys) or
+to flip the raw `element_type` / `locked` / `hidden` columns (`hidden` is read by no renderer).
+The safe procedure on that path:
 
 1. `hiveboard_elements_find({ include_data: true })` (or `hiveboard_get`) and find the
    element. Keep its ENTIRE `element_data`.
 2. Change the one field you care about in that object, preserving `id`, `type`, `shapeType`,
    `start`, `end`, and every other key already present.
-3. Send the whole object back as `element_data`. For a move, also compute new `start` / `end`
-   that preserve the original width and height (`width = end.x - start.x`,
-   `height = end.y - start.y`) and send the matching `position` so the redundant column stays
-   consistent.
+3. Send the whole object back as `element_data`. For a move, do not use this tool at all — see
+   the `position` note below.
 4. If the element is a shape with connectors attached, patch each connector's
    `element_data.start` / `.end` in the same pass. On THIS path connector endpoints are
    stored coordinates and nothing recomputes them server-side — only
    `hiveboard_elements_patch` repairs them for you.
 
-Sending a partial `element_data` such as `{ "label": "New name" }` through
-`hiveboard_element_update` replaces the whole object, stripping `start` and `end`. A shape
-without those crashes the renderer on that element rather than degrading gracefully, which
-takes down the board view for everyone, not just you.
+Two hard behaviours on this route, both changed from what the tool used to do:
+
+- **An incomplete `element_data` is a 409, not a 200.** Sending `{ "label": "New name" }` to a
+  rectangle is a replacement with no `start`/`end`, and it is now refused with an error naming
+  the missing keys and pointing at `hiveboard_elements_patch`. It used to be stored: the row
+  survived, the element vanished from the canvas, and because the renderer de-duplicates on
+  `element_data.id`, two elements stripped of their id collapsed into one and a SECOND element
+  disappeared with it. The required keys per type are `start` and `end` for a shape,
+  `position` for `text` / `sticky-note` / `image`, and a non-empty `points` for a pen. `id`,
+  `type` and `shapeType` are re-injected from the stored row, so you do not have to resend
+  identity to rename a box.
+- **`position` is accepted, stored, and moves nothing.** A shape draws from
+  `element_data.start`/`.end` and everything else from `element_data.position`, so a
+  position-only write returns 200 against an unchanged canvas. A real move is
+  `hiveboard_elements_patch` with `move: {dx, dy}`, which is also what keeps the bound arrows
+  attached.
+
+Style fields (`color`, `z_index`, `locked` and friends) ARE mirrored into `element_data` here
+now, in both directions, so they take effect instead of writing a column no renderer reads.
+`hidden` is the deliberate exception — nothing reads it under any name. A refused colour is a
+400 on this route, because it writes one element and there is nothing else in the call to
+succeed; on `hiveboard_elements_patch` the same refusal is a `skipped` entry and the rest of
+the batch lands.
