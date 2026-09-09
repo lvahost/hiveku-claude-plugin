@@ -7338,7 +7338,7 @@
       "dept": "ppc",
       "method": "POST",
       "timeoutMs": null,
-      "description": "Run a live API test against a PPC connection (verifies OAuth + permissions)."
+      "description": "Run a live API test against a PPC connection. ★ THIS IS NOT A READ: on a verdict the platform actually gave, it WRITES connection_status ('connected' or 'error') and last_error on the row — the same fields the dashboard, connections_status and the daily guardrail sweep read. A configuration gap or a network blip leaves the row untouched and says so, because a diagnostic that cannot reach the platform must not record a verdict about it. RESPONSE: success, message, platform, details, plus four fields separating what was TOUCHED from what MOVED — status_written (did it write the row), status_changed (did the value actually change), status_before / status_after. connection_status_unchanged is the same fact as !status_changed and is kept for older callers. A passing test on an already-connected account writes 'connected' over 'connected': status_written true, status_changed FALSE. Do not read a write as a transition. For Google Ads this refreshes the OAuth token only; it does NOT validate developer_token or customer_id — that needs ppc_sync."
     },
     {
       "name": "ppc_connection_update",
