@@ -267,6 +267,20 @@ async function main() {
   results.sort((a, b) => a.tool.localeCompare(b.tool));
   const by = (s) => results.filter((r) => r.status === s);
   const ok = by('ok'), needs = by('needs-params'), err = by('error');
+  const unavail = by('unavailable');
+
+  // Every swept tool lands in exactly one bucket. Asserted rather than assumed:
+  // adding `unavailable` moved 102 of this account's 106 "errors" out of the
+  // failure list, and a bucket the summary forgets to print is how those tools
+  // would have disappeared from the report entirely while the totals still
+  // looked plausible.
+  const bucketed = ok.length + needs.length + err.length + unavail.length;
+  if (bucketed !== results.length) {
+    console.error(
+      `\n  ! ${results.length - bucketed} swept tool(s) fell into no bucket — ` +
+        'the summary below undercounts. Fix classify() before trusting it.',
+    );
+  }
 
   const report = {
     account_dir: ARGS.dir,
@@ -275,6 +289,7 @@ async function main() {
     tools_swept: results.length,
     ok: ok.length,
     needs_params: needs.length,
+    unavailable: unavail.length,
     errors: err.length,
     rate_limit_waits: throttled,
     results,
@@ -283,6 +298,7 @@ async function main() {
 
   console.log(`\n  ok            ${ok.length}`);
   console.log(`  needs params  ${needs.length}   (not a failure — the tool wants arguments)`);
+  console.log(`  unavailable   ${unavail.length}   (not a failure — no connection / not entitled on this account)`);
   console.log(`  ERRORS        ${err.length}`);
   if (throttled) {
     console.log(`  (paced ${throttled}x for the server's 100-per-60s limit — a full sweep takes ~7 min)`);
@@ -290,6 +306,8 @@ async function main() {
   if (err.length) {
     console.log('\n  failures:');
     for (const r of err) console.log(`    ${r.tool.padEnd(46)} ${r.detail}`);
+  } else {
+    console.log('\n  no failures — every non-ok result was a parameter refusal or an unconnected integration.');
   }
   console.log(`\n  full report: ${path.resolve(ARGS.out)}`);
   process.exitCode = err.length ? 1 : 0;

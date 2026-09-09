@@ -118,3 +118,155 @@ test('the needs-params pattern does not match an empty or trivial string', () =>
   assert.equal(NEEDS_PARAMS_RE.test('ok'), false);
   assert.equal(NEEDS_PARAMS_RE.test('{}'), false);
 });
+
+/**
+ * ── The narrow-fix problem (INFRA-02) ────────────────────────────────────────
+ *
+ * The ppc_metrics fix above was applied to the PHRASE it was reported with,
+ * so the pattern learned "provide one of" and nothing else. An account-wide
+ * sweep of 806 read-only tools then found four more parameter refusals still
+ * filed as failures, in three shapes the verb list cannot reach:
+ *
+ *   crm_contacts_missing_field     "field must be one of: email, phone, …"
+ *   social_analytics_by_dimension  "group_by must be one of: hook, format, …"
+ *   social_posts_analytics_list    "Pass post_ids (comma-separated UUIDs) or a
+ *                                   from_date/to_date window."
+ *   workflow_resolve_short_id      "`short_id` must be 4-12 hex characters …"
+ *
+ * The first two are `<param> must BE one of` — the verb is "be", and the
+ * pattern only knows pass/provide/specify/supply/give/include/set. The third
+ * is "Pass X or Y" with no "one of" at all. The fourth carries no enum: it is
+ * a FORMAT constraint on a named parameter.
+ *
+ * Every one of these strings was captured from a live sweep, not imagined —
+ * which matters, because the previous fix was fitted to the single sample it
+ * was reported with and that is exactly why these four survived it.
+ *
+ * ★ THE ASYMMETRY IS REAL BUT NOT UNLIMITED. sweep-classify.mjs argues that a
+ * false "needs-params" costs one tool reported as uncovered while a false
+ * "error" manufactures an incident. True — but a genuinely broken tool filed
+ * as needs-params does not get reported as uncovered, it vanishes into a
+ * bucket nobody reads. So the guard test below is load-bearing: it holds real
+ * failures OUT of the bucket, and it is the half of this change that must
+ * never be relaxed to make a matching test pass.
+ */
+test('a parameter refusal is needs-params in the shapes a live sweep actually found', () => {
+  const refusals = [
+    // `<param> must be one of` — the verb is "be", not one of the action verbs.
+    'field must be one of: email, phone, first_name, last_name, job_title, lead_source, owner_id, assigned_to_id, lead_status',
+    'group_by must be one of: hook, format, pillar, persona, stage, platform, asset, grid',
+    // "Pass X or Y" — alternatives, with no "one of" to anchor on.
+    'Pass post_ids (comma-separated UUIDs) or a from_date/to_date window.',
+    // A format constraint on a named parameter, carrying no enum at all.
+    '`short_id` must be 4-12 hex characters (the prefix the dashboard displays).',
+  ];
+  for (const text of refusals) {
+    assert.equal(
+      classify(isErrorResult(text)).status,
+      'needs-params',
+      `"${text}" is a live route refusing for want of an argument the sweep withheld — ` +
+        'filing it as a failure buries the real ones',
+    );
+  }
+});
+
+/**
+ * The other half, and the one that keeps the change honest. Broadening a
+ * needs-params pattern is how a sweep stops reporting real breakage: these are
+ * the failures the Locus report was actually built to surface, and several are
+ * deliberately adjacent to the phrasings above.
+ */
+test('a genuine failure is never laundered into needs-params', () => {
+  const failures = [
+    // PPC-04/05/08 — the bare wrapper, and a 500 with no fault attached.
+    '[ppc_google_ads] client library=31.4.0 google-ads-api=unknown',
+    'Olympus API returned 500',
+    'Auction Insights is a Google Ads UI-only report — Google does not expose it through the API',
+    // Adjacent to the enum shape above, but describing a BROKEN state.
+    'The provided rule_type is not supported for the user list.',
+    'The operation is not allowed for the given context.',
+    "The string date's format should be yyyy-mm-dd.",
+    // Says "must" about a thing that is not a parameter the caller withheld.
+    'the campaign must be enabled before an experiment can start',
+    'upstream timed out after 30000ms',
+    'ECONNREFUSED 10.0.0.4:443',
+  ];
+  for (const text of failures) {
+    assert.equal(
+      classify(isErrorResult(text)).status,
+      'error',
+      `"${text}" is a real failure — laundering it into needs-params hides it in ` +
+        'the one bucket nobody reads',
+    );
+  }
+});
+
+/**
+ * ── "ERRORS 106" when nothing is broken ──────────────────────────────────────
+ *
+ * The same account-wide sweep that found the four refusals above reported 106
+ * errors. Adjudicating every one of them against the live corpus:
+ *
+ *     97  not connected      "No Webflow connection is active for this account"
+ *      5  not entitled       sales_agent_disabled, no_brand
+ *      4  parameter refusal  (the four fixed above)
+ *   ─────
+ *      0  actually broken
+ *
+ * This is PPC-12 inverted, and worse by magnitude. PPC-12 overstated health by
+ * counting an error body as a pass; this overstates BREAKAGE 106-to-0, and it
+ * does it in the headline number a person reads to decide whether to go
+ * looking for an incident. A sweep whose failure list is 100% noise trains its
+ * reader to ignore the failure list — at which point the one real regression
+ * lands in a bucket nobody opens.
+ *
+ * "No Webflow connection" is not a defect and is not a withheld argument
+ * either: no argument the sweep could pass would make it succeed. It is a
+ * property of the ACCOUNT, so it gets its own bucket rather than being folded
+ * into a neighbour that would misdescribe it.
+ */
+test('an unexercisable tool is unavailable — not an error, not needs-params', () => {
+  const unavailable = [
+    'No Webflow connection is active for this account. Connect a Webflow site first.',
+    'No Shopify connection is active for this account. Connect a store first (shopify_connect_start).',
+    'No Bing Webmaster connection configured for this account',
+    'HubSpot not connected for this account',
+    'GoHighLevel not connected for this account',
+    'No active Gmail connection found on this account',
+    'sales_agent_disabled',
+    'no_brand',
+  ];
+  for (const text of unavailable) {
+    assert.equal(
+      classify(isErrorResult(text)).status,
+      'unavailable',
+      `"${text}" cannot be exercised on this account — no argument would make it ` +
+        'succeed, so counting it as a failure manufactures an incident',
+    );
+  }
+});
+
+/**
+ * The guard, again, and for the same reason: a bucket that hides things is
+ * only safe while it hides exactly the right things. Every string here is a
+ * real failure, and several deliberately sit close to the connection phrasings
+ * above — ECONNREFUSED contains "CONN", and "does not expose" contains "not".
+ */
+test('the unavailable bucket never swallows a real failure', () => {
+  const failures = [
+    'ECONNREFUSED 10.0.0.4:443',
+    'Auction Insights is a Google Ads UI-only report — Google does not expose it through the API',
+    'The provided rule_type is not supported for the user list.',
+    'Olympus API returned 500',
+    '[ppc_google_ads] client library=31.4.0 google-ads-api=unknown',
+    'upstream timed out after 30000ms',
+    'connection reset by peer',
+  ];
+  for (const text of failures) {
+    assert.equal(
+      classify(isErrorResult(text)).status,
+      'error',
+      `"${text}" is a real failure and must stay in the failure list`,
+    );
+  }
+});
