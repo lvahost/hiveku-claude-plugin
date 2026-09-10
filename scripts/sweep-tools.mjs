@@ -35,7 +35,7 @@
  * Usage:
  *   node scripts/sweep-tools.mjs [--dir <bound-account-dir>] [--limit N]
  *                                [--out report.json] [--concurrency N]
- *                                [--only <substring>]
+ *                                [--only <substring>] [--resolve]
  */
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
@@ -43,12 +43,13 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { isAutoApprovable } from '../lib/tool-safety.mjs';
 import { classify } from '../lib/sweep-classify.mjs';
+import { harvestCandidates, resolveTool, assertSuppliersAreReadOnly } from '../lib/sweep-resolvers.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const PLUGIN_ROOT = path.resolve(HERE, '..');
 
 function parseArgs(argv) {
-  const out = { dir: process.cwd(), limit: 0, out: 'hiveku-sweep.json', concurrency: 4, only: '' };
+  const out = { dir: process.cwd(), limit: 0, out: 'hiveku-sweep.json', concurrency: 4, only: '', resolve: false };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--dir') out.dir = path.resolve(argv[++i]);
@@ -56,6 +57,7 @@ function parseArgs(argv) {
     else if (a === '--out') out.out = argv[++i];
     else if (a === '--concurrency') out.concurrency = Math.max(1, Number(argv[++i]) || 4);
     else if (a === '--only') out.only = argv[++i];
+    else if (a === '--resolve') out.resolve = true;
     else if (a === '--help' || a === '-h') { console.log(fs.readFileSync(new URL(import.meta.url)).toString().split('*/')[0]); process.exit(0); }
   }
   return out;
@@ -231,13 +233,19 @@ async function main() {
   const RETRY_AFTER = /retry after (\d+)/i;
 
   /** One call, with a bounded retry when the server says to wait. */
-  async function callOnce(name) {
+  async function callOnce(name, args = null) {
+    const sendArgs = args ?? argsFor(name);
     for (let attempt = 0; attempt < 3; attempt++) {
       await takeSlot();
       let msg;
-      try { msg = await mcp.send('tools/call', { name, arguments: argsFor(name) }); }
+      try { msg = await mcp.send('tools/call', { name, arguments: sendArgs }); }
       catch (e) { msg = { error: { message: String(e.message || e) } }; }
       const c = classify(msg);
+      // ★ The verdict's `detail` is truncated (80 chars for ok). The resolver
+      // has to parse ids out of a listing, so hand back the FULL text too —
+      // parsing the truncated form fails silently, and an empty harvest then
+      // looks exactly like "this account holds none of that entity".
+      c.raw = (msg?.result?.content || []).map((x) => x.text || '').join('');
       const text = `${c.detail ?? ''}`;
       if (!/rate limit/i.test(text)) return c;
       throttled++;
@@ -262,6 +270,75 @@ async function main() {
     }
   };
   await Promise.all(Array.from({ length: ARGS.concurrency }, worker));
+
+  // ── Resolving the coverage ceiling (opt-in: --resolve) ──────────────────────
+  //
+  // ~400 of the tools above refuse for want of an argument, and 358 of those
+  // want an ENTITY ID. That is the real ceiling, and the obvious fix -- read
+  // required[] and auto-fill it -- makes the report WORSE: a synthetic id
+  // returns 404, a 404 classifies as `error`, and the failure list fills with
+  // hundreds of incidents that are not real.
+  //
+  // So this probes REAL ids harvested from read-only listers, and keeps
+  // whichever one the tool accepts. See lib/sweep-resolvers.mjs for why the map
+  // is discovered rather than declared (seven of nine seo_* tools take the SEO
+  // project id; two want a website project and 404 on it).
+  if (ARGS.resolve) {
+    // ★ Suppliers run ahead of the per-tool gate below, so they are the one
+    // path that could reach a mutating tool unguarded. Fail before calling any.
+    assertSuppliersAreReadOnly((t) => isAutoApprovable(t, {}));
+
+    const schemas = new Map(all.map((t) => [t.name, t.inputSchema ?? t.input_schema ?? {}]));
+    const unresolved = results.filter((r) => r.status === 'needs-params');
+    process.stdout.write(`\n  resolving ${unresolved.length} needs-params tools…\n`);
+
+    const candidates = await harvestCandidates({
+      call: async (tool) => {
+        const c = await callOnce(tool, {});
+        if (c.status !== 'ok') return null;
+        try { return JSON.parse(c.raw); } catch { return null; }
+      },
+      onNote: (n) => console.log(`    ${n}`),
+    });
+
+    const harvested = [...candidates.values()].reduce((n, v) => n + v.length, 0);
+    if (!harvested) {
+      console.log(
+        '    no candidate ids were harvested from any supplier — every unresolved tool\n' +
+        '    below is reported as it was. This is NOT evidence the account holds no such\n' +
+        '    entities; check the suppliers in lib/sweep-resolvers.mjs can be called here.',
+      );
+    }
+
+    let promoted = 0, unavail = 0, probes = 0;
+    for (const row of unresolved) {
+      const verdict = await resolveTool({
+        tool: row.tool,
+        schema: schemas.get(row.tool) ?? {},
+        candidates,
+        call: async (tool, args) => {
+          // ★ RE-GATE. The gate above was evaluated with argsFor(name); these
+          // arguments are different, and gating on one shape while calling with
+          // another is exactly how the gate stops meaning anything.
+          if (!isAutoApprovable(tool, args)) {
+            return { status: 'error', detail: 'refused by the read-only gate under resolved args' };
+          }
+          return callOnce(tool, args);
+        },
+      });
+      probes += verdict.probes;
+      if (verdict.status === 'ok') {
+        row.status = 'ok'; row.detail = verdict.detail; row.resolved_via = verdict.param; promoted++;
+      } else if (verdict.status === 'unavailable' && harvested) {
+        row.status = 'unavailable'; row.detail = verdict.detail; unavail++;
+      }
+    }
+    console.log(
+      `    ${promoted} now answer with a real id, ${unavail} have no such entity on this account ` +
+      `(${probes} probe calls)`,
+    );
+  }
+
   mcp.close();
 
   results.sort((a, b) => a.tool.localeCompare(b.tool));
@@ -302,6 +379,15 @@ async function main() {
   console.log(`  ERRORS        ${err.length}`);
   if (throttled) {
     console.log(`  (paced ${throttled}x for the server's 100-per-60s limit — a full sweep takes ~7 min)`);
+  }
+  if (!ARGS.resolve && needs.length) {
+    // Say the ceiling out loud. A "needs params" count printed with no way to
+    // move it reads as a property of the tools rather than of this run.
+    console.log(
+      `\n  ${needs.length} tools went uncalled for want of an argument. --resolve harvests real ids\n` +
+      '  from read-only listers and probes them, which turns most of that into real coverage\n' +
+      '  (slower: it costs up to one extra call per candidate per tool).',
+    );
   }
   if (err.length) {
     console.log('\n  failures:');
