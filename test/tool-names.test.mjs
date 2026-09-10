@@ -375,3 +375,109 @@ test('no shorthand suffix chains after a gated-prefix tool name', () => {
       'evades name verification - spell every tool name in full:\n  ' + hits.join('\n  '),
   );
 });
+
+/**
+ * ── The Webflow Availability table ──────────────────────────────────────────
+ *
+ * hiveku-web-agency/references/webflow-sites.md carries the one table that
+ * says which webflow_* tools are LIVE and which are INCOMING, which gate each
+ * one carries, and the commands point at it rather than spelling incoming
+ * names. Nothing checked its Status or Gate column against the registries.
+ * The nine WEBFLOW-3 tools landed in the index on 2026-09-06 and the table
+ * still read INCOMING four days later, so a session took the "paste it in the
+ * Designer" fallback for a tool the server served; twelve confirm gates added
+ * on 2026-09-09 never reached the Gate column, and the content-source switch
+ * had no row at all. Three ratchets: an INCOMING row cannot name a live tool,
+ * the rows are exactly the index's webflow_ names, and the confirm marks are
+ * exactly the ask list's webflow_ names.
+ */
+const WEBFLOW_REFERENCE = path.join(root, 'skills', 'hiveku-web-agency', 'references', 'webflow-sites.md');
+
+function readAvailabilityTable() {
+  const lines = fs.readFileSync(WEBFLOW_REFERENCE, 'utf8').split('\n');
+  const start = lines.findIndex((l) => /^\|\s*Tool\s*\|\s*Status\s*\|/.test(l));
+  assert.ok(start >= 0, 'webflow-sites.md has no Availability table (no "| Tool | Status | ..." header row)');
+  const header = lines[start].split('|').map((c) => c.trim());
+  const col = (name) => {
+    const i = header.indexOf(name);
+    assert.ok(i > 0, `the Availability table has no "${name}" column`);
+    return i;
+  };
+  const tool = col('Tool');
+  const status = col('Status');
+  const gate = col('Gate');
+  const rows = [];
+  for (let i = start + 2; i < lines.length && lines[i].startsWith('|'); i++) {
+    const cells = lines[i].split('|').map((c) => c.trim());
+    const name = (cells[tool] ?? '').replace(/`/g, '');
+    if (!name) continue;
+    rows.push({ name, status: cells[status] ?? '', gate: cells[gate] ?? '', line: i + 1 });
+  }
+  assert.ok(rows.length > 100, `only ${rows.length} Availability rows parsed - the parser is broken, not the table`);
+  return rows;
+}
+
+test('no Availability row marked INCOMING names a tool lib/tool-index.json already carries', () => {
+  const index = loadIndex();
+  const stale = readAvailabilityTable()
+    .filter((r) => /INCOMING/i.test(r.status) && index.has(r.name))
+    .map((r) => `${r.name} (webflow-sites.md:${r.line})`);
+  assert.deepEqual(
+    stale,
+    [],
+    'these rows say INCOMING but the tool is live in the index. Flip the row to LIVE and drop its ' +
+      'fallback, or a session keeps using the dashboard workaround for a tool the server serves: ' +
+      stale.join(', '),
+  );
+});
+
+test('the Availability table names every webflow_ tool in the index, and nothing else', () => {
+  const index = [...loadIndex()].filter((n) => n.startsWith('webflow_'));
+  const rows = readAvailabilityTable().map((r) => r.name);
+  const missing = index.filter((n) => !rows.includes(n));
+  const unknown = rows.filter((n) => !index.includes(n) && !PENDING_TOOLS.has(n));
+  const duplicated = rows.filter((n, i) => rows.indexOf(n) !== i);
+  assert.deepEqual(
+    { missing, unknown, duplicated },
+    { missing: [], unknown: [], duplicated: [] },
+    'the Availability table and the index disagree on the webflow_ tools. A live tool with no row ' +
+      'is invisible to the web skill; a row for a name that is neither live nor pending is a ' +
+      'fabricated tool',
+  );
+});
+
+test('the Availability table marks confirm on exactly the webflow_ tools on the ask list', () => {
+  const ask = JSON.parse(fs.readFileSync(path.join(root, 'data', 'permission-critical-tools.json'), 'utf8'))
+    .tools.map((t) => t.name).filter((n) => n.startsWith('webflow_')).sort();
+  const marked = readAvailabilityTable().filter((r) => /\bconfirm\b/.test(r.gate)).map((r) => r.name).sort();
+  assert.ok(ask.length >= 30, `only ${ask.length} webflow_ ask entries read - the ask list parse is broken`);
+  assert.deepEqual(
+    marked,
+    ask,
+    'the table legend promises that confirm mirrors the plugin ask list. A gated tool without the ' +
+      'mark is called without confirm: true and answers 412 confirm_required; a mark on an ungated ' +
+      'tool teaches a prompt that never comes',
+  );
+});
+
+test('new-site.md teaches every external_platform value site_create_external accepts', () => {
+  // The MCP schema and the builder route accept six platforms; the command
+  // used to teach three and file Shopify, Squarespace and Wix sites as "url",
+  // which loses the builder's platform fingerprint and the per-platform
+  // editing connection. The enum lives in the index description, so the
+  // command is checked against that rather than against a copy of the list.
+  const raw = JSON.parse(fs.readFileSync(path.join(root, 'lib', 'tool-index.json'), 'utf8'));
+  const description = raw.tools.find((t) => t.name === 'site_create_external')?.description ?? '';
+  const m = description.match(/external_platform[^(]*\(((?:'[a-z]+'\s*\|\s*)+'[a-z]+')\)/);
+  assert.ok(m, 'the site_create_external description no longer spells the external_platform enum');
+  const values = [...m[1].matchAll(/'([a-z]+)'/g)].map((x) => x[1]);
+  assert.ok(values.length >= 6, `only ${values.length} external_platform values parsed from the description`);
+  const command = fs.readFileSync(path.join(root, 'commands', 'new-site.md'), 'utf8');
+  const missing = values.filter((v) => !command.includes(`"${v}"`));
+  assert.deepEqual(
+    missing,
+    [],
+    'commands/new-site.md does not teach these external_platform values, so a site on that host ' +
+      'gets registered under the wrong platform: ' + missing.join(', '),
+  );
+});

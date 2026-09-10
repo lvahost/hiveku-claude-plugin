@@ -258,9 +258,10 @@ test('no INSTALL.md snippet blanket-allows a prefix the ask list does not cover'
       const prefix = rule.slice(0, -1);
       if (!permFile.prefixes.includes(prefix)) continue;
       const uncovered = jsonNames.filter((n) => !ask.includes(`${prefix}${n}`));
-      // The plugin prefix is covered by the main block, which the mirror test
-      // above already pins; illustrative snippets may repeat that allow.
-      if (prefix === 'mcp__plugin_hiveku_hk__') continue;
+      // No prefix is exempt. The main block passes because its ask list mirrors
+      // the JSON in full (pinned above); an illustrative snippet that repeats the
+      // blanket allow beside a short ask list un-gates everything for a reader
+      // who pastes only that snippet, which is the shape 12da279 removed.
       if (uncovered.length) offenders.push(`${rule} leaves ${uncovered.length} gated tools unmatched`);
     }
   }

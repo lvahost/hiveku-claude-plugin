@@ -354,18 +354,20 @@ who edits the file. The wall is a read-only key: connect the account read-only d
 ### If you also run the VS Code extension
 
 The extension serves its tools under a different prefix, and rules written for one prefix do
-nothing for the other. Cover both:
+nothing for the other. Write each ask rule once per prefix and merge it into the main block above,
+which already carries the `allow` for the plugin prefix and the full ask list. This snippet is an
+addition to that block, not a replacement for it, so it carries no `allow` of its own: pasted alone
+with a blanket allow, a two-entry ask list would un-gate every other critical tool.
 
 ```json
 {
   "permissions": {
-    "allow": ["mcp__plugin_hiveku_hk__*"],
     "ask": ["mcp__hiveku__deploy_site", "mcp__plugin_hiveku_hk__deploy_site"]
   }
 }
 ```
 
-**Note what is deliberately absent: `mcp__hiveku__*` is not in `allow`.** The ask list above is
+**Note what is deliberately absent: `mcp__hiveku__*` is not in `allow`, here or in the main block.** The ask list above is
 written entirely under the plugin prefix, and an ask rule for one prefix does not match the other
 one. Blanket-allowing the extension's prefix alongside a plugin-prefixed ask list is the worst of
 both worlds: every gated tool becomes reachable under a name no rule matches, so

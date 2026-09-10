@@ -70,3 +70,17 @@ test('every referenced references/<file>.md actually exists', () => {
   }
   assert.deepEqual(missing, [], `dangling reference links:\n  ${missing.join('\n  ')}`);
 });
+
+test('/hiveku:code turns a Webflow project away to /hiveku:webflow before step 1', () => {
+  // sites_list returns the external rows too (external_platform,
+  // external_website_url on every row, no project_type filter), and a Webflow
+  // project has no files. cms.md and the web hub already route those rows to
+  // /hiveku:webflow; code.md did not, so an agent asked to work on a Webflow
+  // site went to step 2 and pulled an empty tree.
+  const code = fs.readFileSync(path.join(root, 'commands', 'code.md'), 'utf8');
+  const stepOne = code.indexOf('**1. Pick the project.**');
+  assert.ok(stepOne > 0, 'commands/code.md no longer has a "**1. Pick the project.**" step to guard');
+  const head = code.slice(0, stepOne);
+  assert.ok(head.includes('/hiveku:webflow'), 'commands/code.md must send Webflow projects to /hiveku:webflow before step 1');
+  assert.ok(head.includes('external_platform'), 'commands/code.md must name the sites_list column (external_platform) that marks a project as external');
+});

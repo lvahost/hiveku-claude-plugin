@@ -7,6 +7,13 @@ Operate on a Hiveku website project for the bound account$ARGUMENTS. Hiveku proj
 platform (not GitHub); you edit them through the MCP tools. The high-leverage move is to pull the files
 LOCAL so you edit with your native file tools, then push once - not round-trip every file.
 
+**Not for a Webflow project.** `sites_list` also returns the account's EXTERNAL sites (`project_type:
+"external"`, with `external_platform` and `external_website_url` set). A project whose `external_platform`
+is `"webflow"` has no code, no build and no deploy: nothing below applies, and `project_files_bulk_get`
+on it pulls an empty tree. Use `/hiveku:webflow` instead (pages SEO, schema, CMS items, assets, custom
+code, then a confirmed publish). Any other external platform has nothing to edit from here at all; only
+its tracking snippet exists, and `site_create_external` already minted that.
+
 **1. Pick the project.** `sites_list` → capture the `project_id`. That is the one call that returns every
 buildable website_project with its dev/staging/prod URLs, canonical GitHub connection state (read from
 `builder_project_settings`, not pm_projects), and dev container status - if the container is `stopped`,
