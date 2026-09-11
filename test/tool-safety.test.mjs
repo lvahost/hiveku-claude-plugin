@@ -264,10 +264,21 @@ test('vetoed reads never auto-approve, even while the server lists them as reads
   for (const t of ['voice_recording_url_get', 'voice_tts_preview']) {
     assert.equal(isAutoApprovable(t, {}), false, `${t} must never be auto-approvable`);
     assert.equal(isAutoApprovable(t, undefined), false, `${t} must never be auto-approvable (no input)`);
+    // ★ CORRECTED 2026-09-11. This asserted `null`, with the reason "must fall
+    // through to the normal permission prompt" — a belief this very file
+    // documents as false a few hundred lines down: under the permissions shape
+    // INSTALL.md hands out (`allow: ["mcp__plugin_hiveku_hk__*"]`) the normal
+    // flow IS the blanket allow, so null meant the call ran UNPROMPTED. The
+    // assertion therefore contradicted this test's own stated intent, three
+    // lines above: "neither may run unattended". They did.
+    //
+    // The intent was always right; only the premise about what null does was
+    // wrong. Now pinned on the behaviour that delivers the intent.
+    const d = decideForPayload({ tool_name: `${HIVEKU_TOOL_PREFIX}${t}`, tool_input: {} });
     assert.equal(
-      decideForPayload({ tool_name: `${HIVEKU_TOOL_PREFIX}${t}`, tool_input: {} }),
-      null,
-      `${t} must fall through to the normal permission prompt`,
+      d?.hookSpecificOutput?.permissionDecision,
+      'ask',
+      `${t} must ASK — silence is a yes under a blanket allow`,
     );
   }
 });
@@ -282,9 +293,15 @@ test('design_render_job_get is a write in read clothing and never rides the read
     'design_render_job_get must not classify as a read - if this fails, regenerate lib/readonly-tools.json');
   assert.equal(isAutoApprovable('design_render_job_get', { job_id: 'x' }), false);
   assert.equal(
-    decideForPayload({ tool_name: `${HIVEKU_TOOL_PREFIX}design_render_job_get`, tool_input: { job_id: 'x' } }),
-    null,
-    'the plugin must decline to vouch for it and stay silent on a direct call',
+    decideForPayload({ tool_name: `${HIVEKU_TOOL_PREFIX}design_render_job_get`, tool_input: { job_id: 'x' } })
+      ?.hookSpecificOutput?.permissionDecision,
+    'ask',
+    // ★ CORRECTED 2026-09-11, same reason as the veto test above: this asserted
+    // null and called it "staying silent", but silence under the documented
+    // blanket allow runs the call. design_render_job_get is on
+    // NEVER_AUTO_APPROVE precisely because it is a write in read clothing, so
+    // it must ASK rather than be passed over without comment.
+    'a write in read clothing must ASK, not be passed over silently',
   );
 });
 
@@ -892,4 +909,57 @@ test('a vetoed tool is explained by what makes IT dangerous', () => {
   // danger is in the response would weigh the wrong risk.
   assert.match(VETO_REASONS.execute_js, /ARBITRARY JAVASCRIPT/);
   assert.ok(!/RESPONSE is the hazard/.test(VETO_REASONS.execute_js));
+});
+
+/**
+ * ★ SILENCE IS NOT A GATE.
+ *
+ * decideForPayload returned null for everything not auto-approvable, and null
+ * means "no opinion". Under the permissions shape INSTALL.md hands out —
+ * `allow: ["mcp__plugin_hiveku_hk__*"]` at line 106 — no opinion IS the allow.
+ * So every metered vendor read ran UNPROMPTED and billed the account, and so
+ * did execute_js, which runs arbitrary JavaScript against a third-party page.
+ *
+ * The classification refusing to pre-approve them was doing its job. The hook
+ * then said nothing, and nothing is a yes under a blanket allow.
+ */
+test('a metered vendor read ASKS rather than falling through to the blanket allow', () => {
+  const d = decideForPayload({ tool_name: `${HIVEKU_TOOL_PREFIX}backlinks_summary`, tool_input: {} });
+  assert.equal(d?.hookSpecificOutput?.permissionDecision, 'ask');
+  assert.match(d.hookSpecificOutput.permissionDecisionReason, /BILLS THIS ACCOUNT/);
+});
+
+test('execute_js asks, and the reason names EXECUTION rather than a response hazard', () => {
+  const d = decideForPayload({ tool_name: `${HIVEKU_TOOL_PREFIX}execute_js`, tool_input: {} });
+  assert.equal(d?.hookSpecificOutput?.permissionDecision, 'ask');
+  assert.match(d.hookSpecificOutput.permissionDecisionReason, /ARBITRARY JAVASCRIPT/);
+  assert.ok(!/RESPONSE is the hazard/.test(d.hookSpecificOutput.permissionDecisionReason));
+});
+
+test('a response-hazard read asks with the response-hazard reason', () => {
+  const d = decideForPayload({ tool_name: `${HIVEKU_TOOL_PREFIX}voice_recording_url_get`, tool_input: {} });
+  assert.equal(d?.hookSpecificOutput?.permissionDecision, 'ask');
+  assert.match(d.hookSpecificOutput.permissionDecisionReason, /RESPONSE is the hazard/);
+});
+
+test('EVERY metered vendor tool asks — none can slip through silently', () => {
+  const doc = JSON.parse(
+    readFileSync(new URL('../data/vendor-tool-classification.json', import.meta.url), 'utf8'),
+  );
+  const metered = (doc._lists?.metered ?? []).flatMap((k) => doc[k] ?? []);
+  assert.ok(metered.length > 50, 'classification did not load — would pass vacuously');
+  const silent = metered.filter((n) => {
+    const d = decideForPayload({ tool_name: HIVEKU_TOOL_PREFIX + n, tool_input: {} });
+    return d?.hookSpecificOutput?.permissionDecision !== 'ask';
+  });
+  assert.deepEqual(silent, [], `these would run unprompted and bill: ${silent.slice(0, 5)}`);
+});
+
+test('this does NOT broaden into a prompt storm over ordinary tools', () => {
+  // An ordinary read still auto-allows; an ordinary write still returns null,
+  // so the user's own permission config decides it exactly as before.
+  const read = decideForPayload({ tool_name: `${HIVEKU_TOOL_PREFIX}seo_list_projects`, tool_input: {} });
+  assert.equal(read?.hookSpecificOutput?.permissionDecision, 'allow');
+  const write = decideForPayload({ tool_name: `${HIVEKU_TOOL_PREFIX}crm_deal_create`, tool_input: {} });
+  assert.equal(write, null);
 });

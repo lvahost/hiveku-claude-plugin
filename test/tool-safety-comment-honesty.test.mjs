@@ -70,17 +70,27 @@ function commentBlockAbove(source, declaration) {
   return before.slice(open, close + 2);
 }
 
-test('the veto lists withhold a pre-approval; they do not produce a gate', () => {
-  // Pins the behaviour the comments describe. A vetoed name called DIRECTLY
-  // yields null - silence - which the settings then resolve, not a prompt this
-  // hook forced.
+test('the veto list GATES a direct call; arg-gated reads still go silent', () => {
+  // ★ REWRITTEN 2026-09-11, in the order this test demanded. It used to pin
+  // null for NEVER_AUTO_APPROVE and told the next person to rewrite the
+  // comments before relaxing it. The comments ARE now rewritten: the header and
+  // the NEVER_AUTO_APPROVE block both state that this set returns a real `ask`.
+  //
+  // The reason the old pin was wrong: null is not neutral. Under
+  // `allow: ["mcp__plugin_hiveku_hk__*"]` — INSTALL.md line 106 — silence
+  // resolves to the blanket allow, so every vetoed name ran UNATTENDED. The set
+  // existed to prevent exactly that and, on a direct call, prevented nothing.
   assert.ok(NEVER_AUTO_APPROVE.size > 0, 'NEVER_AUTO_APPROVE is empty - nothing to assert about');
   for (const name of NEVER_AUTO_APPROVE) {
+    const d = decideForPayload({ tool_name: `${HIVEKU_TOOL_PREFIX}${name}`, tool_input: {} });
     assert.equal(
-      decideForPayload({ tool_name: `${HIVEKU_TOOL_PREFIX}${name}`, tool_input: {} }),
-      null,
-      `${name} yields a hook DECISION on a direct call. If that is intentional the comments over `
-      + 'NEVER_AUTO_APPROVE are now understated - rewrite them before relaxing this test.',
+      d?.hookSpecificOutput?.permissionDecision,
+      'ask',
+      `${name} must ASK on a direct call; silence resolves to the blanket allow`,
+    );
+    assert.ok(
+      (d.hookSpecificOutput.permissionDecisionReason || '').length > 40,
+      `${name} must say WHY it is being gated`,
     );
   }
 
