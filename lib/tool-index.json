@@ -13589,7 +13589,7 @@
       "dept": "webflow",
       "method": "POST",
       "timeoutMs": null,
-      "description": "Points the project's CMS at Webflow, or back at Hiveku's native files. 'webflow' binds the site this call resolved (site_id, else the project's bound site, else the connection's only one) and refuses with site_required when the connection reaches several sites and none is named; the connection also needs cms:read for the content routes to read collections through it. Takes project_id: cms_provider is a per-project setting. Ask before running: Redirects every future content write for this project onto the customer live Webflow CMS."
+      "description": "Points the project's CMS at Webflow, or back at Hiveku's native files. 'webflow' binds the site this call resolved (site_id, else the project's bound site, else the connection's only one) and answers 404 site_not_found when the connection reaches several sites and none is bound or named; the connection also needs cms:read for the content routes to read collections through it. Takes project_id: cms_provider is a per-project setting. Ask before running: Redirects every future content write for this project onto the customer live Webflow CMS."
     },
     {
       "name": "webflow_redirect_create",
@@ -13708,7 +13708,7 @@
       "dept": "webflow",
       "method": "GET",
       "timeoutMs": null,
-      "description": "Lists every Webflow site the connection can reach, with custom domains, locales and last publish time. The bound site for this project is the one the other actions target."
+      "description": "Lists every Webflow site the connection can reach, with custom domains, locales and last publish time. The bound site for this project is the one the other actions target. Pass project_id when the connection was made from a project; without it only an account-level connection answers."
     },
     {
       "name": "webflow_site_publish",
