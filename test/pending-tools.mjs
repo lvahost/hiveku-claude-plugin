@@ -196,7 +196,6 @@
  */
 const SEO_SINCE = '2026-08-30';
 const seo = (batch) => ({ since: SEO_SINCE, batch });
-const eliteB = { since: '2026-09-12', batch: 'ELITE-B' };
 
 export const PENDING_TOOLS = new Map([
   // S1
@@ -247,31 +246,10 @@ export const PENDING_TOOLS = new Map([
   // deployed; index regenerated at 2040 tools); entries deleted. See the
   // batch note above for the contract.
 
-  // ELITE-B (2026-09-12): round B of the elite content program. Delete each
-  // entry when the regenerated index carries it (tool-names.test.mjs forces
-  // it). See the batch note above for the contract and the naming notes.
-  ['content_authors_list', eliteB],
-  ['content_authors_create', eliteB],
-  ['content_authors_get', eliteB],
-  ['content_authors_update', eliteB],
-  ['content_authors_delete', eliteB],
-  ['content_brief_build', eliteB],
-  ['content_brief_get', eliteB],
-  ['content_brief_topic', eliteB],
-  ['brand_positioning_get', eliteB],
-  ['brand_positioning_set', eliteB],
-  ['content_titles_generate', eliteB],
-  ['content_titles_get', eliteB],
-  ['content_titles_pick', eliteB],
-  ['content_prune_candidates', eliteB],
-  ['content_refresh_brief_get', eliteB],
-  ['site_page_roles_get', eliteB],
-  ['site_page_roles_set', eliteB],
-  ['content_keyword_map', eliteB],
-  ['content_bofu_plan', eliteB],
-  ['content_bofu_plan_get', eliteB],
-  ['brand_offers_get', eliteB],
-  ['brand_offers_set', eliteB],
-  ['content_conversion_plan', eliteB],
-  ['content_conversion_plan_get', eliteB],
+  // ELITE-B (2026-09-12): the 24 round-B names (authors, the SERP brief,
+  // positioning, titles, the decision loop, page roles, the keyword map, the
+  // bottom-funnel plan, offers, the conversion plan and its read-only twin)
+  // landed in the live index on 2026-09-12 (MCP 01584b0 + 523edef deployed;
+  // index regenerated at 2064 tools); entries deleted. See the batch note
+  // above for the contract.
 ]);
