@@ -162,9 +162,8 @@ export const PENDING_TOOLS = new Map([
   // department_turn_get landed in the live index on 2026-09-12 (MCP b0e0d4d +
   // a675885 deployed; index regenerated at 2030 tools); entries deleted.
 
-  // IMAGES-1 (2026-09-12): see the batch note above. content_images_generate
-  // bills per image (each slot reserved as it is made, refunded on a failed
-  // render); brand_image_profile_get is a read.
-  ['content_images_generate', { since: '2026-09-12', batch: 'IMAGES-1' }],
-  ['brand_image_profile_get', { since: '2026-09-12', batch: 'IMAGES-1' }],
+  // IMAGES-1 (2026-09-12): content_images_generate and brand_image_profile_get
+  // landed in the live index on 2026-09-12 (index regenerated at 2032 tools
+  // during the email-marketing release); entries deleted. See the batch note
+  // above for the billing shape.
 ]);
