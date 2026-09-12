@@ -419,7 +419,7 @@ test('research first: kb_search, then the stamp, then the run when it is missing
 
   const research = read(RESEARCH);
   assert.match(research, /Index what you used/, '/hiveku:research lost its index-what-you-used step');
-  assert.match(research, /`kb_documents_index_text\(\{ kb_id, title, content,\s+source_url \}\)`/, '/hiveku:research must index the page with its URL');
+  assert.match(research, /`kb_documents_index_text\(\{ kb_id, title, content,\s+source_url, tags \}\)`/, '/hiveku:research must index the page with its URL');
   assert.match(research, /Memory holds the conclusion, the KB holds the evidence/, '/hiveku:research must split conclusion and evidence');
   assert.match(research, /`content_research_run\(\{ content_id \}\)`/, '/hiveku:research must point content research at the run');
   assert.match(research, /`content_research_topic\(\{ topic \}\)`/, '/hiveku:research must name the topic run');
