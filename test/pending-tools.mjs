@@ -196,16 +196,10 @@ export const PENDING_TOOLS = new Map([
   // during the email-marketing release); entries deleted. See the batch note
   // above for the billing shape.
 
-  // ELITE-A (2026-09-12): round A of the elite content program. The builder
-  // routes are live on main (commits in the batch note above); the MCP
-  // declarations are the parallel MCP lane's commit, and the live index
-  // regenerates after that deploy.
-  ['content_research_run', { since: '2026-09-12', batch: 'ELITE-A' }],
-  ['content_research_get', { since: '2026-09-12', batch: 'ELITE-A' }],
-  ['content_research_topic', { since: '2026-09-12', batch: 'ELITE-A' }],
-  ['kb_artifacts_list', { since: '2026-09-12', batch: 'ELITE-A' }],
-  ['kb_artifact_get', { since: '2026-09-12', batch: 'ELITE-A' }],
-  ['content_proof_pack', { since: '2026-09-12', batch: 'ELITE-A' }],
-  ['content_case_study_draft', { since: '2026-09-12', batch: 'ELITE-A' }],
-  ['marketing_campaign_roi', { since: '2026-09-12', batch: 'ELITE-A' }],
+  // ELITE-A (2026-09-12): content_research_run, content_research_get,
+  // content_research_topic, kb_artifacts_list, kb_artifact_get,
+  // content_proof_pack, content_case_study_draft and marketing_campaign_roi
+  // landed in the live index on 2026-09-12 (MCP fb5082a + c1fa3f5 + 4e3eceb
+  // deployed; index regenerated at 2040 tools); entries deleted. See the
+  // batch note above for the contract.
 ]);

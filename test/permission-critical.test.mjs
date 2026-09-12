@@ -88,6 +88,12 @@ function reExecutionSignals(tool) {
  * quiet a failure. If you cannot write the reason, gate the tool instead.
  */
 const REEXEC_NOT_GATED = new Map([
+  ['content_research_run',
+    're-runs the research for ONE content item: it refreshes the same knowledge artifact ' +
+    '(settings.research.artifact_id) and re-indexes nothing already in the KB, and it sends ' +
+    'nothing to anyone. The cost is metered spend (SERP cap, scrape, one LLM extraction), not a ' +
+    'send, and the builder route runs under the Idempotency-Key the proxy injects, so a retried ' +
+    'call replays the answer. Ask on a spend would stall every research sweep'],
   ['marketing_offline_conversions_requeue',
     're-ARMS rows so a LATER run uploads them; this call itself dispatches nothing, and it 409s ' +
     'until a human takes the account live in the dashboard. The tool that actually sends is ' +
