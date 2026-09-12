@@ -121,6 +121,35 @@
  *               (Play 3 and references/media-and-visuals.md), the creative
  *               skill (rung 2 and references/brand-and-assets.md) and
  *               commands/media.md.
+ *
+ *   Elite content program, round A (2026-09-12: the knowledge base as the
+ *   research layer, proof packs and case studies from won deals, distribution
+ *   as part of the asset, and a scorecard that counts leads per piece). The
+ *   contract is the builder's commits 23bed5d65 + bdc4f2f6b (the research run,
+ *   POST|GET /api/olympus/marketing/content/:contentId/research, POST|GET
+ *   /content/research, GET /api/olympus/knowledge-bases/artifacts[/:id]),
+ *   4cd5bd7f6 + 95ec02834 (the proof pack route and the proof rules in the
+ *   on-page check), a1bea92a4 + a8125a616 (the case-study draft from a won
+ *   deal, idempotent, the account's won statuses), e47ab5f70 (the campaign ROI
+ *   report, GET /api/olympus/marketing/reports/campaign-roi) and 5d58d7d8b
+ *   (the scorecard and its nightly writer, which changed the two live reads
+ *   content_analytics_get and content_page_views_get rather than adding a
+ *   name). The MCP declarations are the parallel MCP lane's commit in
+ *   hiveku-mcp-api-server; the live index regenerates after that deploy, and
+ *   tool-names.test.mjs then forces these entries out.
+ *     ELITE-A   content_research_run, content_research_get,
+ *               content_research_topic, kb_artifacts_list, kb_artifact_get,
+ *               content_proof_pack, content_case_study_draft, and
+ *               marketing_campaign_roi. Spelled in prose by the content
+ *               skill (Play 1 step 5, Play 3 steps 1 and 5, Play 4, Play 5),
+ *               its two new references (research-and-proof.md and
+ *               distribution-and-scorecard.md carry the Availability tables),
+ *               commands/research.md, commands/campaign.md and
+ *               commands/sme-interview.md. marketing_campaign_roi is not a
+ *               gated prefix, so the honesty gate would not catch a rename of
+ *               it; it rides here so the Availability table and this file are
+ *               the two places that spell it, and content-doctrine.test.mjs
+ *               checks the table against the index and this batch.
  */
 const SEO_SINCE = '2026-08-30';
 const seo = (batch) => ({ since: SEO_SINCE, batch });
@@ -166,4 +195,17 @@ export const PENDING_TOOLS = new Map([
   // landed in the live index on 2026-09-12 (index regenerated at 2032 tools
   // during the email-marketing release); entries deleted. See the batch note
   // above for the billing shape.
+
+  // ELITE-A (2026-09-12): round A of the elite content program. The builder
+  // routes are live on main (commits in the batch note above); the MCP
+  // declarations are the parallel MCP lane's commit, and the live index
+  // regenerates after that deploy.
+  ['content_research_run', { since: '2026-09-12', batch: 'ELITE-A' }],
+  ['content_research_get', { since: '2026-09-12', batch: 'ELITE-A' }],
+  ['content_research_topic', { since: '2026-09-12', batch: 'ELITE-A' }],
+  ['kb_artifacts_list', { since: '2026-09-12', batch: 'ELITE-A' }],
+  ['kb_artifact_get', { since: '2026-09-12', batch: 'ELITE-A' }],
+  ['content_proof_pack', { since: '2026-09-12', batch: 'ELITE-A' }],
+  ['content_case_study_draft', { since: '2026-09-12', batch: 'ELITE-A' }],
+  ['marketing_campaign_roi', { since: '2026-09-12', batch: 'ELITE-A' }],
 ]);

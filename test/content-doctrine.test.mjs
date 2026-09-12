@@ -23,6 +23,17 @@
  * Each block below pins one of those. The profile block also reads the
  * server's profiles.ts when the sibling checkout is present, so the prose
  * cannot drift from the grant again without this failing.
+ *
+ * Round A of the elite content program (2026-09-12) added the ELITE-A blocks
+ * at the bottom: research before a draft (the knowledge base as the research
+ * layer), proof (the proof pack, one proof element per H2, an unsourced
+ * figure is an error at the decision stage, case studies from a won deal
+ * with the consent rule), distribution as part of the asset (the plan on the
+ * row at brief time, the publish event and its two templates,
+ * utm_medium=content), and a scorecard that counts leads per piece - which
+ * retired the "never read content_analytics_get" sentence this file's
+ * siblings used to teach. The eight names ride on PENDING_TOOLS as ELITE-A
+ * until the live index regenerates after the MCP deploy.
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -286,4 +297,321 @@ test('the content skill records who a piece is for on the row as the five typed 
   assert.match(fixtureChecks, /row\.avatar_id !== BOUNDS\.avatar_id/, 'checks.mjs no longer asserts avatar_id on the row');
   assert.match(fixtureChecks, /row\.journey_stage/, 'checks.mjs no longer asserts journey_stage on the row');
   assert.doesNotMatch(fixtureChecks, /settings\.linkedAvatars\)/, 'checks.mjs still reads settings.linkedAvatars as the contract');
+});
+
+// ── ELITE-A: round A of the elite content program (2026-09-12) ─────────────
+
+const RESEARCH_AND_PROOF = 'skills/hiveku-content-agency/references/research-and-proof.md';
+const DISTRIBUTION_AND_SCORECARD = 'skills/hiveku-content-agency/references/distribution-and-scorecard.md';
+const SME_INTERVIEW = 'commands/sme-interview.md';
+const RESEARCH = 'commands/research.md';
+const REPURPOSE = 'commands/repurpose.md';
+
+const ELITE_A_NAMES = [
+  'content_research_run',
+  'content_research_get',
+  'content_research_topic',
+  'kb_artifacts_list',
+  'kb_artifact_get',
+  'content_proof_pack',
+  'content_case_study_draft',
+  'marketing_campaign_roi',
+];
+
+/**
+ * The "| Tool | Status | Route |" table a reference file carries. The same
+ * shape tool-names.test.mjs parses for the Webflow reference; parsed here
+ * for the two content references so an INCOMING row cannot outlive the
+ * index regen and a LIVE row cannot name a tool the index lacks.
+ */
+function readAvailabilityRows(rel) {
+  const lines = read(rel).split('\n');
+  const start = lines.findIndex((l) => /^\|\s*Tool\s*\|\s*Status\s*\|/.test(l));
+  assert.ok(start >= 0, `${rel} has no Availability table (no "| Tool | Status | ..." header row)`);
+  const rows = [];
+  for (let i = start + 2; i < lines.length && lines[i].startsWith('|'); i++) {
+    const cells = lines[i].split('|').map((c) => c.trim());
+    const name = (cells[1] ?? '').replace(/`/g, '');
+    if (!name) continue;
+    rows.push({ name, status: cells[2] ?? '', file: rel, line: i + 1 });
+  }
+  assert.ok(rows.length > 0, `${rel}: no Availability rows parsed`);
+  return rows;
+}
+
+test('the eight ELITE-A names are live or pending under ELITE-A, and the Availability tables agree with the index', () => {
+  const index = toolIndex();
+  for (const name of ELITE_A_NAMES) {
+    const pending = PENDING_TOOLS.get(name);
+    assert.ok(index.has(name) || pending, `${name} is neither in lib/tool-index.json nor test/pending-tools.mjs`);
+    if (pending) {
+      assert.equal(pending.batch, 'ELITE-A', `${name} is pending under the wrong batch`);
+      assert.equal(pending.since, '2026-09-12', `${name} carries the wrong since date`);
+    }
+  }
+  const rows = [...readAvailabilityRows(RESEARCH_AND_PROOF), ...readAvailabilityRows(DISTRIBUTION_AND_SCORECARD)];
+  assert.ok(rows.length >= 12, `only ${rows.length} Availability rows parsed across the two references - the parser is broken, not the tables`);
+  const where = (r) => `${r.name} (${r.file}:${r.line})`;
+  assert.deepEqual(
+    rows.filter((r) => /INCOMING/.test(r.status) && index.has(r.name)).map(where),
+    [],
+    'an INCOMING row names a tool lib/tool-index.json already carries - flip its Status to LIVE',
+  );
+  assert.deepEqual(
+    rows.filter((r) => /INCOMING/.test(r.status) && !PENDING_TOOLS.has(r.name)).map(where),
+    [],
+    'an INCOMING row names a tool test/pending-tools.mjs does not carry',
+  );
+  assert.deepEqual(
+    rows.filter((r) => /LIVE/.test(r.status) && !index.has(r.name)).map(where),
+    [],
+    'a LIVE row names a tool lib/tool-index.json does not carry',
+  );
+  // An incoming name is spelled in exactly one Availability row, so a rename
+  // before the MCP deploy is one table edit plus the pending entry.
+  for (const name of ELITE_A_NAMES) {
+    if (!PENDING_TOOLS.has(name)) continue;
+    assert.equal(rows.filter((r) => r.name === name).length, 1, `${name} must appear in exactly one Availability row`);
+  }
+});
+
+test('research first: kb_search, then the stamp, then the run when it is missing or older than 30 days', () => {
+  const skill = read(SKILL);
+  const play1 = skill.slice(skill.indexOf('5. **What we already know'), skill.indexOf('**If any are missing, build them first**'));
+  assert.ok(play1.length > 0, 'Play 1 step 5 is gone from the content skill');
+  assert.match(play1, /`kb_search\(\{ query \}\)` first/, 'Play 1 step 5 must search the knowledge bases first');
+  assert.match(play1, /`content_research_get\(\{ content_id \}\)`/, 'Play 1 step 5 must read the stored research');
+  assert.match(
+    play1,
+    /`content_research_run\(\{\s+content_id \}\)` when the row has no `settings\.research` or its `ran_at` is older than 30 days/,
+    'Play 1 step 5 must run the research when the stamp is missing or stale',
+  );
+  assert.match(play1, /cites `claims\[\]\.source_url` inline/, 'Play 1 step 5 must cite the claim source inline');
+  assert.match(play1, /a `quote` is verbatim, never paraphrased/, 'Play 1 step 5 must forbid paraphrased quotes');
+  const brief = skill.slice(skill.indexOf('1. **Brief.**'), skill.indexOf('2. **Draft via the department.**'));
+  assert.match(brief, /\*\*Research first\.\*\*/, 'the Play 3 brief lost its research-first item');
+  assert.match(brief, /a gap is a question for the expert\s+\(`\/hiveku:sme-interview`/, 'the brief must send a research gap to the expert interview');
+
+  const ref = read(RESEARCH_AND_PROOF);
+  assert.match(
+    ref,
+    /^## The research run - `content_research_run\(\{ content_id, queries\?, keyword\?, include_web\?, include_serp\?, max_sources\?, location_code\?, location_name\?, index_sources\? \}\)`$/m,
+    'research-and-proof.md lost the research run section',
+  );
+  for (const key of [
+    'What it spends, say so before calling',
+    'A re-run refreshes the\nsame artifact',
+    'never indexed twice',
+    'stamps `settings.research` on the row LAST',
+    'extraction: "llm" | "fallback"',
+    '`serp: null`',
+    '`content_research_get({ content_id })`',
+    '`content_research_topic({ topic, keyword?, avatar_id?, project_id?,',
+    '`kb_artifacts_list({ artifact_type?, kb_id?, content_id?,\nis_verified?, page?, limit? })`',
+    '`kb_artifact_get({ artifact_id })`',
+    '`context_type: "content_research"`',
+    'never paraphrase it into a quotation',
+    '**Index what you used.**',
+    'the route does not\n  read them yet',
+  ]) {
+    assert.ok(ref.includes(key), `research-and-proof.md no longer says ${JSON.stringify(key)}`);
+  }
+
+  const research = read(RESEARCH);
+  assert.match(research, /Index what you used/, '/hiveku:research lost its index-what-you-used step');
+  assert.match(research, /`kb_documents_index_text\(\{ kb_id, title, content,\s+source_url \}\)`/, '/hiveku:research must index the page with its URL');
+  assert.match(research, /Memory holds the conclusion, the KB holds the evidence/, '/hiveku:research must split conclusion and evidence');
+  assert.match(research, /`content_research_run\(\{ content_id \}\)`/, '/hiveku:research must point content research at the run');
+  assert.match(research, /`content_research_topic\(\{ topic \}\)`/, '/hiveku:research must name the topic run');
+  assert.doesNotMatch(research, /Persist what you find to department memory \(`memory_create`\)/, '/hiveku:research again teaches a blind memory_create');
+});
+
+test('proof: the pack before a consideration or decision piece, one proof element per H2, an unsourced figure is an error at decision', () => {
+  const skill = read(SKILL);
+  const brief = skill.slice(skill.indexOf('1. **Brief.**'), skill.indexOf('2. **Draft via the department.**'));
+  assert.match(
+    brief,
+    /\*\*Proof before a consideration or decision piece\.\*\* `content_proof_pack\(\{ avatar_id,\s+journey_stage, keyword \}\)`/,
+    'the brief must read the proof pack before a consideration or decision draft',
+  );
+  assert.match(brief, /one proof element per H2/, 'the brief must plan one proof element per H2');
+  assert.match(brief, /`consent: true` is quoted with attribution,\s+`consent: false` is paraphrased with no name/, 'the brief must state the consent rule');
+
+  const gate = skill.slice(skill.indexOf('5. **Quality gate'), skill.indexOf('6. **Persist:'));
+  assert.match(gate, /`claims_without_source` is a warn, and an ERROR at the decision stage/, 'the gate must say the source rule is an error at decision');
+  assert.match(gate, /`proof_per_section`, a warn; `result\.stats\.sections_without_proof`/, 'the gate must name the per-section proof finding and its stat');
+  assert.match(gate, /\[source: <label>:<id>\]/, 'the gate must accept the proof-pack citation');
+
+  const ref = read(RESEARCH_AND_PROOF);
+  assert.match(ref, /^## The proof pack - `content_proof_pack\(\{ avatar_id\?, journey_stage\?, keyword\?, since\?, limit\? \}\)`$/m, 'research-and-proof.md lost the proof pack section');
+  assert.match(ref, /\*\*The consent flag is a rule, not a hint\.\*\*/, 'the consent rule is gone');
+  assert.match(ref, /No workaround exists/, 'the consent rule must close the trimmed-name workaround');
+  assert.match(ref, /`claims_without_source` \(level `warn`, and `error` at the decision stage/, 'the proof rules section must state the decision-stage error');
+  assert.match(ref, /`proof_per_section` \(level `warn`, field `content`\)/, 'the proof rules section must state the per-section warn');
+  for (const label of ['[source: testimonial:<id>]', '[source: review:<id>]', '[source: before_after_grid:<id>]']) {
+    assert.ok(ref.includes(label), `research-and-proof.md no longer names the citation ${label}`);
+  }
+  assert.match(skill, /no\s+quoting a proof-pack entry with `consent: false`/, 'the hard stops must close the consent workaround');
+  assert.match(skill, /no unsourced figure on a decision piece published over the\s+`claims_without_source` error/, 'the hard stops must close the publish-over-error workaround');
+});
+
+test('case studies come from a won deal through content_case_study_draft, and consent is not routed around', () => {
+  const skill = read(SKILL);
+  const ref = read(RESEARCH_AND_PROOF);
+  assert.match(skill, /`content_case_study_draft\(\{ deal_id \}\)`/, 'Play 5 no longer drafts case studies from a won deal');
+  assert.match(skill, /409 `deal_not_won`/, 'the skill must name deal_not_won');
+  assert.match(skill, /409 `no_consent`/, 'the skill must name no_consent');
+  assert.match(skill, /collect consent, never route around it/, 'the skill must say consent is collected, not bypassed');
+  assert.match(skill, /no case study drafted by hand\s+around a 409 `no_consent`/, 'the hard stops must close the by-hand case study');
+  assert.match(
+    ref,
+    /^## Case studies from a won deal - `content_case_study_draft\(\{ deal_id, testimonial_id\?, grid_item_id\?, avatar_id\? \}\)`$/m,
+    'research-and-proof.md lost the case study section',
+  );
+  assert.match(
+    ref,
+    /a won deal is one whose status the account marks `is_won` in its CRM\s+statuses, or the literal `won` \/ `closed_won`/,
+    'the won rule must be the account CRM statuses, not a literal pair',
+  );
+  assert.doesNotMatch(ref, /status won or closed_won/, 'the pre-review wording of the won rule is back');
+  assert.match(ref, /public with consent granted and not revoked/, 'the consent rule lost its definition');
+  assert.match(ref, /Numbers never come from the model/, 'the case study section must say where the numbers come from');
+  assert.match(ref, /240 s or\s+longer client timeout/, 'the case study section must set the client timeout');
+  assert.match(ref, /a retry replays the first answer/, 'the case study section must say the call is idempotent');
+});
+
+test('distribution is planned on the row at brief time, owned email first, and the publish event repurposes', () => {
+  const skill = read(SKILL);
+  const ref = read(DISTRIBUTION_AND_SCORECARD);
+  const play2 = skill.slice(skill.indexOf('6. **Persist the calendar:**'), skill.indexOf('**Stage-to-format defaults'));
+  assert.match(play2, /`settings: \{ distribution_plan \}`/, 'Play 2 step 6 no longer writes the plan with the calendar row');
+  assert.match(play2, /`email_digest` row first and `paid` winner-only/, 'Play 2 step 6 must say owned email first and paid winner-only');
+  assert.match(play2, /a malformed plan reads as no plan/, 'Play 2 step 6 must say the plan fails closed');
+  const brief = skill.slice(skill.indexOf('1. **Brief.**'), skill.indexOf('2. **Draft via the department.**'));
+  assert.match(brief, /\*\*Distribution at brief time\.\*\*/, 'the brief lost its distribution item');
+
+  const play4 = skill.slice(skill.indexOf('## Play 4'), skill.indexOf('## Play 5'));
+  assert.match(play4, /1\. \*\*The plan on the row comes first\.\*\*/, 'Play 4 no longer starts from the plan on the row');
+  assert.match(play4, /no distribution plan: the piece will get one\s+post and\s+stop/, 'Play 4 lost the no-plan warning');
+  assert.match(play4, /it never blocks/, 'the no-plan warning must never block');
+  assert.match(play4, /`content-published-repurpose`/, 'Play 4 no longer names the repurpose template');
+  assert.match(play4, /`content-digest-weekly`/, 'Play 4 no longer names the digest template');
+  assert.match(play4, /`workflow_create_from_template\(\{ slug, overrides, is_enabled: false \}\)`/, 'Play 4 must stage a template rather than let it go live on create');
+  assert.match(play4, /`utm_medium=content&utm_content=<slug>`/, 'Play 4 must name the link shape that credits the piece');
+  assert.match(play4, /`campaign:<id>`/, 'Play 4 must mark the digest campaign on the plan row');
+  assert.match(skill, /distribution is planned at brief time as `settings\.distribution_plan`/, 'the benchmarks no longer name the plan key');
+  assert.match(skill, /no distribution plan written with every row `skipped`/, 'the hard stops must close the all-skipped plan');
+
+  for (const key of [
+    '## The plan on the row - `settings.distribution_plan`',
+    '`email_digest`, `social`, `community`, `partner`, `outreach`, `paid`',
+    '`planned`, `drafted`, `scheduled`, `done`, `skipped`',
+    'at most 12 rows',
+    'it fails closed',
+    '**Owned email first.**',
+    'winner-only',
+    'ONCE per native publish',
+    'contentPublishedTrigger',
+    '`PLATFORMS`, `RECIPIENT_EMAIL`, `PROJECT_ID`',
+    '`AUDIENCE_ID`, `FROM_EMAIL`, `APPROVER_EMAIL`, `DIGEST_NAME`,\n  `TIMEZONE`',
+    'utm_source=newsletter&utm_medium=content&utm_campaign=content-digest&utm_content=<slug>',
+    'credits nothing',
+    'never\ncompose `utm_content` from a page URL',
+  ]) {
+    assert.ok(ref.includes(key), `distribution-and-scorecard.md no longer says ${JSON.stringify(key)}`);
+  }
+
+  // The old link shape is gone from the content skill and from /hiveku:repurpose
+  // (the social skill's own references are the social lane's).
+  const repurpose = read(REPURPOSE);
+  // The old shape may be named only to say it credits nothing.
+  const oldShape = skill
+    .split(/\n\s*\n/)
+    .filter((paragraph) => /utm_medium=social/.test(paragraph))
+    .filter((paragraph) => !/credits nothing/.test(paragraph));
+  assert.deepEqual(oldShape, [], 'the content skill again teaches utm_medium=social as the link shape');
+  assert.doesNotMatch(repurpose, /`utm_medium=social`, the value the analytics/, '/hiveku:repurpose again says the repurpose links carry utm_medium=social');
+  assert.match(repurpose, /utm_source=<platform>&utm_medium=content&utm_campaign=<slug>&utm_content=<slug>/, '/hiveku:repurpose must name the link shape social_repurpose_source returns');
+
+  const campaign = read(CAMPAIGN);
+  assert.match(campaign, /`settings: \{ distribution_plan \}`/, '/hiveku:campaign no longer writes the plan with each asset');
+  assert.match(campaign, /`content_research_topic\(\{ topic, keyword \}\)`/, '/hiveku:campaign no longer researches a topic before copy');
+  assert.match(campaign, /`content_proof_pack\(\{ avatar_id, journey_stage \}\)`/, '/hiveku:campaign no longer reads the proof pack before a decision asset');
+});
+
+test('the scorecard counts leads per piece, content_analytics_get is no longer refused, and the next brief comes from leads', () => {
+  const skill = read(SKILL);
+  const ref = read(DISTRIBUTION_AND_SCORECARD);
+  assert.doesNotMatch(skill, /Do\s+NOT use `content_analytics_get`/, 'the content skill again refuses content_analytics_get');
+  assert.doesNotMatch(skill, /nothing writes its table/, 'the content skill again says nothing writes content_analytics');
+  const play5 = skill.slice(skill.indexOf('## Play 5'), skill.indexOf('## Weekly cadence'));
+  assert.match(
+    play5,
+    /2\. \*\*Per-piece leads, then traffic - the scorecard\.\*\* `content_analytics_get\(\{ content_id \}\)`/,
+    'Play 5 step 2 no longer reads the scorecard',
+  );
+  assert.match(play5, /`leads` and `contacts`/, 'Play 5 step 2 must name leads and contacts');
+  assert.match(play5, /`marketing_campaign_roi\(\{ asset_types: "content_item" \}\)`/, 'Play 5 step 2 must read revenue from the ROI report');
+  assert.match(play5, /`last_stored: null` means the first run has not happened/, 'Play 5 step 2 must read last_stored');
+  assert.match(play5, /`scorecard\.degraded\.clickhouse: true`/, 'Play 5 step 2 must read the scorecard degraded flag');
+  assert.match(play5, /\*\*The next brief comes from leads per piece, not views\.\*\*/, 'Play 5 lost the leads-not-views rule');
+  assert.match(skill, /the next briefs from the pieces that brought leads/, 'the monthly report no longer plans from leads');
+  assert.match(skill, /early signal from `content_page_views_get` \(`leads` and `views`; check `degraded`\)/, 'the weekly cadence no longer reads leads');
+  assert.match(skill, /leads, contacts and deals from the scorecard/, 'the monthly report no longer reports leads per piece');
+
+  for (const key of [
+    '## The scorecard - leads per piece',
+    '`content_analytics_get({ content_id })`',
+    'form_submits',
+    'attributed_contacts',
+    'lead_rate',
+    '`last_stored`',
+    'is not any more',
+    '`content_page_views_get({ items: [{ projectId, path }] })`',
+    'leads, leads30d, contacts',
+    '`marketing_campaign_roi({ from?, to?, attribution?, confidence?, asset_types? })`',
+    'mixed_currency',
+    '**The rule: the next brief comes from leads per piece, not views.**',
+  ]) {
+    assert.ok(ref.includes(key), `distribution-and-scorecard.md no longer says ${JSON.stringify(key)}`);
+  }
+});
+
+test('/hiveku:sme-interview turns a brief and a proof pack into questions, and a transcript or a call into stored sources', () => {
+  const cmd = read(SME_INTERVIEW);
+  assert.match(cmd, /^description: /m, 'sme-interview.md has no description');
+  assert.match(cmd, /^argument-hint: /m, 'sme-interview.md has no argument hint');
+  assert.match(cmd, /`content_proof_pack\(\{ avatar_id, journey_stage, keyword:/, 'the interview must read the proof pack');
+  assert.match(cmd, /`settings\.research`/, 'the interview must read the research stamp');
+  assert.match(cmd, /`talk_to_department\(\{ domain: "content", message \}\)`[\s\S]*8 to 12 questions/, 'the questions must come from the department, from the brief');
+  assert.match(cmd, /`voice_call_get\(\{ id \}\)`/, 'the interview must accept a voice call id');
+  assert.match(cmd, /`voice_call_transcript_get\(\{ id \}\)`/, 'the interview must read the transcript');
+  assert.match(cmd, /verbatim and unredacted/, 'the interview must warn what the transcript contains');
+  assert.match(cmd, /404 `no_transcript`/, 'the interview must say what a missing transcript answers');
+  assert.match(cmd, /the `quote` verbatim/, 'the lines must be verbatim');
+  assert.match(cmd, /the attribution as it will appear/, 'every line carries its attribution');
+  assert.match(cmd, /off the record\s+is not extracted at all/, 'off-record lines are dropped');
+  assert.match(cmd, /`content_get` first \(the settings PATCH merges top-level keys but\s+REPLACES `sources` whole\)/, 'the store step must read before writing the array');
+  assert.match(cmd, /`content_update\(\{ content_id, settings: \{ sources \} \}\)`/, 'the store step must write through content_update');
+  assert.match(cmd, /\[source: interview:<id>\]/, 'the citation the draft uses is gone');
+  assert.match(cmd, /\*\*How the department uses them\.\*\*/, 'the command must say how the department uses the sources');
+  assert.match(cmd, /`proof_per_section`/, 'the command must say a quoted section counts as proof');
+  assert.ok((cmd.match(/\*\*STOP/g) ?? []).length >= 2, 'the interview needs a STOP before the questions go out and one before the lines are stored');
+
+  const ref = read(RESEARCH_AND_PROOF);
+  assert.match(ref, /^## Expert sources on the row - `settings\.sources\[\]` \(the `\/hiveku:sme-interview` contract\)$/m, 'research-and-proof.md lost the sources contract');
+  assert.match(ref, /REPLACES `sources` whole/, 'the sources contract must say the array is replaced whole');
+  assert.match(ref, /"id": "interview-1", "kind": "interview"/, 'the sources contract lost its shape');
+  assert.match(read(SKILL), /`\/hiveku:sme-interview` stores the answers on the row as `settings\.sources\[\]`/, 'the skill no longer sends a gap to the interview');
+  assert.match(read('README.md'), /`sme-interview` \(/, 'README.md does not list the sme-interview command');
+});
+
+test('the new content references and the interview command carry no exclamation marks and are named by the skill', () => {
+  for (const rel of [RESEARCH_AND_PROOF, DISTRIBUTION_AND_SCORECARD, SME_INTERVIEW]) {
+    const shouts = read(rel).split('\n').filter((line) => /!/.test(line) && !/exclamation/.test(line));
+    assert.deepEqual(shouts, [], `${rel} carries an exclamation mark in shipped copy`);
+  }
+  const skill = read(SKILL);
+  assert.match(skill, /`references\/research-and-proof\.md` - before the brief of any piece/, 'the reference list no longer names research-and-proof.md');
+  assert.match(skill, /`references\/distribution-and-scorecard\.md` - before the brief/, 'the reference list no longer names distribution-and-scorecard.md');
 });

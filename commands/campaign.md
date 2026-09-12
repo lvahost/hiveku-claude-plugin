@@ -7,7 +7,16 @@ planning domain; drafts go through the department agents, never raw copy into `c
 Context FIRST: `account_context_get({ domain: "marketing" })`.
 1. Strategy + copy through the department agents (full brand/memory):
    `talk_to_department({ domain: "marketing", message })` then `{ domain: "content" }` for drafts.
-2. Persist: `content_create` per asset. Record each piece's planned date with `content_schedule` -
+   Research before copy: `content_research_topic({ topic, keyword })` for a campaign topic with no
+   row yet, `content_research_run({ content_id })` once the rows exist (a missing or 30-day-old
+   stamp), and `content_proof_pack({ avatar_id, journey_stage })` before any consideration or
+   decision asset - the brief hands the department the claims and the proof with their citations,
+   and a gap is a question for `/hiveku:sme-interview`, not a sentence to invent
+   (hiveku-content-agency/references/research-and-proof.md).
+2. Persist: `content_create` per asset, carrying the five grounding params and
+   `settings: { distribution_plan }` (owned email first, `paid` winner-only;
+   hiveku-content-agency/references/distribution-and-scorecard.md) so every asset is briefed with
+   its channels. Record each piece's planned date with `content_schedule` -
    it schedules a PUBLISH (or unpublish) date on a content item, never a send, and today the row
    is recorded intent only: nothing executes it (the builder is being changed to write the real
    scheduler for CMS-linked rows). Report it as "recorded for <date>", never as "it will

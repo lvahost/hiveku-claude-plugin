@@ -15,6 +15,17 @@ each rung costs more:
 6. `web_actions({ url, actions: [...] })` - click/scroll/fill to reach content behind interaction.
 
 First read the account's own positioning with `account_context_get({ domain })` so the research is framed
-against this brand, not generic. Persist what you find to department memory (`memory_create`) and, for
-SEO/content, feed it into content-gap and keyword work. Cite source URLs in your summary; never fabricate
-a finding.
+against this brand, not generic. Persist the conclusion to department memory (`memory_list` first, then
+`memory_update` on the standing note; `memory_create` only when none exists) and, for SEO/content, feed
+it into content-gap and keyword work. Cite source URLs in your summary; never fabricate a finding.
+
+7. Index what you used - the evidence outlives this chat. The Content research knowledge base
+   (`kb_list({ context_type: "content_research" })`; the research run creates it, never create a
+   second one) holds the pages behind a finding: `kb_documents_index_text({ kb_id, title, content,
+   source_url })` per page you relied on (put the URL on the first line of `content` and in the
+   title too - the route stores `metadata` only and does not read `source_url` yet), then `kb_search`
+   to confirm it answers. Memory holds the conclusion, the KB holds the evidence.
+   Research FOR a piece of content is not this ladder: `content_research_run({ content_id })` (or
+   `content_research_topic({ topic })` before a row exists) does the search, the SERP read, the
+   extraction and the indexing in one run, cites every claim and stamps the row - see
+   hiveku-content-agency/references/research-and-proof.md.
