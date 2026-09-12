@@ -24,9 +24,10 @@
  *     spread across those prefixes, so gating `seo_` alone would still let a
  *     fabricated `backlinks_new_lost_summary` through.
  *   - `workflow_` (2026-08-30), the creative prefixes (2026-09-01),
- *     `social_` (2026-09-03, the social program) and `webflow_` (2026-09-06,
- *     the Webflow program); each widening came with a KNOWN_NON_TOOLS pass
- *     and a floor, see the arrays below.
+ *     `social_` (2026-09-03, the social program), `webflow_` (2026-09-06,
+ *     the Webflow program) and `content_` (2026-09-12, the content program);
+ *     each widening came with a KNOWN_NON_TOOLS pass and a floor, see the
+ *     arrays below.
  *
  * And the bridge cannot rot: a PENDING entry that the regenerated index now
  * contains FAILS, forcing its deletion from test/pending-tools.mjs.
@@ -44,7 +45,12 @@ import { PENDING_TOOLS } from './pending-tools.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
-/** Prefixes whose tokens must be real. Order does not matter; the longest match is not needed since none is a prefix of another. */
+/**
+ * Prefixes whose tokens must be real. Order matters for exactly one pair:
+ * `content_` is a prefix of the vendor prefix `content_analysis_`, and
+ * gatedPrefixOf takes the FIRST match, so the longer vendor entry stays above
+ * `content_` and keeps its own count. No other entry is a prefix of another.
+ */
 const GATED_PREFIXES = [
   'voice_',
   'seo_',
@@ -82,6 +88,15 @@ const GATED_PREFIXES = [
   // hands. A fabricated webflow_* name in prose is now a failure, not a report
   // line.
   'webflow_',
+  // 2026-09-12. The content program: 38 live content_ tools that the content
+  // skill, /hiveku:campaign and /hiveku:ship-week teach constantly, and until
+  // now a fabricated one (content_publish, say) was a report line rather than
+  // a failure - a session would call it, get unknown-tool, and conclude
+  // Hiveku cannot publish. The widening pass over existing prose found four
+  // non-tool tokens (a table, a field, a trigger node, a response flag - see
+  // KNOWN_NON_TOOLS) and nothing fabricated. Listed AFTER content_analysis_ on
+  // purpose (see the array comment).
+  'content_',
 ];
 
 /**
@@ -111,6 +126,11 @@ const MIN_CHECKED = {
   // tokens, the command, the hub and the three sibling skills the rest. The
   // floor sits near half of that table so a rewrite does not false-fail.
   webflow_: 60,
+  // Content footprint measured 2026-09-12 by this test's own extractor: 83
+  // content_ tokens across the content skill, ship-week, campaign and the
+  // automation references (content_analysis_ tokens counted under their own
+  // prefix). The floor sits near half so a rewrite does not false-fail.
+  content_: 40,
 };
 
 /**
@@ -243,6 +263,21 @@ const KNOWN_NON_TOOLS = new Map([
   // name, not an MCP tool" in the same sentence. The MCP equivalents are
   // webflow_site_get and webflow_token_introspect.
   ['webflow_status', 'agent-tool'],
+
+  // Content program (gate widened 2026-09-12).
+  // The table content_schedule writes and NOTHING executes; site-publishing.md
+  // and ship-week.md name it precisely to say so.
+  ['content_publishing_schedule', 'table'],
+  // content_schedule_list's filter and the schedule row's column
+  // (site-publishing.md, ship-week.md): a field, not a call.
+  ['content_item_id', 'field'],
+  // The workflow trigger NODE for a new comment on a content item
+  // (event-triggers.md's content row): a graph node type the engine fires,
+  // not a tool.
+  ['content_comment_created_trigger', 'trigger'],
+  // A response flag on the journey funnel read (customer-journey.md):
+  // ClickHouse unreachable, meaning UNKNOWN sessions, never zero. A field.
+  ['content_sessions_unavailable', 'field'],
 ]);
 
 /**
@@ -261,7 +296,7 @@ const TOKEN = /(?<![\w/.\-])([a-z][a-z0-9]*(?:_[a-z0-9]+){2,})(?![\w*])/g;
  * Prose must spell every name in full; the extra bytes buy verifiability.
  * Same prefixes as the gate.
  */
-const SHORTHAND_PREFIX = '(?:voice|seo|backlinks|dataforseo_labs|serp|on_page|keywords_data|content_analysis|domain_analytics|business_data|ai_optimization|social|webflow)';
+const SHORTHAND_PREFIX = '(?:voice|seo|backlinks|dataforseo_labs|serp|on_page|keywords_data|content_analysis|domain_analytics|business_data|ai_optimization|social|webflow|content)';
 const SHORTHAND = new RegExp(`${SHORTHAND_PREFIX}_[a-z0-9]+(?:_[a-z0-9]+)+\`?\\s*\\/\\s*\`?_[a-z_]+`);
 
 function walkMarkdown() {

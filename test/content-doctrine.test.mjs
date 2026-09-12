@@ -1,0 +1,187 @@
+/**
+ * The content doctrine the plugin teaches must match what the server does.
+ *
+ * Four drifts shipped together in the 2026-09-11 content-engine audit
+ * (findings channels-3, -4, -6, -11), each one a sentence that read fine and
+ * sent an operator the wrong way:
+ *
+ *   - /hiveku:campaign and the README said `content_schedule` schedules a
+ *     SEND. It schedules a publish date on a content item, and today the row
+ *     lands in a table nothing executes - an operator confirmed a date and
+ *     believed the pieces would go out. They never did.
+ *   - The Play 3 quality gate checked a title length and a meta description
+ *     and called the piece ready; the H1, the slug, the keyword placement,
+ *     heading hierarchy, image alt, internal links and citations were never
+ *     looked at, so "the gate passed" meant almost nothing.
+ *   - The key-profile notes said `cms_*` is `dev`-only and that a marketing
+ *     key cannot read its own project ids; the server's profiles.ts grants
+ *     the `marketing` key the whole cms_ family plus sites_list, project_get
+ *     and deploy_site. Operators were told to ask for ids they could read.
+ *   - The tool-name honesty gate did not cover the content_ prefix, so a
+ *     fabricated content_* name in prose was a report line, not a failure.
+ *
+ * Each block below pins one of those. The profile block also reads the
+ * server's profiles.ts when the sibling checkout is present, so the prose
+ * cannot drift from the grant again without this failing.
+ */
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const read = (rel) => fs.readFileSync(path.join(root, rel), 'utf8');
+
+const SKILL = 'skills/hiveku-content-agency/SKILL.md';
+const SITE_PUBLISHING = 'skills/hiveku-content-agency/references/site-publishing.md';
+const CAMPAIGN = 'commands/campaign.md';
+
+const toolIndex = () =>
+  new Set(JSON.parse(read('lib/tool-index.json')).tools.map((t) => t.name));
+
+// ── channels-3: content_schedule is a publish date, never a send ────────────
+
+test('campaign.md and the README describe content_schedule as recorded publish intent, not a send', () => {
+  const campaign = read(CAMPAIGN);
+  assert.doesNotMatch(campaign, /scheduled to SEND/i, 'the drifted phrase is back in commands/campaign.md');
+  // Every sentence that names content_schedule must not present it as a send.
+  // The one permitted pairing is the correction itself ("never a send").
+  const sentences = campaign.replace(/never a send/g, '').split(/\.\s/);
+  const offenders = sentences.filter((s) => s.includes('content_schedule') && /\bsend\b/i.test(s));
+  assert.deepEqual(offenders, [], 'a sentence in campaign.md pairs content_schedule with a send');
+  assert.match(
+    campaign,
+    /`content_schedule`[\s\S]{0,120}schedules a PUBLISH \(or unpublish\) date on a content item/,
+    'campaign.md must say what content_schedule actually schedules',
+  );
+  assert.match(campaign, /recorded intent only/, 'campaign.md must say the row is recorded intent');
+  assert.match(
+    campaign,
+    /confirmed `content_publish_to_site` \+ deploy/,
+    'campaign.md must name the confirmed publish that actually ships the piece',
+  );
+  assert.match(campaign, /\/hiveku:ship-week/, 'campaign.md must point at the command that lists rows that will not ship themselves');
+
+  const readmeLine = read('README.md').split('\n').find((l) => l.includes('`campaign` ('));
+  assert.ok(readmeLine, 'README.md no longer lists the campaign command');
+  assert.doesNotMatch(readmeLine, /\+ schedule\)/, 'README.md still sells campaign as "plan + draft + schedule"');
+  assert.match(readmeLine, /calendar intent/, 'README.md must call the schedule step calendar intent');
+});
+
+// ── channels-4: the Play 3 pre-publish gate is the full on-page list ────────
+
+test('the Play 3 quality gate covers the full pre-publish checklist and names only real tools', () => {
+  const skill = read(SKILL);
+  const start = skill.indexOf('5. **Quality gate');
+  assert.ok(start > 0, 'Play 3 step 5 (the quality gate) is gone from the content skill');
+  const end = skill.indexOf('6. **Persist:', start);
+  assert.ok(end > start, 'Play 3 step 6 no longer follows the quality gate');
+  const gate = skill.slice(start, end);
+
+  const required = [
+    ['a piece that fails does not ship', /does not ship/],
+    ['exactly one H1 carrying the keyword', /Exactly one H1, and it carries the target keyword/],
+    ['keyword in title, slug and first 100 words', /keyword appears in the title, in the slug, and in the first 100 words/],
+    ['heading hierarchy', /Heading hierarchy is intact/],
+    ['alt on hero and inline images', /Alt text on the hero \(`featured_image_alt`\) and on every inline image/],
+    ['at least two internal links by real URL', /At least two internal links to EXISTING published pieces, each by its real URL/],
+    ['link URLs from tools, never invented', /`content_list`[\s\S]*`cms_list_entries`[\s\S]*`seo_internal_links`[\s\S]*never invented/],
+    ['external claims link their source', /Every EXTERNAL claim[\s\S]*links its source inline/],
+    ['banned phrases from the brand guide', /`ai_forbidden_phrases`[\s\S]*`brand_guide_get`/],
+    ['title length', /Title under ~60 characters/],
+    ['meta description', /meta description drafted, 150-160/],
+    ['post-deploy verification on the live URL', /\/hiveku:seo-onpage/],
+  ];
+  const missing = required.filter(([, re]) => !re.test(gate)).map(([name]) => name);
+  assert.deepEqual(missing, [], 'the quality gate lost these checks');
+
+  // The link sources the gate names must be tools the server serves - a gate
+  // that sends the writer to a tool that does not exist is the phantom-gap
+  // class tool-names.test.mjs exists for, but content_list has only two
+  // segments and evades that extractor, so it is pinned here by name.
+  const index = toolIndex();
+  const unknown = ['content_list', 'cms_list_entries', 'seo_internal_links', 'brand_guide_get'].filter((n) => !index.has(n));
+  assert.deepEqual(unknown, [], 'the quality gate names tools missing from lib/tool-index.json');
+});
+
+// ── channels-11: the key-profile notes match profiles.ts ────────────────────
+
+test('the key-profile notes match the marketing profile the MCP server actually grants', (t) => {
+  const skill = read(SKILL);
+  const sitePublishing = read(SITE_PUBLISHING);
+
+  assert.doesNotMatch(skill, /`cms_\*` is `dev`-only/, 'the skill again says cms_* is dev-only');
+  assert.doesNotMatch(sitePublishing, /are NOT in the\s+`marketing` profile/, 'site-publishing.md again hides sites_list/project_get from the marketing key');
+  assert.doesNotMatch(sitePublishing, /which only the `dev` profile can call/, 'site-publishing.md again says cms_write_entry is dev-only');
+  for (const name of ['sites_list', 'project_get', 'deploy_site', 'cms_*']) {
+    assert.ok(skill.includes(`\`${name}\``), `the profile note no longer names ${name} as carried by the marketing key`);
+  }
+  assert.match(
+    skill,
+    /`account_context_get`,[\s\S]{0,160}always available on\s+every profile/,
+    'the profile note must say account_context_get is on every profile (profiles.ts ALWAYS_AVAILABLE)',
+  );
+  assert.match(skill, /`pages_\*` \(`marketing-seo` \/ `dev` only\)/, 'pages_* is still marketing-seo/dev only and the note must say so');
+
+  const profiles = path.join(root, '..', 'hiveku-mcp-api-server', 'src', 'tools', 'profiles.ts');
+  if (!fs.existsSync(profiles)) {
+    t.diagnostic('source cross-check skipped: hiveku-mcp-api-server checkout not beside this repo');
+    return;
+  }
+  const src = fs.readFileSync(profiles, 'utf8');
+  const slice = (from, to) => {
+    const a = src.indexOf(from);
+    assert.ok(a >= 0, `profiles.ts no longer contains ${JSON.stringify(from)}`);
+    const b = src.indexOf(to, a);
+    assert.ok(b > a, `profiles.ts: ${JSON.stringify(to)} no longer follows ${JSON.stringify(from)}`);
+    return src.slice(a, b);
+  };
+  const marketing = slice('\n  marketing: {', "\n  'marketing-seo': {");
+  assert.ok(marketing.includes("'cms_'"), 'the marketing profile no longer grants cms_ whole - the skill paragraph must change');
+  assert.ok(marketing.includes('SEO_SITE_SURFACE_NAMES'), 'the marketing profile no longer carries the site surface - the skill paragraph must change');
+  assert.ok(!marketing.includes("'pages_'"), 'the marketing profile now grants pages_ - the skill says marketing-seo/dev only');
+  const surface = slice('const SEO_SITE_SURFACE_NAMES = [', '];');
+  for (const name of ['sites_list', 'project_get', 'project_file_save', 'deploy_site', 'cms_write_entry']) {
+    assert.ok(surface.includes(`'${name}'`), `SEO_SITE_SURFACE_NAMES lost ${name} - the skill paragraph must change`);
+  }
+  const always = slice('const ALWAYS_AVAILABLE', ']);');
+  for (const name of ['account_context_get', 'talk_to_department', 'web_search', 'fetch_url', 'audit_query']) {
+    assert.ok(always.includes(`'${name}'`), `${name} left ALWAYS_AVAILABLE - the skill paragraph must change`);
+  }
+});
+
+// ── channels-6: a fabricated content_* name fails the honesty gate ──────────
+
+test('a fabricated content_ name in a command fails tool-names.test.mjs', () => {
+  // The gate resolves its root from its own file location, so it is exercised
+  // on a copy of the prose tree with one planted fabrication. Before content_
+  // was gated this copy passed 7/7 with the planted name on a report line.
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'hiveku-content-gate-'));
+  try {
+    for (const rel of ['skills', 'commands', 'agents']) {
+      fs.cpSync(path.join(root, rel), path.join(tmp, rel), { recursive: true });
+    }
+    for (const rel of ['lib/tool-index.json', 'data/permission-critical-tools.json', 'test/tool-names.test.mjs', 'test/pending-tools.mjs']) {
+      fs.mkdirSync(path.dirname(path.join(tmp, rel)), { recursive: true });
+      fs.copyFileSync(path.join(root, rel), path.join(tmp, rel));
+    }
+    fs.writeFileSync(
+      path.join(tmp, 'commands', 'zz-planted.md'),
+      '---\ndescription: planted\n---\nPublish with `content_fabricated_publish` when the draft passes.\n',
+    );
+    // Spawned from inside `node --test`, a child inherits NODE_TEST_CONTEXT and
+    // reports to the parent runner instead of exiting non-zero on its own;
+    // strip it so the child is an ordinary run whose exit status means what it says.
+    const env = { ...process.env };
+    delete env.NODE_TEST_CONTEXT;
+    const run = spawnSync(process.execPath, ['--test', 'test/tool-names.test.mjs'], { cwd: tmp, encoding: 'utf8', env });
+    const output = `${run.stdout}\n${run.stderr}`;
+    assert.notEqual(run.status, 0, 'tool-names.test.mjs passed with a fabricated content_ name planted in commands/');
+    assert.match(output, /content_fabricated_publish \(commands\/zz-planted\.md:4\)/, 'the failure must name the fabricated token and where it was taught');
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+});

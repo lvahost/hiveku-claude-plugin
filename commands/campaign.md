@@ -1,5 +1,5 @@
 ---
-description: Plan + draft a campaign with the account's brand context, then schedule it.
+description: Plan + draft a campaign with the account's brand context, then record its publish dates (calendar intent - the publish is a confirmed step on the day).
 argument-hint: "[campaign brief]"
 ---
 Campaign: $ARGUMENTS. Follow the **hiveku-content-agency** skill (`"marketing"` is its cross-channel
@@ -7,8 +7,12 @@ planning domain; drafts go through the department agents, never raw copy into `c
 Context FIRST: `account_context_get({ domain: "marketing" })`.
 1. Strategy + copy through the department agents (full brand/memory):
    `talk_to_department({ domain: "marketing", message })` then `{ domain: "content" }` for drafts.
-2. Persist: `content_create` per asset; schedule with `content_schedule` (confirm before anything is
-   scheduled to SEND).
+2. Persist: `content_create` per asset. Record each piece's planned date with `content_schedule` -
+   it schedules a PUBLISH (or unpublish) date on a content item, never a send, and today the row
+   is recorded intent only: nothing executes it (the builder is being changed to write the real
+   scheduler for CMS-linked rows). Report it as "recorded for <date>", never as "it will
+   publish". The publish itself is a confirmed `content_publish_to_site` + deploy on the day;
+   `/hiveku:ship-week` lists the rows that will NOT ship themselves.
    If the campaign includes email, the send is GATED and the gates fail at SEND time, not at build
    time - run `marketing_setup_status` (do not build until `ready_to_send: true`) AND
    `email_service_status` (read `sending_enabled`; setup_status does not check SES suspension) BEFORE
