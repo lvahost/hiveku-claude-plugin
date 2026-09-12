@@ -150,9 +150,52 @@
  *               it; it rides here so the Availability table and this file are
  *               the two places that spell it, and content-doctrine.test.mjs
  *               checks the table against the index and this batch.
+ *
+ *   Elite content program, round B (2026-09-12: a named author and answer-engine
+ *   markup on every post, the SERP brief before the draft, positioning and
+ *   claim-shaped titles with a weekly test, page roles and clusters with the
+ *   keyword map, bottom-funnel comparison pages, conversion inside the piece
+ *   and the decision loop). The contract is the builder's round-B commits
+ *   (handoffs-b.md: content authors + JSON-LD + llms.txt (build 3), the SERP
+ *   brief route (build 4), brand positioning + title candidates + the Monday
+ *   title-results cron (build 5), the decay link cron + prune candidates +
+ *   the refresh brief (build 7), page roles + site links by role + the keyword
+ *   map + the Sunday cluster sweep (build 8), the bottom-funnel plan and its
+ *   three templates (build 9), brand offers + the conversion plan + the
+ *   ::cta / ::upgrade shortcodes (build 10), and the eleven elite rules in
+ *   content_seo_check). The MCP declarations are the parallel MCP lane's
+ *   commit in hiveku-mcp-api-server; the live index regenerates after that
+ *   deploy, and tool-names.test.mjs then forces these entries out.
+ *     ELITE-B   content_authors_list, content_authors_create,
+ *               content_authors_get, content_authors_update,
+ *               content_authors_delete (build 3); content_brief_build,
+ *               content_brief_get, content_brief_topic (build 4);
+ *               brand_positioning_get, brand_positioning_set,
+ *               content_titles_generate, content_titles_get,
+ *               content_titles_pick (build 5); content_prune_candidates,
+ *               content_refresh_brief_get (build 7); site_page_roles_get,
+ *               site_page_roles_set, content_keyword_map (build 8);
+ *               content_bofu_plan, content_bofu_plan_get (build 9);
+ *               brand_offers_get, brand_offers_set, content_conversion_plan
+ *               (build 10). Spelled in prose by the content skill (Plays 1-5
+ *               and the hard stops), its two new references
+ *               (structure-and-conversion.md and site-architecture-and-decay.md
+ *               carry the Availability tables), commands/seo-brief.md,
+ *               commands/bofu.md and commands/refresh.md. The brand_ and site_
+ *               names are not gated prefixes, so the honesty gate would not
+ *               catch a rename of them; they ride here so the Availability
+ *               tables and this file are the two places that spell them, and
+ *               content-doctrine.test.mjs checks the tables against the index
+ *               and the batch. Naming notes for the MCP lane: B0's
+ *               invalid_reference message cites the authors list as
+ *               content_author_list (singular) while B3 asked for
+ *               content_authors_list; this file and the prose follow B3, the
+ *               route owner. B10 named a read-only twin of the conversion plan
+ *               as optional; it is not spelled anywhere until it exists.
  */
 const SEO_SINCE = '2026-08-30';
 const seo = (batch) => ({ since: SEO_SINCE, batch });
+const eliteB = { since: '2026-09-12', batch: 'ELITE-B' };
 
 export const PENDING_TOOLS = new Map([
   // S1
@@ -202,4 +245,31 @@ export const PENDING_TOOLS = new Map([
   // landed in the live index on 2026-09-12 (MCP fb5082a + c1fa3f5 + 4e3eceb
   // deployed; index regenerated at 2040 tools); entries deleted. See the
   // batch note above for the contract.
+
+  // ELITE-B (2026-09-12): round B of the elite content program. Delete each
+  // entry when the regenerated index carries it (tool-names.test.mjs forces
+  // it). See the batch note above for the contract and the naming notes.
+  ['content_authors_list', eliteB],
+  ['content_authors_create', eliteB],
+  ['content_authors_get', eliteB],
+  ['content_authors_update', eliteB],
+  ['content_authors_delete', eliteB],
+  ['content_brief_build', eliteB],
+  ['content_brief_get', eliteB],
+  ['content_brief_topic', eliteB],
+  ['brand_positioning_get', eliteB],
+  ['brand_positioning_set', eliteB],
+  ['content_titles_generate', eliteB],
+  ['content_titles_get', eliteB],
+  ['content_titles_pick', eliteB],
+  ['content_prune_candidates', eliteB],
+  ['content_refresh_brief_get', eliteB],
+  ['site_page_roles_get', eliteB],
+  ['site_page_roles_set', eliteB],
+  ['content_keyword_map', eliteB],
+  ['content_bofu_plan', eliteB],
+  ['content_bofu_plan_get', eliteB],
+  ['brand_offers_get', eliteB],
+  ['brand_offers_set', eliteB],
+  ['content_conversion_plan', eliteB],
 ]);

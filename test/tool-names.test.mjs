@@ -278,6 +278,14 @@ const KNOWN_NON_TOOLS = new Map([
   // A response flag on the journey funnel read (customer-journey.md):
   // ClickHouse unreachable, meaning UNKNOWN sessions, never zero. A field.
   ['content_sessions_unavailable', 'field'],
+  // Elite content program round B (2026-09-12). The refresh brief's decay
+  // object (site-architecture-and-decay.md) names its keys as the route
+  // returns them; content_age_days is one of them, a field.
+  ['content_age_days', 'field'],
+  // The 502 code content_brief_build answers when the DataForSEO SERP read
+  // fails (structure-and-conversion.md), named so the operator can tell a
+  // vendor failure from a spent cap (402). An error code, not a call.
+  ['serp_read_failed', 'error'],
 ]);
 
 /**

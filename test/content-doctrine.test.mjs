@@ -789,11 +789,16 @@ test('orient names the Content research knowledge base, the artifact types and t
   for (const type of ARTIFACT_TYPES) {
     assert.ok(section.includes(`\`${type}\``), `orient no longer names the artifact type ${type}`);
   }
-  assert.match(section, /`content_research` today \(the research run is the one writer the product ships\)/, 'orient must say which type has a writer today');
+  // Round B (2026-09-12): the SERP brief, positioning and bottom-funnel plan
+  // gained writers; orient names the four and their exact reads.
+  assert.match(section, /Four types have\s+writers today: `content_research` \(the research run\), `serp_brief` \(`content_brief_build`/, 'orient must say which types have a writer today');
+  assert.match(section, /`positioning` \(the owner-approved positioning `brand_positioning_set` mirrors/, 'orient must name the positioning writer');
+  assert.match(section, /`bofu_plan` \(the bottom-funnel plan `content_bofu_plan` stores/, 'orient must name the bottom-funnel plan writer');
+  assert.match(section, /hiveku-content-agency\/references\/structure-and-conversion\.md and\s+hiveku-content-agency\/references\/site-architecture-and-decay\.md/, 'orient must point at the two round-B references with the cross-skill path');
   assert.match(section, /research-and-proof\.md/, 'orient must point at the content reference for the contracts');
   // The names orient teaches are live or contracted, so a rename is one edit here.
   const index = toolIndex();
-  for (const name of ['content_research_run', 'content_research_topic', 'kb_artifacts_list', 'kb_artifact_get', 'kb_list', 'kb_search']) {
+  for (const name of ['content_research_run', 'content_research_topic', 'kb_artifacts_list', 'kb_artifact_get', 'kb_list', 'kb_search', 'content_brief_build', 'brand_positioning_set', 'content_bofu_plan', 'content_bofu_plan_get']) {
     assert.ok(index.has(name) || PENDING_TOOLS.has(name), `${name} is neither in lib/tool-index.json nor test/pending-tools.mjs`);
   }
   // Source cross-check: the builder writes content_research today and the MCP
@@ -816,4 +821,454 @@ test('the corrected paragraphs carry no exclamation marks', () => {
       .map((p) => `${rel}:${p.line}`);
     assert.deepEqual(shouts, [], 'a corrected paragraph carries an exclamation mark');
   }
+});
+
+// ── ELITE-B: round B of the elite content program (2026-09-12) ─────────────
+//
+// Seven builds' back-ends shipped in the builder (a named author and
+// answer-engine markup on every post, the SERP brief before the draft,
+// positioning and claim-shaped titles with a weekly test, page roles and
+// clusters with the keyword map, bottom-funnel comparison pages, conversion
+// inside the piece, the decision loop) plus eleven on-page rules in
+// content_seo_check. The plugin teaches them through the content skill, two
+// new references, /hiveku:seo-brief (now built on the row), /hiveku:bofu and
+// /hiveku:refresh. Each pin below reads the exact sentence a session acts on,
+// and cross-checks the builder's own constants when its checkout is beside
+// this repo, so a renamed field or a moved level fails here before it ships
+// as prose.
+
+const STRUCTURE_AND_CONVERSION = 'skills/hiveku-content-agency/references/structure-and-conversion.md';
+const SITE_ARCHITECTURE_AND_DECAY = 'skills/hiveku-content-agency/references/site-architecture-and-decay.md';
+const BOFU = 'commands/bofu.md';
+const REFRESH_COMMAND = 'commands/refresh.md';
+const SEO_BRIEF = 'commands/seo-brief.md';
+const BUILDER = path.join(root, '..', 'hiveku_builder');
+
+const ELITE_B_NAMES = [
+  'content_authors_list',
+  'content_authors_create',
+  'content_authors_get',
+  'content_authors_update',
+  'content_authors_delete',
+  'content_brief_build',
+  'content_brief_get',
+  'content_brief_topic',
+  'brand_positioning_get',
+  'brand_positioning_set',
+  'content_titles_generate',
+  'content_titles_get',
+  'content_titles_pick',
+  'content_prune_candidates',
+  'content_refresh_brief_get',
+  'site_page_roles_get',
+  'site_page_roles_set',
+  'content_keyword_map',
+  'content_bofu_plan',
+  'content_bofu_plan_get',
+  'brand_offers_get',
+  'brand_offers_set',
+  'content_conversion_plan',
+];
+
+/** The eleven elite rules with the level content-seo-check.ts assigns. */
+const ELITE_RULES = [
+  ['author_missing', 'error'],
+  ['answer_block_missing', 'warn'],
+  ['faq_schema_mismatch', 'warn'],
+  ['title_generic', 'warn'],
+  ['money_link_missing', 'error'],
+  ['pillar_link_missing', 'error'],
+  ['keyword_already_targeted', 'warn'],
+  ['comparison_table_missing', 'error'],
+  ['competitor_claim_unsourced', 'error'],
+  ['cta_missing', 'warn'],
+  ['cta_stage_mismatch', 'warn'],
+];
+
+const REVIEW_DISPOSITIONS = ['double_down', 'refresh', 'rewrite', 'consolidate', 'prune'];
+
+/** The builder file, or null when the checkout is not beside this repo. */
+function builderSource(rel) {
+  const p = path.join(BUILDER, rel);
+  return fs.existsSync(p) ? fs.readFileSync(p, 'utf8') : null;
+}
+
+/** The section of the content skill between two step or heading markers. */
+function skillSlice(from, to) {
+  const skill = read(SKILL);
+  const start = skill.indexOf(from);
+  assert.ok(start >= 0, `the content skill no longer contains ${JSON.stringify(from)}`);
+  const end = skill.indexOf(to, start + from.length);
+  assert.ok(end > start, `${JSON.stringify(to)} no longer follows ${JSON.stringify(from)} in the content skill`);
+  return skill.slice(start, end);
+}
+
+test('the ELITE-B names are live or pending under ELITE-B, the two round-B Availability tables agree with the index, and the routes they name exist', (t) => {
+  const index = toolIndex();
+  for (const name of ELITE_B_NAMES) {
+    const pending = PENDING_TOOLS.get(name);
+    assert.ok(index.has(name) || pending, `${name} is neither in lib/tool-index.json nor test/pending-tools.mjs`);
+    if (pending) {
+      assert.equal(pending.batch, 'ELITE-B', `${name} is pending under the wrong batch`);
+      assert.equal(pending.since, '2026-09-12', `${name} carries the wrong since date`);
+    }
+  }
+  const rows = [...readAvailabilityRows(STRUCTURE_AND_CONVERSION), ...readAvailabilityRows(SITE_ARCHITECTURE_AND_DECAY)];
+  assert.ok(rows.length >= 28, `only ${rows.length} Availability rows parsed across the two references - the parser is broken, not the tables`);
+  const where = (r) => `${r.name} (${r.file}:${r.line})`;
+  assert.deepEqual(
+    rows.filter((r) => /INCOMING/.test(r.status) && index.has(r.name)).map(where),
+    [],
+    'an INCOMING row names a tool lib/tool-index.json already carries - flip its Status to LIVE',
+  );
+  assert.deepEqual(
+    rows.filter((r) => /INCOMING/.test(r.status) && !PENDING_TOOLS.has(r.name)).map(where),
+    [],
+    'an INCOMING row names a tool test/pending-tools.mjs does not carry',
+  );
+  assert.deepEqual(
+    rows.filter((r) => /LIVE/.test(r.status) && !index.has(r.name)).map(where),
+    [],
+    'a LIVE row names a tool lib/tool-index.json does not carry',
+  );
+  for (const name of ELITE_B_NAMES) {
+    if (!PENDING_TOOLS.has(name)) continue;
+    assert.equal(rows.filter((r) => r.name === name).length, 1, `${name} must appear in exactly one Availability row`);
+  }
+  // A read-only twin of the conversion plan was named optional by its lane and
+  // is declared nowhere; the prose must not teach it until it exists.
+  const spelled = [...markdownFiles('skills'), ...markdownFiles('commands')].filter((rel) => read(rel).includes('content_conversion_plan_get'));
+  assert.deepEqual(spelled, [], 'content_conversion_plan_get is taught but never declared');
+
+  // Source cross-check: every Olympus route the two tables name has a route
+  // file in the builder (path params become Next.js dynamic segments).
+  if (!fs.existsSync(path.join(BUILDER, 'src', 'app', 'api', 'olympus'))) {
+    t.diagnostic('route cross-check skipped: hiveku_builder checkout not beside this repo');
+    return;
+  }
+  const missing = [];
+  for (const rel of [STRUCTURE_AND_CONVERSION, SITE_ARCHITECTURE_AND_DECAY]) {
+    for (const line of read(rel).split('\n')) {
+      const m = line.match(/^\|\s*`([a-z_]+)`\s*\|[^|]*\|\s*`(?:GET|POST|PUT|PATCH|DELETE)\s+(\/api\/olympus\/[^?`\s]+)/);
+      if (!m) continue;
+      const segments = m[2].split('/').filter(Boolean).map((s) => (s.startsWith(':') ? `[${s.slice(1)}]` : s));
+      const file = path.join(BUILDER, 'src', 'app', ...segments, 'route.ts');
+      if (!fs.existsSync(file)) missing.push(`${m[1]} -> ${m[2]}`);
+    }
+  }
+  assert.deepEqual(missing, [], 'an Availability row names a route the builder does not have');
+});
+
+test('author first: every piece publishes under a named practitioner, and an account with no authors is a stop, not a byline', (t) => {
+  const skill = read(SKILL);
+  assert.match(skill, /7\. \*\*Who signs it:\*\* `content_authors_list`/, 'Play 1 lost the authors step');
+  assert.match(skill, /never an invented byline and never the\s+brand name standing in for a person/, 'Play 1 must refuse an invented byline');
+  const brief = skillSlice('1. **Brief.**', '2. **Draft via the department.**');
+  assert.match(brief, /\*\*Author first\.\*\* The `By: <name>, <role>` line comes from the row's `author`/, 'the Play 3 brief lost the By: line');
+  assert.match(brief, /no authors is a brief that stops here and\s+offers `content_authors_create`/, 'the Play 3 brief must stop on an account with no authors');
+  const gate = skillSlice('5. **Quality gate', '6. **Persist:');
+  assert.match(gate, /`author_missing`/, 'the gate does not name author_missing');
+  assert.match(gate, /`By:` from the row's `author\.name`\s+\(else the account default\)/, 'the gate must read the byline back from the row');
+  assert.match(skill, /no invented byline \(an account with no authors gets\s+`content_authors_create` for a real person/, 'the hard stops lost the byline closure');
+
+  const ref = read(STRUCTURE_AND_CONVERSION);
+  assert.match(ref, /^## Author first - `content_authors_list`, the byline every piece publishes under$/m, 'structure-and-conversion.md lost the authors section');
+  for (const key of ['409 `duplicate_name`', '409 `default_required`', '409 `default_in_use`', '`items_unlinked`', 'never a brand name standing in for a person', '422 `author_entry_failed`', '`author { id, name, entry_slug, entry_created } | null`']) {
+    assert.ok(ref.includes(key), `structure-and-conversion.md no longer says ${JSON.stringify(key)}`);
+  }
+  const authors = builderSource('src/lib/marketing/content-authors.ts');
+  if (!authors) {
+    t.diagnostic('source cross-check skipped: hiveku_builder checkout not beside this repo');
+    return;
+  }
+  for (const code of ['duplicate_name', 'default_required', 'default_in_use']) {
+    assert.ok(authors.includes(`code: '${code}'`), `content-authors.ts no longer answers ${code} - the authors section must change`);
+  }
+});
+
+test('the SERP brief is built on the row before the draft, the stored brief is the specification, and /hiveku:seo-brief runs it', () => {
+  const brief = skillSlice('1. **Brief.**', '2. **Draft via the department.**');
+  assert.match(brief, /\*\*The SERP brief before the draft\.\*\* `content_brief_build\(\{ content_id \}\)` when the row\s+has no stored brief/, 'the Play 3 brief no longer builds the SERP brief');
+  assert.match(brief, /a spent cap is a 402 with nothing written/, 'the brief must say what a spent cap answers');
+  assert.match(brief, /`Intent:` and\s+`Type:` are header lines read back from the row's `search_intent` and `page_type`/, 'the Intent: and Type: header lines are gone');
+  assert.match(brief, /`what_the_top_3_all_say\[\]` the\s+consensus the thesis argues against/, 'the brief must name the consensus line the thesis argues against');
+  assert.match(brief, /No SERP brief, no draft\./, 'the brief lost the no-brief-no-draft rule');
+  assert.match(read(SKILL), /3\. \*\*Optimize against the SERP reality:\*\* the stored brief is the specification -\s+`content_brief_get\(\{ content_id \}\)`/, 'Play 3 step 3 no longer reads the stored brief as the specification');
+  assert.match(read(SKILL), /`search_intent` \/ `page_type` once the brief has been built \(Play 3 step 1 stamps them\s+otherwise\)/, 'Play 2 step 6 must say the brief stamps intent and type');
+
+  const ref = read(STRUCTURE_AND_CONVERSION);
+  assert.match(ref, /^## The brief before the draft - `content_brief_build\(\{ content_id, keyword\?, avatar_id\?, project_id\?, location_code\? \| location_name\?, parse_top\? \}\)`$/m, 'structure-and-conversion.md lost the brief section');
+  for (const key of ['A spent cap is a 402 with NOTHING written', '502 `serp_read_failed`', '`content_brief_get({ content_id })`', '`content_brief_topic({ topic, keyword?, avatar_id?, project_id?, location_code? })`', '`word_count_band` is a BAND, never a target', 'intent_decided_by: rules | model | default', 'reuses `settings.serp_brief` for 30 days']) {
+    assert.ok(ref.includes(key), `structure-and-conversion.md no longer says ${JSON.stringify(key)}`);
+  }
+
+  const cmd = read(SEO_BRIEF);
+  assert.match(cmd, /^description: .*content_brief_build/m, 'seo-brief.md\'s description no longer names the build');
+  assert.match(cmd, /`content_keyword_map\(\{ project_id \}\)`/, 'seo-brief.md must read the keyword map before a brief');
+  assert.match(cmd, /`content_brief_build\(\{ content_id,\s+keyword: <target keyword>, project_id, location_code\? \}\)`/, 'seo-brief.md must build the brief on the row');
+  assert.match(cmd, /`content_brief_get\(\{ content_id \}\)`/, 'seo-brief.md must read the stored brief back');
+  assert.match(cmd, /`content_site_links\(\{ project_id, content_id \}\)` - money pages first/, 'seo-brief.md must take the money page and the pillar from site-links');
+  assert.match(cmd, /`content_authors_list` for the byline/, 'seo-brief.md must name the author');
+  assert.match(cmd, /`content_update\(\{ content_id, author_id, answer_block, faq \}\)`/, 'seo-brief.md must write the human half of the brief onto the row');
+  assert.doesNotMatch(cmd, /`on_page_content_parsing\(\{ url \}\)` on the top 3 \[SPENDS/, 'seo-brief.md again parses the top three by hand instead of through the build');
+});
+
+test('thesis and hook: every draft argues a positioning sentence, titles are five candidates and one pick, and the test rides off-site', (t) => {
+  const skill = read(SKILL);
+  assert.match(skill, /8\. \*\*What we stand for:\*\* `brand_positioning_get`/, 'Play 1 lost the positioning step');
+  assert.match(skill, /`brand_positioning_set` only on the owner's yes \(it\s+replaces the whole object\)/, 'Play 1 must gate the positioning write on the owner');
+  const brief = skillSlice('1. **Brief.**', '2. **Draft via the department.**');
+  assert.match(brief, /\*\*Thesis and hook\.\*\* `Thesis:` is a REQUIRED header line/, 'the Play 3 brief lost the Thesis: line');
+  assert.match(brief, /`Hook:` names the opener's pattern, one of the sixteen slugs\s+hiveku-social-agency\/references\/hooks-and-formats\.md carries/, 'the Hook: line must point at the shared slug list');
+  assert.match(brief, /a competitor would not publish this sentence/, 'the rubric axis is gone from the brief');
+  const step3 = skillSlice('3. **Optimize against the SERP reality:**', '4. **Illustrate');
+  assert.match(step3, /`content_titles_generate\(\{ content_id,\s+count: 5 \}\)`/, 'Play 3 no longer generates five titles');
+  assert.match(step3, /`content_titles_pick\(\{ content_id, index \}\)` - `index` is 0-based/, 'Play 3 no longer picks by 0-based index');
+  assert.match(step3, /Never write\s+`settings\.title_candidates` by hand/, 'Play 3 must forbid hand-written candidates');
+  assert.match(step3, /A pick on a published piece reaches the live page on\s+the next `content_publish_to_site`/, 'Play 3 must say a pick needs a republish');
+  assert.match(skill, /tagged `title:<n>` \(or\s+`utm_term=title-<n>` on the link; n is the 0-based index\)/, 'Play 4 lost the off-site title test convention');
+  assert.match(skill, /`settings\.title_results\.winner` and `notes\[\]`/, 'Play 5 no longer reads the title results');
+  assert.match(skill, /record `Winning titles:\s+<pattern> x<n>` in the content memory/, 'Play 5 no longer records the winning titles');
+  assert.match(skill, /no hand-written `settings\.title_candidates`/, 'the hard stops lost the candidates closure');
+
+  const ref = read(STRUCTURE_AND_CONVERSION);
+  assert.match(ref, /^## Thesis and hook - `brand_positioning_get\(\{ project_id\?, guide_id\? \}\)` \/ `brand_positioning_set\(\{ thesis, beliefs, we_are_against, category_name, proof_points, project_id\?, guide_id\? \}\)`$/m, 'structure-and-conversion.md lost the positioning section');
+  assert.match(ref, /`brand_positioning_set` REPLACES the whole object -\s+send every key each time/, 'the positioning section must say the PUT replaces');
+  assert.match(ref, /^## Five titles, one pick - `content_titles_generate\(\{ content_id, count\? \}\)`, `content_titles_get\(\{ content_id \}\)`, `content_titles_pick\(\{ content_id, index, apply_to\?, change_summary\? \}\)`$/m, 'structure-and-conversion.md lost the titles section');
+  for (const key of ['`index` is the 0-BASED position', 'meta title changed; republish to apply', '`winner.sources`', 'at least 500\n  impressions and 10 clicks by 20 percent relative and 0.5 points absolute', '"No Search Console archive for this account"']) {
+    assert.ok(ref.includes(key), `structure-and-conversion.md no longer says ${JSON.stringify(key)}`);
+  }
+  // The sixteen slugs are one list in three places: the social reference (the
+  // numbered definitions), the content reference (the Hook: line) and the
+  // builder's HOOK_PATTERNS.
+  const slugs = [...read(SOCIAL_HOOKS).matchAll(/^\d+\. `([a-z-]+)` - /gm)].map((m) => m[1]);
+  assert.equal(slugs.length, 16, `hooks-and-formats.md defines ${slugs.length} hook patterns, not 16`);
+  const unnamed = slugs.filter((slug) => !ref.includes(`\`${slug}\``));
+  assert.deepEqual(unnamed, [], 'structure-and-conversion.md does not name every hook slug the social reference defines');
+  const titles = builderSource('src/lib/marketing/content-titles.ts');
+  if (!titles) {
+    t.diagnostic('source cross-check skipped: hiveku_builder checkout not beside this repo');
+    return;
+  }
+  const builderSlugs = [...titles.matchAll(/^\s+slug: '([a-z-]+)',$/gm)].map((m) => m[1]);
+  assert.deepEqual(builderSlugs.sort(), [...slugs].sort(), 'the builder\'s HOOK_PATTERNS and hooks-and-formats.md disagree - a rename must land in both');
+  const grounding = builderSource('src/lib/marketing/content-grounding.ts');
+  assert.match(grounding, /READ_ONLY_FIELD_CODE = 'read_only_field'/, 'the builder renamed read_only_field - the references must change');
+});
+
+test('the answer block and the FAQ live on the row, and the publish emits the markup and its new keys', () => {
+  const brief = skillSlice('1. **Brief.**', '2. **Draft via the department.**');
+  assert.match(brief, /\*\*The answer block and the FAQ\.\*\* 40-60 words directly under the H1/, 'the Play 3 brief lost the answer block');
+  assert.match(brief, /the row's `answer_block` AND the lead paragraph, the same words/, 'the answer block must be written in both places');
+  assert.match(brief, /into the row's `faq`\s+AND an FAQ section in the body, never padded/, 'the FAQ must be written in both places');
+  const play4 = skillSlice('5. **On-site publishing (Hiveku-hosted sites).**', '6. **On-site publishing (Webflow-hosted sites).**');
+  for (const key of ['`author { id, name, entry_slug, entry_created } | null`', '`author_entry_failed`', '`publish_warnings[]`', '`refreshed: true`', '`llms_txt_regenerated`', 'FAQPage when `faq` has\n   real pairs', 'names the money\n   page and the pillar the piece links']) {
+    assert.ok(play4.includes(key), `Play 4 step 5 no longer says ${JSON.stringify(key)}`);
+  }
+  const step2 = skillSlice('2. **Draft via the department.**', '3. **Optimize against the SERP reality:**');
+  assert.match(step2, /`author_id`, `answer_block`, `faq`, `topic_cluster_id`, `cluster_role`, `page_role`,\s+`lead_magnet`, `offer_id` and `settings: \{ hook_pattern \}`/, 'Play 3 step 2 no longer writes the round-B fields with the grounding');
+  assert.match(step2, /a\s+changed value is 400 `read_only_field` \(an unchanged echo is ignored/, 'Play 3 step 2 must teach the read-only echo rule');
+
+  const ref = read(STRUCTURE_AND_CONVERSION);
+  assert.match(ref, /^## The answer block and the FAQ - `answer_block`, `faq\[\]`, and the markup a publish emits$/m, 'structure-and-conversion.md lost the answer block section');
+  for (const key of ['FAQPage only when\n  `faq` holds at least one real pair', '`json_ld_target: "field"`', 'never for Webflow', '"Refreshed on the same URL"', '`publish_warnings[]` names']) {
+    assert.ok(ref.includes(key), `structure-and-conversion.md no longer says ${JSON.stringify(key)}`);
+  }
+  // The field table carries every round-B column, and the six read-only ones.
+  for (const field of ['author_id', 'faq', 'answer_block', 'search_intent', 'page_type', 'review_disposition', 'topic_cluster_id', 'cluster_role', 'page_role', 'lead_magnet', 'offer_id']) {
+    assert.match(ref, new RegExp(`^\\| \`${field}\` \\| `, 'm'), `the field table lost ${field}`);
+  }
+  assert.match(ref, /\*\*Six columns are read-only here\*\* and answer 400 `read_only_field` naming their writer/, 'the read-only rule is gone');
+  assert.match(ref, /\*\*The keyword collision warning never blocks\.\*\*/, 'the collision warning rule is gone');
+});
+
+test('site architecture: the keyword map is read before a keyword, roles are stored and seeded on a yes, and the money page and the pillar are linked first', (t) => {
+  const skill = read(SKILL);
+  assert.match(skill, /1\. \*\*The keyword map first, then topic sourcing\.\*\* `content_keyword_map\(\{ project_id \}\)`/, 'Play 2 no longer reads the keyword map first');
+  assert.match(skill, /are REFUSED for a new piece unless\s+the owner says consolidate/, 'Play 2 must refuse a collision keyword');
+  assert.match(skill, /9\. \*\*What we ask for, and where the site converts:\*\*[\s\S]*`site_page_roles_get\(\{ project_id \}\)`/, 'Play 1 lost the page roles step');
+  assert.match(skill, /`site_page_roles_set\(\{ project_id, seed: true \}\)`[\s\S]*a role a person set is never overwritten/, 'Play 1 must seed roles on the yes and say the seed never overwrites');
+  assert.match(skill, /`topic_cluster_id` \(a `seo_topic_clusters` id in the account\) and\s+`cluster_role` \(`pillar` \| `spoke`\) go on the calendar draft/, 'Play 2 step 4 no longer records the cluster on the row');
+  assert.match(skill, /keyword_already_targeted: \.\.\./, 'Play 2 step 6 no longer relays the collision warning');
+  const brief = skillSlice('1. **Brief.**', '2. **Draft via the department.**');
+  assert.match(brief, /`content_site_links\(\{ project_id,\s+content_id \}\)` orders the targets money pages first, then the piece's own pillar/, 'the Play 3 brief no longer takes the money page and the pillar from site-links');
+  const gate = skillSlice('5. **Quality gate', '6. **Persist:');
+  assert.match(gate, /`money_link_missing`\), or a spoke that does not\s+link its pillar \(`pillar_link_missing`\), is an error/, 'the gate no longer errors on the missing money-page or pillar link');
+
+  const ref = read(SITE_ARCHITECTURE_AND_DECAY);
+  assert.match(ref, /^## Page roles - `site_page_roles_get\(\{ project_id \}\)` \/ `site_page_roles_set\(\{ pages \} \| \{ project_id, seed, apply\? \}\)`$/m, 'site-architecture-and-decay.md lost the page roles section');
+  assert.match(ref, /Roles are STORED, never inferred at read time/, 'the page roles section must say roles are stored');
+  assert.match(ref, /^## Link targets by role - `content_site_links\(\{ project_id, content_id\?, limit\? \}\)`$/m, 'site-architecture-and-decay.md lost the site-links section');
+  assert.match(ref, /^## The keyword map - `content_keyword_map\(\{ project_id\? \}\)`$/m, 'site-architecture-and-decay.md lost the keyword map section');
+  for (const key of ['`suggested_anchor`', '`is_pillar_for_item`', 'A pillar item gets `pillar: null`', '`duplicate_target`', '`without_keyword[]` is the list of pieces written for no query', '`coverage_score`', '`missing_subtopics[]`', '`internal_link_score`', 'is kept and named in the run\'s notes', 'a role a person set is never overwritten, by\n  the route, not by your care']) {
+    assert.ok(ref.includes(key), `site-architecture-and-decay.md no longer says ${JSON.stringify(key)}`);
+  }
+  const roles = builderSource('src/lib/marketing/page-roles.ts');
+  if (!roles) {
+    t.diagnostic('source cross-check skipped: hiveku_builder checkout not beside this repo');
+    return;
+  }
+  assert.match(roles, /PAGE_ROLES = \['money', 'pillar', 'support', 'utility'\]/, 'the builder\'s page roles changed - the references and the skill must change');
+});
+
+test('/hiveku:bofu plans bottom-funnel pages read-only, seeds on a yes, and sources and dates every rival claim', (t) => {
+  const cmd = read(BOFU);
+  assert.match(cmd, /^description: /m, 'bofu.md has no description');
+  assert.match(cmd, /^argument-hint: /m, 'bofu.md has no argument hint');
+  assert.match(cmd, /`content_bofu_plan\(\{ project_id, seed_drafts: false, rivals\? \}\)`/, 'the plan must run read-only first');
+  assert.ok((cmd.match(/\*\*STOP/g) ?? []).length >= 2, 'bofu.md needs a STOP before the spend and one before the seed');
+  assert.match(cmd, /Up to two DataForSEO research calls/, 'bofu.md must say what the plan spends');
+  assert.match(cmd, /`content_bofu_plan\(\{ project_id, seed_drafts: true, max_candidates:\s+<the approved count>, rivals\? \}\)`/, 'the seed must carry the approved count');
+  assert.match(cmd, /`content_bofu_plan_get\(\{ project_id \}\)`/, 'bofu.md must name the stored-plan read');
+  assert.match(cmd, /`web_scrape` on each URL in `settings\.bofu\.sources`, the pricing page first/, 'rival facts must come from pages read this session');
+  assert.match(cmd, /with that URL as `source`\s+and today as `checked_at`/, 'every rival cell must carry its source and date');
+  assert.match(cmd, /`content_proof_pack\(\{ avatar_id, journey_stage: "Decision" \}\)`/, 'own proof must come from the proof pack');
+  assert.match(cmd, /honest-concession section/, 'the concession section is gone');
+  assert.match(cmd, /`brand_offers_get` for the offer/, 'the decision must point at a brand offer');
+  assert.match(cmd, /"learn more" is not a decision/, 'bofu.md lost the decision rule');
+  assert.match(cmd, /`comparison_table_missing`\s+and `competitor_claim_unsourced`[^.]*are errors/, 'the gate must name the two table rules as errors');
+  assert.match(cmd, /`keyword_collision` names an item already on\s+the keyword - that one is a refresh \(`\/hiveku:refresh`\), never a twin/, 'a collision drop must route to a refresh');
+
+  const ref = read(SITE_ARCHITECTURE_AND_DECAY);
+  assert.match(ref, /^## Bottom-funnel pages - `content_bofu_plan\(\{ project_id, max_candidates\?, seed_drafts\?, min_volume\?, max_difficulty\?, rivals\?, include_ideas\? \}\)` \/ `content_bofu_plan_get\(\{ project_id \}\)`$/m, 'site-architecture-and-decay.md lost the bottom-funnel section');
+  for (const key of ['**It spends up to two DataForSEO research calls**', '`brand-vs-rival`, `rival-alternatives`, `best-category-for-segment`', 'Never write a rival price or feature from memory', '`settings.comparison_table`', '`settings.decision_cta { decision, label,\nurl, offer_id }`', 'Idempotency-Key honoured, so a retried POST does not seed twice']) {
+    assert.ok(ref.includes(key), `site-architecture-and-decay.md no longer says ${JSON.stringify(key)}`);
+  }
+  const skill = read(SKILL);
+  assert.match(skill, /commercial -> a `comparison` or `alternatives` page whose\s+rival claims carry a source and a date - `\/hiveku:bofu`/, 'Play 2 no longer maps commercial intent to the sourced comparison page');
+  assert.match(skill, /`comparison`, `alternatives` and `research` are content types\s+on every content route/, 'Play 2 step 5 no longer names the three types');
+  assert.match(skill, /no rival price\s+or feature written from memory on a comparison page/, 'the hard stops lost the rival-claim closure');
+  assert.match(read('README.md'), /`bofu` \(/, 'README.md does not list the bofu command');
+  assert.match(read(SOCIAL_REPURPOSE), /the bottom-funnel types `comparison`,\s+`alternatives` and `research`/, 'the social repurpose reference does not list the three types');
+  assert.match(read(SITE_PUBLISHING), /landing_page, comparison, alternatives, research, custom/, 'site-publishing.md\'s template enum does not carry the three types');
+
+  const configs = builderSource('src/lib/content-type-configs.ts');
+  const templates = builderSource('src/lib/marketing/content-templates-bofu.ts');
+  if (!configs || !templates) {
+    t.diagnostic('source cross-check skipped: hiveku_builder checkout not beside this repo');
+    return;
+  }
+  assert.match(configs, /BOTTOM_FUNNEL_CONTENT_TYPES = \['comparison', 'alternatives'\]/, 'the builder\'s bottom-funnel types changed');
+  assert.match(templates, /BOFU_TEMPLATE_SLUGS = \['brand-vs-rival', 'rival-alternatives', 'best-category-for-segment'\]/, 'the builder\'s template slugs changed - the reference must change');
+});
+
+test('conversion inside the piece: offers on the guide, the five-stage table, the shortcodes the site renders, and the three buckets are retired', (t) => {
+  const brief = skillSlice('1. **Brief.**', '2. **Draft via the department.**');
+  assert.match(brief, /\*\*Conversion, from the plan\.\*\* `content_conversion_plan\(\{ content_id \}\)`/, 'the Play 3 brief no longer reads the conversion plan');
+  assert.match(brief, /The three buckets \(awareness subscribes,\s+consideration downloads, decision buys\) are retired/, 'the three-bucket rule is back');
+  assert.match(brief, /`lead_magnet_missing` on a long-form piece means proposing one/, 'a missing lead magnet must become a brief item');
+  assert.match(brief, /`offer_missing` on a decision piece means an offer from the owner through\s+`brand_offers_set`/, 'a missing offer must go to the owner');
+  const step2 = skillSlice('2. **Draft via the department.**', '3. **Optimize against the SERP reality:**');
+  assert.match(step2, /one `::cta\{variant=inline\}` after the second section, one `::cta\{variant=end\}`\s+after the last, then `::upgrade` when the piece has a lead magnet - two colons, each on a\s+line of its own/, 'Play 3 step 2 no longer teaches the renderer\'s grammar');
+  assert.match(step2, /carries the placements, never\s+the CTA copy/, 'the department must write placements, not copy');
+  assert.match(read(SKILL), /9\. \*\*What we ask for, and where the site converts:\*\* `brand_offers_get`/, 'Play 1 lost the offers step');
+  assert.match(read(SKILL), /no "learn more" as the decision a comparison page ends\s+on/, 'the hard stops lost the decision closure');
+
+  const ref = read(STRUCTURE_AND_CONVERSION);
+  assert.match(ref, /^## Conversion inside the piece - `brand_offers_get\(\{ project_id\? \}\)`, `brand_offers_set\(\{ offers, project_id\?, expected_lock_version\? \}\)`, `content_conversion_plan\(\{ content_id, ensure_checkpoint\? \}\)`$/m, 'structure-and-conversion.md lost the conversion section');
+  for (const key of ['`brand_offers_set` is a\nFULL REPLACEMENT', '`expected_lock_version`', '409\n`offers_conflict`', '`settings.cta_stage_table`', 'two colons, on a line of its own', '<!-- hiveku:cta variant=end -->', '`lead_magnet { kind, title, asset_id?, content_item_id?,\nform_id?, delivery_sequence_id? }`', '"Learn\nmore" is not a decision']) {
+    assert.ok(ref.includes(key), `structure-and-conversion.md no longer says ${JSON.stringify(key)}`);
+  }
+  const shortcodes = builderSource('src/lib/marketing/content-shortcodes.ts');
+  const conversion = builderSource('src/lib/marketing/content-conversion.ts');
+  if (!shortcodes || !conversion) {
+    t.diagnostic('source cross-check skipped: hiveku_builder checkout not beside this repo');
+    return;
+  }
+  assert.match(shortcodes, /MARKDOWN_SHORTCODE_RE = \/\^\[ \\t\]\*::\(cta\|upgrade\)/, 'the renderer\'s grammar changed (no longer two colons on a line of its own) - the skill and the reference must change');
+  assert.ok(shortcodes.includes('<!-- hiveku:upgrade -->'), 'the html twin of the upgrade shortcode changed');
+  assert.match(conversion, /SCHWARTZ_STAGES = \['unaware', 'problem_aware', 'solution_aware', 'product_aware', 'most_aware'\]/, 'the builder\'s five rungs changed - the reference must change');
+});
+
+test('/hiveku:refresh runs the decision loop: the queue, the brief, one disposition per piece on the row, a refresh that keeps the URL, a take-down that keeps its redirect', (t) => {
+  const cmd = read(REFRESH_COMMAND);
+  assert.match(cmd, /^description: /m, 'refresh.md has no description');
+  assert.match(cmd, /^argument-hint: /m, 'refresh.md has no argument hint');
+  assert.match(cmd, /report "not yet analysed", never "no decay"/, 'the queue must not call an unanalysed library healthy');
+  assert.match(cmd, /`content_prune_candidates\(\{ project_id\?, min_age_days: 365 \}\)`/, 'refresh.md must read the prune list');
+  assert.match(cmd, /`unmeasured\[\]` on its own line\s+with the reason/, 'the unmeasured pieces are never candidates');
+  assert.match(cmd, /`content_refresh_brief_get\(\{\s+content_id \}\)` - spends nothing/, 'refresh.md must read the refresh brief');
+  assert.match(cmd, /\*\*STOP: one disposition per piece\.\*\* `double_down`[\s\S]*`refresh`[\s\S]*`rewrite`[\s\S]*`consolidate`[\s\S]*`prune`/, 'the five dispositions are gone from the STOP');
+  assert.match(cmd, /`content_update\(\{\s+content_id, review_disposition \}\)` - the one decay-side column a session writes/, 'the decision must be recorded on the row');
+  assert.match(cmd, /are read-only \(400\s+`read_only_field`\) and never worked around/, 'refresh.md must refuse to work around the read-only columns');
+  assert.match(cmd, /`content_version_create\(\{ content_id \}\)`\s+FIRST - the only undo/, 'the snapshot must come first');
+  assert.match(cmd, /on the SAME slug \(never a new URL\)/, 'a refresh must keep the URL');
+  assert.match(cmd, /`refreshed: true` and the row's `refreshed_at` are the proof/, 'refresh.md must cite the refresh proof');
+  const consolidate = cmd.slice(cmd.indexOf('6. **Consolidate.**'), cmd.indexOf('7. **Prune.**'));
+  assert.ok(consolidate.indexOf('`project_redirect_create`') < consolidate.indexOf('`content_unpublish_from_site`'), 'the redirect must come before the take-down');
+  assert.match(consolidate, /Never a take-down without its redirect/, 'the consolidate step lost its rule');
+  assert.match(cmd, /NOTHING leaves the internet until the project\s+deploys/, 'the prune step must say the unpublish is live until the deploy');
+  assert.match(cmd, /`content_delete` is not this step/, 'the prune step must refuse content_delete');
+
+  const skill = read(SKILL);
+  assert.match(skill, /6\. \*\*The decision loop - refresh, on the same URL\.\*\* `\/hiveku:refresh` is the play/, 'Play 5 step 6 is no longer the decision loop');
+  assert.match(skill, /`content_list` and keep the rows whose `decay_status` is set and not `recovered`, ordered by\s+`refresh_priority` descending/, 'Play 5 must build the queue from the decay columns');
+  assert.match(skill, /`content_update\(\{ content_id,\s+review_disposition: "refresh" \}\)`/, 'Play 5 must record the refresh disposition');
+  assert.match(skill, /7\. \*\*Kill or consolidate underperformers - five dispositions, recorded\.\*\*/, 'Play 5 step 7 no longer records the dispositions');
+  assert.match(skill, /`content_prune_candidates\(\{ min_age_days: 365 \}\)`/, 'Play 5 no longer reads the prune list');
+  assert.match(skill, /never a\s+take-down without its redirect/, 'Play 5 lost the redirect rule');
+  assert.match(skill, /\*\*Refresh vs new decision matrix \(the five dispositions, recorded as `review_disposition`\):\*\*/, 'the decision matrix no longer names the dispositions');
+  assert.match(skill, /Before any net-new topic the decision loop reads first/, 'Play 2 no longer reads the queue before net-new topics');
+  assert.match(read('README.md'), /`refresh` \(/, 'README.md does not list the refresh command');
+
+  const ref = read(SITE_ARCHITECTURE_AND_DECAY);
+  assert.match(ref, /^## The decision loop - `content_prune_candidates\(\{ min_age_days\?, limit\?, project_id\? \}\)`, `content_refresh_brief_get\(\{ content_id \}\)`, and `review_disposition`$/m, 'site-architecture-and-decay.md lost the decision loop section');
+  for (const key of ['a zero the collector could not produce is\nnot a zero', '`suggested_disposition` follows the rule every channel\nshares', '`settings.decay_episode` is that claim -\nnever clear it', '**The refresh play - the URL stays.**', 'is not re-notified', 'only when they cover\nthe window', 'Money pages are\nexcluded and counted']) {
+    assert.ok(ref.includes(key), `site-architecture-and-decay.md no longer says ${JSON.stringify(key)}`);
+  }
+  for (const disposition of REVIEW_DISPOSITIONS) {
+    assert.ok(ref.includes(`\`${disposition}\``), `site-architecture-and-decay.md no longer names ${disposition}`);
+  }
+  const decay = builderSource('src/lib/marketing/content-decay.ts');
+  if (!decay) {
+    t.diagnostic('source cross-check skipped: hiveku_builder checkout not beside this repo');
+    return;
+  }
+  assert.match(decay, /REVIEW_DISPOSITIONS = \['double_down', 'refresh', 'rewrite', 'consolidate', 'prune'\]/, 'the builder\'s dispositions changed - the prose must change');
+  assert.match(decay, /DECAY_RECOVERED_STATUS = 'recovered'/, 'the builder\'s recovered status changed');
+  assert.match(decay, /CONTENT_UNPUBLISH_TOOL = 'content_unpublish_from_site'/, 'the prune default action names a different tool now');
+});
+
+test('the eleven elite rules are taught with the level the check assigns, and the two hand-fixed ones are named', (t) => {
+  const gate = skillSlice('5. **Quality gate', '6. **Persist:');
+  for (const [id] of ELITE_RULES) {
+    assert.ok(gate.includes(`\`${id}\``), `the quality gate does not name ${id}`);
+  }
+  assert.match(gate, /`title_generic` and `cta_stage_mismatch` are the two a writer fixes\s+by hand/, 'the gate must name the two rules fixed by hand');
+  const ref = read(STRUCTURE_AND_CONVERSION);
+  assert.match(ref, /^## The eleven elite rules in `content_seo_check`$/m, 'structure-and-conversion.md lost the rules section');
+  for (const [id, level] of ELITE_RULES) {
+    assert.match(ref, new RegExp(`^\\| \`${id}\` \\| ${level} \\| `, 'm'), `the rules table does not list ${id} as ${level}`);
+  }
+  const publishing = read(SITE_PUBLISHING);
+  for (const [id] of ELITE_RULES) {
+    assert.ok(publishing.includes(`\`${id}\``), `site-publishing.md's check section does not name ${id}`);
+  }
+  const check = builderSource('src/lib/marketing/content-seo-check.ts');
+  if (!check) {
+    t.diagnostic('source cross-check skipped: hiveku_builder checkout not beside this repo');
+    return;
+  }
+  // The rule header in content-seo-check.ts states each id with its level.
+  for (const [id, level] of ELITE_RULES) {
+    const m = check.match(new RegExp(`\\*\\s+${id} \\((error|warn)\\)`));
+    assert.ok(m, `content-seo-check.ts no longer documents ${id} in its rule header`);
+    assert.equal(m[1], level, `content-seo-check.ts assigns ${id} level ${m[1]}; the prose says ${level}`);
+  }
+});
+
+test('the round-B prose carries no exclamation marks and is named by the skill', () => {
+  // The html twins of the shortcodes (`<!-- hiveku:cta -->`) are grammar the
+  // renderer reads, not copy; a line quoting one is not a shout.
+  for (const rel of [STRUCTURE_AND_CONVERSION, SITE_ARCHITECTURE_AND_DECAY, BOFU, REFRESH_COMMAND, SEO_BRIEF]) {
+    const shouts = read(rel).split('\n').filter((line) => /!/.test(line) && !/exclamation/.test(line) && !/<!--/.test(line));
+    assert.deepEqual(shouts, [], `${rel} carries an exclamation mark in shipped copy`);
+  }
+  const skill = read(SKILL);
+  assert.match(skill, /`references\/structure-and-conversion\.md` - before the brief of any piece/, 'the reference list no longer names structure-and-conversion.md');
+  assert.match(skill, /`references\/site-architecture-and-decay\.md` - before placing a piece on the site/, 'the reference list no longer names site-architecture-and-decay.md');
+  assert.match(skill, /`\/hiveku:bofu`/, 'the skill no longer sends bottom-funnel work to /hiveku:bofu');
+  assert.match(skill, /`\/hiveku:refresh`/, 'the skill no longer sends the decision loop to /hiveku:refresh');
+  const shouts = skill.split('\n').filter((line) => /!/.test(line) && !/exclamation/.test(line));
+  assert.deepEqual(shouts, [], 'the content skill carries an exclamation mark in shipped copy');
 });
