@@ -1,0 +1,135 @@
+[
+  {
+    "id": "ci_sand_between_coats_01",
+    "account_id": "acct_fixture_content",
+    "title": "Why we sand between coats",
+    "slug": "why-we-sand-between-coats",
+    "content_type": "blog_post",
+    "status": "draft",
+    "excerpt": "Calendar slot 2026-09 week 1: the finish-durability cluster, a supporting post under the finish schedule pillar. Brief on the linked PM task.",
+    "content": "",
+    "meta_title": null,
+    "meta_description": null,
+    "meta_keywords": [],
+    "canonical_url": null,
+    "featured_image_url": "https://cdn.brightsidefixtures.example/media/finish-room-320-grit.jpg",
+    "featured_image_alt": null,
+    "tags": [
+      "cluster:finish-durability",
+      "calendar:2026-09-w1"
+    ],
+    "category_id": "cat_shop_notes",
+    "website_project_id": "wp_brightside_01",
+    "cms_collection_id": "blog",
+    "cms_entry_slug": null,
+    "settings": {
+      "target_keyword": "sand between coats",
+      "linkedTaskIds": [
+        "task_sept_blog_01"
+      ]
+    },
+    "published_at": null,
+    "last_published_to_cms_at": null,
+    "url": null,
+    "created_at": "2026-08-30T15:00:00Z",
+    "updated_at": "2026-09-02T09:30:00Z"
+  },
+  {
+    "id": "ci_finish_schedule_01",
+    "account_id": "acct_fixture_content",
+    "title": "The finish schedule we follow, coat by coat",
+    "slug": "finish-schedule",
+    "content_type": "blog_post",
+    "status": "published",
+    "excerpt": "Every coat, every pass, every grit - the schedule our finish room runs on.",
+    "content": "## The schedule\n\nSealer, scuff at 320, first coat, scuff at 320, second coat, scuff at 320, top coat. Twenty minutes a door for the passes, and the door still closes at month eighteen.\n",
+    "meta_title": "The finish schedule we follow, coat by coat",
+    "meta_description": "Sealer, three coats and a 320 scuff pass between each: the finish schedule our doors run on, and why the pass is the step that matters.",
+    "meta_keywords": [
+      "cabinet finish schedule"
+    ],
+    "canonical_url": null,
+    "featured_image_url": "https://cdn.brightsidefixtures.example/media/finish-room-rack.jpg",
+    "featured_image_alt": "A rack of cabinet doors between coats in the Brightside finish room",
+    "tags": [
+      "cluster:finish-durability",
+      "pillar"
+    ],
+    "category_id": "cat_shop_notes",
+    "website_project_id": "wp_brightside_01",
+    "cms_collection_id": "blog",
+    "cms_entry_slug": "finish-schedule",
+    "settings": {
+      "target_keyword": "cabinet finish schedule",
+      "published_route": "/blog/finish-schedule"
+    },
+    "published_at": "2026-06-18T14:00:00Z",
+    "last_published_to_cms_at": "2026-06-18T14:00:00Z",
+    "url": "https://brightsidefixtures.example/blog/finish-schedule",
+    "created_at": "2026-06-10T15:00:00Z",
+    "updated_at": "2026-06-18T14:00:00Z"
+  },
+  {
+    "id": "ci_call_backs_01",
+    "account_id": "acct_fixture_content",
+    "title": "What a call-back actually costs a two-crew contractor",
+    "slug": "what-a-call-back-costs",
+    "content_type": "blog_post",
+    "status": "published",
+    "excerpt": "The day, the crew, and the client who does not book the next kitchen.",
+    "content": "## The invoice nobody sends\n\nA call-back is a crew day with no invoice behind it, and a client who now has a reason to shop around.\n",
+    "meta_title": "What a call-back actually costs a two-crew contractor",
+    "meta_description": "A lifted finish is a crew day with no invoice and a client who shops around. What a call-back costs a two-crew remodeling contractor, line by line.",
+    "meta_keywords": [
+      "call-back cost contractor"
+    ],
+    "canonical_url": null,
+    "featured_image_url": "https://cdn.brightsidefixtures.example/media/lifted-finish-door.jpg",
+    "featured_image_alt": "A cabinet door with lacquer lifting along the frame seam",
+    "tags": [
+      "cluster:finish-durability"
+    ],
+    "category_id": "cat_shop_notes",
+    "website_project_id": "wp_brightside_01",
+    "cms_collection_id": "blog",
+    "cms_entry_slug": "what-a-call-back-costs",
+    "settings": {
+      "target_keyword": "call-back cost contractor",
+      "published_route": "/blog/what-a-call-back-costs"
+    },
+    "published_at": "2026-08-06T14:00:00Z",
+    "last_published_to_cms_at": "2026-08-06T14:00:00Z",
+    "url": "https://brightsidefixtures.example/blog/what-a-call-back-costs",
+    "created_at": "2026-07-28T15:00:00Z",
+    "updated_at": "2026-08-06T14:00:00Z"
+  },
+  {
+    "id": "ci_shop_tour_01",
+    "account_id": "acct_fixture_content",
+    "title": "Shop tour, June",
+    "slug": "shop-tour-june",
+    "content_type": "blog_post",
+    "status": "published",
+    "excerpt": "Photos from the June open shop.",
+    "content": "## June open shop\n\nSixty visitors, one very patient finisher.\n",
+    "meta_title": "Shop tour, June",
+    "meta_description": "Photos and notes from the June open shop at Brightside Fixtures.",
+    "meta_keywords": [],
+    "canonical_url": null,
+    "featured_image_url": null,
+    "featured_image_alt": null,
+    "tags": [
+      "news"
+    ],
+    "category_id": "cat_news",
+    "website_project_id": "wp_brightside_01",
+    "cms_collection_id": "news",
+    "cms_entry_slug": "shop-tour-june",
+    "settings": {},
+    "published_at": "2026-06-30T14:00:00Z",
+    "last_published_to_cms_at": "2026-06-30T14:00:00Z",
+    "url": null,
+    "created_at": "2026-06-29T15:00:00Z",
+    "updated_at": "2026-06-30T14:00:00Z"
+  }
+]

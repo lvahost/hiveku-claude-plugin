@@ -1,0 +1,46 @@
+[
+  {
+    "id": "grid_harlow_01",
+    "account_id": "acct_fixture_content",
+    "name": "Harlow Street refit - Whitfield Renovations",
+    "description": "A 41-door kitchen and bath refit for a repeat trade client, delivered June 2025 and checked at 18 months.",
+    "target_avatar_id": "avt_marcus_01",
+    "audience_context": "Trade contractors judged on first-year call-backs.",
+    "is_active": true,
+    "key_benefits": [
+      "No call-back week on the contractor's calendar",
+      "The homeowner stopped asking about the finish",
+      "A standing order for the next three kitchens"
+    ],
+    "measurable_results": [
+      "41 doors finished with the 320 scuff pass between every coat",
+      "Zero call-backs at the 18-month check (December 2026 site visit)",
+      "Install landed on the booked date, 2025-06-12"
+    ],
+    "transformation_story": "Whitfield Renovations came to Brightside after a lacquer failure on another shop's doors cost them a repeat client. Harlow Street was the trial job: 41 doors, a vanity boxed around a heating pipe the drawing never showed, and a finish schedule with a scuff pass between every coat. Eighteen months on, every door closes and none has lifted.",
+    "grid_items": [
+      {
+        "before": {
+          "title": "Before",
+          "description": "A repeat client lost over a lifted lacquer finish on another shop's doors; the contractor ate the invoice.",
+          "pain_points": [
+            "finish lifted at 11 months",
+            "call-back week every quarter",
+            "shop blamed the cleaning products"
+          ]
+        },
+        "after": {
+          "title": "After",
+          "description": "Forty-one doors, eighteen months, no lifted finish and no call-back week.",
+          "benefits": [
+            "zero call-backs at the 18-month check",
+            "a standing order for the next three kitchens",
+            "the homeowner stopped asking about the finish"
+          ]
+        }
+      }
+    ],
+    "created_at": "2026-06-20T15:00:00Z",
+    "updated_at": "2026-08-15T15:00:00Z"
+  }
+]

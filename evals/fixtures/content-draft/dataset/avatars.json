@@ -1,0 +1,63 @@
+[
+  {
+    "id": "avt_marcus_01",
+    "account_id": "acct_fixture_content",
+    "name": "Marcus",
+    "summary": "Trade contractor running two kitchen-and-bath crews in the Dallas suburbs; buys cabinetry repeatedly and is judged by his clients on call-backs.",
+    "description": "Kitchen and bath remodeling contractor, 12 years in, two crews, a dispatcher and a phone that rings on ladders. Buys doors and boxes from three shops and drops the one that costs him a call-back.",
+    "tags": [
+      "trade",
+      "repeat-buyer"
+    ],
+    "occupation": "Kitchen and bath remodeling contractor",
+    "location": "Dallas suburbs, Texas",
+    "age_range": "38-52",
+    "primary_goals": [
+      "Zero call-backs in the first year",
+      "A cabinet shop that hits the install date",
+      "Finishes that survive a working kitchen"
+    ],
+    "pain_points": [
+      "A finish that lifts inside a year and lands on his invoice",
+      "Lead times that slip after the demo is booked",
+      "Shop drawings that miss the false fronts"
+    ],
+    "typical_quote": "I do not need it pretty on day one. I need it to look the same at month eighteen.",
+    "background_story": "Started as a trim carpenter, went out on his own at 30, added the second crew in 2022. Lost a repeat client in 2024 over a lifted lacquer finish on another shop's doors and has audited every shop's finish room since.",
+    "buying_behavior": {
+      "decision_style": "Compares three shops on the finish schedule and the install-date record, not the showroom.",
+      "objections": [
+        "Every shop says it sands between coats; none of them show me the schedule.",
+        "A twenty-minute step per door is a day on a forty-door job."
+      ],
+      "proof_that_moves_him": [
+        "A named job with an 18-month check",
+        "The grit and the pass written down"
+      ]
+    },
+    "online_behavior": {
+      "reads": [
+        "trade Facebook groups",
+        "LinkedIn at 6am",
+        "shop blogs when a client forwards one"
+      ],
+      "social_platforms": [
+        "linkedin",
+        "facebook"
+      ],
+      "search_terms": [
+        "cabinet finish lifting",
+        "sand between coats lacquer",
+        "why do cabinet doors peel"
+      ]
+    },
+    "language": [
+      "call-back",
+      "the finish lifted",
+      "it landed on my invoice",
+      "month eighteen"
+    ],
+    "created_at": "2026-05-02T15:00:00Z",
+    "updated_at": "2026-08-11T15:40:00Z"
+  }
+]

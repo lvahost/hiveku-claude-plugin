@@ -1,0 +1,49 @@
+{
+  "project": {
+    "id": "wp_brightside_01",
+    "name": "Brightside Fixtures site",
+    "project_type": "nextjs",
+    "external_platform": null,
+    "host": "brightsidefixtures.example",
+    "production_url": "https://brightsidefixtures.example",
+    "deployment_status": "deployed",
+    "custom_domain": "brightsidefixtures.example",
+    "cms_provider": "native"
+  },
+  "links": [
+    {
+      "id": "ci_finish_schedule_01",
+      "title": "The finish schedule we follow, coat by coat",
+      "url": "https://brightsidefixtures.example/blog/finish-schedule",
+      "type": "post",
+      "published_at": "2026-06-18T14:00:00Z",
+      "slug": "finish-schedule",
+      "source": "content_item"
+    },
+    {
+      "id": "ci_call_backs_01",
+      "title": "What a call-back actually costs a two-crew contractor",
+      "url": "https://brightsidefixtures.example/blog/what-a-call-back-costs",
+      "type": "post",
+      "published_at": "2026-08-06T14:00:00Z",
+      "slug": "what-a-call-back-costs",
+      "source": "content_item"
+    },
+    {
+      "id": "page:/cabinet-doors",
+      "title": "Cabinet doors",
+      "url": "https://brightsidefixtures.example/cabinet-doors",
+      "type": "page",
+      "published_at": null,
+      "slug": "cabinet-doors",
+      "source": "page_list"
+    }
+  ],
+  "without_url": [
+    {
+      "id": "ci_shop_tour_01",
+      "title": "Shop tour, June",
+      "note": "1 published post has no resolvable URL: \"Shop tour, June\" (ci_shop_tour_01) is in collection \"news\", which has no route pattern in the CMS manifest; give the collection a route before linking to it."
+    }
+  ]
+}

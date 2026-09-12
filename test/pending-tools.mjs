@@ -136,4 +136,20 @@ export const PENDING_TOOLS = new Map([
   // on the native CMS until a human switches it in the dashboard. Gated
   // because flipping it points every subsequent content write at the
   // customer's live site.
+
+  // CONTENT-1 (2026-09-12): the content program's three hands - the on-page
+  // pre-publish check, the site's published-URL list, and the department-turn
+  // poll handle. The builder routes are live on hiveku_builder main
+  // (content_seo_check: 5387b132b + ebceb8cf9, GET
+  // /api/olympus/marketing/content/:contentId/seo-check; content_site_links:
+  // 467fb70e2, GET /api/olympus/marketing/content/site-links?project_id=;
+  // department_turn_get: 1b4b833e0, GET /api/olympus/marketing/ai/turns/:turnId);
+  // the MCP mappings land with the parallel MCP lane and the index regenerates
+  // after that deploy. Spelled in hiveku-content-agency/references/
+  // site-publishing.md's Availability table and, by the content lane's brief,
+  // in the skill's Play 3 gate. department_turn_get has no gated prefix; it
+  // rides here so the content-draft fixture self-test sees one ledger.
+  ['content_seo_check', { since: '2026-09-12', batch: 'CONTENT-1' }],
+  ['content_site_links', { since: '2026-09-12', batch: 'CONTENT-1' }],
+  ['department_turn_get', { since: '2026-09-12', batch: 'CONTENT-1' }],
 ]);

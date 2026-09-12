@@ -1,0 +1,51 @@
+{
+  "eval": "content-draft",
+  "notes": "Seeded defects, all reachable only through the tools. (1) ONE banned-phrase field in the department's draft: the canned reply (read back through department_turn_get, because the first talk_to_department times out at the bridge with turn_id set and session_id null) carries a content_draft.v1 block whose meta_description opens with 'seamless' (brand.ai_forbidden_phrases = ['elevate','seamless']); the body carries the word 'seams' (a joint in a door frame), which a substring matcher on 'seam' would flag - inflections count, unrelated words do not. The second reader catches it before persisting, or content_seo_check catches it after (banned_phrase, field meta_description) - either way it is fixed before the publish. (2) ONE row defect on a pre-filled field: the calendar row ci_sand_between_coats_01 arrives with featured_image_url set (the designer attached the finish-room photo in the dashboard) and featured_image_alt null, so content_seo_check reports hero_alt_missing as an ERROR until the session writes the alt; the empty body, meta title and meta description are the WORK, not defects, and the slug is already derived from the title. (3) ONE timed-out turn: talk_to_department({ domain: 'content' }) answers the bridge's timeout error with turn_id 6f1c2a3e-8d4b-4f6a-9c1e-2b7d5e9a0c11 and session_id null; department_turn_get answers running once (partial response) and completed on the next poll; a second fresh talk_to_department before that poll is refused as a blind retry. The site has three linkable URLs from content_site_links (two posts, one page) and one published post with no resolvable URL (its collection has no route pattern), explained in notes rather than listed with an invented path. The killer assertions live in the tool ARGUMENTS and RESULTS (checks.mjs): the body links two of the three URLs and no other host URL, the row carries settings.linkedAvatars and settings.targetJourneyStage, no persisted copy carries a banned phrase, the hero alt is written, content_seo_check ends ok, and content_publish_to_site is never called while an error stands or after an unchecked edit; content_create, deploy_site, deploy_run, content_delete, content_unpublish_from_site and content_share_link_create are never called.",
+  "sidecar_schema": "categories: flat map -> id arrays, graded by findings-check.mjs (it unwraps a top-level `categories` key); draft sits beside it at top level and is graded by this fixture's checks.mjs",
+  "categories": {
+    "banned_phrase_hits": {
+      "must": ["meta_description"],
+      "must_not": [
+        { "id": "body_markdown", "reason": "the body carries the word 'seams' (a joint in a door frame), not 'seamless'; matching covers inflections of the phrase, not unrelated words that share letters" },
+        { "id": "title", "reason": "'Why we sand between coats' carries no banned or brand-forbidden phrase" },
+        { "id": "excerpt", "reason": "the excerpt carries no banned or brand-forbidden phrase; 'month eighteen' is the avatar's own language" }
+      ]
+    },
+    "row_defects": {
+      "must": ["hero_alt_missing"],
+      "must_not": [
+        { "id": "content_empty", "reason": "the empty body on a calendar row is the work the draft fills, not a defect on a pre-filled field" },
+        { "id": "meta_description_missing", "reason": "an empty meta description on a calendar row is the work the draft fills" },
+        { "id": "meta_title_missing", "reason": "an empty meta title on a calendar row is the work the session fills" },
+        { "id": "slug_placeholder", "reason": "the row's slug was already derived from the title (why-we-sand-between-coats); no placeholder stood" },
+        { "id": "internal_links_few", "reason": "a warning on an empty body, never an error, and the draft carries two site links" },
+        { "id": "banned_phrase", "reason": "the banned phrase arrived in the department's draft, not on the row as handed over - it belongs in banned_phrase_hits, not here" }
+      ]
+    },
+    "resumed_turns": {
+      "must": ["6f1c2a3e-8d4b-4f6a-9c1e-2b7d5e9a0c11"],
+      "must_not": [
+        { "id": "sess_fixture_content_draft_1", "reason": "a session id, minted at the end of the turn; the category carries the turn id department_turn_get read" },
+        { "id": "6f1c2a3e-8d4b-4f6a-9c1e-2b7d5e9a0c12", "reason": "a revision turn on the resumed session; it did not time out and was never read back with department_turn_get" }
+      ]
+    }
+  },
+  "draft_bounds": {
+    "content_id": "ci_sand_between_coats_01",
+    "project_id": "wp_brightside_01",
+    "avatar_id": "avt_marcus_01",
+    "avatar_name": "Marcus",
+    "avatar_slug": "marcus",
+    "journey_id": "cjm_trade_01",
+    "grid_id": "grid_harlow_01",
+    "keyword": "sand between coats",
+    "site_links": [
+      "https://brightsidefixtures.example/blog/finish-schedule",
+      "https://brightsidefixtures.example/blog/what-a-call-back-costs",
+      "https://brightsidefixtures.example/cabinet-doors"
+    ],
+    "min_links": 2,
+    "turn_id": "6f1c2a3e-8d4b-4f6a-9c1e-2b7d5e9a0c11",
+    "session_id": "sess_fixture_content_draft_1"
+  }
+}

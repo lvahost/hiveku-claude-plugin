@@ -1,0 +1,111 @@
+{
+  "identity": {
+    "domain": "content",
+    "persona": "Brightside content - plain-spoken and craft-proud, first person plural, no exclamation marks, no emojis"
+  },
+  "memory": {
+    "entries": [
+      {
+        "memory_id": "mem_content_1",
+        "type": "memory",
+        "name": "content",
+        "domain": "content",
+        "content": "Content notes for Brightside Fixtures: the finish-durability cluster's pillar is the finish schedule post (ci_finish_schedule_01); supporting posts link up to it and to the call-back cost post. Target keyword for the September piece: sand between coats. Client approval on record 2026-09-04 (Dana Whitfield, by email): the September piece may be published to the blog once the pre-publish check passes with zero errors. Deploys are the web team's Friday job; we never run deploy_site ourselves."
+      }
+    ]
+  },
+  "kb": {
+    "knowledge_bases": [
+      {
+        "id": "kb_handbook_01",
+        "name": "Brightside shop handbook"
+      }
+    ],
+    "documents": [
+      {
+        "id": "kbdoc_finish_schedule_01",
+        "knowledgeBaseId": "kb_handbook_01",
+        "knowledgeBaseName": "Brightside shop handbook",
+        "title": "Finish schedule: the scuff pass between coats",
+        "content": "Every coat of lacquer cures to a closed surface the next coat cannot grip. A light pass with 320-grit paper opens it into a key the next coat flows into. The pass runs between every coat, not just before the top coat. It adds about twenty minutes a door. Since the schedule went in (2023) the shop has finished 312 doors on it with no lifted-finish call-back.",
+        "keywords": [
+          "finish schedule",
+          "sand between coats",
+          "320 grit",
+          "key",
+          "adhesion"
+        ],
+        "updated_at": "2026-05-04T15:00:00Z"
+      },
+      {
+        "id": "kbdoc_lead_times_01",
+        "knowledgeBaseId": "kb_handbook_01",
+        "knowledgeBaseName": "Brightside shop handbook",
+        "title": "Lead times by product (internal - never quote publicly)",
+        "content": "Doors 4 weeks, boxes 5 weeks, full kitchens 7 to 9 weeks depending on the finish. Quote only through the sales inbox.",
+        "keywords": [
+          "lead time",
+          "internal"
+        ],
+        "updated_at": "2026-08-20T15:00:00Z"
+      }
+    ]
+  },
+  "pm": {
+    "projects": [
+      {
+        "id": "proj_fixture_ops",
+        "name": "Fixture Ops",
+        "status": "active",
+        "project_type": "marketing"
+      }
+    ],
+    "tasks": [
+      {
+        "id": "task_sept_blog_01",
+        "project_id": "proj_fixture_ops",
+        "title": "September blog: why we sand between coats",
+        "status": "in_progress",
+        "description": "Brief: supporting post under the finish schedule pillar for the trade contractor at Problem Aware. Angle: the failure mechanism (no key between coats) and what it costs him. Keyword: sand between coats. Hero already attached from the media library. Sources: the handbook finish-schedule page and the Harlow Street grid. Link to the pillar and the call-back post."
+      }
+    ]
+  },
+  "department": {
+    "turn_id": "6f1c2a3e-8d4b-4f6a-9c1e-2b7d5e9a0c11",
+    "session_id": "sess_fixture_content_draft_1",
+    "timeout_window_seconds": 108,
+    "started_at": "2026-09-05T15:00:00Z",
+    "finished_at": "2026-09-05T15:03:40Z",
+    "preamble": "Brightside content here. The draft for Marcus at Problem Aware is below, aimed at sand between coats, proof from the handbook finish-schedule page and the Harlow Street grid, linked up to the pillar and across to the call-back post from the site links you passed. The hero on the row is the finish-room photo; write its alt from what the photo shows. Meta description and excerpt are in the block. You are the second reader.",
+    "revision_preamble": "Revised as asked. The block below is the current draft; nothing else on the row changed.",
+    "draft": {
+      "version": "content_draft.v1",
+      "for": {
+        "avatar_id": "avt_marcus_01",
+        "name": "Marcus"
+      },
+      "stage": "Problem Aware",
+      "journey_id": "cjm_trade_01",
+      "grid_id": "grid_harlow_01",
+      "target_keyword": "sand between coats",
+      "title": "Why we sand between coats",
+      "meta_description": "A seamless finish starts between the coats: why we scuff every coat at 320 grit, what skipping it costs a contractor, and the 41-door job that proves it.",
+      "excerpt": "The step most shops skip when the schedule slips is the step that decides whether the finish is still on the door at month eighteen.",
+      "internal_links": [
+        "https://brightsidefixtures.example/blog/finish-schedule",
+        "https://brightsidefixtures.example/blog/what-a-call-back-costs"
+      ],
+      "sources": [
+        {
+          "url": "https://finishing-standards.example/adhesion/cross-hatch",
+          "claim": "keyed coats hold the cross-hatch adhesion test where unkeyed coats flake"
+        },
+        {
+          "kb_document_id": "kbdoc_finish_schedule_01",
+          "claim": "the pass adds about twenty minutes a door"
+        }
+      ],
+      "body_markdown": "We sand between coats on every door because it is the step that decides whether the finish is still on the door at month eighteen. Most shops skip it when the schedule slips. Here is what the pass does, what skipping it costs, and the job that proves it.\n\n## What the second coat needs from the first\n\nA coat of lacquer cures to a hard, closed surface. The next coat can sit on it, but it cannot grip it. A light pass with 320-grit paper opens that surface into thousands of tiny scratches - the key - and the next coat flows into them and locks. Without the key, the coats are two layers resting on each other. They look fine on install day. They part at the first hard knock, usually at the seams of a door frame, and the finish lifts.\n\n## What skipping it costs\n\nA lifted finish does not stay the shop's problem. It lands on the contractor's invoice as a call-back, and we have written up [what a call-back actually costs a two-crew contractor](https://brightsidefixtures.example/blog/what-a-call-back-costs): the day, the crew, and the client who does not book the next kitchen.\n\n## How we run it\n\nOur [finish schedule](https://brightsidefixtures.example/blog/finish-schedule) has the scuff pass between every coat, not just before the top coat. The paper is 320, the pass is light, and the dust is wiped before the next coat goes on. It adds about twenty minutes a door. Adhesion testing on keyed against unkeyed coats is well documented: the [cross-hatch results](https://finishing-standards.example/adhesion/cross-hatch) show the keyed coat holding where the unkeyed one flakes.\n\n## The job that proves it\n\nHarlow Street was 41 doors for a repeat trade client, delivered in June 2025 with the scuff pass between every coat, and the numbers are in the [finish schedule](https://brightsidefixtures.example/blog/finish-schedule) write-up. At the 18-month check none of the 41 had lifted, and the contractor had not scheduled a call-back week. That is the whole argument: the finish looked the same at month eighteen as it did on install day.\n\n## What to ask your shop\n\nDo not ask how many coats. Ask what happens between them. A shop that answers \"we sand\" without a grit and a pass is guessing. A shop that answers \"320, light, every coat\" has a schedule you can hold it to. Book a showroom visit and we will show you ours.\n"
+    }
+  }
+}

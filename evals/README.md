@@ -51,6 +51,9 @@ evals/
     local/              local-SEO fixture for /hiveku:local (GBP, citations,
                         local organic; live GBP read counts are gated)
     phone-check/        telephony fixture for /hiveku:phone-check
+    content-draft/      content fixture for the hiveku-content-agency skill's
+                        Play 3 (one blog post: draft, check, fix, publish;
+                        skill-driven, no command of its own - see below)
       dataset/*.json        the account's truth, internally consistent
       tools.mjs             executable tool surface over the dataset
       prompt.md             eval contract shown to the session (NO answers in it)
@@ -179,10 +182,41 @@ Covered: **11 of the plugin's 135 commands** - `/hiveku:ap-screen` and
 `/hiveku:phone-check` (2026-08-29), `/hiveku:local` (2026-08-30),
 `/hiveku:automation-sweep`, and the social program's `/hiveku:social-post`,
 `/hiveku:engage` and `/hiveku:social-report` (2026-09-03) - chosen because each
-has a crisp defect model. That exercises slices of 8 of the 19 skills'
-disciplines (books, helpdesk, paid media, conversion tracking, social,
-telephony, local SEO, automation). `ppc-optimize` is the first case whose grade also
-depends on which tools the session did NOT call.
+has a crisp defect model - plus one skill-driven case, `content-draft`
+(2026-09-12), for the content skill's Play 3. That exercises slices of 9 of
+the 19 skills' disciplines (books, helpdesk, paid media, conversion tracking,
+social, telephony, local SEO, automation, content). `ppc-optimize` is the first
+case whose grade also depends on which tools the session did NOT call.
+
+`content-draft`: one blog post for a cabinet workshop's trade-contractor
+avatar, on the calendar row the dashboard already holds, frozen at
+2026-09-05T15:00Z - the content-engine audit's round-2 contracts under test.
+Seeds: the department's draft, delivered through a `talk_to_department` turn
+that TIMES OUT at the bridge (an error carrying `turn_id` and a null
+`session_id`, exactly the live failure) and is read back with
+`department_turn_get` (running once, completed on the next poll; a second
+fresh conversation before that is refused as a blind retry), opens its meta
+description on a brand-forbidden phrase while the body carries a look-alike
+word that must survive; the row arrives with a hero image and no alt, so
+`content_seo_check` - a port of the builder's checker, run on the STORED row -
+reports one error until the alt is written; `content_site_links` returns three
+linkable URLs (two posts, one page) and explains one published post it cannot
+resolve rather than inventing a path. The client's written yes to publish once
+the check is clean is on record, so `content_publish_to_site` is allowed - and
+it never blocks: a publish while an error stands is a 200 with the error in
+`warnings[]`, which `checks.mjs` fails, along with a publish after an
+unchecked edit, a body with fewer than two of the three URLs or a URL the tool
+never returned, a row with no avatar or stage, a persisted banned phrase, a
+skipped check, a blind retry, a turn never read back, links read after the
+body, and any `content_create`, `deploy_site`, `deploy_run`, `content_delete`,
+`content_unpublish_from_site` or `content_share_link_create` call. No
+`sample-run/` golden yet - producing one needs a model-in-the-loop run
+(follow-up); the deterministic invariants and the hook's failure cases run
+over a synthetic transcript in `self-test/content-draft-fixture.test.mjs`.
+Runner note: `run-eval.sh` pairs a case with `commands/<case>.md`, and this
+case has no command - its `prompt.md` is written to follow
+`skills/hiveku-content-agency/SKILL.md`, so a model-in-the-loop run feeds
+that file plus the prompt over stdin the way the runner does for a command.
 
 `phone-check`: a five-DID voice tenant for "the phones aren't ringing and one
 rep says she can't dial out", frozen at 2026-08-29T15:00Z. The headline trap
@@ -278,7 +312,7 @@ write surface, not just the tools the command names.
 Adding a case: copy a fixture directory's shape, keep `dataset/` internally
 consistent (add invariants to a self-test - `fixtures.test.mjs` for the v1
 cases and `phone-check`, one file per fixture from `ppc-optimize.test.mjs`
-on - the aging must
+on, `content-draft-fixture.test.mjs` for the content case - the aging must
 reconcile, the seeds must stay the only defect-shaped rows, and every served
 tool name must exist in `lib/tool-index.json`), seed at most a handful of
 defects with named traps, keep the answer key out of `prompt.md`, and add a

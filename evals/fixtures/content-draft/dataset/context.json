@@ -1,0 +1,135 @@
+{
+  "account": "Brightside Fixtures",
+  "account_id": "acct_fixture_content",
+  "domain": "content",
+  "timezone": "America/Chicago",
+  "sections_included": [
+    "identity",
+    "brand",
+    "memory",
+    "rules",
+    "avatars",
+    "journeys",
+    "grids",
+    "content_examples"
+  ],
+  "has": {
+    "skills": true,
+    "content_examples": true,
+    "grids": true,
+    "social": true
+  },
+  "size": {
+    "approx_chars": 7400
+  },
+  "persona": "Brightside Fixtures - a Midwest cabinet and fixture workshop that sells to renovating homeowners and trade contractors. Craft-proud, plain-spoken, generous with know-how.",
+  "brand_voice": "plain-spoken, warm, craft-proud; first person plural; short sentences; no exclamation marks; no emojis; no hype words",
+  "brand": {
+    "id": "bg_brightside_01",
+    "name": "Brightside Fixtures brand guide",
+    "is_active": true,
+    "brand_is": [
+      "plain-spoken",
+      "specific",
+      "craft-proud",
+      "patient"
+    ],
+    "brand_is_not": [
+      "hyped",
+      "salesy",
+      "vague",
+      "breathless"
+    ],
+    "cta_primary": "Book a showroom visit",
+    "copy_dos": [
+      "name the grit and the pass",
+      "lead with what it costs the contractor"
+    ],
+    "copy_donts": [
+      "exclamation marks",
+      "emojis",
+      "promising a lead time in public"
+    ],
+    "ai_forbidden_phrases": [
+      "elevate",
+      "seamless"
+    ],
+    "updated_at": "2026-07-30T16:00:00Z"
+  },
+  "avatars": [
+    {
+      "id": "avt_marcus_01",
+      "name": "Marcus",
+      "summary": "Trade contractor running two kitchen-and-bath crews in the Dallas suburbs; buys cabinetry repeatedly and is judged by his clients on call-backs.",
+      "description": "Kitchen and bath remodeling contractor, 12 years in, two crews, a dispatcher and a phone that rings on ladders. Buys doors and boxes from three shops and drops the one that costs him a call-back.",
+      "tags": [
+        "trade",
+        "repeat-buyer"
+      ],
+      "occupation": "Kitchen and bath remodeling contractor",
+      "primary_goals": [
+        "Zero call-backs in the first year",
+        "A cabinet shop that hits the install date",
+        "Finishes that survive a working kitchen"
+      ],
+      "pain_points": [
+        "A finish that lifts inside a year and lands on his invoice",
+        "Lead times that slip after the demo is booked",
+        "Shop drawings that miss the false fronts"
+      ],
+      "typical_quote": "I do not need it pretty on day one. I need it to look the same at month eighteen.",
+      "updated_at": "2026-08-11T15:40:00Z"
+    }
+  ],
+  "journeys": [
+    {
+      "id": "cjm_trade_01",
+      "name": "Trade contractor journey",
+      "target_avatar_ids": [
+        "avt_marcus_01"
+      ],
+      "stages": [
+        "Unaware",
+        "Problem Aware",
+        "Solution Aware",
+        "Product Aware",
+        "Most Aware"
+      ]
+    }
+  ],
+  "grids": [
+    {
+      "id": "grid_harlow_01",
+      "name": "Harlow Street refit - Whitfield Renovations",
+      "target_avatar_id": "avt_marcus_01",
+      "transformation_story": "A 41-door kitchen and bath refit for a repeat trade client, delivered June 2025 with a scuff pass between every coat; at the 18-month check none of the doors had lifted."
+    }
+  ],
+  "content_examples": [
+    {
+      "id": "ci_finish_schedule_01",
+      "title": "The finish schedule we follow, coat by coat",
+      "content_type": "blog_post",
+      "status": "published",
+      "published_at": "2026-06-18T14:00:00Z",
+      "url": "https://brightsidefixtures.example/blog/finish-schedule"
+    },
+    {
+      "id": "ci_call_backs_01",
+      "title": "What a call-back actually costs a two-crew contractor",
+      "content_type": "blog_post",
+      "status": "published",
+      "published_at": "2026-08-06T14:00:00Z",
+      "url": "https://brightsidefixtures.example/blog/what-a-call-back-costs"
+    }
+  ],
+  "memory_notes": "Content notes: the finish-durability cluster's pillar is the finish schedule post (ci_finish_schedule_01); supporting posts link up to it. The September piece is on the calendar as a draft row with its target keyword set. Client approval on record 2026-09-04 (Dana Whitfield, by email): the September piece may be published to the blog once the pre-publish check passes with zero errors. Deploys are the web team's Friday job and are not ours to run.",
+  "rules": [
+    "Every piece names the avatar and the journey stage it serves.",
+    "Never promise a lead time in public content; send those to the sales inbox.",
+    "No emojis and no exclamation marks anywhere in published copy.",
+    "Every figure links its source in the same paragraph, or it does not ship.",
+    "Internal links come from the site's published URLs, never from memory."
+  ],
+  "instructions": "Write in the brand voice above. Re-read it before every generative call. Name who the piece is for and where they are in the journey. Nothing publishes without the client's yes and a clean pre-publish check."
+}

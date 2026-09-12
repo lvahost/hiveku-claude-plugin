@@ -1,0 +1,128 @@
+[
+  {
+    "id": "cjm_trade_01",
+    "account_id": "acct_fixture_content",
+    "name": "Trade contractor journey",
+    "description": "How a remodeling contractor moves from a failed finish on a competitor's doors to a standing order with Brightside.",
+    "target_avatar_ids": [
+      "avt_marcus_01"
+    ],
+    "stages": [
+      {
+        "name": "Unaware",
+        "description": "Blames the homeowner's cleaning products for a lifted finish.",
+        "emotions": [
+          "annoyed"
+        ],
+        "pain_points": [
+          "call-backs he cannot explain"
+        ],
+        "touchpoints": [
+          "Facebook trade groups"
+        ],
+        "content_types": [
+          "persona callout",
+          "story"
+        ],
+        "opportunities": [
+          "name the call-back in his words"
+        ]
+      },
+      {
+        "name": "Problem Aware",
+        "description": "Knows the finish schedule is where doors fail; does not know what a good one looks like.",
+        "emotions": [
+          "burned",
+          "curious"
+        ],
+        "pain_points": [
+          "a finish that lifts inside a year and lands on his invoice"
+        ],
+        "touchpoints": [
+          "LinkedIn at 6am",
+          "a shop blog a client forwards"
+        ],
+        "content_types": [
+          "explainer",
+          "mistake confession",
+          "myth-truth"
+        ],
+        "opportunities": [
+          "show the failure mechanism: no key between coats"
+        ]
+      },
+      {
+        "name": "Solution Aware",
+        "description": "Comparing shops on their finish room, not their showroom.",
+        "emotions": [
+          "evaluating"
+        ],
+        "pain_points": [
+          "every shop claims the same schedule"
+        ],
+        "touchpoints": [
+          "shop blogs",
+          "a showroom visit"
+        ],
+        "content_types": [
+          "comparison",
+          "checklist"
+        ],
+        "opportunities": [
+          "give him the questions to ask any shop"
+        ]
+      },
+      {
+        "name": "Product Aware",
+        "description": "Knows Brightside's schedule; wants proof it holds on a real job.",
+        "emotions": [
+          "cautious"
+        ],
+        "pain_points": [
+          "a trial job that goes wrong is his name on it"
+        ],
+        "touchpoints": [
+          "case study",
+          "a call with the shop"
+        ],
+        "content_types": [
+          "case study",
+          "site-visit write-up"
+        ],
+        "opportunities": [
+          "the 18-month check on a named job"
+        ]
+      },
+      {
+        "name": "Most Aware",
+        "description": "Has a standing order; wants the next job to be as boring as the last.",
+        "emotions": [
+          "settled"
+        ],
+        "pain_points": [
+          "a schedule change he hears about late"
+        ],
+        "touchpoints": [
+          "email",
+          "the sales inbox"
+        ],
+        "content_types": [
+          "changelog",
+          "advanced tutorial"
+        ],
+        "opportunities": [
+          "keep the install date visible"
+        ]
+      }
+    ],
+    "checkpoints": [
+      {
+        "stage": "Problem Aware",
+        "metric": "blog sessions from the finish-durability cluster",
+        "source": "analytics_pages"
+      }
+    ],
+    "created_at": "2026-05-10T15:00:00Z",
+    "updated_at": "2026-08-01T15:00:00Z"
+  }
+]

@@ -31,6 +31,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { PENDING_TOOLS } from './pending-tools.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const read = (rel) => fs.readFileSync(path.join(root, rel), 'utf8');
@@ -88,7 +89,13 @@ test('the Play 3 quality gate covers the full pre-publish checklist and names on
     ['heading hierarchy', /Heading hierarchy is intact/],
     ['alt on hero and inline images', /Alt text on the hero \(`featured_image_alt`\) and on every inline image/],
     ['at least two internal links by real URL', /At least two internal links to EXISTING published pieces, each by its real URL/],
-    ['link URLs from tools, never invented', /`content_list`[\s\S]*`cms_list_entries`[\s\S]*`seo_internal_links`[\s\S]*never invented/],
+    // Round 2: the URLs come from content_site_links first; the older reads are
+    // the fallbacks, and "never invented" still governs all of them.
+    ['link URLs from content_site_links, never invented', /`content_site_links\(\{ project_id \}\)`[\s\S]*never\s+invented, never guessed from a title/],
+    ['the fallback link reads survive', /`content_list`[\s\S]*`cms_list_entries`[\s\S]*`seo_internal_links`/],
+    ['the mechanical check runs on the stored row', /`content_seo_check\(\{ content_id \}\)` on that row/],
+    ['every error is fixed and the check re-run until ok', /fix it with `content_update`[\s\S]*re-run until `result\.ok` is true/],
+    ['the publish route never blocks, so the gate is the session', /`content_publish_to_site` runs the same check[\s\S]*NEVER blocks[\s\S]*not called\s+while an error stands/],
     ['external claims link their source', /Every EXTERNAL claim[\s\S]*links its source inline/],
     ['banned phrases from the brand guide', /`ai_forbidden_phrases`[\s\S]*`brand_guide_get`/],
     ['title length', /Title under ~60 characters/],
@@ -98,13 +105,57 @@ test('the Play 3 quality gate covers the full pre-publish checklist and names on
   const missing = required.filter(([, re]) => !re.test(gate)).map(([name]) => name);
   assert.deepEqual(missing, [], 'the quality gate lost these checks');
 
-  // The link sources the gate names must be tools the server serves - a gate
-  // that sends the writer to a tool that does not exist is the phantom-gap
-  // class tool-names.test.mjs exists for, but content_list has only two
-  // segments and evades that extractor, so it is pinned here by name.
+  // The tools the gate names must be ones the server serves or has contracted
+  // - a gate that sends the writer to a tool that does not exist is the
+  // phantom-gap class tool-names.test.mjs exists for, but content_list has
+  // only two segments and evades that extractor, so it is pinned here by
+  // name. The two round-2 names ride on PENDING_TOOLS until the index regen.
   const index = toolIndex();
-  const unknown = ['content_list', 'cms_list_entries', 'seo_internal_links', 'brand_guide_get'].filter((n) => !index.has(n));
-  assert.deepEqual(unknown, [], 'the quality gate names tools missing from lib/tool-index.json');
+  const unknown = ['content_list', 'cms_list_entries', 'seo_internal_links', 'brand_guide_get', 'content_seo_check', 'content_site_links']
+    .filter((n) => !index.has(n) && !PENDING_TOOLS.has(n));
+  assert.deepEqual(unknown, [], 'the quality gate names tools missing from lib/tool-index.json and test/pending-tools.mjs');
+});
+
+// ── round 2: the three contracts are documented once, and the timeout is resumable ──
+
+test('site-publishing.md documents content_seo_check, content_site_links and department_turn_get, and the skill resumes a timed-out turn', () => {
+  const skill = read(SKILL);
+  const sitePublishing = read(SITE_PUBLISHING);
+  const index = toolIndex();
+
+  // The names exist somewhere real: the live index or the pending ledger with
+  // its batch, so a rename before the MCP deploy is one edit here, not a hunt.
+  for (const name of ['content_seo_check', 'content_site_links', 'department_turn_get']) {
+    const pending = PENDING_TOOLS.get(name);
+    assert.ok(index.has(name) || pending, `${name} is neither in lib/tool-index.json nor test/pending-tools.mjs`);
+    if (pending) assert.equal(pending.batch, 'CONTENT-1', `${name} is pending under the wrong batch`);
+  }
+
+  // One reference file carries the contracts, headed by the call shape.
+  assert.match(sitePublishing, /^## Link targets - `content_site_links\(\{ project_id, limit\? \}\)`$/m, 'site-publishing.md lost the content_site_links section');
+  assert.match(sitePublishing, /^## The pre-publish check - `content_seo_check\(\{ content_id \}\)`$/m, 'site-publishing.md lost the content_seo_check section');
+  assert.match(sitePublishing, /^## Resuming a department turn - `department_turn_get\(\{ turn_id \}\)`$/m, 'site-publishing.md lost the department_turn_get section');
+  // The response keys a session reads, as the builder routes return them.
+  for (const key of ['`result.ok`', '`result.checks[]`', '`result.stats`', 'posts.without_url', '`project_id_required`', '`project_not_found`', '`running | completed | errored | cancelled`', '`stale: true`', 'events_available']) {
+    assert.ok(sitePublishing.includes(key), `site-publishing.md no longer names ${key}`);
+  }
+  assert.match(sitePublishing, /Every URL is DERIVED, never guessed/, 'the link-targets section must say URLs are derived, never guessed');
+  assert.match(sitePublishing, /it never blocks - the gate is the session, not the route/, 'the check section must say the publish route never blocks');
+  assert.match(sitePublishing, /`warnings\[\]`[\s\S]*`seo_check`[\s\S]*NEVER blocks/, 'the bridge step must describe the publish response warnings');
+
+  // The skill itself teaches the resume, in the principle and in Play 3.
+  const principle = skill.slice(skill.indexOf('2. **Generative work goes through'), skill.indexOf('3. **Direct tools are for CRUD only**'));
+  assert.match(principle, /`department_turn_get\(\{ turn_id \}\)`/, 'principle 2 no longer names department_turn_get');
+  assert.match(principle, /Never re-send the ask blind/, 'principle 2 must forbid the blind retry');
+  const play3 = skill.slice(skill.indexOf('2. **Draft via the department.**'), skill.indexOf('3. **Optimize against the SERP reality:**'));
+  assert.match(play3, /`department_turn_get\(\{ turn_id \}\)`[\s\S]*`status` is `completed`/, 'Play 3 step 2 must resume the timed-out turn until completed');
+  assert.match(play3, /Do not\s+re-send the brief/, 'Play 3 step 2 must forbid re-sending the brief');
+  // Link planning names the new read in the calendar play and the brief.
+  assert.match(skill, /Plan link paths from `content_site_links\(\{ project_id \}\)`/, 'Play 2 step 4 no longer plans links from content_site_links');
+  assert.match(skill, /anchors, each with its real URL from `content_site_links\(\{ project_id \}\)`/, 'the Play 3 brief no longer hands the department anchors from content_site_links');
+  // Shipped copy: no exclamation marks outside the check's own description of one.
+  const shouts = sitePublishing.split('\n').filter((line) => /!/.test(line) && !/exclamation/.test(line));
+  assert.deepEqual(shouts, [], 'site-publishing.md carries an exclamation mark in shipped copy');
 });
 
 // ── channels-11: the key-profile notes match profiles.ts ────────────────────
