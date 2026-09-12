@@ -100,6 +100,27 @@
  *                hiveku-web-agency/references/webflow-sites.md's Availability
  *                table. Landed in the live index on 2026-09-06 (MCP 4f0f0b7);
  *                entries deleted.
+ *
+ *   Images program (2026-09-12: GPT Image 2.5 as the default image model, the
+ *   brand image profile, and article imagery as a pipeline step). The contract
+ *   is the builder's commits 3efdcb0f7 (the direct OpenAI Images client),
+ *   a1068fa5d (registry default gpt-image-2.5 = gpt-image-2.5-flare, with
+ *   gpt-image-2.5-sunburst and the gemini-3.1 fallback), e61447d21 (real
+ *   per-image pricing), 04bd774d8 (the brand image profile, the brand_reference
+ *   tag and GET /api/olympus/marketing/brand/image-profile), d67189972 and
+ *   4caf81b81 (the article images pipeline and GET/POST
+ *   /api/olympus/marketing/content/:contentId/images). The MCP declarations
+ *   are the IMAGES-1 lane's commit in hiveku-mcp-api-server; the live index
+ *   regenerates after that deploy, and tool-names.test.mjs then forces these
+ *   entries out.
+ *     IMAGES-1  content_images_generate (the hero and one image per H2 for one
+ *               content item, alt text on each, metered per image against the
+ *               monthly image allowance) and brand_image_profile_get (the
+ *               prompt block, avoid list and reference images every branded
+ *               generation now sends). Spelled in prose by the content skill
+ *               (Play 3 and references/media-and-visuals.md), the creative
+ *               skill (rung 2 and references/brand-and-assets.md) and
+ *               commands/media.md.
  */
 const SEO_SINCE = '2026-08-30';
 const seo = (batch) => ({ since: SEO_SINCE, batch });
@@ -140,4 +161,10 @@ export const PENDING_TOOLS = new Map([
   // CONTENT-1 (2026-09-12): content_seo_check, content_site_links and
   // department_turn_get landed in the live index on 2026-09-12 (MCP b0e0d4d +
   // a675885 deployed; index regenerated at 2030 tools); entries deleted.
+
+  // IMAGES-1 (2026-09-12): see the batch note above. content_images_generate
+  // bills per image (each slot reserved as it is made, refunded on a failed
+  // render); brand_image_profile_get is a read.
+  ['content_images_generate', { since: '2026-09-12', batch: 'IMAGES-1' }],
+  ['brand_image_profile_get', { since: '2026-09-12', batch: 'IMAGES-1' }],
 ]);

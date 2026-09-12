@@ -25,15 +25,39 @@ IMAGES - cheap, iterate freely, but metered:
   out), auto-registers a media_asset and returns `media_asset_id`. Use that id; do NOT re-upload the
   result. Exact dimensions via `target_width` / `target_height`. `mode: 'modify'` with
   `reference_media_asset_ids` (1-4 library asset ids) edits or composites existing images instead of
-  generating fresh. `model` also takes flux | flux-pro | recraft; `seed` and `negative_prompt` are
-  fal-lane only (a 400 on the gemini lane, never silently dropped). Prompts name photographic
-  subjects only: generated-image text is garbage, so every word and every logo is a canvas layer in
-  the design lane, never generated pixels.
+  generating fresh. `model` defaults to `gpt-image-2.5` (GPT Image 2.5 on a direct OpenAI lane -
+  better than the previous default at about half the latency; `gemini-3.1` is its fallback when
+  that lane fails, and the response's `model` says which rendered); `gpt-image-2.5-sunburst` is the
+  premium model for an edit that must hold the referenced subject exactly; `gemini-3.1` and `gpt-5.4`
+  stay on the OpenRouter lane; flux | flux-pro | recraft are the fal lane, and `seed` /
+  `negative_prompt` work there only (a 400 on the GPT Image and OpenRouter lanes, never silently
+  dropped). Prompts name photographic subjects only: generated-image text is garbage, so every word
+  and every logo is a canvas layer in the design lane, never generated pixels.
+- What brand mode sends now: the brand IMAGE profile, not three colours and two fonts - a prompt
+  block (personality and visual adjectives, the full palette with hex codes and gradients,
+  typography for any text in the image, photography / illustration / icon style and rules, logo
+  rules, the AI prompt rules, the avoid list) plus, as image input on the GPT Image and OpenRouter
+  lanes, the primary logo and up to three Media Library images the customer tagged `brand_reference`
+  (the fal lane gets the text only). `brand_image_profile_get` returns exactly that set
+  (`prompt_block`, `avoid_list`, `reference_images`, `reference_tag`) - read it once per brief, and
+  fix the guide when a line is missing rather than repeating adjectives in every prompt. A customer
+  marks approved brand imagery by tagging a library image `brand_reference` (`media_update({
+  asset_id, tags })`, or the dashboard tag editor); only the three newest ride, so re-tagging
+  promotes a newer photo.
 - Brand honesty on every response: `brand_applied: true` means the active guide reached the model;
   `brand_skipped_reason: 'no_active_brand_guide'` means the image generated UNBRANDED and the slot
-  was still spent - say so, and fix it with /hiveku:brand, not with hex codes in the prompt. A failed
-  guide READ is 503 `brand_unavailable` before any slot is reserved: retry, or pass `use_brand: false`
-  on purpose.
+  was still spent - say so, and fix it with /hiveku:brand, not with hex codes in the prompt.
+  `brand_reference_ids` lists the references that reached the model and `brand_references_skipped`
+  any that could not be fetched (a warning, never a silent drop). A failed guide READ is 503
+  `brand_unavailable` before any slot is reserved: retry, or pass `use_brand: false` on purpose.
+- A blog post's pictures are ONE call, not a `generate_image` per heading:
+  `content_images_generate({ content_id })` plans a hero plus one image per H2 that adds
+  information from the stored body, the row's grounding and the brand image profile, renders the
+  hero first and the sections with the hero as a reference so the set matches, registers each in
+  the library (tags `content_image`, `content:<id>`), places each under its heading and sets the
+  featured image and its alt text. `media_image_quota` first, count confirmed (`max_images` 1-8,
+  default 4); a run that hits the allowance returns what it made plus a warning. Contract:
+  hiveku-content-agency `references/media-and-visuals.md`.
 - A SET that must look consistent (ad variations, hero + before/after, carousel):
   `generate_image_set` (up to 10 prompts, one shared brand context). Top-level `use_brand` is the
   batch default (a per-prompt `use_brand` beats it either way) and top-level `target_width` /
