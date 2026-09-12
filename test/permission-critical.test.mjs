@@ -274,3 +274,21 @@ test('no INSTALL.md snippet blanket-allows a prefix the ask list does not cover'
       'prompts), or mirror all ' + jsonNames.length + ' names under it: ' + offenders.join('; '),
   );
 });
+
+test('the Codex plugin mirrors the gated list per tool (when the sibling checkout is present)', () => {
+  // hiveku-codex-plugin pre-approves the hiveku server by default and prompts per tool
+  // for the permission-critical names. Nothing regenerates that map, so a name added
+  // here would gate in Claude Code and silently not gate in Codex.
+  const codexConfig = path.join(root, '..', 'hiveku-codex-plugin', 'plugins', 'hiveku', '.mcp.json');
+  if (!fs.existsSync(codexConfig)) return;
+  const cfg = JSON.parse(fs.readFileSync(codexConfig, 'utf8'));
+  const tools = cfg?.hiveku?.tools ?? {};
+  const codexNames = Object.keys(tools).sort();
+  const gated = [...new Set(permFile.tools.map((t) => t.name))].sort();
+  const missingFromCodex = gated.filter((name) => !tools[name]);
+  const extraInCodex = codexNames.filter((name) => !gated.includes(name));
+  assert.deepEqual({ missingFromCodex, extraInCodex }, { missingFromCodex: [], extraInCodex: [] });
+  for (const name of codexNames) {
+    assert.equal(tools[name]?.approval_mode, 'prompt', `${name} must prompt in Codex`);
+  }
+});

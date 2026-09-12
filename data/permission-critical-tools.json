@@ -6,7 +6,7 @@
     "mcp__hiveku__"
   ],
   "plugin_version": "0.26.8",
-  "count": 176,
+  "count": 177,
   "tools": [
     {
       "name": "deploy_site",
@@ -97,6 +97,11 @@
       "name": "email_campaign_resend_non_openers",
       "method": "POST",
       "why_gated": "re-sends to real recipients"
+    },
+    {
+      "name": "email_campaign_test_send",
+      "method": "POST",
+      "why_gated": "sends real mail to up to 5 addresses on the account's production SES lane"
     },
     {
       "name": "crm_envelope_send",

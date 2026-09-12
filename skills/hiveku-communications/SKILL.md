@@ -274,22 +274,35 @@ permanently, not a hold), and `crm_*_sequence` is the separate sales engine
 and the diagnosis ladder: `references/email-infrastructure.md` - load it before creating a
 template, scheduling a campaign, or answering "why is our email not arriving".
 
-## Boundary: there is no communications department agent
+## Boundary: the email department has an agent; communications as a whole does not
 
 `talk_to_department`'s domain enum is `seo`, `social`, `content`, `marketing`, `branding`,
 `outbound`, `ppc`, `analytics`, `customer_avatar`, `customer_journey`, `before_after_grid`,
-`website_design`, `knowledge_base`, `workflow`, `sales`. Fifteen values, none of them
+`website_design`, `knowledge_base`, `workflow`, `sales`, `email`. Sixteen values, none of them
 communications, voice, sms or helpdesk. `sales` joined on 2026-08-29 and runs the sales
 department agent (Morgan, the account's `_identity:sales`); its own gated writes come back as
 "staged, awaiting approval" through this rail, so use it for drafts and plans and persist with
-the direct tools yourself. An unlisted value is rejected server-side, not silently defaulted.
-`list_departments` reports which domains this tenant has enabled.
+the direct tools yourself. `email` is the email marketing department: `talk_to_department({
+domain: 'email' })` runs its agent with the account's hydration, and `account_context_get({
+domain: 'email' })` returns its persona, brand voice, memory and rules - start every campaign
+draft there, not at `marketing`. An unlisted value is rejected server-side, not silently
+defaulted. `list_departments` reports which domains this tenant has enabled.
 
-`account_context_get` has no communications domain either. Its enum is `content`, `marketing`,
-`seo`, `social`, `ppc`, `sales`, `helpdesk`, `branding`, `customer_avatar`, `customer_journey`,
-`before_after_grid`, `website_design`, `knowledge_base`, `workflow`, `outbound`. (`helpdesk` is
-valid HERE and not in `talk_to_department`; `analytics` is the reverse - those asymmetries are
-the source of the confusion.)
+`account_context_get`'s enum is `content`, `marketing`, `seo`, `social`, `ppc`, `sales`,
+`helpdesk`, `branding`, `customer_avatar`, `customer_journey`, `before_after_grid`,
+`website_design`, `knowledge_base`, `workflow`, `outbound`, `email`. (`helpdesk` is valid HERE
+and not in `talk_to_department`; `analytics` is the reverse - those asymmetries are the source of
+the confusion.)
+
+Send-time refusals the email tools return, relayed verbatim: `email_service_suspended` (403 - the
+account's sending is suspended by the reputation monitor or staff; nothing sends until staff lift
+it), `audience_not_opted_in` (the account requires opt-in and the audience is visitor-derived -
+built from Visitor Intelligence signals, not opted-in contacts), `reserved_test_address` (a test
+send aimed at example.com, test.com, localhost or another reserved domain; use
+success@simulator.amazonses.com), `tenant_identity_not_attached` (the verified domain is not
+attached to the account's SES tenant; staff reconcile it). `email_campaign_send_now({ dry_run:
+true })` counts recipients without sending, and an in-flight send can be held and continued with
+`email_campaign_pause` / `email_campaign_resume` (queued rows wait; nothing is re-materialized).
 
 Route generative work: customer-facing reply copy via `account_context_get({ domain:
 'helpdesk' })` then draft yourself and persist with the direct tool; prospect-facing copy via

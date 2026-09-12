@@ -311,7 +311,13 @@ Use this FIRST when signups or notifications stop sending, before any SMTP probi
 
 **The recipient is ALWAYS the AWS mailbox simulator (`success@simulator.amazonses.com`): the full
 pipeline is exercised with zero reputation impact and no human recipient. NEVER invent your own
-test address.** Test sends to example.com addresses caused a real account suspension.
+test address.** On 2026-08-07 two transient bounces from synthetic example.com test sends, on an
+account with 20 sends, read to Hiveku's own reputation monitor as a 10 percent bounce rate; it
+auto-suspended a blameless tenant, and the suspension path disabled the shared SES configuration
+set, stopping every tenant's email for about 5.5 hours. AWS suspended nothing. Test sends to
+reserved or test domains are now refused with `reserved_test_address` (`email_campaign_test_send`
+names the addresses and the simulator in its response), and `email_campaign_send_now` accepts
+`dry_run: true` to materialize and count recipients without sending.
 
 A verdict of `sent_but_no_delivery_event` means the send path works and the event webhook pipeline
 is broken. That is a different fix and it makes every downstream metric look wrong.

@@ -13,10 +13,15 @@ verbatim; never claim something sent without checking.
    key, verified domain, a REAL send through the account's production SES lane, then a wait for the
    actual SES delivery event (queued is not delivered). The recipient is ALWAYS the AWS mailbox
    simulator (success@simulator.amazonses.com) - full pipeline exercised, zero reputation impact, no
-   human recipient. NEVER invent your own test recipient address: example.com test sends caused a
-   real account suspension on 08-07. Verdict `sent_but_no_delivery_event` means the send path works
-   and the event webhook pipeline is broken. Rate-limited to 3 checks per 10 minutes (429 after that,
-   and the previous result has not changed).
+   human recipient. NEVER invent your own test recipient address. What happened on 2026-08-07: two
+   transient bounces from synthetic example.com test sends, on an account that had sent 20 emails,
+   were counted by Hiveku's own reputation monitor as a 10 percent bounce rate; it auto-suspended a
+   blameless tenant, and the suspension path disabled the SHARED SES configuration set, which stopped
+   every tenant's email for about 5.5 hours. AWS suspended nothing - the outage was ours. Test sends
+   to reserved or test domains (example.com/.org/.net, test.com, localhost, .invalid) are now refused
+   with `reserved_test_address`; the simulator is the only no-inbox recipient. Verdict
+   `sent_but_no_delivery_event` means the send path works and the event webhook pipeline is broken.
+   Rate-limited to 3 checks per 10 minutes (429 after that, and the previous result has not changed).
 1. **Setup gates first:** `marketing_setup_status`. It checks exactly five conditions -
    marketing_enabled, not_paused, ses_provisioned, verified_sending_domain, mailing_address - each
    with the fix, plus a sixth: account-level suspension, evaluated with the same predicate the
@@ -87,7 +92,9 @@ verbatim; never claim something sent without checking.
    so in a `warning` field. The preview resolves at most 10000 contacts, so an exact 10000 is a
    CEILING, not a count - on a list that big, say the audience is 10000 or more rather than quoting
    it as the size.
-3. **Content:** `account_context_get({ domain: "marketing" })` FIRST, then draft via
+3. **Content:** `account_context_get({ domain: "email" })` FIRST (the email department's own
+   persona, brand voice, memory and rules; `talk_to_department({ domain: "email", message })` runs
+   that agent when you want it to draft or plan for you), then draft via
    `talk_to_department({ domain: "content", message })` - subject (<50 chars) + preview text + HTML +
    plain text. Save it with `marketing_template_create` (layout_json block tree, or raw compiled_html).
    NOT `email_template_create` - that's the transactional store; a campaign cannot use it.
@@ -126,11 +133,22 @@ verbatim; never claim something sent without checking.
      Run `marketing_frequency_cap_get` HERE, not after the send. If cap > 0, tell the user totalQueued
      is an upper bound.
 6. **TEST SEND - never skip:** `email_campaign_test_send({ id, to: [the user's email] })`. Real mail,
-   max 5 recipients (more returns a 400), same CAN-SPAM validation as a production send.
+   max 5 recipients (more returns a 400), same CAN-SPAM validation as a production send. A reserved
+   or test domain in `to` is refused with `reserved_test_address` (the response names the addresses
+   and the simulator); a suspended account is refused with `email_service_suspended`. Use the user's
+   real mailbox, or success@simulator.amazonses.com for a no-inbox pipeline check.
    Ask the user to confirm the render before ANY real send.
 7. **Launch only on explicit approval:** `email_campaign_schedule({ id, scheduled_for })` (future ISO
    timestamp; it runs the same full pre-flight as a real send) or `email_campaign_send_now({ id })`.
-   Confirm which. Dispatch runs on a ~60s cron tick, so it is not instant. `email_campaign_get`
+   Confirm which, naming the totalQueued count from the dry run. Refusals to relay verbatim:
+   `email_service_suspended` (403 - nothing on the account sends until staff lift it; do not retry),
+   `audience_not_opted_in` (the account requires opt-in and the audience is visitor-derived, built
+   from Visitor Intelligence rather than opted-in contacts - pick or build an opted-in audience),
+   `tenant_identity_not_attached` (the verified domain is not attached to the account's SES tenant;
+   staff reconcile it), plus empty_audience / plan_cap / domain_unverified / validation_failed.
+   An in-flight send can be held with `email_campaign_pause({ id })` (queued rows wait) and
+   continued with `email_campaign_resume({ id })`; nothing is re-materialized on resume.
+   Dispatch runs on a ~60s cron tick, so it is not instant. `email_campaign_get`
    returns status but NOT total_sent - that field is not in the response, do not look for it. Verify
    the send landed with `email_campaign_metrics({ id })`: status must be 'sent' AND `by_status.sent`
    must be > 0. A 'sent' campaign with `by_status.sent: 0` reached NOBODY.

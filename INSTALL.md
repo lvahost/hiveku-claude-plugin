@@ -122,6 +122,7 @@ Put this in `.claude/settings.json` (per project) or `~/.claude/settings.json` (
       "mcp__plugin_hiveku_hk__content_schedule",
       "mcp__plugin_hiveku_hk__email_campaign_send_now",
       "mcp__plugin_hiveku_hk__email_campaign_schedule",
+      "mcp__plugin_hiveku_hk__email_campaign_test_send",
       "mcp__plugin_hiveku_hk__email_campaign_resend_non_openers",
       "mcp__plugin_hiveku_hk__crm_envelope_send",
       "mcp__plugin_hiveku_hk__crm_estimate_send",
