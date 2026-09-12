@@ -1274,3 +1274,87 @@ test('the round-B prose carries no exclamation marks and is named by the skill',
   const shouts = skill.split('\n').filter((line) => /!/.test(line) && !/exclamation/.test(line));
   assert.deepEqual(shouts, [], 'the content skill carries an exclamation mark in shipped copy');
 });
+
+// ── ELITE-C: the polish round (2026-09-12) - /hiveku:seo-decay on the round-B reads, and the extension vendoring the two plays ──
+
+const SEO_DECAY = 'commands/seo-decay.md';
+const VSCODE = path.join(root, '..', 'hiveku-vscode');
+const MCP_SERVER = path.join(root, '..', 'hiveku-mcp-api-server');
+
+/** A sibling checkout's file, or null when that checkout is not beside this repo. */
+function siblingSource(checkout, rel) {
+  const p = path.join(checkout, rel);
+  return fs.existsSync(p) ? fs.readFileSync(p, 'utf8') : null;
+}
+
+test('/hiveku:seo-decay runs the decision loop on the round-B reads: money pages from the stored roles, the prune lane, the refresh brief before a draft, the disposition on the row', (t) => {
+  const cmd = read(SEO_DECAY);
+  assert.match(cmd, /^description: /m, 'seo-decay.md has no description');
+  assert.match(cmd, /^argument-hint: /m, 'seo-decay.md has no argument hint');
+  // Money pages come from the stored roles, read before the rows; an account
+  // with none marked is seeded on a yes, never guessed at from prose.
+  const roles = cmd.indexOf('`site_page_roles_get({ project_id })`');
+  assert.ok(roles >= 0, 'seo-decay.md must read the money pages from site_page_roles_get');
+  assert.ok(roles < cmd.indexOf('`seo_content_decay({ project_id })`'), 'the page roles are read before the decay rows');
+  assert.match(cmd, /`counts\.money` of 0 means nothing is marked yet,\s+not that there are none: `site_page_roles_set\(\{ project_id, seed: true \}\)`/, 'an account with no money page marked is seeded on a yes, never guessed');
+  assert.match(cmd, /Keep writing the `Money pages: \/a, \/b` line to the SEO memory as well - the seed reads it/, 'the memory line the seed reads must still be written');
+  // The item side of the findings and the prune lane.
+  assert.match(cmd, /`content_list\(\{ status: "published",\s+limit: 200 \}\)` and keep the rows whose `decay_status` is set and not `recovered`/, 'the item-side queue must come from the decay columns');
+  assert.match(cmd, /`content_prune_candidates\(\{ project_id\?, min_age_days: 365 \}\)`/, 'seo-decay.md must read the prune list');
+  assert.match(cmd, /`unmeasured\[\]` on its own line\s+with the reason \(`no_page`, `clickhouse_unavailable`\) and never as a candidate/, 'the unmeasured pieces are never candidates');
+  assert.match(cmd, /A money page, a protected page and a page the owner named are never on the prune list you present/, 'the prune list must exclude money and protected pages');
+  // The refresh brief is read before any department draft.
+  const brief = cmd.indexOf('`content_refresh_brief_get({ content_id })` - spends nothing');
+  assert.ok(brief >= 0, 'seo-decay.md must read the refresh brief');
+  assert.ok(brief < cmd.indexOf('`talk_to_department({ domain: "seo",'), 'the refresh brief is read before the department draft');
+  // The decision lands on the row in the closed vocabulary, mapped from the
+  // SEO skill's five-way table; the read-only columns are never worked around.
+  assert.match(cmd, /`content_update\(\{ content_id, review_disposition \}\)` - the\s+one decay-side column a session writes/, 'the decision must be recorded on the row');
+  for (const disposition of REVIEW_DISPOSITIONS) {
+    assert.ok(cmd.includes(`\`${disposition}\``), `seo-decay.md does not map the five-way table onto ${disposition}`);
+  }
+  assert.match(cmd, /new is a brief on a new row, never a disposition on the old one/, 'a "new" verdict must not be written to the old row');
+  assert.match(cmd, /are read-only \(400\s+`read_only_field`\) and never worked around/, 'seo-decay.md must refuse to work around the read-only columns');
+  // A refresh keeps the URL, a take-down keeps its redirect, a prune deletes nothing.
+  assert.match(cmd, /`content_version_create\(\{\s+content_id \}\)` FIRST - the only undo/, 'the snapshot must come first');
+  assert.match(cmd, /never a new slug/, 'a refresh must keep the URL');
+  assert.match(cmd, /`refreshed: true` and the row's `refreshed_at` are the proof/, 'seo-decay.md must cite the refresh proof');
+  const consolidation = cmd.slice(cmd.indexOf('9. Consolidation:'), cmd.indexOf('10. Prune:'));
+  assert.ok(consolidation.length > 0, 'seo-decay.md lost its consolidation step');
+  assert.ok(consolidation.indexOf('`project_redirect_create(') < consolidation.indexOf('`content_unpublish_from_site({ content_id })`'), 'the redirect must come before the take-down');
+  assert.match(consolidation, /never a take-down without its redirect/, 'the consolidation step lost its rule');
+  assert.match(cmd, /NOTHING leaves the internet until the project deploys/, 'the prune step must say the unpublish is live until the deploy');
+  assert.match(cmd, /`content_delete` is not this step/, 'the prune step must refuse content_delete');
+  const shouts = cmd.split('\n').filter((line) => /!/.test(line) && !/exclamation/.test(line));
+  assert.deepEqual(shouts, [], 'seo-decay.md carries an exclamation mark in shipped copy');
+  // The server sends its readers here and owns the vocabulary the mapping uses.
+  const tools = siblingSource(MCP_SERVER, 'src/tools/olympus-tools.ts');
+  if (!tools) {
+    t.diagnostic('server cross-check skipped: hiveku-mcp-api-server checkout not beside this repo');
+    return;
+  }
+  assert.match(tools, /Read it before the internal-linking step of any draft and at the start of \/hiveku:seo-decay/, 'site_page_roles_get no longer names this command as its first reader');
+  assert.match(tools, /enum: \['double_down', 'refresh', 'rewrite', 'consolidate', 'prune', null\]/, "content_update's review_disposition vocabulary changed - the mapping in seo-decay.md must change with it");
+});
+
+test('the extension vendors research.md and seo-decay.md through its generator instead of carrying inline literals', (t) => {
+  const set = siblingSource(VSCODE, 'scripts/agency-skills-set.mjs');
+  const role = siblingSource(VSCODE, 'src/roleCommands.ts');
+  if (!set || !role) {
+    t.diagnostic('extension cross-check skipped: hiveku-vscode checkout not beside this repo');
+    return;
+  }
+  const start = set.indexOf('export const VENDORED_COMMANDS = [');
+  assert.ok(start >= 0, 'agency-skills-set.mjs no longer exports VENDORED_COMMANDS');
+  const vendored = set.slice(start, set.indexOf('];', start));
+  for (const name of ['seo-decay', 'research']) {
+    assert.ok(vendored.includes(`'${name}',`), `agency-skills-set.mjs does not vendor ${name}.md`);
+    assert.ok(fs.existsSync(path.join(VSCODE, 'assets', 'commands', `${name}.md`)), `hiveku-vscode/assets/commands/${name}.md is missing - run npm run gen:skills there`);
+  }
+  assert.match(role, /const SEO_COMMANDS = \['seo-decay'\] as const;/, 'roleCommands.ts no longer vendors the SEO decay sweep');
+  assert.match(role, /const UNIVERSAL_COMMANDS = \['research'\] as const;/, 'roleCommands.ts no longer vendors /hiveku-research');
+  assert.doesNotMatch(role, /const RESEARCH_COMMAND = `/, 'the inline RESEARCH_COMMAND literal is back in roleCommands.ts');
+  assert.doesNotMatch(role, /'hiveku-seo-decay': `---/, 'the inline hiveku-seo-decay literal is back in roleCommands.ts');
+  assert.match(role, /for \(const name of SEO_COMMANDS\) \{\s+const body = vendoredCommand\(name\);/, 'the SEO role does not read its vendored command');
+  assert.match(role, /for \(const name of UNIVERSAL_COMMANDS\) \{\s+const body = vendoredCommand\(name\);/, 'the universal commands are not read from the assets');
+});
