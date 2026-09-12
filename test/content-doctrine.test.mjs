@@ -615,3 +615,205 @@ test('the new content references and the interview command carry no exclamation 
   assert.match(skill, /`references\/research-and-proof\.md` - before the brief of any piece/, 'the reference list no longer names research-and-proof.md');
   assert.match(skill, /`references\/distribution-and-scorecard\.md` - before the brief/, 'the reference list no longer names distribution-and-scorecard.md');
 });
+
+// ── ELITE-A leftovers (2026-09-12): the social skill, orient and two commands catch up ──
+//
+// The channel round corrected commands/repurpose.md and the content skill and
+// left the social skill teaching the old link shape (utm_medium=social, no
+// utm_content - a link the scorecard credits to nothing), orient silent on the
+// Content research knowledge base and its artifacts, and two commands still
+// refusing content_analytics_get a day after its nightly writer shipped. The
+// pins below walk skills/ and commands/, so a stale paragraph cannot come back
+// under a new file name.
+
+const SOCIAL_SKILL = 'skills/hiveku-social-agency/SKILL.md';
+const SOCIAL_REPURPOSE = 'skills/hiveku-social-agency/references/repurpose.md';
+const SOCIAL_RECIPES = 'skills/hiveku-social-agency/references/recipes.md';
+const SOCIAL_HOOKS = 'skills/hiveku-social-agency/references/hooks-and-formats.md';
+const ORIENT = 'skills/hiveku-orient/SKILL.md';
+const POST_MORTEM = 'commands/post-mortem.md';
+const REPURPOSE_LINK_SHAPE = 'utm_source=<platform>&utm_medium=content&utm_campaign=<slug>&utm_content=<slug>';
+const ARTIFACT_TYPES = ['content_research', 'serp_brief', 'positioning', 'proof_pack', 'case_study', 'data_study'];
+
+/** Every .md under a repo-relative directory, as sorted repo-relative POSIX paths. */
+function markdownFiles(rel) {
+  const out = [];
+  const walk = (dir) => {
+    for (const entry of fs.readdirSync(path.join(root, dir), { withFileTypes: true })) {
+      const child = `${dir}/${entry.name}`;
+      if (entry.isDirectory()) walk(child);
+      else if (entry.name.endsWith('.md')) out.push(child);
+    }
+  };
+  walk(rel);
+  return out.sort();
+}
+
+/** Blank-line separated paragraphs with the line each starts on, so an offender is named file:line. */
+function paragraphsOf(text) {
+  const out = [];
+  let line = 1;
+  for (const block of text.split(/\n[ \t]*\n/)) {
+    out.push({ line, text: block });
+    line += block.split('\n').length + 1;
+  }
+  return out;
+}
+
+test('no skill teaches utm_medium=social as a link shape: every mention sits beside the shape that credits the piece', () => {
+  const offenders = [];
+  let mentions = 0;
+  for (const rel of markdownFiles('skills')) {
+    for (const p of paragraphsOf(read(rel))) {
+      if (!p.text.includes('utm_medium=social')) continue;
+      mentions++;
+      // The old shape may be named only to say what it does not do: beside the
+      // shape social_repurpose_source returns, or as the note that it credits nothing.
+      if (/utm_medium=content/.test(p.text) || /credits nothing/.test(p.text)) continue;
+      offenders.push(`${rel}:${p.line}`);
+    }
+  }
+  assert.ok(mentions >= 4, `only ${mentions} paragraph(s) under skills/ mention utm_medium=social - the walker is broken, not the prose`);
+  assert.deepEqual(offenders, [], 'a skill paragraph teaches utm_medium=social without the shape that credits the piece');
+  // Nothing under skills/ or commands/ composes the pre-2026-09-12 campaign value.
+  const stale = [...markdownFiles('skills'), ...markdownFiles('commands')].filter((rel) => /utm_campaign=repurpose-/.test(read(rel)));
+  assert.deepEqual(stale, [], 'utm_campaign=repurpose-<slug> is back; social_repurpose_source sends utm_campaign=<slug>');
+});
+
+test('the social skill teaches the repurpose links social_repurpose_source returns, and says utm_source labels the channel', (t) => {
+  const skill = read(SOCIAL_SKILL);
+  const play10 = skill.slice(skill.indexOf('**Play 10 - Repurpose'), skill.indexOf('**Play 11 - Creative handoff'));
+  assert.ok(play10.length > 0, 'Play 10 is gone from the social skill');
+  assert.ok(play10.includes(REPURPOSE_LINK_SHAPE), 'Play 10 must name the link shape social_repurpose_source returns');
+  assert.match(play10, /every link one of the `utm_links` the source read returns, unchanged/, 'Play 10 must use the returned links unchanged');
+  assert.match(play10, /`content_analytics_get` on the\s+shortlist \(`leads` outranks `views`\)/, 'Play 10 must rank the shortlist by leads');
+
+  const ref = read(SOCIAL_REPURPOSE);
+  assert.match(
+    ref,
+    /^3\. \*\*UTM: the `utm_links` the source read returns, unchanged -\n\s+`utm_source=<platform>&utm_medium=content&utm_campaign=<slug>&utm_content=<slug>`\.\*\*$/m,
+    'repurpose.md section 3 no longer opens with the returned links',
+  );
+  assert.doesNotMatch(ref, /maps a medium of exactly `social`/, 'repurpose.md again says the classifier reads the medium');
+  assert.match(ref, /comes from\s+`utm_source`, not the medium/, 'repurpose.md must say utm_source labels the channel');
+  assert.match(ref, /never `utm_content`\s+from a page URL/, 'repurpose.md must forbid composing utm_content from a page URL');
+  for (const key of ['a medium of `content`, `blog` or `organic`', '`slug-2` after a collision', 'a known label limit, not a UTM error']) {
+    assert.ok(ref.includes(key), `repurpose.md no longer says ${JSON.stringify(key)}`);
+  }
+
+  const recipes = read(SOCIAL_RECIPES);
+  assert.ok(recipes.includes(`Links: the production URL with ${REPURPOSE_LINK_SHAPE}`), 'the repurpose recipe no longer composes the link shape that credits the piece');
+  assert.match(recipes, /not cms_entry_slug, which can be slug-2 after a collision/, 'the recipe must say which slug utm_content carries');
+
+  const hooks = read(SOCIAL_HOOKS);
+  assert.doesNotMatch(hooks, /Every link out of a social post carries `utm_medium=social`/, 'hooks-and-formats.md again teaches utm_medium=social for every link');
+  assert.ok(hooks.includes(REPURPOSE_LINK_SHAPE), 'hooks-and-formats.md must name the shape that credits the piece');
+  assert.match(hooks, /which is what the sources view labels the channel from/, 'hooks-and-formats.md must say utm_source labels the channel');
+
+  // Source cross-check when the builder checkout is beside this repo: the
+  // platform slugs the reference names are the ones the route emits, the
+  // medium is content, and the classifier reads the known source before the
+  // medium (which is why utm_source, not the medium, labels the channel).
+  const builder = path.join(root, '..', 'hiveku_builder');
+  const route = path.join(builder, 'src', 'app', 'api', 'olympus', 'social', 'repurpose', 'source', 'route.ts');
+  const classifier = path.join(builder, 'src', 'lib', 'analytics', 'classify-source.ts');
+  if (!fs.existsSync(route) || !fs.existsSync(classifier)) {
+    t.diagnostic('source cross-check skipped: hiveku_builder checkout not beside this repo');
+    return;
+  }
+  const routeSrc = fs.readFileSync(route, 'utf8');
+  assert.match(routeSrc, /REPURPOSE_UTM_MEDIUM = 'content'/, 'the route no longer sends utm_medium=content - the social references must change');
+  const platforms = routeSrc.match(/UTM_PLATFORMS = \[([^\]]+)\]/);
+  assert.ok(platforms, 'the route no longer declares UTM_PLATFORMS');
+  const slugs = [...platforms[1].matchAll(/'([a-z_]+)'/g)].map((m) => m[1]);
+  assert.ok(slugs.length >= 5, 'UTM_PLATFORMS parsed to fewer than five slugs - the parser is broken, not the route');
+  const listed = ref.slice(ref.indexOf('3. **UTM:'), ref.indexOf('4. **One link per post'));
+  const unnamed = slugs.filter((slug) => !listed.includes(`\`${slug}\``));
+  assert.deepEqual(unnamed, [], 'repurpose.md section 3 does not name every platform slug the route emits as utm_source');
+  const classifierSrc = fs.readFileSync(classifier, 'utf8');
+  const hint = classifierSrc.indexOf('else if (channelHint) channel = channelHint;');
+  const medium = classifierSrc.indexOf("else if (med === 'social') channel = 'Organic Social';");
+  assert.ok(hint > 0 && medium > hint, 'classify-source.ts no longer reads the known source before the medium - repurpose.md section 3 must change');
+  for (const slug of ['linkedin', 'facebook', 'instagram', 'twitter', 'tiktok']) {
+    assert.match(classifierSrc, new RegExp(`re: /[^\\n]*${slug}[^\\n]*channel: 'Organic Social'`), `classify-source.ts no longer labels ${slug} Organic Social`);
+  }
+  assert.match(classifierSrc, /google[^\n]*channel: 'Organic Search'/, 'classify-source.ts no longer routes a google source to Organic Search - the GBP note must change');
+});
+
+test('content_analytics_get is refused nowhere in skills/ or commands/ now that the nightly writer exists', () => {
+  const refusal = /Never `content_analytics_get`|do NOT read `content_analytics_get`|Nothing in the product writes `content_analytics`|nothing in the product writes the table/;
+  const offenders = [];
+  for (const rel of [...markdownFiles('skills'), ...markdownFiles('commands')]) {
+    for (const p of paragraphsOf(read(rel))) {
+      if (!refusal.test(p.text)) continue;
+      // The retired sentence may be quoted only as history.
+      if (/is not any more|was true (before|until)/.test(p.text)) continue;
+      offenders.push(`${rel}:${p.line}`);
+    }
+  }
+  assert.deepEqual(offenders, [], 'a skill or command still refuses content_analytics_get');
+
+  const ref = read(SOCIAL_REPURPOSE);
+  assert.match(ref, /`content_analytics_get\(\{ content_id \}\)` is the per-piece scorecard/, 'the social repurpose reference no longer reads the scorecard');
+  assert.match(ref, /`last_stored: null` means the\s+first nightly run has not happened/, 'the social repurpose reference must read last_stored');
+
+  const postMortem = read(POST_MORTEM);
+  assert.match(
+    postMortem,
+    /`content_analytics_get\(\{ content_id, window \}\)` \(`7d` \| `30d` \|\s+`90d` \| `all`\)/,
+    '/hiveku:post-mortem must read the scorecard with its window',
+  );
+  for (const key of ['`last_stored: null`', '`degraded.clickhouse: true`', '`marketing_campaign_roi({ asset_types: "content_item" })`', 'neither is zero']) {
+    assert.ok(postMortem.includes(key), `/hiveku:post-mortem no longer says ${JSON.stringify(key)}`);
+  }
+  const repurpose = read(REPURPOSE);
+  assert.match(repurpose, /`content_analytics_get\(\{ content_id \}\)` on the shortlist is the per-piece scorecard/, '/hiveku:repurpose no longer reads the scorecard on the shortlist');
+  assert.match(repurpose, /`last_stored: null` is "not yet computed", never zero/, '/hiveku:repurpose must read last_stored');
+});
+
+test('orient names the Content research knowledge base, the artifact types and the two artifact reads', (t) => {
+  const orient = read(ORIENT);
+  const start = orient.indexOf('## Knowledge bases vs memory');
+  assert.ok(start > 0, 'orient lost its Knowledge bases vs memory section');
+  const end = orient.indexOf('\n## ', start + 1);
+  assert.ok(end > start, 'no section follows Knowledge bases vs memory');
+  const section = orient.slice(start, end);
+  assert.match(section, /`content_research_run\(\{ content_id \}\)`/, 'orient must name the run that creates the research KB');
+  assert.match(
+    section,
+    /`kb_list\(\{ context_type:\s+"content_research" \}\)` finds it; never create a second one and never look it up by name/,
+    'orient must say how the research KB is found and that it is one per account',
+  );
+  assert.match(section, /`kb_artifacts_list\(\{ artifact_type\?, kb_id\?, content_id\?,\s+is_verified\?, page\?, limit\? \}\)`/, 'orient must name kb_artifacts_list with its params');
+  assert.match(section, /`kb_artifact_get\(\{ artifact_id \}\)`/, 'orient must name kb_artifact_get');
+  for (const type of ARTIFACT_TYPES) {
+    assert.ok(section.includes(`\`${type}\``), `orient no longer names the artifact type ${type}`);
+  }
+  assert.match(section, /`content_research` today \(the research run is the one writer the product ships\)/, 'orient must say which type has a writer today');
+  assert.match(section, /research-and-proof\.md/, 'orient must point at the content reference for the contracts');
+  // The names orient teaches are live or contracted, so a rename is one edit here.
+  const index = toolIndex();
+  for (const name of ['content_research_run', 'content_research_topic', 'kb_artifacts_list', 'kb_artifact_get', 'kb_list', 'kb_search']) {
+    assert.ok(index.has(name) || PENDING_TOOLS.has(name), `${name} is neither in lib/tool-index.json nor test/pending-tools.mjs`);
+  }
+  // Source cross-check: the builder writes content_research today and the MCP
+  // declaration enumerates the same six types.
+  const research = path.join(root, '..', 'hiveku_builder', 'src', 'lib', 'marketing', 'content-research.ts');
+  const tools = path.join(root, '..', 'hiveku-mcp-api-server', 'src', 'tools', 'olympus-tools.ts');
+  if (!fs.existsSync(research) || !fs.existsSync(tools)) {
+    t.diagnostic('source cross-check skipped: sibling checkouts not beside this repo');
+    return;
+  }
+  assert.match(fs.readFileSync(research, 'utf8'), /RESEARCH_ARTIFACT_TYPE = 'content_research'/, 'the research run no longer writes content_research - orient must change');
+  assert.ok(fs.readFileSync(tools, 'utf8').includes(ARTIFACT_TYPES.join(' | ')), 'kb_artifacts_list no longer enumerates the six artifact types in this order - orient must change');
+});
+
+test('the corrected paragraphs carry no exclamation marks', () => {
+  for (const rel of [SOCIAL_SKILL, SOCIAL_REPURPOSE, SOCIAL_RECIPES, SOCIAL_HOOKS, ORIENT, POST_MORTEM, REPURPOSE]) {
+    const shouts = paragraphsOf(read(rel))
+      .filter((p) => /utm_medium=content|content_analytics_get|kb_artifacts_list/.test(p.text))
+      .filter((p) => /!/.test(p.text) && !/exclamation/.test(p.text))
+      .map((p) => `${rel}:${p.line}`);
+    assert.deepEqual(shouts, [], 'a corrected paragraph carries an exclamation mark');
+  }
+});

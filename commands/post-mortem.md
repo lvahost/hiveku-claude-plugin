@@ -32,10 +32,14 @@ hook. Context first: `account_context_get({ domain: "marketing" })`.
      same-length pre-flight window (Google), and `ppc_platform_period_comparison` for
      Meta/Microsoft/LinkedIn/TikTok (Bing's reporting API is async-only - expect the
      client-side-diff note).
-   - Landing pages / content: do NOT read `content_analytics_get` for performance - nothing in the
-     app writes content_analytics, so it returns 200 with empty data and all-zero summaries for
-     effectively every item (a missing collector, not a dead post). Use `analytics_pages` and
-     `analytics_overview` landing pages for the campaign URLs instead.
+   - Landing pages / content: `content_analytics_get({ content_id, window })` (`7d` | `30d` |
+     `90d` | `all`) per campaign piece for leads per piece - since 2026-09-12 a nightly writer
+     (`/api/cron/content-scorecard`) stores the scorecard, so `leads`, `contacts`, `deals.won` and
+     `lead_rate` are real numbers; `last_stored: null` means the first nightly run has not
+     happened, and `views: null` with `degraded.clickhouse: true` is an unreachable collector -
+     neither is zero. `marketing_campaign_roi({ asset_types: "content_item" })` is the revenue
+     view per piece. `analytics_pages` and `analytics_overview` landing pages still cover the
+     campaign URLs that are not content items.
    - Leads: `marketing_form_conversion_audit` over the flight window - `buckets.counted` is the
      real lead count; explain any gap with the named buckets (spam, duplicate, workflow_failed...)
      rather than a bare number.
