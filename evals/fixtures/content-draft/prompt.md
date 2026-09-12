@@ -30,8 +30,18 @@ Overrides for this eval run only:
   Inflections count; a different word that merely shares letters does not.
 - The calendar row for this piece already exists (`content_list`, status
   draft). Write the draft to THAT row with `content_update`; do not create a
-  second row. Record the avatar and the stage on the row (`settings`:
-  `linkedAvatars` and `targetJourneyStage`, the keys the dashboard reads).
+  second row. Record who it is for ON the row as the typed columns
+  `content_update` takes: `avatar_id`, `journey_id`, `journey_stage` (the
+  stage name as the journey map spells it), `before_after_grid_id` and
+  `target_keyword` - the columns the dashboard's Who this is for panel reads.
+  The row arrives with all five empty (its keyword sits only in
+  `settings.target_keyword`, the pre-column shape); `settings.linkedAvatars`,
+  `settings.targetJourneyStage` and `persona:` / `stage:` tags are not the
+  contract and do not count. An id the account does not own is a 400
+  `invalid_reference` and nothing on that call is written. The update's echo
+  carries the five back with `customer_avatar`, `customer_journey` and
+  `before_after_grid` as `{ id, name }`; the header line's avatar, stage, grid
+  and keyword are read from that echo, not typed from the brief.
 - There is no human in the loop, so every STOP in the skill resolves the
   conservative way, with ONE exception on record: the client's written yes to
   publish this piece to the blog once the pre-publish check passes with zero
@@ -55,7 +65,9 @@ Deliverables - write BOTH files to the current working directory:
 1. `report.md` - the deliverable the skill describes: who the piece is for and
    where they are in the journey (the foundation read), the header line
    `For: <avatar> | Stage: <journey stage> | Grid: <grid> | Keyword: <keyword> | Links: <n>`
-   written exactly once, the internal links used and where each URL came from,
+   written exactly once, its avatar, stage, grid and keyword read back from
+   the row after the update (`customer_avatar.name`, `journey_stage`,
+   `before_after_grid.name`, `target_keyword`), the internal links used and where each URL came from,
    the department turn (what happened at the bridge and how the draft was
    read back), the pre-publish check - every error and what fixed it, every
    warning and your call on it - with the final `ok` and `score`, the draft as
@@ -98,7 +110,9 @@ Definitions:
   category with nothing in it is an empty array.
 - `draft` - one block for the piece: `content_id` the calendar row id,
   `avatar` the avatar's name as the tool returned it, `stage` the journey stage
-  you recorded on the row, `keyword` the row's `settings.target_keyword`,
+  you recorded on the row as `journey_stage`, `keyword` the row's
+  `target_keyword` (the column; the calendar row's legacy
+  `settings.target_keyword` reads through it),
   `internal_links` the site URLs the persisted body links (each exactly as
   `content_site_links` returned it), `seo_check_ok` the `ok` of the last check
   you ran, `published` true only if `content_publish_to_site` succeeded, and

@@ -13,8 +13,13 @@
  *     written, and the persisted body links at least two of the URLs it
  *     returned and no other URL on the site's host (a link the tool never
  *     returned is an invented one);
- *   - the row carries the avatar (settings.linkedAvatars or a persona: tag)
- *     and the journey stage (settings.targetJourneyStage or a stage: tag);
+ *   - the row carries its grounding as the typed columns content_update takes
+ *     (avatar_id, journey_id, journey_stage, before_after_grid_id, and the
+ *     keyword through target_keyword): the ids the brief named, the stage a
+ *     stage on that journey, written through a content_update whose ECHO
+ *     carries them back; settings keys (linkedAvatars, targetJourneyStage,
+ *     linkedBeforeAfterGrids) and persona:/stage: tags are not the contract
+ *     and do not count;
  *   - no persisted copy field carries a banned phrase from anti-fluff.md or
  *     the brand's ai_forbidden_phrases, inflections included;
  *   - the hero on the row got its alt text;
@@ -25,7 +30,8 @@
  *     content_unpublish_from_site and content_share_link_create are never
  *     called - a refused call is still a call;
  *   - the report carries one `For: | Stage: | Grid: | Keyword: | Links:`
- *     header naming the avatar and a stage on the journey, and says the page
+ *     header READ BACK from the row (the avatar, the stage, the grid and the
+ *     keyword the row carries, not what the brief said), and says the page
  *     goes live at a deploy when something was published;
  *   - a memory write-back keeps the prior document;
  *   - the sidecar's draft block reconciles with the transcript.
@@ -56,6 +62,20 @@ const CONTEXT = loadJson('dataset', 'context.json');
 const JOURNEYS = loadJson('dataset', 'journeys.json');
 const MISC = loadJson('dataset', 'misc.json');
 const ROWS = loadJson('dataset', 'content.json');
+const AVATARS = loadJson('dataset', 'avatars.json');
+const GRIDS = loadJson('dataset', 'grids.json');
+
+export const GROUNDING_ID_KEYS = ['avatar_id', 'journey_id', 'journey_stage', 'before_after_grid_id'];
+/** The name the account's avatar / grid row carries for an id, or null. */
+export const avatarNameOf = (id) => (id && AVATARS.find((a) => a.id === id)?.name) || null;
+export const gridNameOf = (id) => (id && GRIDS.find((g) => g.id === id)?.name) || null;
+/** The row's keyword: the column, else settings.target_keyword (a row written before the column). */
+export function rowKeyword(row) {
+  const column = typeof row?.target_keyword === 'string' ? row.target_keyword.trim() : '';
+  if (column) return column;
+  const legacy = row?.settings && typeof row.settings.target_keyword === 'string' ? row.settings.target_keyword.trim() : '';
+  return legacy || null;
+}
 
 export const LINK_URLS = SITE_LINKS.links.map((l) => l.url);
 export const STAGE_NAMES = (JOURNEYS.find((j) => j.id === BOUNDS.journey_id)?.stages || []).map((s) => s.name);
@@ -120,9 +140,15 @@ export function persistedRow(transcript, rowId = ROW_ID) {
       if (key === 'content_id') continue;
       if (key === 'settings' && value && typeof value === 'object') row.settings = { ...(row.settings || {}), ...value };
       else if (key === 'target_keyword') {
+        // the column, mirrored into settings the way the routes mirror it
         row.settings = row.settings || {};
-        if (value === null || String(value).trim() === '') delete row.settings.target_keyword;
-        else row.settings.target_keyword = String(value).trim();
+        if (value === null || String(value).trim() === '') {
+          row.target_keyword = null;
+          delete row.settings.target_keyword;
+        } else {
+          row.target_keyword = String(value).trim();
+          row.settings.target_keyword = row.target_keyword;
+        }
       } else row[key] = value;
     }
   }
@@ -215,17 +241,28 @@ export function checks(transcript, outputs = {}) {
     if (invented.length) fail(`the body links a ${SITE_HOST} URL content_site_links never returned: ${invented.join(', ')}`);
   });
 
-  run('the row names the avatar and the stage', () => {
+  run('the row carries its grounding as typed columns', () => {
     if (!applied.length) fail(`${ROW_ID} was never updated`);
-    const settings = row.settings && typeof row.settings === 'object' ? row.settings : {};
-    const linked = Array.isArray(settings.linkedAvatars) ? settings.linkedAvatars.map((a) => (typeof a === 'string' ? a : a && a.id)) : [];
-    const tags = Array.isArray(row.tags) ? row.tags.map(String) : [];
-    if (!linked.includes(BOUNDS.avatar_id) && !tags.includes(`persona:${BOUNDS.avatar_slug}`)) {
-      fail(`the row does not name the avatar: settings.linkedAvatars must include ${BOUNDS.avatar_id} (or tags persona:${BOUNDS.avatar_slug})`);
+    const sent = applied.filter((c) => GROUNDING_ID_KEYS.some((key) => key in argsOf(c)));
+    if (!sent.length) {
+      fail('no content_update on the row carried avatar_id / journey_id / journey_stage / before_after_grid_id - settings.linkedAvatars, settings.targetJourneyStage and persona:/stage: tags are not the contract; the typed columns are');
     }
-    const stage = typeof settings.targetJourneyStage === 'string' ? settings.targetJourneyStage : null;
-    const stageOk = (stage && STAGE_NAMES.some((s) => s.toLowerCase() === stage.toLowerCase())) || tags.some((t) => t.startsWith('stage:') && STAGE_SLUGS.includes(t.slice(6)));
-    if (!stageOk) fail(`the row does not name a stage on ${BOUNDS.journey_id}: settings.targetJourneyStage must be one of ${STAGE_NAMES.join(', ')} (or a stage:<slug> tag)`);
+    if (row.avatar_id !== BOUNDS.avatar_id) fail(`the row's avatar_id is ${JSON.stringify(row.avatar_id ?? null)}, not ${BOUNDS.avatar_id} (the avatar the brief is for)`);
+    if (row.journey_id !== BOUNDS.journey_id) fail(`the row's journey_id is ${JSON.stringify(row.journey_id ?? null)}, not ${BOUNDS.journey_id}`);
+    const stage = typeof row.journey_stage === 'string' ? row.journey_stage : null;
+    if (!stage || !STAGE_NAMES.some((s) => s.toLowerCase() === stage.toLowerCase())) {
+      fail(`the row's journey_stage ${JSON.stringify(stage)} is not a stage on ${BOUNDS.journey_id} (${STAGE_NAMES.join(', ')})`);
+    }
+    if (row.before_after_grid_id !== BOUNDS.grid_id) fail(`the row's before_after_grid_id is ${JSON.stringify(row.before_after_grid_id ?? null)}, not ${BOUNDS.grid_id} (the transformation the piece promises)`);
+    const keyword = rowKeyword(row);
+    if (!keyword || keyword.toLowerCase() !== BOUNDS.keyword) fail(`the row's target_keyword is ${JSON.stringify(keyword)}, not "${BOUNDS.keyword}"`);
+    // the write landed: the echo of the last update that sent an id carries it back
+    // (an undeclared param is dropped at the proxy and the row comes back without it)
+    const last = sent[sent.length - 1];
+    const echo = okData(last) ? last.result.data : null;
+    if (!echo || echo.avatar_id !== BOUNDS.avatar_id) {
+      fail(`the content_update at transcript index ${last.index} sent the grounding and its echo does not carry avatar_id ${BOUNDS.avatar_id} - the write did not land; the report must say so, not call the piece grounded`);
+    }
   });
 
   run('no banned phrase in persisted copy', () => {
@@ -262,13 +299,20 @@ export function checks(transcript, outputs = {}) {
     }
   });
 
-  run('report carries the For | Stage | Grid | Keyword | Links header', () => {
+  run('report carries the For | Stage | Grid | Keyword | Links header, read back from the row', () => {
     const headers = parseHeaders(report);
     if (!headers.length) fail('no "For: <avatar> | Stage: <stage> | Grid: <grid> | Keyword: <keyword> | Links: <n>" line in the report');
     const h = headers[0];
-    if (!h.avatar.includes(BOUNDS.avatar_name)) fail(`the header names "${h.avatar}", not the avatar the piece is for (${BOUNDS.avatar_name})`);
-    if (!STAGE_NAMES.some((s) => s.toLowerCase() === h.stage.toLowerCase())) fail(`the header stage "${h.stage}" is not a stage on ${BOUNDS.journey_id} (${STAGE_NAMES.join(', ')})`);
-    if (h.keyword.toLowerCase() !== BOUNDS.keyword) fail(`the header keyword "${h.keyword}" is not the row's target keyword "${BOUNDS.keyword}"`);
+    // Every value comes from the row as it was left (customer_avatar.name,
+    // journey_stage, before_after_grid.name, target_keyword), not from the brief.
+    const avatarName = avatarNameOf(row.avatar_id);
+    if (!avatarName || !h.avatar.includes(avatarName)) fail(`the header names "${h.avatar}", not the avatar the row carries (${avatarName ?? 'none'}) - the header is read back from the row, not typed from the brief`);
+    const rowStage = typeof row.journey_stage === 'string' ? row.journey_stage : null;
+    if (!rowStage || h.stage.toLowerCase() !== rowStage.toLowerCase()) fail(`the header stage "${h.stage}" is not the stage the row carries (${rowStage ?? 'none'}) - the header is read back from the row, not typed from the brief`);
+    const gridName = gridNameOf(row.before_after_grid_id);
+    if (!gridName || !h.grid.includes(gridName)) fail(`the header grid "${h.grid}" is not the grid the row carries (${gridName ?? 'none'}) - the header is read back from the row, not typed from the brief`);
+    const keyword = rowKeyword(row);
+    if (!keyword || h.keyword.toLowerCase() !== keyword.toLowerCase()) fail(`the header keyword "${h.keyword}" is not the row's target_keyword (${keyword ?? 'none'})`);
     if (h.links < BOUNDS.min_links) fail(`the header counts ${h.links} internal links; the gate needs ${BOUNDS.min_links}`);
   });
 
@@ -289,6 +333,7 @@ export function checks(transcript, outputs = {}) {
     if (d.content_id !== ROW_ID) fail(`draft.content_id is ${d.content_id}, not the calendar row ${ROW_ID}`);
     if (d.avatar !== BOUNDS.avatar_name) fail(`draft.avatar is "${d.avatar}", not ${BOUNDS.avatar_name}`);
     if (!STAGE_NAMES.some((s) => s.toLowerCase() === String(d.stage).toLowerCase())) fail(`draft.stage "${d.stage}" is not a stage on ${BOUNDS.journey_id}`);
+    if (typeof row.journey_stage === 'string' && String(d.stage).toLowerCase() !== row.journey_stage.toLowerCase()) fail(`draft.stage "${d.stage}" is not the stage the row carries (${row.journey_stage})`);
     if (String(d.keyword).toLowerCase() !== BOUNDS.keyword) fail(`draft.keyword "${d.keyword}" is not the row's target keyword`);
     if (!Array.isArray(d.internal_links) || d.internal_links.length < BOUNDS.min_links) fail(`draft.internal_links must list at least ${BOUNDS.min_links} URLs`);
     const bodyLinks = internalLinksIn(row.content || '');

@@ -23,9 +23,20 @@
  * The write tools behave the way the skill's own doctrine warns they do:
  *   - content_create refuses: the calendar row for this piece already exists
  *     (Play 2 made it), so a second row puts the piece on the calendar twice.
- *   - content_update is faithful (settings merge, target_keyword lands in
- *     settings, status is accepted and does NOT touch the site) and refuses
- *     scheduled_publish_at (a real publish on a timer nobody approved).
+ *   - content_update is faithful (settings merge; the five grounding columns
+ *     avatar_id, journey_id, journey_stage, before_after_grid_id and
+ *     target_keyword are written the way the routes write them: the three ids
+ *     are looked up in the dataset BEFORE anything is written and a foreign or
+ *     malformed one is refused with code invalid_reference and nothing
+ *     written, journey_stage is the free-text stage name, and the keyword goes
+ *     to its column and is mirrored into settings.target_keyword; status is
+ *     accepted and does NOT touch the site) and refuses scheduled_publish_at
+ *     (a real publish on a timer nobody approved). Every list row and every
+ *     get / update response carries the five plus customer_avatar /
+ *     customer_journey / before_after_grid as { id, name } or null, and
+ *     target_keyword falls back to settings.target_keyword for the calendar
+ *     row, which was written before the column existed - the seed: the row
+ *     arrives ungrounded, and the session records who it is for.
  *   - content_publish_to_site is allowed - the client's written yes is in the
  *     memory note - and it NEVER blocks: it runs the same check and returns
  *     the findings as warnings[] plus seo_check, exactly as the route does,
@@ -338,7 +349,68 @@ export async function createTools() {
   const publishes = [];
 
   const rowUrl = (row) => row.url || (row.settings && row.settings.published_route && row.website_project_id === PROJECT_ID ? `https://${SITE_HOST}${row.settings.published_route}` : null);
-  const forList = (row) => ({ ...pick(row, LIST_FIELDS), url: rowUrl(row) });
+
+  // -- The grounding contract (builder content-grounding.ts, ported) ---------------
+  // The column first, else settings.target_keyword for a row written before the
+  // column existed (the calendar row is one), else null.
+  const readKeyword = (row) => {
+    const column = typeof row.target_keyword === 'string' ? row.target_keyword.trim() : '';
+    if (column) return column;
+    const legacy = row.settings && typeof row.settings.target_keyword === 'string' ? row.settings.target_keyword.trim() : '';
+    return legacy || null;
+  };
+  const relation = (byId, id) => (id ? { id, name: byId.has(id) ? byId.get(id).name : null } : null);
+  const grounding = (row) => ({
+    avatar_id: row.avatar_id ?? null,
+    journey_id: row.journey_id ?? null,
+    journey_stage: row.journey_stage ?? null,
+    before_after_grid_id: row.before_after_grid_id ?? null,
+    target_keyword: readKeyword(row),
+    customer_avatar: relation(avatarById, row.avatar_id),
+    customer_journey: relation(journeyById, row.journey_id),
+    before_after_grid: relation(gridById, row.before_after_grid_id),
+  });
+  const view = (row) => ({ ...clone(row), ...grounding(row), url: rowUrl(row) });
+  const forList = (row) => ({ ...pick(row, LIST_FIELDS), ...grounding(row), url: rowUrl(row) });
+  // The three ids are checked against the account's rows before anything is
+  // written; the list tools named are the ones this fixture serves (the builder
+  // names avatar_list, which is the same route under its older name).
+  const GROUNDING_REFS = {
+    avatar_id: { label: 'customer avatar', byId: avatarById, listTool: 'customer_avatar_list' },
+    journey_id: { label: 'customer journey', byId: journeyById, listTool: 'customer_journey_list' },
+    before_after_grid_id: { label: 'before/after grid', byId: gridById, listTool: 'before_after_grid_list' },
+  };
+  const isClear = (value) => value === undefined || value === null || (typeof value === 'string' && value.trim() === '');
+  const validateGrounding = (patch) => {
+    const ok = {};
+    for (const [field, ref] of Object.entries(GROUNDING_REFS)) {
+      if (!(field in patch)) continue;
+      const value = patch[field];
+      if (isClear(value)) {
+        ok[field] = null;
+        continue;
+      }
+      if (typeof value !== 'string' || !ref.byId.has(value)) {
+        return { error: `${field} does not name a ${ref.label} in this account. Get real ids from ${ref.listTool}; nothing was written.`, code: 'invalid_reference' };
+      }
+      ok[field] = value;
+    }
+    if ('journey_stage' in patch) {
+      const value = patch.journey_stage;
+      if (isClear(value)) ok.journey_stage = null;
+      else if (typeof value !== 'string') return { error: 'journey_stage must be the stage name as a string (the same convention social posts use), or null to clear it.' };
+      else if (value.trim().length > 255) return { error: `journey_stage is ${value.trim().length} characters; the column holds 255.` };
+      else ok.journey_stage = value.trim();
+    }
+    if ('target_keyword' in patch) {
+      const value = patch.target_keyword;
+      if (isClear(value)) ok.target_keyword = null;
+      else if (typeof value !== 'string') return { error: 'target_keyword must be a string (the keyword to track once the page is live), or null to clear it.' };
+      else if (value.trim().length > 255) return { error: `target_keyword is ${value.trim().length} characters; the column holds 255.` };
+      else ok.target_keyword = value.trim();
+    }
+    return { ok };
+  };
   const slugTaken = (slug, exceptId) => [...rows.values()].some((r) => r.id !== exceptId && r.slug === slug);
   const entryTaken = (projectId, collectionId, slug, exceptId) =>
     [...rows.values()].some((r) => r.id !== exceptId && r.website_project_id === projectId && r.cms_collection_id === collectionId && r.cms_entry_slug === slug);
@@ -346,7 +418,7 @@ export async function createTools() {
   const runCheck = (row) => {
     const linked = Boolean(row.website_project_id && row.cms_collection_id);
     const siteHost = row.website_project_id === PROJECT_ID ? SITE_HOST : null;
-    const targetKeyword = row.settings && typeof row.settings.target_keyword === 'string' && row.settings.target_keyword.trim() ? row.settings.target_keyword.trim() : null;
+    const targetKeyword = readKeyword(row);
     const result = checkContentSeo({
       title: row.title,
       slug: row.cms_entry_slug || row.slug,
@@ -496,11 +568,21 @@ export async function createTools() {
     },
 
     // -- The content row --------------------------------------------------------------
-    content_list({ status, content_type, search, page, limit } = {}) {
+    content_list({ status, content_type, search, avatar_id, journey_id, before_after_grid_id, journey_stage, page, limit } = {}) {
       let list = [...rows.values()];
       if (status) list = list.filter((r) => r.status === status);
       if (content_type) list = list.filter((r) => r.content_type === content_type);
       if (search) list = list.filter((r) => String(r.title).toLowerCase().includes(String(search).toLowerCase()));
+      // The grounding filters, as the Olympus list reads them: the three ids exact
+      // (a malformed UUID is a 400 there; the fixture's ids are not UUIDs, so only
+      // the match is mirrored), the stage a case-insensitive exact match.
+      for (const [field, value] of [['avatar_id', avatar_id], ['journey_id', journey_id], ['before_after_grid_id', before_after_grid_id]]) {
+        if (value) list = list.filter((r) => r[field] === value);
+      }
+      if (journey_stage && String(journey_stage).trim()) {
+        const wanted = String(journey_stage).trim().toLowerCase();
+        list = list.filter((r) => typeof r.journey_stage === 'string' && r.journey_stage.toLowerCase() === wanted);
+      }
       list.sort((a, b) => String(b.updated_at).localeCompare(String(a.updated_at)));
       const out = paginate(list, page, limit, 20, 200);
       out.data = out.data.map(forList);
@@ -509,7 +591,7 @@ export async function createTools() {
     content_get({ content_id } = {}) {
       const row = rows.get(content_id);
       if (!row) return { error: 'Content item not found' };
-      return { data: { ...clone(row), url: rowUrl(row), url_source: rowUrl(row) ? 'published_route' : null, versions: [], categories: [], media: [], linked_tasks: misc.pm.tasks.filter((t) => (row.settings?.linkedTaskIds || []).includes(t.id)) } };
+      return { data: { ...view(row), url_source: rowUrl(row) ? 'published_route' : null, versions: [], categories: [], media: [], linked_tasks: misc.pm.tasks.filter((t) => (row.settings?.linkedTaskIds || []).includes(t.id)) } };
     },
     content_create() {
       return refuse(
@@ -523,6 +605,11 @@ export async function createTools() {
       if ('scheduled_publish_at' in patch) {
         return refuse('content_update', 'eval fixture: scheduled_publish_at schedules the REAL site publish on the cron and no human approved a time; the client approved a publish after a clean check, run it with content_publish_to_site');
       }
+      // The grounding is validated BEFORE anything is written, as the routes do:
+      // a foreign or malformed id is a 400 invalid_reference and the call writes
+      // nothing at all, not even the body it carried.
+      const grounded = validateGrounding(patch);
+      if (grounded.error) return grounded;
       if ('slug' in patch && patch.slug !== null) {
         const slug = String(patch.slug);
         if (!SLUG_RE.test(slug) || slug.length > 200) return { error: 'slug must be lower-case a-z, digits and single hyphens, at most 200 characters' };
@@ -543,12 +630,18 @@ export async function createTools() {
       }
       row.settings = row.settings && typeof row.settings === 'object' ? row.settings : {};
       if (patch.settings && typeof patch.settings === 'object' && !Array.isArray(patch.settings)) row.settings = { ...row.settings, ...clone(patch.settings) };
-      if ('target_keyword' in patch) {
-        if (patch.target_keyword === null || String(patch.target_keyword).trim() === '') delete row.settings.target_keyword;
-        else row.settings.target_keyword = String(patch.target_keyword).trim();
+      // The five columns; the keyword also lands in settings.target_keyword (the
+      // mirror the older readers use), and the declared param wins over a
+      // settings.target_keyword sent in the same call, as the Olympus PATCH does.
+      for (const [key, value] of Object.entries(grounded.ok)) {
+        row[key] = value;
+        if (key === 'target_keyword') {
+          if (value === null) delete row.settings.target_keyword;
+          else row.settings.target_keyword = value;
+        }
       }
       row.updated_at = NOW;
-      return { data: { ...clone(row), url: rowUrl(row) } };
+      return { data: view(row) };
     },
     content_link_to_cms({ content_id, website_project_id, cms_collection_id, cms_entry_slug } = {}) {
       const row = rows.get(content_id);
@@ -565,7 +658,7 @@ export async function createTools() {
       row.cms_collection_id = nextCollection;
       row.cms_entry_slug = nextSlug;
       row.updated_at = NOW;
-      return { data: { ...clone(row), url: rowUrl(row) } };
+      return { data: view(row) };
     },
     content_seo_check({ content_id } = {}) {
       if (!content_id) return { error: 'content_id is required' };

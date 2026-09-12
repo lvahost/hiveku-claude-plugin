@@ -22,6 +22,11 @@
     "website_project_id": "wp_brightside_01",
     "cms_collection_id": "blog",
     "cms_entry_slug": null,
+    "avatar_id": null,
+    "journey_id": null,
+    "journey_stage": null,
+    "before_after_grid_id": null,
+    "target_keyword": null,
     "settings": {
       "target_keyword": "sand between coats",
       "linkedTaskIds": [
@@ -59,6 +64,11 @@
     "website_project_id": "wp_brightside_01",
     "cms_collection_id": "blog",
     "cms_entry_slug": "finish-schedule",
+    "avatar_id": "avt_marcus_01",
+    "journey_id": "cjm_trade_01",
+    "journey_stage": "Solution Aware",
+    "before_after_grid_id": "grid_harlow_01",
+    "target_keyword": "cabinet finish schedule",
     "settings": {
       "target_keyword": "cabinet finish schedule",
       "published_route": "/blog/finish-schedule"
@@ -93,6 +103,11 @@
     "website_project_id": "wp_brightside_01",
     "cms_collection_id": "blog",
     "cms_entry_slug": "what-a-call-back-costs",
+    "avatar_id": "avt_marcus_01",
+    "journey_id": "cjm_trade_01",
+    "journey_stage": "Problem Aware",
+    "before_after_grid_id": null,
+    "target_keyword": "call-back cost contractor",
     "settings": {
       "target_keyword": "call-back cost contractor",
       "published_route": "/blog/what-a-call-back-costs"
@@ -125,6 +140,11 @@
     "website_project_id": "wp_brightside_01",
     "cms_collection_id": "news",
     "cms_entry_slug": "shop-tour-june",
+    "avatar_id": null,
+    "journey_id": null,
+    "journey_stage": null,
+    "before_after_grid_id": null,
+    "target_keyword": null,
     "settings": {},
     "published_at": "2026-06-30T14:00:00Z",
     "last_published_to_cms_at": "2026-06-30T14:00:00Z",

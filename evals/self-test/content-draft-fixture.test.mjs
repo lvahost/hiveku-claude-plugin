@@ -7,13 +7,18 @@
  * field in the department's draft (and a look-alike that must survive), one
  * pre-filled row field the check reports as an error (a hero with no alt),
  * one timed-out department turn that department_turn_get reads back, three
- * linkable site URLs and one published post that cannot be linked. Then the
- * half that matters: the hook FAILS a publish while an error stands, a publish
- * after an unchecked edit, a body with one link or an invented one, a row with
- * no avatar or stage, a banned phrase persisted, a missing hero alt, a skipped
- * check, a blind retry of the timed-out turn, a turn never read back, links
- * read after the body was written, a refused content_create or deploy, a
- * report with no header, and a sidecar that disagrees with the transcript.
+ * linkable site URLs and one published post that cannot be linked, and a
+ * calendar row that arrives UNGROUNDED (the five typed columns null, the
+ * keyword only in settings - the pre-column shape). Then the half that
+ * matters: the hook FAILS a publish while an error stands, a publish after an
+ * unchecked edit, a body with one link or an invented one, a row whose
+ * grounding was written to settings keys or tags instead of the typed
+ * columns (or not at all, or with a stage off the journey, or refused for a
+ * foreign id), a banned phrase persisted, a missing hero alt, a header that
+ * disagrees with the row, a skipped check, a blind retry of the timed-out
+ * turn, a turn never read back, links read after the body was written, a
+ * refused content_create or deploy, a report with no header, and a sidecar
+ * that disagrees with the transcript.
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -34,7 +39,7 @@ const {
   createTools, NOW, ROW_ID, PROJECT_ID, SITE_HOST, TURN_ID, REVISION_TURN_ID, FRESH_TURN_ID, SESSION_ID, FRESH_SESSION_ID,
   phrasePattern, checkContentSeo, parseMarkdown, MIN_BODY_WORDS,
 } = await import(pathToFileURL(path.join(FIX, 'tools.mjs')).href);
-const { checks, BANNED_PHRASES, LINK_URLS, STAGE_NAMES, internalLinksIn, extractUrls, parseHeaders, persistedRow, bannedHit } = await import(pathToFileURL(path.join(FIX, 'checks.mjs')).href);
+const { checks, BANNED_PHRASES, LINK_URLS, STAGE_NAMES, internalLinksIn, extractUrls, parseHeaders, persistedRow, bannedHit, rowKeyword } = await import(pathToFileURL(path.join(FIX, 'checks.mjs')).href);
 
 const tmpDir = () => fs.mkdtempSync(path.join(os.tmpdir(), 'hk-content-draft-'));
 const hasProblem = (problems, prefix, includes) => problems.some((p) => p.startsWith(prefix) && (includes === undefined || p.includes(includes)));
@@ -43,6 +48,9 @@ const LINK_FINISH = 'https://brightsidefixtures.example/blog/finish-schedule';
 const LINK_CALLBACK = 'https://brightsidefixtures.example/blog/what-a-call-back-costs';
 const ALT = 'A cabinet door on the finish-room rack, scuffed with 320-grit paper between coats';
 const META_TITLE = 'Why we sand between coats | Brightside Fixtures';
+const GRID_NAME = 'Harlow Street refit - Whitfield Renovations';
+/** The grounding a clean run records on the row: the five typed columns content_update takes. */
+const DEFAULT_GROUNDING = { avatar_id: 'avt_marcus_01', journey_id: 'cjm_trade_01', journey_stage: 'Problem Aware', before_after_grid_id: 'grid_harlow_01', target_keyword: 'sand between coats' };
 const cleanMeta = () => draft().meta_description.replace('A seamless finish', 'A finish that lasts');
 
 // -- Tool surface -----------------------------------------------------------------
@@ -79,6 +87,16 @@ test('content-draft: the calendar row is bound, keyworded, slugged from its titl
   assert.equal(row.website_project_id, PROJECT_ID);
   assert.equal(row.cms_collection_id, 'blog');
   assert.equal(row.settings.target_keyword, expected.draft_bounds.keyword);
+  // the seed: the row arrives ungrounded - the five typed columns null, the
+  // keyword only in settings (written before the column existed)
+  for (const key of ['avatar_id', 'journey_id', 'journey_stage', 'before_after_grid_id', 'target_keyword']) {
+    assert.equal(row[key], null, `${key} must be null on the calendar row as handed over`);
+  }
+  assert.equal(rowKeyword(row), expected.draft_bounds.keyword, 'the legacy settings keyword reads through the column');
+  assert.equal(expected.draft_bounds.grid_name, GRID_NAME);
+  // the published rows carry theirs on the columns, so the list filters have something to return
+  const pillar = rows.find((r) => r.id === 'ci_finish_schedule_01');
+  assert.deepEqual([pillar.avatar_id, pillar.journey_id, pillar.journey_stage, pillar.before_after_grid_id, pillar.target_keyword], ['avt_marcus_01', 'cjm_trade_01', 'Solution Aware', 'grid_harlow_01', 'cabinet finish schedule']);
   assert.ok(row.featured_image_url, 'the designer attached the hero');
   assert.equal(row.featured_image_alt, null, 'the seed: a hero with no alt');
   // exactly one draft row, and the only one in the September calendar slot
@@ -248,14 +266,34 @@ test('content-draft: tools - create refuses, update is faithful and refuses a sc
   assert.match(tools.content_update({ content_id: ROW_ID, slug: 'Bad Slug' }).error, /lower-case/);
   assert.equal(tools.content_update({ content_id: ROW_ID, slug: 'finish-schedule' }).code, 'slug_conflict');
   assert.match(tools.content_update({ content_id: ROW_ID, status: 'live' }).error, /status must be one of/);
-  // settings merge one level; target_keyword lands in settings; status flips the row and nothing else
-  const merged = tools.content_update({ content_id: ROW_ID, settings: { linkedAvatars: ['avt_marcus_01'], targetJourneyStage: 'Problem Aware' }, meta_keywords: 'sand between coats, cabinet finish' }).data;
-  assert.deepEqual(merged.settings.linkedAvatars, ['avt_marcus_01']);
+  // the grounding: a foreign or malformed id refuses with invalid_reference and NOTHING on the call is written
+  const foreign = tools.content_update({ content_id: ROW_ID, avatar_id: 'avt_other_01', title: 'changed' });
+  assert.equal(foreign.code, 'invalid_reference');
+  assert.match(foreign.error, /customer_avatar_list; nothing was written/);
+  assert.equal(tools.content_get({ content_id: ROW_ID }).data.title, 'Why we sand between coats', 'nothing on a refused call is written');
+  assert.equal(tools.content_update({ content_id: ROW_ID, journey_id: 'cjm_nope' }).code, 'invalid_reference');
+  assert.equal(tools.content_update({ content_id: ROW_ID, before_after_grid_id: 42 }).code, 'invalid_reference');
+  assert.match(tools.content_update({ content_id: ROW_ID, journey_stage: ['x'] }).error, /journey_stage must be the stage name/);
+  // settings merge one level; the five land on the typed columns with the names beside them; the legacy keyword reads through the column; status flips the row and nothing else
+  const merged = tools.content_update({ content_id: ROW_ID, avatar_id: 'avt_marcus_01', journey_id: 'cjm_trade_01', journey_stage: ' Problem Aware ', before_after_grid_id: 'grid_harlow_01', settings: { note: 'x' }, meta_keywords: 'sand between coats, cabinet finish' }).data;
+  assert.equal(merged.avatar_id, 'avt_marcus_01');
+  assert.deepEqual(merged.customer_avatar, { id: 'avt_marcus_01', name: 'Marcus' });
+  assert.deepEqual(merged.customer_journey, { id: 'cjm_trade_01', name: 'Trade contractor journey' });
+  assert.equal(merged.journey_stage, 'Problem Aware', 'the stage name is trimmed');
+  assert.deepEqual(merged.before_after_grid, { id: 'grid_harlow_01', name: GRID_NAME });
+  assert.equal(merged.settings.note, 'x');
   assert.equal(merged.settings.target_keyword, 'sand between coats', 'siblings survive the merge');
+  assert.equal(merged.target_keyword, 'sand between coats', 'the legacy settings keyword reads through the column');
   assert.deepEqual(merged.settings.linkedTaskIds, ['task_sept_blog_01']);
   assert.deepEqual(merged.meta_keywords, ['sand between coats', 'cabinet finish']);
-  assert.equal(tools.content_update({ content_id: ROW_ID, target_keyword: '' }).data.settings.target_keyword, undefined);
-  tools.content_update({ content_id: ROW_ID, target_keyword: 'sand between coats' });
+  const cleared = tools.content_update({ content_id: ROW_ID, target_keyword: '' }).data;
+  assert.equal(cleared.settings.target_keyword, undefined);
+  assert.equal(cleared.target_keyword, null);
+  const keyed = tools.content_update({ content_id: ROW_ID, target_keyword: 'sand between coats', settings: { target_keyword: 'a different keyword' } }).data;
+  assert.equal(keyed.target_keyword, 'sand between coats', 'the declared param wins over a settings keyword sent in the same call');
+  assert.equal(keyed.settings.target_keyword, 'sand between coats', 'and the mirror follows the column');
+  assert.equal(tools.content_update({ content_id: ROW_ID, avatar_id: null }).data.customer_avatar, null, 'null clears');
+  tools.content_update({ content_id: ROW_ID, avatar_id: 'avt_marcus_01' });
   assert.equal(tools.content_update({ content_id: ROW_ID, status: 'published' }).data.status, 'published');
   assert.equal(tools.content_get({ content_id: ROW_ID }).data.url, null, 'a status flip does not put the page anywhere');
   tools.content_update({ content_id: ROW_ID, status: 'draft' });
@@ -370,6 +408,14 @@ test('content-draft: tools - reads behave like the routes (context, foundation, 
   assert.equal(drafts.pagination.total, 1);
   assert.equal(drafts.data[0].id, ROW_ID);
   assert.equal(drafts.data[0].url, null);
+  // every list row carries the grounding: the calendar row's is null, its keyword read through the column
+  assert.deepEqual([drafts.data[0].avatar_id, drafts.data[0].journey_stage, drafts.data[0].customer_avatar, drafts.data[0].target_keyword], [null, null, null, 'sand between coats']);
+  // the grounding filters, as the Olympus list reads them
+  assert.deepEqual(tools.content_list({ avatar_id: 'avt_marcus_01', limit: 200 }).data.map((r) => r.id).sort(), ['ci_call_backs_01', 'ci_finish_schedule_01']);
+  assert.deepEqual(tools.content_list({ journey_stage: 'problem aware' }).data.map((r) => r.id), ['ci_call_backs_01']);
+  assert.deepEqual(tools.content_list({ avatar_id: 'avt_marcus_01', journey_stage: 'Solution Aware' }).data.map((r) => r.id), ['ci_finish_schedule_01']);
+  assert.equal(tools.content_list({ before_after_grid_id: 'grid_nope' }).pagination.total, 0);
+  assert.deepEqual(tools.content_get({ content_id: 'ci_finish_schedule_01' }).data.customer_avatar, { id: 'avt_marcus_01', name: 'Marcus' });
   const published = tools.content_list({ status: 'published', limit: 200 });
   assert.equal(published.pagination.total, 3);
   assert.equal(published.data.find((r) => r.id === 'ci_finish_schedule_01').url, LINK_FINISH);
@@ -384,7 +430,7 @@ test('content-draft: tools - reads behave like the routes (context, foundation, 
 
 // -- The transcript hook, over a synthetic run built from the fixture's own tools ----
 async function syntheticRun({
-  body, metaDescription, alt = ALT, settings, tags, memoryContent, extraCalls = [], reorder,
+  body, metaDescription, alt = ALT, grounding, settings, tags, memoryContent, extraCalls = [], reorder,
   skipPoll = false, pollOnce = false, blindRetry = false, skipCheck = false, publishEarly = false, editAfterCheck = false, skipPublish = false,
   linksAfterBody = false, skipLinks = false, callCreate = false, callDeploy = false, findingsPatch, reportPatch,
 } = {}) {
@@ -423,7 +469,9 @@ async function syntheticRun({
     meta_title: META_TITLE,
     meta_description: metaDescription ?? cleanMeta(),
     meta_keywords: ['sand between coats'],
-    settings: settings ?? { linkedAvatars: ['avt_marcus_01'], targetJourneyStage: 'Problem Aware', linkedBeforeAfterGrids: ['grid_harlow_01'] },
+    // the grounding rides on the typed columns (grounding: null sends none; settings keys are the legacy shape a failing run might still write)
+    ...(grounding === null ? {} : (grounding ?? DEFAULT_GROUNDING)),
+    ...(settings ? { settings } : {}),
     ...(tags ? { tags } : {}),
   };
   call('content_update', update);
@@ -454,7 +502,7 @@ async function syntheticRun({
     '## Who it is for',
     'The brief said the trade contractor. account_context_get returned one avatar, Marcus (avt_marcus_01), and the trade contractor journey (cjm_trade_01); the piece fills the Problem Aware cell under the finish-durability cluster with the Harlow Street grid (grid_harlow_01) as proof.',
     '',
-    reportPatch?.header === null ? '' : (reportPatch?.header ?? 'For: Marcus | Stage: Problem Aware | Grid: Harlow Street refit - Whitfield Renovations | Keyword: sand between coats | Links: 2'),
+    reportPatch?.header === null ? '' : (reportPatch?.header ?? `For: Marcus | Stage: Problem Aware | Grid: ${GRID_NAME} | Keyword: sand between coats | Links: 2`),
     '',
     '## Links',
     `content_site_links(wp_brightside_01) returned 3 URLs (2 posts, 1 page) and 1 post without a URL (its collection has no route pattern). The body links the pillar ${LINK_FINISH} and ${LINK_CALLBACK}.`,
@@ -513,7 +561,13 @@ test('content-draft: the hook PASSES a clean synthetic run, and the answer key g
   // the folded row is what the transcript left
   const { row } = persistedRow(transcript);
   assert.equal(row.featured_image_alt, ALT);
-  assert.deepEqual(row.settings.linkedAvatars, ['avt_marcus_01']);
+  assert.deepEqual([row.avatar_id, row.journey_id, row.journey_stage, row.before_after_grid_id, row.target_keyword], ['avt_marcus_01', 'cjm_trade_01', 'Problem Aware', 'grid_harlow_01', 'sand between coats']);
+  assert.equal(row.settings.target_keyword, 'sand between coats', 'the mirror follows the column');
+  assert.equal(row.settings.linkedAvatars, undefined, 'nothing writes the legacy settings keys');
+  // the echo the hook reads carries the names behind the ids
+  const firstUpdate = callsTo(transcript, 'content_update')[0];
+  assert.deepEqual(firstUpdate.result.data.customer_avatar, { id: 'avt_marcus_01', name: 'Marcus' });
+  assert.equal(firstUpdate.result.data.before_after_grid.name, GRID_NAME);
   assert.equal(bannedHit(row), null);
 });
 
@@ -555,20 +609,43 @@ test('content-draft: the hook FAILS a body with one site link, an invented site 
   assert.ok(hasProblem(p4, 'no banned phrase in persisted copy', '"elevate" in content'), p4.join('\n'));
 });
 
-test('content-draft: the hook FAILS a row with no avatar or stage, a missing hero alt, and honours the tag spelling', async () => {
-  const noFoundation = await syntheticRun({ settings: { linkedBeforeAfterGrids: ['grid_harlow_01'] } });
-  const p1 = checks(noFoundation.transcript, { run: noFoundation.dir, report: noFoundation.report, findings: noFoundation.findings });
-  assert.ok(hasProblem(p1, 'the row names the avatar and the stage', 'does not name the avatar'), p1.join('\n'));
-  const wrongStage = await syntheticRun({ settings: { linkedAvatars: ['avt_marcus_01'], targetJourneyStage: 'Awareness' } });
-  const p2 = checks(wrongStage.transcript, { run: wrongStage.dir, report: wrongStage.report, findings: wrongStage.findings });
-  assert.ok(hasProblem(p2, 'the row names the avatar and the stage', 'does not name a stage'), p2.join('\n'));
-  const tagged = await syntheticRun({ settings: { linkedBeforeAfterGrids: ['grid_harlow_01'] }, tags: ['persona:marcus', 'stage:problem-aware', 'cluster:finish-durability'] });
-  const p3 = checks(tagged.transcript, { run: tagged.dir, report: tagged.report, findings: tagged.findings });
-  assert.deepEqual(p3, [], 'the social tag spelling names the same avatar and stage');
+test('content-draft: the hook FAILS a grounding written to settings keys or tags, none at all, a stage off the journey, a foreign id, a missing hero alt, and a header the row does not back', async () => {
+  const GROUNDING = 'the row carries its grounding as typed columns';
+  // the pre-round-3 shape: settings.linkedAvatars / targetJourneyStage / linkedBeforeAfterGrids - nothing reads them now
+  const settingsOnly = await syntheticRun({ grounding: null, settings: { linkedAvatars: ['avt_marcus_01'], targetJourneyStage: 'Problem Aware', linkedBeforeAfterGrids: ['grid_harlow_01'] } });
+  const p1 = checks(settingsOnly.transcript, { run: settingsOnly.dir, report: settingsOnly.report, findings: settingsOnly.findings });
+  assert.ok(hasProblem(p1, GROUNDING, 'not the contract'), p1.join('\n'));
+  // the social tag spelling is not the contract either
+  const tagged = await syntheticRun({ grounding: null, tags: ['persona:marcus', 'stage:problem-aware', 'cluster:finish-durability'] });
+  const p2 = checks(tagged.transcript, { run: tagged.dir, report: tagged.report, findings: tagged.findings });
+  assert.ok(hasProblem(p2, GROUNDING, 'not the contract'), p2.join('\n'));
+  // avatar and stage recorded, the grid not: the promise is part of the grounding
+  const noGrid = await syntheticRun({ grounding: { avatar_id: 'avt_marcus_01', journey_id: 'cjm_trade_01', journey_stage: 'Problem Aware', target_keyword: 'sand between coats' } });
+  const p3 = checks(noGrid.transcript, { run: noGrid.dir, report: noGrid.report, findings: noGrid.findings });
+  assert.ok(hasProblem(p3, GROUNDING, 'before_after_grid_id is null'), p3.join('\n'));
+  assert.ok(hasProblem(p3, 'report carries the For | Stage | Grid | Keyword | Links header', 'not the grid the row carries'), 'and the header names a grid the row does not carry');
+  // a stage the journey map does not have (the business vocabulary, not the map's)
+  const wrongStage = await syntheticRun({ grounding: { ...DEFAULT_GROUNDING, journey_stage: 'Awareness' } });
+  const p4 = checks(wrongStage.transcript, { run: wrongStage.dir, report: wrongStage.report, findings: wrongStage.findings });
+  assert.ok(hasProblem(p4, GROUNDING, 'not a stage on cjm_trade_01'), p4.join('\n'));
+  // a foreign id: the fixture refuses the whole write (nothing lands, the body included), and the hook sees an ungrounded row
+  const foreign = await syntheticRun({ grounding: { ...DEFAULT_GROUNDING, avatar_id: 'avt_other_01' } });
+  assert.equal(callsTo(foreign.transcript, 'content_update')[0].result.code, 'invalid_reference');
+  const p5 = checks(foreign.transcript, { run: foreign.dir, report: foreign.report, findings: foreign.findings });
+  assert.ok(hasProblem(p5, GROUNDING, 'not the contract') || hasProblem(p5, GROUNDING, 'avatar_id is null'), p5.join('\n'));
   const noAlt = await syntheticRun({ alt: null });
-  const p4 = checks(noAlt.transcript, { run: noAlt.dir, report: noAlt.report, findings: noAlt.findings });
-  assert.ok(hasProblem(p4, 'the hero got its alt text'), p4.join('\n'));
-  assert.ok(hasProblem(p4, 'the check ran on the row and ended clean'), 'and the check still reports the error');
+  const p6 = checks(noAlt.transcript, { run: noAlt.dir, report: noAlt.report, findings: noAlt.findings });
+  assert.ok(hasProblem(p6, 'the hero got its alt text'), p6.join('\n'));
+  assert.ok(hasProblem(p6, 'the check ran on the row and ended clean'), 'and the check still reports the error');
+  // the header is read back from the row: a stage typed from the brief that the row does not carry fails
+  const headerDrift = await syntheticRun({ reportPatch: { header: `For: Marcus | Stage: Solution Aware | Grid: ${GRID_NAME} | Keyword: sand between coats | Links: 2` } });
+  const p7 = checks(headerDrift.transcript, { run: headerDrift.dir, report: headerDrift.report, findings: headerDrift.findings });
+  assert.ok(hasProblem(p7, 'report carries the For | Stage | Grid | Keyword | Links header', 'not the stage the row carries (Problem Aware)'), p7.join('\n'));
+  assert.ok(hasProblem(p7, 'sidecar reconciles', 'not the stage the row carries') === false, 'the sidecar named the row stage, so only the header is wrong');
+  // the row's stage recorded as the map spells it, the sidecar disagreeing, fails on the sidecar
+  const sidecarDrift = await syntheticRun({ findingsPatch: { draft: { content_id: ROW_ID, avatar: 'Marcus', stage: 'Solution Aware', keyword: 'sand between coats', internal_links: [LINK_FINISH, LINK_CALLBACK], seo_check_ok: true, published: true, deployed: false } } });
+  const p8 = checks(sidecarDrift.transcript, { run: sidecarDrift.dir, report: sidecarDrift.report, findings: sidecarDrift.findings });
+  assert.ok(hasProblem(p8, 'sidecar reconciles', 'not the stage the row carries (Problem Aware)'), p8.join('\n'));
 });
 
 test('content-draft: the hook FAILS a blind retry, a turn never read back, a single poll, and links read after the body', async () => {
@@ -610,7 +687,11 @@ test('content-draft: the hook FAILS a refused content_create or deploy, a late c
   assert.ok(hasProblem(p4, 'report carries the For | Stage | Grid | Keyword | Links header', 'no "For:'), p4.join('\n'));
   const wrongHeader = await syntheticRun({ reportPatch: { header: 'For: Marcus | Stage: Awareness | Grid: Harlow | Keyword: sand between coats | Links: 2' } });
   const p5 = checks(wrongHeader.transcript, { run: wrongHeader.dir, report: wrongHeader.report, findings: wrongHeader.findings });
-  assert.ok(hasProblem(p5, 'report carries the For | Stage | Grid | Keyword | Links header', 'not a stage'), p5.join('\n'));
+  assert.ok(hasProblem(p5, 'report carries the For | Stage | Grid | Keyword | Links header', 'not the stage the row carries (Problem Aware)'), p5.join('\n'));
+  // the assertion stops at the first mismatch; the abbreviated grid name fails on its own once the stage is right
+  const wrongGrid = await syntheticRun({ reportPatch: { header: 'For: Marcus | Stage: Problem Aware | Grid: Harlow | Keyword: sand between coats | Links: 2' } });
+  const p5b = checks(wrongGrid.transcript, { run: wrongGrid.dir, report: wrongGrid.report, findings: wrongGrid.findings });
+  assert.ok(hasProblem(p5b, 'report carries the For | Stage | Grid | Keyword | Links header', 'not the grid the row carries'), p5b.join('\n'));
   const dropped = await syntheticRun({ memoryContent: 'September piece done.' });
   const p6 = checks(dropped.transcript, { run: dropped.dir, report: dropped.report, findings: dropped.findings });
   assert.ok(hasProblem(p6, 'memory write-back keeps the prior document'), p6.join('\n'));

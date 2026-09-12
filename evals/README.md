@@ -206,7 +206,11 @@ the check is clean is on record, so `content_publish_to_site` is allowed - and
 it never blocks: a publish while an error stands is a 200 with the error in
 `warnings[]`, which `checks.mjs` fails, along with a publish after an
 unchecked edit, a body with fewer than two of the three URLs or a URL the tool
-never returned, a row with no avatar or stage, a persisted banned phrase, a
+never returned, a row whose grounding was not written to the typed columns
+(`avatar_id`, `journey_id`, `journey_stage`, `before_after_grid_id`,
+`target_keyword` - the calendar row arrives with all five null; settings keys
+and persona/stage tags do not count) or whose report header is not read back
+from them, a persisted banned phrase, a
 skipped check, a blind retry, a turn never read back, links read after the
 body, and any `content_create`, `deploy_site`, `deploy_run`, `content_delete`,
 `content_unpublish_from_site` or `content_share_link_create` call. No

@@ -236,3 +236,54 @@ test('a fabricated content_ name in a command fails tool-names.test.mjs', () => 
     fs.rmSync(tmp, { recursive: true, force: true });
   }
 });
+
+// ── round 3: the grounding is recorded on the row as typed columns ──────────
+
+test('the content skill records who a piece is for on the row as the five typed columns, and reads the header back from them', () => {
+  const skill = read(SKILL);
+  const sitePublishing = read(SITE_PUBLISHING);
+  const prompt = read('evals/fixtures/content-draft/prompt.md');
+  const fixtureChecks = read('evals/fixtures/content-draft/checks.mjs');
+
+  // The calendar draft and the production persist carry the five by name.
+  assert.match(
+    skill,
+    /`content_create\(\{ status:\s+"draft", title, content_type, target_keyword, avatar_id, journey_id, journey_stage,\s+before_after_grid_id \}\)`/,
+    'Play 2 step 6 no longer persists the calendar cell as the typed columns',
+  );
+  const play3 = skill.slice(skill.indexOf('2. **Draft via the department.**'), skill.indexOf('3. **Optimize against the SERP reality:**'));
+  assert.match(play3, /`content_update\(\{ content_id, avatar_id, journey_id, journey_stage, before_after_grid_id,\s+target_keyword \}\)`/, 'Play 3 step 2 no longer records the grounding on the row');
+  assert.match(play3, /`invalid_reference`/, 'Play 3 step 2 must say what a foreign id answers');
+  assert.match(play3, /never strip the id to make the call\s+pass/, 'Play 3 step 2 must forbid dropping the id to get a 201');
+  assert.match(play3, /an echo without them means the\s+write did not land/, 'Play 3 step 2 must read the echo');
+
+  // The gate reads the header back from the row.
+  const gate = skill.slice(skill.indexOf('5. **Quality gate'), skill.indexOf('6. **Persist:'));
+  assert.match(gate, /The row carries its grounding/, 'the quality gate lost the grounding item');
+  assert.match(gate, /READ BACK from those \(`customer_avatar\.name`,\s+`journey_stage`, `before_after_grid\.name`, `target_keyword`\)/, 'the gate must read the header back from the row');
+  assert.match(skill, /6\. \*\*Persist:\*\* `content_create` \(or `content_update` for revisions\) carrying the five\s+grounding params/, 'Play 3 step 6 must persist the five');
+  // The coverage matrix comes from the columns and the list filters.
+  assert.match(skill, /`content_list` filters on `avatar_id`, `journey_id`, `before_after_grid_id` and\s+`journey_stage`/, 'Play 1 step 6 must build the matrix from the list filters');
+
+  // One reference file carries the contract, headed by the call shape.
+  assert.match(sitePublishing, /^## The grounding on the row - `content_create` \/ `content_update` \(\{ avatar_id, journey_id, journey_stage, before_after_grid_id, target_keyword \}\)$/m, 'site-publishing.md lost the grounding section');
+  for (const key of ['`code: "invalid_reference"`', 'NOTHING on that call is\n  written', '`customer_avatar`, `customer_journey`\nand `before_after_grid` as `{ id, name }` or null', '`content_list({ avatar_id, journey_id, before_after_grid_id, journey_stage })`', 'before 2026-09-12 carries the keyword only in `settings`', 'the param wins']) {
+    assert.ok(sitePublishing.includes(key), `site-publishing.md no longer says ${JSON.stringify(key)}`);
+  }
+  assert.match(sitePublishing, /The proxy forwards only DECLARED params/, 'site-publishing.md must say an undeclared param is dropped');
+
+  // The legacy settings keys are gone from the doctrine and the eval prompt
+  // except where they are named as NOT the contract.
+  for (const [label, text] of [['SKILL.md', skill], ['site-publishing.md', sitePublishing], ['content-draft prompt', prompt]]) {
+    // Prose wraps, so a mention is judged with the paragraph it sits in.
+    const offenders = text
+      .split(/\n\s*\n/)
+      .filter((paragraph) => /linkedAvatars|targetJourneyStage|linkedBeforeAfterGrids/.test(paragraph))
+      .filter((paragraph) => !/not the\s+contract|do not count|nothing reads them/i.test(paragraph));
+    assert.deepEqual(offenders, [], `${label} still teaches the settings keys as the place to record the grounding`);
+  }
+  // The fixture asserts on the columns, not the settings keys.
+  assert.match(fixtureChecks, /row\.avatar_id !== BOUNDS\.avatar_id/, 'checks.mjs no longer asserts avatar_id on the row');
+  assert.match(fixtureChecks, /row\.journey_stage/, 'checks.mjs no longer asserts journey_stage on the row');
+  assert.doesNotMatch(fixtureChecks, /settings\.linkedAvatars\)/, 'checks.mjs still reads settings.linkedAvatars as the contract');
+});
