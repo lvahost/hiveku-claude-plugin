@@ -176,7 +176,8 @@
  *               content_refresh_brief_get (build 7); site_page_roles_get,
  *               site_page_roles_set, content_keyword_map (build 8);
  *               content_bofu_plan, content_bofu_plan_get (build 9);
- *               brand_offers_get, brand_offers_set, content_conversion_plan
+ *               brand_offers_get, brand_offers_set, content_conversion_plan,
+ *               content_conversion_plan_get (the read-only twin, declared by the MCP lane)
  *               (build 10). Spelled in prose by the content skill (Plays 1-5
  *               and the hard stops), its two new references
  *               (structure-and-conversion.md and site-architecture-and-decay.md
@@ -190,8 +191,8 @@
  *               invalid_reference message cites the authors list as
  *               content_author_list (singular) while B3 asked for
  *               content_authors_list; this file and the prose follow B3, the
- *               route owner. B10 named a read-only twin of the conversion plan
- *               as optional; it is not spelled anywhere until it exists.
+ *               route owner. B10's read-only twin of the conversion plan
+ *               (content_conversion_plan_get) is declared and taught.
  */
 const SEO_SINCE = '2026-08-30';
 const seo = (batch) => ({ since: SEO_SINCE, batch });
@@ -272,4 +273,5 @@ export const PENDING_TOOLS = new Map([
   ['brand_offers_get', eliteB],
   ['brand_offers_set', eliteB],
   ['content_conversion_plan', eliteB],
+  ['content_conversion_plan_get', eliteB],
 ]);

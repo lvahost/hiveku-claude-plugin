@@ -868,6 +868,7 @@ const ELITE_B_NAMES = [
   'brand_offers_get',
   'brand_offers_set',
   'content_conversion_plan',
+  'content_conversion_plan_get',
 ];
 
 /** The eleven elite rules with the level content-seo-check.ts assigns. */
@@ -935,10 +936,11 @@ test('the ELITE-B names are live or pending under ELITE-B, the two round-B Avail
     if (!PENDING_TOOLS.has(name)) continue;
     assert.equal(rows.filter((r) => r.name === name).length, 1, `${name} must appear in exactly one Availability row`);
   }
-  // A read-only twin of the conversion plan was named optional by its lane and
-  // is declared nowhere; the prose must not teach it until it exists.
-  const spelled = [...markdownFiles('skills'), ...markdownFiles('commands')].filter((rel) => read(rel).includes('content_conversion_plan_get'));
-  assert.deepEqual(spelled, [], 'content_conversion_plan_get is taught but never declared');
+  // The read-only twin of the conversion plan is declared (MCP 01584b0, GET
+  // .../conversion, readOnlyHint) and wrapped by the department, so the prose
+  // teaches it beside the write and it rides the ELITE-B batch until the live
+  // index carries it.
+  assert.match(read(STRUCTURE_AND_CONVERSION), /`content_conversion_plan_get\(\{ content_id \}\)` reads the plan/, 'the conversion reference must teach the read-only twin beside the write');
 
   // Source cross-check: every Olympus route the two tables name has a route
   // file in the builder (path params become Next.js dynamic segments).
