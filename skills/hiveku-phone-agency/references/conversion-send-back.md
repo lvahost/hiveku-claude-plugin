@@ -148,8 +148,12 @@ The row-level truth of the lane (`voice_conversion_uploads`): every enqueued cal
 **unique per (call, platform)** - one call can have up to four rows, one per lane - with the
 originating call joined on and each `error_code` translated. Filters: `status` and `error_code`
 (comma list or repeated; an unknown status is a 400 naming the valid set, never a silent empty
-page), `from`/`to` on created_at, `limit` 1-200 (default 50), `order` created_desc | created_asc
-| oldest_queued.
+page), `platform` (comma list of `google_ads` | `ga4` | `microsoft_ads` | `meta_ads`; an unknown
+value is a 400 naming the set, and the response echoes what was applied under `filters`),
+`from`/`to` on created_at, `limit` 1-200 (default 50), `order` created_desc | created_asc |
+oldest_queued. When the doctor says one lane is failing (its outbox check names the platform,
+`details.by_platform`), filter to that `platform` before reading rows - a Meta token expiry
+buried in a page of Google successes is how a lane stays dead for a month.
 
 **An empty result is ambiguous**: nothing was ever enqueued (a tracking problem - ask
 `voice_call_tracking_diagnose`, and check the enable + attribution upstream) or everything
@@ -161,6 +165,17 @@ retry backoff - the joined `error_code` and timestamps say which); `uploaded` = 
 accepted it, done; `failed` = attempted and refused (the codes below say whether it will ever go);
 `skipped` = never attempted, terminally, for a named reason (the sentinel codes). Unlike the CRM
 lane there is no `validated` state here - the call lane has no validate-only mode.
+
+Two columns to read the way the route means them:
+
+- **`outcome`, not `status`, is the verdict.** `uploaded` = the platform accepted it.
+  `uploaded_duplicate` = status `uploaded` WITH an `error_code`, because the platform already
+  had that conversion - that is ALSO success and never a retry (the (call, platform) key did its
+  job). Otherwise `outcome` equals `status` (`queued` | `failed` | `skipped`).
+- **`click_id` is MASKED.** Every surface hides the raw ad token; `click_id_type` says which
+  platform the row belongs to, and that is all a report needs. Never go looking for the raw
+  gclid to "verify" a row - the platform's own click record is what `CLICK_NOT_FOUND` is about.
+  `conversion_value` comes back as a STRING; parse it before summing.
 
 One more framing fact: **this lane runs itself.** Discovery and dispatch ride a ~5-minute tick;
 there is no batch for you to run, no cadence workflow to build (the CRM lane's daily-batch advice

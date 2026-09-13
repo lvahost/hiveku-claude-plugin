@@ -24,7 +24,8 @@ rings real phones immediately - so the plan comes before any write.
    changing nothing on the phones. A null `extension` means nothing can dial or transfer to it and it
    cannot be another group's fallback.
 6. **Point a DID at it** - [CONFIRM] `voice_number_update` with before/after: "next inbound call to
-   <e164> rings <group>". Read the number back.
+   <e164> rings <group>". Read the number back. A whisper on TRACKED calls ("Call from Google Ads"
+   before the bridge) is a pool setting, not a ring-group one - `/hiveku:call-tracking` pools.
 
 **Editing an existing group** (`voice_ring_group_update`) - three traps, every time:
 - `member_extension_ids` REPLACES the entire membership. "Add Mike" means send the FULL new roster;

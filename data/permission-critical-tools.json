@@ -6,7 +6,7 @@
     "mcp__hiveku__"
   ],
   "plugin_version": "0.26.11",
-  "count": 177,
+  "count": 200,
   "tools": [
     {
       "name": "deploy_site",
@@ -357,6 +357,121 @@
       "name": "voice_tenant_repair",
       "method": "POST",
       "why_gated": "reprovisions the whole PBX tenant - a last resort, not a routine fix"
+    },
+    {
+      "name": "voice_swap_test",
+      "method": "POST",
+      "why_gated": "holds a real tracking DID for the pool's entire sticky window, exactly as a visitor would; on a small pool that is a paying visitor's number"
+    },
+    {
+      "name": "voice_call_tracking_live_probe",
+      "method": "POST",
+      "why_gated": "writes a pool session and holds a tracking DID for the sticky window; a diagnostic loop starves a small pool of real visitors"
+    },
+    {
+      "name": "voice_phone_tracking_config_set",
+      "method": "PUT",
+      "why_gated": "full replace of a project's swap config, not a merge - an omitted swap_source_numbers wipes the numbers being swapped; a consent change takes effect only on a redeploy"
+    },
+    {
+      "name": "voice_phone_tracking_config_delete",
+      "method": "DELETE",
+      "why_gated": "turns number tracking off for an environment"
+    },
+    {
+      "name": "voice_pool_update",
+      "method": "PATCH",
+      "why_gated": "a destination on the patch bulk-rewrites every member DID's routing"
+    },
+    {
+      "name": "voice_pool_create",
+      "method": "POST",
+      "why_gated": "creates a live pool; a destination declared here is inherited by every member added later"
+    },
+    {
+      "name": "voice_pool_numbers_add",
+      "method": "POST",
+      "why_gated": "flips a DID's purpose to did_pool and inherits the pool destination"
+    },
+    {
+      "name": "voice_pool_numbers_remove",
+      "method": "DELETE",
+      "why_gated": "removes a DID from swap rotation"
+    },
+    {
+      "name": "voice_pool_e911_apply",
+      "method": "POST",
+      "why_gated": "one real carrier call per local member; changes where 911 dispatches for every number in the pool"
+    },
+    {
+      "name": "voice_webhook_create",
+      "method": "POST",
+      "why_gated": "registers a live delivery target for the tenant's whole call/SMS event stream - a URL nobody supplied is a standing exfiltration channel"
+    },
+    {
+      "name": "voice_webhook_update",
+      "method": "PATCH",
+      "why_gated": "redirects or stops the live event stream immediately (same exfiltration caution as create)"
+    },
+    {
+      "name": "voice_webhook_delete",
+      "method": "DELETE",
+      "why_gated": "irreversibly deletes the endpoint and its signing secret; recreating mints a new secret the receiver must adopt"
+    },
+    {
+      "name": "voice_sms_registration_share_link_create",
+      "method": "POST",
+      "why_gated": "mints a login-free link to the 10DLC registration form; the URL is a credential shown exactly once"
+    },
+    {
+      "name": "voice_sms_registration_share_link_revoke",
+      "method": "DELETE",
+      "why_gated": "revokes the client's registration link - omitting token_id revokes every live link on the account"
+    },
+    {
+      "name": "voice_port_order_share_link_create",
+      "method": "POST",
+      "why_gated": "mints a login-free link whose holder can write losing-carrier secrets and e-sign the LOA; the URL is a credential shown once"
+    },
+    {
+      "name": "voice_port_order_share_link_revoke",
+      "method": "DELETE",
+      "why_gated": "revokes the port order's handoff link - omitting token_id revokes every live link on the order"
+    },
+    {
+      "name": "voice_ivrs_reprovision",
+      "method": "POST",
+      "why_gated": "rewrites live dialplans: re-renders the IVR menus and re-installs their XML on the PBX, so callers route by the fresh rendering immediately"
+    },
+    {
+      "name": "voice_ai_agent_config_update",
+      "method": "PATCH",
+      "why_gated": "changes how the live AI receptionist answers the very next call (greeting, transfer targets, the minutes cost cap); a key sent as an empty string clears it"
+    },
+    {
+      "name": "voice_number_cnam_set",
+      "method": "PATCH",
+      "why_gated": "writes the caller-ID name to the carrier's national CNAM databases; 12 to 72 hours to propagate and as long again to reverse"
+    },
+    {
+      "name": "voice_sms_campaign_appeal",
+      "method": "POST",
+      "why_gated": "re-queues a rejected 10DLC campaign for manual carrier review with the same content attached; a wasted appeal is a wasted review cycle"
+    },
+    {
+      "name": "voice_port_order_verification_codes_send",
+      "method": "POST",
+      "why_gated": "rings or texts the customer's actual phones on their current carrier, once per number, right now"
+    },
+    {
+      "name": "voice_sms_scheduled_cancel",
+      "method": "DELETE",
+      "why_gated": "hard-deletes a scheduled text; no canceled state exists and a key-driven cancel leaves no audit row, so there is nothing to restore or trace"
+    },
+    {
+      "name": "voice_numbers_search",
+      "method": "POST",
+      "why_gated": "reserves nothing, but every call is one Telnyx API request billed to the account's carrier relationship; a loop through inventory is a spend"
     },
     {
       "name": "seo_gbp_review_reply",

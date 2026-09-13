@@ -19,29 +19,36 @@ call-tracking pools, and the call-conversion send-back to the ad platforms.
 **Profile visibility** (which key sees which names):
 
 - The **helpdesk** and **communications** profiles carry the whole `voice_` prefix.
-- The **sales** profile gets exactly one voice tool by name: `voice_call_transcript_get`.
-- The **marketing-ads (PPC)** profile now carries the call-tracking surface BY NAME:
+- The **sales** profile gets three voice tools by name: `voice_call_transcript_get`,
+  `voice_calls_list`, `voice_call_get`. That is the path from a CRM call to its transcript:
+  `crm_calls_list` rows carry `external_id` (the call UUID), never the `voice_calls.id` the
+  transcript tool takes, and `voice_calls_list` maps one to the other.
+- The **marketing-ads (PPC)** profile carries the call-tracking surface BY NAME:
   `voice_call_tracking_diagnose`, `voice_call_tracking_live_probe`,
   `voice_call_tracking_outbox`, `voice_call_tracking_setup`, `voice_pools_list`,
+  `voice_pool_get`, `voice_pool_sessions_list`, `voice_phone_tracking_config_get`,
   `voice_numbers_list`, `voice_e911_addresses_list`, `voice_settings_get`,
-  `voice_calls_list`, `voice_call_get` - and nothing else `voice_`.
+  `voice_calls_list`, `voice_call_get` - and nothing else `voice_`. Pool, membership and
+  config WRITES are not on it: on a PPC key they are invisible, not missing.
 - A tool outside your key's profile is INVISIBLE, and the failed call reads exactly like a
   missing feature. Say "not visible to this key", never "does not exist", and ship the fix as
   a `pm_tasks_create` naming the exact tool for whoever holds the wider key.
 
 ## The availability rule
 
-The voice tool surface is growing right now: the purchase, E911-create, 10DLC-submit,
-toll-free-submit, porting-write, pool-write, bulk-SMS, click-to-call and ops tools are being
-shipped in batches. This skill is written for the FINAL state, and each reference opens with
-an Availability table saying which of its tools are live and which are INCOMING.
+Each reference opens with an Availability table. Every `voice_` name in those tables resolves
+on this server today except the two rows marked INCOMING (one in
+`references/call-tracking-dni.md`, one in `references/sms-operations.md`): INCOMING means the
+MCP server declares the tool but this plugin's tool index has not been regenerated to carry it
+yet, and the row flips to LIVE at release. Each tool is described from its own registered
+description - trust that over any older copy of a reference.
 
-**A name that does not resolve has not shipped on this server yet - it is NOT proof the
-capability does not exist.** When a documented name fails: (1) check your key's profile
-first; (2) work the hiveku-communications reachability ladder (direct tool, then a workflow
-node, then the dashboard); (3) hand off to the dashboard with a precise single step and file
-it with `pm_tasks_create` so it does not evaporate. Never tell a user Hiveku cannot do the
-thing, and never invent a name to fill the gap.
+**A name that does not resolve is a profile question first.** (1) Check the key's profile - the
+list above says which names each key sees, and an invisible tool fails exactly like a missing
+one; (2) work the hiveku-communications reachability ladder (direct tool, then a workflow node,
+then the dashboard); (3) hand off with a precise single dashboard step and file it with
+`pm_tasks_create` so it does not evaporate. Never tell a user Hiveku cannot do the thing, and
+never invent a name to fill the gap.
 
 ## Operating principles
 
@@ -146,14 +153,14 @@ country code and read back the stored `e164`.
 
 | The ask | First tools | Reference |
 |---|---|---|
-| "Buy us a local number" / "we need an 800 number" / E911 | `voice_numbers_search`, then `voice_number_purchase` (INCOMING) | `references/numbers-and-e911.md` |
+| "Buy us a local number" / "we need an 800 number" / E911 | `voice_numbers_search`, then `voice_number_purchase` | `references/numbers-and-e911.md` |
 | "Phones aren't ringing" / IVR, extension, ring group, queue, settings, blocklist | `voice_diagnose_setup`, `voice_tenant_healthcheck` | `references/pbx-routing.md` |
 | "Who called at 4:15?" / voicemail, recordings, transcripts, call history | `voice_calls_list`, `voice_voicemails_list` | `references/calls-voicemail-transcripts.md` |
 | "Register us for texting" / "our texts aren't delivering" / 10DLC, toll-free verification | `voice_sms_registration_get`, `voice_sms_cta_preflight` | `references/tendlc-and-toll-free.md` |
 | "Text her back" / threads, templates, bulk, scheduled, STOP | `voice_sms_threads_list`, `voice_sms_thread_reply` | `references/sms-operations.md` |
-| "Is call tracking working?" / DNI pools, number swap, local swap | `voice_call_tracking_diagnose`, `voice_pools_list` | `references/call-tracking-dni.md` |
+| "Is call tracking working?" / DNI pools, number swap, local swap, "the tracking numbers ran out" | `voice_call_tracking_diagnose`, `voice_pool_get` | `references/call-tracking-dni.md` |
 | "How many calls did the ads bring in?" / conversions back to Google | `voice_call_tracking_outbox`, `marketing_call_attribution_breakdown` | `references/conversion-send-back.md` |
-| "Port our numbers from CallRail / Twilio / GHL" | `voice_portability_check` (INCOMING), `voice_port_orders_list` | `references/porting.md` |
+| "Port our numbers from CallRail / Twilio / GHL" | `voice_portability_check`, `voice_port_orders_list` | `references/porting.md` |
 | "We show up as Spam Likely" / "wrong number when we call out" | `voice_number_cnam_set`, `voice_settings_get` | `references/caller-id-and-reputation.md` |
 | An end-to-end job: new office, new rep, after-hours, text-back, tracking from zero, the CallRail cutover, quarterly hygiene | the recipe's own ordered list | `references/voice-playbooks.md` |
 
@@ -204,13 +211,16 @@ the authoring traps live in the automation skill:
 - Reporting `sent` as delivered - `sent` means the carrier accepted; null `delivery_status`
   means never reconciled.
 - Scheduling `voice_call_tracking_live_probe` or `voice_swap_test` - each run holds a DID.
+  `voice_pool_get`'s occupancy block answers "is the pool exhausted" without minting.
 - Re-verifying a verified toll-free number casually - it stops sending for 1-2 weeks.
 - Filing a 10DLC campaign whose use case does not match the website, or whose opt-in page
   renders the CTA in client-side JavaScript - the crawler sees neither; both are rejections.
 - Assigning a DID to a campaign with the wrong id space - one tool takes the Hiveku UUID,
   another takes the registry id; read `references/tendlc-and-toll-free.md`.
-- Trusting `voice_pools_list`'s whisper/greeting block - it comes from a second read that
-  can silently fail; verify on the pool itself before editing.
+- Trusting either pool read's whisper/greeting block - both `voice_pools_list` and
+  `voice_pool_get` ride a second read that can silently fail to defaults; when a pool someone
+  says they configured reports bare defaults on both, the dashboard pool dialog is the
+  tie-breaker (`references/call-tracking-dni.md` section 2).
 - Trusting `voice_usage_get`'s minute counters - only TTS spend is actually written there.
 - Expecting your own writes in `voice_audit_export_csv` - key-actor writes are skipped.
 - Using `users.account_id` to decide who on the team gets notified - it is the HOME account,

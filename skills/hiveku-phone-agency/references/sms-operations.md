@@ -6,10 +6,12 @@ This file replaces the old communications `sms.md`; registration (10DLC and toll
 `tendlc-and-toll-free.md` in this skill - go there for anything about brands, campaigns,
 verification, or "why do carriers filter us".
 
-Written for the surface's final state. The availability rule applies: a tool name that does not
-resolve has not shipped on this server yet - never conclude the capability does not exist, and
-never invent a name to fill a gap. Anything not yet reachable is still doable in the dashboard
-SMS inbox and composer.
+Every tool below resolves on this server today except the one marked INCOMING (declared by the
+MCP server, not yet in this plugin's tool index; the row flips to LIVE at release). A name that
+does not resolve on your key is a profile question first: check the key's profile, then the
+hiveku-communications reachability ladder, then hand off with a precise dashboard step filed via
+`pm_tasks_create` - never conclude the capability does not exist, and never invent a name to fill
+a gap.
 
 ## Availability
 
@@ -24,9 +26,10 @@ SMS inbox and composer.
 | `voice_sms_templates_list`, `voice_sms_template_create`, `voice_sms_template_update`, `voice_sms_template_delete` | LIVE | Snippet CRUD |
 | `voice_numbers_list` | LIVE | The DIDs you can send from |
 | `voice_sms_registration_get` | LIVE | The "can this account send at all" verdict (see tendlc file) |
-| `voice_sms_bulk_send` | INCOMING | Up to 200 real texts in one call. Ask-gated |
-| `voice_sms_scheduled_list` | INCOMING | Lists pending scheduled sends |
-| `voice_sms_scheduled_cancel` | INCOMING | Cancels one scheduled send (hard delete) |
+| `voice_sms_bulk_send` | LIVE | Up to 200 real texts in one call. Ask-gated |
+| `voice_sms_scheduled_list` | LIVE | Lists pending scheduled sends |
+| `voice_sms_scheduled_cancel` | LIVE | Cancels one scheduled send (hard delete) |
+| `voice_sms_opt_outs_list` | INCOMING | Reads the do-not-text list (source auto vs manual) |
 
 Profile note: `voice_*` and `workflow_*` names resolve under this skill's key; the `crm_*`
 (DNC), `helpdesk_*` and `survey_*` tools referenced below resolve only under a broader profile
@@ -43,7 +46,7 @@ There are four ways a text leaves this platform. Pick by job, not by habit:
 |---|---|
 | One specific message to one person, now | `voice_sms_send_to_contact` (CRM contact) or `voice_sms_send` (raw E.164) |
 | Reply in an existing conversation | `voice_sms_thread_reply` |
-| The same message to a list (up to 200) | `voice_sms_bulk_send` (INCOMING) - preview and count-approve first |
+| The same message to a list (up to 200) | `voice_sms_bulk_send` - preview and count-approve first |
 | Text automatically on an event (form, missed call, schedule, inbound text) | The workflow `sms` node |
 | A survey or review ask by text | `survey_send({ channel: 'sms' })`, or the `surveySend` / `reviewRequest` / `reviewFunnelSend` nodes - these mint tokens, apply suppression, and honor quiet hours; never hand-roll them with an `sms` node |
 
@@ -290,7 +293,7 @@ failed. The three lies:
 
 ## Part 4: Bulk and scheduled
 
-### `voice_sms_bulk_send` (INCOMING) - up to 200 real texts in one call
+### `voice_sms_bulk_send` - up to 200 real texts in one call
 
 The blast tool, ask-gated for obvious reasons. Non-negotiable discipline:
 
@@ -322,7 +325,7 @@ fires NO webhook, and never bumps template usage - a scheduled send is invisible
 contact timeline until it dispatches. And it can land at 3am local: absolute UTC, no timezone
 awareness. Say both to the user before scheduling.
 
-### `voice_sms_scheduled_list` (INCOMING)
+### `voice_sms_scheduled_list`
 
 Lists pending scheduled messages (filterable by thread, from, to; cursored). **The definition
 of "scheduled" is BOTH conditions: `delivery_status === 'scheduled'` AND a `scheduled_for`
@@ -330,7 +333,7 @@ value - because `scheduled_for` is never cleared on dispatch.** A row with `sche
 set and status `sent` already went out; counting on `scheduled_for` alone marks every
 formerly-scheduled message as pending forever.
 
-### `voice_sms_scheduled_cancel` (INCOMING)
+### `voice_sms_scheduled_cancel`
 
 Cancels ONE scheduled send by message id. **It is a HARD DELETE of the row** - no tombstone,
 no history - and it refuses anything due within 5 seconds, because the dispatch cron may
@@ -449,6 +452,24 @@ this account only, the literal e164 string only - it touches no email suppressio
 sequence suppression, no CRM lifecycle. Two concurrent adds of the same number can collide as
 a 500 rather than a clean `already_present`. For a known CRM contact prefer `crm_set_dnc`,
 which does all channels in one transaction.
+
+### `voice_sms_opt_outs_list` - reading the list
+
+The read-only view of the same table: every number the outbound paths refuse, with `e164`,
+`source`, `reason` and `opted_out_at`, newest first; `page` / `limit` (1-200), and filters
+`source` (`auto` | `manual`) and `e164` (exact match, full E.164 - the phone-format trap below
+applies to what you pass in). Read it for "is she opted out?" before drafting a text, for the
+count behind a bulk audience, and to explain a 403 / 409 refusal by the row that caused it.
+
+`source` is the load-bearing column. **`auto` is the recipient's own STOP** (or `cancel`, `end`,
+`quit`, `unsubscribe`, `stopall`), written by the inbound pipeline - removable by NOBODY on our
+side; only their own START / UNSTOP / YES clears it. **`manual` was added by an operator** via
+`voice_sms_opt_out_add` or `crm_set_dnc`, and `reason` is whatever they typed. The
+sending-reputation rate counts `auto` rows only, so a list that is mostly `manual` is a policy
+choice, not a reputation problem. A read has no compliance problem - it removes nothing and
+re-opens nothing - and there is still no removal tool, by design (next section). PII: the
+numbers of people who asked not to be contacted; a count is reportable, the rows are not. 402
+`voice_not_enabled` without the add-on.
 
 ### Re-subscribe: the removal tool is deliberately absent
 

@@ -11,9 +11,14 @@ the report doctrine live there.
    every comparison below turns into an argument. If `totals.truncated` is true, SAY SO in the
    report - the totals are a floor, not the number.
 2. `marketing_call_attribution_list` for the suspect band - the campaign, day range, or source
-   whose numbers look wrong - and pull `voice_call_transcript_get` on individual calls where
-   qualification is disputed ("was that a real lead or a robocall?"). Quote the transcript; do not
-   characterize it.
+   whose numbers look wrong - and pull `marketing_call_transcript_get` (it takes the `id` from those
+   attribution rows and resolves on the PPC key) on individual calls where qualification is
+   disputed ("was that a real lead or a robocall?"). Quote only the lines that settle the dispute
+   (the caller's ask and the qualifying exchange), never the whole transcript - it is verbatim and
+   unredacted and can carry card numbers, dates of birth and health details - and do not
+   characterize what you did not quote.
+   A missing transcript is one of five named `transcript_state` values, never an empty call -
+   report the state, not "no transcript".
 3. `voice_call_tracking_outbox` - `status: 'failed'` first. Failed uploads mean the platform is
    MISSING conversions Hiveku recorded; that gap is a finding in its own right, and it explains
    "Google shows fewer calls than we got" without anyone's math being wrong.

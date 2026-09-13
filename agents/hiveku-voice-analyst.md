@@ -52,10 +52,20 @@ The read ladder, in order:
   named thread, `voice_sms_thread_messages_list` with `mark_read` omitted. Outbound caps and
   reputation context: `voice_settings_get`, `voice_toll_fraud_state` (a cap hit is a spend guard
   working, not a bug).
-- Pool health: `voice_pools_list`, then `voice_call_tracking_diagnose` - read the ORDERED
-  `fix_first` list, not the raw check array - and `voice_call_tracking_outbox` with
-  `status: 'failed'` first; an empty outbox is ambiguous (nothing enqueued, or everything clean) -
-  disambiguate before concluding.
+- Pool health: `voice_pools_list` for the fleet, then `voice_pool_get` per pool for the
+  `occupancy` block (`dids_available`, `converted_holds`, `exhausted`; `null` is a failed read,
+  never zero), then `voice_pool_sessions_list` - allowed here because it is NON-MINTING: it
+  lists the sessions holding the DIDs and never asks the pool for a number, so it proves or
+  rules out a probe loop (many sessions seconds apart from one visitor hash) without holding
+  anything. Then `voice_call_tracking_diagnose` - read the ORDERED `fix_first` list, not the raw
+  check array; a `number_tracking` `fail` with `details.pool_exhausted: true` is the live
+  starvation signal, and the fix it names is inventory, not a shorter hold - and
+  `voice_call_tracking_outbox` with `status: 'failed'` first; an empty outbox is ambiguous
+  (nothing enqueued, or everything clean) - disambiguate before concluding. History:
+  `agent_inbox_list` with `category: 'voice.pool_starvation'` and again with
+  `category: 'voice.swap_health'`, passing `status: 'new,seen,snoozed,actioned,dismissed,expired'`
+  so closed items count too - a pool that starved last month is a sizing finding even when it
+  is fine right now.
 
 Silent failures are the trade here: the tools above return clean 200s whose payloads mean "could
 not check". A one-element healthcheck, `channels_ok: false`, a failed toll-free verification read,
@@ -77,7 +87,8 @@ errored; name them):
 3. Ranked fix plan - each fix NAMES the exact write tool and arguments the MAIN session should run
    with confirmation (`voice_extension_update` with the extension and field,
    `voice_call_tracking_setup` with `dry_run: true` first, `voice_e911_address_create`,
-   `voice_sms_campaign_submit`, `voice_number_cnam_set`, `voice_pool_update`), or the dashboard /
+   `voice_sms_campaign_submit`, `voice_number_cnam_set`, `voice_pool_update`,
+   `voice_pool_numbers_add` for a pool whose occupancy says it needs inventory), or the dashboard /
    PM-task step where no tool exists - plus `voice_swap_test` or
    `voice_call_tracking_live_probe` as the main session's one-shot confirm where pools are
    involved.

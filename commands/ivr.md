@@ -9,7 +9,9 @@ returns, so design and cost come before any write.
 1. **Design the tree with the human** - ONE level: each digit to an extension, ring group, voicemail,
    sub-IVR, or the AI receptionist. Write out the greeting text and every option label, and resolve
    every target to a real object first (`voice_extensions_list`, `voice_ring_groups_list`,
-   `voice_ivrs_list`). Do not guess wording that callers will hear.
+   `voice_ivrs_list`). Do not guess wording that callers will hear. A call-tracking pool's
+   destination may be an IVR too - tracked calls then hear this menu; point the pool at it from
+   `/hiveku:call-tracking` pools, not by re-routing member DIDs one at a time.
 2. **Voice and name sanity** - `voice_tts_voices_list` to pick the voice. A ONE-entry result named
    'Default voice' is the OUTAGE shape, not a one-voice catalog - stop and say the TTS catalog is
    unavailable rather than shipping the fallback. Then `voice_default_greetings_get`: its templates

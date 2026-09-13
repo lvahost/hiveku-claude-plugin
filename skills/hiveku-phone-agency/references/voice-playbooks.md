@@ -10,10 +10,11 @@ references - this file is the choreography.
 - **[CONFIRM]** marks a gate: show the exact before/after (or the exact draft/spend), get an
   explicit yes on THAT plan, then make the one write. One object per confirmation - a yes
   never covers the next step.
-- **[INCOMING]** marks a tool that is shipping right now and may not resolve on your server
-  yet. The rule from SKILL.md applies: a name that does not resolve has NOT shipped yet -
-  never say the capability does not exist. Each INCOMING step names its dashboard fallback;
-  hand it off precisely and file it with `pm_tasks_create` so it does not evaporate.
+- Every tool named in these recipes resolves on this server today. A name that does not
+  resolve on your key is a profile question first (SKILL.md's availability rule): check the
+  key's profile, then the reachability ladder, then hand off one precise dashboard step and
+  file it with `pm_tasks_create` so it does not evaporate. Never say the capability does not
+  exist.
 - **Read back after every write.** Several voice routes answer 200 without the phone system
   having agreed. The read-back named in each step is the verification, not the status code.
 - Hydrate copy first: any greeting, autoresponder or text a customer will hear or read is
@@ -23,13 +24,13 @@ references - this file is the choreography.
 
 | Recipe | Fully live today? |
 |---|---|
-| 1. New-office phone setup | Purchase + E911-create steps INCOMING (dashboard fallback); rest LIVE |
+| 1. New-office phone setup | LIVE end to end |
 | 2. Add a rep | LIVE end to end |
 | 3. After-hours handling | LIVE end to end |
 | 4. Missed-call text-back | LIVE end to end |
-| 5. Paid-ads call tracking from zero | Core LIVE; pool-edit / config / swap-test steps INCOMING |
-| 6. The CallRail cutover | Port-write and config steps INCOMING (dashboard fallback); reads LIVE |
-| 7. Client texting from zero | Campaign-submit + share-link steps INCOMING; rest LIVE |
+| 5. Paid-ads call tracking from zero | LIVE end to end |
+| 6. The CallRail cutover | LIVE end to end |
+| 7. Client texting from zero | LIVE end to end |
 | 8. Quarterly phone hygiene | LIVE end to end (read-heavy) |
 
 ---
@@ -53,8 +54,7 @@ drafting any greeting.
 2. E911 BEFORE numbers - a local DID cannot activate without a verified address.
    `voice_e911_addresses_list`; if the office address is missing:
    `voice_e911_address_create` [CONFIRM - this registers the street address emergency
-   services will be dispatched to] [INCOMING - fallback: dashboard, Communications settings,
-   E911 addresses; file the handoff with `pm_tasks_create`]. Read back
+   services will be dispatched to]. Read back
    `voice_e911_addresses_list`: `pending` is not `registered` - wait for verified before
    buying against it.
 3. Shortlist: `voice_numbers_search` with the office `area_code`. Present the shortlist with
@@ -63,10 +63,9 @@ drafting any greeting.
    number can be gone by purchase time.
 4. Buy ONE number: `voice_number_purchase` [CONFIRM - name the money out loud: a recurring
    monthly carrier charge until released; local REQUIRES the `e911_address_id`; buying by
-   `search` takes the FIRST match, so prefer the exact `e164` from the shortlist]
-   [INCOMING - fallback: dashboard number purchase]. A 202 means the order is COMMITTED at
-   the carrier and still provisioning: watch `voice_number_orders_list` [INCOMING - fallback:
-   the dashboard's number-orders view] and NEVER re-buy while an order is pending. Depth:
+   `search` takes the FIRST match, so prefer the exact `e164` from the shortlist]. A 202
+   means the order is COMMITTED at the carrier and still provisioning: watch
+   `voice_number_orders_list` and NEVER re-buy while an order is pending. Depth:
    `references/numbers-and-e911.md`.
 5. Seats: one `voice_extension_create` per person [CONFIRM each - it provisions a live SIP
    endpoint immediately]. Extensions number from 1001 up. Read back `voice_extensions_list`
@@ -231,18 +230,17 @@ to the hiveku-conversion-tracking skill; this recipe makes the phone side work.
    it or sending 0 buys nothing]. Read back the per-step results - each step reports
    already_configured or done; success is never inferred from a bare 200.
 4. Call handling on the pool (whisper, greeting, destination): `voice_pool_update`
-   [CONFIRM] [INCOMING - fallback: the dashboard's call-tracking pool settings]. Read back
-   `voice_pool_get` [INCOMING] or `voice_pools_list` - and treat the list tool's
-   whisper/greeting block with suspicion; it comes from a second read that can silently
-   fail. Pool mechanics and sizing: `references/call-tracking-dni.md`.
+   [CONFIRM]. Read back `voice_pool_get` (it also carries the `occupancy` block) - and treat
+   the whisper/greeting block on either pool read with suspicion; it comes from a second read
+   that can silently fail. Pool mechanics and sizing: `references/call-tracking-dni.md`.
 5. Per-project config (which pages swap, consent):
-   `voice_phone_tracking_config_get` then `voice_phone_tracking_config_set` [CONFIRM]
-   [INCOMING - fallback: dashboard]. Two traps from the platform contract: the set is a
-   FULL REPLACE (except consent mode), and the consent gate is baked into the site HTML -
-   a consent change needs a site redeploy, not just this write.
-6. Prove the swap ONCE: `voice_swap_test` [INCOMING - fallback:
-   `voice_call_tracking_live_probe` with `live_probe: true`, once]. Either one HOLDS a real
-   tracking DID for the sticky window [CONFIRM before running; NEVER schedule either].
+   `voice_phone_tracking_config_get` then `voice_phone_tracking_config_set` [CONFIRM]. Two
+   traps from the platform contract: the set is a FULL REPLACE (except consent mode), and the
+   consent gate is baked into the site HTML - a consent change needs a site redeploy, not just
+   this write.
+6. Prove the swap ONCE: `voice_swap_test`, or `voice_call_tracking_live_probe` with
+   `live_probe: true` - one of them, not both. Either one HOLDS a real tracking DID for the
+   sticky window [CONFIRM before running; NEVER schedule either].
 7. Re-run `voice_call_tracking_diagnose` - clean, with `fix_first` empty. After the first
    real calls land, read `voice_call_tracking_outbox` (filter `status: 'failed'` first) and
    follow `references/conversion-send-back.md` for the upload lane and the paid-ads call
@@ -269,39 +267,41 @@ export; the client's explicit approval to port. Porting depth and carrier-specif
 
 **Steps:**
 
-1. Portability first, it is free: `voice_portability_check` on every CallRail number
-   [INCOMING - fallback: the dashboard porting wizard runs the same check]. Anything
-   non-portable gets its own plan before you promise dates.
+1. Portability first, it is free: `voice_portability_check` on every CallRail number.
+   Anything non-portable gets its own plan before you promise dates.
 2. Stand up the Hiveku side BEFORE touching CallRail: run Recipe 5 so a working pool
    exists. Tracking must never go dark mid-cutover.
-3. The bridge - the cutover trick: `voice_phone_tracking_config_set` with
-   `swap_source_numbers` listing the CallRail numbers printed in the site HTML (up to 5)
-   [CONFIRM] [INCOMING - fallback: dashboard]. The snippet now swaps the OLD CallRail
+3. The bridge - the cutover trick: `voice_phone_tracking_config_get` first, then
+   `voice_phone_tracking_config_set` with the FULL config plus `swap_source_numbers` listing
+   the CallRail numbers printed in the site HTML (up to 5) [CONFIRM - the set is a
+   FULL REPLACE: resend every field from the GET, or the selector, regex and widget fields
+   are wiped mid-cutover; Recipe 5 step 5]. The snippet now swaps the OLD CallRail
    numbers out for pool DIDs, so attribution continues while the numbers still belong to
    CallRail. Then remove the CallRail JS from the site through the code lane and deploy -
    two trackers on one page double-swap and fight.
 4. File the port: `voice_port_order_create` [CONFIRM - this files legal paperwork with the
    carrier; billing name, address and signer must match the losing account EXACTLY; the PIN
-   and account number are write-only] [INCOMING - fallback: dashboard porting]. Tell the
+   and account number are write-only]. Tell the
    client: keep CallRail service ACTIVE until the port completes - cancelling early kills
    the port.
 5. LOA and bill copy: `voice_port_order_share_link_create` and send the link to the client
-   to e-sign and upload [INCOMING - fallback: dashboard]. The URL is a CREDENTIAL - deliver
-   it directly to the signer, never into a shared surface.
+   to e-sign and upload. The URL is a CREDENTIAL - deliver it directly to the signer, never
+   into a shared surface.
 6. Before confirming: `voice_port_order_requirements` - every row `met`. An EMPTY list on a
    draft order means the carrier was never asked, not "nothing needed". Then
-   `voice_port_order_action` with `confirm` [CONFIRM - this is the legal act under the LOA]
-   [INCOMING - fallback: dashboard]. Depth on actions and statuses:
-   `references/porting.md`.
+   `voice_port_order_action` with `confirm` [CONFIRM - this is the legal act under the LOA].
+   Depth on actions and statuses: `references/porting.md`.
 7. Track to FOC: `voice_port_orders_list` / `voice_port_order_get` (both LIVE; the response
    is customer PII and porting paperwork - never client-visible verbatim). Exceptions are
    worked through `voice_port_order_comments_list` and `voice_port_order_comment_add`
-   [INCOMING - never paste a PIN into a comment; the carrier's porting ops read them].
+   [never paste a PIN into a comment; the carrier's porting ops read them].
 8. Adoption day (the numbers are now Hiveku DIDs): assign E911 to each local number, set
    routing with `voice_number_update`, re-check CNAM, assign texting numbers to the 10DLC
    campaign with `voice_sms_number_assign_campaign`, and add the ported tracking numbers to
-   the pool with `voice_pool_numbers_add` [INCOMING - fallback: dashboard pool members].
-   Then clear `swap_source_numbers` from the config - the bridge is no longer needed.
+   the pool with `voice_pool_numbers_add`.
+   Then retire the bridge: `voice_phone_tracking_config_get`, then
+   `voice_phone_tracking_config_set` with the full config and `swap_source_numbers: []` - a
+   bare set clears the selector, regex and widget fields too.
 9. Verify the books: `voice_calls_export_csv` for the cutover window (bounded `from`/`to`)
    diffed against the final CallRail export. Only after the numbers ring on Hiveku and the
    diff reconciles does the client cancel CallRail.
@@ -332,10 +332,9 @@ campaign, verified number - without the agency ever guessing at the client's leg
      `voice_sms_brand_submit` [CONFIRM - an irreversible, fee-bearing filing of a real
      company's identity with the carriers; a wrong EIN comes back FAILED and refiling is a
      new fee. This is a human decision, right first time].
-   - The client files it themselves: `voice_sms_registration_share_link_create` [INCOMING -
-     fallback: dashboard share link] and hand the link DIRECTLY to the client - the URL is
-     a credential that lets a logged-out party file the account's EIN and fee-bearing
-     campaigns. It is shown once.
+   - The client files it themselves: `voice_sms_registration_share_link_create`, and hand
+     the link DIRECTLY to the client - the URL is a credential that lets a logged-out party
+     file the account's EIN and fee-bearing campaigns. It is shown once.
    On a FAILED brand, `voice_sms_brand_feedback_get` names the exact refused fields -
    `feedback: null` means no failure snapshot, not healthy.
 3. Draft the campaign: `voice_sms_campaign_draft` (text only, files nothing; requires the
@@ -348,10 +347,9 @@ campaign, verified number - without the agency ever guessing at the client's leg
    `pm_tasks_create`; the opt-in content requirements are in
    `references/tendlc-and-toll-free.md`).
 5. File it: `voice_sms_campaign_submit` [CONFIRM - name the money: roughly $15 per fresh
-   submit, no withdrawal] [INCOMING - fallback: the dashboard registration wizard]. A
-   response with a non-null submission error means the row SAVED but the carriers never saw
-   it - fix and re-file THAT row with `voice_sms_campaign_resubmit` (a full replace, not a
-   patch; omitting a field clears it), never a second fresh submit.
+   submit, no withdrawal]. A response with a non-null submission error means the row SAVED
+   but the carriers never saw it - fix and re-file THAT row with `voice_sms_campaign_resubmit`
+   (a full replace, not a patch; omitting a field clears it), never a second fresh submit.
 6. Monitor: `voice_sms_registration_get` until the campaign is ACTIVE and provisioned;
    `voice_sms_campaign_carriers_get` for the per-carrier verdict (it takes the HIVEKU
    campaign UUID - the Telnyx id 404s). Acceptance at the registry is not sendability, and

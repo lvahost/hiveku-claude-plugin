@@ -19,11 +19,14 @@ confirmation.
 
 ## Availability
 
-Prose below is written for the final state. A tool name that does not resolve on your key has not
-shipped on this server yet - never say the capability does not exist; use the dashboard fallback
-and file the gap.
+Every tool in this table resolves on this server today except the one marked INCOMING (declared
+by the MCP server, not yet in this plugin's tool index; the row flips to LIVE at release). A name
+that does not resolve on your key is a profile question first: check the key's profile (section
+below), then the hiveku-communications reachability ladder, then hand off with a precise
+dashboard step filed via `pm_tasks_create`. Never say Hiveku cannot do the thing, and never
+invent a name.
 
-| Tool | Status | Fallback until live |
+| Tool | Status | Note |
 |---|---|---|
 | `voice_pools_list` | LIVE | - |
 | `voice_call_tracking_setup` | LIVE | - |
@@ -32,26 +35,31 @@ and file the gap.
 | `voice_call_tracking_outbox` | LIVE | - |
 | `voice_numbers_list` | LIVE | - |
 | `voice_settings_get` | LIVE | - |
-| `voice_pool_create` | INCOMING | Dashboard: Communications -> Phone numbers -> Pools |
-| `voice_pool_get` | INCOMING | `voice_pools_list` (returns every pool) |
-| `voice_pool_update` | INCOMING | Dashboard: the pool dialog on the Pools page |
-| `voice_pool_delete` | INCOMING | Dashboard: the pool dialog (it warns about live sessions) |
-| `voice_pool_numbers_list` | INCOMING | `voice_pools_list` members[] (weight not shown) |
-| `voice_pool_numbers_add` | INCOMING | Dashboard: pool -> Manage numbers |
-| `voice_pool_numbers_remove` | INCOMING | Dashboard: pool -> Manage numbers |
-| `voice_pool_e911_apply` | INCOMING | Dashboard: pool -> Manage numbers -> bulk E911 |
-| `voice_phone_tracking_config_get` | INCOMING | Dashboard: project Hosting page -> Phone Tracking card |
-| `voice_phone_tracking_config_set` | INCOMING | Same card (per environment) |
-| `voice_phone_tracking_config_delete` | INCOMING | Same card (disable toggle) |
-| `voice_swap_test` | INCOMING | Dashboard: Phone Tracking card -> "Test my live site" / "Watch it swap" |
+| `voice_pool_create` | LIVE | Creates a live pool; a destination declared here is inherited by every member added later |
+| `voice_pool_get` | LIVE | Single-pool read; carries weight, is_active and the occupancy block |
+| `voice_pool_sessions_list` | INCOMING | The non-minting occupancy read: who holds each DID right now; safe to repeat |
+| `voice_pool_update` | LIVE | PARTIAL patch, except `destination`, which bulk-rewrites every member DID's routing |
+| `voice_pool_delete` | LIVE | Cascades sessions and members; prefer `is_active: false` and drain |
+| `voice_pool_numbers_list` | LIVE | Members with `weight` and `member_id` (what remove takes) |
+| `voice_pool_numbers_add` | LIVE | Flips the DID's purpose to `did_pool` and inherits the pool destination |
+| `voice_pool_numbers_remove` | LIVE | Removes one member by `member_id`; the DID keeps its routing and is not released |
+| `voice_pool_e911_apply` | LIVE | One carrier call per local member; changes where 911 dispatches |
+| `voice_phone_tracking_config_get` | LIVE | Per project per environment, with `siblings` |
+| `voice_phone_tracking_config_set` | LIVE | FULL REPLACE; read first and resend every field |
+| `voice_phone_tracking_config_delete` | LIVE | Turns tracking off for that environment |
+| `voice_swap_test` | LIVE | Holds a DID for the sticky window; run once |
 
 Profile visibility: the **marketing-ads (PPC) profile sees the call-tracking family BY NAME** -
 `voice_call_tracking_diagnose`, `voice_call_tracking_live_probe`, `voice_call_tracking_outbox`,
-`voice_call_tracking_setup`, `voice_pools_list`, `voice_numbers_list`,
-`voice_e911_addresses_list`, `voice_settings_get`, `voice_calls_list`, `voice_call_get` - because
-"are the ads' calls counted?" is ads work. The rest of the `voice_` prefix (sends, routing,
-purchases, porting, `voice_settings_update`) is deliberately NOT on a paid-media key; pool CRUD and
-config writes need a communications-scope or full key.
+`voice_call_tracking_setup`, `voice_pools_list`, `voice_pool_get`, `voice_pool_sessions_list`,
+`voice_phone_tracking_config_get`, `voice_numbers_list`, `voice_e911_addresses_list`,
+`voice_settings_get`, `voice_calls_list`, `voice_call_get` - because "are the ads' calls counted?"
+is ads work, and "is the pool exhausted?" needs the occupancy reads. The rest of the `voice_`
+prefix (sends, routing, purchases, porting, `voice_settings_update`) is deliberately NOT on a
+paid-media key; pool CRUD, membership and config writes need a communications-scope or full key.
+On a PPC key a pool or config write is invisible and fails exactly like a missing feature - say
+"not visible to this key", file the write with `pm_tasks_create` naming the exact tool, never
+"does not exist".
 
 ## 1. The model: one pool, many visitors, one number each
 
@@ -78,10 +86,10 @@ The lifecycle rules, each load-bearing:
   callers are covered by the breadcrumb below.
 - **Least-recently-converted rotation.** Among eligible DIDs the picker prefers numbers with no
   conversion in the last 14 days (weighted random within that tier - `voice_pool_members.weight`
-  biases it, though `voice_pools_list` does not return weight); only when every DID converted
-  recently does it fall to the oldest-converted. This spreads inventory and keeps one hot number
-  from serving several concurrent visitors. Minting runs under a per-pool advisory lock: one
-  assignment decision per pool at a time.
+  biases it; `voice_pools_list` drops weight, `voice_pool_get` and `voice_pool_numbers_list` show
+  it); only when every DID converted recently does it fall to the oldest-converted. This spreads
+  inventory and keeps one hot number from serving several concurrent visitors. Minting runs under
+  a per-pool advisory lock: one assignment decision per pool at a time.
 - **The repeat-caller breadcrumb.** A caller with no live session (they dialed a saved number
   weeks later, or called from a different phone than the browser) inherits the attribution of
   their most recent attributed inbound call - same account, same caller number, SAME POOL, within
@@ -218,11 +226,19 @@ law:
   `tracking_source_rules` come from a second read that swallows column-missing errors: on a
   deployment where those columns are not pushed, every pool silently reports identical hardcoded
   defaults and NOTHING in the payload says the read failed. Never report those fields as a
-  tenant's configured settings without corroborating (dashboard, or `voice_pool_get` once live).
+  tenant's configured settings without corroborating - `voice_pool_get` rides the same second
+  read, so when both report bare defaults on a pool someone says they configured, the dashboard
+  pool dialog is the tie-breaker.
 - The POOL-level destination comes back as a bare type string + bare UUID, un-resolved; only the
   per-member `routing` block carries names. `routing.type: null` returns the literal synthesized
   string "Account default routing" - a label the route invents, not a real target.
-  A non-null type with `target_name: null` means the target was deleted or is another account's.
+  A non-null type with `target_name: null` means the target was deleted or is another account's
+  (the queue branch resolves names too, so a queue target with a null name is the same signal).
+- Each pool carries an `occupancy` block, and the RESPONSE carries one top-level
+  `occupancy_measured_at` for all of them (`pool.occupancy_measured_at` is undefined on a list
+  row; only `voice_pool_get` stamps it on the pool itself). It is the same block
+  `voice_pool_get` returns (next section). `null` means the read failed; it is never fabricated
+  zeros, so never report `null` as "nothing held".
 - `member_count` counts raw membership rows; `members[]` skips rows whose DID was deleted -
   `member_count > members.length` is a dangling membership, not truncation.
 - Member rows DROP `weight`, so you cannot see rotation bias here.
@@ -231,7 +247,64 @@ law:
   into a client-facing report.
 - No pagination, no filters - inactive pools come back too; filter `is_active` yourself.
 
-### Pool CRUD (INCOMING): `voice_pool_create`, `voice_pool_get`, `voice_pool_update`, `voice_pool_delete`
+### `voice_pool_get` (LIVE) - the single pool and its occupancy block
+
+One pool by id with members hydrated: the full knob set, `member_count`, and `members[]` with
+`member_id`, `weight`, `voice_number_id` and `number: { id, e164, label, is_active } | null`.
+This shape DOES carry `weight` and `is_active`, which the fleet list drops; `number: null` is a
+membership row whose DID was deleted or is another account's, still occupying the
+one-pool-per-DID slot until removed. The call-handling block rides the same second read as the
+list (the fiction caveat above applies here too), and the destination is still a bare type +
+UUID.
+
+The part that answers "is the pool exhausted?" without touching the pool: **`occupancy`**,
+measured at `occupancy_measured_at`:
+
+- `members_active` - member DIDs whose number is active (an inactive member quietly shrinks
+  capacity).
+- `dids_held` - distinct active DIDs with an unexpired session right now.
+- `dids_available` - `members_active - dids_held`, floored at 0: what a NEW visitor can still get.
+- `converted_holds` - active DIDs parked by `conversion_sticky_days` (a converted session).
+- `sessions_active` - unexpired session rows on active members (can exceed `dids_held` when one
+  DID served several sticky visitors).
+- `exhausted` - `members_active > 0` and `dids_available === 0`: the live starvation signal.
+
+Three batched reads, no lock, no mint - point-in-time, so two calls a minute apart can
+legitimately differ. **`occupancy: null` means the read failed** (the pool still comes back); it
+is never fabricated zeros, so never report `null` as "nothing held". The rows behind the numbers
+are `voice_pool_sessions_list`. 404 `not_found` is also the cross-tenant answer; 402
+`voice_not_enabled` without the add-on. PII: live E.164 tracking numbers.
+
+### `voice_pool_sessions_list` - the non-minting occupancy read
+
+Reads the `voice_pool_sessions` rows for one pool (`pool_id`; filters `environment` and
+`voice_number_id`; `page` / `limit` 1-200) and **never asks the pool for a number** - unlike
+`voice_call_tracking_live_probe` and `voice_swap_test` it holds nothing, so it is the ONE
+occupancy check that is safe to repeat. Returns `{ pool, measured_at, occupancy, sessions[],
+pagination }`; each session carries `visitor_hash`, the tenant DID it was shown (`e164`,
+`label`, `voice_number_id`), `project_id` / `environment`, `assigned_at` / `expires_at` /
+`converted_at`, `is_converted_hold`, `seconds_remaining`, `source { utm_source, utm_medium,
+utm_campaign, click_id_type }`, `geo_region` / `geo_country`, `ad_consent`.
+
+What to read it for:
+
+- **Who is holding the DIDs right now** - every row is one held DID for `seconds_remaining` more
+  seconds; rows with `is_converted_hold: true` are the conversion pile-up (section 4).
+- **The probe-loop signature**: many sessions minted seconds apart, one `visitor_hash` (or a run
+  of fresh hashes from one `source` / `environment` with no conversions), on the same DIDs. That
+  is a monitor somebody built on `voice_swap_test`, the live probe, or the snippet's mint
+  endpoint - kill it before buying inventory.
+- **Whether traffic matches the story**: a `google_ads`-mode pool whose sessions all carry
+  `click_id_type: null` is minting for visitors the gate should exclude - a config question, not
+  a sizing one.
+
+PII posture: `visitor_hash` is a tenant-salted, truncated hash - correlate rows with it, never
+treat it as an identity; the click id itself is never returned (only its TYPE), nor is the
+visitor's user agent, referrer, landing URL or GA client id. Each row is still a real person's
+visit - do not paste the response into anything client-facing. 404 `not_found` is also the
+cross-tenant answer; 402 `voice_not_enabled`.
+
+### Pool CRUD (LIVE): `voice_pool_create`, `voice_pool_get`, `voice_pool_update`, `voice_pool_delete`
 
 Everything in section 1 is settable at create and patchable after. Behaviors carried from the
 session route these twin:
@@ -249,17 +322,18 @@ session route these twin:
 - A DID lives in at most ONE pool (409 `already_in_pool` on a second add, naming whether it is
   this pool or another).
 
-### Membership (INCOMING): `voice_pool_numbers_list`, `voice_pool_numbers_add`, `voice_pool_numbers_remove`
+### Membership (LIVE): `voice_pool_numbers_list`, `voice_pool_numbers_add`, `voice_pool_numbers_remove`
 
 - Add takes `voice_number_id` (must be an active number the account owns) and optional `weight`
   (1-100, default 1 - higher = served more often). On add, the number's `purpose` flips to
   `did_pool` and it inherits the pool destination; on remove (`member_id` as a query param) it
   flips back to `tracking` and KEEPS its routing.
-- `voice_pool_numbers_list` is the only read that shows `weight`.
+- `voice_pool_numbers_list` and `voice_pool_get` are the only reads that show `weight`;
+  `member_id` (NOT `voice_number_id`) is what `voice_pool_numbers_remove` takes.
 - Removing a member does not release the DID or end its live sessions; a visitor holding it keeps
   it until expiry, and calls to it still land wherever it routes.
 
-### `voice_pool_e911_apply` (INCOMING) - the office-move play
+### `voice_pool_e911_apply` (LIVE) - the office-move play
 
 Applies ONE carrier-validated E911 address to every LOCAL member of a pool in a single call. Pool
 DIDs are interchangeable, so their dispatchable address is a pool-wide fact: when the client moves
@@ -277,7 +351,7 @@ with three numbers pointing 911 at the old suite. Contract details:
 - Read the result back: `updated` + `skipped_toll_free` + `failed.length` should equal the local
   member count you expected. Report the actual numbers that failed, not a count.
 
-### Per-project tracking config (INCOMING): `voice_phone_tracking_config_get`, `voice_phone_tracking_config_set`, `voice_phone_tracking_config_delete`
+### Per-project tracking config (LIVE): `voice_phone_tracking_config_get`, `voice_phone_tracking_config_set`, `voice_phone_tracking_config_delete`
 
 Config is **per project, per environment** (`development` | `staging` | `production`; preview is
 deliberately excluded - the live-preview container is ephemeral). Production can be live while dev
@@ -315,7 +389,7 @@ Fields that matter:
 removed). The snippet reference in the site HTML survives until the next deploy but assigns
 nothing.
 
-### `voice_swap_test` (INCOMING) - the swap tester
+### `voice_swap_test` (LIVE) - the swap tester
 
 CallRail-style end-to-end verification for one project + environment: loads the config, resolves
 the deployed URL the way the hosting surfaces do, fetches the live page, checks that the snippet
@@ -342,8 +416,10 @@ conversion action. Per-step results plus an overall state - success is never inf
 - **`did_count` is THE money field** - the ONLY input that spends. Omit it or send 0 and nothing
   is bought. When set it buys only the shortfall between the pool's current active size and the
   target, at most 5 per run, and only after the E911 address checks out (a missing or unvalidated
-  address comes back as a `blocked` step naming the human action - it never half-buys). Numbers
-  bill monthly until released.
+  address comes back as a `blocked` step naming the human action - it never half-buys). Pass
+  `e911_address_id` to choose which validated address the purchased DIDs register against; an
+  unvalidated or foreign id is refused before anything is bought. Numbers bill monthly until
+  released.
 - **Always `dry_run: true` first** on any account where you are not certain what exists, then
   confirm with the operator before any run naming a nonzero `did_count`.
 - **`did_search` is an OBJECT**: `{ area_code?, locality?, state? }`, at least one set. Flat
@@ -363,7 +439,10 @@ The doctor: seven checks (`ok | warn | fail | unknown`) plus an ORDERED `fix_fir
 `fix_first`, not the check array. Read-only but not free (outbound Google Ads reads plus one HTTP
 GET of the deployed page; `skip_google` / `skip_site_fetch` stay in the database and the skipped
 checks report `unknown`, which is NOT a pass). Pass `project_id` explicitly on multi-site accounts
-or the doctor picks the most recently updated project.
+or the doctor picks the most recently updated project. Two verdicts to know by name:
+`number_tracking` reports `fail` with `details.pool_exhausted: true` when every active DID is held
+and no live probe ran (section 4), and the outbox check names the platform whose connection is
+failing (`details.by_platform`) - a Meta token expiry is reported as Meta, not Google.
 
 **`voice_call_tracking_live_probe` is the doctor PLUS a real pool assignment** - the only way to
 PROVE swapping works end to end, and it HOLDS a tracking DID for the sticky window just like
@@ -420,9 +499,25 @@ Three operational facts:
   mint at most once per sticky window. This is also why `voice_call_tracking_live_probe` and
   `voice_swap_test` are run-once tools.
 - **The starvation email exists.** The attribution sweep runs live occupancy math; when every
-  active DID is held, account admins get a branded email + bell (24h per-pool cooldown). If the
-  client forwards one: first question is whether a test loop (yours or anyone's) caused it; second
-  is real growth - size up via `voice_call_tracking_setup` `did_count` (dry_run, confirm).
+  active DID is held, account admins get a branded email + bell (24h per-pool cooldown) and the
+  account gets an ops-inbox item (below). If the client forwards one: first question is whether a
+  test loop (yours or anyone's) caused it; second is real growth - size up via
+  `voice_call_tracking_setup` `did_count` (dry_run, confirm).
+- **Read occupancy BEFORE the arithmetic.** `voice_pool_get` (or `voice_pools_list`) carries
+  `occupancy` - `dids_available`, `converted_holds`, `exhausted` - measured without minting. Size
+  from the busiest hour, but say what is held right now and by what (visitor sessions vs
+  conversion holds) before proposing a number of DIDs; `occupancy: null` is a failed read, not a
+  free pool.
+- **The doctor calls it.** `voice_call_tracking_diagnose` reports `number_tracking` as a `fail`
+  with `details.pool_exhausted: true` when every active DID is held and no live probe ran (probe
+  evidence outranks a stale reading); the copy names conversion holds when they are the reason,
+  and `next_action` carries the sizing rule. The fix it names is inventory, not a shorter hold.
+- **Starvation and swap-health history is on the ops inbox.** Every starvation notice and every
+  swap-health issue also lands as an inbox item, so "has this pool been starving?" has an answer
+  even on an account with no email recipients: `agent_inbox_list({ category:
+  'voice.pool_starvation', status: 'new,seen,snoozed,actioned,dismissed,expired' })`, and the same
+  call with `category: 'voice.swap_health'`. `category` is an exact match, and the default
+  `status` is the open queue only - pass the full list to read history.
 
 ## 5. Consent, and the ad_consent tri-state
 
@@ -502,7 +597,7 @@ site and a connected Google Ads account:
    `did_search: { area_code }` for the client's market, and the conversion policy fields agreed
    with the client (`conversion_upload_disposition`, `conversion_upload_min_duration_sec` -
    definitions in `conversion-send-back.md`). One confirmed call; numbers bill monthly.
-4. `voice_pool_update` (or the pool dialog until it ships) for call handling: destination first -
+4. `voice_pool_update` for call handling: destination first -
    where do these calls RING - then whisper/greeting/caller_id_mode per the client's front-desk
    workflow, and `tracking_source_mode` only if they explicitly want paid-only tracking (default
    `all` is right for most: every channel's calls get attributed, uploads are gated separately).
@@ -526,17 +621,25 @@ broken" also only lands on this redeploy (section 5).
 
 ### "The pool is exhausted"
 
-1. `voice_pools_list`: `member_count`, `is_active`, and whether members' routing is intact. Then
-   the arithmetic: busiest-hour concurrent visitors / 4 vs active member count (section 4).
-2. Rule out self-inflicted starvation: has anyone (including you, including a monitor someone
-   built) been probing with fresh visitor ids? Kill the loop first; the pool recovers within a
-   sticky window.
-3. Rule out hold pile-up: many recent conversions each hold a DID for `conversion_sticky_days`.
-   A promo spike converts the whole pool into held DIDs - that is success, and the fix is still
-   more inventory, not a shorter hold (the hold protects callbacks).
+1. `voice_pool_get` for the pool: `is_active`, the members' `is_active`, whether routing is
+   intact, and the `occupancy` block - `dids_available`, `dids_held`, `converted_holds`,
+   `exhausted`. If `occupancy` is `null` the read failed; say so rather than reading it as a free
+   pool. Then the arithmetic: busiest-hour concurrent visitors / 4 vs `members_active` (section
+   4).
+2. Rule out self-inflicted starvation BEFORE buying anything: `voice_pool_sessions_list`, and
+   look for the probe-loop signature (section 2) - sessions minted seconds apart, one visitor
+   hash or a run of fresh ones, no conversions. Has anyone (including you, including a monitor
+   someone built) been probing with fresh visitor ids? Kill the loop first; the pool recovers
+   within a sticky window. This read holds nothing - repeat it after the kill and watch the
+   sessions expire.
+3. Rule out hold pile-up: `converted_holds` counts DIDs parked by `conversion_sticky_days`, and
+   the session rows with `is_converted_hold: true` say which. A promo spike converts the whole
+   pool into held DIDs - that is success, and the fix is still more inventory, not a shorter hold
+   (the hold protects callbacks).
 4. Add inventory: `voice_call_tracking_setup` with `did_count` = new target (dry_run -> confirm ->
    run; it buys only the shortfall, max 5/run), or `voice_pool_numbers_add` for DIDs already
-   owned. Verify with `voice_pools_list` and one `voice_swap_test`.
+   owned. Verify with `voice_pool_get` (`members_active` went up, `exhausted` is false) and one
+   `voice_swap_test`.
 5. If the client declines to buy: say plainly what `swap_fallback` means - visitors beyond
    capacity share the main number and attribute only by breadcrumb - and record the decision.
 
@@ -577,7 +680,10 @@ A client (or their privacy counsel) wants tracking numbers shown only to paid vi
 - **Scheduling the probe.** `voice_call_tracking_live_probe` and `voice_swap_test` each hold a
   real DID for the sticky window. A monitor built on either one starves the pool it monitors. The
   scheduled monitoring that IS safe already exists platform-side (swap-health cron, starvation
-  email).
+  email, both also written to the ops inbox).
+- **Polling occupancy with a probe.** `voice_pool_get` answers "is it exhausted" and
+  `voice_pool_sessions_list` answers "who holds what" without minting; a probe run "to check the
+  pool" IS the loop that starves it.
 - **"Fix" the mint cap for the client's office.** 6+ people behind one NAT IP hitting the cap is
   the guard working. Explain it; do not raise anything.
 - **Deleting a pool to "reset" it.** Cascades sessions, orphans pending calls, and the members'
@@ -604,7 +710,7 @@ is `hiveku-conversion-tracking/references/calls.md` section 7's job.
 | `site_unreachable` | The deployed page would not load at all | `voice_swap_test` once (its `site_reachable` + `deployed_url` say what was fetched); a wrong/missing custom domain or a dead deploy is a hosting problem - fix that before reading anything else |
 | `snippet_missing` | Page loads, DNI loader not in the served HTML | `analytics_probe_page` on the money URL (no pool session burned). Redeploy-shaped: check the deploy date against the drop. On a GTM-injected loader a server-side fetch can miss it - a `voice_swap_test` `assignment.assigned: true` with `snippet_detected: false` is that false alarm |
 | `pool_empty` | No DIDs provisioned in the pool | `voice_pools_list` (member_count 0?) then `voice_call_tracking_setup` with `did_count` - dry_run first, confirm, it spends money |
-| `pool_exhausted` | Every active DID currently held | The play in section 7: rule out a probe loop, check conversion-hold pile-up, then size up. Meanwhile `swap_fallback` is showing the main DID - calls still land, attribution degrades to breadcrumb |
+| `pool_exhausted` | Every active DID currently held | `voice_pool_get` occupancy first (`dids_held` vs `converted_holds`), then `voice_pool_sessions_list` to prove or rule out a probe loop, then the play in section 7 to size up. Meanwhile `swap_fallback` is showing the main DID - calls still land, attribution degrades to breadcrumb |
 
 Two more first moves that are not dashboard codes:
 
@@ -612,6 +718,8 @@ Two more first moves that are not dashboard codes:
 |---|---|
 | "The number doesn't swap for me" (client staff) | Ask where they are: office NAT + mint cap (section 4) or a source-gated pool (`tracking_source_mode` - direct visits excluded) or consent not yet granted in `analytics` mode. All three are the system working |
 | Whisper says "your website" for an ads caller | Audio variant not rendered yet for that source (renders lag the pool save) - re-check after a few minutes; persistent = the session had no source (check the session on the call via `marketing_call_attribution_list`) |
+| "Has this pool been starving?" / "how often?" | `agent_inbox_list({ category: 'voice.pool_starvation', status: 'new,seen,snoozed,actioned,dismissed,expired' })` - one OPEN item per pool, urgent, linking to the pools page (a notice while the previous item is still new/seen/snoozed files nothing, a fresh row appears only after the last one was actioned, dismissed or expired, and the sweep refiles at most once per 24h), so the row count is episodes, not notices - read each row's `created_at` / `expires_at` and `metadata` for cadence; the default `status` shows only the open queue, so pass the full list for history |
+| "Has the swap been unhealthy?" (history, not a live check) | `agent_inbox_list({ category: 'voice.swap_health', status: 'new,seen,snoozed,actioned,dismissed,expired' })` - one item per project per issue code; corroborate a live claim with `voice_swap_test` ONCE, never a loop |
 
 For everything downstream of a healthy swap - matchers, sweep timing, transcript states, "are
 these conversions real" - go to `hiveku-conversion-tracking/references/calls.md`. For pushing the

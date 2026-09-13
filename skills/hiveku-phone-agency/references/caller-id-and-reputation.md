@@ -20,8 +20,10 @@ The stakes, first:
 
 ## Availability
 
-A name that does not resolve has not shipped on this server yet - use the dashboard fallback and
-never tell the user the capability does not exist.
+Every tool below resolves on this server today. A name that does not resolve on your key is a
+profile question first: check the key's profile, then the hiveku-communications reachability
+ladder, then hand off with a precise dashboard step filed via `pm_tasks_create`. Never tell the
+user the capability does not exist, and never invent a name.
 
 | Tool | Status |
 |---|---|
@@ -32,7 +34,7 @@ never tell the user the capability does not exist.
 | `voice_number_cnam_set` | LIVE |
 | `voice_calls_list` | LIVE |
 | `voice_toll_fraud_state` | LIVE |
-| `voice_call_originate` | INCOMING - until it resolves: dashboard, click-to-call from the CRM contact page |
+| `voice_call_originate` | LIVE |
 
 ---
 
@@ -128,7 +130,7 @@ matter here: 15 characters, letters/numbers/spaces; accepted is not live (12-24h
 with a literally false message. An unregistered number shows bare digits AND is far likelier to
 be labeled spam - which makes CNAM step one of the reputation ladder (section 5).
 
-### Placing a call: `voice_call_originate` (INCOMING)
+### Placing a call: `voice_call_originate`
 
 Click-to-call: **rings the rep's extension FIRST, and only bridges to the destination once the
 rep answers** - the customer's phone never rings for an unanswered originate. `from_extension_id`

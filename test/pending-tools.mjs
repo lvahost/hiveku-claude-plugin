@@ -193,6 +193,22 @@
  *               content_authors_list; this file and the prose follow B3, the
  *               route owner. B10's read-only twin of the conversion plan
  *               (content_conversion_plan_get) is declared and taught.
+ *
+ *   Voice program, batch J (2026-09-13, the call-tracking visibility round):
+ *   the non-minting pool occupancy read and the do-not-text list read. The
+ *   contract is the builder's GET /api/olympus/voice/pools/:id/sessions and
+ *   GET /api/olympus/voice/sms/opt-outs routes plus the two MCP declarations
+ *   in marketing-tools.ts, all committed in the same program; the live index
+ *   regenerates after the MCP deploy, and tool-names.test.mjs then forces
+ *   these entries out. Each name has exactly one Availability row
+ *   (call-tracking-dni.md and sms-operations.md) that phone-doctrine.test.mjs
+ *   checks against the index and this batch; the phone doctrine, three
+ *   commands and the voice analyst also spell the names because the routes
+ *   and declarations are already written, so a rename before release is not
+ *   a case this batch plans for.
+ *     VOICE-J  voice_pool_sessions_list (who holds each DID right now; never
+ *              mints), voice_sms_opt_outs_list (the opt-out list with its
+ *              auto-vs-manual source).
  */
 const SEO_SINCE = '2026-08-30';
 const seo = (batch) => ({ since: SEO_SINCE, batch });
@@ -252,4 +268,15 @@ export const PENDING_TOOLS = new Map([
   // landed in the live index on 2026-09-12 (MCP 01584b0 + 523edef deployed;
   // index regenerated at 2064 tools); entries deleted. See the batch note
   // above for the contract.
+
+  // VOICE-J (2026-09-13): the two call-tracking visibility reads. Both are
+  // GETs, so neither is on the ask list; they leave here when the index
+  // regenerated after the MCP deploy carries them. The release is the two
+  // row flips plus these two deletions - and the prose that says "except the
+  // two rows marked INCOMING" (the SKILL.md availability rule and the
+  // Availability intros of call-tracking-dni.md and sms-operations.md) goes
+  // with them: phone-doctrine.test.mjs fails on any INCOMING token left in
+  // the phone skill outside pbx-routing.md once this batch is gone.
+  ['voice_pool_sessions_list', { since: '2026-09-13', batch: 'VOICE-J' }],
+  ['voice_sms_opt_outs_list', { since: '2026-09-13', batch: 'VOICE-J' }],
 ]);

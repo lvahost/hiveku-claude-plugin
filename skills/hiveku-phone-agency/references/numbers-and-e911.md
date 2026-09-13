@@ -21,8 +21,10 @@ Money and irreversibility first, because both live here:
 
 ## Availability
 
-A name that does not resolve has not shipped on this server yet - use the dashboard fallback and
-never tell the user the capability does not exist.
+Every tool below resolves on this server today. A name that does not resolve on your key is a
+profile question first: check the key's profile, then the hiveku-communications reachability
+ladder, then hand off with a precise dashboard step filed via `pm_tasks_create`. Never tell the
+user the capability does not exist, and never invent a name.
 
 | Tool | Status |
 |---|---|
@@ -36,9 +38,9 @@ never tell the user the capability does not exist.
 | `voice_e911_addresses_list` | LIVE |
 | `voice_usage_get` | LIVE |
 | `voice_diagnose_setup` | LIVE |
-| `voice_e911_address_create` | INCOMING - until it resolves: dashboard, Communications > Phone Numbers, E911 addresses |
-| `voice_number_purchase` | INCOMING - until it resolves: dashboard, Communications > Phone Numbers, "Find a number" |
-| `voice_number_orders_list` | INCOMING - until it resolves: dashboard, the Numbers page shows pending orders |
+| `voice_e911_address_create` | LIVE |
+| `voice_number_purchase` | LIVE |
+| `voice_number_orders_list` | LIVE |
 
 ---
 
@@ -131,7 +133,7 @@ verification, in one list. Pending is not registered: only a row that carries a 
 registration can gate a number's activation (`voice_number_update` refuses an address with no
 carrier registration as `422 e911_address_invalid`). Read the rows, not just the count.
 
-**`voice_e911_address_create`** (INCOMING) registers a new dispatchable address with the carrier.
+**`voice_e911_address_create`** registers a new dispatchable address with the carrier.
 What its session-route twin enforces, carried to the tool:
 
 - The address is CASS-validated SYNCHRONOUSLY at the carrier during the call, and the two
@@ -163,7 +165,7 @@ the route pins the carrier search to ONE result and BUYS THE FIRST MATCH sight u
 never see candidates and cannot echo the exact number to the human first. Shortlist with
 `voice_numbers_search`, get the yes on a specific e164 and its costs, then pass that `e164`.
 
-**`voice_number_purchase`** (INCOMING) searches-and-orders or orders an explicit `e164` in one
+**`voice_number_purchase`** searches-and-orders or orders an explicit `e164` in one
 call. Money moves here. What the session twin enforces, in the order it enforces it:
 
 **The E911 hard gate, before anything else.** A local purchase without `e911_address_id` is
@@ -196,7 +198,7 @@ carrier activates the number. The correct response to a 202 is: report the order
 it with `voice_number_orders_list`, and **never re-buy** - a second purchase is a second committed
 carrier order for a second number.
 
-**`voice_number_orders_list`** (INCOMING) reads those parked orders: `status` runs
+**`voice_number_orders_list`** reads those parked orders: `status` runs
 `pending -> complete | failed | expired`. `complete` is stamped only AFTER the adoption write
 succeeds - never before - so a `pending` order with a live number at the carrier just has not been
 swept yet. `expired` means the poll gave up after days of attempts (it polls the carrier one last

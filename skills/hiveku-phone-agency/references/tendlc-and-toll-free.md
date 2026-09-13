@@ -6,10 +6,11 @@ the phone system where a wrong call costs real money (brand vetting fees, ~$15 p
 campaign submit), files legal identity data (an EIN) with third parties irreversibly, or takes
 a working number OFF THE AIR for weeks. Money and legal first, always.
 
-This document is written for the surface's final state. The availability rule applies: a tool
-name that does not resolve has not shipped on this server yet - never conclude the capability
-does not exist, and never invent a name. Anything not yet reachable by tool is still doable in
-the dashboard's SMS registration wizard, or by the client through the share-link page (Part 9).
+Every tool below resolves on this server today. A name that does not resolve on your key is a
+profile question first: check the key's profile, then the hiveku-communications reachability
+ladder, then hand off with a precise dashboard step filed via `pm_tasks_create` - never conclude
+the capability does not exist, and never invent a name. The client can also file through the
+share-link page (Part 9) when they are the one holding the EIN.
 
 ## Availability
 
@@ -24,19 +25,18 @@ the dashboard's SMS registration wizard, or by the client through the share-link
 | `voice_sms_number_assign_campaign` | LIVE | Registers a DID to a campaign. Carrier paperwork |
 | `voice_sms_campaign_resubmit` | LIVE | Re-files a row that never reached the carrier (~$15) |
 | `voice_sms_toll_free_verification_get` | LIVE | Per-number toll-free verification state |
-| `voice_sms_campaign_submit` | INCOMING | The fresh campaign filing (~$15 vet). Ask-gated |
-| `voice_sms_campaign_get` | INCOMING | One campaign row by id |
-| `voice_sms_campaign_appeal` | INCOMING | Appeal note on a FAILED/SUSPENDED campaign |
-| `voice_sms_campaign_delete` | INCOMING | Remove a dead campaign row (guarded) |
-| `voice_sms_toll_free_verification_submit` | INCOMING | Files toll-free verification. Overwrite trap in Part 8 |
-| `voice_sms_registration_share_link_create` | INCOMING | Mints the client-facing registration link. The URL is a credential |
-| `voice_sms_registration_share_links_list` | INCOMING | Lists minted links |
-| `voice_sms_registration_share_link_revoke` | INCOMING | Revokes one link, or all of them |
-| `voice_sms_messaging_profile_attach` | INCOMING | Manual profile attach when auto-provision has not run |
+| `voice_sms_campaign_submit` | LIVE | The fresh campaign filing (~$15 vet). Ask-gated |
+| `voice_sms_campaign_get` | LIVE | One campaign row by id |
+| `voice_sms_campaign_appeal` | LIVE | Appeal note on a FAILED/SUSPENDED campaign |
+| `voice_sms_campaign_delete` | LIVE | Remove a dead campaign row (guarded) |
+| `voice_sms_toll_free_verification_submit` | LIVE | Files toll-free verification. Overwrite trap in Part 8 |
+| `voice_sms_registration_share_link_create` | LIVE | Mints the client-facing registration link. The URL is a credential |
+| `voice_sms_registration_share_links_list` | LIVE | Lists minted links |
+| `voice_sms_registration_share_link_revoke` | LIVE | Revokes one link, or all of them |
+| `voice_sms_messaging_profile_attach` | LIVE | Manual profile attach when auto-provision has not run |
 
-LIVE = resolves on this server today. INCOMING = shipping in the 2026-08-29 voice program; if
-the name does not resolve yet, the dashboard wizard covers the same step. Every LIVE tool here
-is described from its own registered description; trust that over any older copy of this file.
+LIVE = resolves on this server today. Every tool here is described from its own registered
+description; trust that over any older copy of this file.
 
 ---
 
@@ -320,7 +320,7 @@ the opt-in page it names actually complies.
 **3. `voice_sms_cta_preflight`** on the draft's message flow. Part 4. Do not skip it because
 the draft "looks right" - the page, not the draft, is what gets scanned.
 
-**4. `voice_sms_campaign_submit` (INCOMING) - the filing. ~$15 per fresh submit, no
+**4. `voice_sms_campaign_submit` - the filing. ~$15 per fresh submit, no
 withdrawal.** Takes the full campaign payload (name, use case, description, message flow,
 sample messages, keyword sets and auto-replies; `sub_usecases` when MIXED/LOW_VOLUME). The CTA
 preflight is enforced server-side at submit - a page that fails hard-blocks the filing (the
@@ -329,10 +329,10 @@ such as an unreachable page; provable failures still refuse; the
 dashboard has an acknowledge-warnings override; the public share-link page has none). Same
 response trap as the brand: **`submission_error` non-null on a 200 = the row persisted but
 never reached the carrier** - that row is exactly what `voice_sms_campaign_resubmit` re-files;
-do NOT create a second campaign for it. Until this tool resolves, the filing happens in the
-dashboard wizard or via the client share link.
+do NOT create a second campaign for it. The client share link (Part 9) files the same campaign
+when the client is the one holding the details.
 
-**5. Poll.** `voice_sms_campaign_get` (INCOMING) for the row, or `voice_sms_registration_get`
+**5. Poll.** `voice_sms_campaign_get` for the row, or `voice_sms_registration_get`
 for the whole picture. Review runs registry -> vendor CSP review -> MNO review, typically days.
 The status cron polls and notifies on changes; you do not need to poll aggressively. Remember
 Part 2: raw "accepted" statuses are still canonical PENDING.
@@ -345,7 +345,7 @@ before filing by hand. Carrier paperwork, not a local preference: moving a numbe
 another filing, and assigning a number to the wrong campaign misrepresents its sending
 identity, which gets traffic filtered rather than merely rejected.
 
-**7. `voice_sms_messaging_profile_attach` (INCOMING) - only when auto-provision has not.**
+**7. `voice_sms_messaging_profile_attach` - only when auto-provision has not.**
 Attaches the campaign's messaging profile to a DID for routing. **Attach is not assignment**:
 a DID can be attached and still 40010 until step 6 lands. The auto-provision poll normally
 does both; reach for the manual tools only when a specific number is misbehaving after the
@@ -362,7 +362,7 @@ carrier-side. A stale failure reason lingers on the vendor object after a re-que
 new verdict lands - do not re-diagnose from a reason older than your last action. Then pick a
 lane. There are exactly three, plus the escalation:
 
-**`voice_sms_campaign_appeal` (INCOMING) - a note, nothing else.** It attaches your
+**`voice_sms_campaign_appeal` - a note, nothing else.** It attaches your
 `appeal_reason` (20 to 2000 chars) and re-queues review. **THE CONTENT IS UNCHANGED. If the
 content is why it failed, the appeal fails again** - Locus proved this with a byte-identical
 re-rejection. Appeal ONLY when the campaign and page are already right and the reviewer's
@@ -377,7 +377,7 @@ must be the COMPLETE payload, not a patch - **omitting a field you previously se
 Run the preflight before retrying; resubmitting a rejected flow unchanged buys another
 rejection.
 
-**`voice_sms_campaign_delete` (INCOMING) - cleanup only.** Hard-deletes the local row; the
+**`voice_sms_campaign_delete` - cleanup only.** Hard-deletes the local row; the
 guard allows only FAILED/EXPIRED/never-submitted and refuses anything live or in flight. Any
 vendor-side record is left orphaned. Use it to clear dead rows so the attach logic and the
 humans see one live campaign, never as a rejection-recovery move by itself.
@@ -387,8 +387,8 @@ rejected campaign whose CONTENT needs to change - the message flow, the descript
 - cannot be edited-and-re-queued through any tool today; a campaign content-update tool does
 not exist at any layer, so do not go looking for a name. The choices are: fix the PAGE
 (content on the website is yours to change freely) and appeal; or delete the row and file
-fresh (~$15). A raw content update at the vendor does re-queue review free of charge, which
-is why the update tool is planned; until it ships, the ~$15 delete-and-refile is the honest
+fresh (~$15). A raw content update at the vendor does re-queue review free of charge, but
+no update tool exists (unbuilt at every layer), so the ~$15 delete-and-refile is the honest
 quote for a content fix, and pretending otherwise strands the client.
 
 **When to escalate to a human at the vendor - the move that actually cleared Locus.** The
@@ -431,7 +431,7 @@ not a defect. Never run this proof against a customer's number.
 
 **LEAD WITH THE OVERWRITE TRAP: resubmitting a number that is already VERIFIED OVERWRITES its
 vendor-side approval, and that number STOPS SENDING until the fresh review completes - one to
-two weeks off the air.** `voice_sms_toll_free_verification_submit` (INCOMING) guards this with
+two weeks off the air.** `voice_sms_toll_free_verification_submit` guards this with
 a 409 `verified_number_resubmission` listing the `verified_e164s`; overriding it requires
 `confirm_overwrite_verified: true`, and that flag is a HUMAN decision every time - never set
 it to make an error go away. The legitimate reason to overwrite is a material change to the
@@ -463,7 +463,7 @@ an all-null status sweep during a deploy is not a lost verification.
 ## Part 9: The client handoff - the share link is a credential
 
 Most agency clients cannot and should not be walked through EIN entry over chat.
-`voice_sms_registration_share_link_create` (INCOMING) mints a public registration page where
+`voice_sms_registration_share_link_create` mints a public registration page where
 the person who actually holds the EIN fills the brand (and, once the brand verifies, the
 campaign) in plain language, with the preflight enforced and no override button.
 
@@ -471,10 +471,9 @@ campaign) in plain language, with the preflight enforced and no override button.
 identity (EIN included) and fee-bearing campaigns.** It is shown ONCE at mint time. Handle it
 like a password: deliver it directly to the named recipient, never paste it into a shared
 channel or a ticket, and never store it in notes. `voice_sms_registration_share_links_list`
-(INCOMING) shows what is outstanding; `voice_sms_registration_share_link_revoke` (INCOMING)
-kills one token, or every token when called without one. Revoke links that are no longer
-needed - an unused live link is standing risk. Until these resolve, mint and revoke from the
-dashboard's registration page.
+shows what is outstanding; `voice_sms_registration_share_link_revoke` kills one token, or every
+token when called without one. Revoke links that are no longer needed - an unused live link is
+standing risk.
 
 ---
 

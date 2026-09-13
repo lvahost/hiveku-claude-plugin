@@ -18,21 +18,28 @@ first for every tool, every time.
 
 ## Availability
 
-Prose in this file is written for the final state. A name marked INCOMING may not resolve yet on
-this server - a name that does not resolve has not shipped, which is never the same thing as the
-capability not existing. Confirm before promising, and fall back to the dashboard action.
+Every routing tool below resolves on this server today. A name that does not resolve on your key
+is a profile question first: check the key's profile, then the hiveku-communications reachability
+ladder, then hand off with a precise dashboard step filed via `pm_tasks_create`. Never say the
+capability does not exist, and never invent a name.
 
 | Area | LIVE now | INCOMING | No tool - dashboard only |
 |---|---|---|---|
-| Diagnostics | `voice_diagnose_setup`, `voice_tenant_healthcheck`, `voice_presence_get`, `voice_extension_status`, `voice_audit_export_csv` | `voice_tenant_repair` | the settings-page Repair button (until `voice_tenant_repair` ships) |
+| Diagnostics | `voice_diagnose_setup`, `voice_tenant_healthcheck`, `voice_presence_get`, `voice_extension_status`, `voice_audit_export_csv`, `voice_tenant_repair` | - | - |
 | Extensions | `voice_extensions_list`, `voice_extension_get`, `voice_extension_create`, `voice_extension_update`, `voice_extension_delete` | - | device/handset provisioning (the SIP password exists exactly once, dashboard-side) |
 | Ring groups | `voice_ring_groups_list`, `voice_ring_group_get`, `voice_ring_group_create`, `voice_ring_group_update`, `voice_ring_group_delete` | - | - |
-| IVRs | `voice_ivrs_list`, `voice_ivr_walk`, `voice_ivr_create`, `voice_ivr_update`, `voice_ivr_delete`, `voice_default_greetings_get`, `voice_tts_voices_list` | `voice_ivrs_reprovision`, `voice_tts_preview` | - |
-| Queues | `voice_queues_list`, `voice_queue_get`, `voice_queue_update`, `voice_queue_delete` | `voice_queue_create` | queue-agent state reset (no path anywhere - see section 6) |
-| AI receptionist | (as a routing target only) | `voice_ai_agent_config_get`, `voice_ai_agent_config_update` | flipping `ai_agent_enabled` (no API path at all) |
+| IVRs | `voice_ivrs_list`, `voice_ivr_walk`, `voice_ivr_create`, `voice_ivr_update`, `voice_ivr_delete`, `voice_default_greetings_get`, `voice_tts_voices_list`, `voice_ivrs_reprovision`, `voice_tts_preview` | - | - |
+| Queues | `voice_queues_list`, `voice_queue_get`, `voice_queue_create`, `voice_queue_update`, `voice_queue_delete` | - | queue-agent state reset (no path anywhere - see section 6) |
+| AI receptionist | `voice_ai_agent_config_get`, `voice_ai_agent_config_update` (and as a routing target) | - | flipping `ai_agent_enabled` (no API path at all) |
 | Settings | `voice_settings_get`, `voice_settings_update` | - | `hipaa_mode` (accepted then silently dropped for every API key) |
 | Blocklist / caps | `voice_blocked_numbers_list`, `voice_blocked_numbers_add`, `voice_blocked_numbers_remove`, `voice_toll_fraud_state` | - | - |
 | DID routing | `voice_number_update` | - | - |
+| Webhooks | `voice_webhooks_list`, `voice_webhook_create`, `voice_webhook_update`, `voice_webhook_delete` | - | - |
+
+Legend: LIVE now = resolves on this server today. INCOMING = declared by the MCP server but not
+yet in this plugin's tool index - the column is empty because nothing in this file is INCOMING
+today; a name that appears there later flips to LIVE at release. Dashboard only = no tool at any
+layer.
 
 One profile note that applies to every write in this file: the Olympus twins deliberately do NOT
 enforce the dashboard's per-user voice permissions - the API key is the only gate. And because a
@@ -161,7 +168,7 @@ is NOT bumped to end of day (pass a full timestamp or lose the whole last day); 
 both `actor_name` and `actor_id` empty. It discloses staff PII - do not paste it into anything
 client-visible.
 
-**`voice_tenant_repair` (INCOMING) - LAST RESORT, after `voice_tenant_healthcheck` names the
+**`voice_tenant_repair` - LAST RESORT, after `voice_tenant_healthcheck` names the
 problem.** This is the tenant-level big hammer. It collapses duplicate FusionPBX domain rows,
 repairs extensions missing their user context, REWRITES the tenant's outbound dialplan rule with
 one DID baked in as the tenant-wide fallback caller ID (the `main`-purpose DID, else the oldest
@@ -490,7 +497,7 @@ and audio can survive on the PBX for a menu Hiveku has forgotten. A 200 with a w
 clean delete - report it, and expect the orphan to self-heal only if something re-provisions the
 same extension.
 
-### `voice_ivrs_reprovision` (INCOMING) - push the stored config back onto the box
+### `voice_ivrs_reprovision` - push the stored config back onto the box
 
 Rewrites LIVE dialplans: it re-runs the same provision path the edit routes use, against the rows
 already in the database, changing no stored configuration - idempotent, and normally $0 in TTS
@@ -528,7 +535,7 @@ independent caches (5 min per builder process, 1 hour on voice_server) mean cons
 disagree and a new voice takes about an hour to appear; the catalog is truncated at 100 and
 filtered to English, so a voice seen at Cartesia may sit past the cap rather than be missing.
 
-**`voice_tts_preview` (INCOMING) - hear it before callers do.** Renders up to 500 chars in a
+**`voice_tts_preview` - hear it before callers do.** Renders up to 500 chars in a
 chosen voice and returns an `audio_url`. Money: a fresh render is a real Cartesia call (it
 deliberately never lands on the tenant's TTS ledger - a UX feature, not a customer asset), and
 identical text+voice re-previews are cached and free - so preview once, not in a loop. Handling:
@@ -562,7 +569,7 @@ music no matter what `moh_s3_key` says - a set key is not proof the branded clip
 local path, written only from what the PBX reported placing, is the only proof.
 `voice_queue_get` is the single-queue read with the same row plus members.
 
-**`voice_queue_create` (INCOMING).** Auto-allocates from the 5000-5999 pool (409
+**`voice_queue_create`.** Auto-allocates from the 5000-5999 pool (409
 `no_extension_available` when exhausted) and provisions BEFORE the local write - the correct
 order, so a create that returns wrote what the PBX actually did. Queue strategies ARE the honest
 mod_callcenter set (`longest_idle`, `round_robin`, `top_down`, `agent_with_least_talk_time`,
@@ -618,7 +625,7 @@ IVR after-hours branch can send callers to it. What routing tools can and cannot
   that back - a failed delete leaves a ringing phone the AI can no longer transfer to
   (section 3).
 
-**`voice_ai_agent_config_get` / `voice_ai_agent_config_update` (INCOMING).** The config pair.
+**`voice_ai_agent_config_get` / `voice_ai_agent_config_update`.** The config pair.
 The update is a partial MERGE onto the stored config, not a replace - keys you do not send are
 preserved, `''` still clears a value - which is exactly what makes it safe to change one setting
 without wiping `transfer_directory`. The body shape is strict at BOTH levels:
@@ -687,7 +694,7 @@ retention cut leaves no attributable actor. Tell a human exactly what you change
 
 ---
 
-## 8b. Webhooks (INCOMING) - the event stream to another system
+## 8b. Webhooks - the event stream to another system
 
 Four tools, one contract: `voice_webhooks_list` (Olympus-only read; the signing secret is
 masked to its last 4 and NOTHING can re-read it), `voice_webhook_create` (registers a LIVE

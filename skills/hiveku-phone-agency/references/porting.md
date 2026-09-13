@@ -24,26 +24,28 @@ The stakes, first:
 
 ## Availability
 
-A name that does not resolve has not shipped on this server yet - use the dashboard fallback and
-never tell the user the capability does not exist.
+Every tool below resolves on this server today. A name that does not resolve on your key is a
+profile question first: check the key's profile, then the hiveku-communications reachability
+ladder, then hand off with a precise dashboard step filed via `pm_tasks_create`. Never tell the
+user the capability does not exist, and never invent a name.
 
 | Tool | Status |
 |---|---|
 | `voice_port_orders_list` | LIVE |
 | `voice_port_order_get` | LIVE |
 | `voice_port_order_requirements` | LIVE |
-| `voice_portability_check` | INCOMING - until it resolves: dashboard, the Porting wizard's pre-check step |
-| `voice_port_order_create` | INCOMING - until it resolves: dashboard, Communications > Phone Numbers > "Port existing numbers" |
-| `voice_port_order_update` | INCOMING - until it resolves: dashboard, the port order detail page's exception/fix panel |
-| `voice_port_order_action` | INCOMING - until it resolves: dashboard, the detail page's Confirm / Cancel buttons |
-| `voice_port_order_refresh_status` | INCOMING - until it resolves: dashboard, the detail page's Refresh button |
-| `voice_port_order_share_link_create` | INCOMING - until it resolves: dashboard, the detail page's client-handoff card |
-| `voice_port_order_share_links_list` | INCOMING - same fallback |
-| `voice_port_order_share_link_revoke` | INCOMING - same fallback |
-| `voice_port_order_comments_list` | INCOMING - until it resolves: dashboard, the detail page's comments thread |
-| `voice_port_order_comment_add` | INCOMING - same fallback |
-| `voice_port_order_verification_codes_send` | INCOMING - until it resolves: dashboard, the detail page's verification panel |
-| `voice_port_order_verification_codes_verify` | INCOMING - same fallback |
+| `voice_portability_check` | LIVE |
+| `voice_port_order_create` | LIVE |
+| `voice_port_order_update` | LIVE |
+| `voice_port_order_action` | LIVE |
+| `voice_port_order_refresh_status` | LIVE |
+| `voice_port_order_share_link_create` | LIVE |
+| `voice_port_order_share_links_list` | LIVE |
+| `voice_port_order_share_link_revoke` | LIVE |
+| `voice_port_order_comments_list` | LIVE |
+| `voice_port_order_comment_add` | LIVE |
+| `voice_port_order_verification_codes_send` | LIVE |
+| `voice_port_order_verification_codes_verify` | LIVE |
 
 ---
 
