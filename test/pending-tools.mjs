@@ -269,14 +269,4 @@ export const PENDING_TOOLS = new Map([
   // index regenerated at 2064 tools); entries deleted. See the batch note
   // above for the contract.
 
-  // VOICE-J (2026-09-13): the two call-tracking visibility reads. Both are
-  // GETs, so neither is on the ask list; they leave here when the index
-  // regenerated after the MCP deploy carries them. The release is the two
-  // row flips plus these two deletions - and the prose that says "except the
-  // two rows marked INCOMING" (the SKILL.md availability rule and the
-  // Availability intros of call-tracking-dni.md and sms-operations.md) goes
-  // with them: phone-doctrine.test.mjs fails on any INCOMING token left in
-  // the phone skill outside pbx-routing.md once this batch is gone.
-  ['voice_pool_sessions_list', { since: '2026-09-13', batch: 'VOICE-J' }],
-  ['voice_sms_opt_outs_list', { since: '2026-09-13', batch: 'VOICE-J' }],
 ]);
