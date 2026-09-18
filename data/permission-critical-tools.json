@@ -6,7 +6,7 @@
     "mcp__hiveku__"
   ],
   "plugin_version": "0.26.13",
-  "count": 200,
+  "count": 202,
   "tools": [
     {
       "name": "deploy_site",
@@ -72,6 +72,16 @@
       "name": "site_delete",
       "method": "DELETE",
       "why_gated": "destroys a site"
+    },
+    {
+      "name": "site_firewall_allow",
+      "method": "POST",
+      "why_gated": "adds an allowance at the edge firewall of a customer's site: the named client (a user-agent token on that site's hostnames, or an address everywhere on Hiveku hosting) skips the browser check from then on, and a careless token opens the site to any scraper that copies it"
+    },
+    {
+      "name": "site_firewall_remove",
+      "method": "DELETE",
+      "why_gated": "removes a firewall allowance and re-syncs the edge: the customer's monitor or audit tool is challenged again on its next request, which they see as a blank page or a 202"
     },
     {
       "name": "content_publish_to_site",
