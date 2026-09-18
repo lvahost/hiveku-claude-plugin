@@ -289,9 +289,6 @@ export const PENDING_TOOLS = new Map([
   // index regenerated at 2064 tools); entries deleted. See the batch note
   // above for the contract.
 
-  // FIREWALL-1 (2026-09-18): the edge firewall's agent surface. Delete these
-  // three once the index carries them (tool-names.test.mjs insists).
-  ['site_firewall_get', { since: '2026-09-18', batch: 'FIREWALL-1' }],
-  ['site_firewall_allow', { since: '2026-09-18', batch: 'FIREWALL-1' }],
-  ['site_firewall_remove', { since: '2026-09-18', batch: 'FIREWALL-1' }],
+  // FIREWALL-1: landed in the live index on 2026-09-18 (MCP abc95f75d +
+  // 1b8c1065d deployed; index regenerated at 2070 tools); entries deleted.
 ]);
