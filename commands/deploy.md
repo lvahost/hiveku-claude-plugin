@@ -80,7 +80,8 @@ tier, and why, then wait for the confirmation before calling `deploy_site`.
    FAILS the deploy on 403/404/5xx, so a success is a deploy that is actually serving. Two things it
    cannot tell you: page routes under reserved CDN prefixes are excluded from that smoke check by
    design, and a 401 from an intentional auth gate counts as a pass. Load the pages you changed
-   yourself and spot-check.
+   yourself and spot-check - in a browser, or `curl -A 'Hiveku-Session/1.0'`. A 202 with an empty
+   body from a bare terminal GET is the edge firewall's challenge, not a broken deploy.
 
 7. IF IT FAILS: a red build → `project_build_error_get({ project_id })` (`error_summary` +
    `last_log_lines` + `full_logs`). "Deployed, but the live site FAILS verification" means the
