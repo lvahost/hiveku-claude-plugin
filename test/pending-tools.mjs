@@ -209,6 +209,26 @@
  *     VOICE-J  voice_pool_sessions_list (who holds each DID right now; never
  *              mints), voice_sms_opt_outs_list (the opt-out list with its
  *              auto-vs-manual source).
+ *
+ *   Edge firewall program (2026-09-18, notes/edge-firewall-and-identify-yourself-2026-09-18.md
+ *   Part 3): agents get the three operations a person has in Site > Hosting >
+ *   Firewall and nothing more - read the last 7 days and the allowances, add
+ *   an allowance, remove one. The contract is the builder's Olympus routes,
+ *   merged as PR #60 (eccbb3fdf): GET /api/olympus/builder/projects/:projectId/firewall,
+ *   POST .../firewall/exceptions and DELETE .../firewall/exceptions/:exceptionId.
+ *   The MCP declarations are the MCP lane's PR in hiveku-mcp-api-server; the
+ *   live index regenerates after that deploy, and tool-names.test.mjs then
+ *   forces these entries out. The two writes are on the ask list
+ *   (data/permission-critical-tools.json), which is why that file's test
+ *   accepts them as PENDING names until the index carries them. Spelled in
+ *   prose by hiveku-web-agency/references/firewall.md (the identify-yourself
+ *   PR), which is why site_firewall_ is a gated prefix in tool-names.test.mjs:
+ *   a token there that differs from what the MCP module declares fails.
+ *     FIREWALL-1  site_firewall_get (read-only: totals, window, the top
+ *                 challenged or blocked clients, the active allowances),
+ *                 site_firewall_allow (one allowance by user-agent token or
+ *                 address; returns edge: 'applied' | 'pending'),
+ *                 site_firewall_remove (one allowance by exception_id).
  */
 const SEO_SINCE = '2026-08-30';
 const seo = (batch) => ({ since: SEO_SINCE, batch });
@@ -269,4 +289,9 @@ export const PENDING_TOOLS = new Map([
   // index regenerated at 2064 tools); entries deleted. See the batch note
   // above for the contract.
 
+  // FIREWALL-1 (2026-09-18): the edge firewall's agent surface. Delete these
+  // three once the index carries them (tool-names.test.mjs insists).
+  ['site_firewall_get', { since: '2026-09-18', batch: 'FIREWALL-1' }],
+  ['site_firewall_allow', { since: '2026-09-18', batch: 'FIREWALL-1' }],
+  ['site_firewall_remove', { since: '2026-09-18', batch: 'FIREWALL-1' }],
 ]);

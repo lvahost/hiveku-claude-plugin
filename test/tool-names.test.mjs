@@ -97,6 +97,17 @@ const GATED_PREFIXES = [
   // KNOWN_NON_TOOLS) and nothing fabricated. Listed AFTER content_analysis_ on
   // purpose (see the array comment).
   'content_',
+  // 2026-09-18. The edge firewall's agent surface: three names
+  // (site_firewall_get, site_firewall_allow, site_firewall_remove) that the
+  // web skill's firewall reference teaches and two of which the ask list
+  // gates. The prefix is deliberately the narrow site_firewall_, not site_:
+  // the site_ footprint is a mix of tools, tables and fields nobody has
+  // curated, while a firewall token that differs from what the MCP module
+  // declares (site_firewall_exception_add, say) would send a session to a
+  // dashboard fallback for a tool the server serves. No floor in MIN_CHECKED:
+  // the footprint is a handful of tokens in one reference, so a floor would
+  // false-fail a rewrite before it caught a broken walk.
+  'site_firewall_',
 ];
 
 /**

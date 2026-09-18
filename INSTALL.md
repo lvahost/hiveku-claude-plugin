@@ -118,6 +118,8 @@ Put this in `.claude/settings.json` (per project) or `~/.claude/settings.json` (
       "mcp__plugin_hiveku_hk__project_vcs_branch_preview_teardown",
       "mcp__plugin_hiveku_hk__project_vcs_revert",
       "mcp__plugin_hiveku_hk__site_delete",
+      "mcp__plugin_hiveku_hk__site_firewall_allow",
+      "mcp__plugin_hiveku_hk__site_firewall_remove",
       "mcp__plugin_hiveku_hk__content_publish_to_site",
       "mcp__plugin_hiveku_hk__content_schedule",
       "mcp__plugin_hiveku_hk__email_campaign_send_now",
