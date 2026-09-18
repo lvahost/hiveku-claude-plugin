@@ -12,7 +12,12 @@ Triage THIS project's **$ARGUMENTS** environment (default development). This pro
    it's the exact log the user is looking at.
 
 2. **Site serving WRONG (403/404 on the live URL, blank pages, "deploy said ready but the site is
-   broken")** → `deploy_doctor({ project_id: <the project_id>, environment: "$ARGUMENTS" })` FIRST, not
+   broken")** → first rule out the edge firewall: if the blank page was seen by a terminal fetch,
+   WebFetch, a script or the customer's monitor, a 202 with an empty body (header
+   `x-amzn-waf-action: challenge`) is the firewall's challenge, not a broken site - fetch with
+   `curl -I` or `-A 'Hiveku-Session/1.0'`, and allow the customer's own client in Site > Hosting >
+   Firewall (`hiveku-web-agency/references/firewall.md`). A real browser passes the check without
+   anyone noticing. Otherwise → `deploy_doctor({ project_id: <the project_id>, environment: "$ARGUMENTS" })` FIRST, not
    a log. Read-only; it checks the full serving path you cannot see from logs: CloudFront wiring
    (right origin kind - Lambda for framework apps, S3 for static), the attached CloudFront Function
    (a static-era function on a Lambda origin = the "every route 404s but /_next/* chunks work"
