@@ -346,13 +346,16 @@ with `is_active: false`):
 - **Known limit**: the check finds extensions by Hiveku's record of which number each one
   presents, not by what the PBX holds. An extension whose caller ID was changed while the PBX was
   unreachable can still present this number without being found. That is why the retire play runs
-  `voice_tenant_healthcheck` before the release: its `extension_caller_id_matches_builder` check
-  is what shows an extension presenting a different number on the PBX than in Hiveku.
+  `voice_tenant_healthcheck` while the number is still active, before the deactivate: its
+  `extension_caller_id_matches_builder` check is what shows an extension presenting a different
+  number on the PBX than in Hiveku, and it stops looking once the account has no active number.
 
 **The reversible alternative, and the default recommendation:** `voice_number_update` with
 `is_active: false`. The DID stays owned, inbound stops, caller-ID references are cleared, and the
 decision can be unwound. Prefer it, and wait a billing cycle before the real release - the calls
-that were still arriving at the "dead" number show up in that window.
+that were still arriving at the "dead" number show up in that window. If a release may follow,
+run the retire play's caller-ID check (step 3) before deactivating, while the number is still
+active.
 
 ## 9. Who is this number: `voice_number_lookup`
 
@@ -433,14 +436,28 @@ DIFFERENT column from the cap the toll-fraud guard enforces - quote `voice_setti
    number is PRINTED (signage, GBP listing, ads) - no tool can see a vehicle wrap.
 2. If it is the account's only DID, its only `main`, a pool's last member, or an SMS campaign's
    sender: stop and say so. The release tool will not.
-3. Deactivate first: `voice_number_update` with `is_active: false`. Reversible. A
+3. While the number is still active, run `voice_tenant_healthcheck` and read
+   `extension_caller_id_matches_builder`. It is the only check that sees what the PBX presents,
+   and it is how you find an extension the release cannot see (section 8, known limit). Go on only
+   when it is ok and its detail does not start with `skipped`:
+   - Each drifted extension reads
+     `ext 101: builder=<what Hiveku shows> pbx=<what calls present>`. Re-save that extension's
+     caller ID with `voice_extension_update` while the phone system answers (re-saving re-pushes
+     it), then run the check again.
+   - The detail names only the first five drifted extensions. Keep going until the check is ok,
+     not just until the named ones are fixed.
+   - `skipped: tenant has no active DID` is NOT a pass: the check looked at nothing. It skips
+     whenever no number on the account is active. If this is the last active one, a check run
+     after the deactivate below comes back green even while an extension still presents these
+     digits, and the nightly repair skips such an account too, so nothing fixes it during the
+     wait. If this number was already deactivated and it was the last active one, nothing can see
+     the PBX side for it: say so to the human before asking for the release.
+4. Deactivate, do not release yet: `voice_number_update` with `is_active: false`. Reversible. A
    `409 caller_id_clear_failed` means nothing was deactivated - handle it as section 8 says
    before going on. On success, confirm caller-ID references were cleared
    (`voice_extensions_list`).
-4. Wait a billing cycle. Check `voice_calls_list` and the SMS threads for traffic that arrived at
+5. Wait a billing cycle. Check `voice_calls_list` and the SMS threads for traffic that arrived at
    the "dead" number - each one is a reason to keep it.
-5. Run `voice_tenant_healthcheck`. An `extension_caller_id_matches_builder` failure where the PBX
-   side shows these digits is an extension the release cannot see: stop and fix it first.
 6. Only then, with a human's explicit confirmation of the exact digits:
    `voice_number_release`. Read `released` in the response; `released: false` is a carrier-side
    follow-up, not a success. If audit history matters, pass `soft: '1'` - the exact string.
@@ -467,6 +484,9 @@ DIFFERENT column from the cap the toll-fraud guard enforces - quote `voice_setti
 - **Getting past a `409 caller_id_clear_failed` by reassigning caller ID.** The save lands in
   Hiveku, the PBX push only warns, and the next release goes through while the PBX still presents
   the number. Wait for the phone system and retry the same call.
+- **Checking caller ID after the deactivate.** Once the account has no active number,
+  `extension_caller_id_matches_builder` answers ok with `skipped: tenant has no active DID`, having
+  compared nothing. Run the healthcheck while the number is still active.
 - **Quoting `voice_usage_get` minutes as call volume.** Nothing increments them in this build.
 - **Promising an 800 number.** Unpurchasable platform-wide, and unsearchable.
 
@@ -485,6 +505,6 @@ DIFFERENT column from the cap the toll-fraud guard enforces - quote `voice_setti
 | CNAM returns `not_provisioned` on a working number | Ported/half-provisioned row with NULL `provider_number_id`. Fix the row's adoption (`porting.md`), not the number |
 | CNAM on an 8xx number | `cnam_not_applicable_toll_free` - by design, not a failure |
 | Release answered 200 but the client is still billed | `released: false` was in that response. Carrier-side follow-up required - and the local row is gone |
-| "Take the number out of service" | `voice_number_update` `is_active: false` - reversible. Release only after the retire play, digits confirmed |
+| "Take the number out of service" | `voice_number_update` `is_active: false` - reversible. If a release may follow, run the retire play's caller-ID check (step 3) first, while the number is still active. Release only after the retire play, digits confirmed |
 | Release or deactivate answered `409 caller_id_clear_failed` | Not released or deactivated (any `cleared_extensions` stay cleared). Show `details.message`; retry the same call once `voice_tenant_healthcheck` answers normally (only the stuck extensions are retried). Never reassign their caller ID to get past it |
 | Usage says zero minutes despite real calls | Normal - `voice_usage_get` counters are not live except `tts_cents`. Use `voice_calls_list` |

@@ -74,11 +74,35 @@ test('the workaround that would release a number the PBX still presents is forbi
 
 test('the retire play handles the 409 at deactivate and checks the PBX side before releasing', () => {
   const play = retirePlay();
-  const deactivate = play.indexOf('Deactivate first');
-  const healthcheck = play.indexOf('Run `voice_tenant_healthcheck`');
+  const healthcheck = play.search(/run `voice_tenant_healthcheck`/i);
+  const deactivate = play.indexOf('`voice_number_update` with `is_active: false`');
   const release = play.indexOf('`voice_number_release`');
   assert.ok(deactivate >= 0 && healthcheck >= 0 && release >= 0, 'the play lost a step it must have');
-  assert.ok(deactivate < healthcheck && healthcheck < release, 'the PBX-side check must come before the release');
+  assert.ok(healthcheck < release, 'the PBX-side check must come before the release');
   assert.match(play, /`409 caller_id_clear_failed` means nothing was deactivated/);
   assert.match(play, /extension_caller_id_matches_builder/);
+});
+
+// The voice server answers extension_caller_id_matches_builder with ok and a
+// "skipped: tenant has no active DID" detail once no number on the account is
+// active, and the nightly repair skips that account too. Run after deactivating
+// the last active number, the check is green in exactly the case it is there
+// for, so it has to run while this number is still active.
+test('the caller-ID check runs while the number is still active, before the deactivate', () => {
+  const play = retirePlay();
+  const healthcheck = play.search(/run `voice_tenant_healthcheck`/i);
+  const deactivate = play.indexOf('`voice_number_update` with `is_active: false`');
+  assert.ok(healthcheck >= 0 && deactivate >= 0, 'the play lost a step it must have');
+  assert.ok(healthcheck < deactivate, 'the healthcheck must come before the deactivate');
+  assert.match(play, /While the number is still active, run `voice_tenant_healthcheck`/);
+});
+
+test('a skipped caller-ID check is taught as no pass, and the five-name cap is named', () => {
+  const play = retirePlay();
+  assert.match(play, /`skipped: tenant has no active DID` is NOT a pass/);
+  assert.match(play, /names only the first five drifted extensions/);
+  assert.match(play, /Keep going until the check is ok/);
+  assert.match(play, /say so to the human before asking for the release/);
+  assert.match(retiring(), /while the number is still active, before the deactivate/);
+  assert.doesNotMatch(retiring(), /runs\s+`voice_tenant_healthcheck` before the release/);
 });
