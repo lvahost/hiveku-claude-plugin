@@ -7,7 +7,7 @@ ORDER. Do not skip to the interesting step: the boring steps are the ones that a
 and each step you finish RULES SOMETHING OUT, which is what makes the next answer mean anything.
 Follow the **hiveku-automation-agency** skill, and load `references/reliability.md` before you draw
 a conclusion. That file carries the deep detail this command deliberately does not repeat (Part 1
-the full ladder, Part 2 the six ways a run is green and not green, Part 3 the status vocabulary
+the full ladder, Part 2 the seven ways a run is green and not green, Part 3 the status vocabulary
 trap, Part 4 reading a failed run, Part 5 retries and duplicate sends, Part 6 recovery). Before any
 causal story ("the platform broke"), rule out the measurement artifacts that mimic every outage: a
 status filter outside the real vocabulary, a disabled workflow, a paused workflow banking
@@ -28,12 +28,21 @@ submissions, the wrong cron rail, and a UTC schedule the client reads as local.
 3. **Is it paused, and why?** The highest-yield step on the ladder and the one most often skipped,
    because a paused workflow produces the least evidence of anything being wrong.
    `workflow_stranded_list({ workflow_id })` is READ-ONLY and returns the pause window, the count,
-   and one row per submission with its trigger_run_id, arrival time, form name and payload KEYS (field names only, never the values: a stranded payload can hold personal data, so you can say how many leads are waiting and which form they came from, but you cannot read the operator their names). Five consecutive failures trip the circuit breaker and pause the
-   workflow; a paused workflow REJECTS triggers and the rejection writes NO run row, which is the
-   exact signature of "it just stopped and there are no errors", while the webhook keeps accepting
-   and storing deliveries so the client's form still returns a success page. The count is a LEAD
-   count: those submissions are invisible, not lost. A run history that simply stops on a date with
-   the last few runs failing and nothing after is the fingerprint. Do not resume yet. Do not go
+   and one row per submission with its trigger_run_id, arrival time, form name and payload KEYS (field names only, never the values: a stranded payload can hold personal data, so you can say how many leads are waiting and which form they came from, but you cannot read the operator their names). Five consecutive failed runs started by a schedule, a database
+   change, an internal event or a retry of one of those trip the circuit breaker and pause the
+   workflow. A failed webhook or website-visitor delivery never does: that workflow keeps
+   running and failing, so for a webhook form the evidence is the failed runs in step 4, not a pause. If a
+   webhook workflow IS paused, `paused_reason` on `workflow_get` says why (`manual` is a person,
+   `cascade_loop` the loop guard, `ai_budget` the daily AI budget, `circuit_breaker` five failures
+   in a row ending in a run of a pausing origin, or a pause from before webhook failures stopped
+   pausing workflows); find out who before you resume. A retry takes the origin of the run it
+   retries: a retried webhook delivery is still a webhook run and never pauses, and only a retry
+   of a schedule, database or event run can. A paused workflow REJECTS triggers and the rejection writes NO run row, which is
+   the exact signature of "it just stopped and there are no errors", while the webhook keeps
+   accepting and storing deliveries so the client's form still returns a success page. The count
+   is a LEAD count: those submissions are invisible, not lost. On a scheduled, database or event
+   workflow, a run history that simply stops on a date with the last few runs failing and nothing
+   after is the fingerprint. Do not resume yet. Do not go
    hunting for the pause in run rows instead: `stopped_paused` is recorded for internal event
    triggers ONLY and caps at 200 rows per pause window, and stranded webhook deliveries produce no
    such row at all.
@@ -48,14 +57,25 @@ submissions, the wrong cron rail, and a UTC schedule the client reads as local.
 5. **Did runs fail, and how consistently?** `workflow_run_summary({ workflow_id, since })` returns
    counts by status, `success_rate`, latency percentiles, up to 5 recent failures with
    `error_message`, and `last_succeeded_at` / `last_failed_at` / `last_failed_run_id`. Read the
-   SHAPE, not just the rate. Five consecutive failures then silence is a circuit-breaker pause, so
-   go back to step 3. A steady 85 percent is a flaky dependency. A cliff on one date is a change:
-   `workflow_versions_list({ workflow_id })` and `audit_query` name what changed and who changed
-   it. The summary caps at 1000 runs per window, so narrow `since` on a busy workflow rather than
-   quoting a truncated sample as the whole picture.
+   SHAPE, not just the rate. Five consecutive failures then silence, on a scheduled, database or
+   event workflow, is a circuit-breaker pause, so go back to step 3 (a webhook workflow keeps
+   failing instead of going silent). A steady 85 percent is a flaky dependency. A cliff on one
+   date is a change: `workflow_versions_list({ workflow_id })` and `audit_query` name what changed
+   and who changed it. The summary caps at 1000 runs per window, so narrow `since` on a busy
+   workflow rather than quoting a truncated sample as the whole picture. **Before you chase a
+   failure, ask whether it is still current.** Each recent failure carries
+   `predates_current_definition` (the summary also gives
+   `last_failed_run_predates_current_definition`, `definition_changed_at` and `current_setup`).
+   `true` means the failure happened before the workflow last changed (`definition_changed_at`,
+   the newest version that changed the graph: an edit or a restore; turning failure alerts on or
+   off does not count), so someone may already have fixed it. Read `current_setup` (the current definition's `workflow_validate`
+   verdict, `{ state, errors, first_issue }`), and prove the current graph with a `workflow_test`
+   (step 8) before you report the old error as today's.
 6. **Did the steps DEGRADE?** `workflow_run_get({ workflow_id, run_id })` for `step_states`, the
    per-node map of `{ status, input, output, error }` showing what each node received, produced, or
-   failed on. This is the answer to the most common report of all, "it says it worked but nothing
+   failed on. It carries `predates_current_definition` and `current_setup` too: a run from before
+   the last change describes a graph that may no longer exist. This is the answer to the most
+   common report of all, "it says it worked but nothing
    happened": a node with `on_error: 'continue'` that FAILS records as completed with a `degraded`
    flag plus `original_error` and `on_error_mode`, and the run finishes GREEN. A run whose every
    action step is degraded reports success and did nothing at all, and no status filter or summary
@@ -98,25 +118,36 @@ submissions, the wrong cron rail, and a UTC schedule the client reads as local.
    are kept, but a webhook node whose trigger was deleted comes back on a NEW URL named in
    `webhook_trigger_warnings`, so its senders need re-pointing). Then
    `workflow_validate({ workflow_id })`, fixing every error and reading every warning, then
-   `workflow_test({ workflow_id, input_data })`. Read the evidence out of the CALL'S OWN RESPONSE: a
-   test persists no run row, so `run_id` comes back null and `workflow_run_get` has nothing to
-   fetch. The test runs the whole graph, and `data.step_states[<nodeId>]` reports every node: for a
+   `workflow_test({ workflow_id, input_data })`. On a webhook workflow `input_data` is the request
+   BODY: the test wraps it the way a real delivery arrives (under `trigger.output.payload`, with
+   `input_data.headers` / `query` / `method` optional), so pass a real submission's fields, and a
+   `{{trigger.output.email}}` that misses on real traffic misses here too. Read the evidence out
+   of the CALL'S OWN RESPONSE: a test persists no run row, so `run_id` comes back null and
+   `workflow_run_get` has nothing to fetch. The test runs the whole graph, and `data.step_states[<nodeId>]` reports every node: for a
    simulated one (`dry_run: true`), `output.would_have` (the config it would have sent) and
    `template_values` (every `{{token}}` and what it resolved to); `error` on a node that failed.
-   `data.not_reached` lists nodes the run never got to, so a leg that should have run and is listed
+   A simulated node whose required config is missing, or resolves to nothing in this test, now
+   FAILS the test with the error a real run gives (`Slack webhook URL is required`) instead of
+   returning a mock: that error is the fix you have not made yet. A value the test cannot know
+   (from a simulated upstream node, or an `{{env.*}}` value, which `workflow_test` does not load)
+   keeps the mock. `data.not_reached` lists nodes the run never got to, so a leg that should have run and is listed
    there is still broken. That is where you confirm the real recipient, body, and fields before
    anything goes live. A dry run from before the 2026-09 fix stopped at the first simulated node, so
    a "passing" test from then proved nothing past it. Never use `workflow_run` to test. That sends
    for real. If the fix was a missing field, `workflow_enable` on a disabled workflow now refuses
    with 422 `workflow_invalid` until validate is clean; `allow_incomplete: true` is only for the
    operator's explicit yes. If the fix is on the trigger row (a 401 form made public, a disarmed
-   URL re-armed with `is_enabled: true`, a rename), `workflow_trigger_update` is its own
-   confirmed write: name the URL and what changes, and get the yes first. Editing the webhook
+   URL re-armed with `is_enabled: true`, a rename, a `rotate_webhook_path: true` re-mint of a
+   leaked URL), `workflow_trigger_update` is its own confirmed write: name the URL and what
+   changes, and get the yes first. It goes out once (the proxy never re-sends it after a 5xx, a
+   timeout or a dropped connection; only a 429, refused before any work, is re-sent for you), so
+   if it errors, read `workflow_triggers_list` before you send it again: a repeated rotation
+   kills the URL the first one made live. Editing the webhook
    node's auth with `workflow_node_update` fixes nothing: a node edit never changes a live URL's
    auth, and the response says `auth_not_applied`.
 9. **Recovery, in this order, each step gated.** Fix before resume, resume before replay. Resuming
-   a workflow whose cause is unfixed just trips the breaker again, and the second outage costs more
-   trust than the first.
+   a workflow whose cause is unfixed just fails again (a scheduled or event workflow trips the
+   breaker again), and the second outage costs more trust than the first.
    - `workflow_resume({ workflow_id })` clears the pause and resets the failure counter. It runs
      nothing by itself, and it must come FIRST: a replay against a still-paused workflow is
      refused.
@@ -126,7 +157,10 @@ submissions, the wrong cron rail, and a UTC schedule the client reads as local.
    - `workflow_stranded_replay({ workflow_id, confirm: true })`. `confirm: true` is required (400
      without it), it is capped at 25 per call and SILENTLY clamped, so a 60-submission backlog is
      three calls, and `trigger_run_ids` replays a chosen subset. Re-run `workflow_stranded_list`
-     afterwards to verify the drain; never report a backlog as drained after one call.
+     afterwards to verify the drain; never report a backlog as drained after one call. If a
+     replay call errors, re-read `workflow_stranded_list` before calling it again: the proxy
+     never re-sends it after a 5xx, a timeout or a dropped connection, and the batch may have
+     run (only a 429, refused before any work, is re-sent for you).
    - **A replay sends REAL notifications through the workflow's CURRENT definition, to people whose
      submissions may be days old.** Replaying a six-day outage emails a week of people about a form
      they filled in last Tuesday. Say that to the operator in those words before you send.
@@ -145,5 +179,9 @@ submissions, the wrong cron rail, and a UTC schedule the client reads as local.
      without the bookkeeping.
 10. **Close the loop.** Hand over with `workflow_dashboard_url({ workflow_id })` so the operator can
    watch it in the editor, say plainly what broke and what is now different, and for anything the
-   client depends on turn on per-run failure alerting when you enable it, so the NEXT outage tells
-   someone instead of waiting for a sweep. Finish every session of work the same way: persist notable learnings to department memory - read the department's current document with `memory_list({ domain: "<dept>" })`, append your note to the `content` it returns, and send the WHOLE merged document to `memory_update({ memory_id, content })`, which REPLACES it (sending only the new note destroys everything that department had accumulated); use `memory_create({ type: "memory", name: "<dept>", content })` only when no entry exists, and keep `<dept>` to a canonical department name (see hiveku-orient), and reflect the work in Hiveku PM: `pm_projects_list` to find the project (it filters only by `status`; `project_type` is named in its description but is NOT in its schema, so the proxy drops it and you filter the returned list yourself), or `pm_projects_create({ name, project_type })` where project_type is one of seo | ppc | marketing | website | app_dev, then `pm_tasks_create({ project_id, title })` (the field is `title`, not `name`), `pm_tasks_update` as it moves, `pm_tasks_complete({ id, summary })` when the loop is closed. Reopen a task closed too early with `pm_tasks_uncomplete`, never `pm_tasks_update`. A memory_update that destroyed content is recoverable: `memory_list_versions({ memory_id })` lists the snapshots taken before every PUT or DELETE, and `memory_restore_version({ version_id })` restores one (it works for deleted entries too). Hiveku, not this folder, is the source of truth.
+   client depends on turn on per-run failure alerting when you enable it (`workflow_update({
+   workflow_id, settings: { notify_on_failure: true } })`), so the NEXT outage tells someone
+   instead of waiting for a sweep. It covers every run a trigger started, webhook deliveries and
+   website visitors included, and never a run you or the operator started (`workflow_run`,
+   `workflow_test`, a replay): a webhook lead form never pauses, so without it nothing tells the
+   client about the next outage. Finish every session of work the same way: persist notable learnings to department memory - read the department's current document with `memory_list({ domain: "<dept>" })`, append your note to the `content` it returns, and send the WHOLE merged document to `memory_update({ memory_id, content })`, which REPLACES it (sending only the new note destroys everything that department had accumulated); use `memory_create({ type: "memory", name: "<dept>", content })` only when no entry exists, and keep `<dept>` to a canonical department name (see hiveku-orient), and reflect the work in Hiveku PM: `pm_projects_list` to find the project (it filters only by `status`; `project_type` is named in its description but is NOT in its schema, so the proxy drops it and you filter the returned list yourself), or `pm_projects_create({ name, project_type })` where project_type is one of seo | ppc | marketing | website | app_dev, then `pm_tasks_create({ project_id, title })` (the field is `title`, not `name`), `pm_tasks_update` as it moves, `pm_tasks_complete({ id, summary })` when the loop is closed. Reopen a task closed too early with `pm_tasks_uncomplete`, never `pm_tasks_update`. A memory_update that destroyed content is recoverable: `memory_list_versions({ memory_id })` lists the snapshots taken before every PUT or DELETE, and `memory_restore_version({ version_id })` restores one (it works for deleted entries too). Hiveku, not this folder, is the source of truth.

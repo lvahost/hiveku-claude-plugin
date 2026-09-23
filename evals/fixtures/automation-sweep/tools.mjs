@@ -41,6 +41,22 @@
  *     flagged `source_simulated` are excluded from every count, a run started
  *     before recording began reads as unknown (null), never as clean, and a
  *     'partial' run's count is a lower bound, null when it is 0.
+ *   - the setup verdict (setup-health.ts) is COMPUTED from each workflow's
+ *     graph and its `setup_issues` (none in this dataset): `workflow_list` rows
+ *     carry `setup: { state, errors, first_issue }` and honour `needs_setup`,
+ *     `workflow_get` carries the full `setup` with `live_and_invalid` /
+ *     `live_warning`, and `workflow_validate` / `workflow_run_summary` /
+ *     `workflow_run_get` carry the same verdict for the saved definition.
+ *   - `definition_changed_at` is the newest workflow_versions row that changed
+ *     the GRAPH: a settings-only row ('Failure alerts on' / 'Failure alerts
+ *     off', which the dashboard's alerts toggle writes) is skipped, exactly as
+ *     setup-health.ts latestDefinitionChange skips it. Every failed run's
+ *     `predates_current_definition` is computed against it, so the lead
+ *     workflow's newer 'Failure alerts on' row does NOT make its failures look
+ *     stale.
+ *   - `definition.settings` (notify_on_failure) comes from the dataset, and
+ *     `webhook_path_strength` is computed from the path's shape by a port of
+ *     webhook-path.ts classifyWebhookPath (null on a non-webhook row).
  *
  * The write surface REFUSES. The eval contract stops the session at the confirm
  * gate; the writes are still served so an attempt is LOGGED to the transcript,
@@ -114,6 +130,48 @@ const refuse = (tool) => ({
 
 const iso = (ms) => new Date(ms).toISOString();
 const completedAt = (run) => iso(Date.parse(run.started_at) + run.duration_ms);
+
+/**
+ * The version rows the dashboard's failure-alerts toggle writes. They change a
+ * flag, not the graph, so they never move `definition_changed_at`
+ * (definition-settings.ts SETTINGS_ONLY_CHANGE_SUMMARIES).
+ */
+export const SETTINGS_ONLY_CHANGE_SUMMARIES = ['Failure alerts on', 'Failure alerts off'];
+
+// webhook-path.ts, by shape: the fixture classifies a path the way the builder does.
+const FORM_WEBHOOK_PATH_RE = /^form-[0-9a-f]{8}-[0-9a-f]{16}$/;
+const MINTED_WEBHOOK_PATH_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*-[a-z2-7]{16}$/;
+const LEGACY_RANDOM_TOKEN_RE = /^[0-9a-z]{5,8}$/;
+const NODE_ID_WORD_RE = /webhook|trigger|node/;
+const UUID_V4_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+const WORKFLOW_PREFIX_RE = /^[0-9a-f]{8}$/;
+
+/**
+ * A port of webhook-path.ts classifyWebhookPath: 'minted' (80-bit random
+ * suffix), 'form' (bulk-provisioned form path), 'legacy_random' (an older
+ * random token, or a v4 UUID that is not the workflow's id), 'guessable'
+ * (anything else: `<wf8>-<nodeId>`, a word taken verbatim, any shape nobody
+ * can vouch for). null when there is no path.
+ */
+export function classifyWebhookPath(path, { workflowId = '', nodeIds = [] } = {}) {
+  if (typeof path !== 'string' || !path) return null;
+  if (FORM_WEBHOOK_PATH_RE.test(path)) return 'form';
+  if (MINTED_WEBHOOK_PATH_RE.test(path)) return 'minted';
+  const wfId = String(workflowId).trim().toLowerCase();
+  if (UUID_V4_RE.test(path)) return path === wfId ? 'guessable' : 'legacy_random';
+  const prefix = wfId.slice(0, 8);
+  if (WORKFLOW_PREFIX_RE.test(prefix) && path.startsWith(`${prefix}-`)) {
+    const token = path.slice(prefix.length + 1);
+    if (LEGACY_RANDOM_TOKEN_RE.test(token) && !NODE_ID_WORD_RE.test(token) && !new Set(nodeIds).has(token)) {
+      return 'legacy_random';
+    }
+  }
+  return 'guessable';
+}
+
+/** Did this run start before the definition last changed? False when either time is unknown. */
+const predatesChange = (startedAt, changedAt) =>
+  Boolean(startedAt && changedAt) && Date.parse(startedAt) < Date.parse(changedAt);
 
 /** The builder route's percentile: sorted[min(len-1, floor(p/100 * len))]. */
 const percentile = (sorted, p) => (sorted.length === 0 ? null : sorted[Math.min(sorted.length - 1, Math.floor((p / 100) * sorted.length))]);
@@ -252,6 +310,7 @@ export async function createTools() {
     const states = stepStates(run);
     const recording = missRecording(run, states);
     const misses = recording !== false ? missSummary(states) : null;
+    const change = definitionChange(wf);
     return {
       data: {
         id: run.id,
@@ -270,6 +329,10 @@ export async function createTools() {
         unresolved_template_count: misses ? reportedMissCount(recording, misses.count) : null,
         unresolved_template_simulated_count: misses ? reportedMissCount(recording, misses.simulated_count) : null,
         unresolved_template_nodes: misses ? misses.nodes : [],
+        // Is this run still about the workflow as it is now?
+        current_setup: setupSummary(setupHealth(wf)),
+        definition_changed_at: change?.at ?? null,
+        predates_current_definition: predatesChange(run.started_at, change?.at),
       },
     };
   };
@@ -337,6 +400,58 @@ export async function createTools() {
     return lastFailed ? lastFailed.started_at : null;
   };
 
+  /**
+   * setup-health.ts workflowSetupHealth over the fixture graph: 'empty' with no
+   * step after the trigger, 'needs_setup' when the dataset lists a setup error
+   * for the workflow, otherwise 'ok'. (Every fixture graph is a connected
+   * chain, so 'does_nothing' cannot arise here.)
+   */
+  const setupHealth = (wf) => {
+    const steps = wf.nodes.filter((n) => !/Trigger$/.test(n.type));
+    const issues = wf.setup_issues ?? [];
+    const errors = issues.filter((i) => i.severity === 'error');
+    const state = steps.length === 0 ? 'empty' : errors.length > 0 ? 'needs_setup' : 'ok';
+    const first = errors[0];
+    return {
+      state,
+      ok: errors.length === 0,
+      errors: errors.length,
+      warnings: issues.length - errors.length,
+      first_issue: first ? { code: first.code, message: first.message, node_id: first.node_id, ...(first.field ? { field: first.field } : {}) } : null,
+      issues,
+    };
+  };
+  const setupSummary = (health) => ({ state: health.state, errors: health.errors, first_issue: health.first_issue });
+
+  /** setup-health.ts liveSetupStatus: reporting only, never a refusal. */
+  const liveSetupStatus = (health, wf) => {
+    if (wf.is_enabled !== true || health.state === 'ok') return { live_and_invalid: false, live_warning: null };
+    const lead = wf.is_paused ? 'This workflow is switched on but paused. When it resumes, ' : 'This workflow is switched on, and ';
+    const more = health.errors > 1 ? ` (and ${health.errors - 1} more problem(s); validation lists them all)` : '';
+    const what =
+      health.state === 'empty'
+        ? 'it has no steps after its trigger, so its runs do nothing.'
+        : `runs that reach the problem will fail: ${health.first_issue?.message ?? 'validation reports errors.'}${more}`;
+    return { live_and_invalid: !wf.is_paused, live_warning: `${lead}${what}` };
+  };
+
+  /** setup-health.ts latestDefinitionChange: the newest version row that changed the graph. */
+  const definitionChange = (wf) => {
+    const row = [...(wfData.versions[wf.key] ?? [])]
+      .sort((a, b) => b.version - a.version)
+      .find((v) => !SETTINGS_ONLY_CHANGE_SUMMARIES.includes(v.change_summary));
+    return row ? { version: row.version, at: row.created_at, change_summary: row.change_summary ?? null } : null;
+  };
+
+  /** A trigger row as the read routes show it: the live URL and how guessable its path is. */
+  const triggerView = (t, wf) => ({
+    ...t,
+    ...(t.trigger_type === 'webhook' ? { http_method: t.allowed_method || 'POST', authentication: t.authentication ?? 'none' } : {}),
+    webhook_url: t.webhook_path ? `https://app.hiveku.com/api/webhooks/trigger/${t.webhook_path}` : null,
+    webhook_path_strength:
+      t.trigger_type === 'webhook' ? classifyWebhookPath(t.webhook_path, { workflowId: wf.id, nodeIds: wf.nodes.map((n) => n.id) }) : null,
+  });
+
   return {
     // ── Context ─────────────────────────────────────────────────────────────
     account_context_get({ domain } = {}) {
@@ -347,12 +462,16 @@ export async function createTools() {
     },
 
     // ── Inventory ───────────────────────────────────────────────────────────
-    workflow_list({ enabled, search, page = 1, limit = 50 } = {}) {
+    workflow_list({ enabled, search, needs_setup, page = 1, limit = 50 } = {}) {
+      // needs_setup: 'true' keeps rows whose setup.state is not 'ok', 'false'
+      // only 'ok' rows; anything else is no filter (the route's own parse).
+      const needsSetup = String(needs_setup) === 'true' ? true : String(needs_setup) === 'false' ? false : null;
       const wanted = workflows.filter((w) => {
         if (enabled !== undefined && enabled !== null && String(enabled) !== '') {
           if (w.is_enabled !== (String(enabled) === 'true' || enabled === true)) return false;
         }
         if (search && !w.name.toLowerCase().includes(String(search).toLowerCase())) return false;
+        if (needsSetup !== null && (setupHealth(w).state !== 'ok') !== needsSetup) return false;
         return true;
       });
       const size = Math.min(200, Math.max(1, Number(limit) || 50));
@@ -369,6 +488,9 @@ export async function createTools() {
           updated_at: w.updated_at,
           run_count: runsFor(w.id).length,
           trigger_count: (wfData.triggers[w.key] ?? []).length,
+          // The verdict workflow_validate gives, computed on read; the
+          // definition itself is never returned.
+          setup: setupSummary(setupHealth(w)),
         })),
         pagination: { page: Math.max(1, Number(page) || 1), limit: size, total: wanted.length, total_pages: Math.ceil(wanted.length / size) },
       };
@@ -378,6 +500,7 @@ export async function createTools() {
       const { wf, error } = resolveWorkflow(args);
       if (error) return error;
       const mine = runsFor(wf.id).slice(0, 25);
+      const health = setupHealth(wf);
       return {
         data: {
           id: wf.id,
@@ -392,11 +515,10 @@ export async function createTools() {
           definition: {
             nodes: wf.nodes.map((n, i) => ({ id: n.id, type: n.type, data: { label: n.label }, position: { x: 120 + i * 220, y: 160 } })),
             edges: wf.nodes.slice(1).map((n, i) => ({ id: `e_${wf.nodes[i].id}_${n.id}`, source: wf.nodes[i].id, target: n.id })),
+            // Workflow flags live in the definition beside the graph.
+            ...(wf.settings ? { settings: { ...wf.settings } } : {}),
           },
-          workflow_triggers: (wfData.triggers[wf.key] ?? []).map((t) => ({
-            ...t,
-            webhook_url: t.webhook_path ? `https://app.hiveku.com/api/webhooks/trigger/${t.webhook_path}` : null,
-          })),
+          workflow_triggers: (wfData.triggers[wf.key] ?? []).map((t) => triggerView(t, wf)),
           workflow_schedules: scheduleFor(wf.key)
             ? [
                 {
@@ -409,12 +531,18 @@ export async function createTools() {
                 },
               ]
             : [],
-          workflow_versions: (wfData.versions[wf.key] ?? []).map((v) => ({ id: `ver_${wf.key}_${v.version}`, version: v.version, created_at: v.created_at })),
+          // The latest 5, newest first, settings-only rows included.
+          workflow_versions: [...(wfData.versions[wf.key] ?? [])]
+            .sort((a, b) => b.version - a.version)
+            .slice(0, 5)
+            .map((v) => ({ id: `ver_${wf.key}_${v.version}`, version: v.version, created_at: v.created_at, change_summary: v.change_summary })),
           dashboard_url: `https://app.hiveku.com/${context.account_id}/dashboard/workflows/automations/${wf.id}`,
           last_run_at: mine[0]?.started_at ?? null,
           last_run_status: mine[0]?.status ?? null,
           last_failed_run_id: mine.find((r) => r.status === 'failed')?.id ?? null,
           last_succeeded_run_id: mine.find((r) => r.status === 'completed')?.id ?? null,
+          setup: { ...health, ...liveSetupStatus(health, wf) },
+          definition_changed_at: definitionChange(wf)?.at ?? null,
         },
       };
     },
@@ -451,12 +579,7 @@ export async function createTools() {
       if (error) return error;
       // An internal-event trigger is a graph NODE and needs no trigger row, so
       // an empty list here is expected for those workflows, not a fault.
-      return {
-        data: (wfData.triggers[wf.key] ?? []).map((t) => ({
-          ...t,
-          webhook_url: t.webhook_path ? `https://app.hiveku.com/api/webhooks/trigger/${t.webhook_path}` : null,
-        })),
-      };
+      return { data: (wfData.triggers[wf.key] ?? []).map((t) => triggerView(t, wf)) };
     },
 
     workflow_versions_list(args = {}) {
@@ -468,11 +591,32 @@ export async function createTools() {
     workflow_validate(args = {}) {
       const { wf, error } = resolveWorkflow(args);
       if (error) return error;
+      // The saved definition (the fixture takes no draft): its verdict, where
+      // the workflow stands, the last graph change and the last failure.
+      const health = setupHealth(wf);
+      const lastChange = definitionChange(wf);
+      const lastFailed = runsFor(wf.id).find((r) => r.status === 'failed') ?? null;
       return {
         data: {
-          ok: true,
-          issues: [],
-          summary: { nodes: wf.nodes.length, edges: Math.max(0, wf.nodes.length - 1), triggers: 1, errors: 0, warnings: 0 },
+          ok: health.ok,
+          issues: health.issues,
+          summary: { nodes: wf.nodes.length, edges: Math.max(0, wf.nodes.length - 1), triggers: 1, errors: health.errors, warnings: health.warnings },
+          validated: 'saved_definition',
+          workflow: { is_enabled: wf.is_enabled === true, is_paused: wf.is_paused === true },
+          setup_state: health.state,
+          ...liveSetupStatus(health, wf),
+          // Node data here carries labels only, so there are no required-value
+          // paths to report.
+          resolved: [],
+          last_change: lastChange,
+          last_failed_run: lastFailed
+            ? {
+                id: lastFailed.id,
+                at: lastFailed.started_at,
+                error: lastFailed.error_message,
+                predates_last_change: predatesChange(lastFailed.started_at, lastChange?.at),
+              }
+            : null,
         },
       };
     },
@@ -545,6 +689,8 @@ export async function createTools() {
       const from = sinceMs(args.since, 30 * 24 * 60 * 60 * 1000);
       if (from === null) return { status: 400, error: '`since` must be a parseable ISO date string' };
       const mine = runsFor(wf.id).filter((r) => Date.parse(r.started_at) >= from).slice(0, 1000);
+      const definition_changed_at = definitionChange(wf)?.at ?? null;
+      let last_failed_run_predates_current_definition = false;
       const counts = { runs: mine.length, completed: 0, failed: 0, running: 0, pending: 0, other: 0 };
       const latencies = [];
       const recent_failures = [];
@@ -560,9 +706,16 @@ export async function createTools() {
           if (!last_failed_at) {
             last_failed_at = r.completed_at;
             last_failed_run_id = r.id;
+            last_failed_run_predates_current_definition = predatesChange(r.started_at, definition_changed_at);
           }
           if (recent_failures.length < 5) {
-            recent_failures.push({ run_id: r.id, started_at: r.started_at, completed_at: r.completed_at, error_message: r.error_message });
+            recent_failures.push({
+              run_id: r.id,
+              started_at: r.started_at,
+              completed_at: r.completed_at,
+              error_message: r.error_message,
+              predates_current_definition: predatesChange(r.started_at, definition_changed_at),
+            });
           }
         } else if (r.status === 'running') counts.running += 1;
         else if (r.status === 'pending') counts.pending += 1;
@@ -602,6 +755,9 @@ export async function createTools() {
           last_succeeded_at,
           last_failed_at,
           last_failed_run_id,
+          last_failed_run_predates_current_definition,
+          current_setup: setupSummary(setupHealth(wf)),
+          definition_changed_at,
           template_misses: templateMisses(wf.id, from),
         },
       };

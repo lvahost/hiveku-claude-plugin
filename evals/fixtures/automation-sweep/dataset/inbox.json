@@ -19,6 +19,24 @@
       "expires_at": null
     },
     {
+      "id": "aib_4d82c6",
+      "category": "workflow_reliability",
+      "severity": "info",
+      "status": "dismissed",
+      "title": "Workflow \"Ticket Escalation Ping\" failed",
+      "body_markdown": "A run of \"Ticket Escalation Ping\" failed and the workflow is still enabled, so it will run again on its next trigger.\n\nStarted by: Event\n\nError: apiCall: 502 Bad Gateway from https://hooks.brightside.example/escalate\n\nRun id: 7c4e0009-4c17-4b3a-9e59-7c4e00000009",
+      "metadata": {
+        "workflow_id": "81c4de60-9a27-4f5b-b3e8-2d16074c9fa2",
+        "run_id": "7c4e0009-4c17-4b3a-9e59-7c4e00000009",
+        "triggered_by": "event"
+      },
+      "action_type": "no_action",
+      "action_payload": null,
+      "created_at": "2026-08-26T11:14:28Z",
+      "seen_at": "2026-08-26T11:40:02Z",
+      "expires_at": null
+    },
+    {
       "id": "aib_9b40ae",
       "category": "deploy.health",
       "severity": "info",

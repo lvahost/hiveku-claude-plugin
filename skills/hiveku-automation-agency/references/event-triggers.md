@@ -76,7 +76,12 @@ referencing a key the trigger does not emit is not an error: it is written throu
 blank and recorded in the step's `unresolved_templates`. `workflow_test` is how you catch
 it before it ships: read `template_values` (status `missed`) and `would_have` in the
 response's `data.step_states`, or add a `{{trigger.output.<key> || default}}` where a
-blank is acceptable.
+blank is acceptable. The default is plain text, never another key:
+`{{trigger.output.a || trigger.output.b}}` sends the words `trigger.output.b`. To fall back
+to a second key, check the first with a Conditional node (or return the first non-empty
+value from a Code node) and reference that node's output (`node-rail.md` 2.6).
+`{{trigger.output.timestamp}}` is on every run, even where `output_shape_keys` does not
+list it.
 
 Some CRM triggers need a backend emitter on the underlying write; the palette says so
 per entry. A trigger with no live emitter is authorable and silent, which looks

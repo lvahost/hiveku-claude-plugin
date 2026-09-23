@@ -26,7 +26,12 @@ version-snapshotted and server-validated.
    else `data`).
    `workflow_templating_syntax` before you write any `{{...}}` value: `{{ref || default}}` is the
    fallback (used when the ref is missing, null or blank, in every node and in dry runs); a single
-   `|` or `or` is not one.
+   `|` or `or` is not one. Everything after the first `||` is plain text, never looked up, so
+   `{{a || trigger.output.payload.name}}` sends the words, not the name: to fall back to a second
+   field, check the first with a Conditional node (or a Code node) and reference its output, and
+   quote a default that only looks like a path (`{{ref || 'trigger.name'}}`). workflow_validate
+   warns `fallback_default_is_literal` when a default looks like a reference. A webhook's body
+   is only under `trigger.output.payload`, and `{{trigger.output.timestamp}}` is on every run.
 3. Build it: `workflow_create({ name, description })`, leaving `is_enabled` at its default false.
    Then `workflow_node_add({ workflow_id, type, data, position? })` per node (exactly ONE
    trigger-category node), then `workflow_edge_add({ workflow_id, source, target, sourceHandle? })`.
@@ -56,7 +61,11 @@ version-snapshotted and server-validated.
    `missed`, `literal`, `upstream_simulated`, `not_evaluated`). `data.not_reached` lists nodes the
    run never got to (an untaken branch, or everything after a failure), and `data.output` is the
    terminal node's output. Confirm the real recipient, body and CRM fields there before anything
-   goes live: `missed`, `empty` and `literal` are the broken merges a customer would see. Dry-run
+   goes live: `missed`, `empty` and `literal` are the broken merges a customer would see. A
+   simulated node whose required config is missing, or resolves to nothing in the test, FAILS
+   the test with the real run's error (`Slack webhook URL is required`) instead of returning a
+   mock: fix that field. On a webhook workflow `input_data` is the request BODY, wrapped the way
+   a real delivery arrives (`trigger.output.payload`), so send a real submission's fields. Dry-run
    each branch. A test from before the 2026-09 fix stopped at the first simulated node, so re-run
    it. Never use `workflow_run` to test. That sends for real.
 6. Schedule it, if it is recurring: `workflow_set_schedule({ workflow_id, cron_expression, timezone })`.
@@ -65,7 +74,11 @@ version-snapshotted and server-validated.
 7. Enable only after the operator says yes: `workflow_enable({ workflow_id })`. It re-runs
    validation and refuses with 422 `workflow_invalid` (listing the `issues`) while any node a run
    can reach is incomplete: fix those nodes. Pass `allow_incomplete: true` only when the operator, told which
-   nodes will fail, explicitly says to enable anyway. Hand off with
+   nodes will fail, explicitly says to enable anyway. For anything the client depends on, turn
+   on failure alerts in the same breath: `workflow_update({ workflow_id, settings: {
+   notify_on_failure: true } })` emails the account admins once per incident when a triggered
+   run fails. A webhook workflow never pauses on its own failures, so for a lead form this is the
+   only alert the client gets. Hand off with
    `workflow_dashboard_url({ workflow_id })` so they can watch it in the editor.
 8. Finish every session of work the same way: persist notable learnings to department memory - read the department's current document with `memory_list({ domain: "<dept>" })`, append your note to the `content` it returns, and send the WHOLE merged document to `memory_update({ memory_id, content })`, which REPLACES it (sending only the new note destroys everything that department had accumulated); use `memory_create({ type: "memory", name: "<dept>", content })` only when no entry exists, and keep `<dept>` to a canonical department name (see hiveku-orient), and reflect the work in Hiveku PM: `pm_projects_list` to find the project (it filters only by `status`; `project_type` is named in its description but is NOT in its schema, so the proxy drops it and you filter the returned list yourself), or `pm_projects_create({ name, project_type })` where project_type is one of seo | ppc | marketing | website | app_dev, then `pm_tasks_create({ project_id, title })` (the field is `title`, not `name`), `pm_tasks_update` as it moves, `pm_tasks_complete({ id, summary })` when the loop is closed. Reopen a task closed too early with `pm_tasks_uncomplete`, never `pm_tasks_update`. A memory_update that destroyed content is recoverable: `memory_list_versions({ memory_id })` lists the snapshots taken before every PUT or DELETE, and `memory_restore_version({ version_id })` restores one (it works for deleted entries too). Hiveku, not this folder, is the source of truth.
 

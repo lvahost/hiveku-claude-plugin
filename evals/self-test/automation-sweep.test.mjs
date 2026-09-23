@@ -473,6 +473,126 @@ test('automation-sweep: the dataset agrees with itself - graphs, ids, triggers, 
   assert.equal(tools.workflow_run_get({ workflow_id: WF.lead, run_id: '00000000-0000-4000-8000-000000000000' }).status, 404);
 });
 
+// ── the round-2 read fields: served, computed, and not seeded findings ─────
+test('automation-sweep: every row carries a setup verdict, and no switched-on workflow needs setup', async () => {
+  const { tools } = await fixtureTools();
+  const rows = tools.workflow_list({}).data;
+  assert.equal(rows.length, 8);
+  for (const row of rows) {
+    assert.deepEqual(row.setup, { state: 'ok', errors: 0, first_issue: null }, `${row.name}: the list row carries the verdict`);
+    assert.ok(!('definition' in row), 'the list never returns the definition');
+  }
+  // the sweep's own query for the ones that will fail on their next trigger
+  assert.deepEqual(tools.workflow_list({ enabled: 'true', needs_setup: 'true' }).data, []);
+  assert.equal(tools.workflow_list({ needs_setup: 'false' }).data.length, 8);
+  assert.equal(tools.workflow_list({ needs_setup: 'maybe' }).data.length, 8, 'an unknown needs_setup value is no filter');
+  for (const [key, id] of Object.entries(WF)) {
+    const detail = tools.workflow_get({ workflow_id: id }).data;
+    assert.equal(detail.setup.state, 'ok', key);
+    assert.equal(detail.setup.live_and_invalid, false, key);
+    assert.equal(detail.setup.live_warning, null, key);
+    const validate = tools.workflow_validate({ workflow_id: id }).data;
+    assert.equal(validate.ok, true, key);
+    assert.equal(validate.setup_state, 'ok', key);
+    assert.equal(validate.validated, 'saved_definition', key);
+    assert.deepEqual(validate.workflow, { is_enabled: detail.is_enabled, is_paused: detail.is_paused }, key);
+  }
+});
+
+test("automation-sweep: definition_changed_at skips the alerts toggle's row, so the lead outage is still current", async () => {
+  const { tools } = await fixtureTools();
+  const { SETTINGS_ONLY_CHANGE_SUMMARIES } = await import(pathToFileURL(path.join(FIXTURE, 'tools.mjs')).href);
+  assert.deepEqual(SETTINGS_ONLY_CHANGE_SUMMARIES, ['Failure alerts on', 'Failure alerts off'], 'the builder constant');
+  const lead = tools.workflow_get({ workflow_id: WF.lead }).data;
+  // Dana switched failure alerts on the morning after the outage: the newest row
+  assert.equal(lead.workflow_versions[0].version, 13);
+  assert.equal(lead.workflow_versions[0].change_summary, 'Failure alerts on');
+  assert.equal(lead.definition.settings.notify_on_failure, true);
+  // ... which changed a flag, not the graph
+  assert.equal(lead.definition_changed_at, '2026-08-19T09:05:37Z');
+  const summary = tools.workflow_run_summary({ workflow_id: WF.lead, since: WINDOW_SINCE }).data;
+  assert.equal(summary.definition_changed_at, '2026-08-19T09:05:37Z');
+  assert.deepEqual(summary.current_setup, { state: 'ok', errors: 0, first_issue: null });
+  assert.equal(summary.last_failed_run_predates_current_definition, false, 'the outage is current');
+  assert.equal(summary.recent_failures.length, 5);
+  for (const failure of summary.recent_failures) {
+    assert.equal(failure.predates_current_definition, false, failure.run_id);
+    // counting the toggle row would have called every one of them stale
+    assert.ok(Date.parse(failure.started_at) < Date.parse(lead.workflow_versions[0].created_at));
+  }
+  const run = tools.workflow_run_get({ workflow_id: WF.lead, run_id: summary.last_failed_run_id }).data;
+  assert.equal(run.predates_current_definition, false);
+  assert.equal(run.definition_changed_at, '2026-08-19T09:05:37Z');
+  assert.deepEqual(run.current_setup, { state: 'ok', errors: 0, first_issue: null });
+  const validate = tools.workflow_validate({ workflow_id: WF.lead }).data;
+  assert.deepEqual(validate.last_change, { version: 12, at: '2026-08-19T09:05:37Z', change_summary: 'update node sendEmail_lead03 (recipient)' });
+  assert.equal(validate.last_failed_run.id, summary.last_failed_run_id);
+  assert.equal(validate.last_failed_run.predates_last_change, false);
+  // a workflow with no version rows never reads as changed
+  const ticket = tools.workflow_run_summary({ workflow_id: WF.ticket, since: WINDOW_SINCE }).data;
+  assert.equal(ticket.definition_changed_at, null);
+  assert.equal(ticket.recent_failures[0].predates_current_definition, false);
+  // the review workflow's graph edit on 2026-08-22 is a real change
+  assert.equal(tools.workflow_get({ workflow_id: WF.review }).data.definition_changed_at, '2026-08-22T16:09:11Z');
+});
+
+test('automation-sweep: failure alerts are on for every switched-on workflow, and the one alert that fired was dismissed', async () => {
+  const { tools } = await fixtureTools();
+  for (const [key, id] of Object.entries(WF)) {
+    const detail = tools.workflow_get({ workflow_id: id }).data;
+    if (!detail.is_enabled) {
+      assert.equal(detail.definition.settings, undefined, `${key}: switched off, no flags`);
+      continue;
+    }
+    assert.equal(detail.definition.settings?.notify_on_failure, true, `${key}: an alerts-off finding is not seeded`);
+  }
+  // the ticket's one failure raised one failure-alert item, which was dismissed:
+  // it is history, not part of the open queue
+  const open = tools.agent_inbox_list({}).data;
+  assert.ok(!open.some((i) => i.category === 'workflow_reliability'));
+  const dismissed = tools.agent_inbox_list({ status: 'dismissed' }).data;
+  assert.equal(dismissed.length, 1);
+  assert.equal(dismissed[0].category, 'workflow_reliability');
+  assert.equal(dismissed[0].metadata.workflow_id, WF.ticket);
+  const ticketFailure = tools.workflow_run_summary({ workflow_id: WF.ticket, since: WINDOW_SINCE }).data.recent_failures[0];
+  assert.equal(dismissed[0].metadata.run_id, ticketFailure.run_id);
+  assert.ok(Date.parse(dismissed[0].created_at) >= Date.parse(ticketFailure.completed_at), 'the alert follows the failure');
+  // the lead workflow failed before its alerts were switched on, so no alert item exists for it
+  const all = tools.agent_inbox_list({ status: 'new,seen,snoozed,actioned,dismissed,expired' }).data;
+  assert.ok(!all.some((i) => i.category === 'workflow_reliability' && i.metadata?.workflow_id === WF.lead));
+});
+
+test('automation-sweep: webhook_path_strength is computed from the path, and the one guessable URL is not live', async () => {
+  const { tools } = await fixtureTools();
+  const { classifyWebhookPath } = await import(pathToFileURL(path.join(FIXTURE, 'tools.mjs')).href);
+  // the port classifies the builder's shapes
+  assert.equal(classifyWebhookPath('lead-form-q7m2xk4tz6a3nvpe'), 'minted');
+  assert.equal(classifyWebhookPath('form-6a1d93c4-b27e05f8c1d94a3e'), 'form');
+  assert.equal(classifyWebhookPath('3f9c1a72-k3x9q2', { workflowId: WF.lead }), 'legacy_random');
+  assert.equal(classifyWebhookPath('3f9c1a72-webhook_trigger-1', { workflowId: WF.lead }), 'guessable');
+  assert.equal(classifyWebhookPath('lead-form'), 'guessable');
+  assert.equal(classifyWebhookPath(null), null);
+
+  const lead = tools.workflow_triggers_list({ workflow_id: WF.lead }).data;
+  assert.equal(lead.length, 1);
+  assert.equal(lead[0].webhook_path_strength, 'form', 'a bulk-provisioned form path: nothing to rotate');
+  assert.equal(lead[0].authentication, 'none');
+  assert.equal(lead[0].http_method, 'POST');
+  assert.equal(tools.workflow_get({ workflow_id: WF.lead }).data.workflow_triggers[0].webhook_path_strength, 'form');
+  // guessable, but on a disabled row of a deliberately disabled workflow: not live, so not a finding
+  const legacy = tools.workflow_triggers_list({ workflow_id: WF.legacy }).data[0];
+  assert.equal(legacy.webhook_path_strength, 'guessable');
+  assert.equal(legacy.is_enabled, false);
+  assert.equal(tools.workflow_get({ workflow_id: WF.legacy }).data.is_enabled, false);
+  // a non-webhook row has no strength
+  for (const id of [WF.report, WF.digest]) {
+    for (const row of tools.workflow_triggers_list({ workflow_id: id }).data) {
+      assert.equal(row.webhook_path_strength, null);
+      assert.ok(!('authentication' in row), 'only webhook rows carry authentication');
+    }
+  }
+});
+
 // ── answer key hygiene ──────────────────────────────────────────────────────
 test('automation-sweep: every expected id exists, must/must_not are disjoint, and prompt.md leaks no answer', async () => {
   const expected = loadJson('expected-findings.json');

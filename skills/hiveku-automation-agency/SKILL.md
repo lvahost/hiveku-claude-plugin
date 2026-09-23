@@ -55,14 +55,28 @@ that order.
   documented in INSTALL.md. That prompt is a backstop for an accident, not the
   approval itself: the operator's yes has to be informed - say what will fire, to
   whom, and how many - and a prompt you clicked through is not a yes anyone gave.
+- **A real send goes out once.** The Hiveku proxy never re-sends `workflow_trigger_update`,
+  a real `workflow_run`, `workflow_run_retry`, `workflow_run_replay`,
+  `workflow_stranded_replay` or `workflow_dead_letter_resolve` on its own after a 502, 503
+  or 504, a timeout or a dropped connection, because the request may have landed before the
+  error: none of those means nothing happened. Check what landed before you call one again:
+  `workflow_runs_list` for a run, retry or replay, `workflow_stranded_list` for a stranded
+  replay, `workflow_triggers_list` for a trigger update, `workflow_dead_letters_list`
+  (status `'all'`) for a dead-letter resolve. A 429 is the one exception: it is a rate-limit
+  refusal answered before any work, so the proxy waits (the response's `Retry-After`, capped
+  at 10 seconds, or a short backoff without one) and sends it again, 3 attempts in all; a
+  429 that still comes back means nothing ran and nothing changed, so wait and send the same
+  call again. Never repeat a rotation (`rotate_webhook_path: true`) you have not read back: a
+  second one kills the URL the first one made live.
 - **Never pass `allow_incomplete: true` on your own judgment.** `workflow_enable` (and
   `workflow_update` with `is_enabled: true`) refuses a disabled workflow that fails
   validation with 422 `workflow_invalid` and the `issues` list. The answer is to fix those
   nodes. The override exists for an operator who has been told exactly which nodes will
   fail at run time and says to enable anyway; "just turn it on" is not that yes. The same
   holds for renaming a live webhook URL (`workflow_trigger_update({ webhook_path })` or a
-  changed `webhookPath` on `workflow_node_update`): the old URL dies at once, so it needs
-  the list of senders to re-point and an explicit yes. And for making a protected webhook
+  changed `webhookPath` on `workflow_node_update`) and for re-minting it in place
+  (`workflow_trigger_update({ rotate_webhook_path: true })`): the old URL dies at once, so it
+  needs the list of senders to re-point and an explicit yes. And for making a protected webhook
   public (`filter_config: { authentication: 'none' }` or `filter_config: null`): say which
   URL loses its credential before you send it.
 - Durable decisions (which template a client is on, who the recipient is, why an
@@ -78,7 +92,7 @@ that order.
 |---|---|
 | `workflow_node_types_list` | The only way to know which node `type` strings the engine accepts. Returns the full catalog with per-type `data` fields and outgoing-handle shapes. `required` / `requiredOneOf` / `requiredWhen` on a field and node-level `requires` are what the handler fails without, custom-panel nodes included; `inferred: true` only means the handler reads the key, never that it is required; `configLocation: 'flat'` means `data.config` is ignored, and `'configOrData'` (CRM, the four SEO research nodes, Slack) means the handler reads `data.config` whole whenever the node has one, so a flat key beside it is missed, and `'databaseTriggerConfig'` (the DB triggers) reads one object whole, `data.databaseTriggerConfig`, else `data.config`, else `data` (`references/node-rail.md` 2.4-2.5). The set moves per deploy - read the catalog, never a type string or a count from memory. |
 | `workflow_templating_syntax` | The `{{...}}` reference: what the executor resolves at run time, what `trigger.output.payload` / `headers` / `query` contain, upstream-node references, `{{ref \|\| default}}` fallbacks, what `unresolved_templates` records, and the `{mode, value}` field modes `sendEmail` uses. Read it BEFORE you write any interpolated value. |
-| `workflow_validate({ workflow_id })` | Server-side check after every batch of edits. Errors: unknown node types, missing required fields on any node a trigger reaches (custom-panel nodes included; an issue can carry `anyOf` and a `note` such as "found at data.config.url, but this node reads data.url"), dangling edges, duplicate ids, no trigger (counted by the engine's own start-node list, so CRM, billing, email and database triggers count), an invalid `aiAgent` `responseSchema`. Warnings: orphan nodes (not reachable from the trigger), a missing field on such a node (`unreachable: true`: connect it or delete it), multiple triggers (**only the first fires**), self-loops, invalid source handles. Any error makes `workflow_enable` refuse with 422 `workflow_invalid`. |
+| `workflow_validate({ workflow_id })` | Server-side check after every batch of edits. Errors: unknown node types on a node a run reaches, missing required fields on any node a trigger reaches (custom-panel nodes included; an issue can carry `anyOf` and a `note` such as "found at data.config.url, but this node reads data.url"), a project-bound node with no project (`unbound_project_node`, the enable gate's own check), dangling edges, duplicate ids, no trigger (counted by the engine's own start-node list, so CRM, billing, email and database triggers count), an invalid `aiAgent` `responseSchema`. Warnings: orphan nodes (not reachable from the trigger), a missing field or unknown type on such a node (`unreachable: true`: connect it or delete it), multiple triggers (**only the first fires**), self-loops, invalid source handles, and `fallback_default_is_literal` (a `\|\|` default that reads like a reference; it is sent as text). Any error makes `workflow_enable` refuse with 422 `workflow_invalid`. Beside the issues it returns `setup_state` (`ok` \| `needs_setup` \| `does_nothing` \| `empty`), `live_and_invalid` and a plain `live_warning` for a switched-on workflow that is not ok, `resolved` (where each required value was found: paths, never values), `last_change`, and `last_failed_run` with `predates_last_change`. |
 
 Two more discovery tools, and the split between them matters:
 `workflow_event_trigger_types_list` returns trigger NODES that fire on something
@@ -104,7 +118,8 @@ untyped and unknown keys are silently ignored**.
    label the server suffixes with 16 random characters, so read `webhook_url` from the
    response and never build a URL yourself. A live URL moves only on an explicit, one-way
    rename (`workflow_trigger_update({ webhook_path })`, or a changed `webhookPath` on
-   `workflow_node_update`). Cron -> the scheduling section. Read the entry's
+   `workflow_node_update`) or rotation (`workflow_trigger_update({ rotate_webhook_path:
+   true })`). Cron -> the scheduling section. Read the entry's
    `output_shape_keys`.
 3. **Pick the action nodes.** `workflow_node_types_list`, read each type's `fields[]`.
 4. **Read the templating reference.** `workflow_templating_syntax`.
@@ -170,6 +185,24 @@ the step a "test run: fetch ... was not sent" warning. The metered DataForSEO re
 nodes return placeholder data in a test (no spend), `delay` does not sleep, and a wait
 node never parks the test - full lists in `references/node-rail.md` Part 4.
 
+**On a webhook-trigger workflow, `input_data` is the request BODY.** The test builds the
+envelope a real delivery gets: `input_data` (or `input_data.payload`, when that is an object)
+lands under `trigger.output.payload` with lowercase key aliases added, `input_data.headers` /
+`query` / `method` are optional beside it, and `trigger.output.timestamp` is the test's start
+time. Nothing is copied to the top level, so `{{trigger.output.email}}` misses in the test
+exactly as it misses on real traffic: write `{{trigger.output.payload.email}}`. `workflow_run`
+on a webhook workflow builds the same envelope.
+
+**A node that cannot run fails the test; it is not mocked.** A side-effecting node whose
+required config is missing, or whose required field is a `{{...}}` that resolved to nothing in
+this test, fails the test with the error a real run gives (`Slack webhook URL is required`,
+`<label>: <key> is required`), where it used to return a `would_have` and a green run. With
+`on_error: 'continue'` it records `degraded`, as a real run would. A value the test cannot know
+keeps the mock: one read from a simulated upstream node, or an `{{env.*}}` value
+(`workflow_test` does not load the environment). A test that passed before this change
+proved nothing about a node with a missing field: re-run it, and fix the field the error
+names before you read anything downstream of it.
+
 **Two dry-run holes were closed on 2026-08-30; both are worth knowing because older
 notes describe the broken behaviour.** (1) A side-effecting node inside a
 `parallelExecute` branch or a `transactionBlock` used to reach the REAL handler: the
@@ -203,8 +236,10 @@ afterwards. Read the response instead (shape: `references/node-rail.md` 5.1):
 you catch the wrong recipient, the `{{...}}` that resolved to an empty string (status
 `empty`: the reference exists but is blank, which is not a miss, so add a `||` default),
 the literal token text going out (status `literal`), and the CRM payload with a blank
-email. A miss with `source_simulated` came from a simulated upstream node and is expected
-in a dry run. `fire_and_forget` is ignored on a test (it always runs synchronously).
+email. An entry with a `hint` has a `||` default that reads like a reference: that default
+goes out as text (Pitfall 10). A miss with `source_simulated` came from a simulated upstream
+node and is expected in a dry run. `fire_and_forget` is ignored on a test (it always runs
+synchronously).
 Quota is not debited and no run history is polluted.
 
 **Re-run old tests.** Before the 2026-09 fix a test run stopped at the first simulated
@@ -355,19 +390,25 @@ Automations rot silently: a paused workflow banks invisible submissions, a stage
 queue fills, a schedule drifts. Weekly, per retainer account - read-only until the
 last step:
 
-1. `workflow_runs_recent({ status: 'failed', since: <7 days> })` - account-wide
+1. `workflow_list({ enabled: 'true' })` - every row carries `setup: { state, errors,
+   first_issue }`, the verdict `workflow_validate` gives, computed from the saved
+   definition. A switched-on workflow whose state is not `ok` fails (`needs_setup`) or does
+   nothing (`does_nothing`, `empty`) on its next trigger, and nothing switches it off:
+   that is a finding. `needs_setup: 'true'` narrows the list to those rows. `setup: null`
+   means the verdict could not be computed for that row: unknown, not ok.
+2. `workflow_runs_recent({ status: 'failed', since: <7 days> })` - account-wide
    failures -> the debug ladder.
-2. `workflow_run_summary({ workflow_id, since })` per enabled retainer automation:
+3. `workflow_run_summary({ workflow_id, since })` per enabled retainer automation:
    `success_rate`, latency percentiles, `last_failed_run_id` to drill, and
    `template_misses` (`runs_with_misses`, `total_misses`, `last_run_id_with_misses`, the
    top nodes) for runs that completed but merged blanks. `runs_checked` counts runs whose
    every step was checked; `runs_partially_checked` counts runs an older engine wrote in
    part, whose misses are a lower bound.
-3. `workflow_get_schedule` on every scheduled automation - enabled flag and
+4. `workflow_get_schedule` on every scheduled automation - enabled flag and
    `next_run_at` sanity. A null schedule on a workflow the client believes is
    scheduled is a finding, not a skip.
-4. `workflow_stranded_list` on anything paused - stranded submissions are leads.
-5. `agent_inbox_list` - the open staged-item queue. Apply what should be applied,
+5. `workflow_stranded_list` on anything paused - stranded submissions are leads.
+6. `agent_inbox_list` - the open staged-item queue. Apply what should be applied,
    then resolve; dismiss only what is deliberately rejected.
 
 Report it honestly. ZERO runs in the window is **unknown**, not passing - say "no
@@ -383,8 +424,21 @@ The weekly sweep above is how YOU find a broken automation. It is not how the CL
 finds out, and a week is a long time for a lead form to be dead. The reliability
 surface is loud about terminal states and silent about the ordinary one:
 
-- The circuit breaker pauses a workflow after **five consecutive** failures and emails
-  the account admins. Four failed nights in a row say nothing.
+- The circuit breaker pauses a workflow after **five consecutive** failed runs and emails
+  the account admins, but only a failed run that a schedule, a database change, an
+  internal event (a `form_submitted` event, a deal changing stage), or a retry of one of
+  those started can trip it. A retry takes the origin of the run it retries, whoever asks for
+  it (`workflow_run_retry`, or the hourly retry sweep): retrying a failed webhook or
+  website-visitor run gives another webhook (or visitor) run, which counts and alerts but
+  never pauses, and retrying a run a person or an agent started is a replay, which never
+  alerts, counts or pauses. Never tell an operator a failed run will be retried on its own:
+  the hourly sweep only picks up a failed run from the last 24 hours that already carries a
+  retry count, which in practice means a run somebody already retried with
+  `workflow_run_retry`. Four failed nights in a row say nothing.
+- A **webhook or website-visitor** run never pauses the workflow, however often it fails:
+  lead capture must not stop because a side step is flaky. Its failures still count
+  (`consecutive_failures` on `workflow_get`), but the only alert that reaches the client
+  is the opt-in below, so without it a broken lead form fails quietly on every submission.
 - An **intermittent** failure - the one that fails a third of the time - never trips
   the breaker at all, so it can run broken indefinitely.
 - A paused workflow rejects triggers **without writing a run row**, which is why the
@@ -397,13 +451,23 @@ it:
 workflow_update({ workflow_id, settings: { notify_on_failure: true } })
 ```
 
-Send `settings` on its own - you do NOT resend the graph, and the server merges it, so
-a later `workflow_update({ definition })` cannot silently drop the flag. Read it back
-with `workflow_get` under `definition.settings`. The opt-in lives in the workflow's own
-definition, which means it survives a clone, a template instantiation and a version
-restore. On a failed triggered run it raises one inbox item and emails the account
-admins **once per incident, not once per failed run** - a workflow failing every five
-minutes produces 288 failures a day and one email; resolving the inbox item re-arms it.
+Send `settings` on its own - you do NOT resend the graph, and the server merges it per
+flag. Read it back with `workflow_get` under `definition.settings`. The opt-in lives in the
+workflow's own definition, so it travels with a clone and a template instantiation, and it
+survives the owner's dashboard saves and every version restore (the current flag wins over
+the snapshot's, so a restore can never switch alerts off). A graph write that says nothing
+about `settings` keeps the flag, but a `definition` you send that carries its own `settings` IS
+honoured: never echo `definition.settings` from an old `workflow_get` back at a workflow
+someone may have changed since. The owner has the same switch in the workflow editor's gear menu
+("Email admins when a triggered run fails") - the gear is the Workflow Options button at the top
+right. Flipping it records a version ("Failure alerts on" / "Failure alerts off") that changes
+no graph, so it never moves `definition_changed_at`.
+
+What it covers: a failed run that a trigger started - webhook deliveries and
+website-visitor events included, as well as schedules, database changes, internal events
+and retries of those runs. On one it raises one inbox item and emails the account admins **once per
+incident, not once per failed run** - a workflow failing every five minutes produces 288
+failures a day and one email; resolving the inbox item re-arms it.
 
 Rules for it:
 
@@ -413,8 +477,11 @@ Rules for it:
   anything whose silence costs the client money. Leave it off for noisy internal
   sweeps where a single failure is genuinely uninteresting, or you teach the owner to
   ignore the channel.
-- **Human-origin failures do not alert.** Your own editor iteration is not an
-  incident.
+- **A failed run that a person or an agent started never alerts, counts or pauses.** That
+  is `workflow_run`, `workflow_test`, a replay (stranded or dead-letter), and the editor's
+  Test Run and its test webhook URL. Your own iteration is not an incident, and a failed
+  `workflow_run` on a live workflow cannot trip its breaker - but nobody is emailed when
+  one of those fails either, so read its result yourself.
 - Say plainly which workflows have it on when you hand over. An owner who believes
   they will be told, and will not be, is worse off than one who knows to check.
 
@@ -438,7 +505,15 @@ UTC schedule the client reads in local time.
    history, or `workflow_run_summary({ workflow_id, since })` for health:
    `success_rate` (0..1), latency percentiles, up to 5 recent failures, and
    `last_failed_run_id` to drill into. It caps at 1000 runs in the window, so narrow
-   `since` on a busy workflow.
+   `since` on a busy workflow. **Before you chase a failure, ask whether it is still
+   current.** Each recent failure carries `predates_current_definition` (and the summary
+   `last_failed_run_predates_current_definition`); `workflow_run_get` carries the same flag,
+   and `workflow_validate` gives `last_failed_run.predates_last_change`. `true` means the run
+   started before the workflow last changed (`definition_changed_at`: the newest version that
+   changed the graph, an edit or a restore; turning failure alerts on or off does not count), so
+   someone may already have fixed it. Read `current_setup` beside it (the current definition's
+   validate verdict), then `workflow_test` the current graph before reporting the old error as
+   today's.
 3. **You know the run.** `workflow_run_get({ workflow_id, run_id })` for `step_states`
    - a per-node map of `{ status, input, output, error }` showing exactly what each
    node received, produced, or failed on. This is the primary debug surface.
@@ -495,18 +570,23 @@ actually matters: it converts a loud failure into a quiet one.
 
 ## Paused workflows and stranded submissions
 
-Five consecutive failures trip the circuit breaker and auto-pause a workflow. **Its
+Five consecutive failed runs started by a schedule, a database change, an internal event
+or a retry of one of those trip the circuit breaker and auto-pause a workflow; webhook and
+website-visitor failures never do, retried or not (they count and alert, see above). A workflow can also be paused by hand
+in the dashboard, by the loop guard, or by its daily AI budget. **A paused workflow's
 webhook keeps accepting deliveries** - payloads are stored in `trigger_runs` and never
 processed - so the client's form looks fine and their leads are invisible rather than
 lost. Nothing un-pauses automatically, even after the bug is fixed. One client's forms
-were down six days that way, with the cause fixed on day two.
+were down six days that way, with the cause fixed on day two (that was before webhook
+failures stopped pausing a workflow; any pause strands deliveries the same way).
 
 Recovery order is strict, and each step has a guard:
 
 1. `workflow_run_get` on the failing run - find the node that tripped
    (`workflow_runs_recent({ status: 'failed' })` finds the run if you do not have it).
 2. Fix it (`workflow_node_update`), then `workflow_validate`, then `workflow_test`.
-   Resuming a workflow that is still broken just trips the breaker again.
+   Resuming a workflow that is still broken just fails again: a scheduled or event
+   workflow trips the breaker again, and a webhook workflow fails every delivery.
 3. `workflow_stranded_list({ workflow_id })` - READ-ONLY. Returns the pause window,
    the count, and one row per submission carrying trigger_run_id, received_at, form_name and payload KEYS - the field NAMES only. The values are deliberately withheld because a stranded payload can hold personal data, so you can tell the operator how many leads are waiting and when they arrived, and you cannot read them the contents. Capped at 200 rows.
 4. **Show the operator what would run, and get approval.** Not a count - the list.
@@ -542,9 +622,11 @@ read `change_summary` to find the right one, `workflow_version_get({ workflow_id
 to preview it, then `workflow_version_restore({ workflow_id, version })`. `version`
 is the **monotonic integer** (7), NOT the row uuid - passing a uuid is a
 silent-looking mistake. The restore snapshots the CURRENT definition first, so it is
-itself reversible, and it restores the graph, not the live webhook URL: a live trigger
-row keeps its URL, so senders keep working. A webhook node whose row has since been
-deleted gets a NEW URL, never the snapshot's old path; `webhook_trigger_warnings` names
+itself reversible, and it restores the graph, not the live webhook URL, and not over the
+workflow's current `settings` (the current flags win; a flag the current definition lacks
+comes back from the snapshot, so a restore can never switch failure alerts off): a live
+trigger row keeps its URL, so senders keep working. A webhook node whose row has since
+been deleted gets a NEW URL, never the snapshot's old path; `webhook_trigger_warnings` names
 it, and every sender must be pointed at it. Roll back rather than hand-reconstructing a
 graph from memory.
 
@@ -643,6 +725,14 @@ evidence of what the automation did to real customers.
    Apply authentication in the editor; for bearer, Apply authentication, or
    `workflow_trigger_delete` + `workflow_trigger_create` (a NEW URL, token returned once).
    `authRequired` does nothing for either value.
+10. **A `||` default is text, never another field.** Everything after the first `||` is
+   plain text, never looked up. `{{trigger.output.payload.company || trigger.output.payload.name}}`
+   falls back to the words `trigger.output.payload.name`, not to the name. There is no
+   chaining. To fall back to a second field, check the first with a Conditional node (or
+   return the first non-empty value from a Code node) and reference that node's output. If
+   you mean text that looks like a path, quote it: `{{ref || 'trigger.name'}}`.
+   workflow_validate warns `fallback_default_is_literal`, and a workflow_test
+   template_values entry carries a `hint`, when a default looks like a reference.
 
 ## Deep reference
 

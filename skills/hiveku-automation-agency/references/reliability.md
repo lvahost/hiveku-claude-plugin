@@ -66,9 +66,17 @@ workflow_stranded_list({ workflow_id })    # read-only: pause window, count, pay
 
 - A pause window with a count is proof of a pause, and the count is a LEAD count. Those
   submissions are invisible, not lost.
-- A run history that simply STOPS on a date, with the last few runs failing and nothing
-  after, is the fingerprint. The failures caused the pause; the silence is the pause.
-- Do not resume yet. Resuming with the cause unfixed trips the breaker again.
+- On a scheduled, database or internal-event workflow, a run history that simply STOPS on
+  a date, with the last few runs failing and nothing after, is the fingerprint. The
+  failures caused the pause; the silence is the pause.
+- A failed webhook or website-visitor delivery never pauses its workflow (Part 6). If
+  one is paused, read `paused_reason` and `paused_at` on `workflow_get`: `manual` is a
+  person, `cascade_loop` the loop guard, `ai_budget` the daily AI budget, and
+  `circuit_breaker` five failures in a row ending in a run of a pausing origin (a
+  schedule, an internal event, or a retry of one of those), or a pause from before webhook
+  failures stopped pausing workflows. Find out who and why before you resume.
+- Do not resume yet. Resuming with the cause unfixed fails again, and on a scheduled or
+  event workflow trips the breaker again.
 
 Do not go looking for the pause in run rows instead: `stopped_paused` is recorded for
 INTERNAL EVENT triggers only and caps at 200 rows per pause window, and stranded WEBHOOK
@@ -107,10 +115,22 @@ up to 5 recent failures with `error_message`, and `last_succeeded_at` / `last_fa
 `last_failed_run_id`. It caps at 1000 runs per window, so narrow `since` on a busy
 workflow or you are quoting a truncated sample as the whole picture.
 
-Read the SHAPE, not just the rate. Five consecutive failures then silence is a
-circuit-breaker pause (back to T2). A steady 85% is a flaky dependency. A cliff on one
-date is a change: `workflow_versions_list` and `audit_query` name what changed and who
-changed it.
+Read the SHAPE, not just the rate. Five consecutive failures then silence, on a scheduled,
+database or event workflow, is a circuit-breaker pause (back to T2); a webhook workflow
+never goes silent that way, it keeps failing. A steady 85% is a flaky dependency. A cliff
+on one date is a change: `workflow_versions_list` and `audit_query` name what changed and
+who changed it.
+
+**Is the failure still current?** Each recent failure carries `predates_current_definition`,
+and the summary carries `last_failed_run_predates_current_definition`, `definition_changed_at`
+and `current_setup`. `true` means the run started before the workflow last changed
+(`definition_changed_at` is the newest version that changed the graph, an edit or a restore;
+turning failure alerts on or off does not count): someone may already have fixed it.
+`current_setup` is `{ state, errors, first_issue }` for the definition as it is NOW, the same
+verdict `workflow_validate` gives.
+A stale failure beside a `current_setup.state` of `ok` is a question for a dry run
+(`workflow_test`), not a diagnosis to report; a stale failure beside `needs_setup` names
+what is broken today in `first_issue`.
 
 ### T5. Did the steps degrade?
 
@@ -170,7 +190,9 @@ How to read it without walking every step:
   `total_misses`, `last_run_id_with_misses` and the top nodes for the window, with
   `runs_checked` (every step checked) and `runs_partially_checked` (the rest) beside them.
 - A reference that EXISTS but is blank is not a miss and is never listed. Guard it with a
-  `||` default; a dry run shows it as `empty` in `template_values`.
+  `||` default; a dry run shows it as `empty` in `template_values`. The default is plain
+  text, never another field (`{{a || trigger.output.payload.name}}` sends those words):
+  `workflow_validate` warns `fallback_default_is_literal` on one that reads like a reference.
 - Test runs record misses too, in the `workflow_test` response. A miss flagged
   `source_simulated` came from a simulated upstream node and is expected there.
 
@@ -226,7 +248,7 @@ hunting for a workflow that does not exist.
 
 ## Part 2: Green that is not green
 
-Six specific ways a workflow reports success and is not working. Check each before you
+Seven specific ways a workflow reports success and is not working. Check each before you
 tell a client their automation is healthy.
 
 **1. The all-degraded run.** Every action step failed, every one had
@@ -262,6 +284,12 @@ finding.
 
 **6. A truncated sample presented as the whole.** A `success_rate` computed off a window
 that hit the 1000-run cap is partial, and must be reported as partial (caps: Part 4).
+
+**7. A switched-on workflow with nothing connected.** Its runs complete at 100% and do
+nothing: every step sits unreachable from the trigger, or there is no step after it.
+Detection: `setup.state` on `workflow_list` / `workflow_get` (or `setup_state` from
+`workflow_validate`) reads `does_nothing` or `empty`, and `live_warning` says so in a
+sentence. One workflow logged 305 "completed" runs this way.
 
 And the one that survives every check above: **a dry run passing is not delivery.**
 Downstream nodes in a dry run see `would_have` payloads and a synthetic `id`, never what a
@@ -311,7 +339,9 @@ Three surfaces, in this order, each answering a different question.
 same payload under an older name) gives `status`, `input_data`, `output_data`,
 `error_message`, `triggered_by`, `started_at`, `completed_at`, and `step_states`. Start
 here, but do not stop at the run-level `error_message`: it often names a node downstream
-of the real cause.
+of the real cause. It also gives `predates_current_definition`, `definition_changed_at`
+and `current_setup` (T4): a run from before the last change describes a graph that may no
+longer exist.
 
 **2. The steps.** `step_states` is a per-node map. The keys that matter for reliability
 (full table in node-rail.md 5.2):
@@ -377,15 +407,59 @@ replay is a NEW run, so the idempotency key does not protect it.** Say that plai
 anyone about to replay: replaying stranded submissions CAN duplicate a send that already
 went out through some other path, and the only protection is the list review in Part 6.
 
+**A real send that errors may still have run, and the proxy re-sends only a 429.** The
+Hiveku proxy sends `workflow_trigger_update`, a real `workflow_run`, `workflow_run_retry`,
+`workflow_run_replay`, `workflow_stranded_replay` and `workflow_dead_letter_resolve` once
+and never re-sends them on its own after a failure that can follow work: a 502, 503 or 504,
+a timeout or a dropped connection comes back as it is, and the request may have landed
+before it failed. Check what landed before you call again: `workflow_runs_list` (newest
+first) for the run, retry or replay it may have started, `workflow_stranded_list` for the
+batch it may have drained, `workflow_triggers_list` for the trigger,
+`workflow_dead_letters_list` (status `'all'`) for the dead letter. A 429 is different: it is
+a rate-limit refusal answered before any work, so the proxy waits (the response's
+`Retry-After`, capped at 10 seconds, or a short backoff without one) and re-sends it, 3
+attempts in all. A 429 that still comes back means nothing ran and nothing changed (its hint
+says so): wait, then send the same call again. A rotation (`rotate_webhook_path: true`) is
+the sharpest case of the first kind: a second call mints another URL and kills the one the
+first call made live.
+
 ---
 
 ## Part 6: Recovery, in order
 
-The circuit breaker trips at **5 consecutive failures** and pauses the workflow. Paused
-workflows reject triggers with **no run row written**, submissions received while paused
-are recoverable, and nothing un-pauses automatically even after the bug is fixed. One
-client's forms were down six days that way, with the cause fixed on day two, because
-nobody resumed.
+**What a failure does depends on what started the run** (the run's `triggered_by`):
+
+| Started by | `triggered_by` | Counts (`consecutive_failures`) | Pauses at 5 in a row | Failure alert (`notify_on_failure`) |
+|---|---|---|---|---|
+| A webhook delivery, a website visitor (or a trigger row of unknown type), or a retry of one of those | `webhook`, `new_site_visitor`, `trigger_event` | yes | **never** | yes |
+| A schedule, a database change, an internal event, or a retry of one of those | `scheduled`, `database_trigger`, `form_submitted`, `crm_event` and the other `*_event` labels, `retry`, ... | yes | yes | yes |
+| A person or an agent, or a retry of their run | `manual`, `test`, `manual_test`, `webhook_test`, `replay`, `olympus_agent`, `olympus_agent_async` | no | no | no |
+
+`olympus_agent` / `olympus_agent_async` are `workflow_run` (sync and `fire_and_forget`); a
+`workflow_test` writes no run at all. A completed real run of any origin resets the counter
+(a dry run never touches it). A retry takes the origin of the run it retries, whoever asked
+for it (`workflow_run_retry`, or the hourly retry sweep): a retried webhook or visitor run
+keeps its label and never pauses, a retried run a person or an agent started is recorded as
+`replay`, and only a retry of a schedule, database or event run is recorded as `retry` and
+can pause. The sweep is not a safety net: it only picks up a failed run from the last 24
+hours whose trigger data already carries a `retry_count`, and the engine stores every run's
+input there instead, so in practice it only retries a run somebody already retried by hand.
+Never promise an operator that a failed run will be retried on its own. The failure alert is
+opt-in:
+`workflow_update({ workflow_id, settings: { notify_on_failure: true } })`, or the owner's
+failure-alerts switch in the workflow editor's gear menu ("Email admins when a triggered run
+fails"). It emails the account admins and raises one
+inbox item per incident, not per failed run, and it survives dashboard saves and version
+restores. For a webhook lead form it is the only alert the client gets: the workflow keeps
+running (and failing) on every submission, and nothing pauses to make the outage visible.
+
+The circuit breaker trips at **5 consecutive failures** on the rows marked above and
+pauses the workflow. A workflow can also be paused by hand in the dashboard, by the loop
+guard, or by its daily AI budget. Paused workflows reject triggers with **no run row
+written**, submissions received while paused are recoverable, and nothing un-pauses
+automatically even after the bug is fixed. One client's forms were down six days that way,
+with the cause fixed on day two, because nobody resumed (that was before webhook failures
+stopped pausing a workflow; any pause strands deliveries the same way).
 
 The path back, and every step has a guard:
 
@@ -411,9 +485,20 @@ The path back, and every step has a guard:
    sleep, and a code node's `fetch` is never sent (node-rail.md 4.1, 4.3). If the fix was
    a missing field (a `slackNotification` with no `webhookUrl`, say), `workflow_validate`
    and `workflow_enable` now name it too: enabling a disabled workflow with a validate
-   error on a node a run can reach is refused with 422 `workflow_invalid`.
+   error on a node a run can reach is refused with 422 `workflow_invalid`. And the test
+   itself fails on it: a side-effecting node whose required config is missing, or resolves
+   to nothing in this test, errors with the real run's message (`Slack webhook URL is
+   required`) instead of returning a mock. A value the test cannot know (read from a
+   simulated upstream node, or an `{{env.*}}` value, which `workflow_test` does not load)
+   still gets the mock, so a green test proves every required value the test could see
+   was there, not the ones it could not. On a webhook workflow, pass the request BODY as
+   `input_data`: the test wraps it the way a real delivery arrives
+   (`trigger.output.payload`), so a `{{trigger.output.email}}` that misses on real traffic
+   misses in the test too.
 4. **Resume.** `workflow_resume({ workflow_id })` clears the pause and resets the failure
-   counter. It runs nothing by itself. It must come BEFORE replay: a replay against a
+   counter. It runs nothing by itself (the dashboard's Resume replays the runs the guards
+   stopped, the `stopped_*` rows, but never stranded webhook deliveries: those come back
+   only through steps 5 to 7). It must come BEFORE replay: a replay against a
    still-paused workflow is refused with a 409 (and, if it were not, would simply strand
    the submissions again).
 5. **Review what is banked.** `workflow_stranded_list({ workflow_id })`, read-only. GET
@@ -485,7 +570,7 @@ Weekly, per retainer account, read-only until the last step. This is the work th
 
 | # | Call | Healthy answer |
 |---|---|---|
-| 1 | `workflow_list({ enabled: true })` | The enabled set matches what the client believes is running. Anything they think is on and is not is a finding today. |
+| 1 | `workflow_list({ enabled: 'true' })` | The enabled set matches what the client believes is running. Anything they think is on and is not is a finding today. Every row's `setup.state` is `ok`: a switched-on `needs_setup` fails on its next trigger, `does_nothing` / `empty` completes and does nothing, and nothing switches either off (`needs_setup: 'true'` lists only those; `setup: null` is unknown). |
 | 2 | `workflow_runs_recent({ status: 'failed', since: <7d> })` | Empty, or failures you can each name a cause for. Not "empty because the filter was wrong". |
 | 3 | `workflow_run_summary({ workflow_id, since })` per enabled retainer automation | `success_rate` at or near its own prior-window baseline, p95 latency stable, `last_succeeded_at` recent, `template_misses.runs_with_misses` 0 (null means the stats query failed: unknown, not clean). Narrow `since` if the window hits the 1000-run cap. |
 | 4 | `workflow_run_get` on each `last_failed_run_id`, on `template_misses.last_run_id_with_misses`, and on one recent GREEN run per workflow | No `degraded` steps, `unresolved_template_count` 0 with `unresolved_templates_recorded: true` (`'partial'` gives only a lower bound, so a clean one is not proof). The green-run spot check is the part everyone skips and it is where the silent failures live. |
@@ -493,6 +578,8 @@ Weekly, per retainer account, read-only until the last step. This is the work th
 | 6 | `workflow_stranded_list` on anything paused or recently failing | Zero. A non-zero count is a lead count and goes to the top of the report. |
 | 7 | `agent_inbox_list` | The open queue (default `new,seen`) worked, not just read. Apply what should be applied through its own surface, THEN `agent_inbox_resolve`; resolving never executes the item. |
 | 8 | `project_crons_list` / `project_cron_logs` where the client has project crons | No `failure` or `timeout` rows accumulating on the other rail. |
+| 9 | `workflow_get` on every customer-facing automation | `definition.settings.notify_on_failure` is `true`, above all on webhook lead forms, which never pause and so never announce an outage any other way. Off is a proposal (`workflow_update({ workflow_id, settings: { notify_on_failure: true } })` on the operator's yes), not a fix you make from the pass. |
+| 10 | `workflow_triggers_list` on every workflow with a public webhook | No live, public (`authentication: 'none'`) row reads `webhook_path_strength: 'guessable'`. One that does is a proposal to rotate (`/hiveku:automation-sweep` step 7), never a rotation made from the pass. |
 
 Then write it down: durable decisions (why an automation is deliberately disabled, who
 the correct recipient is, which template a client is on) to `memory_create`, work items
@@ -543,7 +630,9 @@ check something, name it.
 - Never set `on_error: 'continue'` on a node whose failure is the point of the workflow.
   It converts a loud failure into a quiet one, the exact failure mode this file exists to
   catch.
-- Never resume a workflow whose cause is unfixed. The breaker trips again, and the second
-  outage costs more trust than the first.
+- Never resume a workflow whose cause is unfixed. It fails again (a scheduled or event
+  workflow trips the breaker again), and the second outage costs more trust than the first.
+- Never chase a failure without reading `predates_current_definition` first. A run from
+  before the last change may describe a graph that no longer exists.
 - Never report a client's automations as healthy on the strength of a window in which
   nothing ran.

@@ -1,5 +1,5 @@
 ---
-description: "\"Are our automations still running?\" / \"is anything broken that nobody told us about?\" - the weekly automation sweep: account-wide failed runs, per-workflow health, schedule sanity, paused workflows and the leads stranded behind them, and the staged inbox queue. Read-only until the last step, and every fix is a separate confirmed action."
+description: "\"Are our automations still running?\" / \"is anything broken that nobody told us about?\" - the weekly automation sweep: switched-on workflows that will fail on their next trigger, account-wide failed runs, per-workflow health, schedule sanity, paused workflows and the leads stranded behind them, failure alerts and guessable webhook URLs, and the staged inbox queue. Read-only until the last step, and every fix is a separate confirmed action."
 argument-hint: "[optional scope - e.g. 'last 14 days' or 'just the lead-notification workflows']"
 ---
 Weekly automation sweep for the account this directory is bound to$ARGUMENTS. Automations rot
@@ -15,7 +15,14 @@ moment a check fails). When one automation is already known to be broken, run
    be notified. Then `workflow_list` for the full inventory with `is_enabled`. Fix the window now
    (default the last 7 days) and write it down, because every number in the report carries it. A
    workflow the context says is deliberately disabled is not a finding; one nobody can account for
-   is.
+   is. Read every row's `setup` too: `{ state, errors, first_issue }`, the same verdict
+   `workflow_validate` gives, computed from the saved definition. A SWITCHED-ON workflow whose
+   `state` is `needs_setup` will fail on its next trigger (`first_issue` names the node and the
+   field), and one that is `does_nothing` or `empty` completes and does nothing. Nothing switches
+   such a workflow off on its own, so each one is a finding, ranked by what its trigger carries
+   (a live lead form above an internal digest). `workflow_list({ enabled: 'true', needs_setup:
+   'true' })` returns just those. `setup: null` means the verdict could not be computed for that
+   row: unknown, never ok.
 2. **Account-wide failures first.** `workflow_runs_recent({ status: 'failed', since })` covers ALL
    workflows in one call and names the broken one for you: each entry carries `workflow_name`,
    `error_message`, `triggered_by`, and timings. Its default window is ONE HOUR, so pass `since`
@@ -26,7 +33,12 @@ moment a check fails). When one automation is already known to be broken, run
 3. **Per-workflow health.** `workflow_run_summary({ workflow_id, since })` on every enabled
    workflow the client depends on: `success_rate`, latency percentiles, `last_succeeded_at`,
    `last_failed_at`, and `last_failed_run_id` to drill into. Compare each workflow against its OWN
-   prior window, never against a different workflow with different triggers and volumes. The
+   prior window, never against a different workflow with different triggers and volumes. Before
+   you report a failure, check it is still current: each recent failure carries
+   `predates_current_definition` (and the summary `last_failed_run_predates_current_definition`,
+   `definition_changed_at` and `current_setup`). `true` means the failure happened before the
+   workflow last changed, so someone may already have fixed it: report it with the date of that
+   change and `current_setup.state`, not as today's breakage. The
    summary caps at 1000 runs in the window, so if you hit the cap, narrow `since` before quoting a
    `success_rate` and mark that workflow PARTIAL. Read its `template_misses` too: `runs_checked`
    (runs whose every step was checked), `runs_partially_checked` (runs an older engine wrote in
@@ -60,18 +72,48 @@ moment a check fails). When one automation is already known to be broken, run
    `project_cron_logs` for `failure` or `timeout` rows piling up.
 6. **Paused workflows and the leads behind them.** `workflow_stranded_list({ workflow_id })` on
    anything paused or recently failing. It is READ-ONLY and returns the pause window, the count,
-   and one row per submission with its payload KEYS only (field names, never values: report the count and the arrival dates, not the leads' details). Five consecutive failures trip the circuit breaker and pause a
-   workflow; a paused workflow rejects triggers and writes NO run row, while its webhook keeps
+   and one row per submission with its payload KEYS only (field names, never values: report the count and the arrival dates, not the leads' details). Five consecutive failed runs started by a schedule, a
+   database change, an internal event or a retry of one of those trip the circuit breaker and
+   pause a workflow (a retry takes the origin of the run it retries).
+   Webhook and website-visitor failures never pause one: they count and, when failure alerts are
+   on, alert, and the workflow keeps running (and failing) on every delivery, so for a webhook
+   lead form the failure feed in step 2, not a pause, is the evidence. A workflow can also be
+   paused by hand, by the loop guard or by its daily AI budget (`paused_reason` on `workflow_get`
+   says which). A paused workflow rejects triggers and writes NO run row, while its webhook keeps
    accepting and storing deliveries, so the client's form still says "Thanks!" and their leads are
    invisible rather than lost. Nothing un-pauses itself, even after the bug is fixed. A non-zero
    count is a LEAD count and goes to the top of the report. Do not resume and do not replay from
    this pass: that is `/hiveku:workflow-debug`, in its strict order, with its own approval.
-7. **The staged inbox queue.** `agent_inbox_list` for the open items (it defaults to `new,seen`),
+7. **Failure alerts and guessable webhook URLs.** Two settings decide whether the NEXT outage
+   announces itself, and whether a stranger can post to the form.
+   - `workflow_get({ workflow_id })` on every workflow the client depends on, and read
+     `definition.settings.notify_on_failure`. When it is on, the account admins get one email
+     per incident when a triggered run fails: webhook deliveries and website visitors included,
+     never a run a person or an agent started. A customer-facing workflow with it off is a
+     finding, above all a webhook lead form, which never pauses and so never announces an outage
+     any other way. The fix is a PROPOSAL: `workflow_update({ workflow_id, settings: {
+     notify_on_failure: true } })` on the operator's yes (or the owner flips the failure-alerts
+     switch, "Email admins when a triggered run fails", in the workflow editor's gear menu).
+   - `workflow_triggers_list({ workflow_id })` on every workflow with a webhook trigger, and read
+     each row's `webhook_path_strength`: `minted` (an 80-bit random suffix), `form` (a
+     bulk-provisioned form path), `legacy_random` (an older random token), `guessable` (the
+     workflow's id prefix plus a node id, or a word taken verbatim, or a shape nobody can vouch
+     for), null on a non-webhook row. A row that is LIVE (the workflow and the row enabled) and
+     PUBLIC (`authentication: 'none'`) and reads `guessable` is a finding. Recommend
+     `workflow_trigger_update({ workflow_id, trigger_id, rotate_webhook_path: true })`, and say
+     in the same breath what it costs: it is ONE-WAY, the current URL answers 404 the moment it
+     runs and nothing forwards it, so every sender (the site form's env var via
+     `workflow_bind_form`, GoHighLevel, Zapier, a vendor console) must be re-pointed at the new
+     `webhook_url`, and a lead posted to the old URL in between is lost. It runs only on the
+     operator's explicit yes for that trigger, with that sender list in front of them. Never
+     rotate from this pass, never rotate on your own judgment, and never rotate a batch because
+     a list said `guessable`.
+8. **The staged inbox queue.** `agent_inbox_list` for the open items (it defaults to `new,seen`),
    and `agent_inbox_get` on anything worth reading in full. A staged item nobody has worked is a
    decision the client is still waiting on. Reading is free. Applying an item happens through its
    own surface, and `agent_inbox_resolve` is a WRITE that never executes the item, so both are
    confirmed one at a time, and you dismiss only what is deliberately rejected.
-8. **Report honestly, then propose.** Open with the window and the coverage list: which workflows
+9. **Report honestly, then propose.** Open with the window and the coverage list: which workflows
    you checked, and which you did not.
    - **ZERO runs in the window is UNKNOWN, not passing.** Write "no runs in window" and leave it
      there. It is equally consistent with "nobody submitted the form this week", "the workflow is
@@ -85,7 +127,8 @@ moment a check fails). When one automation is already known to be broken, run
      quietly becomes a pass.
    Then a ranked list of PROPOSALS, each with its evidence (run ids, counts, the tool that produced
    it) and the ONE next action, naming the play that does it: `/hiveku:workflow-debug` for a broken
-   automation, `/hiveku:automate` for a rebuild or a schedule change. Nothing is fixed, enabled,
-   resumed, replayed, or deleted from this pass. Each fix is a separate action with its own
-   confirmation.
-9. Finish every session of work the same way: persist notable learnings to department memory - read the department's current document with `memory_list({ domain: "<dept>" })`, append your note to the `content` it returns, and send the WHOLE merged document to `memory_update({ memory_id, content })`, which REPLACES it (sending only the new note destroys everything that department had accumulated); use `memory_create({ type: "memory", name: "<dept>", content })` only when no entry exists, and keep `<dept>` to a canonical department name (see hiveku-orient), and reflect the work in Hiveku PM: `pm_projects_list` to find the project (it filters only by `status`; `project_type` is named in its description but is NOT in its schema, so the proxy drops it and you filter the returned list yourself), or `pm_projects_create({ name, project_type })` where project_type is one of seo | ppc | marketing | website | app_dev, then `pm_tasks_create({ project_id, title })` (the field is `title`, not `name`), `pm_tasks_update` as it moves, `pm_tasks_complete({ id, summary })` when the loop is closed. Reopen a task closed too early with `pm_tasks_uncomplete`, never `pm_tasks_update`. A memory_update that destroyed content is recoverable: `memory_list_versions({ memory_id })` lists the snapshots taken before every PUT or DELETE, and `memory_restore_version({ version_id })` restores one (it works for deleted entries too). Hiveku, not this folder, is the source of truth.
+   automation, `/hiveku:automate` for a rebuild or a schedule change, and the exact
+   `workflow_update` / `workflow_trigger_update` call for a failure alert to switch on or a URL to
+   rotate (with that URL's senders). Nothing is fixed, enabled, resumed, replayed, rotated, or
+   deleted from this pass. Each fix is a separate action with its own confirmation.
+10. Finish every session of work the same way: persist notable learnings to department memory - read the department's current document with `memory_list({ domain: "<dept>" })`, append your note to the `content` it returns, and send the WHOLE merged document to `memory_update({ memory_id, content })`, which REPLACES it (sending only the new note destroys everything that department had accumulated); use `memory_create({ type: "memory", name: "<dept>", content })` only when no entry exists, and keep `<dept>` to a canonical department name (see hiveku-orient), and reflect the work in Hiveku PM: `pm_projects_list` to find the project (it filters only by `status`; `project_type` is named in its description but is NOT in its schema, so the proxy drops it and you filter the returned list yourself), or `pm_projects_create({ name, project_type })` where project_type is one of seo | ppc | marketing | website | app_dev, then `pm_tasks_create({ project_id, title })` (the field is `title`, not `name`), `pm_tasks_update` as it moves, `pm_tasks_complete({ id, summary })` when the loop is closed. Reopen a task closed too early with `pm_tasks_uncomplete`, never `pm_tasks_update`. A memory_update that destroyed content is recoverable: `memory_list_versions({ memory_id })` lists the snapshots taken before every PUT or DELETE, and `memory_restore_version({ version_id })` restores one (it works for deleted entries too). Hiveku, not this folder, is the source of truth.

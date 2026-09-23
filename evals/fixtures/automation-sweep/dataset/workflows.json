@@ -9,8 +9,9 @@
       "is_paused": true,
       "paused_at": "2026-08-24T14:47:33.402Z",
       "pause_reason": "circuit_breaker",
+      "settings": { "notify_on_failure": true },
       "created_at": "2026-02-11T18:24:03Z",
-      "updated_at": "2026-08-24T14:47:33Z",
+      "updated_at": "2026-08-25T08:03:11Z",
       "nodes": [
         { "id": "webhookTrigger_lead01", "type": "webhookTrigger", "label": "Website form submission" },
         { "id": "crmCreateContact_lead02", "type": "crmCreateContact", "label": "Create or update the CRM contact" },
@@ -26,6 +27,7 @@
       "is_paused": false,
       "paused_at": null,
       "pause_reason": null,
+      "settings": { "notify_on_failure": true },
       "created_at": "2026-03-04T09:41:52Z",
       "updated_at": "2026-08-22T16:09:11Z",
       "nodes": [
@@ -44,6 +46,7 @@
       "is_paused": false,
       "paused_at": null,
       "pause_reason": null,
+      "settings": { "notify_on_failure": true },
       "created_at": "2026-01-19T22:15:37Z",
       "updated_at": "2026-06-02T11:03:44Z",
       "nodes": [
@@ -61,6 +64,7 @@
       "is_paused": false,
       "paused_at": null,
       "pause_reason": null,
+      "settings": { "notify_on_failure": true },
       "created_at": "2026-04-28T14:52:19Z",
       "updated_at": "2026-05-06T08:30:22Z",
       "nodes": [
@@ -78,6 +82,7 @@
       "is_paused": false,
       "paused_at": null,
       "pause_reason": null,
+      "settings": { "notify_on_failure": true },
       "created_at": "2026-07-15T13:07:41Z",
       "updated_at": "2026-07-15T13:22:08Z",
       "nodes": [
@@ -110,6 +115,7 @@
       "is_paused": false,
       "paused_at": null,
       "pause_reason": null,
+      "settings": { "notify_on_failure": true },
       "created_at": "2026-05-21T07:33:12Z",
       "updated_at": "2026-08-11T19:26:40Z",
       "nodes": [
@@ -126,6 +132,7 @@
       "is_paused": false,
       "paused_at": null,
       "pause_reason": null,
+      "settings": { "notify_on_failure": true },
       "created_at": "2026-06-30T12:44:09Z",
       "updated_at": "2026-08-03T15:58:31Z",
       "nodes": [
@@ -160,9 +167,10 @@
         "name": "Enquiry form",
         "trigger_type": "webhook",
         "is_enabled": true,
-        "webhook_path": "wh_lead_5f2a9c",
+        "webhook_path": "form-6a1d93c4-b27e05f8c1d94a3e",
         "allowed_method": "POST",
         "require_auth_token": false,
+        "authentication": "none",
         "created_at": "2026-02-11T18:26:47Z"
       }
     ],
@@ -175,6 +183,7 @@
         "webhook_path": "wh_legacy_1c88de",
         "allowed_method": "POST",
         "require_auth_token": false,
+        "authentication": "none",
         "created_at": "2025-11-02T10:20:31Z"
       }
     ],
@@ -209,6 +218,7 @@
       { "version": 6, "change_summary": "update node crmCreateActivity_rev04 (activity type)", "created_at": "2026-06-18T10:12:44Z", "actor": "owner@brightside.example" }
     ],
     "lead": [
+      { "version": 13, "change_summary": "Failure alerts on", "created_at": "2026-08-25T08:03:11Z", "actor": "dana@brightside.example" },
       { "version": 12, "change_summary": "update node sendEmail_lead03 (recipient)", "created_at": "2026-08-19T09:05:37Z", "actor": "owner@brightside.example" }
     ]
   }
