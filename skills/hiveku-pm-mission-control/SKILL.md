@@ -33,6 +33,14 @@ A card is the WHY. A task is the WORK. Never let one exist without the other for
 - `assigned_to_id`, `acting_as_user_id`, `project_manager_id` and friends are **public_users** UUIDs:
   the `id` field from `crm_list_users`, NOT `clerk_user_id`. Sending a Clerk id into a uuid column
   errors the whole write.
+- **An empty roster is a real answer.** `crm_list_users` lists the account's Team Members only
+  (home users plus invited members); an agency or SaaS operator working the account without an
+  invitation is not in it and cannot be assigned. When it returns `{ users: [], hint }`, or the
+  person the work belongs to is not listed, leave `assigned_to_id` unset and create the task
+  unassigned. Never borrow another member's id to stand in for them, and never use an id from
+  another account. Tell the user once that inviting them under Team Members makes them
+  assignable. (`pm_tasks_create` / `pm_tasks_update` still accept any user id today, so nothing
+  but this rule stops a wrong one.)
 
 ## Key scope
 
@@ -43,7 +51,9 @@ reads) is invisible; `mc_*` goes only to the **communications** profile and unsc
 Also absent from the pm profile: `crm_list_users` (the attribution-id source above — it grants no
 `crm_` anything), `sites_list` / `project_get`, and `account_audit_health` (full-only). A tool
 named here but absent from your session is the key's profile, not a missing feature: flag it and
-ask for the right key — never guess a UUID or skip the attribution field to work around it.
+ask for the right key — never guess a UUID or skip the attribution field to work around it. That
+is different from `crm_list_users` being present and returning an empty list: that is the
+account's real roster, and the answer is an unassigned task (Ids, above), not a different key.
 
 ## The board
 
@@ -131,9 +141,12 @@ also_resolve, force })`. This tool does not queue anything and it is not how you
 SUBMITS a choice a human already made, validates `chosen_key` against that card's `decision_options`
 (or `'OTHER'` plus `text`), and by default transitions the card to `done`.
 
-- Pass `acting_as_user_id` (public_users `id` from `crm_list_users`). Omit it and the card resolves
-  with `decided_by_user_id: null` while the event log records `agent_relay: true`, which reads in an
-  audit as the agent having decided on the client's behalf.
+- Pass `acting_as_user_id` (public_users `id` from `crm_list_users`; invited members are accepted).
+  Omit it and the card resolves with `decided_by_user_id: null` while the event log records
+  `agent_relay: true`, which reads in an audit as the agent having decided on the client's behalf.
+  When the human who decided is not on the roster (an empty `crm_list_users`, or they are not
+  listed), omit `acting_as_user_id` and put their name and their answer in `comment`, so the audit
+  names who decided. Never pass another member's id in their place.
 - 409 `code='claim_held_by_other'` means a different human has claimed the card. `force: true`
   overrides and is audit-logged in `meta`. Ask the operator before forcing.
 - `also_resolve: false` records the answer without closing, for a multi-step decision.

@@ -229,6 +229,7 @@ Put this in `.claude/settings.json` (per project) or `~/.claude/settings.json` (
       "mcp__plugin_hiveku_hk__seo_page_schema_delete",
       "mcp__plugin_hiveku_hk__workflow_run",
       "mcp__plugin_hiveku_hk__workflow_enable",
+      "mcp__plugin_hiveku_hk__workflow_trigger_update",
       "mcp__plugin_hiveku_hk__workflow_delete",
       "mcp__plugin_hiveku_hk__workflow_delete_schedule",
       "mcp__plugin_hiveku_hk__workflow_stranded_replay",

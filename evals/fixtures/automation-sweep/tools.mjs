@@ -30,6 +30,17 @@
  *     failed run when the workflow was already resumed, and answers with a
  *     `_note` instead of a window when it has neither. It returns payload KEYS,
  *     never payload values.
+ *   - merge-variable misses are COMPUTED from the step states the way the
+ *     builder does: every step carries `unresolved_templates` (`[]` = checked)
+ *     and the boolean `dry_run` the current engine stamps on each step it
+ *     checked, `workflow_run_get` adds `unresolved_templates_recorded`
+ *     (true | 'partial' | false) and the run-level counts, `workflow_runs_list`
+ *     the per-run recording flag and count, and `workflow_run_summary` a
+ *     `template_misses` block over the latest 200 recorded runs, split into
+ *     `runs_checked` (every step checked) and `runs_partially_checked`. Misses
+ *     flagged `source_simulated` are excluded from every count, a run started
+ *     before recording began reads as unknown (null), never as clean, and a
+ *     'partial' run's count is a lower bound, null when it is 0.
  *
  * The write surface REFUSES. The eval contract stops the session at the confirm
  * gate; the writes are still served so an attempt is LOGGED to the transcript,
@@ -54,6 +65,12 @@ export const WINDOW_DAYS = 7;
 
 /** `workflow_runs_recent` defaults to the last hour - the silence trap. */
 export const RUNS_RECENT_DEFAULT_MS = 60 * 60 * 1000;
+
+/** When the engine began recording `unresolved_templates` on every step. */
+export const TEMPLATE_MISS_RECORDING_SINCE = '2026-08-08T17:36:39Z';
+
+/** `workflow_run_summary`'s `template_misses` reads at most this many recent runs. */
+export const TEMPLATE_MISS_STATS_LIMIT = 200;
 
 /**
  * Every write the sweep could reach. Two of them are the fixture's whole point:
@@ -164,6 +181,9 @@ export async function createTools() {
         duration_ms: spec.ms,
         retry_count: spec.retry_count ?? 0,
         max_retries: spec.max_retries ?? 3,
+        // The current engine stamps a boolean dry_run on every step it writes;
+        // the builder reads it as "this step was checked for misses".
+        dry_run: false,
         unresolved_templates: [],
         ...(spec.error ? { error: spec.error } : {}),
         ...(spec.degraded
@@ -174,6 +194,54 @@ export async function createTools() {
     return out;
   };
 
+  /** Runs started before recording began never recorded misses: unknown, not clean. */
+  const missesRecorded = (run) => Date.parse(run.started_at) >= Date.parse(TEMPLATE_MISS_RECORDING_SINCE);
+
+  /**
+   * The builder's templateMissRecording: false before the cutoff, 'partial'
+   * when any step lacks the boolean `dry_run` coverage marker (an older engine
+   * wrote it without checking), true when every step was checked.
+   */
+  const missRecording = (run, states) => {
+    if (!missesRecorded(run)) return false;
+    return Object.values(states).some((step) => step && typeof step === 'object' && typeof step.dry_run !== 'boolean')
+      ? 'partial'
+      : true;
+  };
+
+  /** The builder's reportedMissCount: exact, a lower bound (null at 0) on 'partial', null before recording. */
+  const reportedMissCount = (recording, count) => {
+    if (recording === false) return null;
+    if (recording === 'partial' && count === 0) return null;
+    return count;
+  };
+
+  /**
+   * The run-level miss summary the builder derives from step_states. Misses
+   * flagged `source_simulated` (expected in a dry run) are counted apart.
+   */
+  const missSummary = (states) => {
+    let count = 0;
+    let simulated = 0;
+    const nodes = [];
+    for (const [node_id, state] of Object.entries(states)) {
+      const misses = Array.isArray(state.unresolved_templates) ? state.unresolved_templates : [];
+      if (misses.length === 0) continue;
+      const real = misses.filter((m) => m.source_simulated !== true).length;
+      count += real;
+      simulated += misses.length - real;
+      nodes.push({
+        node_id,
+        node_label: state.node_label ?? null,
+        node_type: state.node_type ?? null,
+        count: real,
+        simulated_count: misses.length - real,
+        templates: [...new Set(misses.map((m) => m.template))],
+      });
+    }
+    return { count, simulated_count: simulated, nodes };
+  };
+
   /** workflow_run_get, hoisted so its documented alias workflow_run_status can
    *  share the identical function object rather than re-implement it. */
   const runGet = (args = {}) => {
@@ -181,6 +249,9 @@ export async function createTools() {
     if (error) return error;
     const run = runById.get(args.run_id);
     if (!run || run.workflow_id !== wf.id) return notFound('Run');
+    const states = stepStates(run);
+    const recording = missRecording(run, states);
+    const misses = recording !== false ? missSummary(states) : null;
     return {
       data: {
         id: run.id,
@@ -191,15 +262,74 @@ export async function createTools() {
         trigger_data: { source: run.triggered_by },
         input_data: { _callChain: [] },
         output_data: run.status === 'completed' ? { ok: true } : null,
-        step_states: stepStates(run),
+        step_states: states,
         error_message: run.error_message,
         started_at: run.started_at,
         completed_at: run.completed_at,
+        unresolved_templates_recorded: recording,
+        unresolved_template_count: misses ? reportedMissCount(recording, misses.count) : null,
+        unresolved_template_simulated_count: misses ? reportedMissCount(recording, misses.simulated_count) : null,
+        unresolved_template_nodes: misses ? misses.nodes : [],
       },
     };
   };
 
   const scheduleFor = (key) => wfData.schedules[key] ?? null;
+
+  /**
+   * workflow_run_summary's template_misses: the latest TEMPLATE_MISS_STATS_LIMIT
+   * runs started since max(since, recording start), newest first, excluding
+   * source_simulated misses. Top 5 nodes by misses. `runs_checked` counts the
+   * runs whose every step was checked, `runs_partially_checked` the rest; the
+   * miss counts cover both.
+   */
+  const templateMisses = (workflowId, sinceMs) => {
+    const floorMs = Math.max(sinceMs, Date.parse(TEMPLATE_MISS_RECORDING_SINCE));
+    const checked = runsFor(workflowId)
+      .filter((r) => Date.parse(r.started_at) >= floorMs)
+      .slice(0, TEMPLATE_MISS_STATS_LIMIT);
+    let runs_with_misses = 0;
+    let total_misses = 0;
+    let runs_partially_checked = 0;
+    let last_run_id_with_misses = null;
+    let last_run_with_misses_at = null;
+    const byNode = new Map();
+    for (const run of checked) {
+      const states = stepStates(run);
+      if (missRecording(run, states) === 'partial') runs_partially_checked += 1;
+      const summary = missSummary(states);
+      if (summary.count === 0) continue;
+      runs_with_misses += 1;
+      total_misses += summary.count;
+      if (!last_run_id_with_misses) {
+        last_run_id_with_misses = run.id;
+        last_run_with_misses_at = run.started_at;
+      }
+      for (const node of summary.nodes) {
+        if (node.count === 0) continue;
+        const entry = byNode.get(node.node_id) ?? { node_label: node.node_label, runs: 0, misses: 0, samples: new Set() };
+        entry.runs += 1;
+        entry.misses += node.count;
+        for (const t of node.templates) if (entry.samples.size < 3) entry.samples.add(t);
+        byNode.set(node.node_id, entry);
+      }
+    }
+    const nodes = [...byNode.entries()]
+      .map(([node_id, n]) => ({ node_id, node_label: n.node_label, runs: n.runs, misses: n.misses, sample_templates: [...n.samples] }))
+      .sort((a, b) => b.misses - a.misses || b.runs - a.runs || a.node_id.localeCompare(b.node_id))
+      .slice(0, 5);
+    return {
+      runs_checked: checked.length - runs_partially_checked,
+      runs_partially_checked,
+      runs_with_misses,
+      total_misses,
+      last_run_id_with_misses,
+      last_run_with_misses_at,
+      nodes,
+      since: iso(floorMs),
+      limit: TEMPLATE_MISS_STATS_LIMIT,
+    };
+  };
 
   const strandedWindow = (wf) => {
     if (wf.paused_at) return wf.paused_at;
@@ -396,6 +526,14 @@ export async function createTools() {
           started_at: r.started_at,
           completed_at: r.completed_at,
           duration_ms: r.duration_ms,
+          ...(() => {
+            const states = stepStates(r);
+            const recording = missRecording(r, states);
+            return {
+              unresolved_template_count: recording === false ? null : reportedMissCount(recording, missSummary(states).count),
+              unresolved_templates_recorded: recording,
+            };
+          })(),
         })),
         pagination: { page: Math.max(1, Number(page) || 1), limit: size, total: mine.length, total_pages: Math.ceil(mine.length / size) },
       };
@@ -464,6 +602,7 @@ export async function createTools() {
           last_succeeded_at,
           last_failed_at,
           last_failed_run_id,
+          template_misses: templateMisses(wf.id, from),
         },
       };
     },
@@ -486,6 +625,10 @@ export async function createTools() {
       for (const [node_id, state] of Object.entries(states)) {
         if (args.node_id && args.node_id !== node_id) continue;
         logs.push({ node_id, node_status: state.status, ts: state.started_at, level: 'info', msg: `starting ${state.node_type}` });
+        const nodeMisses = (state.unresolved_templates ?? []).filter((m) => m.source_simulated !== true);
+        if (nodeMisses.length > 0) {
+          logs.push({ node_id, node_status: state.status, ts: state.completed_at, level: 'warn', msg: `${nodeMisses.length} merge variable(s) resolved to nothing: ${nodeMisses.map((m) => m.template).join(', ')}` });
+        }
         if (state.error) {
           for (let attempt = 1; attempt <= state.retry_count; attempt += 1) {
             logs.push({ node_id, node_status: 'running', ts: state.completed_at, level: 'warn', msg: `retry ${attempt}/${state.max_retries} after: ${state.error}` });

@@ -3,9 +3,12 @@ description: The rep's morning queue - reminders due, today's meetings, waiting 
 argument-hint: "[optional: rep name/email to scope to, if not you]"
 ---
 The rep's day$ARGUMENTS. Context: `account_context_get({ domain: "sales" })`. Resolve the rep:
-`crm_list_users` → the `owner_id` UUID. Be honest about scope as you go: only some queues filter
-by owner (gone-cold does; reminders, inboxes, and triage are account-wide - label those lines
-"account-wide" rather than implying they're personal).
+`crm_list_users` → the `owner_id` UUID. That list is the account's Team Members only; if it is
+empty (`{ users: [], hint }`) or the rep is not in it, say once that the account has no Team
+Member for them (inviting them under Team Members fixes it), label EVERY queue account-wide, and
+never pick another member's `owner_id` to stand in. Be honest about scope as you go: only some
+queues filter by owner (gone-cold does; reminders, inboxes, and triage are account-wide - label
+those lines "account-wide" rather than implying they're personal).
 1. Reminders: `crm_reminder_list({ status: "scheduled" })` - overdue and due-today first. Each
    reminder's `prompt` is self-contained; do what it says or surface it.
 2. Meetings: `crm_calendar_list({ time_min: <today 00:00 ISO>, time_max: <today 23:59 ISO> })` -

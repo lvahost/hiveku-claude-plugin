@@ -39,22 +39,44 @@ filters), not a second event; never wire a connected Webflow site to a
 ## Node versus row
 
 An event trigger needs no `workflow_triggers` row. It is a graph node and nothing
-else. Only webhook, scheduled and database triggers need the row, created with
-`workflow_trigger_create({ workflow_id, name, node_id, trigger_type, config })` -
-`name` and `node_id` are both required, and `node_id` is the id of the trigger node
-you already added with `workflow_node_add`.
+else. Only webhook, scheduled and database triggers need the row.
+
+- **Webhook:** `workflow_node_add` of a `webhookTrigger` creates the row in the same
+  call and returns `webhook_url` and `trigger_id`. Do not call `workflow_trigger_create`
+  for that node afterwards: it answers 409 "Trigger already exists for this node" with
+  `existing_trigger_id`. The URL is server-assigned (`<label>-<16 random characters>`;
+  `webhookPath` is only the label), so read `webhook_url`; auth and method are managed
+  with `workflow_trigger_update({ workflow_id, trigger_id, filter_config, allowed_method })`,
+  which prompts at the permission layer and needs the operator's yes (header auth:
+  `workflow_webhook_auth_set`). Editing the node's auth with `workflow_node_update`,
+  `workflow_update` or an editor save never changes the live URL's; it warns
+  `auth_not_applied`.
+- **Everything else, or a webhook node that has no row:**
+  `workflow_trigger_create({ workflow_id, name, node_id, trigger_type, config })` -
+  `name` and `node_id` are both required, and `node_id` is the id of the trigger node
+  you already added with `workflow_node_add`. For a webhook it accepts `http_method` (or
+  `httpMethod`) and `authentication` `'none'` or `'bearer'` (header auth goes through
+  `workflow_webhook_auth_set`; a bearer token is returned once, and through the API only a
+  NEW trigger gets one: bearer on an existing URL is the owner's Apply authentication in
+  the editor), mints the path the same way, stamps the node with the new row's auth, and returns
+  `warnings`, `ignored_keys` and `unknown_keys`. `authRequired` is not a setting and is
+  ignored for either value.
 
 Call `workflow_trigger_types_list` before `workflow_trigger_create`: it returns the
 infrastructure trigger types (`webhook`, `scheduled_trigger`, `database_trigger`)
-and the config keys each reads. Trigger config is untyped and unknown keys are
-silently ignored - a typo'd key does not error, it just does nothing.
+and the config keys each reads. A webhook row echoes a key that is not a setting back in
+the response; on scheduled and database rows trigger config is untyped and unknown keys
+are silently ignored - a typo'd key does not error, it just does nothing.
 
 ## Using `output_shape_keys`
 
 Read the chosen entry's `output_shape_keys` before writing any `{{...}}`: those are
 the keys available to your templates as `{{trigger.output.<key>}}`. An expression
-referencing a key the trigger does not emit is written through as the literal string,
-not an error - `workflow_test` plus `would_have` is how you catch it.
+referencing a key the trigger does not emit is not an error: it is written through as a
+blank and recorded in the step's `unresolved_templates`. `workflow_test` is how you catch
+it before it ships: read `template_values` (status `missed`) and `would_have` in the
+response's `data.step_states`, or add a `{{trigger.output.<key> || default}}` where a
+blank is acceptable.
 
 Some CRM triggers need a backend emitter on the underlying write; the palette says so
 per entry. A trigger with no live emitter is authorable and silent, which looks

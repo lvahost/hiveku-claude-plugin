@@ -59,10 +59,16 @@ submissions, the wrong cron rail, and a UTC schedule the client reads as local.
    happened": a node with `on_error: 'continue'` that FAILS records as completed with a `degraded`
    flag plus `original_error` and `on_error_mode`, and the run finishes GREEN. A run whose every
    action step is degraded reports success and did nothing at all, and no status filter or summary
-   will ever show it to you. While you are in `step_states`, read `unresolved_templates` on every
-   step: each `{{...}}` that resolved to nothing with no `||` default is written through as a blank
-   or as the literal string, which is how "Hi ," reaches a client's list from a run that looks
-   perfect. Then `workflow_run_logs({ workflow_id, run_id })` for the per-node lifecycle timeline
+   will ever show it to you. While you are in the run, read `unresolved_template_count` and
+   `unresolved_template_nodes`, then `unresolved_templates` on the steps they name: each `{{...}}`
+   that resolved to nothing with no `||` default is written through as a blank (`''` in text, null
+   as a whole field), which is how "Hi ," reaches a client's list from a run that looks perfect. A
+   malformed `{{ref | x}}` / `{{ref or x}}` is recorded too, with a `hint`, and in engine-resolved
+   fields its token text goes out as written. `[]` on a step means checked and clean;
+   `unresolved_templates_recorded: false` means the run predates recording and proves nothing,
+   and `'partial'` means an older engine wrote some steps unchecked (they carry no
+   `unresolved_templates` key), so the count is a lower bound. `workflow_run_summary`'s
+   `template_misses` says how many runs in the window merged blanks and which run did it last. Then `workflow_run_logs({ workflow_id, run_id })` for the per-node lifecycle timeline
    when you need to confirm a node was actually reached or to see the retries before a final
    failure: capped at 50 lines per node, filterable by `node_id` or `level`.
    (`workflow_run_status` is the same payload as `workflow_run_get` under an older name.)
@@ -70,7 +76,10 @@ submissions, the wrong cron rail, and a UTC schedule the client reads as local.
    never reached the engine. `workflow_triggers_list({ workflow_id })` for the webhook,
    scheduled-trigger, and database-trigger ROWS, and `workflow_trigger_get({ trigger_id })` for one
    config in full. An EMPTY list is expected and correct for an internal event trigger, which is a
-   graph node and needs no trigger row. `workflow_get_schedule({ workflow_id })` returning null
+   graph node and needs no trigger row. A webhook row with `is_enabled: false` answers the sender
+   200 "Trigger disabled" and runs nothing (deleting a webhook trigger node disarms its row that
+   way), and a sender still posting to a renamed URL gets 404: compare the URL the sender uses with
+   the row's `webhook_url`, never with one built from a label. `workflow_get_schedule({ workflow_id })` returning null
    means there is no scheduled trigger node at all; it does not mean the cron is fine. The schedule
    also reports whether the workflow is enabled, because a disabled workflow's schedule never
    fires. A cron that belongs to a website project is a different rail with incompatible syntax and
@@ -85,13 +94,26 @@ submissions, the wrong cron rail, and a UTC schedule the client reads as local.
    `workflow_edge_delete` for a wiring error. Or roll back: `workflow_versions_list` to find the
    good version by its `change_summary`, `workflow_version_get` to preview it, and
    `workflow_version_restore` to apply it (it snapshots the current definition first, so it is
-   itself reversible, and `version` is the monotonic integer, not the row uuid). Then
+   itself reversible, and `version` is the monotonic integer, not the row uuid; live webhook URLs
+   are kept, but a webhook node whose trigger was deleted comes back on a NEW URL named in
+   `webhook_trigger_warnings`, so its senders need re-pointing). Then
    `workflow_validate({ workflow_id })`, fixing every error and reading every warning, then
    `workflow_test({ workflow_id, input_data })`. Read the evidence out of the CALL'S OWN RESPONSE: a
    test persists no run row, so `run_id` comes back null and `workflow_run_get` has nothing to
-   fetch. Every mocked node contributes `__dry_run: true` plus `would_have` (the args it would have
-   sent), and that is where you confirm the real recipient, body, and fields before anything goes
-   live. Never use `workflow_run` to test. That sends for real.
+   fetch. The test runs the whole graph, and `data.step_states[<nodeId>]` reports every node: for a
+   simulated one (`dry_run: true`), `output.would_have` (the config it would have sent) and
+   `template_values` (every `{{token}}` and what it resolved to); `error` on a node that failed.
+   `data.not_reached` lists nodes the run never got to, so a leg that should have run and is listed
+   there is still broken. That is where you confirm the real recipient, body, and fields before
+   anything goes live. A dry run from before the 2026-09 fix stopped at the first simulated node, so
+   a "passing" test from then proved nothing past it. Never use `workflow_run` to test. That sends
+   for real. If the fix was a missing field, `workflow_enable` on a disabled workflow now refuses
+   with 422 `workflow_invalid` until validate is clean; `allow_incomplete: true` is only for the
+   operator's explicit yes. If the fix is on the trigger row (a 401 form made public, a disarmed
+   URL re-armed with `is_enabled: true`, a rename), `workflow_trigger_update` is its own
+   confirmed write: name the URL and what changes, and get the yes first. Editing the webhook
+   node's auth with `workflow_node_update` fixes nothing: a node edit never changes a live URL's
+   auth, and the response says `auth_not_applied`.
 9. **Recovery, in this order, each step gated.** Fix before resume, resume before replay. Resuming
    a workflow whose cause is unfixed just trips the breaker again, and the second outage costs more
    trust than the first.

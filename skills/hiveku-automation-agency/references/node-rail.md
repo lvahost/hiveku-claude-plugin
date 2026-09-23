@@ -3,7 +3,7 @@
 ## What this covers / when to load this
 
 The Hiveku MCP surface exposes roughly a thousand tools. The workflow palette exposes a
-**second, separate execution surface**: 525 node types (2026-09-07 count), each with a server-side handler that
+**second, separate execution surface**: over 500 node types (the live count is in the catalog), each with a server-side handler that
 runs inside the client's account with the client's credentials. Most sessions never touch it,
 so a large slice of the platform reads as "not possible" when it is one four-call workflow away.
 
@@ -99,9 +99,9 @@ description is blunt about why it is mandatory:
 > `type` strings the engine accepts.
 
 **Never quote a node count from memory, including the one in this file.** The palette moves
-every deploy. As of this writing `palette-data.ts` holds 402 entries, 395 live and 7 marked
-`isComingSoon`, and the tool description says "401 node types" - already one behind. Every
-such number will be wrong eventually. The catalog will not.
+every deploy, and the counts written into this file, the skill and the tool descriptions have
+disagreed with each other and with the live catalog more than once. Every such number will be
+wrong eventually. The catalog will not.
 
 The seven `isComingSoon` stubs, whose engine handlers return a "Coming Soon" error rather than
 doing the work: `executeCode`, `executeExpression`, `waitForWebhook`, `waitForApproval`,
@@ -125,8 +125,10 @@ does mean "the engine can run it".
   `output_shape_keys`. Those keys are what your templates can reference.
 - `workflow_trigger_types_list` returns infrastructure triggers, which are `workflow_triggers`
   table **rows**: `webhook`, `scheduled_trigger`, `database_trigger`, and the config keys each
-  reads. Call it before `workflow_trigger_create`, because trigger config is untyped and
-  unknown keys are silently ignored. A typo'd key does not error, it just does nothing.
+  reads. Call it before `workflow_trigger_create`. On a webhook row, a key that is not a
+  setting is dropped and echoed back in the response as `ignored_keys` / `unknown_keys` /
+  `warnings`, so read those; on the other row types trigger config is untyped and a typo'd key
+  does not error, it just does nothing.
 
 And one for expressions: `workflow_templating_syntax` returns the `{{...}}` reference. Read it
 before you write any interpolated value.
@@ -147,8 +149,10 @@ Each entry in `nodes[]`:
 | `category` | one of triggers, ai, crm, helpdesk, pm, seo, ppc, social, marketing, analytics, builder, email, calendar, cms, knowledge, notifications, database, http, cache, files, data, flow, utilities |
 | `isTrigger` | true when the engine will accept this node as the graph's entry point |
 | `isComingSoon` | true means the handler returns a stub error. Do not use it |
-| `hasCustomPanel` | true means there is no authored field schema, see below |
+| `hasCustomPanel` | true means the editor renders a bespoke panel instead of a schema-driven one, see 2.4 |
 | `fields[]` | the `data` keys this node reads |
+| `requires` | custom-panel nodes: the handler's contract, `[{ anyOf, when? }]`, see 2.4 |
+| `configLocation` | `'flat'` means the handler reads `data.*` only and ignores `data.config.*`; `'configOrData'` means it reads `data.config` whole whenever the node has one; `'databaseTriggerConfig'` (the DB triggers) means `data.databaseTriggerConfig`, else `data.config`, else `data`, see 2.5 |
 | `hint`, `warning` | free text the editor shows. Read both, they carry unguessable vocabularies |
 | `outgoingHandles` | which `sourceHandle` values an outgoing edge may use |
 
@@ -162,10 +166,20 @@ usual cause of "my branch never ran":
 
 ### 2.4 How to read `fields[]` without being misled
 
-A `fields[]` entry can be `{ key, label, placeholder?, description?, required?, textarea?,
-checkbox?, inferred?, advanced?, type?, default? }`.
+A `fields[]` entry can be `{ key, label, placeholder?, description?, required?,
+requiredOneOf?, requiredWhen?, textarea?, checkbox?, inferred?, advanced?, type?, default?,
+options? }`.
 
 - `required: true` means the handler fails without it. Set it.
+- `requiredOneOf: [...]` lists interchangeable keys (aliases such as `webhookUrl` /
+  `webhook_url`, or genuine alternatives such as `tagName` / `tagId`). Any ONE of them
+  satisfies the requirement; setting none of them fails the node. Schema-panel fields carry
+  it too, built from their aliases: `connectionId` / `connection_id` on the PPC nodes,
+  `projectId` / `project_id` on the builder, CMS and Supabase nodes, `ticket_id` /
+  `ticketId` on helpdesk nodes.
+- `requiredWhen: { key, truthy? | falsy? | equals? }` makes a key required only when a sibling
+  key says so (`aiAgent` needs `customPrompt` when `identityDepartment` is set). It never sets
+  `required: true` on its own.
 - **`inferred: true` does NOT mean required, and does not mean user-facing.** Inferred fields
   come from static introspection of the handler source (grepping for `config.X` and
   `node.data.X`), not from an authored schema. Read them as "the handler reads this key". Some
@@ -173,8 +187,20 @@ checkbox?, inferred?, advanced?, type?, default? }`.
   `lastName` and `last_name`, both `leadSource` and `lead_source`. Setting one is enough.
   Setting both is harmless. Assuming all of them are mandatory produces an unusable node config.
 - `hasCustomPanel: true` means the editor renders a bespoke React panel instead of a
-  schema-driven one, so `fields[]` may be the introspected list rather than a curated schema.
-  When that happens, `hint` is where the real contract lives. Two hints are load-bearing:
+  schema-driven one. Custom-panel nodes carry their contract as data now: node-level
+  `requires: [{ anyOf, when?, label? }]` lists exactly what the handler rejects without (each
+  group is satisfied by any one of its `anyOf` keys, and `when` gates it on a sibling key), and
+  the member fields carry `required` / `requiredOneOf` / `requiredWhen` to match. The five
+  `crmUpdate*` nodes (Contact, Deal, Company, Activity, Task) carry a second group labelled
+  "At least one field to change": an update node with only its id is `missing_required_field`
+  in validate and at the enable gate ("... is missing a required value: at least one field to
+  change (any of ...)"), because the handler refuses it with "No fields to update". A `{{template}}`
+  or `{{env.NAME}}` string counts as set. `slackNotification`, `apiCall`, `conditional`,
+  `switch`, `aiAgent`, `respond`, `sendEmail`, `webhookTrigger`, `inboundWebhook` and
+  `forEach` also carry authored `type` / `options` / `default` / `description` on their fields.
+  `workflow_node_add`, `workflow_node_update` and `workflow_validate` check the same groups
+  (3.2 step 5, 3.4). `hint` still carries what that shape cannot express: conjunctions,
+  vocabularies, side effects, which node to prefer. Two hints are load-bearing:
 
   **`conditional`**: config lives at `data.conditionConfig: { inputPath, operator,
   compareValue }`. Operators are strict: `'==='`, `'!=='`, `'>'`, `'<'`, `'>='`, `'<='`,
@@ -187,7 +213,30 @@ checkbox?, inferred?, advanced?, type?, default? }`.
   server with full brand and memory hydration; omit it for a direct model call. `delegates:
   [{ department, instructions, model? }]` (max 3) runs department sub-agents first and feeds
   their output into the main prompt, surfacing as `delegate_results`. `outputFormat: 'json'`
-  parses the response into fields downstream nodes can reference.
+  parses the response into fields downstream nodes can reference, but on its own it does not
+  hold the model to any keys: a reply can add keys, drop keys or return the wrong types and
+  the node still completes.
+
+  `responseSchema` (optional, flat on `data`, implies `outputFormat: 'json'`) is what holds
+  the reply to a shape. Shorthand: `{ key: 'string' | 'number' | 'integer' | 'boolean' |
+  'object' | 'array' | 'string[]' | 'number[]' }`, a `?` on the TYPE for an optional key
+  (`'string?'`; a key written `"name?"` is rejected with "put ? on the type"), or
+  `["a", "b"]` for a string enum. Or a full JSON Schema with `type: 'object'`; without
+  `additionalProperties: false` a full schema keeps extra keys, as the spec says, while the
+  shorthand strips them. On a direct model call the schema is sent natively; on a department
+  node (`identityDepartment`) it goes into the prompt. Either way the reply is validated after
+  parsing: undeclared keys are stripped (and named in a step warning), required keys and types
+  are enforced, and only safe coercions apply (`'42'` to 42, `'true'` to true, 7 to `'7'`,
+  enum case). A mismatch gets ONE repair attempt (direct: a follow-up turn on the same model;
+  department: a formatting-only call on the agent's reply, the agent never runs twice), then
+  the node fails and honours `on_error`. Output adds `schema_valid`, `schema_errors`,
+  `schema_stripped_keys`, `schema_repaired` and `structured_output`. A failed node does not
+  spread its fields, so a downstream `{{ai.key}}` records a miss instead of reading bad data;
+  for best-effort copy set `on_error: 'continue'` and branch on `{{ai.schema_valid}}`. An
+  invalid schema fails the node before any model spend ("responseSchema is invalid: ...") and
+  `workflow_validate` reports it as `invalid_response_schema`. With a legacy `agentId` the
+  schema is not applied (step warning). `workflow_test` mocks AI nodes, so enforcement shows
+  only on a real run.
 
 - Every non-trigger node carries a synthetic `on_error` field appended by the catalog builder.
   It is real, and it is the cheapest resilience lever on the platform. See 3.6.
@@ -203,26 +252,56 @@ The canonical shape a node is stored in is:
   "position": { "x": 400, "y": 100 },
   "data": {
     "label": "Post to #leads",
-    "config": { "channel": "#leads", "message": "New lead: {{trigger.output.payload.email}}" }
+    "config": {
+      "webhookUrl": "{{env.SLACK_WEBHOOK_URL}}",
+      "channel": "#leads",
+      "message": "New lead: {{trigger.output.payload.email}}"
+    }
   }
 }
 ```
 
-Roughly thirty handler sites read `node.data?.config || node.data || {}`, so either shape
-works for them. **Two nodes invert that, deliberately, and it has already cost a production
+`slackNotification` requires `webhookUrl` (or `webhook_url`) AND one of `message` / `text` /
+`blocks`; without the webhook URL every run fails at this node. An `{{env.NAME}}` reference
+counts as set. In a `workflow_test` it shows as `not_evaluated` in `template_values`, because
+MCP test runs never load the environment, so that is not a miss (4.2).
+
+Most handler sites read `node.data?.config || node.data || {}`, so either shape works for
+them as a whole: `data.config` when the node has one, otherwise flat `data`, never a mix.
+**The exceptions are marked in the catalog, and they have already cost a production
 incident.**
 
+- `configLocation: 'flat'` nodes read `data.*` ONLY; a value you put under `data.config` is
+  invisible to them. Today that is `apiCall`, `conditional` (`data.conditionConfig`),
+  `switch` (`data.switchConfig`), `forEach` (`data.forEachConfig`), `aiAgent`, `respond`,
+  `transformData` and `respondToOutboundReply`. Read `configLocation` off the catalog rather
+  than this list. When a required value sits in the wrong place, `workflow_node_add`,
+  `workflow_node_update` and `workflow_validate` say so in a `note` on the missing field
+  (for example "found at data.config.url, but this node reads data.url").
+- `configLocation: 'configOrData'` marks the custom-panel nodes that read that whole-object
+  way: every CRM node, `keywordResearch`, `rankTracker`, `domainAnalysis`, `serpAnalysis`
+  and `slackNotification`. Once the node has a `data.config` object, a key left flat beside
+  it is invisible, and the check reports it missing with the note "found at data.X, but
+  this node reads data.config when data has a config object; move it to data.config.X".
+- `configLocation: 'databaseTriggerConfig'` marks the DB triggers (`databaseTrigger`,
+  `dbInsertTrigger`, `dbUpdateTrigger`, `dbDeleteTrigger`, `dbRowChange`). Every reader takes
+  ONE object whole: `data.databaseTriggerConfig` when it exists, else `data.config`, else flat
+  `data`. `tableName` counts only there; anywhere else it is reported missing with a note
+  naming where to set it ("found at data.tableName, but the trigger readers read data.config
+  when it exists; set data.config.tableName").
 - `sendEmail` (and its `send_email` alias) reads **flat first**, falling back to `config`:
   `node.data[key] ?? node.data.config[key]`. The engine comment records why: the MCP write
   paths store under `data.config.*` while the editor panel both displays and writes the FLAT
   shape, so a config-first read would turn "open the node and type the right recipient" into a
   silent no-op while a stale `config.to` kept receiving the tenant's leads. Flat-first keeps a
   mis-set node failing loudly instead of misdelivering quietly.
-- `aiAgent` reads flat off `data.*` only.
 
-Practical rule: write `data.config` for everything, and additionally write `to`, `subject`,
-`body` flat on `data` for `sendEmail`, and everything flat for `aiAgent`. Then confirm with a
-dry run before you enable.
+Practical rule: write `data.config` for every node EXCEPT the `configLocation: 'flat'` ones,
+which get everything flat on `data`; for `sendEmail` additionally write `to`, `subject`, `body`
+flat on `data`. Then read `config_incomplete` on the node_add / node_update response, and
+confirm with a dry run before you enable. On the unmarked nodes the check counts a key set
+in `data.config` or in flat `data`, so a clean validate does not prove a config split
+across both places works: keep each node's keys together.
 
 ### 2.6 The `{{...}}` contract, in brief
 
@@ -238,7 +317,37 @@ The full reference is `workflow_templating_syntax`. The parts you need to build 
 - Upstream node outputs are `{{<nodeId>.output.<path>}}`, using the node's **id**, never its
   label. Labels are display-only and can collide.
 - `{{env.NAME}}` reads the per-run environment.
-- `{{ref || default}}` supplies a fallback when the reference misses.
+- `{{ref || default}}` supplies a fallback, in every node type, in `workflow_test` and in real
+  runs alike. The default is used when the reference is missing (unknown node, missing field,
+  out-of-range index), null, or an empty or whitespace-only string; `0`, `false`, `[]` and
+  `{}` are real values and are kept. Everything after the FIRST `||` is a literal, never
+  another reference, so there is no chaining: `{{a.b || c.d}}` yields the text `c.d`. Quotes
+  are stripped (`"n/a"` and `'n/a'` both give `n/a`), and JSON literals parse (`0`, `true`,
+  `{}`, `[]`): a whole-field reference keeps the default's type where the field keeps types
+  (an `apiCall` / `respond` JSON body, a database row value) and is text everywhere else. As
+  text, a fired default is written exactly as typed (`9.90` stays `9.90`, `1e3` stays `1e3`),
+  even when the whole field is that one token in a Slack message, an email node's fields
+  (`sendEmail`, `gmail*`, `emailNotification`) or an AI prompt. A control field that is one
+  whole token takes the parsed value instead, so `{{x || 9.90}}` gives `9.9` in a `delay`
+  duration, a `conditional` compareValue, a `switch` value, `respond` statusCode, or an
+  `apiCall` url, method or header. A
+  default cannot contain `}` except as one flat JSON object. `{{ref || }}` or
+  `{{ref || null}}` means blank is intended and is not recorded as unresolved.
+  (Before the 2026-09 fix, most action nodes - SMS, CRM, PM, helpdesk, Discord / Teams /
+  push, database and every Olympus-backed node - and every `workflow_test` preview blanked the
+  whole `{{...}}` even when the reference had a value, and an empty string never triggered a
+  default. Re-test anything that relied on a fallback.)
+- **A single `|` and the word `or` are NOT fallbacks.** `{{ref | x}}` and `{{ref or x}}`
+  resolve to nothing: blank in most nodes, and sent through as literal token text in
+  engine-resolved fields (`apiCall`, `sendEmail`, `aiAgent` and similar). The step records
+  either one in `unresolved_templates` with a `hint` saying to write `||`.
+- **What a miss becomes.** A well-formed `{{node.path}}` that resolves to nothing, with no
+  default, becomes `''` inside text or null as a whole field, and is recorded in the step's
+  `unresolved_templates` (5.2). It is never sent as literal `{{...}}` text. The literal case is
+  narrower: a token the engine grammar cannot parse (a bare `{{channel}}`, or an index in the
+  middle of a path such as `{{node.output.items[0].name}}`) in an engine-resolved field goes
+  out unchanged and is not recorded on a real run; a dry run shows it as `literal` in
+  `template_values` (4.2).
 - There is no arithmetic, no string concatenation, and no conditional inside an expression.
   `{{a + b}}` and `{{ if x }}` do not work. Compose with `transformData`, branch with
   `conditional`.
@@ -266,8 +375,8 @@ workflow_node_add   (trigger)            manualTrigger, explicit id 'trigger'
 workflow_node_add   (action)             the capability you came for
 workflow_edge_add                        connect trigger -> action
 workflow_validate                        fix every error, read every warning
-workflow_enable                          REQUIRED before any run, see 3.3
-workflow_test                            dry run, read `would_have`
+workflow_test                            dry run while still disabled, read data.step_states
+workflow_enable                          REQUIRED before a real run; refused while validate errors, see 3.3
 workflow_run                             the real thing, on approval
 workflow_run_get                         per-node step_states
 workflow_disable / workflow_delete       clean up, see Part 7
@@ -329,26 +438,31 @@ workflow_node_add({
   "position": { "x": 400, "y": 100 },
   "data": {
     "label": "Sweep URLs",
-    "config": { "concurrency": 5, "on_error": "continue" }
+    "config": {
+      "requests": [
+        { "url": "https://client.com/", "method": "GET" },
+        { "url": "https://client.com/services", "method": "GET" }
+      ],
+      "concurrency": 5,
+      "on_error": "continue"
+    }
   }
 })
 ```
 
-The catalog lists `requests` as required and `concurrency` with a placeholder of 5. Here
-`requests` is deliberately left unset: the handler reads `config.requests` and falls back to
-`inputContext.requests`, so the array arrives at run time from `input_data` instead of being
-baked into the graph. That is the pattern that makes an ad-hoc workflow reusable within a
-session: parameterise through `input_data`, not through node config.
+The catalog marks `requests` `required: true` and lists `concurrency` with a placeholder of
+5. Put the array in `config.requests`, one `{ url, method }` object per URL (all 40 of them).
+The response carries `config_incomplete` and
+`missing_required_fields` (advisory, never blocking); both should come back clean.
 
-Important: Expect step 5 to fail because of this, and expect to override it. `requests` is marked
-`required: true` in the node schema with no `default` and no `inferred` flag, which is exactly
-the case `getNodeConfigStatus` reports as missing, so `workflow_validate` returns `ok: false`
-with a `severity: 'error'`, `code: 'missing_required_field'` issue naming `requests`. The
-validator only reads the graph, it cannot see that `input_data` will supply the array at run
-time. So this one error is expected and correct to ignore. Every other error is not. If you
-would rather have a clean validate, put a placeholder array in `config.requests`; the handler
-prefers config over input, so a non-empty placeholder would then win over `input_data` and
-defeat the point. Leaving it unset and accepting the known issue is the better trade.
+Important: Do not leave `requests` unset to pass the array through `input_data` at run time.
+The handler does fall back to `inputContext.requests`, and that used to be this file's
+parameterise-per-run pattern, but it no longer works on this rail: an unset `requests` is a
+`missing_required_field` error in `workflow_validate`, `workflow_enable` refuses any workflow
+with a validate error (422 `workflow_invalid`, 3.3), and a real `workflow_run` needs the
+workflow enabled. `allow_incomplete: true` gets past that gate only on the operator's explicit
+yes, never to make a pattern work. To run the sweep again with a different list,
+`workflow_node_update` the `requests` key (3.4); every call is version-snapshotted.
 
 **Step 4. Connect them.**
 
@@ -367,38 +481,44 @@ workflow_validate({ "workflow_id": "<uuid>" })
 ```
 
 Returns `{ ok, issues[], summary: { nodes, edges, triggers, errors, warnings } }`. Errors:
-unknown node types, missing required fields, dangling edges to non-existent nodes, duplicate
-ids, no trigger. Warnings: orphan nodes unreachable from any trigger, multiple triggers,
-self-loops, invalid source handles. An orphan warning almost always means a missing edge. Fix
-errors before you go further, with the one documented exception from step 3: the
-`missing_required_field` error on the `requests` field of the `sweep` node is the deliberate
-consequence of parameterising through `input_data`, so `ok: false` here is expected and every
-other error still has to be fixed. This call is free and catches at authoring time what would
-otherwise be a runtime "Unsupported node type".
+unknown node types, missing required fields on a node the trigger reaches (custom-panel nodes
+included; a `missing_required_field` issue can carry `anyOf` and a `note`), dangling edges to
+non-existent nodes, duplicate ids, no trigger, and `invalid_response_schema` on an `aiAgent`.
+The trigger count follows the engine's own start-node list (`TRIGGER_START_NODE_TYPES`), so
+CRM, billing, email and database triggers count. Warnings: orphan nodes (not reachable from
+the trigger over any edge, including a node whose only incoming edges start at nodes that
+never run), a missing field on such a node (`unreachable: true`, "It never runs ... connect
+it or delete it"), multiple triggers, self-loops, invalid source handles. An orphan warning
+almost always means a missing edge. With no trigger in the graph, missing fields stay
+errors. Fix every error before you go further: `workflow_enable` refuses a workflow while
+any error remains (3.3). This call is free and catches at authoring time what would
+otherwise be a runtime "Unsupported node type" or a node that fails every run.
 
-**Step 6. Enable. This is not optional.** See 3.3.
-
-**Step 7. Dry run.**
+**Step 6. Dry run, while still disabled.** See 3.3 and Part 5.
 
 ```json
-workflow_test({
-  "workflow_id": "<uuid>",
-  "input_data": { "requests": [{ "url": "https://client.com/", "method": "GET" }] }
-})
+workflow_test({ "workflow_id": "<uuid>", "input_data": {} })
 ```
+
+Read `data.step_states.sweep`: `dry_run: true`, and `output.would_have.requests` is the list
+the real run would send.
+
+**Step 7. Enable. A real run needs it.** See 3.3.
 
 **Step 8. Real run, on approval.**
 
 ```json
-workflow_run({
-  "workflow_id": "<uuid>",
-  "input_data": { "requests": [ ...40 entries... ] }
-})
+workflow_run({ "workflow_id": "<uuid>" })
 ```
 
 Sync is the default and it waits for completion. For anything that may exceed roughly 25
-seconds, pass `fire_and_forget: true`: you get a 202 with a `run_id` and poll
-`workflow_run_get`. Note the response shape difference in 5.1 before you decide.
+seconds, pass `fire_and_forget: true`: you get a 202 with the run's own `run_id` and
+`persisted: true`, and poll `workflow_run_get`. A 202 with `run_id: null` means the row did
+not appear within 2 s: find it in `workflow_runs_list` (newest first) by matching
+`started_at`, never by assuming the newest row is yours while other runs are active. A run
+a guard stops before it starts (paused workflow, run quota, rate limit) comes back at once
+as a 500 carrying the stopped row's `run_id`, or null when no row was written. Note the
+response shape difference in 5.1 before you decide.
 
 **Step 9. Read the per-node detail.**
 
@@ -422,7 +542,7 @@ rejects a disabled workflow only when `test_mode` is absent:
 ```
 
 `workflow_test` is exempt. The correct order is validate, `workflow_test` while still
-disabled, read `would_have`, and only then `workflow_enable`.
+disabled, read `data.step_states` (5.1), and only then `workflow_enable`.
 
 **This section used to say the opposite**, and the order it prescribed (validate, enable,
 test) was the unsafe one: enabling arms the real webhook and any cron, so a graph that had
@@ -436,18 +556,77 @@ does not do, and that is still worth understanding before you enable anything:
 
 - A `manualTrigger`-only graph has **no listener**. There is no `workflow_triggers` row and no
   `workflow_schedules` row, so the only thing that can start it is your own `workflow_run`.
-- `workflow_enable` is a PATCH that sends only `is_enabled: true`. It provisions nothing on its
+- `workflow_enable` is a PATCH that sets `is_enabled: true`. It provisions no listener on its
   own.
+
+**The enable gate.** Turning a DISABLED workflow on runs `workflow_validate` first. Any error
+(a missing required field on any node a run can reach, no trigger, an unknown node type, a
+dangling edge) returns 422 `{ error: 'workflow_invalid', message, issues, summary }` and
+nothing changes: fix the named nodes with `workflow_node_update` and enable again. A leftover
+node no trigger connects to is only a warning and never blocks it. `allow_incomplete: true`
+overrides the gate. Pass it ONLY on the operator's explicit yes, after telling them which
+nodes will fail at run time, and never on your own judgment to get past a refusal.
+`workflow_update({ is_enabled: true })` goes through the same gate. Re-enabling an
+already-enabled workflow, or editing one that is enabled, is never refused. With warnings only
+(or with the override) the 200 carries `validation { ok, errors, warnings, issues }`; read it.
+Separately, a project-bound node (a coding-agent or CMS node) with no project bound is refused
+with 422 `unbound_project_nodes`.
+
+The gate covers turning a workflow on, not creating one on. `workflow_create` or
+`workflow_clone` with `is_enabled: true`, and `workflow_create_from_template` (enabled by
+default), are never refused for validation: the 201 carries `validation`, plus a
+`validation_warning` when there are errors ("created ENABLED ... will make its runs fail").
+Fix the named nodes or `workflow_update({ is_enabled: false })` straight away.
+`workflow_provision_webhook` reports neither.
 
 Important: Note what does provision a listener, because it is more than the obvious calls. Webhook
 trigger rows are created when a `definition` is sent to PATCH (that is, via `workflow_update`),
 by `workflow_provision_webhook`, by `workflow_create_from_template` (which defaults the created
 workflow to enabled so the URL goes live immediately), **and by `workflow_node_add` itself**:
-the nodes route calls `syncWebhookTriggers(workflow_id, account_id, definition)` whenever the
-added node's `type` is `webhookTrigger` or `webhook_trigger`, and returns `webhook_url` and
-`trigger_id` in the response. So adding a webhook trigger node creates the live
-`workflow_triggers` row in the same call. Treat a `webhook_url` in a `workflow_node_add`
-response as the signal that a listener now exists.
+adding a `webhookTrigger` (or `webhook_trigger`) node creates the live `workflow_triggers` row
+in the same call and returns `webhook_url`, `webhook_path` and `trigger_id` (plus
+`webhook_path_note` when the minted path differs from what you sent, `webhook_trigger_warnings`,
+or `webhook_trigger_error` plus `webhook_trigger_error_code` when no row resulted). Code
+`webhook_path_shared` means the node you added shows the live URL of ANOTHER webhook node in
+the graph (a copied node, say), so no second URL was minted and it has none of its own: send a
+new label in `data.webhookPath` with `workflow_node_update` to give it one, or delete the
+duplicate. Treat a `webhook_url` in a `workflow_node_add`
+response as the signal that a listener now exists. Never follow it with `workflow_trigger_create`
+for that node: it answers 409 "Trigger already exists for this node" with `existing_trigger_id`.
+
+**The webhook URL belongs to the trigger row, and the server picks it.**
+
+- A new path is `<label>-<16 random characters>`. The `webhookPath` you send (or, without one,
+  the node label or trigger name) is only a LABEL: slugged, at most 40 characters, with a
+  random suffix appended. There is no workflow-id prefix. Always read `webhook_url` from the
+  response or from `workflow_triggers_list`; never build a URL from your label.
+- The live URL is the row's `webhook_path`, which is what the receiver routes on. The node's
+  `data.webhookPath` and `data.triggerId` are a mirror the server re-stamps from the row on
+  every server-side definition write. Existing live URLs never change on a deploy, and forms
+  wired by `workflow_bulk_provision_for_project` keep their deterministic `form-*` paths.
+- A URL moves only on an explicit, one-way rename (3.4). `workflow_update` with a whole
+  definition, an editor save, `workflow_version_restore` and `workflow_clone` never move a live
+  URL; `workflow_update` reports a differing path as `requested_webhook_path_ignored`, plus
+  `orphaned_webhook_triggers` for rows the new graph no longer references.
+- The row is authoritative for auth. A definition write (`workflow_update`, an editor save,
+  `workflow_node_add`, `workflow_node_update`) NEVER changes a live webhook's authentication,
+  header name, username or secrets, whatever the node says. A node whose auth differs from the
+  row is left as sent, and a write that changed it warns `auth_not_applied`, naming what was not
+  applied, the mode the URL still enforces (secrets by their last 4 characters only) and the
+  explicit call that does it. So no copy of a node, however old, can revert a rotation or a
+  make-public. Auth on a live URL changes only through `workflow_trigger_update`
+  (`filter_config`), `workflow_webhook_auth_set` (header auth), or the owner's **Apply
+  authentication** in the editor's webhook panel; for bearer, Apply authentication (it keeps
+  the URL and shows the new token once), or `workflow_trigger_delete` then
+  `workflow_trigger_create({ authentication: 'bearer' })`, which returns the token once on a
+  NEW URL. The node's auth is a mirror of the row that only those explicit writes stamp. Only a trigger the write CREATES takes the node's auth. The
+  method (`allowed_method`) and the `hiveku_*` form keys still follow a definition write, and
+  only when that write changed them against the stored definition. `authRequired` (any
+  spelling) does nothing for either value (it comes back in `ignored_keys` with a warning); only
+  `workflow_trigger_update` with `authentication: 'none'` or `filter_config: null` (or Apply
+  authentication with None) makes a protected webhook public.
+- `workflow_clone` always gets its OWN new URL. Re-point every sender at the clone's
+  `webhook_url`; nothing copies the source's URL across.
 
 Important: And the hazard that follows: **if your graph contains a `webhookTrigger` or a
 `scheduledTrigger`, enabling it makes it live.** The cron lives on the node itself, which is why
@@ -460,11 +639,61 @@ itself, not merely to satisfy the run gate.
 
 Same loop from step 3, with `workflow_node_update` instead of `workflow_node_add`. `data` is
 **shallow-merged** into the existing data, so you can patch one key without resending the node;
-set a key to `null` to clear it. Every call snapshots the prior version.
+set a key to `null` to clear it. Every call snapshots the prior version. Like `workflow_node_add`,
+it returns `config_incomplete`, `missing_required_fields` (items can carry `anyOf` and a `note`)
+and `config_hint`: advisory, never blocking, but `workflow_enable` will refuse on the same gaps
+when the node is one a run can reach.
+
+**Renaming a webhook URL is explicit and one-way.** Two calls move a live URL:
+`workflow_node_update` with a CHANGED `data.webhookPath` (different from the stored node value
+and from the live path or its label), or
+`workflow_trigger_update({ workflow_id, trigger_id, webhook_path })`. The value is a label; the
+server appends a fresh suffix and returns `webhook_url`, `previous_webhook_url`,
+`webhook_path_changed` and a `warning`. The old URL answers 404 immediately, so before you
+rename, list every sender and get the operator's yes: a bound form's env var (re-run
+`workflow_bind_form`), GHL, Zapier, a vendor console. The rename pins the form's Forms-ledger
+identity, so a bound form's submission history does not split. Renaming a
+`workflow_bulk_provision_for_project` `form-*` URL and then re-running bulk provisioning creates
+a duplicate workflow (the warning says so). What is NOT a rename: echoing any path the node or
+the row already knows never moves the URL. That covers the live path, its label or its URL
+(a legacy multi-segment URL or one carrying a `/suffix` included), any stored spelling of the
+node's path (`data.webhookPath`, `data.config.webhookPath`, `data.webhookUrl`), a
+server-assigned path that is no longer live, and any path the row was renamed away from (the
+row records the last 10). Those
+re-stamp the node to the live path with warning `webhook_path_was_not_live`, whose message
+names what matched; to move the URL to one of them on purpose, use
+`workflow_trigger_update({ webhook_path })`. Null or `''` never removes a URL (warning
+`webhook_path_cannot_be_cleared`). 409 `webhook_path_taken`, and 409 `webhook_path_conflict`
+when a concurrent rename won, changed nothing and carry `current_webhook_url` (the path that
+won); 400 `invalid_webhook_path` / `not_a_webhook_trigger` likewise.
+
+The row stays authoritative for auth on this call too: `workflow_node_update` never changes a
+live webhook's authentication or secrets. Sending `authentication`, a header name or a secret in
+`data` updates only the node, and the response's `webhook_trigger_warnings` carries
+`auth_not_applied` with the explicit call to make instead (`workflow_trigger_update` with
+`filter_config`, `workflow_webhook_auth_set`, or Apply authentication in the editor). Of the
+other row keys it merges only the ones it SENT that differ from the stored node (the method, a
+`hiveku_*` key), so a label-only or position-only update never touches the row. Its response
+(and `workflow_node_add`'s) is redacted like `workflow_get`: secrets read `'[redacted]'`. Sending that marker back is safe.
+In `workflow_node_update`, `workflow_update` and an editor save, an incoming `'[redacted]'`
+takes the value stored at the same node and key path; when nothing usable is stored there the
+key is dropped with a warning (`warnings[]`), and `workflow_node_add` always drops it with a
+warning. The marker is never written into a definition. A trigger ROW whose stored secret is
+the literal `'[redacted]'` counts as having no secret: the receiver answers 403, a
+`workflow_trigger_update` that would keep it gets 400 `auth_secret_missing`, and reads no
+longer show the key at all. Put a real secret on with `workflow_webhook_auth_set`.
 
 `workflow_node_delete` cascades: every edge whose source or target is that node is removed too,
 and the response lists the removed edge ids. `workflow_edge_delete` removes one edge and leaves
-nodes alone.
+nodes alone. Deleting a webhook trigger node (or changing its type away from webhook) DISARMS
+its trigger row rather than deleting it: the response carries `disarmed_webhook_trigger`, and
+the URL keeps answering 200 "Trigger disabled" and recording submissions but runs nothing.
+Re-arm it with `workflow_trigger_update({ workflow_id, trigger_id, is_enabled: true })` or
+remove it with `workflow_trigger_delete`. A row that belongs to a DIFFERENT webhook node still
+in the graph is never disarmed, and neither is a row whose context does not name the removed
+node when a remaining webhook node links to it or shows its URL (two nodes sharing one legacy
+URL): `webhook_trigger_warnings` says it "was NOT disabled: it belongs to webhook node X", and
+that URL keeps running.
 
 ### 3.5 Versions are your undo
 
@@ -475,6 +704,19 @@ workflow_id, version })` fetches one in full. `workflow_version_restore({ workfl
 })` rolls back, snapshotting the current state first so the restore is itself reversible.
 
 `version` is the integer, not a row uuid. Passing a uuid fails.
+
+A restore rolls back the graph, not the live URL: live trigger rows are kept, a snapshot node
+whose `triggerId` is missing or stale (not one of this workflow's rows) takes the row the same
+node has in the current definition, whether that node is bound by `triggerId` or by its path
+alone, and the webhook node is re-stamped with the current path. Linked rows' auth is not
+re-synced from the old node, so restoring a snapshot from before an auth change never changes
+the webhook's auth. A node left with no trigger (its row was deleted since, or its live URL
+belongs to another node in the restored graph) gets a NEW URL (`<label>-<random>`), never the
+snapshot's old path: `webhook_trigger_warnings` carries a "NEW URL" note per created row, which
+says "no longer existed" only when the current node really had no live trigger (re-point every
+sender at the new URL), and otherwise that the earlier URL is still live and unchanged
+(re-point senders only if this node should receive them). A restored node whose row is
+disabled stays disabled (`disabled_webhook_triggers`); re-arm it with `workflow_trigger_update({ is_enabled: true })`.
 
 ### 3.6 `on_error: 'continue'` is the fan-out insurance
 
@@ -535,7 +777,25 @@ and flow control, and trigger nodes against your `input_data`. And:
 
 > Run-quota is NOT debited, no run row is persisted, cascade detection is bypassed.
 
-### 4.2 The mock shape
+**A test run covers the whole graph.** It does not stop at the first simulated node:
+side-effecting nodes are simulated, pure nodes run for real on what the mocks hand them, and
+the response reports every node (5.1). A dry run never parks at a wait node, never emails
+approvers and never resumes for real; a `delay` validates its duration and does not sleep; and
+a test run never moves the circuit breaker's failure counter or writes a CRM "Entered via
+automation" touch. Code the graph runs (a `transformData` custom transform, a `validateData`
+custom rule, a `waitUntil` expression) still executes, but it never reaches the network. Its
+`fetch` gets a synthetic 200 `{}` with header `x-hiveku-dry-run: 1`, and the step carries a
+warning "test run: fetch METHOD URL was not sent ...". Every other way out throws "... is
+blocked: network access is disabled in test runs" (`error.code` `HIVEKU_DRY_RUN_NETWORK`):
+loading `http`, `https`, `net`, `tls`, `dns`, `child_process`, `worker_threads` and the other
+network modules (by `require`, `import()` or `process.getBuiltinModule`), `new WebSocket`,
+`new EventSource`, a raw socket. The step warns "test run: <what> was blocked (network access
+is disabled in test runs; the code got an error)", and an attempt the code does not catch fails
+the step. Real runs are unchanged. Before the 2026-09 fix a test run
+stopped at the first simulated node, so an older "passing" test proved nothing past that node.
+Re-run it.
+
+### 4.2 The mock shape, and `template_values`
 
 Every short-circuited node returns:
 
@@ -543,38 +803,99 @@ Every short-circuited node returns:
 {
   "__dry_run": true,
   "action": "<nodeType>",
-  "would_have": { "...": "the args it would have sent" },
+  "would_have": {
+    "...": "the resolved config it would have sent",
+    "_template": { "...": "only the raw leaves whose resolved value differs" }
+  },
   "id": "dry-run-<nodeId>-<timestamp>",
   "mock_note": "test_mode=true ... no real side effect was fired ..."
 }
 ```
 
-Some handlers carry their own richer dry-run branch and return a shape that matches their real
-output (for example `emailNotification` returns a `sentAt` / `to` / `subject` / `messageId`
-shape). Those short-circuit before the engine's generic net is consulted. The generic fallback
-caps the config snapshot at 2000 bytes and replaces it with `{ _truncated: true, _bytes,
-_preview }` when it is larger, and stubs a synthetic `id` so a downstream
-`{{node.output.id}}` still resolves to something traceable.
+The engine gate runs before the handler for every type in the side-effecting set, at every
+dispatch site, so every simulated node gets this generic mock; a handler's own richer dry-run
+branch never runs for those types. The only synthetic field is `id`, so a downstream
+`{{node.output.id}}` resolves to something traceable. There is no fake `messageId` or
+`contact_id`.
 
-**Read `would_have` before you enable anything.** It is where you catch the wrong recipient,
-the `{{...}}` that resolved to an empty string, and the CRM payload with a blank email.
+`would_have` is the resolved config (`data.config` when that is an object, otherwise all of
+`data`), resolved by the SAME resolver the real run uses, `||` defaults included. It keeps its
+structure: a string leaf over 4000 characters keeps its first 3000 and last 800 around a
+`…[N chars elided]…` marker, an array over 50 items keeps its first 45 and last 5, and the
+snapshot has a 12,000-character budget (a tighter 800-character-per-leaf pass runs when the
+first is over). `_template` is sparse. The old whole-object marker
+`{ _truncated, _bytes, _preview, _keys }` appears only for a pathological config.
+
+Credentials never come back through a test. `would_have`, `_template` and each
+`template_values[].value` show credential-keyed values (an `Authorization` or `x-api-key`
+header, `apiKey`, `password`, `secret`, the same key list `workflow_get` hides) as
+`'[redacted]'`, env secret values are replaced with `•••` before any cap, and the same
+redaction runs over `step_states` (each step on its own, so a node whose id looks like a
+credential key, `authorization` say, keeps its `status`, `dry_run` and `node_type`) and
+`output`, so a pure node's output reads `'[redacted]'` there too. A Date shows as its ISO
+string and a Decimal as its text.
+
+Trust the STEP's `dry_run` flag in the report, not `__dry_run` in an output: a pure node
+downstream of a mock returns its input context, so it inherits `__dry_run` and `would_have`
+without having been simulated. The step's `dry_run` is true exactly when its output is a
+simulation mock.
+
+**`template_values` is the check to read first.** Each simulated node's step lists every
+`{{token}}` in its config (up to 50; `template_values_omitted` counts the rest) as
+`{ field, template, source_node_id, path, resolver, status, has_default?, value,
+value_chars? }`:
+
+| `status` | Meaning |
+|---|---|
+| `resolved` | had a value; `value` shows it (long values keep head and tail) |
+| `empty` | the reference exists but is blank or null, and no `||` default was set. This is the "Hi ," case, and it is NOT a miss, so `unresolved_templates` does not list it. A `||` default covers it |
+| `default` | a `||` default supplied the value |
+| `missed` | resolved to nothing with no default; also in `unresolved_templates` |
+| `literal` | the token text goes out unchanged (a malformed single-pipe or `or` fallback, or a token the engine grammar cannot parse) |
+| `upstream_simulated` | the source node was simulated in this test, so its real value is unknown. Expected in a dry run |
+| `not_evaluated` | the dry run cannot evaluate it: templating the handler does itself, or an `{{env.NAME}}` in an MCP test run, which never loads the environment |
+
+`{{env.*}}` values read `[redacted]` when they are evaluated.
+
+**Read `template_values` and `would_have` before you enable anything.** They are where you
+catch the wrong recipient, the `{{...}}` that resolved to an empty string, and the CRM payload
+with a blank email.
 
 ### 4.3 What a dry run does NOT protect you from
 
 The dry-run net is a set of node types, `SIDE_EFFECTING_NODE_TYPES`. Read-shaped nodes are
 excluded on purpose, with the reasoning stated in source: dry-running a read makes the test
-less useful and costs nothing to run for real. That reasoning does not hold for every read,
-and these are the ones that bite. Verified as **not** in the set and with no dry-run branch of
-their own, so they execute for real inside a `workflow_test`:
+less useful and costs nothing to run for real. Every read outside the set runs for real inside
+a `workflow_test` (a `webflowCmsItemGet`, a CRM lookup), and because a test now runs the whole
+graph it reaches reads it never used to. The ones worth knowing:
 
 | Node type | What a "dry run" actually does |
 |---|---|
-| `keywordResearch` | real DataForSEO keyword-ideas call, metered spend |
-| `rankTracker` | real DataForSEO SERP call, metered spend |
-| `domainAnalysis` | real DataForSEO domain call, metered spend |
-| `serpAnalysis` | real live SERP fetch, metered spend |
+| `keywordResearch` | returns placeholder data: one idea per seed keyword (the seed itself, `search_volume` / `keyword_difficulty` / `cpc` null, `competition: 'UNKNOWN'`, `placeholder: true`), `totalFound` = the seed count up to `limit`. DataForSEO is not called and nothing is spent |
+| `rankTracker` | returns placeholder data; no DataForSEO call, no spend |
+| `domainAnalysis` | returns placeholder data; no DataForSEO call, no spend |
+| `serpAnalysis` | returns placeholder data; no DataForSEO call, no spend |
+| `seoGetAudit` | reads the stored audit row (the route's `{ data: {...} }` shape plus `refreshed: false` and `test_mode_note`); no refresh, no write. A simulated `seoStartAudit` is the engine's generic mock, which has no `task_id`: `{{start.task_id}}` reads empty and gets a placeholder with `data.status: 'queued'`, `data.task_id: null` and `audit_unresolved: true`; a misspelled `{{start.task_idd}}` fails "auditId is required"; `{{start.id}}` (the mock's own id) and an unknown literal id fail "Audit not found" (404) |
 | `kbSearch` | real vector search |
-| `delay` | actually waits |
+| `delay` | validates the duration, does not wait |
+
+The research placeholders carry the node's documented output keys and a note saying they are
+not real research, so downstream templates resolve but the numbers mean nothing (metrics are
+null, never 0). The four research nodes relax one check in a test only: a required input that
+is empty ONLY because its template reads a simulated node (or a pure node downstream of one)
+gets the placeholder flagged `<input>_unresolved: true` (`keyword_unresolved`,
+`domain_unresolved`, `keywords_unresolved`) instead of "Keyword and domain are required". The
+note says only that the test could not check that input; a real run fails if it is empty there
+too. The excuse holds only for a path the source can really output: when the source is
+`keywordResearch`, `rankTracker`, `domainAnalysis`, `serpAnalysis` or `seoStartAudit`, the path
+is checked against that node's real output (`keywordResults.ideas[].keyword`,
+`rankingResult.rank`, `serpResults.organicResults[].title`, `task_id` and so on), so a
+misspelled key (`keywordResult`, `idea`, `organicResults[0].titel`), an index on a field that
+is not a list, or a single-pipe / `or` fallback fails the test with the real run's error. An
+index past the end of a placeholder list (`ideas[5]`) and a documented field the placeholder
+leaves null are still excused. A source of unknown shape (the generic mock of another
+simulated type, or a pure node downstream of one) is still excused for any path. A literally
+empty field or a miss on trigger data still fails the test, as it would fail the real run.
 
 **`aiAgent` left this table on 2026-08-30.** It used to run the model for real during a dry
 run, burning tokens and firing any delegate sub-agents, and because an agent turn can call
@@ -582,8 +903,7 @@ its own tools it could also WRITE from a run whose whole purpose was to prove no
 be written. It and the six sub-agent role nodes (`blogWriter`, `seoSpecialist`, `socialMedia`,
 `dataAnalyst`, `contentCurator`, `videoCreator`) are now in `SIDE_EFFECTING_NODE_TYPES`, so a
 dry run returns a `would_have` instead of generated copy. The trade is deliberate: judging the
-copy needs a real run, on approval. Note the rows ABOVE were not part of that change - the
-metered DataForSEO reads and `delay` still execute for real.
+copy needs a real run, on approval.
 
 The same day closed the other hole in this section: a side-effecting node inside a
 `parallelExecute` branch or a `transactionBlock` used to reach its real handler, because the
@@ -601,48 +921,83 @@ because it reads like a read: it is in `SIDE_EFFECTING_NODE_TYPES` alongside `mc
 before the handler and returns `genericDryRunOutputForNode`. A dry run does not run the LLM
 router and does not cost a completion. A real run does.
 
-`waitUntil` is a separate case. The suspend path that parks a run in
-`workflow_pending_waits` is gated on the run being persisted, and a dry run persists no run.
-So in a dry run a `waitUntil` does not park and does not resume. Do not put one in a graph you
-intend to prove out with `workflow_test`.
+`waitUntil` (and every other wait node) is a separate case. The suspend path that parks a run
+in `workflow_pending_waits` never runs for a dry-run node: the step records `waiting` and the
+test continues downstream, so a wait never
+parks a test, never emails an approver, and never resumes into a real run. What happens after
+a real wait is therefore visible in a test, but the wait itself is not exercised.
 
 Important: And the caveat to state out loud whenever you report a passing dry run: downstream nodes
-that reference `{{nodeId.output.X}}` see the `would_have` payload or a synthetic field (a fake
-`messageId` from `sendEmail`, for instance). **Structural correctness is testable. Real
-delivery is not.** "The dry run passed" is not "the email will arrive".
+that reference `{{nodeId.output.X}}` see the `would_have` payload or the synthetic `id`, not
+what a real send returns. **Structural correctness is testable. Real delivery is not.** "The
+dry run passed" is not "the email will arrive".
 
 ---
 
 ## Part 5: Reading results
 
-### 5.1 A dry run leaves nothing to read
+### 5.1 A dry run's evidence is in its own response
 
-This is the single most surprising thing on this rail, and the tool descriptions do not warn
-about it.
+`test_mode` writes **no** `automation_workflow_runs` row, so the response comes back with
+`run_id: null` and `persisted: false`, and **`workflow_run_get`, `workflow_run_logs` and
+`workflow_runs_list` have nothing to fetch afterwards.** The per-node evidence comes back in the
+`workflow_test` (or `workflow_run({ test_mode: true })`) response instead. A test run is always
+synchronous: `fire_and_forget` is ignored for it and the response carries a `note` saying so. A
+failing test is still HTTP 500, with the same body.
 
-`test_mode` sets `persistRun = false`. The engine logs "Test mode, skipping database record
-creation", mints an in-memory UUID, and creates **no** `automation_workflow_runs` row. The
-route then looks up the run row it expects to exist and finds nothing, so the sync response
-comes back with `run_id: null`.
+```
+data = {
+  run_id: null, persisted: false, test_mode: true, mode: 'sync',
+  status, started_at, completed_at, error,
+  output,                 // the terminal node's output (several: { output_<nodeId>: ... })
+  terminal_node_ids, execution_order,
+  step_states: { <nodeId>: { node_type, node_label, status, dry_run,
+                             output?, output_omitted?, unresolved_templates,
+                             template_values?, template_values_omitted?, warnings?,
+                             error?, degraded?, original_error?, duration_ms?,
+                             branch_taken?, in_parallel_branch?, in_transaction?,
+                             skipped_reason? } },
+  not_reached: [{ node_id, node_type, label }],
+  unresolved_template_count, unresolved_template_simulated_count,
+  unresolved_templates,   // flat across nodes, capped at 100
+  report_truncated?,      // { budget_bytes, compacted_node_ids }
+  note?
+}
+```
 
-Consequences:
+How to read it:
 
-- **`workflow_run_get` after `workflow_test` has nothing to fetch.** There is no run id, and
-  no row behind it. Neither `workflow_run_logs` nor `workflow_runs_list` will show the test
-  either.
-- The only dry-run evidence you get is the sync response's `data.output`, and that is the
-  **terminal node's** output. When the graph has several terminal nodes it is
-  `{ "output_<nodeId>": <output>, ... }`; with exactly one it is that node's output directly.
-- To inspect one specific node's `would_have` when it is not terminal, either read it off the
-  terminal node's context (many handlers spread `...inputContext` into their output, so
-  upstream fields ride along), or temporarily make it terminal by removing the edges below it,
-  or accept the terminal view.
-- `data.status` on the sync response is `completed` or `error`. The persisted run **row**
-  uses `failed`, not `error`. Do not filter runs by `error`; see 5.3.
+- **`data.step_states[<nodeId>]` is the evidence for every node.** For a simulated node
+  (`dry_run: true`) read `output.would_have` and `template_values` (4.2); for a pure node,
+  `output` is what it really produced, capped at 4 KB. `unresolved_templates` is always an
+  array, `[]` meaning checked and clean. There is no `input` key.
+- **`not_reached` lists nodes the run never got to**: an untaken branch, or everything
+  downstream of a failure. A node you expected to run that appears here is a wiring problem.
+  Dry-run each branch with input that should take it, and check the untaken one is listed.
+- **`execution_order` is authoritative** for order; JSON reorders integer-like keys in
+  `step_states`.
+- **`output` is the terminal output**: the output of each completed node none of whose
+  successors ran (several become `{ "output_<nodeId>": <output>, ... }`). It is no longer the
+  only view, so never make a node terminal just to see it.
+- `report_truncated` means the report hit its 64 KB budget: `would_have` on the latest nodes was
+  compacted first, then `template_values` (counted in `template_values_omitted`), then outputs
+  (`output_omitted`). `status`, `dry_run`, `error` and `unresolved_templates` are never dropped.
+- `data.status` on the response is `completed` or `error`. The persisted run **row** uses
+  `failed`, not `error`. Do not filter runs by `error`; see 5.3.
 
-Full per-node `step_states` requires a persisted run, which means a real `workflow_run`.
+A REAL sync `workflow_run` returns its own `run_id` (the run the engine wrote),
+`persisted: true`, `output`, and the run's `unresolved_template_count` and flat
+`unresolved_templates`. Full `step_states` with `input` then come from `workflow_run_get`.
 Sequence the two deliberately: dry run to prove the shape, then a real run once the operator
 has said yes, then read `step_states`.
+
+Three real-run answers are not "done". A run that parks on a wait or approval node answers
+HTTP 202 with `status: 'waiting'`, its `run_id`, `persisted: true`, `completed_at: null`,
+`waiting_on_node_id` and a note: it is saved and NOT finished. Poll it with
+`workflow_run_get` or resolve the wait; never re-run it, which would repeat every step before
+the wait (a wait that could not be saved is a 500 that still carries `run_id`). A rate-limit
+or cascade stop returns the stopped row's `run_id` with `status: 'error'`. A paused workflow or
+an exhausted run quota writes no row: `run_id: null`, `persisted: false`.
 
 ### 5.2 `workflow_run_get` is the debug surface
 
@@ -666,25 +1021,48 @@ Each `step_states[nodeId]` entry, verified against the engine's writer, can carr
 | `node_type`, `node_label` | a snapshot, so a later edit does not rewrite history |
 | `retry_count`, `max_retries` | how many attempts were spent |
 | `unresolved_templates` | see below |
+| `warnings` | non-fatal notes from the node, e.g. keys an `aiAgent` `responseSchema` stripped |
 | `degraded`, `original_error`, `on_error_mode` | present when `on_error: 'continue'` soft-failed the node |
 | `waiting_for` | present when the run parked on a wait node |
 | `uiData` | editor feedback payload |
 
 **`unresolved_templates` is the blank-merge detector.** Every `{{...}}` that resolved to
-nothing during that node's config resolution, with no `||` default, is recorded there with its
-template, source node id, path, and what it was coerced to (`empty_string` or `null`). This is
-the difference between an email that went out with "Hi ," and an hour of guessing. Read it on
-every green run before you call the workflow correct: a run can be `completed`, look perfect,
-and still have sent blanks.
+nothing during that node's config resolution, with no `||` default, is recorded there as
+`{ template, source_node_id, path, coerced_to, hint?, source_simulated? }`. `coerced_to` is
+what went out: `empty_string` (blanked inside text), `null` (a whole-field reference), or
+`literal` (the token text sent unchanged, which is what a malformed `{{ref | x}}` /
+`{{ref or x}}` does in an engine-resolved field; `hint` says to write `||`). Coverage includes
+nodes that threw or timed out, waiting nodes, nodes inside `transactionBlock` /
+`parallelExecute`, JSON-body misses (`apiCall` / `respond`), and every simulated node in a test
+run. Entries are deduped, at most 20 per node. `source_simulated: true` means the source node
+was simulated in a test run, so that miss is expected there. A reference that EXISTS but is
+blank is not a miss and is not listed; a dry run's `template_values` shows it as `empty`.
+
+`workflow_run_get` returns `unresolved_templates_recorded`, which says how far to trust that:
+
+- `true`: every step was checked and carries the key, `[]` meaning checked, nothing missed.
+- `'partial'`: the run started after 2026-08-08T17:36:39Z, but some step was written by the
+  older engine, which did not check `parallelExecute` / `transactionBlock` inner steps,
+  simulated or waiting steps, or handlers that threw or timed out. Only checked steps carry the
+  key; an unchecked step has none.
+- `false`: the run started before 2026-08-08T17:36:39Z. Absence proves nothing.
+
+It also returns `unresolved_template_count`, `unresolved_template_simulated_count` and
+`unresolved_template_nodes`, so read the count before walking every step. The count is exact
+on a `true` run, a lower bound on a `'partial'` run (null when that bound is 0), and null on a
+`false` one, so a 0 always means checked, none. Every step the current engine writes carries a
+boolean `dry_run`; that is how coverage is read per step. This is the difference between an email that went out with
+"Hi ," and an hour of guessing. Read it on every green run before you call the workflow
+correct: a run can be `completed`, look perfect, and still have sent blanks.
 
 ### 5.3 The rest of the run tools
 
 | Tool | Use it for |
 |---|---|
-| `workflow_run_logs({ workflow_id, run_id, node_id?, level? })` | the per-node lifecycle timeline: config, starting, handler invoked, retry, timeout, completion, soft-fail. Complements `step_states` by showing WHAT happened, not just the final state. `level` filters info / warn / error. Capped at 50 lines per node |
-| `workflow_runs_list({ workflow_id, status?, page?, limit? })` | this workflow's recent runs |
+| `workflow_run_logs({ workflow_id, run_id, node_id?, level? })` | the per-node lifecycle timeline: config, starting, handler invoked, retry, timeout, completion, soft-fail, and a `warn` line "N merge variable(s) resolved to nothing: ..." on a node that missed. Complements `step_states` by showing WHAT happened, not just the final state. `level` filters info / warn / error. Capped at 50 lines per node |
+| `workflow_runs_list({ workflow_id, status?, page?, limit? })` | this workflow's recent runs, each with `unresolved_templates_recorded` (`true` / `'partial'` / `false`) and `unresolved_template_count` under the same rules as 5.2 (also null when the count query failed) |
 | `workflow_runs_recent({ status?, since?, workflow_ids?, limit? })` | account-wide feed across ALL workflows, default window one hour. Use it BEFORE `workflow_runs_list` when you do not yet know which workflow broke |
-| `workflow_run_summary({ workflow_id, since? })` | counts by status, `success_rate`, latency p50/p95/p99/mean, up to 5 recent failures, `last_failed_run_id` to drill into. Caps at 1000 runs in the window |
+| `workflow_run_summary({ workflow_id, since? })` | counts by status, `success_rate`, latency p50/p95/p99/mean, up to 5 recent failures, `last_failed_run_id` to drill into. Caps at 1000 runs in the window. Also `template_misses`: `{ runs_checked, runs_partially_checked, runs_with_misses, total_misses, last_run_id_with_misses, last_run_with_misses_at, nodes (top 5), since, limit }` over the latest 200 recorded runs, excluding expected dry-run misses. `runs_checked` counts runs whose every step was checked, `runs_partially_checked` the rest; the miss counts include both. Null only when that stats query failed, which is unknown, not clean |
 | `workflow_dashboard_url({ workflow_id })` | editor, runs-list, and latest-run URLs for a human |
 
 **The status vocabulary is not what you would guess.** Real values are `pending`, `waiting`,
@@ -735,7 +1113,9 @@ Node types are camelCase by convention. Many also accept a snake_case alias in t
 Every workflow needs exactly one of the first group.
 
 **Entry points**: `manualTrigger` (start with test data, the ad-hoc rail's default),
-`webhookTrigger` (inbound HTTP with method, auth, response, CORS, rate limiting),
+`webhookTrigger` (inbound HTTP; it enforces the method and the auth mode only: only POST runs
+the workflow, another configured verb answers 405, and there is no response-mode, CORS or
+rate-limit setting; see 3.3 for the URL rules),
 `scheduledTrigger` (cron), `inboundWebhook` (alias handler).
 
 **Flow control**: `conditional` (branch, handles `true` / `false`), `switch` (multi-branch),
@@ -912,7 +1292,8 @@ connected Webflow site: filter `source: webflow`), `websiteVisitorTrigger` and
 `visitor_event_trigger` (page view, form view, session start), `deployTrigger` (fires when
 a deployment completes, per environment), `databaseTrigger` (any change in a watched table
 of a connected project database), `dbInsertTrigger`, `dbUpdateTrigger`, `dbDeleteTrigger`,
-`dbRowChange`; and the `webflow*Trigger` family for a site connected to Hiveku:
+`dbRowChange` (each requires `tableName` in the one object the trigger readers pick, see 2.5;
+a `table` key is read by nothing); and the `webflow*Trigger` family for a site connected to Hiveku:
 `webflowSitePublishedTrigger`, `webflowCmsItemTrigger` (umbrella) with the per-event
 `webflowCmsItem{Created,Changed,Deleted,Published,Unpublished}Trigger`,
 `webflowPage{Created,Deleted,MetadataUpdated}Trigger`, `webflowCommentCreatedTrigger`,
@@ -1122,8 +1503,9 @@ Every one verified present in `hiveku-mcp-api-server/src/tools/*.ts`.
 `enabled` pauses the schedule without disabling the workflow), `workflow_get_schedule`,
 `workflow_delete_schedule` ( removes the `scheduledTrigger` node and its edges, which can
 orphan the nodes below it; the response warns when it does), `workflow_triggers_list`,
-`workflow_trigger_get`, `workflow_trigger_create`, `workflow_trigger_update`,
-`workflow_trigger_delete`.
+`workflow_trigger_get`, `workflow_trigger_create`, `workflow_trigger_update` (takes
+`filter_config`, merged on a webhook row; `webhook_path` renames a live URL, see 3.4; it
+prompts at the permission layer, like `workflow_enable`), `workflow_trigger_delete`.
 
 **Run and read**: `workflow_run`, `workflow_test`, `workflow_run_get`, `workflow_run_status`,
 `workflow_run_logs`, `workflow_runs_list`, `workflow_runs_recent`, `workflow_run_summary`.

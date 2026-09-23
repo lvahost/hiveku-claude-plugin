@@ -25,9 +25,11 @@ building, and the client may already have the automation they are asking for.
 ## Hard rules (these do not bend for any recipe)
 
 - **Never enable without a passing dry run, and dry-run BEFORE you enable.**
-  `workflow_validate`, `workflow_test`, read `would_have`, then `workflow_enable`.
-  A dry run works on a DISABLED workflow, so there is never a reason to arm a graph
-  you have not tested. Each recipe's "Prove it works" names the field to read. "It
+  `workflow_validate`, `workflow_test`, read `data.step_states` on its response, then
+  `workflow_enable` (which refuses a workflow that still fails validation). A dry run works
+  on a DISABLED workflow, so there is never a reason to arm a graph you have not tested.
+  Each recipe's "Prove it works" names the field to read; a node's `would_have` is
+  `data.step_states.<nodeId>.output.would_have`, next to its `template_values`. "It
   validated" is not proof.
 - **Never guess a node `type`, a trigger type, or a `{{...}}` path.**
   `workflow_node_types_list` for actions, `workflow_event_trigger_types_list` for
@@ -39,8 +41,9 @@ building, and the client may already have the automation they are asking for.
 - **Enabling a `webhookTrigger` or `scheduledTrigger` graph makes it LIVE.** Get the
   operator's yes to the automation itself, not merely to the run gate.
 - **Anything reaching a customer needs an explicit human yes**: enable on a live
-  trigger, `workflow_run` in real mode, `workflow_stranded_replay`, `workflow_delete`,
-  `workflow_delete_schedule`, `agent_approval_approve`.
+  trigger, `workflow_trigger_update` (a URL rename, making a protected webhook public, or
+  re-arming a disarmed one), `workflow_run` in real mode, `workflow_stranded_replay`,
+  `workflow_delete`, `workflow_delete_schedule`, `agent_approval_approve`.
 - **`waitForApproval` does not work.** It is one of seven `isComingSoon` stubs (with
   `executeCode`, `executeExpression`, `waitForWebhook`, `manualCheckpoint`,
   `googleSheets`, `asana`). Recipe 11 is the approval pattern that does work.
@@ -55,8 +58,8 @@ workflow_create({ name, description })        disabled by default, leave it
 workflow_node_add  x N                        explicit short id per node ('trigger', 'notify', 'upsert')
 workflow_edge_add  x N                        sourceHandle only for conditional ('true'/'false') and switch
 workflow_validate                             fix every error, read every warning
-workflow_test({ input_data })                 STILL DISABLED. read would_have off the response
-workflow_enable                               LAST, and only on the operator's yes
+workflow_test({ input_data })                 STILL DISABLED. read data.step_states: would_have, template_values, not_reached
+workflow_enable                               LAST, only on the operator's yes; 422 workflow_invalid = fix the named nodes
 workflow_dashboard_url                        hand the human the editor link
 ```
 
@@ -102,20 +105,24 @@ notification, both hanging directly off the trigger.
    `workflow_bind_form({ ..., dry_run: true })`, read the warnings, real call.
 
 **Prove it works.** `workflow_test({ input_data: { payload: {<a real submission>} } })`.
-In `would_have`: the `crmUpsertContact` payload's `email` is the submitter's address,
-not the literal string `{{trigger.output.payload.email}}`; the notify node's `to` is the
-real recipient, not a stale template default. An unresolved `{{...}}` is written through
-as literal text rather than erroring, so this read is the whole test.
+In `data.step_states`, on both legs: the `crmUpsertContact` `would_have` has the
+submitter's address as `email`, and its `template_values` show that token `resolved`, not
+`missed` or `empty`; the notify node's `to` is the real recipient, not a stale template
+default. An unresolved `{{...}}` is written through as a blank rather than erroring (a
+contact with no email), so this read is the whole test.
 
 **Ship.** Confirm the recipient, enable, submit the live form once yourself, read
-`workflow_runs_recent`. Record the recipient decision with `memory_create`.
+`workflow_runs_recent`. Record the recipient decision with `memory_create`. The form posts
+to the `webhook_url` the server returned; never hand the site a URL built from a label.
 
-**How this fails in the wild.** A 401 on the form POST. The trigger's
-`config.authentication` gates the webhook, not the workflow-level `authRequired` flag,
-and a public lead form must be `authentication: 'none'`. Symptom: 401 in the browser
-console and an empty `workflow_runs_list`, which reads exactly like "the automation is
-broken". Fix with `workflow_trigger_update({ config: { authentication: 'none' } })`.
-Detail: `references/form-wiring.md`.
+**How this fails in the wild.** A 401 on the form POST. The trigger row's
+`filter_config.authentication` gates the webhook (`require_auth_token` mirrors it), not the
+workflow-level `authRequired` flag, which is ignored for either value, and a public lead form must be
+`authentication: 'none'`. Symptom: 401 in the browser console and an empty
+`workflow_runs_list`, which reads exactly like "the automation is broken". Fix with
+`workflow_trigger_update({ workflow_id, trigger_id, filter_config: { authentication: 'none' } })`:
+the tool takes `filter_config`, never `config`, and merges it, and switching to `'none'`
+clears the old mode's secrets. Detail: `references/form-wiring.md`.
 
 ---
 
@@ -179,8 +186,9 @@ to default. That is a data problem, not an automation problem. Say so before bui
    `sendEmail`. Always wire the default handle; an unwired default is a dropped lead.
 
 **Prove it works.** Dry-run once per branch INCLUDING the default, with `input_data` that
-should land there, and confirm the notification that fired is the one you expected. A
-branch that never fires is usually a missing or misspelled `sourceHandle`, which
+should land there, and confirm in `data.step_states` that the notification on that branch
+ran (its `would_have`) while every other branch's nodes are in `data.not_reached`. A branch
+that never fires is usually a missing or misspelled `sourceHandle`, which
 `workflow_validate` reports only as a warning.
 
 **Ship.** Enable, then watch day one with `workflow_run_summary({ workflow_id, since })`
@@ -303,8 +311,9 @@ config is read-only via Olympus; writes go through the dashboard.
    into unsupervised changes to a live ad account.
 
 **Prove it works.** Dry-run the true AND the false branch. On true, `would_have` on the
-alert node names the specific campaign or ticket and the actual number that breached; on
-false, nothing fires. An alert that cannot say WHICH thing breached gets muted in a week.
+alert node (in `data.step_states`) names the specific campaign or ticket and the actual
+number that breached; on false, the alert nodes are in `data.not_reached`. An alert that
+cannot say WHICH thing breached gets muted in a week.
 
 **Ship.** Enable, and agree with the operator what the alert means they will do. An
 escalation nobody owns is noise.
@@ -342,12 +351,14 @@ broken workflow. `workflow_event_trigger_types_list` says so per entry. Confirm 
    onboarding task.
 
 **Prove it works.** Dry-run a won deal and a stage change that is NOT won. On the won run
-read every leg's `would_have` and confirm the deal name and amount resolved; on the
-other, confirm the true branch produced nothing.
+read every leg's `would_have` and `template_values` in `data.step_states` and confirm the
+deal name and amount resolved; on the other, confirm every true-branch node is in
+`data.not_reached`.
 
-**Ship.** Enable, then close one real low-stakes deal and read `workflow_run_get`'s
-`step_states`. On that green run read `unresolved_templates` in each step before calling
-it correct: a run can be `completed`, look perfect, and still have sent blanks.
+**Ship.** Enable, then close one real low-stakes deal and read `workflow_run_get`. On that
+green run read `unresolved_template_count` (and each step's `unresolved_templates`, where
+`[]` means checked and clean) before calling it correct: a run can be `completed`, look
+perfect, and still have sent blanks.
 
 **How this fails in the wild.** It fires on every stage change, because the conditional
 compares a stage NAME against a trigger emitting a stage UUID (or the reverse). Early
@@ -516,9 +527,10 @@ accept a `connectionId`.
 3. Do NOT wire an automatic customer email on a payment failure without the operator
    reading the copy. Dunning mail firing on a transient card decline reads as dunning mail.
 
-**Prove it works.** `would_have` on the CRM leg carries the customer's real email; a blank
-there means the trigger key you referenced does not exist, and a real run would write a
-contact whose address is the literal template string.
+**Prove it works.** `would_have` on the CRM leg carries the customer's real email, and
+its `template_values` entry for that token reads `resolved`; a blank there (`missed`) means
+the trigger key you referenced does not exist, and a real run would write a contact with no
+email address.
 
 **Ship.** Enable, and confirm the Slack channel is one somebody reads.
 
@@ -554,20 +566,22 @@ editorial methodology.
    The terminal step is the draft: do not wire `socialPublishPost` on the end, since that
    fires an already-approved post and nothing is approved yet.
 
-**Prove it works.** This is the dry run that lies least and costs most: `aiAgent` is NOT in
-the dry-run net. It runs the model for real inside `workflow_test`, burning tokens and any
-delegate sub-agents. So the draft in the terminal output is a real draft: judge it on
-quality in the account's voice, and fix the prompt before shipping if it is generic. The
-`socialCreatePost` leg IS mocked; read its `would_have` for the account id and the
-scheduled time.
+**Prove it works.** `aiAgent` is in the dry-run net, so `workflow_test` does not run the
+model: its step in `data.step_states` shows the prompt it would have sent (`would_have`,
+with `template_values` for every merge field), not a draft. Check the brand-guide and avatar
+reads resolved into that prompt, and read the `socialCreatePost` leg's `would_have` for
+the account id and the scheduled time. Judging the copy itself takes one real run on the
+operator's yes, which produces a draft, never a post. Give the `aiAgent` a `responseSchema`
+for the fields `socialCreatePost` reads, so a reply missing them fails the node instead of
+drafting a blank post.
 
 **Ship.** Schedule with an explicit timezone. Tell the operator this produces DRAFTS and
 name the approval step (`socialApprovePost`, then `socialPublishPost`).
 
 **How this fails in the wild.** Drafts pile up unapproved, so the cadence is worse than
 manual: now there is a backlog AND no posts. Early symptom: week three, `socialListPosts`
-shows a stack of drafts and zero published. The other failure is cost, since a weekly
-`aiAgent` run is a weekly model call and every dry run you did while building was another.
+shows a stack of drafts and zero published. The other failure is cost: a weekly `aiAgent`
+run is a weekly model call (dry runs are free; they mock it).
 
 ---
 
@@ -640,9 +654,13 @@ connection must be OAuth. The social account is connected (`social_list_accounts
 3. `webflowCmsItemGet` with `project_id: "{{trigger.output.project_id}}"`,
    `collection_id: "{{trigger.output.collection_id}}"`, `item_id: "{{trigger.output.item_id}}"`
    - the trigger carries a `field_data` snapshot, the read carries the live item.
-4. `aiAgent` (`identityDepartment: "social"`, `outputFormat: "json"`) writing ONE post
-   from `{{item.name}}`, `{{item.slug}}` and `{{item.fieldData}}`, returning
-   `{"post_text": string, "hashtags": string[]}`.
+4. `aiAgent` (`identityDepartment: "social"`, `outputFormat: "json"`,
+   `responseSchema: { "post_text": "string", "hashtags": "string[]" }`, all flat on
+   `data`) writing ONE post from `{{item.name}}`, `{{item.slug}}` and
+   `{{item.fieldData}}`. The schema holds the reply to those two keys: anything else the
+   model adds is stripped, and a reply missing `post_text` gets one repair and then fails
+   the node rather than drafting an empty post. Set `on_error: 'continue'` on it only if a
+   downstream `conditional` branches on `{{draft.schema_valid}}`.
 5. `socialCreatePost` with `status: "draft"`, `content: "{{draft.post_text}}"`. Draft
    by construction; publishing is `socialApprovePost` then `socialPublishPost`, by a
    person.
@@ -652,7 +670,10 @@ connection must be OAuth. The social account is connected (`social_list_accounts
 is the catalog's sample payload, the `webflowCmsItemGet` read runs FOR REAL against
 Webflow (reads are never mocked, and spend the connection's rate budget), and
 `socialCreatePost` is mocked - read its `would_have` for the platform, the content and
-`status: draft`. Then publish one real item and check `workflow_runs_recent` shows one
+`status: draft` in `data.step_states`. The `aiAgent` is mocked too, so its
+`responseSchema` is only exercised by the real run: on that run read the step's
+`schema_valid` and `warnings` (stripped keys). Then publish one real item and check
+`workflow_runs_recent` shows one
 run with `triggered_by: webflow_event`; a second run for the same item within three
 minutes is the self-write guard's job to prevent and must not appear.
 

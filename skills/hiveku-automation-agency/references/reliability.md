@@ -129,20 +129,50 @@ every step of a green run before telling anyone the workflow is fine, then decid
 honestly whether `on_error: 'continue'` still belongs on that node: right for a
 non-critical sibling leg, wrong the moment its failure is what the client pays for.
 
+An `aiAgent` with a `responseSchema` is the case to know. A reply that still misses the
+schema after its one repair attempt FAILS the node ("did not match responseSchema"); with
+`on_error: 'continue'` it records as degraded with `schema_valid: false` and
+`schema_errors` in its output, and its fields are not spread, so downstream `{{ai.key}}`
+references show up as misses. A graph that uses the AI output should branch on
+`{{ai.schema_valid}}` rather than run on regardless. On a passing node, read the step's
+`warnings` for keys the schema stripped or values it coerced.
+
 ### T6. Did the templates resolve?
 
-Still inside `step_states`, on every step:
+Still inside the run:
 
 ```
+workflow_run_get -> unresolved_template_count, unresolved_template_nodes
 step_states[nodeId].unresolved_templates
+workflow_run_summary -> template_misses        # across the latest 200 runs
 ```
 
 Every `{{...}}` that resolved to nothing with no `||` default is recorded there with its
-template, source node id, path, and coercion (`empty_string` or `null`). An unresolved
-expression is NOT an error: it is written through as the literal string or as a blank.
-That is how `{{body.email}}` ends up stored as somebody's email address and how "Hi ,"
-goes out to a client's list. A run can be `completed`, look perfect in every summary, and
-still be why a customer replied "who is this?".
+template, source node id, path, coercion (`empty_string`, `null` or `literal`) and, for
+`{{ref | x}}` / `{{ref or x}}`, a `hint` (neither is a fallback; write `||`). An unresolved
+expression is NOT an error: a well-formed reference is written through as a blank (`''` in
+text, null as a whole field), and only a malformed fallback or a token the engine grammar
+cannot parse goes out as literal text. That is how "Hi ," goes out to a client's list and a
+contact is created with no email. A run can be `completed`, look perfect in every summary,
+and still be why a customer replied "who is this?".
+
+How to read it without walking every step:
+
+- Read `unresolved_templates_recorded` first. `true`: every step was checked and carries
+  the key, and `[]` means checked, nothing missed. `'partial'`: the run started after
+  2026-08-08T17:36:39Z, but an older engine wrote some steps (`parallelExecute` /
+  `transactionBlock` inner steps, simulated, waiting or throwing ones) without checking
+  them; those steps have no key, and `unresolved_template_count` is a lower bound (null when
+  it is 0). `false`: the run predates recording, absence proves nothing, and the count is
+  null. So a 0 always means checked, none.
+- `workflow_runs_list` gives `unresolved_templates_recorded` and `unresolved_template_count`
+  per run, and `workflow_run_summary`'s `template_misses` gives `runs_with_misses`,
+  `total_misses`, `last_run_id_with_misses` and the top nodes for the window, with
+  `runs_checked` (every step checked) and `runs_partially_checked` (the rest) beside them.
+- A reference that EXISTS but is blank is not a miss and is never listed. Guard it with a
+  `||` default; a dry run shows it as `empty` in `template_values`.
+- Test runs record misses too, in the `workflow_test` response. A miss flagged
+  `source_simulated` came from a simulated upstream node and is expected there.
 
 ### T7. Is the trigger wired to the rail you think it is?
 
@@ -150,7 +180,7 @@ If there are no runs and no pause, the trigger never reached the engine.
 
 ```
 workflow_triggers_list({ workflow_id })     # webhook / scheduled_trigger / database_trigger ROWS
-workflow_trigger_get({ trigger_id })        # the exact config of one
+workflow_trigger_get({ trigger_id })        # one row: canonical filter_config (secrets redacted), http_method, authentication, webhook_url
 workflow_get_schedule({ workflow_id })      # null == no scheduledTrigger NODE at all
 project_crons_list({ project_id })          # the OTHER cron rail entirely
 project_cron_logs({ ... })                  # status success|failure|timeout per execution
@@ -168,6 +198,13 @@ Four things this rules in or out:
 - An internal event trigger is a graph NODE needing no `workflow_triggers` row, so an
   empty `workflow_triggers_list` is expected for those (`references/event-triggers.md`).
 
+Two webhook-row causes of "no runs" on an enabled workflow. A row with `is_enabled: false`
+answers the sender 200 "Trigger disabled" and records the submission, but runs nothing;
+deleting a webhook trigger node disarms its row that way, so a graph that lost its webhook
+node goes quiet without an error. And a sender posting to an old URL after a rename gets
+404: compare the URL the sender uses with the row's `webhook_url`, never with a URL built
+from the node's label.
+
 One cause outside the workflow rail entirely: "tickets are auto-replying and no workflow
 explains it" is usually `helpdesk_automations_get` (auto_acknowledge, auto_assign, sla,
 csat_survey, auto_close, team_notifications), read-only via Olympus. Flag it rather than
@@ -182,7 +219,7 @@ hunting for a workflow that does not exist.
 | T3 ran | runs exist in window | Trigger delivery, wiring, wrong rail |
 | T4 failed | failures present | "It is not even trying" |
 | T5 degraded | no `degraded` steps | The green-run-that-did-nothing case |
-| T6 templates | `unresolved_templates` empty | Blank merges and literal `{{...}}` sends |
+| T6 templates | `unresolved_template_count` 0 on a recorded run | Missing references and malformed fallbacks. Not a field that exists but is blank, and not a token the grammar cannot parse: a dry run's `template_values` catches those |
 | T7 trigger | trigger row / schedule correct | Wrong rail, missing node, UTC drift |
 
 ---
@@ -196,12 +233,15 @@ tell a client their automation is healthy.
 `on_error: 'continue'`, the run is `completed`. Detection: `degraded` on the step, plus
 `original_error`. See T5. This is the number one cause of "it says it worked".
 
-**2. Unresolved templates written as literals.** No error, no failed step, a customer
-receives a blank or the string `{{...}}`. Detection: `unresolved_templates` on a
-persisted run, or `would_have` on a dry run. On a dry run, `workflow_run`'s own
-description notes that `would_have` shows the RESOLVED values, with the raw templates
-under `would_have._template` where they differ, so an empty resolved field next to a
-`{{ref}}` is the bug made visible before it ships.
+**2. Blank merges.** No error, no failed step, a customer receives a blank (or, from a
+malformed `|` / `or` fallback, the token text). Detection: `unresolved_template_count` and
+`unresolved_templates` on a persisted run, `template_misses` on the summary, and on a dry run
+`data.step_states[<nodeId>].template_values`, which lists every `{{token}}` with what it
+resolved to. Read its `status`: `missed` and `literal` are the bug; `empty` is the reference
+that exists but is blank, the "Hi ," case, which no miss list shows and a `||` default
+fixes. `would_have` beside it shows the RESOLVED config, with the raw templates under
+`would_have._template` where they differ, so an empty resolved field next to a `{{ref}}` is
+the bug made visible before it ships.
 
 **3. An empty status filter.** **There is no `queued`, no `succeeded`, and no `error`**
 in the run vocabulary (Part 3). Filtering on one of those returns an empty list that is
@@ -224,8 +264,10 @@ finding.
 that hit the 1000-run cap is partial, and must be reported as partial (caps: Part 4).
 
 And the one that survives every check above: **a dry run passing is not delivery.**
-Downstream nodes in a dry run see `would_have` payloads and synthetic fields (a fake
-`messageId` from a send). Structural correctness is testable; real delivery is not.
+Downstream nodes in a dry run see `would_have` payloads and a synthetic `id`, never what a
+real send returns. Structural correctness is testable; real delivery is not. And a dry run
+from before the 2026-09 fix stopped at the first simulated node, so it proved nothing past
+it: re-run it.
 
 For delivery truth on email, `email_logs_list` returns per-message rows (to, subject,
 status of queued/sent/delivered/bounced/complained, open and click counts, timestamps,
@@ -282,8 +324,9 @@ of the real cause.
 | `error`, `error_stack` | the message, and up to 4000 characters of stack |
 | `retry_count`, `max_retries` | how many attempts were actually spent |
 | `degraded`, `original_error`, `on_error_mode` | present when `on_error: 'continue'` soft-failed the node |
-| `unresolved_templates` | every blank merge, with template, source node, path, coercion |
-| `waiting_for` | present when the run parked on a wait node |
+| `unresolved_templates` | each missing reference or malformed fallback, with template, source node, path, coercion, `hint?`; `[]` = checked, none. An unchecked step of a `'partial'` run has no key |
+| `warnings` | non-fatal notes, e.g. keys an `aiAgent` `responseSchema` stripped or values it coerced |
+| `waiting_for` | present when the run parked on a wait node. A real `workflow_run` that parks answers 202 `status: 'waiting'` with its `run_id`: poll or resolve it, never re-run it |
 | `duration_ms` | timing; a simulated node reports 0 |
 | `node_type`, `node_label` | a snapshot, so a later edit does not rewrite history |
 
@@ -298,9 +341,11 @@ when one node is the suspect and by `level: 'error'` on a long run.
 each message truncated to 500 characters, so a long log is not the whole story and a
 short one is not proof of a short execution. `step_states.input` truncates on large
 payloads, `error_stack` stops at 4000 characters, `workflow_run_summary` caps at 1000
-runs, and a dry run persists NO run row at all, so `workflow_run_get`,
-`workflow_run_logs`, and `workflow_runs_list` have nothing to fetch after a
-`workflow_test` (node-rail.md 5.1). In every one of those cases the honest sentence is
+runs (its `template_misses` at the latest 200), and a dry run persists NO run row at all,
+so `workflow_run_get`, `workflow_run_logs`, and `workflow_runs_list` have nothing to fetch
+after a `workflow_test`: its evidence is the response's `data.step_states`, `not_reached`
+and `unresolved_templates`, and that report has its own 64 KB budget (`report_truncated`
+names what was compacted; node-rail.md 5.1). In every one of those cases the honest sentence is
 "the evidence is capped here", not "nothing else happened". Handing off to a human:
 `workflow_dashboard_url({ workflow_id })` returns the editor, runs-list, and latest-run
 URLs.
@@ -350,17 +395,23 @@ The path back, and every step has a guard:
    `workflow_edge_delete` for wiring. Or roll back: `workflow_versions_list` to find the
    good version by `change_summary`, `workflow_version_get` to preview it,
    `workflow_version_restore` to apply it (it snapshots the current definition first, so
-   it is itself reversible; `version` is the monotonic integer, not the row uuid).
+   it is itself reversible; `version` is the monotonic integer, not the row uuid). A
+   restore keeps every live webhook URL, but a webhook node whose trigger was deleted
+   since comes back on a NEW URL: read `webhook_trigger_warnings` and re-point its
+   senders.
 3. **Prove the fix.** `workflow_validate({ workflow_id })`, then
-   `workflow_test({ workflow_id, input_data })`, then read `would_have` on every
-   short-circuited node. **As of 2026-08-30 the dry-run gate holds at every dispatch
-   site**, including side-effecting nodes inside a `parallelExecute` branch or a
-   `transactionBlock` (previously those ran FOR REAL during a test), and AI/agent nodes
-   are now mocked instead of spending real tokens and writing through their own tools.
-   A dry run is therefore trustworthy for fan-out graphs too, which it was not before.
-   node-rail.md 4.3 still lists `aiAgent` among the nodes that execute for real; that row
-   is superseded. The metered DataForSEO reads and `delay` in that same table were NOT
-   part of the change, so treat them as still live in a dry run unless verified.
+   `workflow_test({ workflow_id, input_data })`, then read the response's
+   `data.step_states`: `template_values` and `output.would_have` on every simulated node,
+   `error` on any node that failed, and `data.not_reached` for a branch or leg that never
+   ran. A test runs the whole graph, so the node you fixed is covered even when it sits
+   after a simulated send. **The dry-run gate holds at every dispatch site**, including
+   side-effecting nodes inside a `parallelExecute` branch or a `transactionBlock`, and
+   AI/agent nodes are mocked instead of spending real tokens and writing through their
+   own tools; the metered DataForSEO reads return placeholder data, `delay` does not
+   sleep, and a code node's `fetch` is never sent (node-rail.md 4.1, 4.3). If the fix was
+   a missing field (a `slackNotification` with no `webhookUrl`, say), `workflow_validate`
+   and `workflow_enable` now name it too: enabling a disabled workflow with a validate
+   error on a node a run can reach is refused with 422 `workflow_invalid`.
 4. **Resume.** `workflow_resume({ workflow_id })` clears the pause and resets the failure
    counter. It runs nothing by itself. It must come BEFORE replay: a replay against a
    still-paused workflow is refused with a 409 (and, if it were not, would simply strand
@@ -436,8 +487,8 @@ Weekly, per retainer account, read-only until the last step. This is the work th
 |---|---|---|
 | 1 | `workflow_list({ enabled: true })` | The enabled set matches what the client believes is running. Anything they think is on and is not is a finding today. |
 | 2 | `workflow_runs_recent({ status: 'failed', since: <7d> })` | Empty, or failures you can each name a cause for. Not "empty because the filter was wrong". |
-| 3 | `workflow_run_summary({ workflow_id, since })` per enabled retainer automation | `success_rate` at or near its own prior-window baseline, p95 latency stable, `last_succeeded_at` recent. Narrow `since` if the window hits the 1000-run cap. |
-| 4 | `workflow_run_get` on each `last_failed_run_id`, and on one recent GREEN run per workflow | No `degraded` steps, `unresolved_templates` empty. The green-run spot check is the part everyone skips and it is where the blank merges live. |
+| 3 | `workflow_run_summary({ workflow_id, since })` per enabled retainer automation | `success_rate` at or near its own prior-window baseline, p95 latency stable, `last_succeeded_at` recent, `template_misses.runs_with_misses` 0 (null means the stats query failed: unknown, not clean). Narrow `since` if the window hits the 1000-run cap. |
+| 4 | `workflow_run_get` on each `last_failed_run_id`, on `template_misses.last_run_id_with_misses`, and on one recent GREEN run per workflow | No `degraded` steps, `unresolved_template_count` 0 with `unresolved_templates_recorded: true` (`'partial'` gives only a lower bound, so a clean one is not proof). The green-run spot check is the part everyone skips and it is where the silent failures live. |
 | 5 | `workflow_get_schedule` on every scheduled automation | Non-null, workflow enabled, `next_run_at` correct in the CLIENT's timezone. A null schedule on a workflow the client believes is scheduled is a finding, not a skip. |
 | 6 | `workflow_stranded_list` on anything paused or recently failing | Zero. A non-zero count is a lead count and goes to the top of the report. |
 | 7 | `agent_inbox_list` | The open queue (default `new,seen`) worked, not just read. Apply what should be applied through its own surface, THEN `agent_inbox_resolve`; resolving never executes the item. |
@@ -463,7 +514,10 @@ check something, name it.
 - Rule out the measurement artifact before the causal story. A wrong status filter, a
   disabled workflow, a paused workflow, the wrong cron rail, and a UTC schedule read as
   local all mimic an outage perfectly.
-- Read `degraded` and `unresolved_templates` on a GREEN run before calling it correct.
+- Read `degraded` and the blank-merge count (`unresolved_template_count` on the run,
+  `template_misses` on the summary) on a GREEN run before calling it correct. `[]` on a
+  recorded step is clean; `unresolved_templates_recorded: false` is unknown, and
+  `'partial'` is a lower bound.
 - Widen `since` deliberately. `workflow_runs_recent` defaults to one hour.
 - Fix before resume, resume before replay, and show the operator the stranded LIST with
   dates (never a count) before any replay.

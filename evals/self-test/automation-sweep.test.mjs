@@ -380,6 +380,51 @@ test('automation-sweep: a failed STEP persists as `error` while its run persists
   }
 });
 
+test('automation-sweep: the blank-merge counts mirror the builder - recorded, zero, and never a false clean', async () => {
+  const { tools, NOW } = await fixtureTools();
+  const mod = await import(pathToFileURL(path.join(FIXTURE, 'tools.mjs')).href);
+  assert.equal(mod.TEMPLATE_MISS_RECORDING_SINCE, '2026-08-08T17:36:39Z', 'the recording cutoff is the builder constant');
+  assert.equal(mod.TEMPLATE_MISS_STATS_LIMIT, 200);
+  const since = new Date(Date.parse(NOW) - 7 * DAY).toISOString();
+  assert.equal(Date.parse(since), Date.parse(WINDOW_SINCE));
+  for (const [key, id] of Object.entries(WF)) {
+    const summary = tools.workflow_run_summary({ workflow_id: id, since }).data;
+    const misses = summary.template_misses;
+    assert.ok(misses && typeof misses === 'object', `${key}: template_misses is present (null would mean the stats query failed)`);
+    for (const field of ['runs_checked', 'runs_partially_checked', 'runs_with_misses', 'total_misses', 'last_run_id_with_misses', 'last_run_with_misses_at', 'nodes', 'since', 'limit']) {
+      assert.ok(field in misses, `${key}: template_misses.${field}`);
+    }
+    assert.equal(misses.runs_with_misses, 0, `${key}: no seeded blank merge`);
+    assert.equal(misses.total_misses, 0);
+    assert.equal(misses.last_run_id_with_misses, null);
+    assert.deepEqual(misses.nodes, []);
+    assert.equal(misses.limit, 200);
+    assert.equal(misses.since, since, 'the window floor is `since` when it is after the recording cutoff');
+    // runs_checked counts the runs actually examined, so a zero-run workflow
+    // reads 0 checked - unknown, not a clean bill.
+    const inWindow = tools.workflow_runs_list({ workflow_id: id, limit: 200 }).data.filter((r) => Date.parse(r.started_at) >= Date.parse(since));
+    assert.equal(misses.runs_checked, Math.min(200, inWindow.length), `${key}: runs_checked`);
+    // Every fixture step carries the current engine's boolean dry_run marker,
+    // so no run is partially checked and runs_checked is the whole sample.
+    assert.equal(misses.runs_partially_checked, 0, `${key}: runs_partially_checked`);
+
+    for (const row of tools.workflow_runs_list({ workflow_id: id }).data) {
+      assert.equal(row.unresolved_template_count, 0, `${key} ${row.id}: per-run count on the list`);
+      assert.equal(row.unresolved_templates_recorded, true, `${key} ${row.id}: per-run recording flag on the list`);
+      const run = tools.workflow_run_get({ workflow_id: id, run_id: row.id }).data;
+      assert.equal(run.unresolved_templates_recorded, true, 'every fixture run postdates the recording cutoff and every step is checked');
+      for (const [nodeId, step] of Object.entries(run.step_states)) {
+        assert.equal(typeof step.dry_run, 'boolean', `${key} ${row.id} ${nodeId}: the coverage marker the builder reads`);
+      }
+      assert.equal(run.unresolved_template_count, 0);
+      assert.equal(run.unresolved_template_simulated_count, 0);
+      assert.deepEqual(run.unresolved_template_nodes, []);
+    }
+  }
+  const zeroRun = tools.workflow_run_summary({ workflow_id: WF.nurture, since }).data.template_misses;
+  assert.equal(zeroRun.runs_checked, 0, 'the zero-run workflow checked nothing: unknown, never clean');
+});
+
 test('automation-sweep: the dataset agrees with itself - graphs, ids, triggers, the other cron rail', async () => {
   const { tools } = await fixtureTools();
   const wfData = loadJson('dataset', 'workflows.json');

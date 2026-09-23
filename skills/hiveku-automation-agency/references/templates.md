@@ -51,7 +51,11 @@ workflow, AND auto-provisions its webhook triggers in one call. It returns
 variable fails fast with a 400 - it does not silently create a half-configured
 workflow. Note `is_enabled` defaults to **true** here, unlike `workflow_create`: the
 workflow is live the moment the call returns, so confirm with the operator before
-instantiating, or pass `is_enabled: false` and enable after review.
+instantiating, or pass `is_enabled: false` and enable after review. An enabled install
+never passes through the enable gate and is never refused for validation: when the
+substituted graph has problems the 201 carries `validation { ok, errors, warnings, issues }`,
+and on errors a `validation_warning` ("created ENABLED ... will make its runs fail"). Read
+it, then fix the named nodes or `workflow_update({ workflow_id, is_enabled: false })` at once.
 
 ## Working the staged queues (finish what the template starts)
 

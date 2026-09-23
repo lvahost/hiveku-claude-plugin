@@ -28,16 +28,26 @@ moment a check fails). When one automation is already known to be broken, run
    `last_failed_at`, and `last_failed_run_id` to drill into. Compare each workflow against its OWN
    prior window, never against a different workflow with different triggers and volumes. The
    summary caps at 1000 runs in the window, so if you hit the cap, narrow `since` before quoting a
-   `success_rate` and mark that workflow PARTIAL.
+   `success_rate` and mark that workflow PARTIAL. Read its `template_misses` too: `runs_checked`
+   (runs whose every step was checked), `runs_partially_checked` (runs an older engine wrote in
+   part, whose misses are a lower bound), `runs_with_misses`, `total_misses`,
+   `last_run_id_with_misses` and the top `nodes`, over the latest 200 runs recorded since
+   2026-08-08 (misses that are expected in a dry run are excluded). A
+   non-zero `runs_with_misses` is a finding even on a 100% `success_rate`: those runs completed and
+   merged blanks. `template_misses: null` means the stats query failed, which is UNKNOWN, not clean.
 4. **Spot-check a GREEN run, not only the failures.** `workflow_run_get({ workflow_id, run_id })`
-   on `last_failed_run_id` AND on one recent completed run per workflow. In `step_states`, read
-   `degraded` on every step: a node with `on_error: 'continue'` that FAILS records as completed
-   with `degraded`, `original_error`, and `on_error_mode`, and the run finishes green, so a run
-   whose every action step is degraded reports success and did nothing at all. Read
-   `unresolved_templates` in the same place: every `{{...}}` that resolved to nothing with no `||`
-   default is written through as a blank, which is how "Hi ," reaches a client's list from a run
-   that looks perfect in every summary. This is the step everyone skips and it is where the silent
-   breakage lives. `workflow_run_logs({ workflow_id, run_id })` gives the per-node timeline when
+   on `last_failed_run_id`, on `template_misses.last_run_id_with_misses` when there is one, AND on
+   one recent completed run per workflow. In `step_states`, read `degraded` on every step: a node
+   with `on_error: 'continue'` that FAILS records as completed with `degraded`, `original_error`,
+   and `on_error_mode`, and the run finishes green, so a run whose every action step is degraded
+   reports success and did nothing at all. Read the run's `unresolved_template_count` and
+   `unresolved_template_nodes`, and each step's `unresolved_templates`: every `{{...}}` that
+   resolved to nothing with no `||` default is written through as a blank, which is how "Hi ,"
+   reaches a client's list from a run that looks perfect in every summary. `[]` on a step means
+   checked and clean, so you can say you checked; `unresolved_templates_recorded: false` means the
+   run predates recording and proves nothing either way, and `'partial'` means some steps were
+   never checked (no key on them), so its count is a lower bound, not a clean bill. This is the step everyone skips and it is
+   where the silent breakage lives. `workflow_run_logs({ workflow_id, run_id })` gives the per-node timeline when
    you need to see retries, capped at 50 lines per node.
 5. **Schedule sanity.** `workflow_get_schedule({ workflow_id })` on every automation the client
    believes is scheduled, and check three things: it is non-null, the WORKFLOW itself is enabled (a

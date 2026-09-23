@@ -6,7 +6,7 @@
     "mcp__hiveku__"
   ],
   "plugin_version": "0.26.17",
-  "count": 202,
+  "count": 203,
   "tools": [
     {
       "name": "deploy_site",
@@ -627,6 +627,11 @@
       "name": "workflow_enable",
       "method": "PATCH",
       "why_gated": "arms a live webhook or cron: from this call the automation reaches customers unattended"
+    },
+    {
+      "name": "workflow_trigger_update",
+      "method": "PATCH",
+      "why_gated": "can move a live webhook URL (a webhook_path rename is one-way; the old URL 404s at once) or make a protected webhook public (filter_config authentication none)"
     },
     {
       "name": "workflow_delete",

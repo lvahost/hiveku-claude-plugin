@@ -380,18 +380,24 @@ Two facts that map directly onto a sequence board:
 - The delay you drew on an arrow label maps to `delay` only for short pauses. For anything
   over 15 minutes use `waitUntil`, which parks the run in the database and resumes it from a
   cron so it survives deploys and restarts. A multi-day sequence built on `delay` is a
-  sequence that silently dies on the next deploy.
+  sequence that silently dies on the next deploy. A real `workflow_run` that reaches the wait
+  answers 202 with `status: 'waiting'` and its `run_id`: the run is saved, not finished. Poll
+  `workflow_run_get` or let the wait resolve; never re-run it, which repeats every step before
+  the wait.
 - Never fire a first draft at real contacts. `workflow_run({ test_mode: true })` (or the
   equivalent named tool `workflow_test`, which pins the flag so you cannot forget it)
   short-circuits every side-effecting node: each returns a mock carrying `__dry_run: true`
   and `would_have: {...}` with the arguments it would have sent, while pure transforms and
-  flow control still execute. Know what a dry run does NOT leave behind: no run quota is
-  debited and NO run row is persisted, so the sync response — final status, output, error,
-  `run_id: null` — is the whole record. Do not follow it with
-  `workflow_run_get({ workflow_id, run_id })`: there is no run to fetch. That tool's
-  per-node `step_states` map (`{status, input, output, error}`, which branch actually
-  took) exists only for real runs — it is the debug surface after a wet `workflow_run`,
-  fed the `run_id` that call returned.
+  flow control still execute, across the whole graph. Know what a dry run does NOT leave
+  behind: no run quota is debited and NO run row is persisted, so the sync response is the
+  whole record: final status, output, error, `run_id: null`, plus the per-node report
+  `data.step_states` (for each node its status, `dry_run`, the mock's `would_have`,
+  `template_values` for every `{{token}}`, `unresolved_templates`, and `branch_taken` on a
+  branch node) and `data.not_reached` (the nodes on the untaken branch). Map a sequence board
+  by dry-running each branch and checking the right nodes land in `not_reached`. Do not
+  follow it with `workflow_run_get({ workflow_id, run_id })`: there is no run to fetch. That
+  tool's persisted `step_states` (with each node's `input`) exists only for real runs — it
+  is the debug surface after a wet `workflow_run`, fed the `run_id` that call returned.
 
 When a test run shows one node wrong, fix that node: `workflow_node_update` shallow-merges
 its `data` (null clears a key) and snapshots the prior version — do not rebuild the workflow.

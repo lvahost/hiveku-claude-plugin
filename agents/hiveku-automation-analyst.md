@@ -60,13 +60,24 @@ The read ladder, in order (every tool below is on the read list):
 - Per-workflow health: `workflow_run_summary({ workflow_id, since })` - `success_rate`, latency
   percentiles, up to 5 recent failures, `last_succeeded_at` / `last_failed_at` /
   `last_failed_run_id`. It caps at 1000 runs per window; narrow `since` rather than quoting a
-  truncated sample. `workflow_runs_list({ workflow_id, status? })` for one workflow's history.
-- The green-run spot check: `workflow_run_get` on `last_failed_run_id` AND on one recent COMPLETED
-  run per workflow. In `step_states`, `degraded` (a node with `on_error: 'continue'` that failed
-  records as completed, plus `original_error` and `on_error_mode`, and the run finishes green - a
-  run whose every action step is degraded reports success and did nothing) and
-  `unresolved_templates` (each `{{...}}` that resolved to nothing with no `||` default, written
-  through as a blank). `workflow_run_logs` for the per-node timeline, capped at 50 lines per node.
+  truncated sample. Its `template_misses` block (`runs_checked` for runs whose every step was
+  checked, `runs_partially_checked` for runs an older engine wrote in part, `runs_with_misses`,
+  `total_misses`, `last_run_id_with_misses`, top `nodes`, over the latest 200 recorded runs) is
+  the blank-merge count: non-zero is a finding even at a 100% `success_rate`, and null means the
+  stats query failed, which is unknown. `workflow_runs_list({ workflow_id, status? })` for one
+  workflow's history, with `unresolved_templates_recorded` and `unresolved_template_count` per
+  run.
+- The green-run spot check: `workflow_run_get` on `last_failed_run_id`, on
+  `template_misses.last_run_id_with_misses`, AND on one recent COMPLETED run per workflow. In
+  `step_states`, `degraded` (a node with `on_error: 'continue'` that failed records as completed,
+  plus `original_error` and `on_error_mode`, and the run finishes green - a run whose every action
+  step is degraded reports success and did nothing) and `unresolved_templates` (each `{{...}}` that
+  resolved to nothing with no `||` default, written through as a blank; `[]` means checked and
+  clean). The run-level `unresolved_template_count` / `unresolved_template_nodes` summarise it,
+  `unresolved_templates_recorded: false` means the run predates recording and proves nothing, and
+  `'partial'` means some steps were never checked (no key on them), so the count is a lower
+  bound: report it as that, never as clean.
+  `workflow_run_logs` for the per-node timeline, capped at 50 lines per node.
   (`workflow_run_status` is the same payload as `workflow_run_get` under an older name.)
 - Schedules: `workflow_get_schedule({ workflow_id })` per scheduled automation. Null means there is
   no scheduled trigger node at all, which on a workflow the client believes is scheduled is a
@@ -128,7 +139,9 @@ automations) | `failed` (reads errored; name them):
    confirmation (`workflow_node_update` with the node and the field, `workflow_edge_add` or
    `workflow_edge_delete` for wiring, `workflow_version_restore` with the monotonic integer
    version, `workflow_set_schedule` with the client's IANA timezone, `workflow_enable` after the
-   operator's yes, then `workflow_resume` followed by `workflow_stranded_replay` with
+   operator's yes, `workflow_trigger_update` for a trigger row's auth, method, path or
+   `is_enabled` after the operator's yes (it is ask-gated; name the URL and every sender a path
+   change breaks), then `workflow_resume` followed by `workflow_stranded_replay` with
    `confirm: true` in batches of 25 or fewer), or the `/hiveku:workflow-debug`,
    `/hiveku:automation-sweep`, or `/hiveku:automate` play that does it, or the dashboard step where
    no tool exists. Any stranded backlog is ranked with the LIST the operator must read, never a

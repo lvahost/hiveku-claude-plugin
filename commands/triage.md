@@ -40,7 +40,10 @@ the work is tracked. They are separate systems joined by a bridge (see the `hive
    against that card's `decision_options`, and by default closes the card. Call it only as the courier for
    a real human choice, and pass `acting_as_user_id` (the `id` field from `crm_list_users`, a public_users
    UUID, NOT `clerk_user_id`). Omit it and the card resolves with `decided_by_user_id: null` and the event
-   log records `agent_relay: true`, which reads in an audit as the agent deciding unilaterally. If another
+   log records `agent_relay: true`, which reads in an audit as the agent deciding unilaterally. When the
+   decider is not a Team Member (`crm_list_users` is empty, or they are not in it), omit
+   `acting_as_user_id` and put their name and their answer in `comment`; never pass another member's id
+   in their place. If another
    user has claimed the card you get 409 `code='claim_held_by_other'`; do not pass `force: true` without
    asking the operator first. Use `also_resolve: false` when the answer unblocks you but the work is not done.
 

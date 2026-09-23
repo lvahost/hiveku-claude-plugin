@@ -851,9 +851,11 @@ The build order is `workflow_node_types_list` to read the node catalog and confi
 type strings plus each node's required `data` fields (it returns the same static catalog for
 every account, so treat it as documentation, not a per-tenant capability check),
 then `workflow_create`, then `workflow_node_add` and `workflow_edge_add` per node and edge,
-then `workflow_run`. `workflow_run` accepts `test_mode: true` for a dry run that returns
-`would_have` payloads instead of writing — but a dry run persists NO run row, so its sync
-response (status, output, error, `run_id: null`) is the whole record. `workflow_run_get`
+then `workflow_run`. `workflow_run` accepts `test_mode: true` (or use `workflow_test`) for
+a dry run that returns `would_have` payloads instead of writing — but a dry run persists NO
+run row, so its sync response is the whole record: status, output, error, `run_id: null`,
+and `data.step_states` with every node's status, its `would_have` (the element payload it
+would have written) and `template_values`, plus `data.not_reached`. `workflow_run_get`
 returns per-node `step_states` with input, output, and error for REAL runs only — pass it
 the `run_id` a wet `workflow_run` returned. Dry-run any board-building workflow first: a
 wet run that misplaces 200 elements is 200 delete calls.
