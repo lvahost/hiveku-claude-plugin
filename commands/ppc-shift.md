@@ -1,5 +1,5 @@
 ---
-description: "\"Move budget from what's wasting to what's working\" / \"shift spend from Meta to Google\" - cross-platform budget reallocation: a zero-net move plan with its data gaps relayed verbatim, donor sanity-checks, then each move applied one confirmed step at a time."
+description: "\"Move budget from what's wasting to what's working\" / \"which platform should get more of the budget?\" - cross-platform budget reallocation: a zero-net move plan with its data gaps relayed verbatim, donor sanity-checks (including what each platform did in the CRM), then each move applied one confirmed step at a time."
 argument-hint: "[optional focus, e.g. a platform or campaign to fund]"
 ---
 Cross-platform budget reallocation ($ARGUMENTS). Follow the **hiveku-ppc-agency** skill; the write
@@ -26,6 +26,19 @@ money moves.
 3. Donor sanity-check, per proposed donor, before presenting anything:
    - Protected and brand campaigns named in account memory are never donors. If the plan drains
      one, strike the move and flag it - protection is not overridden by an efficiency ranking.
+   - What the donor did in the CRM, not only in its own dashboard: `marketing_campaign_roi({
+     attribution: 'any', asset_types: 'ppc_campaign' })` for the same window, then read the
+     donor platform's `platforms[]` entry and every `health[]` item for it. The plan ranks on each
+     platform's OWN conversion count, and platforms credit themselves on their own last-click
+     rules, so a channel that brings people back (retargeting) reads weak there even when it took
+     part in real leads.
+     - `spend_without_matches`: Hiveku could not match ANY lead to this platform, usually because
+       its ads carry no campaign tags Hiveku can read. Its results are unknown, not zero: strike
+       the move, say so in those words, and name the tagging fix.
+     - `touched_contacts` above 0, or a `credited_elsewhere` item: the platform took part in CRM
+       leads its own count under-credits. It is never a donor on platform CPA alone. If the user
+       still wants to cut it after hearing that, the move is a trim of 20% or less with a review
+       in two weeks, never a pause.
    - `ppc_impression_share` (Google; Microsoft via `ppc_bing_impression_share_report`) - a
      campaign losing impression share to BUDGET is a bad donor: it is budget-starved, not
      wasteful, and cutting it deepens the very constraint the plan read as inefficiency.
