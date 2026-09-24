@@ -264,6 +264,8 @@ Put this in `.claude/settings.json` (per project) or `~/.claude/settings.json` (
       "mcp__plugin_hiveku_hk__media_upscale",
       "mcp__plugin_hiveku_hk__marketing_testimonial_media_replace",
       "mcp__plugin_hiveku_hk__marketing_form_upload_settings_update",
+      "mcp__plugin_hiveku_hk__marketing_form_capture_settings_update",
+      "mcp__plugin_hiveku_hk__marketing_form_capture_purge",
       "mcp__plugin_hiveku_hk__social_publish_post",
       "mcp__plugin_hiveku_hk__social_delete_post",
       "mcp__plugin_hiveku_hk__social_comment_reply",
