@@ -107,3 +107,4 @@ Every admin on the account also gets an in-app notification (and email) when a l
   credential-shaped URL: give it to the person who should click it and nobody else.
 - Persist what you learned (which connector uses which client, which connections are the account's
   own app vs Hiveku's) to department memory: `memory_list({ domain })`, append, `memory_update`.
+  If you read that document earlier in the session, check `memory_log_list({ memory_id, since })` first and merge any newer change; pass `reason`, one line on why.
