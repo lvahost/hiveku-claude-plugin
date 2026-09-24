@@ -229,6 +229,25 @@
  *                 site_firewall_allow (one allowance by user-agent token or
  *                 address; returns edge: 'applied' | 'pending'),
  *                 site_firewall_remove (one allowance by exception_id).
+ *
+ *   Account memory program (2026-09-23, notes/memory-pages-audit-2026-09-22/
+ *   memory-ui-and-account-memory-plan.md 2.8-2.9): the business facts every
+ *   department agent reads, owned by the account's owners and admins and
+ *   edited only on the dashboard. The contract is the builder's Olympus routes
+ *   (A3): GET /api/olympus/account-memory and POST
+ *   /api/olympus/account-memory/append. The MCP declarations are
+ *   hiveku-mcp-api-server fix/memory-a6-account-memory-tools (A6); the live
+ *   index regenerates after that deploy, and tool-names.test.mjs then forces
+ *   these entries out. There is no set, replace or delete tool, by design.
+ *   account_memory_append is on the ask list (data/permission-critical-tools.json),
+ *   which is why that file's test accepts it as a PENDING name until the index
+ *   carries it. Spelled in prose by /hiveku:remember, /hiveku:brief and the
+ *   orient skill, which is why account_memory_ is a gated prefix.
+ *     ACCOUNT-MEMORY-1  account_memory_get (read-only: the owner text, the
+ *                       unreviewed suggestions agents read, the injected
+ *                       block), account_memory_append (one suggested line an
+ *                       owner keeps or removes; never edits the owner text).
+ *                       Landed in the live index on 2026-09-24; entries deleted.
  */
 const SEO_SINCE = '2026-08-30';
 const seo = (batch) => ({ since: SEO_SINCE, batch });
@@ -291,4 +310,11 @@ export const PENDING_TOOLS = new Map([
 
   // FIREWALL-1: landed in the live index on 2026-09-18 (MCP abc95f75d +
   // 1b8c1065d deployed; index regenerated at 2070 tools); entries deleted.
+
+  // ACCOUNT-MEMORY-1: landed in the live index on 2026-09-24 (MCP #18 and #21
+  // deployed; index regenerated at 2087 tools); entries deleted.
+
+  // PF: the agent feedback loop's four core tools landed in the live index on
+  // 2026-09-24 (MCP #26, c2cbfb7ee, deployed; index regenerated at 2117 tools);
+  // entries deleted.
 ]);
