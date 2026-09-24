@@ -100,6 +100,13 @@ assignee only to enumerate which tickets to route, and reconcile against that co
 paged (`page` / `limit`): page until a short page comes back and report the count you actually
 enumerated, never a page size.
 
+Website chats come back in this list too (`channel: 'chat'`), including the ones the website
+assistant is answering right now (`ai_handling: true` on the row). Those are not unassigned or
+neglected - leave them out of any "who needs a reply" count. An `ai_handling` filter
+(`'true' | 'false' | 'all'`) works only once the tool's schema lists it; until then it is
+dropped like any invented filter, so split the rows on the field yourself. Details:
+`references/website-chats.md`.
+
 ## helpdesk_ticket_add_message vs helpdesk_ticket_send_reply
 The highest-stakes tool confusion in this domain. `helpdesk_ticket_add_message({ id, body })`
 records an internal note (`direction` defaults to `internal`); `helpdesk_ticket_send_reply({
@@ -110,9 +117,18 @@ NOT, so the ticket keeps showing up in `helpdesk_tickets_overdue` as a first-res
 even though the customer was answered - permanently skewing the SLA attainment number the
 retainer is sold on. Customer-facing text goes through `send_reply`, always. `add_message` also
 defaults `author_kind` to `ai_agent`; pass `author_kind: 'user'` plus `author_id` when logging
-on behalf of a human. Use `'user'`, not `'human'` - an unrecognised value falls back to
-`ai_agent`, and a human reply stored as `ai_agent` is shown to the CUSTOMER as the bot and
-replayed to the model as its own prior turn.
+on behalf of a human. Write `'user'` (`'human'` and `'agent'` are accepted aliases for it) -
+any other unrecognised value falls back to `ai_agent`, and a human reply stored as `ai_agent`
+is shown to the CUSTOMER as the bot.
+
+On a website chat (`channel: 'chat'`), `send_reply` is delivered in the chat window itself and
+TAKES THE CHAT OVER from the website assistant: `ai_handling` flips to false and the assistant
+stops answering that visitor. No tool hands it back (the dashboard's "Hand back to assistant"
+button does). Pass `author_kind: 'user'` with the approving teammate's `author_id` (from
+`crm_list_users`) so it posts as staff, never reply to a chat the assistant is still handling
+unless the user asked for that chat, and confirm `ai_handling: false` when you verify. An
+internal note (`add_message`) neither reaches the visitor nor takes the chat over. Full rules:
+`references/website-chats.md`.
 
 The first-response clock stops only for an outbound message that a human or the AI wrote AND
 that was actually delivered. An auto-acknowledgement never stops it, an internal note never
