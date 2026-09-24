@@ -247,6 +247,7 @@
  *                       unreviewed suggestions agents read, the injected
  *                       block), account_memory_append (one suggested line an
  *                       owner keeps or removes; never edits the owner text).
+ *                       Landed in the live index on 2026-09-24; entries deleted.
  */
 const SEO_SINCE = '2026-08-30';
 const seo = (batch) => ({ since: SEO_SINCE, batch });
@@ -310,7 +311,6 @@ export const PENDING_TOOLS = new Map([
   // FIREWALL-1: landed in the live index on 2026-09-18 (MCP abc95f75d +
   // 1b8c1065d deployed; index regenerated at 2070 tools); entries deleted.
 
-  // ACCOUNT-MEMORY-1: contracted 2026-09-23, waiting for the A6 MCP deploy.
-  ['account_memory_get', { since: '2026-09-23', batch: 'ACCOUNT-MEMORY-1' }],
-  ['account_memory_append', { since: '2026-09-23', batch: 'ACCOUNT-MEMORY-1' }],
+  // ACCOUNT-MEMORY-1: landed in the live index on 2026-09-24 (MCP #18 and #21
+  // deployed; index regenerated at 2087 tools); entries deleted.
 ]);
