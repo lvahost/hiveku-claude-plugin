@@ -199,6 +199,10 @@ const KNOWN_NON_TOOLS = new Map([
   ['voice_call_completed_trigger', 'trigger'],
   ['voice_voicemail_trigger', 'trigger'],
   ['voice_missed_call_trigger', 'trigger'],
+  // A website chat's source_meta.escalation_reason code (the visitor asked for
+  // a person on a Talk live call; hiveku_builder handoff-reasons.ts), named in
+  // the helpdesk skill's website-chats.md list of fixed hand-off codes.
+  ['voice_requested_human', 'code'],
   // Webflow workflow trigger NODE ids (event-triggers.md's webflow row, design
   // p12): graph node types the engine fires from Hiveku's receiver, not tools.
   ['webflow_site_published_trigger', 'trigger'],
