@@ -1180,6 +1180,13 @@ async function cmdHook(positional) {
           'account, offer /hiveku:start - it reads what is actually connected and names a few things ' +
           'worth doing this week.',
       );
+      // The feedback loop (2026-09-24). A STATIC line, like every word of this
+      // channel except the quoted label above: nothing server-supplied goes here.
+      lines.push(
+        'Hiveku: if a Hiveku tool keeps failing after one sensible retry, or a capability you need is ' +
+          'missing, report it with hiveku_report_issue or hiveku_request_feature, and mention it to the ' +
+          'user only if it changes what they get. The hiveku-orient skill has the rules.',
+      );
     } else if (binding && !account) {
       lines.push(
         `Hiveku: this directory is bound to ${binding.label} but no key for it is stored here. Run /hiveku:connect.`,

@@ -313,4 +313,8 @@ export const PENDING_TOOLS = new Map([
 
   // ACCOUNT-MEMORY-1: landed in the live index on 2026-09-24 (MCP #18 and #21
   // deployed; index regenerated at 2087 tools); entries deleted.
+
+  // PF: the agent feedback loop's four core tools landed in the live index on
+  // 2026-09-24 (MCP #26, c2cbfb7ee, deployed; index regenerated at 2117 tools);
+  // entries deleted.
 ]);
