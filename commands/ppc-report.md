@@ -16,12 +16,24 @@ voice, target CPA/ROAS, and protected campaigns.
 3. `ppc_segment_report` - its `dimensions` array replaces a dozen named reports: `dimensions:
    ['hour']` for dayparting, `['day_of_week']` for when in the week, `['device']` for the
    mobile/desktop/tablet split. Pull the two or three cuts that explain this period's story.
+   `ppc_performance_breakdown` (Google or Microsoft, one `params.dimension` per call: location,
+   device, hour_of_day, day_of_week, hour_and_day, landing_page, impression_share) adds the verdict
+   and ranked `findings[]` with evidence levels; platforms are never summed, and a zero-conversion
+   slice under 3x the account CPA is noise, not waste.
 4. `ppc_impression_share` (Google only) - report lost-to-budget and lost-to-rank as two different
    stories with two different fixes: high lost-to-budget means raise the budget (the cheapest
    growth there is); high lost-to-rank means raise bids or fix Quality Score, NOT budget.
 5. `ppc_google_pmax_performance` (Google only) where PMax runs - per-asset-group metrics plus the
    per-channel split the PMax UI hides (Search vs Search Partners vs Display vs YouTube vs Gmail).
-6. Deliverable is BOTH of these, not one:
+6. Cost per REAL lead by campaign: `marketing_channel_roi` for the window (a `month` for a monthly
+   report). Each `channels[].campaigns[]` row sets the platform's own `platform_conversions` beside
+   the real leads (`platform_to_lead_ratio`); the `click_ids` block gives `capture_rate` and
+   `by_platform[].resolution.pending` (above 0: `marketing_click_ids_resolve`, then read again). SAY
+   IT: these campaign figures moved when the click-id attribution deployed on 2026-09-24, so a month
+   before it is not like for like. Targets and stop-loss states: `ppc_goals_get({ evaluate: true })`.
+7. Running or finished campaign experiments: `ppc_experiment_readout`, verdict quoted as returned -
+   `interim_*` until the planned end, never a winner on thin data.
+8. Deliverable is BOTH of these, not one:
    - A short client-readable memo: plain language, the numbers that matter, next tests. Where more
      than one platform appears, the memo states the comparability caveat: a Meta "conversion" is
      not a Google "conversion" - report conversions per platform, blend only spend.
@@ -29,4 +41,4 @@ voice, target CPA/ROAS, and protected campaigns.
      ['overview', 'ppc', 'search_terms', 'calls', 'work_log']`, then `marketing_report_regenerate`
      (the public page renders the stored blob verbatim, so regenerate or the client opens stale
      numbers), then `marketing_report_share_link` for the URL the client opens.
-7. Finish every session of work the same way: persist notable learnings to department memory - read the department's current document with `memory_list({ domain: "<dept>" })`, append your note to the `content` it returns, and send the WHOLE merged document to `memory_update({ memory_id, content })`, which REPLACES it (sending only the new note destroys everything that department had accumulated); use `memory_create({ type: "memory", name: "<dept>", content })` only when no entry exists, and keep `<dept>` to a canonical department name (see hiveku-orient), and reflect the work in Hiveku PM: `pm_projects_list` to find the project (it filters only by `status`; `project_type` is named in its description but is NOT in its schema, so the proxy drops it and you filter the returned list yourself), or `pm_projects_create({ name, project_type })` where project_type is one of seo | ppc | marketing | website | app_dev, then `pm_tasks_create({ project_id, title })` (the field is `title`, not `name`), `pm_tasks_update` as it moves, `pm_tasks_complete({ id, summary })` when the loop is closed. Reopen a task closed too early with `pm_tasks_uncomplete`, never `pm_tasks_update`. A memory_update that destroyed content is recoverable: `memory_list_versions({ memory_id })` lists the snapshots taken before every PUT or DELETE, and `memory_restore_version({ version_id })` restores one (it works for deleted entries too). Hiveku, not this folder, is the source of truth.
+9. Finish every session of work the same way: persist notable learnings to department memory - read the department's current document with `memory_list({ domain: "<dept>" })`, append your note to the `content` it returns, and send the WHOLE merged document to `memory_update({ memory_id, content })`, which REPLACES it (sending only the new note destroys everything that department had accumulated); use `memory_create({ type: "memory", name: "<dept>", content })` only when no entry exists, and keep `<dept>` to a canonical department name (see hiveku-orient), and reflect the work in Hiveku PM: `pm_projects_list` to find the project (it filters only by `status`; `project_type` is named in its description but is NOT in its schema, so the proxy drops it and you filter the returned list yourself), or `pm_projects_create({ name, project_type })` where project_type is one of seo | ppc | marketing | website | app_dev, then `pm_tasks_create({ project_id, title })` (the field is `title`, not `name`), `pm_tasks_update` as it moves, `pm_tasks_complete({ id, summary })` when the loop is closed. Reopen a task closed too early with `pm_tasks_uncomplete`, never `pm_tasks_update`. A memory_update that destroyed content is recoverable: `memory_list_versions({ memory_id })` lists the snapshots taken before every PUT or DELETE, and `memory_restore_version({ version_id })` restores one (it works for deleted entries too). Hiveku, not this folder, is the source of truth.

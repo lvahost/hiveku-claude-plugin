@@ -11,7 +11,10 @@ copy, spend, budget, or targeting, so nothing below is platform data about them.
 1. Own-auction truth first: `ppc_impression_share({ connection_id, days: 30 })`, read per campaign -
    account-wide output blends brand and non-brand into a meaningless average. It gives YOUR search
    impression share and the split between share lost to RANK and lost to BUDGET. Say this where the
-   numbers are quoted: competitor DOMAINS are not obtainable. Auction Insights is a Google Ads
+   numbers are quoted: competitor DOMAINS are not obtainable. For where the rank loss sits,
+   `ppc_performance_breakdown` with `params.dimension: 'impression_share'` and `params.level: 'ad_group'` or
+   `'keyword'` (keyword is Google only; on Microsoft the same call covers campaign and ad group):
+   `RANK_LIMITED` findings name the quality-score read to run next. Auction Insights is a Google Ads
    UI-only report, `ppc_auction_insights` always refuses on every account and every campaign type,
    and the raw lane calls the same implementation, so there is no workaround and no window to
    widen. Lost-to-rank is the honest proxy for "somebody is outranking us"; if the client needs
@@ -44,7 +47,9 @@ copy, spend, budget, or targeting, so nothing below is platform data about them.
    what is ABSENT from their ads (no reviews, no price, no local claim) - the gap is the angle.
 4. Deliverable: a competitor creative brief in the shape /hiveku:ad-refresh step 6 consumes - per
    competitor: offer, hook, format, longevity, evidence URL - then three lines the account can act
-   on (the angle nobody runs, the claim to counter, the format missing from our mix). It is a
+   on (the angle nobody runs, the claim to counter, the format missing from our mix). A claim the
+   account would make in reply has to be in the client's claims record first
+   (`ppc_claims_check({ record_only: true })`; `ppc_claims_set` only with the owner's words). It is a
    report section and a hypothesis, not a bid or budget change (Play 6). Persist it through the
    closer's memory write, with this month's auction-insights domain set, so the next refresh starts
    from it. Deeper work - pricing pages, positioning, a full content audit - routes to

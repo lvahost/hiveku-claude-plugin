@@ -5,9 +5,12 @@ argument-hint: "[optional focus, e.g. a platform or campaign to fund]"
 Cross-platform budget reallocation ($ARGUMENTS). Follow the **hiveku-ppc-agency** skill; the write
 discipline for every budget move is `references/spend-change-discipline.md` and the budget
 economics are `references/bidding-budgets-pacing.md`. Context:
-`account_context_get({ domain: "ppc" })` + `memory_list({ domain: "ppc" })` for the client's
-monthly ceiling and target CPA/ROAS - if no ceiling is on record, STOP and get one before any
-money moves.
+`account_context_get({ domain: "ppc" })` + `memory_list({ domain: "ppc" })` for protected campaigns,
+then `ppc_goals_get({ evaluate: true })` for the client's monthly budget target per connection and
+target CPA / ROAS / cost per lead - the plan works toward those instead of stopping to ask. If a
+ceiling is missing, ask the owner ONCE, record what they state with `ppc_goals_set`
+(`connections[].monthly_budget_target_cents`, the key the plan reads; preview, then `confirm: true` +
+`preview_hash`), and only then move money. Never invent one.
 1. `ppc_digest` first - a stale connection makes every number below it a lie, and a reallocation
    built on stale spend moves money in the wrong direction twice. Its `warnings[]` flags
    connections stale by over 25h: `ppc_sync({ connection_id })` before planning anything.
@@ -42,9 +45,15 @@ money moves.
    - `ppc_impression_share` (Google; Microsoft via `ppc_bing_impression_share_report`) - a
      campaign losing impression share to BUDGET is a bad donor: it is budget-starved, not
      wasteful, and cutting it deepens the very constraint the plan read as inefficiency.
-   - `ppc_segment_report` with `dimensions: ['hour']` - the waste may be dayparting, not the
-     campaign: a campaign that bleeds overnight needs an ad schedule, not a budget cut. Add
-     `['day_of_week']` when the hourly cut is ambiguous.
+   - `ppc_performance_breakdown` with `params.dimension: 'hour_and_day'` (or `ppc_segment_report`
+     `dimensions: ['hour']`) - the waste may be dayparting, not the campaign: a campaign that bleeds
+     overnight needs an ad schedule (`ppc_google_ad_schedule_set` / `ppc_bing_ad_schedule_add`, its
+     own confirmed change), not a budget cut. On a Smart Bidding campaign only `strong` evidence
+     justifies windows, and never a bid modifier.
+   - Recipient check: `ppc_bid_budget_simulate` on each recipient before the money moves - the
+     platform's own marginal cost per extra conversion for the added daily spend, with `calibration`
+     read first (`off` = do not act on the curve). A recipient whose marginal CPA breaks the target
+     is not a recipient. Its `next_step` is a proposal, never something already done.
 4. STOP: present the full move table - from, to, monthly amount, confidence, rationale, and the
    data gaps beneath it. Then apply moves ONE at a time, each via the move's named `apply_with`
    tool: `ppc_budget_update` (google_ads; a shared budget returns `explicitly_shared: true` and

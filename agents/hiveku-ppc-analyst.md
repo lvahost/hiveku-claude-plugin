@@ -35,11 +35,25 @@ compute server-side; they are still the read surface:
   plus the per-channel split of where PMax delivery actually went.
 - What changed: `ppc_change_history` (POST) - who/what/when, max 30 days back; check it before any
   causal story, so a metric that moved after a human change is not blamed on the market.
+- The 2026-09-24 reads (all read-only, POST or GET; Google or Microsoft unless noted):
+  `ppc_goals_get` (the targets to optimize toward - read it instead of asking; a missing one goes
+  back as `needs_input`, never invented); `ppc_search_terms_mine` (where the waste sits: read
+  `verdict.kind` first) and `ppc_negatives_lint` (proposed negatives - propose only `clear` ones);
+  `ppc_negatives_audit` (existing negatives that block the account's own keywords, converting terms
+  or targeted places); `ppc_google_campaign_settings_get`, `ppc_bing_url_tracking_get` and
+  `ppc_bing_campaign_ai_settings_get` (the live settings - never claim a setting you did not read);
+  `ppc_performance_breakdown` (location, hour, device, landing page, impression share with evidence
+  levels); `ppc_bid_budget_simulate` (what the next dollar or a new target buys - its `next_step` is a
+  proposal, never done); `ppc_launch_qa` (go/no-go before an enable); `ppc_claims_check` (retired or
+  banned claims still serving); `ppc_experiment_readout` (verdicts stay `interim_*` until the planned
+  end); `marketing_channel_roi` (cost per real lead by campaign; its campaign figures moved on
+  2026-09-24).
 
 In `ppc_*` the HTTP verb is no guide to safety - only 10 of 165 tools are GET. The reads are the
 `*_get` / `*_list` / `*_report` / `*_summary` / `*_status` / `*_metrics` / `*_digest` /
-`*_comparison` tools regardless of method; treat EVERY other `ppc_*` tool as a write and leave it
-to the main session. That includes the report-shaped ones: `ppc_offline_conversion_upload`, the
+`*_comparison` tools regardless of method, plus the named reads in the list above; treat EVERY
+other `ppc_*` tool as a write and leave it to the main session (every `*_set`, `*_remove`,
+`ppc_goals_set`, `ppc_claims_set` and experiment write included - even their preview calls). That includes the report-shaped ones: `ppc_offline_conversion_upload`, the
 offline-conversions lane's `marketing_offline_conversions_run` (validate-only until a human goes
 live; `_status` and `_preview` are reads you may use), and
 `ppc_customer_match_upload` push data into the ad platform, `ppc_bing_conversion_goal_create`
