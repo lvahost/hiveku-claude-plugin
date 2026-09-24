@@ -40,9 +40,13 @@ Investigate with exactly these tools (all GET):
 - Website chats: the website assistant's live chats are `channel: 'chat'` tickets, and
   `helpdesk_workload` counts them as open/pending work, mostly in the unassigned bucket. Sort
   every chat row with the rule in the skill's `references/website-chats.md` (rows carry no
-  `ai_handling` today, so it is the newest `source_meta` stamp), take the assistant's chats out
-  of the unassigned and backlog numbers, and report them on their own line ("11 chats the
-  assistant is answering"). They are never neglected work or a routing finding.
+  `ai_handling` today, so it is the newest `source_meta` stamp of `escalated_at` /
+  `taken_over_at` / `handed_back_at`: `handed_back_at` newest means the assistant has it; or,
+  with none of the three set, `mode: 'conversational'` means the assistant has it - every fresh
+  assistant chat, which has no stamp at all), take the assistant's chats out of the unassigned
+  and backlog numbers, and report them on their own line ("11 chats the assistant is
+  answering"). They are never neglected work or a routing finding, and a plan never routes,
+  assigns, chases or replies to them.
 - CSAT: `helpdesk_csat_stats` (great/ok/not_great totals, `csat_score` = great/total, per-assignee
   and per-source; scope with `since`) and `helpdesk_csat_list` for the verbatims.
 - Coverage: `helpdesk_macros_list` (usage-sorted) and `helpdesk_macros_get` for a raw body. Do NOT

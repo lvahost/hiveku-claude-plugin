@@ -29,6 +29,26 @@
  *   - the untrusted rule leaned on the fence tags, which the helpdesk server
  *     escapes only in exact case. Trust follows the field, not the tags.
  *
+ * The second review (r1-P / r2-plugin) found more of the same:
+ *
+ *   - "waiting for a person" was the newest visible message, so a Talk live
+ *     hand-off (the voice assistant's "I've let the team know" lands after
+ *     the handoff line) and a Support desk chat (auto_acknowledge lands after
+ *     the visitor's first message) both read as answered. The rule is now the
+ *     re-alert ladder's: no outbound author_kind 'user' since the hand-off;
+ *   - the escalation_reason list had 7 of the builder's 25 fixed codes, so
+ *     the most common one (customer_requested_human) and "out of AI credit"
+ *     (budget:*) read as untrusted free text;
+ *   - a Support desk visitor's typed name and email go on the chat's own
+ *     contact, not into claimed_*;
+ *   - a chat handed back to the assistant stays 'pending', and the pending
+ *     chase in Play 1 and the daily cadence did not leave it out;
+ *   - chat subjects, the contact a chat created and attachment names are
+ *     visitor text too;
+ *   - the analyst missed the no-stamp case (every fresh assistant chat);
+ *   - /hiveku:support-sweep and /hiveku:tickets (another lane) still route,
+ *     chase and reply in general steps, so the skill says its chat rules win.
+ *
  * Each block below pins one of those on every surface that carries it.
  */
 import { test } from 'node:test';
@@ -93,8 +113,150 @@ test('who has the chat: the newest change-of-hands stamp decides, and a hand-bac
   // The old presence-only rule read every handed-back chat as person-owned.
   assert.doesNotMatch(flat(chats), /no `escalated_at` or `taken_over_at` as still with the assistant/);
   // A newest hand_back line is not "waiting for a person".
-  assert.match(chatsWho, /lines `handoff`, `takeover` or `ladder_notice`/);
   assert.match(chatsWho, /newest `hand_back` line means the assistant has the chat again/);
+});
+
+test('waiting for a person: no teammate reply since the hand-off, whatever the voice assistant or an automatic line posted after it', () => {
+  const chatsWho = chatsWhoOf();
+  const chatsListing = chatsListingOf();
+  const chatsReading = chatsReadingOf();
+  const skillChats = skillChatsOf();
+  // alerts/ladder.ts re-alerts until an outbound author_kind 'user' message
+  // is newer than the anchor (escalated_at, or talk_live_requested_at). The old
+  // "newest visible message" test read a Talk live hand-off as answered: the
+  // voice assistant's "I've let the team know" is an outbound ai_agent row
+  // (comms helpdesk_writeback.py, source voice_agent) written after the
+  // handoff line, and a Support desk chat's auto_acknowledge is an outbound
+  // system line written after the visitor's first message.
+  assert.doesNotMatch(flat(chats), /the newest message the visitor can see is the visitor's own/);
+  assert.match(chatsWho, /The newest message in the thread does NOT decide it/);
+  assert.match(chatsWho, /NEWEST of `escalated_at`, `taken_over_at` and `talk_live_requested_at`/);
+  assert.match(chatsWho, /A Support desk chat with none of them has been waiting since it began/);
+  assert.match(chatsWho, /A teammate answer is an outbound message with `author_kind: 'user'`\. Nothing else counts/);
+  assert.match(chatsWho, /the visitor has written \(inbound\) since the newest teammate answer/);
+  for (const skipped of [
+    /`auto_acknowledge`/,
+    /`ladder_notice`/,
+    /a booking confirmation/,
+    /outbound `ai_agent` with `metadata\.source: 'voice_agent'`/,
+    /outbound `ai_agent` with `metadata\.source: 'api'`/,
+  ]) {
+    assert.match(between(chatsWho, 'Skip every other line', 'still waiting'), skipped);
+  }
+  // The Talk live case, spelled out.
+  assert.match(
+    chatsWho,
+    /"I've let the team know, someone will reply here": that is the voice assistant, not a teammate, and the visitor is still waiting/,
+  );
+  // The dashboard does not re-alert these, but the visitor still waits.
+  assert.match(chatsWho, /`left_message`, `away_left_message`, `sms_handoff` or one starting with `callback`/);
+  assert.match(chatsWho, /They still wait for a person, but the answer goes by email, text or phone/);
+  // The list row cannot answer the test.
+  assert.match(chatsListing, /The test needs the thread, so read `helpdesk_ticket_messages` for each of those rows/);
+  // The reading key agrees: an AI's API reply is not a teammate answer, and
+  // the Support desk acknowledgement is an automatic line.
+  assert.match(chatsReading, /`auto_acknowledge` \(the Support desk "we received your message" line\)/);
+  assert.match(chatsReading, /the visitor sees it as the bot's, and it is not a teammate answer/);
+  assert.doesNotMatch(chatsReading, /it is instead a reply the team sent through the API/);
+
+  assert.match(skillChats, /no teammate reply \(outbound `author_kind: 'user'`\) since the newest of `escalated_at` \/ `taken_over_at` \/ `talk_live_requested_at`/);
+  assert.match(skillChats, /the voice assistant's Talk live lines \("I've let the team know"\)/);
+  assert.match(skillChats, /`auto_acknowledge`/);
+  assert.match(skillChats, /are not teammate replies - skip them/);
+});
+
+test('escalation_reason: every fixed code the builder stores is named, and only the assistant\'s own hand-off stores free text', () => {
+  const chatsWho = chatsWhoOf();
+  const skillChats = skillChatsOf();
+  // The EXACT keys of hiveku_builder src/lib/helpdesk/handoff-reasons.ts
+  // (describeHandoffReason), 2026-09-24. A code missing here reads to the
+  // agent as untrusted free text: 'customer_requested_human' is the most
+  // common hand-off and 'escalated' is this tool's own escalate.
+  const EXACT = [
+    'customer_requested_human', 'requested', 'visitor_not_solved', 'no_grounding', 'low_confidence',
+    'session_turn_cap', 'account_daily_cap', 'output_budget_exhausted', 'output_guardrail', 'ai_busy',
+    'ai_off', 'ai_unavailable', 'budget_check_failed', 'timeout', 'unparseable_response', 'max_iterations',
+    'left_message', 'away_left_message', 'sms_handoff', 'talk_live', 'voice_requested_human',
+    'booking_low_time', 'booking_indeterminate', 'agent_requested', 'escalated',
+  ];
+  for (const code of EXACT) assert.ok(chatsWho.includes('`' + code + '`'), `website-chats must name ${code}`);
+  // The prefixes describeHandoffReason matches (ai-reply.ts stores budget:<reason>).
+  assert.match(chatsWho, /any code starting with `budget:`/);
+  assert.match(chatsWho, /any code starting with `provider_`/);
+  assert.match(chatsWho, /any code starting with `callback`/);
+  assert.match(chatsWho, /the assistant is out of AI credit/);
+  assert.match(chatsWho, /\(`helpdesk_ticket_escalate_to_human`, including from here\)/);
+  assert.match(chatsWho, /The one path that stores free text is the assistant's own hand-off tool/);
+  // The old seven-code list called everything else untrusted.
+  assert.doesNotMatch(flat(chats), /usually a fixed code \(`requested`, `no_grounding`/);
+  assert.match(skillChats, /`escalation_reason`, a fixed code on every path but the assistant's own hand-off/);
+});
+
+test('what a visitor typed about themselves is on the chat\'s own contact for a Support desk chat, and unverified wherever it lands', () => {
+  const chatsReading = chatsReadingOf();
+  const skillChats = skillChatsOf();
+  // identifyChatSession (chat-session.ts) puts a typed name/email on the
+  // chat's own new contact and writes claimed_* only when another contact
+  // already owns the address.
+  assert.doesNotMatch(flat(chats), /`claimed_phone` are what the visitor TYPED/);
+  assert.match(chatsReading, /On a Support desk chat, the name, email and phone from the chat form go straight onto the chat's own new contact/);
+  assert.match(chatsReading, /`claimed_name` appear only when the typed address already belonged to another contact/);
+  assert.match(chatsReading, /the name and email on a contact a chat created are the visitor's own words, exactly like `claimed_\*`/);
+  assert.match(chatsReading, /never report a Support desk visitor as having left no email because `claimed_email` is missing/);
+
+  assert.doesNotMatch(flat(skill), /what the visitor typed as their name and email, and any booking are in `source_meta`/);
+  assert.match(skillChats, /What the visitor typed as their name and email is on the chat's own contact/);
+  assert.match(skillChats, /`claimed_\*` appears only if the address already belonged to someone else/);
+  assert.match(skillChats, /unverified visitor input either way/);
+});
+
+test('a chat handed back to the assistant stays pending: the pending chase and close leave it out', () => {
+  // handBackToAssistant leaves the status alone and a hand-off set it to
+  // 'pending', so the assistant's own chats sit in the pending list.
+  const play1Step3 = between(skill, '3. Aging `pending` tickets', '\n4. Context before');
+  const dailyStep4 = between(section(skill, '## Daily cadence'), '4. Follow up aging', ' 5. Update');
+  for (const [name, text] of [
+    ['SKILL.md Play 1 step 3', play1Step3],
+    ['SKILL.md daily cadence step 4', dailyStep4],
+  ]) {
+    assert.match(text, /Leave out every (website )?chat the assistant has/, `${name}: leave the assistant's chats out`);
+    assert.match(text, /handed_back_at/, `${name} must carry the change-of-hands rule inline`);
+    assert.match(text, /'conversational'/, `${name} must name the no-stamp case`);
+    assert.match(text, /stays `pending` while (the assistant answers it|it answers)/, `${name}: say why it is pending`);
+    assert.match(text, /take it over again/, `${name}: say what a follow-up would do`);
+  }
+  assert.match(dailyStep4, /Never chase or close a handed-off website chat whose visitor is waiting/);
+  assert.match(chatsWhoOf(), /a hand-back leaves the status as it was, so a chat the assistant has again is often `pending` too/);
+});
+
+test('untrusted fields: every chat subject, the contact a chat created, and attachment file names', () => {
+  const chatsUntrusted = chatsUntrustedOf();
+  // A Support desk chat's subject is the first 80 characters of the
+  // visitor's first message, returned on every list row.
+  assert.doesNotMatch(chatsUntrusted, /the subject of an assistant chat/);
+  assert.match(chatsUntrusted, /the subject of every chat ticket \(a Support desk chat's subject is the first 80 characters of the visitor's first message/);
+  assert.match(chatsUntrusted, /the name, email and phone on a contact a chat created, and every `claimed_\*` detail/);
+  assert.match(chatsUntrusted, /attachment file names/);
+  assert.match(chatsUntrusted, /an `escalation_reason` that is not one of the codes above/);
+});
+
+test('the support analyst sorts a fresh assistant chat with no stamp as the assistant\'s', () => {
+  const analyst = flat(read(ANALYST));
+  assert.match(analyst, /`handed_back_at` newest means the assistant has it/);
+  assert.match(analyst, /with none of the three set, `mode: 'conversational'` means the assistant has it/);
+  assert.match(analyst, /a plan never routes, assigns, chases or replies to them/);
+});
+
+test('the skill tells the sweep and ticket commands their general steps give way on chat rows', () => {
+  // commands/support-sweep.md and commands/tickets.md are another lane's
+  // files; until they carry the chat rules themselves, the skill they load
+  // says its chat rules win over their steps.
+  const skillChats = skillChatsOf();
+  assert.match(skillChats, /`\/hiveku:support-sweep` and `\/hiveku:tickets`/);
+  assert.match(skillChats, /On every chat row these rules win over those steps: load `references\/website-chats\.md`/);
+  assert.match(skillChats, /skip the chats the assistant has in routing, chasing and closing, and take them out of the workload bucket/);
+  assert.match(skillChats, /never chase or close a handed-off chat whose visitor waits/);
+  assert.match(skillChats, /send a chat reply with `author_kind: 'user'` and the approving teammate's `author_id`/);
 });
 
 test('the rule is written where triage and counting run, not only in the reply reference', () => {
