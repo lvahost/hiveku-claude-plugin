@@ -6,7 +6,7 @@
     "mcp__hiveku__"
   ],
   "plugin_version": "0.26.21",
-  "count": 204,
+  "count": 208,
   "tools": [
     {
       "name": "deploy_site",
@@ -87,6 +87,26 @@
       "name": "account_memory_append",
       "method": "POST",
       "why_gated": "suggests a line for the account memory: until an owner reviews it on the dashboard, every department agent reads it at the start of each conversation (marked as not reviewed), so a wrong or planted line steers every department at once"
+    },
+    {
+      "name": "memory_update",
+      "method": "PATCH",
+      "why_gated": "replaces a department's whole memory document: a partial or stale copy silently erases everything else that department's agents read at the start of each conversation (History keeps the old version, but nobody sees it happen)"
+    },
+    {
+      "name": "memory_delete",
+      "method": "DELETE",
+      "why_gated": "deletes a memory entry: every agent that reads it stops seeing it at once (History keeps a copy to restore)"
+    },
+    {
+      "name": "memory_restore_version",
+      "method": "POST",
+      "why_gated": "puts an older version back over the current one: every change made since that version disappears from what the agents read"
+    },
+    {
+      "name": "memory_bulk_create",
+      "method": "POST",
+      "why_gated": "writes up to 100 memory entries in one call: a bad batch fills department memory with entries every agent reads"
     },
     {
       "name": "content_publish_to_site",
