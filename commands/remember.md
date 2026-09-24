@@ -1,8 +1,33 @@
 ---
-description: Persist what you learned/did into the right Hiveku department memory (source of truth).
+description: Persist what you learned/did into the right Hiveku department memory (source of truth), or suggest a business-wide fact for the account memory.
 argument-hint: "[department] [what you learned]"
 ---
 Record a learning to Hiveku so every department stays in sync.
+
+## A fact about the whole business goes to the account memory
+
+Some facts belong to every department, not one: opening hours, locations, who the key people are,
+standing policies ("Closed on Mondays from November to March"). Those go to the **account memory**,
+the one document every department agent reads at the start of each conversation. You cannot edit
+it: the account's owners and admins write it on the Hiveku dashboard (Account memory), and there is
+no tool that sets, replaces or deletes it. What you can do is suggest one line:
+
+1. Read it first: `account_memory_get()`. If the fact is already in the text or already waiting as
+   a suggestion, stop.
+2. `account_memory_append({ text })` with ONE plain sentence of at most 400 characters. Never
+   secrets, customer personal data, or something only one department needs (that goes in the
+   department memory below).
+3. Tell the person plainly: "I suggested this for the account memory. An owner or admin keeps or
+   removes it on the dashboard under Account memory." (On an account with no owner or admin, the
+   Hiveku team reviews it.) Until then the agents read it marked as not
+   reviewed, and the owner's text wins where they disagree. `duplicate: true` means it was already
+   there; a 409 `account_memory_full` means an owner has to review the waiting suggestions first.
+
+If the person wants to change what the account memory already says, that is an edit on the
+dashboard, not something you can do here. Do not work around it by copying the fact into every
+department's memory, and do not try `memory_create` / `memory_update` on it (they refuse).
+
+Everything else - what one department learned - goes to that department's memory:
 
 1. Pick the department this memory belongs to. The domain is NOT free-form - it decides which agents
    ever see the entry. Hydration filters on `account_ai_memory.department`, which is derived from the

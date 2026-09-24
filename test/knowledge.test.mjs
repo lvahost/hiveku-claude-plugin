@@ -11,9 +11,15 @@ import path from 'node:path';
 import os from 'node:os';
 import { promises as fs } from 'node:fs';
 import { pullKnowledge, knowledgeStatus, departmentOf } from '../lib/knowledge.mjs';
+import { ACCOUNT_MEMORY_SAMPLE } from './account-memory-fixture.mjs';
 
 let server;
 let endpoint;
+/** Every tool name called, so a test can prove nothing was written back. */
+const toolCalls = [];
+/** false: account_memory_get answers like a server that does not have it yet. */
+const accountMemory = { deployed: true };
+const ACCOUNT_ID = '3f2b8c1e-1d2a-4b5c-9e8f-0a1b2c3d4e5f';
 /** Mutable upstream state so tests can simulate remote change/delete. */
 const upstream = {
   memory: [
@@ -42,6 +48,13 @@ before(async () => {
       if (rpc.method === 'notifications/initialized') {
         res.statusCode = 204;
         return res.end();
+      }
+      if (rpc.method === 'tools/call') toolCalls.push(rpc.params.name);
+      if (rpc.method === 'tools/call' && rpc.params.name === 'account_memory_get') {
+        if (!accountMemory.deployed) {
+          return reply({ isError: true, content: [{ type: 'text', text: 'Unknown tool: account_memory_get' }] });
+        }
+        return reply({ content: [{ type: 'text', text: JSON.stringify(ACCOUNT_MEMORY_SAMPLE) }] });
       }
       if (rpc.method === 'tools/call' && rpc.params.name === 'memory_list') {
         const type = rpc.params.arguments?.type;
@@ -149,4 +162,78 @@ test('status before any pull says initialized:false instead of inventing drift',
   const status = await knowledgeStatus(opts);
   assert.equal(status.initialized, false);
   assert.equal(status.in_sync, 0);
+});
+
+/* ── The account memory (plan A7) ──────────────────────────────────────── */
+
+test('knowledge pull writes the read-only account memory copy, and never files it as a department', async () => {
+  const opts = await OPTS();
+  // A server that (wrongly, or from before the builder excluded them) lists
+  // the two account rows as ordinary memory entries.
+  const leaked = [
+    { id: 'a1', name: 'Account memory', domain: 'account', content: 'owner text', version: 7, updated_at: '2026-09-23T00:00:00Z' },
+    { id: 'a2', name: 'Suggestions', domain: 'account-suggestions', content: '{"v":1}', version: 3, updated_at: '2026-09-23T00:00:00Z' },
+  ];
+  upstream.memory.push(...leaked);
+  toolCalls.length = 0;
+  try {
+    const result = await pullKnowledge({ ...opts, accountId: ACCOUNT_ID });
+    assert.equal(result.written, 4, 'the two account rows are not counted as knowledge entries');
+    await assert.rejects(fs.access(path.join(opts.rootDir, 'memory/account')), 'no memory/account/ department folder');
+    await assert.rejects(fs.access(path.join(opts.rootDir, 'memory/account-suggestions')));
+    // Control: an ordinary department entry from the same listing is still filed.
+    await fs.access(path.join(opts.rootDir, 'memory/seo/keyword-strategy.md'));
+
+    const manifest = JSON.parse(await fs.readFile(path.join(opts.rootDir, '.hiveku/knowledge-manifest.json'), 'utf8'));
+    assert.equal(manifest.entries['account'], undefined);
+    assert.equal(manifest.entries['account-suggestions'], undefined);
+
+    assert.equal(result.accountMemory.ok, true);
+    const file = path.join(opts.rootDir, 'hiveku-data/account/ACCOUNT_MEMORY.md');
+    const text = await fs.readFile(file, 'utf8');
+    assert.match(text, /read-only copy of the account memory/);
+    assert.match(text, new RegExp(`https://app\\.hiveku\\.com/${ACCOUNT_ID}/dashboard/memory`));
+    assert.match(text, /Prefers phone calls to email\. \(suggested by MCP \(Claude Code\), 2026-09-24 09:05 UTC\)/);
+    assert.equal((await fs.stat(file)).mode & 0o777, 0o444);
+
+    // Status: the account rows are neither new upstream nor anything else.
+    const status = await knowledgeStatus(opts);
+    for (const bucket of ['new_remote', 'changed_remote', 'deleted_remote', 'locally_modified', 'missing_local']) {
+      assert.ok(!status[bucket].some((k) => k === 'account' || k === 'account-suggestions'), `${bucket}: ${status[bucket]}`);
+    }
+
+    // Read-only: the only non-listing call is the read. Nothing was written back.
+    assert.deepEqual([...new Set(toolCalls)].sort(), ['account_memory_get', 'memory_list']);
+  } finally {
+    upstream.memory.splice(upstream.memory.length - leaked.length, leaked.length);
+  }
+});
+
+test('a manifest that already filed the account rows as a department does not report them as deleted', async () => {
+  const opts = await OPTS();
+  await pullKnowledge(opts);
+  const manifestPath = path.join(opts.rootDir, '.hiveku/knowledge-manifest.json');
+  const manifest = JSON.parse(await fs.readFile(manifestPath, 'utf8'));
+  manifest.entries['account'] = { id: 'a1', type: 'memory', department: 'account', domain: 'account', file: 'memory/account/x.md' };
+  await fs.writeFile(manifestPath, JSON.stringify(manifest), 'utf8');
+
+  const status = await knowledgeStatus(opts);
+  assert.ok(!status.deleted_remote.includes('account'), `deleted_remote: ${status.deleted_remote}`);
+  assert.ok(!status.missing_local.includes('account'));
+  const second = await pullKnowledge(opts);
+  assert.ok(!second.deletedRemote.includes('account'));
+});
+
+test('knowledge pull still succeeds when the account memory tool is not deployed yet', async () => {
+  const opts = await OPTS();
+  accountMemory.deployed = false;
+  try {
+    const result = await pullKnowledge(opts);
+    assert.equal(result.written, 4);
+    assert.equal(result.accountMemory.ok, false);
+    assert.match(result.accountMemory.error, /Unknown tool/);
+    await assert.rejects(fs.access(path.join(opts.rootDir, 'hiveku-data/account/ACCOUNT_MEMORY.md')));
+  } finally {
+    accountMemory.deployed = true;
+  }
 });

@@ -54,12 +54,14 @@ const HELP = `hiveku ${PLUGIN_VERSION} — Hiveku for Claude Code
   unbind [--dir <path>]         Remove this directory's binding
   status [--json] [--dir <path>]
                                 What this directory is bound to, and to what else
-  pull [<dept ...>] [--default | --all | --stale [h] | --dataset <dept:id> | --list]
+  pull [<dept ...> | account] [--default | --all | --stale [h] | --dataset <dept:id> | --list]
                                 Pull department data into hiveku-data/ for the
-                                bound account (local files beat live calls)
-  knowledge [pull|status]       Sync account memory/rules/skills into this
+                                bound account (local files beat live calls), plus
+                                a read-only copy of the account memory
+  knowledge [pull|status]       Sync department memory/rules/skills into this
                                 folder by department (pull), or report drift
-                                (status). Never deletes local files.
+                                (status). Never deletes local files. Pull also
+                                refreshes the read-only account memory copy.
   focus [<departments...>|--clear] [--json]
   env pull <project_id> write .env.local for local dev (values never printed)
   fleet                 read-only portfolio sweep across every connected account
@@ -498,6 +500,7 @@ async function cmdPull(flags, positional) {
     endpoint: HIVEKU_MCP_URL,
     key: account.key,
     argv,
+    accountId: binding.accountId,
     log: (line) => process.stdout.write(line + '\n'),
   });
   if (!result.ok) {
@@ -566,10 +569,14 @@ async function cmdKnowledge(flags, positional) {
     rootDir: binding.dir,
     endpoint: HIVEKU_MCP_URL,
     key: account.key,
+    accountId: binding.accountId,
     log: (line) => process.stdout.write(line + '\n'),
   });
   out(flags.json, result, [
     `Pulled ${result.written} knowledge entr${result.written === 1 ? 'y' : 'ies'} for ${account.label} (by department).`,
+    result.accountMemory?.ok
+      ? `Account memory: ${result.accountMemory.file} (read-only copy; owners and admins edit it on the dashboard).`
+      : `Account memory: not refreshed (${String(result.accountMemory?.error || 'unknown error').slice(0, 160)}).`,
   ]);
 }
 
