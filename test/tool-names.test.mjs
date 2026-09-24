@@ -108,6 +108,14 @@ const GATED_PREFIXES = [
   // the footprint is a handful of tokens in one reference, so a floor would
   // false-fail a rewrite before it caught a broken walk.
   'site_firewall_',
+  // 2026-09-23. The account memory (memory programme A6/A7): two names,
+  // account_memory_get and account_memory_append, that /hiveku:remember,
+  // /hiveku:brief and the orient skill teach, and one of which the ask list
+  // gates. The server deliberately has no set/replace/delete tool, so a
+  // fabricated account_memory_set in prose would teach a session to reach for
+  // an edit path that does not exist; this prefix makes that a failure. No
+  // floor in MIN_CHECKED: the footprint is a handful of tokens.
+  'account_memory_',
 ];
 
 /**
@@ -297,6 +305,9 @@ const KNOWN_NON_TOOLS = new Map([
   // fails (structure-and-conversion.md), named so the operator can tell a
   // vendor failure from a spent cap (402). An error code, not a call.
   ['serp_read_failed', 'error'],
+  // The account-memory append route's 409 code when 40 suggestions are
+  // waiting for an owner (/hiveku:remember names it).
+  ['account_memory_full', 'error'],
 ]);
 
 /**
