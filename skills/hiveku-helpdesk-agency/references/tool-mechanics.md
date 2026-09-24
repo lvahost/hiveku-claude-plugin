@@ -90,6 +90,15 @@ to route; reconcile it against this bucket's count). Assignees whose user record
 this account return `name: null` with the id - report those rows by id, do not drop them.
 Optional `queue_id` scopes every count to one queue.
 
+The counts include website chats the website assistant is answering right now: the tool counts
+every open or pending ticket and does not check who has a chat. Those chats have no assignee, so
+they sit in the unassigned bucket (a chat handed back after a take-over keeps its assignee and
+sits in that person's row). Before you quote the bucket or reconcile a list against it, count
+the open and pending chats with no assignee that the assistant has (`helpdesk_ticket_list({
+channel: 'chat', status })`, paged, sorted by the rule in `references/website-chats.md`),
+subtract them, and report both numbers: "3 unassigned tickets, plus 11 chats the assistant is
+answering". The difference is not a paging error to chase, and never work to route.
+
 ## helpdesk_ticket_list
 Filters: status, priority, channel, `queue_id`, `assigned_to_id`, contact, company. `sort`
 accepts `last_activity` or `created` only. There is NO unassigned filter - an invented
@@ -101,11 +110,15 @@ paged (`page` / `limit`): page until a short page comes back and report the coun
 enumerated, never a page size.
 
 Website chats come back in this list too (`channel: 'chat'`), including the ones the website
-assistant is answering right now (`ai_handling: true` on the row). Those are not unassigned or
-neglected - leave them out of any "who needs a reply" count. An `ai_handling` filter
-(`'true' | 'false' | 'all'`) works only once the tool's schema lists it; until then it is
-dropped like any invented filter, so split the rows on the field yourself. Details:
-`references/website-chats.md`.
+assistant is answering right now. Those are not unassigned or neglected - leave them out of any
+"who needs a reply" or "to route" set. The row does not carry `ai_handling` today (the list
+route does not return it), so decide from `source_meta`: the assistant has the chat when the
+newest of `escalated_at` / `taken_over_at` / `handed_back_at` is `handed_back_at`, or when none
+is set and `mode` is `'conversational'`; any other chat row is a person's. (A hand-back keeps
+the older `taken_over_at`, so its presence alone proves nothing.) Where a row does carry
+`ai_handling`, that field wins. An `ai_handling` filter (`'true' | 'false' | 'all'`) works only
+once the tool's schema lists it; until then it is dropped like any invented filter. Load
+`references/website-chats.md` before you assign, escalate or re-prioritise any chat row.
 
 ## helpdesk_ticket_add_message vs helpdesk_ticket_send_reply
 The highest-stakes tool confusion in this domain. `helpdesk_ticket_add_message({ id, body })`
@@ -121,14 +134,16 @@ on behalf of a human. Write `'user'` (`'human'` and `'agent'` are accepted alias
 any other unrecognised value falls back to `ai_agent`, and a human reply stored as `ai_agent`
 is shown to the CUSTOMER as the bot.
 
-On a website chat (`channel: 'chat'`), `send_reply` is delivered in the chat window itself and
-TAKES THE CHAT OVER from the website assistant: `ai_handling` flips to false and the assistant
-stops answering that visitor. No tool hands it back (the dashboard's "Hand back to assistant"
-button does). Pass `author_kind: 'user'` with the approving teammate's `author_id` (from
-`crm_list_users`) so it posts as staff, never reply to a chat the assistant is still handling
-unless the user asked for that chat, and confirm `ai_handling: false` when you verify. An
-internal note (`add_message`) neither reaches the visitor nor takes the chat over. Full rules:
-`references/website-chats.md`.
+On a website chat (`channel: 'chat'`), `send_reply` is delivered in the chat window itself. On
+a chat the website assistant still has, it also TAKES THE CHAT OVER: `ai_handling` flips to
+false, `source_meta.taken_over_at` is stamped, and the assistant stops answering that visitor.
+No tool hands it back (the dashboard's "Hand back to assistant" button does). On a chat a
+person already has, nothing changes hands and no take-over stamp is written. Pass
+`author_kind: 'user'` with the approving teammate's `author_id` (from `crm_list_users`) so it
+posts as staff, and never reply to a chat the assistant still has unless the user asked for
+that chat. When you verify, check the change of hands only if the assistant had the chat before
+you sent. An internal note (`add_message`) neither reaches the visitor nor takes the chat over.
+Full rules: `references/website-chats.md`.
 
 The first-response clock stops only for an outbound message that a human or the AI wrote AND
 that was actually delivered. An auto-acknowledgement never stops it, an internal note never

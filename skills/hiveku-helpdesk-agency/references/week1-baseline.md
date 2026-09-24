@@ -15,10 +15,13 @@ lifecycle summary in SKILL.md: the 7-step week-1 baseline and the week-2 operati
    group), all whole-table aggregates no page limit can truncate. That one call is the staffing
    map AND the honest unassigned count - do not rebuild it by paging `helpdesk_ticket_list` and
    filtering client-side; the client-side null-assignee filter survives only for enumerating
-   specific tickets later. Then `helpdesk_ticket_list({ status })` once per status (`open`,
-   `pending`) for the actual rows - it is paged (`page` / `limit`), so page until a short page
-   comes back and report the count you actually
-   enumerated, never a page size. Then `helpdesk_tickets_overdue({ kind: 'first_response',
+   specific tickets later. One correction: the bucket also counts the website chats the
+   assistant is answering. Take those out and report them as their own number
+   (`references/website-chats.md`, Listing chats), or the baseline opens with a neglected
+   queue that is really a busy assistant. Then `helpdesk_ticket_list({ status })` once per
+   status (`open`, `pending`) for the actual rows - it is paged (`page` / `limit`), so page
+   until a short page comes back and report the count you actually enumerated, never a page
+   size. Then `helpdesk_tickets_overdue({ kind: 'first_response',
    limit: 500 })` and `({ kind: 'resolve', limit: 500 })` for anything already past SLA - the
    default limit is 100 and a truncated list looks like a healthy queue. The gap between "open"
    and "overdue" is the live starting health; the historical health is `helpdesk_sla_history`
