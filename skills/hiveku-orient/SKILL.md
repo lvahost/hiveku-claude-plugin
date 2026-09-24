@@ -266,6 +266,11 @@ Always read-modify-write:
 2. Append your note to that text.
 3. `memory_update({ memory_id, content })` with the FULL merged document.
 
+`memory_update`, `memory_delete`, `memory_restore_version`, `memory_bulk_create` and
+`account_memory_append` always ask the person first, even when their settings allow every Hiveku
+tool. Before the call, say in one line what will change so the prompt is easy to answer.
+`memory_create` and the reads do not ask.
+
 If no entry exists, `memory_create({ type: 'memory', name: '<dept>', content })`; a 409 means one
 already exists, so go back to step 1 rather than duplicating.
 

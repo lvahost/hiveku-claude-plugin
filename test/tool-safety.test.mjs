@@ -963,3 +963,104 @@ test('this does NOT broaden into a prompt storm over ordinary tools', () => {
   const write = decideForPayload({ tool_name: `${HIVEKU_TOOL_PREFIX}crm_deal_create`, tool_input: {} });
   assert.equal(write, null);
 });
+
+// ── Memory writes always ask (memory-surface gaps G2 + G4, 2026-09-24) ─────
+//
+// Under `allow: ["mcp__plugin_hiveku_hk__*"]` a write the hook says nothing
+// about runs unprompted. memory_update (replaces the whole document) and
+// memory_delete ran that way, and account_memory_append was gated only by an
+// INSTALL.md ask rule that earlier installs never got. These drive
+// decideWithGuardrails, the function `bin/hiveku hook pre-tool-use` calls.
+import { ALWAYS_ASK_WRITES } from '../lib/tool-safety.mjs';
+
+const MEMORY_WRITES_THAT_ASK = [
+  'account_memory_append',
+  'memory_bulk_create',
+  'memory_delete',
+  'memory_restore_version',
+  'memory_update',
+];
+
+test('the always-ask memory set is exactly the five whole-document, delete, restore, bulk and account writes', () => {
+  assert.deepEqual([...ALWAYS_ASK_WRITES.keys()].sort(), MEMORY_WRITES_THAT_ASK);
+});
+
+test('every memory write on the set ASKS on a direct call with no guardrails file', () => {
+  const cwd = folderWith(undefined);
+  for (const name of MEMORY_WRITES_THAT_ASK) {
+    const r = decideWithGuardrails({ ...payload(name, cwd), tool_input: { memory_id: 'x', content: 'y' } });
+    assert.equal(decision(r), 'ask', `${name} must ask; silence resolves to the blanket allow`);
+    const why = r.hookSpecificOutput.permissionDecisionReason;
+    assert.match(why, new RegExp(`^${name} `), `${name}: the prompt must name the tool`);
+    assert.match(why, /even when your settings allow all Hiveku tools/);
+    assert.ok(!/BILLS THIS ACCOUNT|RESPONSE is the hazard/.test(why), `${name}: shown a read's reason`);
+  }
+});
+
+test('memory_update asks with the whole-document reason, not a generic one', () => {
+  const r = decideForPayload({ tool_name: `${HIVEKU_TOOL_PREFIX}memory_update`, tool_input: {} });
+  assert.equal(r?.hookSpecificOutput?.permissionDecision, 'ask');
+  assert.match(r.hookSpecificOutput.permissionDecisionReason, /replaces a whole department memory document/);
+});
+
+test('NEGATIVE CONTROL: memory_create and ordinary writes stay silent, memory reads stay pre-approved', () => {
+  // memory_create is deliberately not on the set: it only makes a new entry.
+  const cwd = folderWith(undefined);
+  assert.equal(decideWithGuardrails(payload('memory_create', cwd)), null);
+  assert.equal(decideWithGuardrails(payload('crm_deal_create', cwd)), null);
+  assert.equal(decideWithGuardrails(payload('onboarding_write_department_memory', cwd)), null);
+  for (const read of ['memory_get', 'memory_list', 'memory_list_versions']) {
+    assert.equal(decision(decideWithGuardrails(payload(read, cwd))), 'allow', `${read} must stay pre-approved`);
+  }
+});
+
+test('the set is case-insensitive and does not reach another server\'s tool of the same name', () => {
+  assert.equal(
+    decideForPayload({ tool_name: `${HIVEKU_TOOL_PREFIX}Memory_Update`, tool_input: {} })
+      ?.hookSpecificOutput?.permissionDecision,
+    'ask',
+  );
+  assert.equal(decideForPayload({ tool_name: 'mcp__other__memory_update', tool_input: {} }), null);
+});
+
+test('a batch carrying a memory write asks, and a batch of memory reads is still allowed', () => {
+  const cwd = folderWith(undefined);
+  const mixed = decideWithGuardrails(batch([
+    { tool: 'memory_get', args: { memory_id: 'x' } },
+    { tool: 'memory_update', args: { memory_id: 'x', content: 'y' } },
+  ], cwd));
+  assert.equal(decision(mixed), 'ask');
+  assert.match(mixed.hookSpecificOutput.permissionDecisionReason, /memory_update/);
+  const reads = decideWithGuardrails(batch([
+    { tool: 'memory_get', args: { memory_id: 'x' } },
+    { tool: 'memory_list', args: {} },
+  ], cwd));
+  assert.equal(decision(reads), 'allow');
+});
+
+test('a reads-only folder still DENIES a memory write rather than merely asking', () => {
+  const cwd = folderWith({ version: 1, mode: 'reads-only' });
+  for (const name of MEMORY_WRITES_THAT_ASK) {
+    assert.equal(decision(decideWithGuardrails(payload(name, cwd))), 'deny', `${name} under reads-only`);
+  }
+});
+
+test('a mis-generated read list cannot pre-approve a memory write', () => {
+  // isAutoApprovable refuses the names outright, independent of the read list.
+  for (const name of MEMORY_WRITES_THAT_ASK) {
+    assert.equal(isAutoApprovable(name, {}), false, name);
+    assert.equal(isReadOnlyTool(name), false, `${name} must not be on the generated read list`);
+  }
+});
+
+test('every always-ask name is a real, non-GET tool (a typo gates nothing)', () => {
+  const index = new Map(
+    JSON.parse(readFileSync(new URL('../lib/tool-index.json', import.meta.url), 'utf8'))
+      .tools.map((t) => [t.name, t.method]),
+  );
+  for (const name of ALWAYS_ASK_WRITES.keys()) {
+    assert.ok(index.has(name) || PENDING_TOOLS.has(name), `${name} exists neither in the index nor PENDING_TOOLS`);
+    if (index.has(name)) assert.notEqual(index.get(name), 'GET', `${name} is a GET; gate a read elsewhere`);
+    assert.ok(ALWAYS_ASK_WRITES.get(name).length > 40, `${name} must say why it asks`);
+  }
+});
