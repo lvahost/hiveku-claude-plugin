@@ -9,8 +9,11 @@ triage, 18 thresholds). Doctrine, 11.4 verbatim: "Rebrief, do not rebid; the wri
 loop is new creative, not a budget cut." Production lands through the **hiveku-creative-agency** skill.
 1. Context: `account_context_get({ domain: "ppc" })` + `memory_list({ domain: "ppc" })` for target
    CPA/ROAS per platform, protected and brand campaigns (nothing inside one is created, paused, or
-   enabled from here - surface it and stop), prohibited phrases from past disapprovals, cleared
-   offer claims. `ppc_connection_list` for each platform's connection_id; `ppc_digest` for
+   enabled from here - surface it and stop), prohibited phrases from past disapprovals. The claims
+   record: `ppc_claims_check({ record_only: true })` - `usable_now` is the only list of approved and
+   banned claims copy may be written from; an empty record means asking the owner and storing their
+   words with `ppc_claims_set` (preview, then `confirm: true` + `preview_hash`), never inventing a
+   claim or a contract number. `ppc_connection_list` for each platform's connection_id; `ppc_digest` for
    staleness - a connection stale past 25h gets `ppc_sync({ connection_id })` before any read.
 2. Not-a-creative-problem gate, before any ad is condemned (paid-social section 4 ladder: delivery,
    measurement, audience, creative, offer - stop at the first failing rung):
@@ -69,8 +72,8 @@ loop is new creative, not a budget cut." Production lands through the **hiveku-c
    Reels/TikTok, 1:1 or 4:5 feed, 1.91:1 link card, RSA 30/90/15 character limits). Draft copy
    through `talk_to_department({ domain: "ppc", message })` - the domain the sibling plays use for
    ad copy (ads-assets-quality Play 2, paid-social Play 12) - stating bucket, retired angle, limits,
-   and memory's prohibited phrases; the return is a starting inventory edited against the standard,
-   never pasted through. Visual direction goes to `{ domain: "branding" }` - there is NO `creative`
+   memory's prohibited phrases, and the approved and banned claims from `usable_now`; the return is a
+   starting inventory edited against the standard and the claims record, never pasted through. Visual direction goes to `{ domain: "branding" }` - there is NO `creative`
    domain; an unlisted value is a server-side rejection.
 7. Production handoff, on the creative skill's ladder (reuse before generating):
    - Images: /hiveku:media - `generate_image_set` (up to 10 prompts sharing one brand context,
@@ -89,13 +92,22 @@ loop is new creative, not a budget cut." Production lands through the **hiveku-c
    - Google: `ppc_responsive_search_ad_create({ connection_id, ad_group_id, headlines,
      descriptions, final_url, path1?, path2?, pinned_headlines? })` - one ad per call, one
      confirmation per ad, meeting the step 3 standard (count characters first: one over-length
-     string fails the whole call). It ALWAYS creates PAUSED. Enabling is a separate write with its
+     string fails the whole call). It ALWAYS creates PAUSED. Before the enable,
+     `ppc_claims_check({ connection_id, campaign_id, include_paused: true })` on the campaign (the
+     new ad is paused, and without `include_paused` the check reads serving text only) - the new
+     copy, Google's auto-created text and the landing page against the record; a violation is fixed
+     first, with the tools its `fix[]` names, in order. Enabling is a separate write with its
      own yes after the human previews the ad in the dashboard: `ppc_enable_resource({
      connection_id, resource_type: "ad", resource_id, ad_group_id })`. Do not pause the incumbent
      in the same breath: run Play 3 (two RSAs on one axis, ~100 clicks AND ~10 conversions per
      variant or two full weeks, a 15% cost-per-conversion delta to call it), then pause the loser
      with its own confirmation. Microsoft parity: `ppc_platform_responsive_search_ad_create`
-     (3+ headlines, 2+ descriptions, also PAUSED).
+     (3+ headlines, 2+ descriptions, also PAUSED); Microsoft ads cannot be edited in place, so a
+     copy fix there is always new ad plus pause. A refreshed ad is undone by the platform writing
+     its own text when text customization is on: read `automation` in
+     `ppc_google_campaign_settings_get` (Microsoft: `ppc_bing_campaign_ai_settings_get`) and offer
+     `auto_generated_text: false` through `ppc_google_campaign_ai_settings_set` /
+     `ppc_bing_campaign_ai_settings_set`, each with its own yes.
    - Meta: `ppc_meta_media_upload` (asset-only, spends nothing), `ppc_meta_adcreative_create` (a
      creative alone spends nothing), `ppc_meta_ad_create` (ALWAYS created PAUSED, no status
      parameter exists; serves only once ad, ad set, and campaign are enabled via

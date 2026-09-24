@@ -38,6 +38,14 @@ then `memory_list` for consent posture, protected campaigns, and the approval th
    `ppc_custom_audience_create` (populates in hours to days - do not judge it on day one), and
    `ppc_audience_attach` RESTRICTS serving to members - observation mode is
    `ppc_bid_modifier_update` at 1.0, and the reach tradeoff gets its own STOP and confirmation.
+   **Exclusions** (existing customers and recent converters out of prospecting - usually the
+   highest-value audience move): `ppc_google_audience_exclusions_set({ connection_id, params: {
+   campaign_id | ad_group_id, add_audience_resource_names } })`, preview-first. STOP on the preview's
+   `before` / `after`, then the same call with `confirm: true` and `params.expected_preview_hash`.
+   Removing an exclusion (`remove_criterion_resource_names`) WIDENS reach: its own STOP. Campaign
+   exclusions read back in `ppc_google_campaign_settings_get` (`audience_exclusions`). Microsoft:
+   `ppc_bing_audience_criterion_add` with `exclude: true` - no preview, it writes on the first call,
+   so STOP for the yes before calling it.
 4. **Customer Match** - only when the user brings a list, never invented. Consent comes FIRST and
    OUT LOUD: ask the user to state the lawful basis and to confirm consent for both `ad_user_data`
    and `ad_personalization` before step one; record the answer in memory. Only then the contract
@@ -47,15 +55,25 @@ then `memory_list` for consent posture, protected campaigns, and the approval th
      entry. The normalize-THEN-hash rules (lowercase+trim email, E.164 phone, hex lowercase) are
      in `references/audiences-and-remarketing.md` Play 4 - follow them or the match rate craters.
    - The target user_list must already EXIST - get `user_list_id` from `ppc_google_user_lists`
-     `user-lists-list`. Creating a customer-match container list is an Ads UI Audience Manager
-     action, not a tool call on this surface - say so honestly instead of improvising one. Submit
-     5,000+ records to clear the 1,000-matched serve floor reliably (reference section 8).
+     `user-lists-list`; a missing tier is created with `ppc_audience_ops({ connection_id,
+     operation: 'create', params: { name } })` on the Google connection (a
+     `google_customer_match_not_eligible` refusal is the owner's or Google's to resolve, never a
+     reconnect). Submit 5,000+ records to clear the 1,000-matched serve floor reliably (reference
+     section 8).
+   - It uploads through Google's Data Manager API. Prove the path first with the same call and
+     `validate_only: true` (adds nobody, no confirm). On `google_ads_needs_reconnect` mint the link
+     right away with `integration_connect_link_create` and `needs_reconnect.next_call.arguments`,
+     hand it to whoever manages the ads with `needs_reconnect.tell_the_owner`, poll
+     `integration_connect_link_status`, then re-run - never send them to the Hiveku dashboard (on a
+     marketing-ads key those two tools are not visible: a full-key session runs
+     `/hiveku:connect-integration`). `google_ads_needs_setup` is not a reconnect: it names who fixes what.
    - It is a TWO-STEP CONFIRM: the first call (without `confirm`) uploads NOTHING and returns a
      dry-run preview with `requires_confirm: true`. STOP - show the user the preview counts, and
      only on their explicit yes repeat the IDENTICAL call with `confirm: true`.
-   - A 200 is not success: report accepted vs submitted from the response, and verify list sizes
-     only at 24-48 hours - a zero right after upload means nothing.
-5. **Everything not doable from here** (a new CM container list, Meta lookalike or custom-audience
+   - A 200 is not success: report accepted vs submitted from the response, keep the `request_ids`,
+     read Google's verdict with `ppc_google_upload_diagnostics` (30 minutes to 24 hours later), and
+     verify list sizes only at 24-48 hours - a zero right after upload means nothing.
+5. **Everything not doable from here** (Meta lookalike or custom-audience
    nuances - separate tools and minimums per `references/paid-social-and-bing.md` - or a consent
    question for legal): one `pm_tasks_create` per item. Present the task list and confirm before
    creating any.

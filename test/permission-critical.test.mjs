@@ -98,6 +98,12 @@ const REEXEC_NOT_GATED = new Map([
     're-ARMS rows so a LATER run uploads them; this call itself dispatches nothing, and it 409s ' +
     'until a human takes the account live in the dashboard. The tool that actually sends is ' +
     'marketing_offline_conversions_run — gate that one, not this one'],
+  ['ppc_bid_budget_simulate',
+    'matches only on "SIMULATIONS REPLAY THE PAST WINDOW", which describes how Google computes a ' +
+    'simulation, not an action: the tool is a read (readOnlyHint, action read), POST only to carry ' +
+    'its params. The builder route refuses a top-level confirm and params.apply / params.confirm ' +
+    'with 400, both Python lanes only query simulation, recommendation and Ad Insight endpoints, ' +
+    'and its proposed next_step is never applied: nothing is sent, changed or spent'],
   ['project_domain_retry_certificate',
     'requests a fresh SSL cert after a FAILED issuance. Nothing is sent to anyone and no live ' +
     'cert is touched; the usual outcome of a careless call is that it fails again identically ' +
