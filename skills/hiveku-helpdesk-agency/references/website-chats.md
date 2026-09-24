@@ -49,9 +49,10 @@ asks you to step in. Reading it is fine.
 assistant (a Support desk chat).
 
 A chat is **waiting for a person** when a person has it, its status is `open` or `pending`, and
-no teammate has answered since the visitor last needed one. It matches the dashboard's own
+no teammate has answered since the visitor last needed one. It follows the dashboard's own
 re-alerts, which keep alerting the team until a teammate replies, whatever else is posted in the
-chat. The newest message in the thread does NOT decide it.
+chat (and it also counts a visitor who wrote again after a teammate's answer, which the re-alerts
+do not). The newest message in the thread does NOT decide it.
 - Start from the NEWEST of `escalated_at`, `taken_over_at` and `talk_live_requested_at` (a
   visitor already with a person who asked for one again on a Talk live call). A Support desk
   chat with none of them has been waiting since it began.
@@ -87,9 +88,11 @@ The change-of-hands record lives in `source_meta`:
     office hours), `sms_handoff` (moved to text), and any code starting with `callback` (asked
     for a call back, for example `callback_requested:sales`).
   - The assistant could not answer: `no_grounding`, `low_confidence`, `output_guardrail` (a
-    safety check held its answer back), `booking_low_time` and `booking_indeterminate` (a
-    booking could not be finished or confirmed), `agent_requested` (it passed the chat on
-    without a reason).
+    safety check held its answer back), `unverified_booking_claim` (its answer said a meeting
+    was booked when none was, so the answer was held back), `booking_low_time` and
+    `booking_indeterminate` (a booking could not be finished or confirmed), `agent_requested`
+    (it passed the chat on without a reason). The dashboard shows `unverified_booking_claim` only
+    as "The assistant passed the chat to the team", but it is a fixed code too.
   - Out of AI credit: any code starting with `budget:` (for example `budget:exhausted`). A run of
     these is an account problem to report ("the assistant is out of AI credit"), not a run of
     ordinary hand-offs.
@@ -160,9 +163,10 @@ More on the thread:
 - What the visitor typed about themselves is unverified wherever it lands:
   - On a Support desk chat, the name, email and phone from the chat form go straight onto the
     chat's own new contact (the ticket's `crm_contact_id`), and `source_meta` has no `claimed_*`
-    keys. `source_meta.claimed_email` and `claimed_name` appear only when the typed address
-    already belonged to another contact: the chat is then NOT put on that contact, and an
-    internal note says so.
+    keys for them. `source_meta.claimed_email` and `claimed_name` appear only when the typed
+    address already belonged to another contact (the chat is then NOT put on that contact, and
+    an internal note says so) or when the visitor typed different details again later in the
+    same chat.
   - Details a visitor gives at or after a hand-off are kept in `source_meta.claimed_name` /
     `claimed_email` / `claimed_phone`, and also filled onto the chat's own contact while it is
     still anonymous.

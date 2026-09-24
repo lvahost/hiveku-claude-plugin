@@ -130,6 +130,10 @@ test('waiting for a person: no teammate reply since the hand-off, whatever the v
   // system line written after the visitor's first message.
   assert.doesNotMatch(flat(chats), /the newest message the visitor can see is the visitor's own/);
   assert.match(chatsWho, /The newest message in the thread does NOT decide it/);
+  // The skill's rule is the ladder's plus one case the ladder does not
+  // re-alert; the prose must not claim they are identical.
+  assert.doesNotMatch(chatsWho, /It matches the dashboard's own re-alerts/);
+  assert.match(chatsWho, /a visitor who wrote again after a teammate's answer, which the re-alerts do not/);
   assert.match(chatsWho, /NEWEST of `escalated_at`, `taken_over_at` and `talk_live_requested_at`/);
   assert.match(chatsWho, /A Support desk chat with none of them has been waiting since it began/);
   assert.match(chatsWho, /A teammate answer is an outbound message with `author_kind: 'user'`\. Nothing else counts/);
@@ -180,6 +184,11 @@ test('escalation_reason: every fixed code the builder stores is named, and only 
     'booking_low_time', 'booking_indeterminate', 'agent_requested', 'escalated',
   ];
   for (const code of EXACT) assert.ok(chatsWho.includes('`' + code + '`'), `website-chats must name ${code}`);
+  // A fixed code ai-reply.ts stores (the reply claimed a booking that never
+  // happened) that describeHandoffReason does not list: without it here the
+  // agent would read it as the assistant's steerable free text.
+  assert.ok(chatsWho.includes('`unverified_booking_claim`'), 'website-chats must name unverified_booking_claim');
+  assert.match(chatsWho, /`unverified_booking_claim` only as "The assistant passed the chat to the team", but it is a fixed code too/);
   // The prefixes describeHandoffReason matches (ai-reply.ts stores budget:<reason>).
   assert.match(chatsWho, /any code starting with `budget:`/);
   assert.match(chatsWho, /any code starting with `provider_`/);
@@ -201,6 +210,9 @@ test('what a visitor typed about themselves is on the chat\'s own contact for a 
   assert.doesNotMatch(flat(chats), /`claimed_phone` are what the visitor TYPED/);
   assert.match(chatsReading, /On a Support desk chat, the name, email and phone from the chat form go straight onto the chat's own new contact/);
   assert.match(chatsReading, /`claimed_name` appear only when the typed address already belonged to another contact/);
+  // A second identify on a chat that already has its ticket keeps the new
+  // details as a claim on the ticket (chat-session.ts), never moves the chat.
+  assert.match(chatsReading, /or when the visitor typed different details again later in the same chat/);
   assert.match(chatsReading, /the name and email on a contact a chat created are the visitor's own words, exactly like `claimed_\*`/);
   assert.match(chatsReading, /never report a Support desk visitor as having left no email because `claimed_email` is missing/);
 
