@@ -41,3 +41,10 @@ To change knowledge, use the live memory_* MCP tools, then `knowledge pull` to b
   entries too) then `memory_restore_version({ version_id })`.
 
 Editing the local mirror changes nothing upstream, and a re-pull overwrites it.
+
+**The account memory is not a department and is not in `memory/`.** `knowledge pull` also writes
+it as the read-only `hiveku-data/account/ACCOUNT_MEMORY.md` (the same file `/hiveku:pull` writes):
+the owner's text, then the agent suggestions not reviewed yet, each with who suggested it and when.
+Owners and admins edit it on the Hiveku dashboard at the link in the file's header; there is no
+tool that sets it, and the memory_* tools refuse it. The only write is `account_memory_append`,
+which suggests one line for an owner to review. Nothing uploads the local file.

@@ -286,7 +286,9 @@ dashboard (Account memory). `memory_list` does not show it, and `memory_create` 
 `account_context_get`). The only write is `account_memory_append({ text })`, which SUGGESTS one
 line for an owner to keep or remove and never changes the owner's text (it is on the ask list).
 There is no set or replace tool. When the user wants what it says changed, tell them it is edited
-on the dashboard.
+on the dashboard. `/hiveku:pull` and `/hiveku:knowledge` keep a read-only copy at
+`hiveku-data/account/ACCOUNT_MEMORY.md` whose header links the dashboard page; editing that file
+changes nothing.
 
 **Deleting memory.** `memory_delete` removes one entry by UUID; the entry is snapshotted into
 version history before deletion (`changed_by: "olympus_agent_delete"`), so it remains recoverable.
