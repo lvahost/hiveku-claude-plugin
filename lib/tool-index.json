@@ -4501,7 +4501,7 @@
     {
       "name": "helpdesk_assistant_knowledge_status",
       "dept": "helpdesk",
-      "method": null,
+      "method": "GET",
       "timeoutMs": null,
       "description": "What the website chat assistant (the chat on the account's own website) can answer from right now, and why it may not answer something. Read-only, no inputs. USE IT whenever the user asks what the website chat assistant knows, why it could not answer a question or handed a chat to a person, whether their website was read, or how to make the assistant answer more. Returns assistant_enabled; then per source: help_articles.published (published help articles); saved_answers (usable, and waiting_for_placeholders: saved answers that cannot be used until their placeholders are filled in); reference_info.entries (the owner's reference facts); business_info (Google Business Profile: enabled, connected, last_synced_at); website_pages (enabled, pages read, and each website address with status read | skipped | never_read, the reason it was skipped, last_read_at, plus next_read_at); documents (enabled, and the knowledge bases the owner chose to share with it, with page counts); unanswered_last_30_days (visitor questions it could not answer); and advice (plain next steps for the owner). TELL THE USER in plain words, not field names or JSON: which sources are on and which are off, what was read from the website and when, which website addresses were skipped and why, how many questions went unanswered, and what to do about it. Pass on every advice line. Never guess at a reason the result does not give."
     },
