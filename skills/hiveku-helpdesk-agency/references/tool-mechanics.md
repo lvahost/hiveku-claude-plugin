@@ -164,7 +164,10 @@ recording a reply nobody receives.
 `helpdesk_ticket_merge({ id, merge_into_id })` is hard to unwind - `id` is the SOURCE and gets
 closed, `merge_into_id` is the TARGET that receives the messages. Get them backwards and you
 close the wrong ticket. Confirm the two really are one issue and one customer, and confirm which
-one survives, before merging.
+one survives, before merging. The route does not check who has a website chat, so never merge a
+chat with `ai_handling: true`, as the source or the target: the source is closed while the
+assistant is still answering it, and a thread merged into it lands under "AI chats", out of the
+team's inbox.
 
 A system note is written on BOTH threads recording the merge, and the response returns
 `messages_moved` plus `messages_deduplicated` - two tickets ingested from the same email thread

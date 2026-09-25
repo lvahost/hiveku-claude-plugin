@@ -66,6 +66,32 @@
  *     unanswered questions, advice). A site on a Hiveku-named host is a
  *     website source like any other.
  *
+ * The review of round 3 (r1-P / r2 plugins) found five more gaps, each pinned
+ * by a block at the end of this file:
+ *
+ *   - "a website not in hosts[] is not a connected, verified production
+ *     domain" was wrong twice: planAccountSiteHosts reads at most
+ *     SITE_INDEX_MAX_HOSTS (5) addresses and lists the rest as skipped, and
+ *     round 3 reads the Hiveku address of a site published without a custom
+ *     domain, which is no connected domain at all. A read host can also carry
+ *     a reason (the last read had trouble; the older pages still answer);
+ *   - the Hiveku-named-address rule read as true on every server, while an
+ *     older builder skips those hosts, and the fallback for a missing tool
+ *     sent the agent back to that promise;
+ *   - the knowledge route answers 403 key_creator_lacks_access to a key whose
+ *     creator has no helpdesk access, and the fallback read every failure as a
+ *     missing tool;
+ *   - merge was missing from every "leave the assistant's chat alone" list,
+ *     and the merge route does not check ai_handling, so a sweep could close a
+ *     live assistant chat or bury an email under "AI chats";
+ *   - "an internal note (add_message) never reaches the visitor" held only for
+ *     the default direction: an outbound add_message on a chat posts to the
+ *     visitor and takes the chat over;
+ *   - helpdesk_assistant_knowledge_status is not in lib/tool-index.json until
+ *     the index is regenerated after the MCP deploy, and helpdesk_ is not a
+ *     gated prefix, so nothing tied the new name to the index or the pending
+ *     bridge.
+ *
  * Each block below pins one of those on every surface that carries it.
  */
 import { test } from 'node:test';
@@ -312,9 +338,9 @@ test('the rule is written where triage and counting run, not only in the reply r
   }
   // Loading the reference is required before routing a chat, not only before a reply.
   assert.match(play1Step2, /load `references\/website-chats\.md` before you prioritise, assign or escalate/);
-  assert.match(skillChats, /before listing, triaging, assigning, escalating, re-prioritising, closing or replying to any chat/);
+  assert.match(skillChats, /before listing, triaging, assigning, escalating, re-prioritising, merging, closing or replying to any chat/);
   assert.match(mechList, /Load `references\/website-chats\.md` before you assign, escalate or re-prioritise any chat row/);
-  assert.match(flat(chats.slice(0, 600)), /triaging, assigning, escalating, re-prioritising, closing or replying/);
+  assert.match(flat(chats.slice(0, 600)), /triaging, assigning, escalating, re-prioritising, merging, closing or replying/);
 });
 
 test('after a reply, the take-over is checked only when the assistant had the chat', () => {
@@ -551,7 +577,7 @@ test('every surface tells the user plainly, quotes the advice, and never promise
 
   // The hub carries the essentials inline and names the reference.
   const skillChats = skillChatsOf();
-  assert.match(skillChats, /What the assistant answers from: published help articles, saved answers marked for it, Reference info, the Google Business Profile, the business's own website pages \(a site on a Hiveku-named address included\) and the documents the owner chose/);
+  assert.match(skillChats, /What the assistant answers from: published help articles, saved answers marked for it, Reference info, the Google Business Profile, the business's own website pages \(a site on a Hiveku-named address included, on current servers\) and the documents the owner chose/);
   assert.match(skillChats, /`helpdesk_assistant_knowledge_status` shows which sources are on, what was read from the website and when, what was skipped and why/);
   assert.match(skillChats, /Tell the user plainly, quote the `advice`, and never invent a tool to change a source/);
   assert.match(skillChats, /`references\/assistant-knowledge\.md`/);
@@ -565,4 +591,94 @@ test('every surface tells the user plainly, quotes the advice, and never promise
   assert.match(analyst, /`helpdesk_assistant_knowledge_status` \(no arguments\)/);
   assert.match(analyst, /never something to switch from here/);
   assert.match(analyst, /If the tool is not there \(an older server\), say so rather than guessing/);
+});
+
+test('which websites are read: the 5-address cap, the Hiveku address of a published site, and every skipped reason', () => {
+  const status = section(readIf(KNOW), '## Check before you explain: `helpdesk_assistant_knowledge_status`');
+  // The old sentence sent an owner whose 6th domain was over the cap, or whose
+  // site lives on its Hiveku address, to reconnect a domain.
+  assert.doesNotMatch(status, /connected, verified and in production\)\. Only those are read/);
+  assert.match(status, /each verified, active custom domain the account has in production, and the Hiveku-named address of a site published without a custom domain/);
+  assert.match(status, /At most 5 of them are read: one past that is on the account but not read, and shows in `hosts\[\]` as `skipped` with a reason saying only the first 5 addresses are read/);
+  assert.match(status, /a domain not verified yet, a test or preview address, a site that belongs to another account\) is also `skipped` with its reason/);
+  assert.match(status, /a site the chat widget is set to show on that is not one of the account's websites/);
+  assert.match(status, /`hosts\[\]` lists at most 20 addresses/);
+  assert.match(status, /the site is not published \(a site taken offline is not read\), or its domain is not on this account/);
+  assert.match(status, /Never send them to connect a custom domain for a site that lives on its Hiveku address/);
+});
+
+test('a read host can carry a reason, and a never-read host can too', () => {
+  const status = section(readIf(KNOW), '## Check before you explain: `helpdesk_assistant_knowledge_status`');
+  assert.match(status, /A `read` host can also carry a `reason`: the last read had trouble/);
+  assert.match(status, /the pages read before are still used, so `last_read_at` is the older date\. Say so and quote the reason/);
+  assert.match(status, /`never_read`: it is on the list but has not been read yet \(see `next_read_at`\)\. A `reason` here is why the last read failed as a whole\. Quote it/);
+});
+
+test('a Hiveku-named address is promised only on a server that has the knowledge tool', () => {
+  const know = readIf(KNOW);
+  const sources = section(know, '## What it answers from');
+  assert.match(sources, /On current servers \(the ones that have `helpdesk_assistant_knowledge_status`\) that includes a site that lives on a Hiveku-named address/);
+  assert.match(sources, /An older server skips those addresses, so without the tool never promise that one is read/);
+  const missing = between(know + '\n## ', '## When the tool is not there', '\n## ');
+  assert.match(missing, /never tell the owner such a site is read: the card shows what was/);
+  assert.match(skillChatsOf(), /A server without the tool is older and may skip a site on a Hiveku-named address, so never promise that one is read without it/);
+});
+
+test('a 403 key_creator_lacks_access is a missing grant, not a missing tool', () => {
+  const know = readIf(KNOW);
+  const missing = between(know + '\n## ', '## When the tool is not there', '\n## ');
+  assert.match(missing, /unknown tool, `hiveku_find_tools` does not find it, or a 404/);
+  assert.match(missing, /A 403 with code `key_creator_lacks_access` is not a missing tool/);
+  assert.match(missing, /an account owner or admin can give them helpdesk access under Settings > Users/);
+  assert.match(missing, /Any other 403 carries a `message` in plain words: pass it on as it is/);
+  assert.match(skillChatsOf(), /a 403 `key_creator_lacks_access` means an owner or admin must give the user helpdesk access under Settings > Users/);
+});
+
+test('a chat the assistant has is never merged, as the source or the target', () => {
+  const sweepRaw = read(SWEEP);
+  // Every "leave it alone" list names merge.
+  const sweepHeader = between(sweepRaw, 'Website chats (`channel: \'chat\'`)', '\n1. Context');
+  assert.match(sweepHeader, /No reply, assign, escalation, priority change, merge or close, unless the user names that chat/);
+  assert.match(flat(read(TICKETS)), /\(no reply, assign, escalation, merge or close unless the user names that chat/);
+  const chatsWho = chatsWhoOf();
+  assert.match(chatsWho, /no reply, assign, escalation, priority change, merge or close - unless the user names this chat/);
+  assert.match(chatsWho, /Never merge it, as the source or the target/);
+  assert.match(skillChatsOf(), /leave it alone \(no reply, assign, escalation, priority change, merge or close\) unless the user names that chat/);
+  // Where a merge is proposed, the chat is ruled out.
+  const sweepStep5 = between(sweepRaw, '5. History at a glance', '\n6. Draft proposals');
+  assert.match(sweepStep5, /Never merge a website chat with `ai_handling: true`, as source or target/);
+  assert.match(sweepStep5, /moves the email thread under "AI chats", out of the team's inbox/);
+  const play1Step5 = between(skill, '5. Duplicates from one customer for one issue', '\n6. Log the sweep');
+  assert.match(play1Step5, /Never merge a website chat with `ai_handling: true`, as the source or the target/);
+  assert.match(section(mech, '## helpdesk_ticket_merge'), /The route does not check who has a website chat, so never merge a chat with `ai_handling: true`, as the source or the target/);
+});
+
+test('an add_message note is internal only by default: outbound on a chat is a reply that takes it over', () => {
+  const reply = chatsReplyOf();
+  assert.match(reply, /`helpdesk_ticket_add_message` with the default `direction: 'internal'`\) never reaches the visitor/);
+  assert.match(reply, /Never pass `direction: 'outbound'`: on a website chat that posts to the visitor and takes the chat from the assistant exactly like a reply/);
+  assert.match(reply, /Text for the visitor goes only through `helpdesk_ticket_send_reply`/);
+});
+
+test('every helpdesk tool the helpdesk docs name is in the tool index or the pending bridge', async () => {
+  const { PENDING_TOOLS } = await import('./pending-tools.mjs');
+  const index = new Set(JSON.parse(read('lib/tool-index.json')).tools.map((t) => t.name));
+  // Names that look like tools and are not: a workflow trigger event.
+  const NOT_TOOLS = new Set(['helpdesk_ticket_created']);
+  const refs = fs.readdirSync(path.join(root, 'skills/hiveku-helpdesk-agency/references')).map((f) => `skills/hiveku-helpdesk-agency/references/${f}`);
+  const unknown = [];
+  let seen = 0;
+  for (const rel of [SKILL, ...refs, SWEEP, TICKETS, ANALYST]) {
+    // A trailing underscore is a family (`helpdesk_macros_*`), not a name.
+    for (const m of read(rel).matchAll(/\b(helpdesk_[a-z0-9_]*[a-z0-9])\b(?!_)/g)) {
+      seen++;
+      const name = m[1];
+      if (index.has(name) || PENDING_TOOLS.has(name) || NOT_TOOLS.has(name)) continue;
+      unknown.push(`${name} (${rel})`);
+    }
+  }
+  assert.ok(seen > 100, `only ${seen} helpdesk_ names found - extraction is broken, not the prose`);
+  assert.deepEqual([...new Set(unknown)], [], 'helpdesk tools named by the docs that are neither live nor pending (test/pending-tools.mjs)');
+  // The round-3 tool rides the bridge until the index is regenerated after the MCP deploy.
+  assert.ok(index.has('helpdesk_assistant_knowledge_status') || PENDING_TOOLS.get('helpdesk_assistant_knowledge_status')?.batch === 'HELPDESK-R3');
 });

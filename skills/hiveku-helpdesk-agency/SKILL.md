@@ -177,7 +177,10 @@ The play you run most. Order matters: protect SLA first, then reduce backlog.
    timeline) and `crm_contact_engagement_summary` (read-only snapshot) tell you whether that
    angry contact is a high-value account mid-renewal or a one-time buyer.
 5. Duplicates from one customer for one issue: propose `helpdesk_ticket_merge` (confirm first -
-   `id` is the source that gets closed, `merge_into_id` survives).
+   `id` is the source that gets closed, `merge_into_id` survives). Never merge a website chat
+   with `ai_handling: true`, as the source or the target: merging it away closes the chat while
+   the assistant is answering, and merging another ticket into it moves that thread onto a chat
+   the dashboard keeps under "AI chats", out of the team's inbox.
 6. Log the sweep: `pm_tasks_update` the triage task with counts, `pm_tasks_create` anything
    needing engineering, billing, or a KB article. A sweep that produces no follow-up tasks
    means you missed the systemic issues.
@@ -325,8 +328,8 @@ The structure that routes work is itself a deliverable you maintain.
 Every conversation on the account's website chat is a helpdesk ticket with `channel: 'chat'`,
 so the ticket tools list, read and answer it. Many of them are still being answered by the
 website assistant, the AI on the client's site. Load `references/website-chats.md` before
-listing, triaging, assigning, escalating, re-prioritising, closing or replying to any chat, and
-before counting chats in a sweep or report; the essentials:
+listing, triaging, assigning, escalating, re-prioritising, merging, closing or replying to any
+chat, and before counting chats in a sweep or report; the essentials:
 - Commands: `/hiveku:support-sweep` and `/hiveku:tickets` list open tickets, route the
   unassigned, chase aging `pending` ones and send replies. They carry the chat rules in their own
   steps now; if a step ever reads differently, this section decides. On every chat row these
@@ -344,7 +347,8 @@ before counting chats in a sweep or report; the essentials:
   `mode` is `'conversational'`, a person otherwise (a Support desk chat). A hand-back keeps the
   old `taken_over_at`, so its presence alone proves nothing.
 - The assistant has it: not unanswered, not unassigned, not yours to answer or route; read it,
-  leave it alone unless the user names that chat and asks you to step in. A person has it:
+  leave it alone (no reply, assign, escalation, priority change, merge or close) unless the user
+  names that chat and asks you to step in. A person has it:
   handed off, taken over, or a Support desk chat. Waiting for a person = a person has it,
   status `open` OR `pending` (a hand-off sets `pending` while the visitor waits), and no
   teammate reply (outbound `author_kind: 'user'`) since the newest of `escalated_at` /
@@ -389,15 +393,17 @@ before counting chats in a sweep or report; the essentials:
   visitor chats.
 - What the assistant answers from: published help articles, saved answers marked for it,
   Reference info, the Google Business Profile, the business's own website pages (a site on a
-  Hiveku-named address included) and the documents the owner chose - the last three only when
-  the owner switched them on. `helpdesk_assistant_knowledge_status` shows which sources are on,
-  what was read from the website and when, what was skipped and why, and the server's `advice`.
-  Call it before you explain a hand-off with `escalation_reason` `no_grounding` or
-  `low_confidence`, before you promise an owner the assistant will answer something, and
-  whenever the user asks what it knows. Tell the user plainly, quote the `advice`, and never
-  invent a tool to change a source: the switches are the owner's, in Helpdesk > AI agent. Full
-  field guide, wording and the fallback when the tool is missing:
-  `references/assistant-knowledge.md`.
+  Hiveku-named address included, on current servers) and the documents the owner chose - the
+  last three only when the owner switched them on. `helpdesk_assistant_knowledge_status` shows
+  which sources are on, what was read from the website and when, what was skipped and why, and
+  the server's `advice`. Call it before you explain a hand-off with `escalation_reason`
+  `no_grounding` or `low_confidence`, before you promise an owner the assistant will answer
+  something, and whenever the user asks what it knows. Tell the user plainly, quote the
+  `advice`, and never invent a tool to change a source: the switches are the owner's, in
+  Helpdesk > AI agent. A server without the tool is older and may skip a site on a Hiveku-named
+  address, so never promise that one is read without it; a 403 `key_creator_lacks_access` means
+  an owner or admin must give the user helpdesk access under Settings > Users. Full field guide,
+  wording and the fallback when the tool is missing: `references/assistant-knowledge.md`.
 
 ## Daily cadence (every business day, protects SLA)
 1. `helpdesk_tickets_overdue({ kind: 'first_response', limit: 500 })` then

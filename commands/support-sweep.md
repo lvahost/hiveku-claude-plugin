@@ -9,10 +9,10 @@ Website chats (`channel: 'chat'`) follow their own rules in every step below. Lo
 `references/website-chats.md` before you route, chase, close or answer one. The short form:
 - Skip every chat with `ai_handling: true`. The website assistant is answering it right now: it
   is not unassigned, not overdue work and not a reply you owe. No reply, assign, escalation,
-  priority change or close, unless the user names that chat and asks you to step in. A row with
-  no `ai_handling` (an older server, an old mirror file) is sorted by the newest `source_meta`
-  stamp instead: `handed_back_at` newest, or no stamp and `mode: 'conversational'`, means the
-  assistant has it.
+  priority change, merge or close, unless the user names that chat and asks you to step in. A
+  row with no `ai_handling` (an older server, an old mirror file) is sorted by the newest
+  `source_meta` stamp instead: `handed_back_at` newest, or no stamp and
+  `mode: 'conversational'`, means the assistant has it.
 - A chat the assistant handed to the team is set to `pending` while the VISITOR waits. With no
   teammate reply (outbound `author_kind: 'user'`) since the hand-off, it needs a reply, not a
   chase and not a close.
@@ -79,7 +79,10 @@ Website chats (`channel: 'chat'`) follow their own rules in every step below. Lo
    `crm_email_thread_search({ q })` for what was already promised by email. Two open tickets from
    one customer for one issue: propose `helpdesk_ticket_merge({ id, merge_into_id })` - confirm
    BOTH ids with the user first; `id` is the SOURCE that gets closed with a merge note,
-   `merge_into_id` survives, and backwards means you closed the wrong ticket.
+   `merge_into_id` survives, and backwards means you closed the wrong ticket. Never merge a
+   website chat with `ai_handling: true`, as source or target: merging it away closes the chat
+   while the assistant is answering, and merging an email into it moves the email thread under
+   "AI chats", out of the team's inbox.
 6. Draft proposals, macro-first: group the flagged tickets by contact reason, then per ticket
    `helpdesk_macros_list` → `helpdesk_macros_get({ id })` for the raw `{{placeholders}}` →
    `helpdesk_macros_render({ id, variables })` - YOU build the variables map from the ticket, and a

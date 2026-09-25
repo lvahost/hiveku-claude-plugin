@@ -1,8 +1,8 @@
 # Website chats - who is answering, how to read one, when to stay out
 
-Load this before listing, reading, triaging, assigning, escalating, re-prioritising, closing or
-replying to any `channel: 'chat'` ticket, and whenever a sweep, a count or a report turns up
-chats. Every conversation on the account's website chat is a helpdesk ticket, so the ticket
+Load this before listing, reading, triaging, assigning, escalating, re-prioritising, merging,
+closing or replying to any `channel: 'chat'` ticket, and whenever a sweep, a count or a report
+turns up chats. Every conversation on the account's website chat is a helpdesk ticket, so the ticket
 tools read and answer it. But a chat can be in the middle of a live conversation with the
 website assistant (the AI that answers visitors on the client's site), and an assign, an
 escalation or a reply from here changes who answers the visitor.
@@ -42,8 +42,10 @@ does a person have it? Answer it for every chat row before you count, route or a
 
 **The assistant has it** - it is NOT an unanswered ticket, NOT unassigned work, and NOT
 neglected: the dashboard keeps these out of the main inbox, under "AI chats". Leave it alone -
-no reply, assign, escalation, priority change or close - unless the user names this chat and
-asks you to step in. Reading it is fine.
+no reply, assign, escalation, priority change, merge or close - unless the user names this chat
+and asks you to step in. Reading it is fine. Never merge it, as the source or the target: a
+merge closes the source while the assistant is answering it, and a ticket merged into it moves
+its thread under "AI chats", out of the team's inbox.
 
 **A person has it** - the assistant handed it off, a teammate took it over, or it never had the
 assistant (a Support desk chat).
@@ -274,5 +276,8 @@ user asks. The local mirror (`hiveku-data/helpdesk/tickets.json`) holds chat sub
   it to the team through the chat's own hand-off (the visitor is told they are being connected,
   the team is alerted) on top of forcing `urgent`. Assigning to a queue alone does not take it
   over.
-- An internal note (`helpdesk_ticket_add_message`) never reaches the visitor and does not take
-  the chat over - the safe way to leave a teammate context on a chat the assistant still has.
+- An internal note (`helpdesk_ticket_add_message` with the default `direction: 'internal'`)
+  never reaches the visitor and does not take the chat over - the safe way to leave a teammate
+  context on a chat the assistant still has. Never pass `direction: 'outbound'`: on a website
+  chat that posts to the visitor and takes the chat from the assistant exactly like a reply.
+  Text for the visitor goes only through `helpdesk_ticket_send_reply`.

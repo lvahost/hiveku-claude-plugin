@@ -4,12 +4,12 @@ description: Work the overdue ticket queue with macro-based drafts. Nothing send
 Ticket pass. Website chats (`channel: 'chat'`) follow the **hiveku-helpdesk-agency** skill's
 `references/website-chats.md` in every step - load it before you answer one. Skip every chat with
 `ai_handling: true`: the website assistant is answering it right now, so it is not a reply you
-owe (no reply, assign, escalation or close unless the user names that chat and asks you to step
-in). A row with no `ai_handling` (an older server, an old mirror file) is sorted by the newest
-`source_meta` stamp instead: `handed_back_at` newest, or no stamp and `mode: 'conversational'`,
-means the assistant has it. A chat the assistant handed to the team is set to `pending` while the
-VISITOR waits: with no teammate reply (outbound `author_kind: 'user'`) since the hand-off, it
-needs a reply, not a chase and not a close.
+owe (no reply, assign, escalation, merge or close unless the user names that chat and asks you
+to step in). A row with no `ai_handling` (an older server, an old mirror file) is sorted by the
+newest `source_meta` stamp instead: `handed_back_at` newest, or no stamp and
+`mode: 'conversational'`, means the assistant has it. A chat the assistant handed to the team is
+set to `pending` while the VISITOR waits: with no teammate reply (outbound `author_kind: 'user'`)
+since the hand-off, it needs a reply, not a chase and not a close.
 1. `helpdesk_tickets_overdue({ kind: "first_response", limit: 500 })` then
    `({ kind: "resolve", limit: 500 })` → queue by priority/age. The default limit is 100 and the
    truncation is silent, so a capped list reads as a healthy queue. This is the LIVE-breach queue
