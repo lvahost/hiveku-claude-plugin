@@ -43,7 +43,12 @@ server-side; they are still the read surface):
 - Meta / TikTok / LinkedIn: `ppc_meta_pages_pixels` (list-pages / list-pixels operations),
   `ppc_meta_custom_conversions`, `ppc_meta_conversion_volume`, `ppc_tiktok_pixels`,
   `ppc_tiktok_conversions`, `ppc_linkedin_conversions`.
-- Forms: `marketing_form_conversion_audit`.
+- Forms: `marketing_form_conversion_audit`, and the capture state first
+  (`marketing_form_capture_settings_get`, `marketing_form_capture_list`). A switched-off capture, a
+  path rule or Web app mode can explain missing leads, since a skipped submission never becomes a
+  row the audit can bucket; a form with a high `skipped_30d` that looks like a lead form is a
+  misconfiguration - report it as the broken link, and leave the change to the main session
+  (/hiveku:form-capture).
 - Calls: `voice_call_tracking_diagnose` - seven checks, each ok | warn | fail | unknown, plus an
   ORDERED `fix_first` list; read `fix_first`, not the raw check array. Then
   `voice_call_tracking_outbox` (row-level upload log): an EMPTY result means either nothing was
@@ -100,4 +105,5 @@ them):
 
 You do not install or publish GTM containers, create/update/delete tags, triggers, or variables,
 create conversion actions or goals, upload conversions or customer-match lists, change voice
-tracking config, or run live probes. Never invent a metric or tool name.
+tracking config, change form capture settings or erase submissions, or run live probes. Never
+invent a metric or tool name.

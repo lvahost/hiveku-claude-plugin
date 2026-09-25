@@ -248,6 +248,31 @@
  *                       block), account_memory_append (one suggested line an
  *                       owner keeps or removes; never edits the owner text).
  *                       Landed in the live index on 2026-09-24; entries deleted.
+ *
+ *   Form capture controls (2026-09-24): a project chooses which of its forms
+ *   Hiveku captures automatically (the switch, Marketing site or Web app, the
+ *   sign-in default, path and per-form rules) and can erase what was captured
+ *   by mistake. The contract is the builder's Olympus routes
+ *   (GET|PATCH /api/olympus/marketing/form-capture/settings, GET .../forms,
+ *   GET .../preview, POST .../purge); the MCP declarations are
+ *   hiveku-mcp-api-server src/tools/form-capture-tools.ts. The live index
+ *   regenerates after that deploy, and tool-names.test.mjs then forces these
+ *   entries out. The two writes are on the ask list
+ *   (data/permission-critical-tools.json) and on ALWAYS_ASK_WRITES
+ *   (lib/tool-safety.mjs), which is why both of those tests accept them as
+ *   PENDING names until the index carries them. Spelled in prose by
+ *   /hiveku:form-capture, both forms references, the measurement plays and
+ *   the tracking auditor, because the routes and the declarations are written
+ *   in the same program; marketing_form_ is a gated prefix, so a name that
+ *   drifts from the declaration fails here rather than in a session.
+ *     FORM-CAPTURE-1  marketing_form_capture_settings_get (read-only),
+ *                     marketing_form_capture_settings_update (merge maps;
+ *                     "remove" deletes a rule), marketing_form_capture_list
+ *                     (read-only; deliberately not ..._forms_list),
+ *                     marketing_form_capture_preview (read-only, never saves),
+ *                     marketing_form_capture_purge (permanent erase; dry run
+ *                     by default, and executing through an agent key answers
+ *                     403 agent_execute_disabled until the plugin release).
  */
 const SEO_SINCE = '2026-08-30';
 const seo = (batch) => ({ since: SEO_SINCE, batch });
@@ -317,4 +342,7 @@ export const PENDING_TOOLS = new Map([
   // PF: the agent feedback loop's four core tools landed in the live index on
   // 2026-09-24 (MCP #26, c2cbfb7ee, deployed; index regenerated at 2117 tools);
   // entries deleted.
+
+  // FORM-CAPTURE-1: landed in the live index on 2026-09-24 (MCP #31, fe5e28674,
+  // deployed; index regenerated at 2141 tools); entries deleted.
 ]);

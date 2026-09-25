@@ -20,7 +20,7 @@ failure mode this play exists to prevent. Follow the **hiveku-analytics-agency**
    `analytics_diagnose_tracking({ project_id })`, then `analytics_probe_page({ url })` on each
    money page its findings name, and `analytics_channel_scorecard({ project_id, days })` ONCE and
    only if a paid channel's counts are in question - it loads live pages in a real browser and
-   takes minutes; never loop it. Alongside the tag layer, check the three lead-swallowing pipes:
+   takes minutes; never loop it. Alongside the tag layer, check the four lead-swallowing pipes:
    - Form pipeline: `marketing_form_conversion_audit` for BOTH windows - its discrepancy buckets
      SUM to the total (deleted, duplicate, spam, archived, workflow_failed, no_attribution,
      unpaid_attribution, counted). Compare `buckets.counted` across the windows: a jump in spam
@@ -33,6 +33,11 @@ failure mode this play exists to prevent. Follow the **hiveku-analytics-agency**
      lost. It takes ONE workflow id; there is no account-wide stranded sweep.
    - Data freshness: `ppc_digest` - its `warnings[]` flags connections stale by >25h, and a stale
      connection makes every number on that platform a lie. Sync before reading deltas.
+   - Form capture state: `marketing_form_capture_settings_get({ project_id })` +
+     `marketing_form_capture_list({ project_id })`. A switched-off capture, a path rule or Web app
+     mode can explain missing leads, and a skipped submission leaves no row for the audit to
+     bucket; a form with a high `skipped_30d` that looks like a lead form is a misconfiguration,
+     fixed with the owner through /hiveku:form-capture.
    If the fork lands on measurement: STOP the causal investigation, name the broken link out loud
    ("the tag is in the code but not the served HTML", "the form workflow has been failing since
    Tuesday"), quantify the client's REAL lead flow from the buckets, and route the fix -

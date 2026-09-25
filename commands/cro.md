@@ -43,6 +43,12 @@ as a hypothesis, scored with `ice_score`, persisted as a pm_task in the backlog.
    - `click_window.click_dated` = 0 means `clicks_before_range: 0` is NOT MEASURABLE, never
      "no clicks fell outside the window". And `totals.truncated` means every count is a sample -
      narrow the window or disclose it.
+   - Check form capture state before trusting a low form count:
+     `marketing_form_capture_settings_get({ project_id })` and
+     `marketing_form_capture_list({ project_id })`. A switched-off capture, a path rule or Web app
+     mode can explain missing leads, and a form with a high `skipped_30d` that looks like a lead
+     form is a misconfiguration, not a conversion problem - route it to /hiveku:form-capture
+     before scoring any experiment on that page.
    The page's baseline = `buckets.counted` over the window against `analytics_pages` views for
    the SAME full UTC days, both sources labeled.
 7. Candidate experiments: turn each finding into a hypothesis - "because [evidence], changing

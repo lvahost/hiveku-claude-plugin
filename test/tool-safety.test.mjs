@@ -981,8 +981,19 @@ const MEMORY_WRITES_THAT_ASK = [
   'memory_update',
 ];
 
-test('the always-ask memory set is exactly the five whole-document, delete, restore, bulk and account writes', () => {
-  assert.deepEqual([...ALWAYS_ASK_WRITES.keys()].sort(), MEMORY_WRITES_THAT_ASK);
+// Form capture controls (2026-09-24): the capture-settings write and the
+// permanent erase share the set. Listed apart so the memory tests below keep
+// testing memory; the form-capture pins are at the end of this section.
+const FORM_CAPTURE_WRITES_THAT_ASK = [
+  'marketing_form_capture_purge',
+  'marketing_form_capture_settings_update',
+];
+
+test('the always-ask set is exactly the five memory writes and the two form-capture writes', () => {
+  assert.deepEqual(
+    [...ALWAYS_ASK_WRITES.keys()].sort(),
+    [...MEMORY_WRITES_THAT_ASK, ...FORM_CAPTURE_WRITES_THAT_ASK].sort(),
+  );
 });
 
 test('every memory write on the set ASKS on a direct call with no guardrails file', () => {
@@ -1062,5 +1073,50 @@ test('every always-ask name is a real, non-GET tool (a typo gates nothing)', () 
     assert.ok(index.has(name) || PENDING_TOOLS.has(name), `${name} exists neither in the index nor PENDING_TOOLS`);
     if (index.has(name)) assert.notEqual(index.get(name), 'GET', `${name} is a GET; gate a read elsewhere`);
     assert.ok(ALWAYS_ASK_WRITES.get(name).length > 40, `${name} must say why it asks`);
+  }
+});
+
+// ── Form capture writes always ask (form capture controls, 2026-09-24) ─────
+//
+// The builder refuses to EXECUTE marketing_form_capture_purge through an agent
+// key until these rules ship, because an install without them runs the erase
+// unprompted. These pin that the hook asks on both writes whatever the user's
+// settings say, and that the three reads are left to the read list.
+
+test('both form-capture writes ASK on a direct call, and the prompt names the hazard', () => {
+  const cwd = folderWith(undefined);
+  for (const name of FORM_CAPTURE_WRITES_THAT_ASK) {
+    const r = decideWithGuardrails({ ...payload(name, cwd), tool_input: { project_id: 'x' } });
+    assert.equal(decision(r), 'ask', `${name} must ask; silence resolves to the blanket allow`);
+    const why = r.hookSpecificOutput.permissionDecisionReason;
+    assert.match(why, new RegExp(`^${name} `), `${name}: the prompt must name the tool`);
+    assert.match(why, /even when your settings allow all Hiveku tools/);
+  }
+  const purge = decideForPayload({ tool_name: `${HIVEKU_TOOL_PREFIX}marketing_form_capture_purge`, tool_input: {} });
+  assert.match(purge.hookSpecificOutput.permissionDecisionReason, /PERMANENTLY erase/);
+  assert.match(purge.hookSpecificOutput.permissionDecisionReason, /dry run \(the default\) only counts/i);
+  const update = decideForPayload({ tool_name: `${HIVEKU_TOOL_PREFIX}marketing_form_capture_settings_update`, tool_input: {} });
+  assert.match(update.hookSpecificOutput.permissionDecisionReason, /which of this site's forms Hiveku captures/);
+});
+
+test('a batch carrying a form-capture write asks, and a reads-only folder denies both', () => {
+  const cwd = folderWith(undefined);
+  const mixed = decideWithGuardrails(batch([
+    { tool: 'memory_get', args: { memory_id: 'x' } },
+    { tool: 'marketing_form_capture_purge', args: { project_id: 'x', confirm: true, confirm_token: 't' } },
+  ], cwd));
+  assert.equal(decision(mixed), 'ask');
+  assert.match(mixed.hookSpecificOutput.permissionDecisionReason, /marketing_form_capture_purge/);
+  const readsOnly = folderWith({ version: 1, mode: 'reads-only' });
+  for (const name of FORM_CAPTURE_WRITES_THAT_ASK) {
+    assert.equal(decision(decideWithGuardrails(payload(name, readsOnly))), 'deny', `${name} under reads-only`);
+    assert.equal(isAutoApprovable(name, {}), false, `${name} must never be pre-approved`);
+  }
+});
+
+test('NEGATIVE CONTROL: the three form-capture reads are not on the always-ask set', () => {
+  // A read on this set would prompt on every leads-down and tracking-check pass.
+  for (const read of ['marketing_form_capture_settings_get', 'marketing_form_capture_list', 'marketing_form_capture_preview']) {
+    assert.equal(ALWAYS_ASK_WRITES.has(read), false, `${read} is a read; it must not ask on every call`);
   }
 });

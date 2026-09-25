@@ -5,8 +5,8 @@
     "mcp__plugin_hiveku_hk__",
     "mcp__hiveku__"
   ],
-  "plugin_version": "0.26.24",
-  "count": 208,
+  "plugin_version": "0.26.25",
+  "count": 210,
   "tools": [
     {
       "name": "deploy_site",
@@ -802,6 +802,16 @@
       "name": "marketing_form_upload_settings_update",
       "method": "PATCH",
       "why_gated": "changes a site's file-upload policy; shortening retention purges visitor documents on the next sweep"
+    },
+    {
+      "name": "marketing_form_capture_settings_update",
+      "method": "PATCH",
+      "why_gated": "changes which of a site's forms Hiveku captures: the switch, Web app mode or an exclude stops real enquiries becoming contacts, notifications, workflow runs and ad conversions from the next submission, with no redeploy and nothing on the site to show it"
+    },
+    {
+      "name": "marketing_form_capture_purge",
+      "method": "POST",
+      "why_gated": "permanently erases captured form submissions, their files and CRM notes, and the contacts that exist only because of them; there is no undo (a dry run is the default, and executing needs the confirm token from one)"
     },
     {
       "name": "social_publish_post",

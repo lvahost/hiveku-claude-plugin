@@ -116,6 +116,15 @@ const GATED_PREFIXES = [
   // an edit path that does not exist; this prefix makes that a failure. No
   // floor in MIN_CHECKED: the footprint is a handful of tokens.
   'account_memory_',
+  // 2026-09-24. Form capture controls: five marketing_form_capture_* tools
+  // that /hiveku:form-capture, both forms references and the measurement
+  // plays (leads-down, tracking-check, cro, the tracking auditor) teach, next
+  // to the five live marketing_form_* tools. A near-miss such as
+  // marketing_form_capture_forms_list (the list tool is deliberately
+  // marketing_form_capture_list) would send a session to an unknown tool and
+  // the conclusion that capture cannot be controlled. The widening pass found
+  // nothing fabricated: every token is live or in PENDING_TOOLS.
+  'marketing_form_',
 ];
 
 /**
@@ -150,6 +159,10 @@ const MIN_CHECKED = {
   // automation references (content_analysis_ tokens counted under their own
   // prefix). The floor sits near half so a rewrite does not false-fail.
   content_: 40,
+  // Form footprint measured 2026-09-24 by this test's own extractor: 86
+  // marketing_form_ tokens (39 of them marketing_form_conversion_audit). The
+  // floor sits near half so a rewrite does not false-fail.
+  marketing_form_: 40,
 };
 
 /**
@@ -330,7 +343,7 @@ const TOKEN = /(?<![\w/.\-])([a-z][a-z0-9]*(?:_[a-z0-9]+){2,})(?![\w*])/g;
  * Prose must spell every name in full; the extra bytes buy verifiability.
  * Same prefixes as the gate.
  */
-const SHORTHAND_PREFIX = '(?:voice|seo|backlinks|dataforseo_labs|serp|on_page|keywords_data|content_analysis|domain_analytics|business_data|ai_optimization|social|webflow|content)';
+const SHORTHAND_PREFIX = '(?:voice|seo|backlinks|dataforseo_labs|serp|on_page|keywords_data|content_analysis|domain_analytics|business_data|ai_optimization|social|webflow|content|marketing_form)';
 const SHORTHAND = new RegExp(`${SHORTHAND_PREFIX}_[a-z0-9]+(?:_[a-z0-9]+)+\`?\\s*\\/\\s*\`?_[a-z_]+`);
 
 function walkMarkdown() {
