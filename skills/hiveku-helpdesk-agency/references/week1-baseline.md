@@ -45,11 +45,14 @@ lifecycle summary in SKILL.md: the 7-step week-1 baseline and the week-2 operati
    ladder you are about to propose is what the account actually enforces, read `auto_close` before
    you plan to chase aging pending tickets by hand (the system may already close them on a timer),
    and read `csat_survey` before you interpret any CSAT number at all. Do not rebuild what is
-   already there. If `helpdesk_kb_categories_list` comes back empty, the KB has no structure yet:
-   article creation requires a `category_id`, so on a fresh account the deflection plan below
-   starts with `helpdesk_kb_categories_create({ name, parent_id? })` (slug auto-derives from the
-   name; `parent_id` makes a sub-category) - create the 3-5 categories the contact-reason map
-   implies before drafting the first article, not while drafting it.
+   already there. On an account with the website chat, also read
+   `helpdesk_assistant_knowledge_status`: which sources the website assistant answers from, what
+   it read from the website and when, what it skipped and why
+   (`references/assistant-knowledge.md`). If `helpdesk_kb_categories_list` comes back empty, the
+   KB has no structure yet: article creation requires a `category_id`, so on a fresh account the
+   deflection plan below starts with `helpdesk_kb_categories_create({ name, parent_id? })` (slug
+   auto-derives from the name; `parent_id` makes a sub-category) - create the 3-5 categories the
+   contact-reason map implies before drafting the first article, not while drafting it.
 6. Baseline satisfaction: `helpdesk_csat_stats` for the current score and the per-assignee
    breakdown, `helpdesk_csat_list` to read the actual verbatims behind low scores. Ratings are
    `great | ok | not_great` and `csat_score = great / total`, so a middling "ok" counts AGAINST

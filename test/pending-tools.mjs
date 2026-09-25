@@ -273,6 +273,25 @@
  *                     marketing_form_capture_purge (permanent erase; dry run
  *                     by default, and executing through an agent key answers
  *                     403 agent_execute_disabled until the plugin release).
+ *
+ *   Helpdesk chat program, round 3 (2026-09-25, contract C7): what the website
+ *   assistant answers from. The contract is the builder's
+ *   GET /api/olympus/helpdesk/assistant/knowledge (getAssistantKnowledgeStatus,
+ *   src/lib/helpdesk/assistant-knowledge-status.ts); the MCP declaration is
+ *   hiveku-mcp-api-server 3f48344 (branch round 3). The helpdesk skill, its
+ *   assistant-knowledge and website-chats references, /hiveku:support-sweep,
+ *   /hiveku:tickets and the support analyst tell every sweep, checkup and
+ *   analyst run to read it, so until the index carries it hiveku_find_tools
+ *   cannot find or promote it and the session falls back to "I can't read the
+ *   assistant's knowledge settings from here yet". Release step, after the r3
+ *   MCP deploy: node scripts/gen-tool-index.mjs --dir <bound account> and
+ *   node scripts/gen-readonly-tools.mjs (it is a GET, so it joins the
+ *   read-only list), then delete this entry; tool-names.test.mjs forces the
+ *   deletion. helpdesk_ is not a gated prefix, so
+ *   helpdesk-chat-doctrine.test.mjs is the test that checks the helpdesk
+ *   docs name only live or pending tools.
+ *     HELPDESK-R3  helpdesk_assistant_knowledge_status (read-only, no
+ *                  arguments; the account comes from the key).
  */
 const SEO_SINCE = '2026-08-30';
 const seo = (batch) => ({ since: SEO_SINCE, batch });
@@ -345,4 +364,7 @@ export const PENDING_TOOLS = new Map([
 
   // FORM-CAPTURE-1: landed in the live index on 2026-09-24 (MCP #31, fe5e28674,
   // deployed; index regenerated at 2141 tools); entries deleted.
+
+  // HELPDESK-R3 (2026-09-25): see the batch note above.
+  ['helpdesk_assistant_knowledge_status', { since: '2026-09-25', batch: 'HELPDESK-R3' }],
 ]);

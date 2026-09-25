@@ -1,8 +1,8 @@
 # Website chats - who is answering, how to read one, when to stay out
 
-Load this before listing, reading, triaging, assigning, escalating, re-prioritising, closing or
-replying to any `channel: 'chat'` ticket, and whenever a sweep, a count or a report turns up
-chats. Every conversation on the account's website chat is a helpdesk ticket, so the ticket
+Load this before listing, reading, triaging, assigning, escalating, re-prioritising, merging,
+closing or replying to any `channel: 'chat'` ticket, and whenever a sweep, a count or a report
+turns up chats. Every conversation on the account's website chat is a helpdesk ticket, so the ticket
 tools read and answer it. But a chat can be in the middle of a live conversation with the
 website assistant (the AI that answers visitors on the client's site), and an assign, an
 escalation or a reply from here changes who answers the visitor.
@@ -25,10 +25,10 @@ written into the same ticket (see "Reading a conversation").
 Everything below starts from one question: is the website assistant answering this chat, or
 does a person have it? Answer it for every chat row before you count, route or answer it.
 - Where the row carries `ai_handling`, that is the answer: `true` - the assistant; `false` - a
-  person.
-- Where it does not, decide from the change-of-hands stamps in `source_meta`. This is the normal
-  case today: `helpdesk_ticket_list` and `helpdesk_ticket_messages` do not return `ai_handling`
-  yet. In order:
+  person. Current servers return it on every row of `helpdesk_ticket_list` and
+  `helpdesk_tickets_overdue`, and on `helpdesk_ticket_get` and `helpdesk_ticket_messages`.
+- Where it does not (an older server, or a mirror file in `hiveku-data/` pulled from one),
+  decide from the change-of-hands stamps in `source_meta`. In order:
   1. `source_meta.via: 'social_dm'` - a social message, not the assistant's.
   2. Take the NEWEST of `escalated_at`, `taken_over_at` and `handed_back_at`, comparing the
      times, not which keys exist. Newest is `handed_back_at` - the assistant has it. Newest is
@@ -42,8 +42,10 @@ does a person have it? Answer it for every chat row before you count, route or a
 
 **The assistant has it** - it is NOT an unanswered ticket, NOT unassigned work, and NOT
 neglected: the dashboard keeps these out of the main inbox, under "AI chats". Leave it alone -
-no reply, assign, escalation, priority change or close - unless the user names this chat and
-asks you to step in. Reading it is fine.
+no reply, assign, escalation, priority change, merge or close - unless the user names this chat
+and asks you to step in. Reading it is fine. Never merge it, as the source or the target: a
+merge closes the source while the assistant is answering it, and a ticket merged into it moves
+its thread under "AI chats", out of the team's inbox.
 
 **A person has it** - the assistant handed it off, a teammate took it over, or it never had the
 assistant (a Support desk chat).
@@ -92,7 +94,10 @@ The change-of-hands record lives in `source_meta`:
     was booked when none was, so the answer was held back), `booking_low_time` and
     `booking_indeterminate` (a booking could not be finished or confirmed), `agent_requested`
     (it passed the chat on without a reason). The dashboard shows `unverified_booking_claim` only
-    as "The assistant passed the chat to the team", but it is a fixed code too.
+    as "The assistant passed the chat to the team", but it is a fixed code too. To explain a
+    `no_grounding` or `low_confidence` hand-off, read what the assistant answers from first
+    (`helpdesk_assistant_knowledge_status`, `references/assistant-knowledge.md`): the usual cause
+    is a source that is off, stale or missing the answer.
   - Out of AI credit: any code starting with `budget:` (for example `budget:exhausted`). A run of
     these is an account problem to report ("the assistant is out of AI credit"), not a run of
     ordinary hand-offs.
@@ -121,9 +126,12 @@ The change-of-hands record lives in `source_meta`:
   cannot tell you whether a teammate answered.
 - The assistant's live chats (to read, not to answer): the rows the assistant has.
 - `helpdesk_ticket_list` takes an `ai_handling` filter (`'true' | 'false' | 'all'`) once its
-  schema lists it. Pass it explicitly every time rather than leaning on a default. If the schema
-  does not list it, the argument is silently dropped (the invented-filter trap), so sort the
-  rows yourself.
+  schema lists it: `'false'` is the human queue, `'true'` the assistant's chats. Pass it
+  explicitly every time rather than leaning on a default. If the schema does not list it, the
+  argument is silently dropped (the invented-filter trap), so sort the rows yourself.
+- `helpdesk_tickets_overdue` can list a chat the assistant is answering. A row with
+  `ai_handling: true` is not a breach anyone on the team owns: leave it out of the replies you
+  draft and report it on its own line.
 - A sweep that counts chats reports the two groups separately ("4 chats waiting for a person,
   11 with the assistant"), never one number.
 - `helpdesk_workload` counts the assistant's chats as ordinary open/pending tickets. They have no
@@ -139,7 +147,8 @@ as `helpdesk_ticket_get({ id, include: 'messages' })`). Read the whole thread be
 anything about it. Who said what, by `direction` and `author_kind`:
 - inbound + `contact` - the visitor. `contact` always means the visitor, never a teammate.
 - outbound + `ai_agent` - the website assistant. With `metadata.source: 'api'` it is instead an
-  AI's reply sent through the team's tools (the helpdesk agent, or any call that left out
+  AI's reply sent through the team's tools (the helpdesk agent, a call that passed
+  `author_kind: 'ai_agent'`, or, on an older server, any call that left out
   `author_kind: 'user'`): the assistant reads it as the team's words, the visitor sees it as the
   bot's, and it is not a teammate answer.
 - outbound + `user` - a teammate (with `metadata.source: 'api'`, one sent through these tools).
@@ -241,16 +250,20 @@ user asks. The local mirror (`hiveku-data/helpdesk/tickets.json`) holds chat sub
   the ticket page in the dashboard.
 - So never reply to a chat the assistant still has unless the user asked for that chat by name.
   A sweep does not step into assistant chats on its own initiative.
+- Never paste the visitor's fenced text into the reply: a body that carries the
+  `<untrusted_external_content>` markup is refused (400 `fence_markup_in_write`).
 - Post it as staff: pass `author_kind: 'user'` and, as `author_id`, the id of the teammate who
   approved the text (`crm_list_users` returns the account's people). The reply shows under the
   team's name, and on a chat the assistant still had, the visitor also sees "A teammate has
-  joined the chat." Do not rely on the default `author_kind`: without `'user'` the reply is
-  stored and shown to the visitor as the bot.
+  joined the chat." Do not rely on the default `author_kind`: current servers default a chat
+  reply to `'user'`, but older ones default to `'ai_agent'`, which stores the reply and shows it
+  to the visitor as the bot.
 - Verify: re-read `helpdesk_ticket_messages` - your reply is in the thread as an outbound `user`
-  message. Then:
+  message, and `ai_handling` is `false` where the row carries it. Then:
   - The chat was already a person's before you sent (handed off, taken over earlier, or a
-    Support desk chat): that is the whole check. A reply there changes no hands, writes no
-    take-over stamp and posts no "teammate joined" line, so do not look for one.
+    Support desk chat): that is the whole check (its `ai_handling` was already `false`). A reply
+    there changes no hands, writes no take-over stamp and posts no "teammate joined" line, so do
+    not look for one.
   - The chat was the assistant's (the user named it): it must now be a person's by the same
     rule - `ai_handling: false` where the row has it, otherwise a `taken_over_at` that is newer
     than the one you noted and newer than any `handed_back_at`. If the assistant still has it,
@@ -263,5 +276,8 @@ user asks. The local mirror (`hiveku-data/helpdesk/tickets.json`) holds chat sub
   it to the team through the chat's own hand-off (the visitor is told they are being connected,
   the team is alerted) on top of forcing `urgent`. Assigning to a queue alone does not take it
   over.
-- An internal note (`helpdesk_ticket_add_message`) never reaches the visitor and does not take
-  the chat over - the safe way to leave a teammate context on a chat the assistant still has.
+- An internal note (`helpdesk_ticket_add_message` with the default `direction: 'internal'`)
+  never reaches the visitor and does not take the chat over - the safe way to leave a teammate
+  context on a chat the assistant still has. Never pass `direction: 'outbound'`: on a website
+  chat that posts to the visitor and takes the chat from the assistant exactly like a reply.
+  Text for the visitor goes only through `helpdesk_ticket_send_reply`.

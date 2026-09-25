@@ -39,14 +39,24 @@ Investigate with exactly these tools (all GET):
   id - report those rows by id, never drop them.
 - Website chats: the website assistant's live chats are `channel: 'chat'` tickets, and
   `helpdesk_workload` counts them as open/pending work, mostly in the unassigned bucket. Sort
-  every chat row with the rule in the skill's `references/website-chats.md` (rows carry no
-  `ai_handling` today, so it is the newest `source_meta` stamp of `escalated_at` /
-  `taken_over_at` / `handed_back_at`: `handed_back_at` newest means the assistant has it; or,
-  with none of the three set, `mode: 'conversational'` means the assistant has it - every fresh
-  assistant chat, which has no stamp at all), take the assistant's chats out of the unassigned
+  every chat row with the rule in the skill's `references/website-chats.md`:
+  `ai_handling: true` on the row means the assistant has it (current servers return it on
+  every list, overdue and ticket read); on a row without the field (an older server, an old
+  mirror file) it is the newest `source_meta` stamp of `escalated_at` / `taken_over_at` /
+  `handed_back_at`: `handed_back_at` newest means the assistant has it; or, with none of the
+  three set, `mode: 'conversational'` means the assistant has it - every fresh assistant chat,
+  which has no stamp at all. Take the assistant's chats out of the unassigned
   and backlog numbers, and report them on their own line ("11 chats the assistant is
   answering"). They are never neglected work or a routing finding, and a plan never routes,
   assigns, chases or replies to them.
+- The website assistant's knowledge: `helpdesk_assistant_knowledge_status` (no arguments) says
+  which sources it answers from (help articles, saved answers, Reference info, the Google
+  Business Profile, website pages, chosen documents), what it read from each website host and
+  when, what it skipped and why, how many questions it passed to the team for want of an answer
+  in the last 30 days, and the server's `advice`. Report it in plain words with the advice
+  quoted (the skill's `references/assistant-knowledge.md`); a source that is off or stale is a
+  deflection finding for the owner, never something to switch from here. If the tool is not
+  there (an older server), say so rather than guessing.
 - CSAT: `helpdesk_csat_stats` (great/ok/not_great totals, `csat_score` = great/total, per-assignee
   and per-source; scope with `since`) and `helpdesk_csat_list` for the verbatims.
 - Coverage: `helpdesk_macros_list` (usage-sorted) and `helpdesk_macros_get` for a raw body. Do NOT
