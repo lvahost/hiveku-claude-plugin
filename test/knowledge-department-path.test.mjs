@@ -14,7 +14,7 @@ import http from 'node:http';
 import path from 'node:path';
 import os from 'node:os';
 import { promises as fs } from 'node:fs';
-import { pullKnowledge, departmentOf, isInsideRoot } from '../lib/knowledge.mjs';
+import { pullKnowledge, departmentOf, isInsideRoot, WINDOWS_DEVICE_NAME } from '../lib/knowledge.mjs';
 
 const SLASH = String.fromCharCode(47);
 const BACKSLASH = String.fromCharCode(92);
@@ -116,6 +116,21 @@ test('departmentOf files a traversal name, an absolute name and other off-shape 
   assert.equal(departmentOf({ domain: '_identity:x', content: `department: ${'t'.repeat(60)}` }), 'general');
 });
 
+test('a name Windows keeps for a device files under general; near-names are kept', () => {
+  const devices = ['con', 'prn', 'aux', 'nul', 'com0', 'com1', 'com9', 'lpt0', 'lpt1', 'lpt9'];
+  for (const domain of devices) {
+    assert.equal(departmentOf({ domain, content: '' }), 'general', `${domain} must file under general`);
+  }
+  // A content tag is lowercased first, so an uppercase device name is caught too.
+  assert.equal(departmentOf({ domain: '_command:x', content: '<!-- department: NUL -->' }), 'general');
+  // With an extension it is still a device name on Windows.
+  for (const name of ['nul.txt', 'CON', 'com1.md', 'lpt9.x.y']) assert.equal(WINDOWS_DEVICE_NAME.test(name), true, name);
+  // Negative control: names that only start like one are ordinary departments.
+  for (const name of ['console', 'null', 'auxiliary', 'com10', 'lpt', 'connect', 'prn-team']) {
+    assert.equal(departmentOf({ domain: name, content: '' }), name);
+  }
+});
+
 test('isInsideRoot: inside is true; the root itself, a prefix sibling, a climb and an absolute path are not', () => {
   const root = path.join(os.tmpdir(), 'hiveku-root-check');
   assert.equal(isInsideRoot(root, path.join(root, 'memory', 'seo', 'a.md')), true);
@@ -174,4 +189,47 @@ test('a listed row whose type names an inherited property is ignored and the pul
   const result = await pullKnowledge({ rootDir, endpoint, key: 'hvk_test' });
   assert.equal(result.written, 1);
   await fs.access(path.join(rootDir, 'memory', 'seo', 'keyword-strategy.md'));
+});
+
+test('a row the disk refuses is reported and the rest of the pull still lands', async () => {
+  const { rootDir } = await layout();
+  const seoFile = path.join(rootDir, 'memory', 'seo', 'keyword-strategy.md');
+  listing = {
+    memory: [
+      { id: 'm1', name: 'Keyword strategy', domain: 'seo', content: 'first', version: 1 },
+      { id: 'm2', name: 'Pipeline rules', domain: 'sales', content: 'first', version: 1 },
+    ],
+  };
+  await pullKnowledge({ rootDir, endpoint, key: 'hvk_test' });
+  const first = JSON.parse(await fs.readFile(path.join(rootDir, '.hiveku', 'knowledge-manifest.json'), 'utf8'));
+
+  // Two rows this disk cannot take, standing in for a folder name Windows
+  // refuses: a department folder that cannot be created (a file is in the way),
+  // and an entry file that cannot be written (a folder is in the way). Both
+  // come first, so the rows after them show the pull carried on.
+  await fs.writeFile(path.join(rootDir, 'memory', 'ppc'), 'in the way', 'utf8');
+  await fs.rename(seoFile, seoFile + '.kept');
+  await fs.mkdir(seoFile);
+  listing = {
+    memory: [
+      { id: 'm3', name: 'Bid notes', domain: 'ppc', content: 'second', version: 1 },
+      { id: 'm1', name: 'Keyword strategy', domain: 'seo', content: 'second', version: 2 },
+      { id: 'm2', name: 'Pipeline rules', domain: 'sales', content: 'second', version: 2 },
+    ],
+    rule: [{ id: 'r1', name: 'No emojis', domain: 'email', content: 'never', version: 1 }],
+  };
+  const lines = [];
+  const result = await pullKnowledge({ rootDir, endpoint, key: 'hvk_test', log: (line) => lines.push(line) });
+
+  assert.deepEqual(result.failed, ['ppc', 'seo']);
+  assert.equal(result.written, 2);
+  assert.match(await fs.readFile(path.join(rootDir, 'memory', 'sales', 'pipeline-rules.md'), 'utf8'), /second/);
+  await fs.access(path.join(rootDir, 'rules', 'email', 'no-emojis.md'));
+  assert.ok(lines.some((line) => /could not write 2 entries/.test(line)));
+  // A write that failed here is not a deletion upstream: the last pull's row is kept.
+  assert.deepEqual(result.deletedRemote, []);
+  const manifest = JSON.parse(await fs.readFile(path.join(rootDir, '.hiveku', 'knowledge-manifest.json'), 'utf8'));
+  assert.deepEqual(manifest.entries.seo, first.entries.seo);
+  assert.equal(Object.hasOwn(manifest.entries, 'ppc'), false);
+  assert.equal(manifest.entries.sales.version, '2');
 });
