@@ -103,7 +103,13 @@ test('results tell the model the found tools are now callable', () => {
 test('index mode advertises the core plus the search tool, and nothing else', () => {
   const upstream = loadIndex().map((t) => ({ name: t.name, description: t.description, inputSchema: {} }));
   const adv = indexModeTools(upstream);
-  assert.ok(adv.length < 20, `advertised ${adv.length} tools — index mode is not taking effect`);
+  // Exactly the search tool plus the CORE_TOOLS the server offers: index mode is
+  // taking effect, and nothing outside the core list leaks in. (A fixed cap broke
+  // every time a tool joined CORE_TOOLS on purpose, e.g. memory_log_list.)
+  const offered = new Set(upstream.map((t) => t.name));
+  const expected = 1 + CORE_TOOLS.filter((n) => offered.has(n)).length;
+  assert.equal(adv.length, expected, `advertised ${adv.length} tools, expected ${expected}: index mode is not taking effect`);
+  assert.ok(adv.length <= CORE_TOOLS.length + 1, `advertised ${adv.length} tools, more than the core list allows`);
   assert.equal(adv[0].name, FIND_TOOL_NAME, 'the search tool must be first so it is impossible to miss');
   for (const n of ['get_account_info', 'account_context_get', 'list_departments']) {
     assert.ok(adv.some((t) => t.name === n), `${n} must stay advertised`);

@@ -47,7 +47,7 @@ const ACCOUNT = '3f2504e0-4f89-11d3-9a0c-0305e82c3301';
  * the release that regenerates the index is forced to clean this up (the same
  * contract as test/pending-tools.mjs).
  */
-const INCOMING = new Set(['memory_log_list', 'memory_log_summary']);
+const INCOMING = new Set([]); // memory_log_list and memory_log_summary landed in the index (MCP #28, 2026-09-25)
 
 /** memory_* tokens in prose that are field or argument names, not tools. */
 const MEMORY_NON_TOOLS = new Set(['memory_id', 'memory_domain', 'memory_entry_id', 'memory_promoted', 'memory_links']);
