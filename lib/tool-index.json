@@ -240,14 +240,14 @@
       "dept": "accounting",
       "method": "POST",
       "timeoutMs": null,
-      "description": "Create a DRAFT customer invoice (AR). Creating does NOT send: the draft is invisible to the client until it is sent - use accounting_invoice_send (preview without confirm:true first, send on an explicit yes) or the dashboard. Never tell a user the invoice went out on the strength of this call alone. Exactly one of contact_id or company_id is REQUIRED (400 with neither; both is allowed), and every linked contact/company/deal must belong to this account or the call 400s. line_items needs at least one of { description (1-500 chars), quantity, unit_cents, discount_cents?, tax_bps?, product_id?, sort_order?, metadata? }; money is in CENTS. invoice_number: omit it and the per-account counter mints the next one (INV-YYYY-000042 style; numbers already in use are skipped, and a gap after a failed create is normal). Supply one only to keep an invoice's ORIGINAL number when moving it over from another app - it is used as-is and takes nothing from the sequence: max 20 characters (card processors keep only 20), letters/digits/space and . _ / # - starting with a letter or digit, a leading '#' is dropped, and numbers starting 'P-' are refused (reserved for proposal payments); 400 invoice_number_invalid otherwise. Numbers are unique per account ignoring case, deleted and void invoices included: a number already used returns 409 invoice_number_taken with the holder named - pick another number, never retry the same one. tax_bps is deliberately THREE-STATE: omit it (or send null) and the rate resolves from the customer's jurisdiction and the account default; send a number - including an explicit 0 - and that is stamped forever (a later tax-rule edit never re-rates an issued document). A line-level tax_bps overrides the document rate for that line. Document discount_cents is clamped to the subtotal, and tax applies to the post-discount base. issue_date defaults to today; issue_date/due_date parse leniently and an unparseable string stores as the default/NULL rather than rejecting. Optional: currency (ISO 4217, default USD), po_number, title (client-facing headline), notes, terms, allow_partial_payment (default false), send_payment_receipts (default true), delivery ({ attach_pdf?, mode: 'default'|'custom', to?, bcc?, subject?, body? } - prefills the dashboard send dialog), invoice_template_id (validated against the account; silently falls back to the account default template when foreign or omitted). Unknown keys are stripped by the Zod parse. Returns { data } with the created invoice and its line items; owner_id/created_by stay null under a service key. Idempotent: an identical retried call within 1 hour replays the first result instead of minting a second draft - including a cached error, so to genuinely retry after a failure, vary the body."
+      "description": "Create a DRAFT customer invoice (AR). Creating does NOT send: the draft is invisible to the client until it is sent - use accounting_invoice_send (preview without confirm:true first, send on an explicit yes) or the dashboard. Never tell a user the invoice went out on the strength of this call alone. Exactly one of contact_id or company_id is REQUIRED (400 with neither; both is allowed), and every linked contact/company/deal must belong to this account or the call 400s. line_items needs at least one of { description (plain text or simple HTML, up to 2,000 visible characters; see line_items), quantity, unit_cents, discount_cents?, tax_bps?, product_id?, sort_order?, metadata? }; money is in CENTS. invoice_number: omit it and the per-account counter mints the next one (INV-YYYY-000042 style; numbers already in use are skipped, and a gap after a failed create is normal). Supply one only to keep an invoice's ORIGINAL number when moving it over from another app - it is used as-is and takes nothing from the sequence: max 20 characters (card processors keep only 20), letters/digits/space and . _ / # - starting with a letter or digit, a leading '#' is dropped, and numbers starting 'P-' are refused (reserved for proposal payments); 400 invoice_number_invalid otherwise. Numbers are unique per account ignoring case, deleted and void invoices included: a number already used returns 409 invoice_number_taken with the holder named - pick another number, never retry the same one. tax_bps is deliberately THREE-STATE: omit it (or send null) and the rate resolves from the customer's jurisdiction and the account default; send a number - including an explicit 0 - and that is stamped forever (a later tax-rule edit never re-rates an issued document). A line-level tax_bps overrides the document rate for that line. Document discount_cents is clamped to the subtotal, and tax applies to the post-discount base. issue_date defaults to today; issue_date/due_date parse leniently and an unparseable string stores as the default/NULL rather than rejecting. Optional: currency (ISO 4217, default USD), po_number, title (client-facing headline), notes, terms, allow_partial_payment (default false), send_payment_receipts (default true), delivery ({ attach_pdf?, mode: 'default'|'custom', to?, bcc?, subject?, body? } - prefills the dashboard send dialog), invoice_template_id (validated against the account; silently falls back to the account default template when foreign or omitted). Unknown keys are stripped by the Zod parse. Returns { data } with the created invoice and its line items, each line with description_text beside description (its plain rendering, for quoting to a person); owner_id/created_by stay null under a service key. Idempotent: an identical retried call within 1 hour replays the first result instead of minting a second draft - including a cached error, so to genuinely retry after a failure, vary the body."
     },
     {
       "name": "accounting_invoice_get",
       "dept": "accounting",
       "method": "GET",
       "timeoutMs": null,
-      "description": "Read one customer invoice (AR) by UUID: the full crm_invoices row plus line_items sorted by sort_order, payment_applications (each carrying amount_applied_cents, applied_at and a display-safe payment: amount_cents, refunded_cents, method, gateway, gateway_transaction_id, status, card brand/last4, captured/settled/refunded timestamps, and the metadata holding any reference/note from accounting_invoice_record_payment - never the raw gateway payload), plus the linked contact (name/email/phone), company and deal. This is the ONLY Olympus read of an invoice's line items; accounting_invoice_list returns summary rows without them. Balance fields come back exactly as stored - total_cents, amount_paid_cents, balance_due_cents - because the record-payment transaction is their single writer; do not recompute them from the applications. REVERSED payment applications are excluded (same surface the dashboard shows), and the stored balance already reflects any reversal, so the visible applications may sum to less than amount_paid_cents implies historically. A refunded payment shows refunded_cents on the ORIGINAL payment row, never as a separate negative application. Money is in cents. Unknown id, another tenant's id, or a soft-deleted invoice is a 404."
+      "description": "Read one customer invoice (AR) by UUID: the full crm_invoices row plus line_items sorted by sort_order, payment_applications (each carrying amount_applied_cents, applied_at and a display-safe payment: amount_cents, refunded_cents, method, gateway, gateway_transaction_id, status, card brand/last4, captured/settled/refunded timestamps, and the metadata holding any reference/note from accounting_invoice_record_payment - never the raw gateway payload), plus the linked contact (name/email/phone), company and deal. This is the ONLY Olympus read of an invoice's line items; accounting_invoice_list returns summary rows without them. Balance fields come back exactly as stored - total_cents, amount_paid_cents, balance_due_cents - because the record-payment transaction is their single writer; do not recompute them from the applications. REVERSED payment applications are excluded (same surface the dashboard shows), and the stored balance already reflects any reversal, so the visible applications may sum to less than amount_paid_cents implies historically. A refunded payment shows refunded_cents on the ORIGINAL payment row, never as a separate negative application. Money is in cents. Unknown id, another tenant's id, or a soft-deleted invoice is a 404. Each returned line also carries description_text beside description: its plain rendering, for quoting to a person (email, SMS, chat). description is the stored value, plain text or HTML."
     },
     {
       "name": "accounting_invoice_list",
@@ -2319,7 +2319,7 @@
       "dept": "crm",
       "method": "POST",
       "timeoutMs": null,
-      "description": "Create a draft estimate. Either contact_id OR company_id is required. line_items is an array of { description, quantity, unit_cents, discount_cents?, tax_bps?, sort_order?, product_id?, metadata? }. estimate_number is auto-generated server-side via the atomic doc-number helper."
+      "description": "Create a draft estimate. Either contact_id OR company_id is required. line_items is an array of { description, quantity, unit_cents, discount_cents?, tax_bps?, sort_order?, product_id?, metadata? }; description is plain text or simple HTML (see line_items). estimate_number is auto-generated server-side via the atomic doc-number helper. Returns { data } with the estimate and its line items. Each returned line also carries description_text beside description: its plain rendering, for quoting to a person (email, SMS, chat). description is the stored value, plain text or HTML."
     },
     {
       "name": "crm_estimate_delete",
@@ -2333,7 +2333,7 @@
       "dept": "crm",
       "method": "GET",
       "timeoutMs": null,
-      "description": "Get a single estimate by UUID, including line_items, contact, company, and deal."
+      "description": "Get a single estimate by UUID, including line_items, contact, company, and deal. Each returned line also carries description_text beside description: its plain rendering, for quoting to a person (email, SMS, chat). description is the stored value, plain text or HTML."
     },
     {
       "name": "crm_estimate_list",
@@ -2361,7 +2361,7 @@
       "dept": "crm",
       "method": "POST",
       "timeoutMs": null,
-      "description": "Create an estimate template. line_items is optional (a design-only template is valid); amount_cents is stamped server-side on each item. design_json is the customizable PDF design (theme/columns/sections/labels) applied when an estimate from this template is rendered. is_default=true makes it the account default (applied to blank estimates) and unsets any other default."
+      "description": "Create an estimate template. line_items is optional (a design-only template is valid); amount_cents is stamped server-side on each item. design_json is the customizable PDF design (theme/columns/sections/labels) applied when an estimate from this template is rendered. is_default=true makes it the account default (applied to blank estimates) and unsets any other default. Returns { data } with the template, its lines as line_items_json. Each returned line also carries description_text beside description: its plain rendering, for quoting to a person (email, SMS, chat). description is the stored value, plain text or HTML."
     },
     {
       "name": "crm_estimate_template_delete",
@@ -2375,28 +2375,28 @@
       "dept": "crm",
       "method": "GET",
       "timeoutMs": null,
-      "description": "Get a single estimate template by UUID."
+      "description": "Get a single estimate template by UUID. Its lines come back as line_items_json; to change them, send line_items to crm_estimate_template_update. Each returned line also carries description_text beside description: its plain rendering, for quoting to a person (email, SMS, chat). description is the stored value, plain text or HTML."
     },
     {
       "name": "crm_estimate_template_list",
       "dept": "crm",
       "method": "GET",
       "timeoutMs": null,
-      "description": "List reusable estimate templates (name, description, currency, default tax, line items skeleton)."
+      "description": "List reusable estimate templates (name, description, currency, default tax, line items skeleton). Each template returns its lines as line_items_json (writes take them as line_items). Each returned line also carries description_text beside description: its plain rendering, for quoting to a person (email, SMS, chat). description is the stored value, plain text or HTML."
     },
     {
       "name": "crm_estimate_template_update",
       "dept": "crm",
       "method": "PATCH",
       "timeoutMs": null,
-      "description": "Update an estimate template. Passing line_items replaces the full set. design_json replaces the PDF design. is_default=true makes it the account default (unsets others); is_archived hides it from pickers. Partial updates: only fields present are written."
+      "description": "Update an estimate template. Passing line_items replaces the full set: read the template first (its lines are line_items_json) and send every line you keep, with its description unchanged, as line_items. design_json replaces the PDF design. is_default=true makes it the account default (unsets others); is_archived hides it from pickers. Partial updates: only fields present are written. Each returned line also carries description_text beside description: its plain rendering, for quoting to a person (email, SMS, chat). description is the stored value, plain text or HTML."
     },
     {
       "name": "crm_estimate_update",
       "dept": "crm",
       "method": "PATCH",
       "timeoutMs": null,
-      "description": "Update an editable estimate (status draft/sent/viewed/expired/declined). PATCHing an accepted/converted estimate returns 409 — duplicate it instead. Passing line_items replaces the full set."
+      "description": "Update an editable estimate (status draft/sent/viewed/expired/declined). PATCHing an accepted/converted estimate returns 409 — duplicate it instead. Passing line_items replaces the full set: read the estimate with crm_estimate_get first and send every line you keep with its description unchanged. Returns { data } with the estimate and its line items. Each returned line also carries description_text beside description: its plain rendering, for quoting to a person (email, SMS, chat). description is the stored value, plain text or HTML."
     },
     {
       "name": "crm_forecast_weighted",
@@ -2620,7 +2620,7 @@
       "dept": "crm",
       "method": "POST",
       "timeoutMs": null,
-      "description": "Create an invoice template. line_items is required (min 1). amount_cents is stamped server-side on each item. default_due_days seeds the invoice due date (issue_date + days)."
+      "description": "Create an invoice template. line_items is required (min 1). amount_cents is stamped server-side on each item. default_due_days seeds the invoice due date (issue_date + days). Returns { data } with the template, its lines as line_items_json. Each returned line also carries description_text beside description: its plain rendering, for quoting to a person (email, SMS, chat). description is the stored value, plain text or HTML."
     },
     {
       "name": "crm_invoice_template_delete",
@@ -2634,21 +2634,21 @@
       "dept": "crm",
       "method": "GET",
       "timeoutMs": null,
-      "description": "Get a single invoice template by UUID."
+      "description": "Get a single invoice template by UUID. Its lines come back as line_items_json; to change them, send line_items to crm_invoice_template_update. Each returned line also carries description_text beside description: its plain rendering, for quoting to a person (email, SMS, chat). description is the stored value, plain text or HTML."
     },
     {
       "name": "crm_invoice_template_list",
       "dept": "crm",
       "method": "GET",
       "timeoutMs": null,
-      "description": "List reusable invoice templates (name, description, currency, default tax, net terms, line items skeleton)."
+      "description": "List reusable invoice templates (name, description, currency, default tax, net terms, line items skeleton). Each template returns its lines as line_items_json (writes take them as line_items). Each returned line also carries description_text beside description: its plain rendering, for quoting to a person (email, SMS, chat). description is the stored value, plain text or HTML."
     },
     {
       "name": "crm_invoice_template_update",
       "dept": "crm",
       "method": "PATCH",
       "timeoutMs": null,
-      "description": "Update an invoice template. Passing line_items replaces the full set. Partial updates: only fields present are written."
+      "description": "Update an invoice template. Passing line_items replaces the full set: read the template first (its lines are line_items_json) and send every line you keep, with its description unchanged, as line_items. Partial updates: only fields present are written. Each returned line also carries description_text beside description: its plain rendering, for quoting to a person (email, SMS, chat). description is the stored value, plain text or HTML."
     },
     {
       "name": "crm_lead_triage",
