@@ -36,7 +36,8 @@ To change knowledge, use the live memory_* MCP tools, then `knowledge pull` to b
   `content` with `<!-- department: seo -->` to scope it to one department - `account_context_get`
   reads that tag out of the content, and an untagged skill or rule is global to every department.
 - Existing entry: read it with `memory_list({ domain: "_skill:<slug>" })` or `memory_get`, then
-  `memory_update({ memory_id, content })` with the full body. `memory_update` REPLACES the content.
+  `memory_update({ memory_id, content, reason })` with the full body. `memory_update` REPLACES the
+  content. If you read that entry earlier in the session, check `memory_log_list({ memory_id, since })` first and merge any newer change; pass `reason`, one line on why.
 - Wrong edit, or an entry deleted by mistake: `memory_list_versions({ memory_id })` (works on deleted
   entries too) then `memory_restore_version({ version_id })`.
 

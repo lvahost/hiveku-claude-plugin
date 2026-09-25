@@ -36,7 +36,9 @@ Stand up the memory substrate for a newly bound account$ARGUMENTS. A new account
 5. **READ `results[]`. A 200 does not mean every entry landed.** One malformed row refuses the WHOLE batch
    upfront, but per-row write failures - most often a 409 because that domain already exists - come back
    individually with `ok: false` while the rest land. Retry only the `ok: false` rows, and handle a 409 by
-   reading the existing document and merging into it with `memory_update`, never by writing past it.
+   reading the existing document and merging into it with `memory_update` (with a one-line `reason`),
+   never by writing past it. The memory log (`memory_log_list({ domain })`) shows who wrote that
+   document and when.
 
 6. **Mirror it locally:** `/hiveku:knowledge pull`.
 
