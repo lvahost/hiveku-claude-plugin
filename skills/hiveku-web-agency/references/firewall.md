@@ -150,9 +150,11 @@ directly. If the tools are not on your key yet, say so and hand the user the pat
    window, not proof that the crawler was served. For what Google actually fetched, the Search
    Console URL inspection is the evidence.
 2. The firewall lets real Googlebot and bingbot through by the address they come from, so a real
-   one is not challenged. A row can still appear: `blocked` also counts the site's own 403s, and
-   the per-address rate limit applies to everyone. A `blocked` row from Google (`asn` 15169) or
-   Microsoft / Azure (8075) usually means the site refused it: check the page, not the firewall.
+   one is not challenged. A row can still appear: the per-address rate limit applies to everyone,
+   and a `blocked` row mixes the site's own 403s with the firewall's. The row cannot tell them
+   apart, and neither can its network number: a 403 carrying `x-hiveku-firewall` is the firewall,
+   one without it is the site. Ask for the response's `x-hiveku-firewall` header, or open the row
+   with `site_firewall_client_get` (step 4), before blaming the page or the firewall.
 3. A Googlebot row on Google Cloud (`asn` 396982) is usually an impostor: anyone can rent a server
    there and put that name in the user agent. Real bingbot comes from 8075 (Microsoft / Azure),
    which also carries rented Azure servers, so the network number alone cannot prove a bingbot

@@ -75,6 +75,12 @@ const FORBIDDEN = [
   /(now|no longer) (answers|returns|gets) (a )?(202|403)/i,
   /since the (edge )?switch/i,
   /is now a 403/i,
+  // A blocked row mixes the site's own 403s with the firewall's, and the rollup
+  // classifies on the status alone, so no network number says which one a row is:
+  // once the edge answers 403, a spoofed crawler on rented Azure (8075) lands in the
+  // same blocked bucket as the site's own refusals.
+  /usually means the site refused it/i,
+  /a blocked row from [^.]*\b(15169|8075)\b/i,
 ];
 function assertNoFalseClaims(text, label) {
   const f = flat(text);
@@ -105,6 +111,7 @@ function assertFirewallReference(text) {
     'null means "not read", never zero',
     'It never lifts the per-address rate limit (429), the fingerprint volume challenge, or the scraper-network block (403 with x-hiveku-firewall: blocked-network)',
     'Decide on the status and the x-hiveku-firewall header, never on the body text',
+    'The row cannot tell them apart, and neither can its network number',
   ]) {
     assert.ok(f.includes(token), `${FIREWALL} does not teach: ${token}`);
   }
@@ -145,4 +152,12 @@ test('the checks fail on the old wording (negative control)', () => {
   assert.throws(() => assertContract(old, 'old'));
   assert.throws(() => assertFirewallReference(old));
   assert.throws(() => assertNoFalseClaims('The edge now answers 403 to every script.', 'claim'));
+});
+
+test('a blocked row is never read as the site by its network number (negative control)', () => {
+  const oldCrawler =
+    'A `blocked` row from Google (`asn` 15169) or\n' +
+    '   Microsoft / Azure (8075) usually means the site refused it: check the page, not the firewall.';
+  assert.throws(() => assertNoFalseClaims(oldCrawler, 'old crawler reading'));
+  assert.throws(() => assertNoFalseClaims('A blocked row from 8075 is the site.', 'bare network reading'));
 });
