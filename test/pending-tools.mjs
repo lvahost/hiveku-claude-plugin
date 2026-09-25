@@ -343,11 +343,6 @@ export const PENDING_TOOLS = new Map([
   // 2026-09-24 (MCP #26, c2cbfb7ee, deployed; index regenerated at 2117 tools);
   // entries deleted.
 
-  // FORM-CAPTURE-1 (2026-09-24): pending until the MCP deploy and the index
-  // regeneration. See the batch note above.
-  ['marketing_form_capture_settings_get', { since: '2026-09-24', batch: 'FORM-CAPTURE-1' }],
-  ['marketing_form_capture_settings_update', { since: '2026-09-24', batch: 'FORM-CAPTURE-1' }],
-  ['marketing_form_capture_list', { since: '2026-09-24', batch: 'FORM-CAPTURE-1' }],
-  ['marketing_form_capture_preview', { since: '2026-09-24', batch: 'FORM-CAPTURE-1' }],
-  ['marketing_form_capture_purge', { since: '2026-09-24', batch: 'FORM-CAPTURE-1' }],
+  // FORM-CAPTURE-1: landed in the live index on 2026-09-24 (MCP #31, fe5e28674,
+  // deployed; index regenerated at 2141 tools); entries deleted.
 ]);
