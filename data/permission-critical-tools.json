@@ -6,7 +6,7 @@
     "mcp__hiveku__"
   ],
   "plugin_version": "0.26.27",
-  "count": 210,
+  "count": 214,
   "tools": [
     {
       "name": "deploy_site",
@@ -67,6 +67,26 @@
       "name": "project_vcs_revert",
       "method": "POST",
       "why_gated": "moves a branch head back to an earlier commit and discards its uncommitted working-tree edits"
+    },
+    {
+      "name": "project_checkpoint_restore",
+      "method": "POST",
+      "why_gated": "overwrites the project's files with a checkpoint's (and, with restore_database: true, replays the checkpoint's database copy into the live database)"
+    },
+    {
+      "name": "checkpoint_restore",
+      "method": "POST",
+      "why_gated": "overwrites the project's files with a checkpoint's (and, with restore_database: true, replays the checkpoint's database copy into the live database)"
+    },
+    {
+      "name": "history_restore_to_time",
+      "method": "POST",
+      "why_gated": "overwrites the project's files with their state at an earlier time"
+    },
+    {
+      "name": "checkpoint_delete",
+      "method": "DELETE",
+      "why_gated": "permanently deletes a checkpoint, a recovery point that cannot be recreated"
     },
     {
       "name": "site_delete",
