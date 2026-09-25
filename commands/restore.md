@@ -16,8 +16,11 @@ to also push the restore. Prefer this whenever only a file or two regressed.
 `project_checkpoint_restore_dry_run({ project_id: <the project_id>, checkpoint_hash })` (from `/hiveku:history`)
 shows exactly which files would add/update/stay. Then `project_checkpoint_restore({ project_id: <the project_id>,
 checkpoint_hash })` - same endpoint as `checkpoint_restore`. It is ADDITIVE about deletions (files
-created SINCE the checkpoint are kept), but it OVERWRITES the content of every file in the checkpoint and
-restores the database when the checkpoint captured one - so uncommitted edits to those files are lost.
+created SINCE the checkpoint are kept), but it OVERWRITES the content of every file in the checkpoint - so
+uncommitted edits to those files are lost. The live DATABASE is left alone unless you pass
+`restore_database: true`, and only do that when the user explicitly asks for their data back: it replays
+the checkpoint's database copy into the live database (the dry run's `database` section says whether
+the checkpoint holds one).
 Take `/hiveku:checkpoint` FIRST, then confirm the hash with the user.
 
 **A point in time (no snapshot needed):** `project_state_at({ project_id: <the project_id>, as_of: "<ISO time>" })`
