@@ -111,14 +111,17 @@ enumerated, never a page size.
 
 Website chats come back in this list too (`channel: 'chat'`), including the ones the website
 assistant is answering right now. Those are not unassigned or neglected - leave them out of any
-"who needs a reply" or "to route" set. The row does not carry `ai_handling` today (the list
-route does not return it), so decide from `source_meta`: the assistant has the chat when the
-newest of `escalated_at` / `taken_over_at` / `handed_back_at` is `handed_back_at`, or when none
-is set and `mode` is `'conversational'`; any other chat row is a person's. (A hand-back keeps
-the older `taken_over_at`, so its presence alone proves nothing.) Where a row does carry
-`ai_handling`, that field wins. An `ai_handling` filter (`'true' | 'false' | 'all'`) works only
-once the tool's schema lists it; until then it is dropped like any invented filter. Load
-`references/website-chats.md` before you assign, escalate or re-prioritise any chat row.
+"who needs a reply" or "to route" set. Current servers put `ai_handling` on every row (`true`
+while the assistant answers the chat on its own), and that field wins. A row without it (an
+older server, an old mirror file) is decided from `source_meta`: the assistant has the chat
+when the newest of `escalated_at` / `taken_over_at` / `handed_back_at` is `handed_back_at`, or
+when none is set and `mode` is `'conversational'`; any other chat row is a person's. (A
+hand-back keeps the older `taken_over_at`, so its presence alone proves nothing.) An
+`ai_handling` filter (`'true' | 'false' | 'all'`; `'false'` is the human queue) works only once
+the tool's schema lists it; until then it is dropped like any invented filter, so pass it
+explicitly and check the rows. The same schema adds `q` (subject or message text) and `since` /
+`until` (on `created_at`); the same rule applies to them. Load `references/website-chats.md`
+before you assign, escalate or re-prioritise any chat row.
 
 ## helpdesk_ticket_add_message vs helpdesk_ticket_send_reply
 The highest-stakes tool confusion in this domain. `helpdesk_ticket_add_message({ id, body })`

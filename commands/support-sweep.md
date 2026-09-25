@@ -4,6 +4,19 @@ description: "Customers waiting too long? Full helpdesk queue triage - SLA breac
 Queue sweep - the **hiveku-helpdesk-agency** skill's Play 1 end-to-end. Order matters: protect SLA
 first, then reduce backlog. `/hiveku:tickets` is the overdue-reply half of this pass; run this one
 for the full morning triage.
+
+Website chats (`channel: 'chat'`) follow their own rules in every step below. Load the skill's
+`references/website-chats.md` before you route, chase, close or answer one. The short form:
+- Skip every chat with `ai_handling: true`. The website assistant is answering it right now: it
+  is not unassigned, not overdue work and not a reply you owe. No reply, assign, escalation,
+  priority change or close, unless the user names that chat and asks you to step in. A row with
+  no `ai_handling` (an older server, an old mirror file) is sorted by the newest `source_meta`
+  stamp instead: `handed_back_at` newest, or no stamp and `mode: 'conversational'`, means the
+  assistant has it.
+- A chat the assistant handed to the team is set to `pending` while the VISITOR waits. With no
+  teammate reply (outbound `author_kind: 'user'`) since the hand-off, it needs a reply, not a
+  chase and not a close.
+- Report the two groups apart: "4 chats waiting for a person, 11 with the assistant".
 1. Context: `account_context_get({ domain: "helpdesk" })` for brand voice and the account's priority
    rubric (it lives in helpdesk memory, not in any tool - no rubric on file means propose one and
    persist it), plus `helpdesk_automations_get` for the config this sweep must respect: `sla`,
@@ -23,8 +36,10 @@ for the full morning triage.
    `({ kind: "resolve", limit: 500 })`. The default limit is 100, the max is 500, and the truncation
    is silent - a capped list reads as a healthy queue, so flag any list that returns at exactly its
    limit. Missed reply windows are the breaches customers feel; nothing else matters until every
-   ticket here has a reply drafted (step 6) or an owner. This tool excludes resolved/closed - it
-   shows current fires only; the attainment number (resolved tickets included, whole-window
+   ticket here has a reply drafted (step 6) or an owner. A row with `ai_handling: true` is a chat
+   the assistant is still answering: leave it out and count it on its own line. This tool
+   excludes resolved/closed - it shows current fires only; the attainment number (resolved
+   tickets included, whole-window
    counts, met/(met+breached) with the excluded no_sla and pending counts reported beside it) is
    `helpdesk_sla_history` - the weekly-checkup and monthly-report read, not part of this sweep.
 3. New and unassigned: `helpdesk_workload` first - per-assignee open/pending and
@@ -36,7 +51,13 @@ for the full morning triage.
    `page`/`limit` until a short page returns - report the count you enumerated, never a page size -
    filtered client-side for a null assignee (there is NO unassigned filter, and an invented
    `unassigned: true` is silently dropped, so the call succeeds and hands you the whole open
-   list), then reconciled against the workload bucket count. Set priority against the rubric
+   list), then reconciled against the workload bucket count. The bucket also counts the chats
+   the assistant is answering (open and pending, mostly with no assignee): leave the
+   `ai_handling: true` rows out of what you route, subtract the unassigned ones from the bucket
+   before you reconcile, and report them apart ("3 unassigned tickets, plus 11 chats the
+   assistant is answering"). Where the tool's schema lists `ai_handling`, list the human queue
+   with `ai_handling: "false"` and count the assistant's chats with `ai_handling: "true"`;
+   otherwise the argument is dropped, so sort the rows yourself. Set priority against the rubric
    (`helpdesk_ticket_set_priority`), then route: `helpdesk_ticket_assign({ id, assigned_to_id })`
    for a human - the workload table shows who already carries the most before you add to a pile -
    or `({ id, queue_id })` for a queue, whose strategy picks the agent
@@ -46,7 +67,10 @@ for the full morning triage.
    `auto_close` in the step-1 config FIRST - the account may already sweep these on a timer, and a
    manual chase stacked on an auto-close email double-messages the customer. Quiet ones get a
    polite follow-up draft (step 6) then a close proposal; `pending` must not become a graveyard
-   that hides real backlog.
+   that hides real backlog. Two kinds of website chat sit in this list and are never chased or
+   closed: a chat with `ai_handling: true` (a hand-back to the assistant leaves the status
+   `pending`, and a follow-up would take it over again), and a chat handed to the team whose
+   visitor is still waiting for a teammate reply - that one goes to step 6 as a reply to draft.
 5. History at a glance, per flagged ticket (every breach, every urgent, every angry thread), before
    routing or wording anything hard: `helpdesk_ticket_list_for_contact` /
    `helpdesk_ticket_list_for_company` (first-time issue, or the fifth ticket from one account),
@@ -69,14 +93,25 @@ for the full morning triage.
    serially: `helpdesk_ticket_send_reply({ id, body })` (the ONLY tool that stamps
    `first_response_at` - an outbound `helpdesk_ticket_add_message` answers the customer but leaves
    the ticket a breach forever), verify each in `helpdesk_ticket_messages` before the next, stop on
-   the first anomaly. Then `helpdesk_ticket_set_status` - `resolved` when done, `pending` when the
-   ball is with the customer. A true escalation is `helpdesk_ticket_escalate_to_human`, which
-   force-bumps priority to `urgent` and adds an "escalated" tag - it is not a routing tool; plain
-   routing is `helpdesk_ticket_assign`.
+   the first anomaly. On a website chat, send it as staff: `author_kind: 'user'` plus the
+   approving teammate's `author_id` (`crm_list_users`). Never paste the visitor's fenced text
+   into a draft: a body carrying the `<untrusted_external_content>` markup is refused. After the
+   send, re-read the ticket and check `ai_handling` is `false` (where the server does not return
+   it, check the take-over stamps as `references/website-chats.md` says). A reply takes the chat
+   from the assistant; if the assistant still has it, tell the user and point them to "Take
+   over" on the ticket page. Then `helpdesk_ticket_set_status` - `resolved` when done, `pending`
+   when the ball is with the customer. A true escalation is `helpdesk_ticket_escalate_to_human`,
+   which force-bumps priority to `urgent` and adds an "escalated" tag - it is not a routing tool;
+   plain routing is `helpdesk_ticket_assign`.
 8. Report + re-check: counts (breaches worked/owned, unassigned routed, pending chased, merges,
    escalations) logged to the triage task via `pm_tasks_update`; `pm_tasks_create` anything needing
    engineering, billing, or a KB article - a sweep that produces zero follow-up tasks means you
-   missed the systemic issues. The sweep is a snapshot, not a feed - no delta or updated-since
-   filter exists - so on a live queue re-run step 2 every hour or two, keep this pass's ticket ids,
-   and report only what changed: new tickets, new breaches, priority changes.
+   missed the systemic issues. When chats in this pass were handed to the team because the
+   assistant had no answer (`escalation_reason` `no_grounding` or `low_confidence`), read
+   `helpdesk_assistant_knowledge_status` and tell the user in plain words what the assistant
+   answers from, what it read from the website and when, what it skipped and why, and quote its
+   `advice` (the skill's `references/assistant-knowledge.md`). The switches are the owner's, in
+   Helpdesk > AI agent; no tool changes them. The sweep is a snapshot, not a feed - no delta or
+   updated-since filter exists - so on a live queue re-run step 2 every hour or two, keep this
+   pass's ticket ids, and report only what changed: new tickets, new breaches, priority changes.
 9. Finish every session of work the same way: persist notable learnings to department memory - read the department's current document with `memory_list({ domain: "<dept>" })`, append your note to the `content` it returns, and send the WHOLE merged document to `memory_update({ memory_id, content })`, which REPLACES it (sending only the new note destroys everything that department had accumulated); use `memory_create({ type: "memory", name: "<dept>", content })` only when no entry exists, and keep `<dept>` to a canonical department name (see hiveku-orient), and reflect the work in Hiveku PM: `pm_projects_list` to find the project (it filters only by `status`; `project_type` is named in its description but is NOT in its schema, so the proxy drops it and you filter the returned list yourself), or `pm_projects_create({ name, project_type })` where project_type is one of seo | ppc | marketing | website | app_dev, then `pm_tasks_create({ project_id, title })` (the field is `title`, not `name`), `pm_tasks_update` as it moves, `pm_tasks_complete({ id, summary })` when the loop is closed. Reopen a task closed too early with `pm_tasks_uncomplete`, never `pm_tasks_update`. A memory_update that destroyed content is recoverable: `memory_list_versions({ memory_id })` lists the snapshots taken before every PUT or DELETE, and `memory_restore_version({ version_id })` restores one (it works for deleted entries too). Hiveku, not this folder, is the source of truth.
