@@ -3,7 +3,8 @@
  * department comes from the entry's stored domain, which any agent or API
  * caller on the account can write. Only a plain lowercase name may become a
  * directory; any other domain files under general, and nothing is ever written
- * outside the bound folder.
+ * outside the bound folder. The file name comes from the same stored data, so
+ * one that names a Windows device is renamed.
  *
  * Hostile names are assembled from parts at run time and referred to by
  * placeholder ("a traversal name", "an absolute name").
@@ -14,7 +15,14 @@ import http from 'node:http';
 import path from 'node:path';
 import os from 'node:os';
 import { promises as fs } from 'node:fs';
-import { pullKnowledge, departmentOf, isInsideRoot, WINDOWS_DEVICE_NAME } from '../lib/knowledge.mjs';
+import {
+  pullKnowledge,
+  knowledgeStatus,
+  departmentOf,
+  isInsideRoot,
+  safeFileStem,
+  WINDOWS_DEVICE_NAME,
+} from '../lib/knowledge.mjs';
 
 const SLASH = String.fromCharCode(47);
 const BACKSLASH = String.fromCharCode(92);
@@ -188,7 +196,66 @@ test('a listed row whose type names an inherited property is ignored and the pul
   };
   const result = await pullKnowledge({ rootDir, endpoint, key: 'hvk_test' });
   assert.equal(result.written, 1);
+  // Ignored, not failed: the per-row catch must not be what keeps this pull alive.
+  assert.deepEqual(result.failed, []);
   await fs.access(path.join(rootDir, 'memory', 'seo', 'keyword-strategy.md'));
+});
+
+test('safeFileStem renames a stem that names a Windows device and keeps every other stem', () => {
+  assert.equal(safeFileStem('com1'), 'com1-entry');
+  assert.equal(safeFileStem('nul'), 'nul-entry');
+  // The part before the first dot decides, so the suffix goes there.
+  assert.equal(safeFileStem('nul.txt'), 'nul-entry.txt');
+  assert.equal(safeFileStem('lpt9.x.y'), 'lpt9-entry.x.y');
+  for (const stem of ['con', 'prn', 'aux', 'nul', 'com0', 'com9', 'lpt0', 'lpt9', 'nul.txt', 'con.md']) {
+    assert.equal(WINDOWS_DEVICE_NAME.test(`${safeFileStem(stem)}.md`), false, stem);
+  }
+  // Negative control: near-names and ordinary stems are unchanged.
+  for (const stem of ['console', 'null', 'auxiliary', 'com10', 'lpt', 'connect', 'prn-team', 'keyword-strategy', 'unnamed']) {
+    assert.equal(safeFileStem(stem), stem);
+  }
+});
+
+test('an entry whose file name would be a Windows device is written under a safe name, and later pulls agree', async () => {
+  const { rootDir } = await layout();
+  listing = {
+    memory: [
+      // A plain memory row: the server sets its name to its domain.
+      { id: 'd1', name: 'com1', domain: 'com1', content: 'device-named domain', version: 1 },
+      // Negative controls: near-names keep their own folder and file name.
+      { id: 'n1', name: 'console', domain: 'console', content: 'near-name', version: 1 },
+      { id: 'n2', name: 'com10', domain: 'com10', content: 'near-name', version: 1 },
+    ],
+    // A typed row with no name: the file name comes from the domain after its prefix.
+    skill: [{ id: 'd2', domain: '_skill:nul', content: 'device-named skill', version: 1 }],
+  };
+
+  const first = await pullKnowledge({ rootDir, endpoint, key: 'hvk_test' });
+  assert.equal(first.written, 4);
+  assert.deepEqual(first.failed, []);
+  const deviceFile = path.join('memory', 'general', 'com1-entry.md');
+  const skillFile = path.join('skills', 'general', 'nul-entry.md');
+  assert.match(await fs.readFile(path.join(rootDir, deviceFile), 'utf8'), /device-named domain/);
+  assert.match(await fs.readFile(path.join(rootDir, skillFile), 'utf8'), /device-named skill/);
+  assert.match(await fs.readFile(path.join(rootDir, 'memory', 'console', 'console.md'), 'utf8'), /near-name/);
+  await fs.access(path.join(rootDir, 'memory', 'com10', 'com10.md'));
+  const filesAfterFirst = (await listFiles(rootDir)).sort();
+  for (const file of filesAfterFirst) {
+    assert.equal(WINDOWS_DEVICE_NAME.test(path.basename(file)), false, `device-named file: ${path.relative(rootDir, file)}`);
+  }
+  const manifest = JSON.parse(await fs.readFile(path.join(rootDir, '.hiveku', 'knowledge-manifest.json'), 'utf8'));
+  assert.equal(manifest.entries.com1.file, deviceFile);
+  assert.equal(manifest.entries['_skill:nul'].file, skillFile);
+
+  // The next pull writes the same files: nothing reported deleted, nothing added.
+  const second = await pullKnowledge({ rootDir, endpoint, key: 'hvk_test' });
+  assert.deepEqual([second.written, second.failed, second.deletedRemote], [4, [], []]);
+  assert.deepEqual((await listFiles(rootDir)).sort(), filesAfterFirst);
+
+  // The status check reads the files the manifest names: all four are in sync.
+  const status = await knowledgeStatus({ rootDir, endpoint, key: 'hvk_test' });
+  assert.equal(status.in_sync, 4);
+  assert.deepEqual([status.missing_local, status.locally_modified, status.deleted_remote], [[], [], []]);
 });
 
 test('a row the disk refuses is reported and the rest of the pull still lands', async () => {
