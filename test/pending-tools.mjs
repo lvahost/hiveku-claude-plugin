@@ -365,6 +365,7 @@ export const PENDING_TOOLS = new Map([
   // FORM-CAPTURE-1: landed in the live index on 2026-09-24 (MCP #31, fe5e28674,
   // deployed; index regenerated at 2141 tools); entries deleted.
 
-  // HELPDESK-R3 (2026-09-25): see the batch note above.
-  ['helpdesk_assistant_knowledge_status', { since: '2026-09-25', batch: 'HELPDESK-R3' }],
+  // HELPDESK-R3: landed in the live index on 2026-09-25 (MCP #32, 515ec43,
+  // deployed; index regenerated at 2144 tools, and it joined the read-only
+  // list as a GET); entry deleted.
 ]);
