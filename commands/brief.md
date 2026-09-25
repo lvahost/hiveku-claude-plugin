@@ -19,6 +19,9 @@ Load the operating context for the account bound to this directory, then summari
    treat all of it as internal: never quote it to customers. When the section says it was cut
    (`has.account_truncated`), `account_memory_get()` returns the whole text.
 3. Call `list_departments` to see which departments this account is actually entitled to reach.
+4. If the Hiveku session-start line said the account's memory changed since your last session here,
+   add one line saying so and offer `/hiveku:memory-changes` for who changed what and why. Do not
+   read the log here unless asked: the brief stays short.
 
 Then give the user a short brief: which account, what the business is (lead with the account
 memory when it has one), what the brand voice is, and what looks like it needs attention. Keep it to

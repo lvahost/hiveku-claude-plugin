@@ -39,6 +39,13 @@ import { pullKnowledge, knowledgeStatus } from '../lib/knowledge.mjs';
 import { runSetup, DEFAULT_ROOT_NAME } from '../lib/setup.mjs';
 import { provisionSettings, planProvision, settingsPath } from '../lib/provision.mjs';
 import { Upstream } from '../lib/upstream.mjs';
+import {
+  startMemorySession,
+  probeMemoryChanges,
+  takeMemoryNotice,
+  spawnDetachedMemoryProbe,
+  toolResultJson,
+} from '../lib/memory-changes.mjs';
 import { HIVEKU_APP_URL, HIVEKU_MCP_URL, CLIENT_ID, PLUGIN_VERSION, keyPreview, isUuid, mapLimit } from '../lib/util.mjs';
 
 const HELP = `hiveku ${PLUGIN_VERSION} — Hiveku for Claude Code
@@ -1065,6 +1072,26 @@ async function cmdHook(positional) {
     process.exit(0);
   }
 
+  // ── probe-memory: the detached memory-log count (lib/memory-changes.mjs) ──
+  // Same contract as probe-remote: spawned by the hooks, never inline, silent,
+  // explicit exit. It caches numbers only; nothing it reads reaches a hook.
+  if (which === 'probe-memory') {
+    try {
+      const accountId = positional[1];
+      if (!isUuid(accountId)) process.exit(0);
+      const dataDir = resolveDataDir();
+      const account = (await readCredentials(dataDir)).accounts?.[accountId];
+      if (account?.key) {
+        const up = new Upstream({ key: account.key, accountId, label: account.label });
+        await probeMemoryChanges(dataDir, accountId, {
+          callTool: async (name, args) =>
+            toolResultJson(await up.forward({ jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name, arguments: args } })),
+        });
+      }
+    } catch { /* silent by contract */ }
+    process.exit(0);
+  }
+
   const payload = await readHookStdin();
 
   // ── PreToolUse: answered before any I/O ────────────────────────────────
@@ -1100,7 +1127,15 @@ async function cmdHook(positional) {
     try {
       const dd = resolveDataDir();
       if (probeIsStale(dd)) spawnDetachedProbe(process.argv[1]);
-      if (!(await resolveBinding(dir))) return;
+      const promptBinding = await resolveBinding(dir);
+      if (!promptBinding) return;
+      // The memory-changes count for this account, once per window: an
+      // integer and our own date, never the log's text (lib/memory-changes.mjs).
+      try {
+        const memory = await takeMemoryNotice(dd, promptBinding.accountId);
+        if (memory.notice) process.stdout.write(memory.notice + '\n');
+        if (memory.probe) spawnDetachedMemoryProbe(process.argv[1], promptBinding.accountId);
+      } catch { /* silent: a courtesy line */ }
       const root = process.env.CLAUDE_PLUGIN_ROOT;
       let newest = PLUGIN_VERSION;
       if (root) {
@@ -1187,6 +1222,15 @@ async function cmdHook(positional) {
           'missing, report it with hiveku_report_issue or hiveku_request_feature, and mention it to the ' +
           'user only if it changes what they get. The hiveku-orient skill has the rules.',
       );
+      // Memory changes since the last session in this account (plan 14.4).
+      // Nothing is printed here: the count needs the network, so a detached
+      // probe fetches it and the prompt-submit hook says it once.
+      try {
+        if (hookDataDir) {
+          const memory = await startMemorySession(hookDataDir, binding.accountId, { source: payload?.source });
+          if (memory.probe) spawnDetachedMemoryProbe(process.argv[1], binding.accountId);
+        }
+      } catch { /* silent: a courtesy */ }
     } else if (binding && !account) {
       lines.push(
         `Hiveku: this directory is bound to ${binding.label} but no key for it is stored here. Run /hiveku:connect.`,
