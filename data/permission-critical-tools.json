@@ -81,7 +81,7 @@
     {
       "name": "site_firewall_remove",
       "method": "DELETE",
-      "why_gated": "removes a firewall allowance and re-syncs the edge: the customer's monitor or audit tool is challenged again on its next request, which they see as a blank page or a 202"
+      "why_gated": "removes a firewall allowance and re-syncs the edge: the customer's monitor or audit tool is refused at the browser check again on its next request, which they see as a blank page, a 202, or a 403 with x-hiveku-firewall: blocked"
     },
     {
       "name": "account_memory_append",
