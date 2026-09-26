@@ -363,10 +363,10 @@ list above is spelled out. If you add to it, add whole names.
 **This list is a copy.** It lives in your settings file and only changes when you paste it
 again, so after a plugin update it can be missing names a newer release added. Paste the block
 again after an update. The plugin also asks on its own before the writes that change what
-department agents read, which forms a site captures (and erasing what it captured), live ad
-campaigns, the budget guardrail, conversion uploads, a staged production deploy and GA4
-conversion settings, whatever your settings allow, so those prompt even on a machine with an
-older copy.
+department agents read, which forms a site captures (and erasing what it captured), a site's
+search engine indexing, live ad campaigns, the budget guardrail, conversion uploads, a staged
+production deploy and GA4 conversion settings, whatever your settings allow, so those prompt
+even on a machine with an older copy.
 
 ### What is safe to leave on allow
 
