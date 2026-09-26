@@ -10,6 +10,7 @@
     "duplicate",
     "spam",
     "archived",
+    "excluded",
     "workflow_failed",
     "no_attribution",
     "unpaid_attribution",

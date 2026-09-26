@@ -78,8 +78,9 @@ did the other 18 go?". For CRO it is also the baseline instrument for any form-c
 page. Rules, stated wherever its numbers are quoted:
 
 - **The buckets sum to the total.** Every submission lands in exactly one named discrepancy
-  bucket - deleted, duplicate, spam, archived, workflow_failed, no_attribution,
-  unpaid_attribution, counted - and the buckets sum to the total. `buckets.counted` is OUR
+  bucket - deleted, duplicate, spam, archived, excluded (a form the site's capture settings
+  now exclude: not a lead), workflow_failed, no_attribution, unpaid_attribution, counted - and
+  the buckets sum to the total. `buckets.counted` is OUR
   number; the rest ARE the explanation of the gap ("40 vs 22, and here are 11 spam, 4
   duplicates, 3 with no UTMs"). Unlike the dashboard Forms tab it includes spam, deleted, and
   duplicate rows and labels them, because they are the answer. `has_click_id` isolates the paid

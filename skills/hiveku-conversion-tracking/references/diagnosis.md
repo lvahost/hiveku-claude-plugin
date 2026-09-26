@@ -228,8 +228,11 @@ read their output conservatively, and note they are `seo_`-prefixed - invisible 
 ## 7. `marketing_form_conversion_audit` - where the leads went
 
 **The discrepancy buckets SUM TO THE TOTAL**, which makes this an explanation, not an estimate:
-`deleted | duplicate | spam | archived | workflow_failed | no_attribution | unpaid_attribution |
-counted`.
+`deleted | duplicate | spam | archived | excluded | workflow_failed | no_attribution |
+unpaid_attribution | counted`.
+- `excluded` = captured from a form or page the site's CURRENT capture settings exclude (a
+  sign-in form, an excluded page or form, capture switched off) - not a lead, and not uploaded
+  as an offline conversion. It follows the settings as they are now, so it moves when they change.
 - `spam` includes leads filed by the hostname/reCAPTCHA check: a production site fronted by a proxy
   on a hostname not registered on the project scores 0 and is filed to spam with nobody told
   (remedy: register the domain).
