@@ -233,6 +233,111 @@ test('every re-execution exemption is still live and still an exemption', () => 
 });
 
 /**
+ * ── The server-confirm class ──────────────────────────────────────────────
+ *
+ * ★ THE GAP THIS CLOSES (release 0.26.30, 2026-09-26). The paid-ads program
+ * shipped 23 writes whose own contract is "the first call writes nothing and
+ * returns a preview_hash; repeat the SAME call with confirm: true". Not one of
+ * them reached this ask list, so on a machine set up per INSTALL.md they ran
+ * unprompted: ppc_google_auto_apply_set (lets Google change keywords, match
+ * types and targets on its own), ppc_negatives_remove (reopens blocked
+ * searches at once), ppc_conversion_adjustments_run (a retraction cannot be
+ * undone). The preview hash is a real protection against a STALE write, and
+ * no protection at all against an UNATTENDED one: the model reads the hash
+ * off the first answer and sends it straight back. That is the same reason
+ * given for `confirm: true` above, one field later.
+ *
+ * So a tool whose own description carries one of these signals is judged
+ * here, by name, the day it lands:
+ *   - `preview_hash`: the server-confirm contract above;
+ *   - `GATED WRITE`: the tool says of itself that it needs a human's yes
+ *     (ppc_bing_campaign_ai_settings_set, which has no preview hash at all);
+ *   - `HAS NO RETRACTION`: it sends something a third party keeps
+ *     (ppc_meta_lead_quality_test: Meta keeps even test events).
+ * Case-sensitive for the last two, for the reason REEXEC_SHOUT gives.
+ */
+const ASK_CLASS_SIGNALS = [
+  ['preview_hash', /preview_hash/],
+  ['self-declared gated write', /(?:^|[^A-Za-z])GATED WRITE(?:[^A-Za-z]|$)/],
+  ['no retraction', /(?:^|[^A-Za-z])HAS NO RETRACTION(?:[^A-Za-z]|$)/],
+];
+
+function askClassSignals(tool) {
+  return ASK_CLASS_SIGNALS.filter(([, re]) => re.test(tool.description || '')).map(([label]) => label);
+}
+
+/**
+ * Server-confirm writes deliberately left OFF the ask list, each with the
+ * reason nobody outside the session would notice the call, or with why it is
+ * the direction that only narrows. Same rules as REEXEC_NOT_GATED: added one
+ * at a time, never to quiet a failure; if you cannot write the reason, gate it.
+ */
+const ASK_CLASS_NOT_GATED = new Map([
+  ['marketing_form_path_test',
+    'runs ONE labelled test submission through the intake code, written already deleted and ' +
+    'removed in the same request: nothing is emailed, triggered, written to the CRM or uploaded, ' +
+    'and confirms are capped at 5 per project per hour'],
+  ['ppc_goals_set',
+    'records the client\'s targets and stop-loss rules in Hiveku only: nothing on any ad platform ' +
+    'changes, the rules only file inbox items, and it cannot pause anything or arm auto-pause'],
+  ['ppc_claims_set',
+    'records approved and banned ad claims in Hiveku only; no ad platform is touched, and fixing a ' +
+    'live ad that breaks a claim is ppc_google_ad_text_update, which is on the ask list'],
+  ['ppc_google_account_negatives_add',
+    'adds negatives, the direction that narrows delivery and cuts spend (the asymmetry that leaves ' +
+    'pausing ungated everywhere); a term that would block an enabled keyword, a converting search ' +
+    'term, a targeted place or a protected term is held back unless include_conflicting is sent'],
+  ['ppc_experiment_discard',
+    'removes only an experiment that never started: nothing has served, the base campaign is ' +
+    'untouched, and a started experiment is refused (experiment_started)'],
+]);
+
+test('every server-confirm write in the index is on the ask list or has a written reason', () => {
+  const gated = new Set(permFile.tools.map((t) => t.name));
+  // GETs are out of scope for the reason given at the re-execution test.
+  const missing = indexTools
+    .filter((t) => t.method && t.method !== 'GET')
+    .filter((t) => askClassSignals(t).length > 0)
+    .filter((t) => !gated.has(t.name) && !ASK_CLASS_NOT_GATED.has(t.name))
+    .map((t) => `${t.name} (${t.method}, matched by ${askClassSignals(t).join(' + ')})`);
+  assert.deepEqual(
+    missing,
+    [],
+    'writes that confirm on the SERVER only are NOT on the ask list. A preview hash or a ' +
+      'confirm field is filled in by the model itself, so on a machine configured per INSTALL.md ' +
+      'these run unprompted. Add each to data/permission-critical-tools.json, the INSTALL.md ask ' +
+      'block and the Codex .mcp.json, or add it to ASK_CLASS_NOT_GATED with the reason nobody ' +
+      'outside the session would notice:\n  ' + missing.join('\n  '),
+  );
+});
+
+test('every server-confirm exemption is still live and still an exemption', () => {
+  const byName = new Map(indexTools.map((t) => [t.name, t]));
+  const gated = new Set(permFile.tools.map((t) => t.name));
+  const stale = [];
+  for (const [name, reason] of ASK_CLASS_NOT_GATED) {
+    const tool = byName.get(name);
+    if (!tool) {
+      stale.push(`${name}: no longer in the tool index - delete this entry and judge the new name`);
+      continue;
+    }
+    if (!tool.method || tool.method === 'GET') {
+      stale.push(`${name}: is no longer a write (method ${tool.method}), so this entry exempts nothing`);
+    }
+    if (askClassSignals(tool).length === 0) {
+      stale.push(`${name}: no longer carries a server-confirm signal, so this entry exempts nothing. Delete it`);
+    }
+    if (gated.has(name)) {
+      stale.push(`${name}: is BOTH exempted here and on the ask list. The ask list wins; delete the exemption`);
+    }
+    if (!reason || reason.length < 40) {
+      stale.push(`${name}: exemption reason is missing or too thin to review`);
+    }
+  }
+  assert.deepEqual(stale, [], `stale server-confirm exemptions:\n  ${stale.join('\n  ')}`);
+});
+
+/**
  * ── The second-prefix blanket-allow ───────────────────────────────────────
  *
  * data/permission-critical-tools.json declares TWO prefixes, because the same
