@@ -37,7 +37,8 @@ as a hypothesis, scored with `ice_score`, persisted as a pm_task in the backlog.
      workflow_failed, no_attribution, unpaid_attribution, counted) - `buckets.counted` is OUR
      number and the rest are the explanation of any platform gap. `has_click_id` isolates the
      paid slice. `excluded` is rows from forms the site's capture settings now exclude - not
-     leads, and not uploaded as conversions.
+     leads, and not uploaded as conversions (one uploaded before the exclusion stays with the
+     platform).
    - Platforms date conversions by CLICK in the AD ACCOUNT's timezone; PASS `timezone` as that
      account's IANA zone - the audit defaults to UTC day buckets when you omit it. Name the
      timezone before quoting a daily figure against a platform number.
