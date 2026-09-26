@@ -1129,12 +1129,12 @@ test('NEGATIVE CONTROL: the three form-capture reads are not on the always-ask s
 //
 // project_indexing_set turns a site's search engine indexing on or off, and
 // off can take a live site out of Google's results for weeks. INSTALL.md hands
-// out `allow: ["mcp__plugin_hiveku_hk__*"]`, which matches it, and its ask
-// block cannot carry the name until the MCP server serves it (the server's own
-// test fails a listed name its registry lacks). So the hook's `ask` is the only
-// thing between an unattended session and the switch, and it must be in place
-// before the MCP deploy: the name rides on PENDING_TOOLS until then. Its
-// `confirm: true` argument is not a gate; the model fills it in itself.
+// out `allow: ["mcp__plugin_hiveku_hk__*"]`, which matches it. Its ask block
+// names the tool too, but only a machine whose settings were copied from a
+// release that carries the entry has it; the hook's `ask` reaches every install
+// that updates, so it is the rail these tests pin. The name rides on
+// PENDING_TOOLS until the index carries it. Its `confirm: true` argument is not
+// a gate; the model fills it in itself.
 
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
@@ -1183,7 +1183,8 @@ function runPreToolUseHook(toolName, toolInput, cwd) {
 
 test('the INSTALL.md blanket allow covers project_indexing_set, and the plugin hook runs on it', () => {
   // The premise of every test below: without the hook's answer, this call
-  // would run unprompted on a machine set up per INSTALL.md.
+  // would run unprompted on a machine whose settings carry INSTALL.md's blanket
+  // allow but an ask list copied before this entry.
   const { allow } = installPermissions();
   assert.ok(allow.some((rule) => ruleMatches(rule, INDEXING_TOOL)),
     `no INSTALL.md allow rule matches ${INDEXING_TOOL}; the premise of these tests changed`);
@@ -1191,6 +1192,22 @@ test('the INSTALL.md blanket allow covers project_indexing_set, and the plugin h
   const matchers = hooks.hooks.PreToolUse.map((h) => h.matcher);
   assert.ok(matchers.some((m) => new RegExp(`^(?:${m})$`).test(INDEXING_TOOL)),
     `no PreToolUse matcher in hooks/hooks.json reaches ${INDEXING_TOOL}`);
+});
+
+test('project_indexing_set is on the ask list as a PATCH and in the INSTALL.md ask block; the read is on neither', () => {
+  // The settings rail beside the hook: a machine set up from this INSTALL.md
+  // prompts on the name even where the hook does not run. The Codex plugin's
+  // prompt list mirrors the same file (test/permission-critical.test.mjs).
+  const perm = JSON.parse(readFileSync(new URL('../data/permission-critical-tools.json', import.meta.url), 'utf8'));
+  const gated = new Map(perm.tools.map((t) => [t.name, t.method]));
+  assert.equal(gated.get('project_indexing_set'), 'PATCH',
+    'project_indexing_set must be on data/permission-critical-tools.json as a PATCH');
+  assert.equal(gated.has('project_indexing_get'), false,
+    'project_indexing_get is a read; an ask rule on it stalls every sweep');
+  const { ask } = installPermissions();
+  assert.ok(ask.includes(INDEXING_TOOL), `INSTALL.md's ask block must name ${INDEXING_TOOL}`);
+  assert.equal(ask.includes(`${HIVEKU_TOOL_PREFIX}project_indexing_get`), false,
+    'INSTALL.md must not ask on the read');
 });
 
 test('project_indexing_set ASKS on a direct call, whichever way it turns indexing and whatever confirm says', () => {

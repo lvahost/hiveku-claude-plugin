@@ -280,18 +280,20 @@
  *   (builder branch feature/indexing-toggle-olympus); the MCP declarations are
  *   hiveku-mcp-api-server src/tools/indexing-tools.ts (branch
  *   feature/indexing-toggle-tools), both for a person's own key only. The
- *   write is on ALWAYS_ASK_WRITES (lib/tool-safety.mjs), gated like the
- *   form-capture writes above, which is why that file's tests accept it as a
- *   PENDING name until the index carries it. It is NOT on the ask list
- *   (data/permission-critical-tools.json) yet: the MCP server's
- *   permission-critical-tools.test.ts fails any listed name its registry does
- *   not serve, and INSTALL.md must mirror that file, so both follow the MCP
- *   deploy. The read, project_indexing_get, has no entry: no prose or gate
- *   names it, and it joins lib/readonly-tools.json as a GET at the regen.
- *   Release step, after the MCP deploy: regenerate the index and the read-only
- *   list from the live server, add the ask-list and INSTALL.md entries (and
- *   the Codex prompt), then delete this entry; tool-names.test.mjs forces the
- *   deletion.
+ *   write is on ALWAYS_ASK_WRITES (lib/tool-safety.mjs) and on the ask list
+ *   (data/permission-critical-tools.json, mirrored in INSTALL.md and in the
+ *   Codex plugin's prompts), gated like the form-capture writes above, which
+ *   is why both of those tests accept it as a PENDING name until the index
+ *   carries it. The ask-list entry is why this merges only after the MCP
+ *   tools merge: the MCP server's permission-critical-tools.test.ts reads this
+ *   file from its sibling checkout and fails any listed name its registry
+ *   does not serve. Until this release and the Codex prompt are out, the
+ *   builder refuses every change through its Olympus route (403
+ *   agent_changes_not_enabled). The read, project_indexing_get, has no entry:
+ *   no prose or gate names it, and it joins lib/readonly-tools.json as a GET
+ *   at the regen. Release step, after the MCP deploy: regenerate the index and
+ *   the read-only list from the live server, then delete this entry;
+ *   tool-names.test.mjs forces the deletion.
  *     INDEXING-1  project_indexing_set (PATCH { enabled, confirm }; turning
  *                 indexing off can remove a live site from search results).
  *
@@ -387,7 +389,7 @@ export const PENDING_TOOLS = new Map([
   // deployed; index regenerated at 2141 tools); entries deleted.
 
   // INDEXING-1 (2026-09-26): pending until the MCP deploy and the index
-  // regeneration. See the batch note above.
+  // regeneration at release. See the batch note above.
   ['project_indexing_set', { since: '2026-09-26', batch: 'INDEXING-1' }],
 
   // HELPDESK-R3: landed in the live index on 2026-09-25 (MCP #32, 515ec43,
