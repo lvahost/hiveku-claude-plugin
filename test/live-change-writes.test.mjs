@@ -30,7 +30,7 @@ import {
 } from '../lib/tool-safety.mjs';
 import { probeIsStale, updateCheckPath } from '../lib/update-check.mjs';
 
-/** Every name 0.26.30 added to the ask list, which is every name on the map. */
+/** Every name 0.26.30 and 0.26.32 added to the ask list, which is every name on the map. */
 const LIVE_CHANGE_NAMES = [
   // Google and Microsoft settings on live campaigns.
   'ppc_google_auto_apply_set',
@@ -54,6 +54,12 @@ const LIVE_CHANGE_NAMES = [
   'ppc_experiment_graduate',
   'ppc_experiment_promote',
   'ppc_experiment_treatment_set',
+  // Switching ads on (0.26.32; test/spend-start-writes.test.mjs pins why).
+  'ppc_enable_resource',
+  'ppc_platform_enable_resource',
+  'ppc_bulk_edit',
+  'ppc_linkedin_creatives',
+  'ppc_tiktok_split_tests',
   // Conversions and audiences sent to the platforms.
   'ppc_conversion_adjustments_run',
   'ppc_conversion_adjustments_set',
@@ -124,7 +130,7 @@ function runPreToolUseHook(toolName, toolInput, cwd) {
   );
 }
 
-test('the live-change set is exactly the writes 0.26.30 added to the ask list', () => {
+test('the live-change set is exactly the writes 0.26.30 and 0.26.32 added to the ask list', () => {
   assert.deepEqual([...LIVE_CHANGE_WRITES.keys()].sort(), [...LIVE_CHANGE_NAMES].sort());
 });
 

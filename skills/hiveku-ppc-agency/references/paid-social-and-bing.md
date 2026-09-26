@@ -209,7 +209,7 @@ Suppression is the most under-used first-party move: upload existing customers a
 3. `ppc_tiktok_videos_list` maps ads back to source assets, so you see which raw videos carry multiple winners. Rebrief around those instead of duplicating the ad.
 4. `ppc_tiktok_creative` supports the build (identities, AI text ideas, previews, asset info); media upload is not available here.
 5. Kill and scale are writes: `ppc_platform_pause_resource` and `ppc_platform_budget_update`, each separately confirmed.
-6. Testing: `ppc_tiktok_split_tests` power-estimate, then create with fixed start and end, then result. Do not read a result before the planned end.
+6. Testing: `ppc_tiktok_split_tests` power-estimate, then create with fixed start and end, then result. Do not read a result before the planned end. A create spends its budget from the start time with no confirm step, so it gets the owner's yes like an enable; the plugin asks before every call to this tool, reads included.
 7. Large or multi-dimension pulls go async through `ppc_tiktok_reports`: task-create, poll task-check until SUCCEED, task-download.
 
 ## 15. Play: TikTok measurement, leads, safety

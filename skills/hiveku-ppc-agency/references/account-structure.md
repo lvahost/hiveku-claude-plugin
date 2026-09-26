@@ -206,7 +206,9 @@ plus pause-old, on fresh Quality Score history. Expect a 1 to 2 week dip, and sa
 `{ mutate_op: "ad_group_status", ad_group_id, status }`, and
 `{ mutate_op: "keyword_status", ad_group_id, criterion_id, status }`. Budget ops are **refused** with code
 `budget_op_in_bulk_edit`; budgets go one campaign at a time through the step-capped path in
-`references/bidding-budgets-pacing.md`.
+`references/bidding-budgets-pacing.md`. The plugin asks the owner before every `ppc_bulk_edit` call,
+pause-only ones too (an `ENABLED` op starts spend, and the ask is on the tool name), so expect one
+approval per chunk; an unattended emergency stop uses `ppc_pause_resource`, which does not ask.
 
 Build candidates from the local files joined to `metrics_daily.json` using the section-4 zombie criteria.
 **Enumerate to the user by name**: "pause 34 ad groups" is not a confirmation, 34 vetoable names is. Chunk

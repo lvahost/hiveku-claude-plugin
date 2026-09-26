@@ -361,7 +361,10 @@ read both: a high `skipped_unknown` means your ids were stale and the pause you 
 fully happen.
 
 Note the sharp edge: `ppc_bulk_edit` can flip `campaign_status` to `ENABLED`. A batch that reads as
-housekeeping can turn on spend. Bulk-enabling is never one decision. Enable one at a time.
+housekeeping can turn on spend. Bulk-enabling is never one decision. Enable one at a time. For that
+reason the plugin asks the owner before every `ppc_bulk_edit` call, pause-only calls included,
+because the ask is on the tool name. When nobody is there to answer (an emergency stop in an
+unattended session), pause with `ppc_pause_resource` / `ppc_platform_pause_resource`, which do not ask.
 
 ### 3.3 Batch the analysis, never the consent
 
@@ -461,7 +464,7 @@ commit. Show those numbers to the operator. Never auto-confirm by immediately re
 | `ppc_meta_ad_set_audiences_update` | Changes delivery on a LIVE ad set immediately and re-enters the learning phase. |
 | `ppc_linkedin_campaign_update` | Gate is on `operation: "archive"` only. Irreversible. |
 | `ppc_linkedin_campaign_group_update` | Gate is on `operation: "archive"` only. Irreversible, and it takes the group's campaigns with it. Budget edits on this tool are guardrailed, hard-capped at 100,000. |
-| `ppc_linkedin_creatives` | Gate on `operation: "set-status"` with `status: "enabled"` (enabling can make the ad deliverable immediately) and on `archive`. Pausing needs no confirm - the safe direction is ungated by design. |
+| `ppc_linkedin_creatives` | Gate on `operation: "set-status"` with `status: "enabled"` (enabling can make the ad deliverable immediately) and on `archive`. Pausing needs no confirm - the safe direction is ungated by design. The agent fills in `confirm` itself, so the plugin also asks the owner before every call to this tool (list and detail too, because the ask is on the tool name). |
 | `ppc_linkedin_conversions` | `conversion-event-send` ALWAYS previews, and `conversion-rule-create` previews whenever `default_value` is set. The stated reason: conversion data trains LinkedIn's bidding and uploaded conversions cannot be recalled. |
 | `ppc_linkedin_audience_segments` | Gate on `campaign-audiences-update`: it changes delivery on a possibly-live campaign immediately. |
 | `ppc_linkedin_abm_segment` | Gate on `company-segment-add`: campaigns targeting the segment start reaching the added companies. Person-level identifiers are REFUSED by policy on this lane. |
@@ -500,16 +503,21 @@ These are documented dangers with no code gate behind them. You are the gate.
 
 Say these out loud in your own head before you assume you are protected.
 
-- **Enabling has no gate on the Google lane.** `ppc_enable_resource` has no confirm flag and no budget
-  check. The builder's own source comment on the campaign-create guardrail states it plainly: "created
-  paused" is NOT a rail, because `ppc_enable_resource` has no confirm and no budget check, and
-  `ppc_bulk_edit` will flip `campaign_status` to `ENABLED`. Everything that creates paused
+- **Enabling has no server-side gate.** `ppc_enable_resource` and `ppc_platform_enable_resource`
+  have no confirm flag and no budget check. The builder's own source comment on the campaign-create
+  guardrail states it plainly: "created paused" is NOT a rail, because `ppc_enable_resource` has no
+  confirm and no budget check, and `ppc_bulk_edit` will flip `campaign_status` to `ENABLED`. The
+  plugin now asks the owner before every call that can switch ads on: `ppc_enable_resource`,
+  `ppc_platform_enable_resource`, `ppc_bulk_edit`, `ppc_linkedin_creatives` and
+  `ppc_tiktok_split_tests` (the last three on every call, pauses and reads too, because the ask is on
+  the tool name). The Codex plugin prompts before the same five. That prompt is the owner's yes to
+  the call; it checks nothing about the campaign. Everything that creates paused
   (`ppc_campaign_create`, `ppc_responsive_search_ad_create`, `ppc_bing_push_campaign`,
-  `ppc_meta_campaign_push`, `ppc_google_pmax` asset groups) is relying on YOU as the last gate. The
-  read that makes you a good one on a Search campaign is `ppc_launch_qa`: ten checks (ads policy,
-  conversion tracking, phone numbers, tracking, landing pages, self-blocking negatives, risky defaults,
-  budget vs goals, and more), `no_go` until every fail is fixed with the tool it names. It never
-  enables anything itself.
+  `ppc_meta_campaign_push`, `ppc_google_pmax` asset groups) still relies on YOU to bring a
+  launch-ready campaign to that prompt. The read that makes you a good one on a Search campaign is
+  `ppc_launch_qa`: ten checks (ads policy, conversion tracking, phone numbers, tracking, landing
+  pages, self-blocking negatives, risky defaults, budget vs goals, and more), `no_go` until every fail
+  is fixed with the tool it names. It never enables anything itself.
 - **Bid modifiers have no ceiling.** `ppc_bid_modifier_update` will take any multiplier you send.
 - **Bids have no step cap.** `ppc_keyword_bid_update` and `ppc_platform_keyword_bid_update` have
   nothing analogous to the budget guardrail.
@@ -518,7 +526,7 @@ Say these out loud in your own head before you assume you are protected.
 
 ### 4.5 Going live: the enable call itself
 
-The enable is the write that starts spend, and three traps sit at the call itself.
+The enable is the write that starts spend. Four things to know at the call itself.
 
 - **Just-created Microsoft entities need their parent.** Before enabling Microsoft ads or ad groups
   created in this session, run `ppc_launch_qa`, then pass the parent id on
@@ -528,22 +536,31 @@ The enable is the write that starts spend, and three traps sit at the call itsel
   retry ONCE. (A fix that makes the tool use the passed parent id is shipping. Until it deploys the
   passed parent is ignored, so re-sending the same call fails the same way and only the sync clears
   the error.)
-- **A Claude Code auto-mode denial never turns into a prompt.** In auto mode a classifier reviews each
-  tool call and can deny an enable, naming a category such as "[Production Deploy]". Nothing is then
-  waiting for approval. Never promise the owner a prompt (one comes only from the steps below), and
-  do not retry around the denial (another tool, a bulk edit, the same call reworded). Give the owner
-  the exact steps instead:
+- **The plugin asks before each enable.** Its hook asks the owner before `ppc_enable_resource`,
+  `ppc_platform_enable_resource`, `ppc_bulk_edit`, `ppc_linkedin_creatives` and
+  `ppc_tiktok_split_tests`, even when the settings allow every Hiveku tool, and Claude Code shows a
+  prompt a hook forces in auto mode too. So on the plugin each enable reaches the owner as an approval
+  card, with no ask rule of their own. Put the diff in front of them before the call, so they know
+  what the card is asking. In a session with nobody to answer (a scheduled or `-p` run, or the
+  `dontAsk` mode) the call is refused instead, which is the intended result.
+- **A Claude Code auto-mode denial never turns into a prompt.** On a plugin older than 0.26.32, or
+  on the VS Code extension's tools (the plugin's hook never sees them), the auto-mode classifier can
+  still deny an enable, naming a category such as "[Production Deploy]". Nothing is then waiting for
+  approval. Never promise the owner a prompt (one comes only from the plugin's ask or the steps
+  below), and do not retry around the denial (another tool, a bulk edit, the same call reworded).
+  Give the owner the exact steps instead:
   1. To run the call that was just denied: in the CLI, `/permissions`, the **Recently denied** tab,
      select it and press `r` to retry it with a manual approval. That covers one call; a go-live with
      several enables is easier with 2.
   2. For the go-live turn, switch the chat to Manual so each enable prompts (VS Code: the mode
      indicator under the prompt box; CLI: Shift+Tab), then switch back afterwards. Or:
-  3. Add a permissions ASK rule naming the enable tool, via `/permissions` (VS Code: Permissions under
-     Customize in the `/` menu) or `permissions.ask` in settings. The plugin's names are
-     `mcp__plugin_hiveku_hk__ppc_platform_enable_resource` and
-     `mcp__plugin_hiveku_hk__ppc_enable_resource` (Google); the VS Code extension's are
-     `mcp__hiveku__ppc_platform_enable_resource` and `mcp__hiveku__ppc_enable_resource`. Write whole
-     tool names (safe on every Claude Code version).
+  3. On the VS Code extension only, check the folder has a permissions ASK rule for each enable tool:
+     `mcp__hiveku__ppc_platform_enable_resource` and `mcp__hiveku__ppc_enable_resource`. The
+     extension does not run the plugin's hook, so these rules are its only ask. Current extension
+     releases write those two into each Hiveku folder they open; if one is missing, add it via
+     `/permissions` (VS Code: Permissions under Customize in the `/` menu) or `permissions.ask` in
+     settings. Write whole tool names (safe on every Claude Code version). On the plugin, update it
+     with `/hiveku:update` instead of adding rules: its own names already ask.
 
   The denial text suggests adding a Bash permission rule; for an MCP tool that is misleading, since
   the rule names the MCP tool. Never propose an ALLOW rule for a tool that starts spend. Three denials
@@ -631,10 +648,11 @@ strongly the data supports them. Propose, diff, wait.
 
 1. **Enabling a paused campaign.** Paused is a decision someone made. It may be a budget freeze, a
    seasonal stop, a legal hold, or a client who fired the previous agency mid-flight. Enabling is the
-   single fastest way to spend money you were not asked to spend, it has NO confirm gate and NO budget
-   check on the Google lane, and "it was clearly paused by mistake" is a conclusion you are not in a
-   position to reach. Check `memory_list({ domain: "ppc" })` for protected campaigns and
-   `ppc_change_history` for who paused it, then ask.
+   single fastest way to spend money you were not asked to spend, the server puts NO confirm gate and
+   NO budget check on it (the plugin's prompt puts the question to the owner; it checks nothing), and
+   "it was clearly paused by mistake" is a conclusion you are not in a position to reach. Check
+   `memory_list({ domain: "ppc" })` for protected campaigns and `ppc_change_history` for who paused
+   it, then ask.
 2. **Raising a budget.** Even a well-evidenced raise, even a small one, even inside the guardrail. The
    guardrail's 10,000 ceiling and 2x step cap are the limits of catastrophe, not a mandate. The client's
    monthly ceiling is the real number and it lives in `ppc_goals_get`. `ppc_experiment_graduate` (and a

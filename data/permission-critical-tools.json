@@ -6,7 +6,7 @@
     "mcp__hiveku__"
   ],
   "plugin_version": "0.26.35",
-  "count": 245,
+  "count": 250,
   "tools": [
     {
       "name": "deploy_site",
@@ -222,6 +222,31 @@
       "name": "ppc_campaign_create",
       "method": "POST",
       "why_gated": "creates a spending campaign"
+    },
+    {
+      "name": "ppc_enable_resource",
+      "method": "POST",
+      "why_gated": "turns a paused Google Ads campaign, ad group, ad or keyword back on: it serves and spends from that moment, with no confirm step and no budget check on the call"
+    },
+    {
+      "name": "ppc_platform_enable_resource",
+      "method": "POST",
+      "why_gated": "turns a paused campaign, ad set, ad group or ad back on (Google, Microsoft, Meta, LinkedIn, TikTok, Amazon, Vibe or ChatGPT Ads): it serves and spends from that moment, with no confirm step and no budget check on the call"
+    },
+    {
+      "name": "ppc_bulk_edit",
+      "method": "POST",
+      "why_gated": "sets the status of up to 100 Google Ads campaigns, ad groups or keywords in one call, and any ENABLED operation starts spend at once; gated by name, so a pause-only call asks too (a single pause through ppc_pause_resource does not)"
+    },
+    {
+      "name": "ppc_linkedin_creatives",
+      "method": "POST",
+      "why_gated": "set-status enabled makes a LinkedIn ad deliverable at once when its campaign and group are active, and its confirm field is filled in by the agent, not a person; gated by name, so list and detail ask too"
+    },
+    {
+      "name": "ppc_tiktok_split_tests",
+      "method": "POST",
+      "why_gated": "create starts a TikTok split test that copies the ads under test into cells and spends its budget from the start time, and update extends a running one; no confirm step; gated by name, so its reads ask too"
     },
     {
       "name": "ppc_google_auto_apply_set",

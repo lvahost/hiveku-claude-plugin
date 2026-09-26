@@ -148,6 +148,11 @@ Put this in `.claude/settings.json` (per project) or `~/.claude/settings.json` (
       "mcp__plugin_hiveku_hk__ppc_bidding_strategy_update",
       "mcp__plugin_hiveku_hk__ppc_platform_bidding_strategy_update",
       "mcp__plugin_hiveku_hk__ppc_campaign_create",
+      "mcp__plugin_hiveku_hk__ppc_enable_resource",
+      "mcp__plugin_hiveku_hk__ppc_platform_enable_resource",
+      "mcp__plugin_hiveku_hk__ppc_bulk_edit",
+      "mcp__plugin_hiveku_hk__ppc_linkedin_creatives",
+      "mcp__plugin_hiveku_hk__ppc_tiktok_split_tests",
       "mcp__plugin_hiveku_hk__ppc_google_auto_apply_set",
       "mcp__plugin_hiveku_hk__ppc_google_campaign_settings_set",
       "mcp__plugin_hiveku_hk__ppc_google_ad_schedule_set",
@@ -364,9 +369,10 @@ list above is spelled out. If you add to it, add whole names.
 again, so after a plugin update it can be missing names a newer release added. Paste the block
 again after an update. The plugin also asks on its own before the writes that change what
 department agents read, which forms a site captures (and erasing what it captured), a site's
-search engine indexing, live ad campaigns, the budget guardrail, conversion uploads, a staged
-production deploy and GA4 conversion settings, whatever your settings allow, so those prompt
-even on a machine with an older copy.
+search engine indexing, live ad campaigns, switching ads on (every enable, a bulk status edit, a
+LinkedIn creative's status and a TikTok split test), the budget guardrail, conversion uploads, a
+staged production deploy and GA4 conversion settings, whatever your settings allow, so those
+prompt even on a machine with an older copy.
 
 ### What is safe to leave on allow
 
