@@ -296,6 +296,7 @@
  *   tool-names.test.mjs forces the deletion.
  *     INDEXING-1  project_indexing_set (PATCH { enabled, confirm }; turning
  *                 indexing off can remove a live site from search results).
+ *                 Landed in the live index on 2026-09-26; entry deleted.
  *
  *   Helpdesk chat program, round 3 (2026-09-25, contract C7): what the website
  *   assistant answers from. The contract is the builder's
@@ -388,9 +389,9 @@ export const PENDING_TOOLS = new Map([
   // FORM-CAPTURE-1: landed in the live index on 2026-09-24 (MCP #31, fe5e28674,
   // deployed; index regenerated at 2141 tools); entries deleted.
 
-  // INDEXING-1 (2026-09-26): pending until the MCP deploy and the index
-  // regeneration at release. See the batch note above.
-  ['project_indexing_set', { since: '2026-09-26', batch: 'INDEXING-1' }],
+  // INDEXING-1: landed in the live index on 2026-09-26 (MCP #46, 4f1a061,
+  // deployed; index regenerated at 2146 tools in release 0.26.31, and
+  // project_indexing_get joined the read-only list as a GET); entry deleted.
 
   // HELPDESK-R3: landed in the live index on 2026-09-25 (MCP #32, 515ec43,
   // deployed; index regenerated at 2144 tools, and it joined the read-only

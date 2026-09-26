@@ -1132,9 +1132,9 @@ test('NEGATIVE CONTROL: the three form-capture reads are not on the always-ask s
 // out `allow: ["mcp__plugin_hiveku_hk__*"]`, which matches it. Its ask block
 // names the tool too, but only a machine whose settings were copied from a
 // release that carries the entry has it; the hook's `ask` reaches every install
-// that updates, so it is the rail these tests pin. The name rides on
-// PENDING_TOOLS until the index carries it. Its `confirm: true` argument is not
-// a gate; the model fills it in itself.
+// that updates, so it is the rail these tests pin. The tool index carries it
+// since release 0.26.31. Its `confirm: true` argument is not a gate; the model
+// fills it in itself.
 
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
