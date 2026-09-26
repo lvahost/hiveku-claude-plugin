@@ -39,8 +39,19 @@ A card is the WHY. A task is the WORK. Never let one exist without the other for
   person the work belongs to is not listed, leave `assigned_to_id` unset and create the task
   unassigned. Never borrow another member's id to stand in for them, and never use an id from
   another account. Tell the user once that inviting them under Team Members makes them
-  assignable. (`pm_tasks_create` / `pm_tasks_update` still accept any user id today, so nothing
-  but this rule stops a wrong one.)
+  assignable. (Every PM write that sets an assignee refuses someone who is not a team member
+  with 400 `user_not_in_account`, and an id that is not a UUID with 400 `invalid_assignee_id`;
+  the body is `{ error, code, field: 'assigned_to_id' }`, so read the code from `code`, and
+  `error` is the sentence to relay. It covers `create_task`,
+  `pm_tasks_create`, `pm_tasks_update` when the assignee changes, `pm_tasks_create_bulk` (the
+  whole batch, with `invalid` listing each `{ index, assigned_to_id }`), `pm_tasks_reassign_bulk`,
+  `mc_task_spawn_pm` and the recurrence tools. On a shared project, members of an account it is
+  shared with count too. On that refusal, tell the user they can invite the person under
+  Settings > Team Members, or create the task unassigned. Editing other fields of a task already
+  held by a non-member still works, and so does unassigning. A workflow's `createTask`,
+  `createSubtask` or `updateTask` step makes the same check when a real run reaches it and fails
+  the step on a non-member; `workflow_test` simulates those steps, so a dry run never shows it:
+  `hiveku-automation-agency/references/node-rail.md` 6.3.)
 
 ## Key scope
 
@@ -286,6 +297,14 @@ Four things that bite:
   one-off catch-up). `pm_task_recurrence_delete` stops future fires and leaves already-spawned tasks
   behind with their `recurrence_id` nulled. Deleting is not undoable - confirm with the operator and
   prefer pause.
+
+`assigned_to_id` on a recurrence follows the Ids rule above: a person who is not a team member is
+refused with 400 `user_not_in_account` when the recurrence is created or its assignee changed. If
+the assignee is not a team member when an occurrence fires (they left, or the recurrence predates
+the check), each occurrence spawns unassigned and its `ai_metadata` records `assignee_dropped`;
+the fire itself never fails for it. Every fire checks again, so sending the current assignee back
+on `pm_task_recurrence_update` is accepted but does not stop that: pick a team member, or leave it
+unassigned.
 
 On a takeover account, audit the engine before adding to it: `pm_task_recurrence_list` WITHOUT
 `active_only` — look for paused rows the client believes are running, rows spawning into a

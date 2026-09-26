@@ -106,7 +106,14 @@ The read ladder, in order (every tool below is on the read list):
 - What changed: `workflow_versions_list` and `workflow_version_get` to preview a definition, and
   `audit_query` for who disabled or edited what and when.
 - The staged queue: `agent_inbox_list` (it defaults to `new,seen`) and `agent_inbox_get`. Never
-  `agent_inbox_resolve` - resolving is a write, and it never executes the item anyway.
+  `agent_inbox_resolve` - resolving is a write, and it never executes the item anyway. An item
+  whose `metadata.dedup_key` is `workflow-setup:<workflow id>` or `webhook-auth-public:<trigger
+  id>` is the hourly setup sweep's: it closes itself within the hour once its cause is fixed, so
+  the plan names the fix: for `workflow-setup:` run `metadata.fix` (`workflow_validate`, which
+  is on your read list) and fix what `metadata.first_issue` names; for `webhook-auth-public:` it
+  is `metadata.fix` (`workflow_webhook_auth_set`, read its `note`: for a saved header secret the
+  owner can instead apply Header Auth in the editor with the value the sender already sends) on
+  the owner's yes. Never a resolve.
 - Handoff: `workflow_dashboard_url({ workflow_id })` for the editor link on any workflow you name.
 
 Silent failures are the trade here: these tools return clean results whose meaning is "could not

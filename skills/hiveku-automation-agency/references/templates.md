@@ -84,7 +84,10 @@ it never executes the item's action handler.** A staged negative keyword is appl
 from the PPC dashboard/agent or the PPC tools, and only then resolved; resolving is
 not applying, and deduped producers re-file an alert whose cause was never fixed.
 Only open items (`new`/`seen`/`snoozed`) can be closed; already-closed or expired
-items 409.
+items 409. Two workflow notices close themselves: the hourly setup sweep files and
+closes `workflow-setup:<workflow id>` (category `workflow_reliability`) and
+`webhook-auth-public:<trigger id>` (category `workflow_security`) items, so fix the cause
+and leave them (`/hiveku:automation-sweep` step 8).
 
 The PPC staging mechanics, from the engine: a write node with `auto_apply` off seeds
 ONE inbox item per node per period (a weekly template's item is deduplicated per week

@@ -8,8 +8,11 @@ version-snapshotted and server-validated.
 
 1. Context: `account_context_get({ domain: "workflow" })`. Then `workflow_list`. If something close
    already exists, `workflow_clone({ workflow_id, new_name, overrides? })` (clone starts disabled)
-   beats rebuilding. And before hand-building anything recurring, call `workflow_templates_list`: the
-   catalog is the form/newsletter migration defaults plus the standing SEO/PPC/reputation delivery plays
+   beats rebuilding. It is also one way to reuse a Slack or Zapier webhook URL, which every API
+   read shows as `'[redacted]'`: a clone copies each hidden value exactly as stored, and `overrides`
+   never change one (the other way is an `{{env.NAME}}` the owner sets up). Never copy a
+   `'[redacted]'` into a new workflow: it is saved without that key. And before hand-building
+   anything recurring, call `workflow_templates_list`: the catalog is the form/newsletter migration defaults plus the standing SEO/PPC/reputation delivery plays
    (read the returned `count` rather than assuming a number - the catalog grows between releases); install one with
    `workflow_create_from_template({ slug, overrides })` (it defaults to `is_enabled: true`, so
    confirm first or pass `is_enabled: false`; an enabled create is never refused for validation,

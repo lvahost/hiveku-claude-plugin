@@ -113,6 +113,26 @@ moment a check fails). When one automation is already known to be broken, run
    decision the client is still waiting on. Reading is free. Applying an item happens through its
    own surface, and `agent_inbox_resolve` is a WRITE that never executes the item, so both are
    confirmed one at a time, and you dismiss only what is deliberately rejected.
+   Two kinds clear themselves. The hourly setup sweep files and closes them, one per problem
+   (`metadata.dedup_key`): `workflow-setup:<workflow id>` in category `workflow_reliability`, a
+   switched-on workflow (paused or not) that needs setup (a step not set up, no trigger, a
+   connection to a deleted step) or has nothing connected to its trigger, and
+   `webhook-auth-public:<trigger id>` in category `workflow_security`
+   (`agent_inbox_list({ category: 'workflow_security' })`), a live public webhook whose saved
+   settings hold a secret, or say one is required, that the URL does not check. On a setup
+   notice `metadata.fix` is `workflow_validate`, the diagnostic: the problem itself is in
+   `metadata.first_issue` (`code`, `node_id`, `field`, `message`). On an auth notice it is
+   `workflow_webhook_auth_set`, with a `note`. Fix the cause (the workflow's setup, or the
+   webhook's auth on the owner's yes: `workflow_webhook_auth_set` issues a NEW secret, so every
+   sender must be updated before posts are accepted; read `metadata.fix.note` first, because for
+   a saved header secret the owner can instead apply Header Auth in the editor with that header
+   name and the value the sender already sends, and no sender changes), then leave the item: it
+   closes within the hour, and within the hour of the
+   workflow or webhook being switched off. Resolving it by hand while the cause is still there
+   only holds it back for a day, and dismissing it silences the same problem for 30 days (a
+   different problem on that workflow or webhook is raised on the next sweep). The owner sees
+   the same open items, with Open and Dismiss, in the "Needs your attention" strip on the
+   Workflows page.
 9. **Report honestly, then propose.** Open with the window and the coverage list: which workflows
    you checked, and which you did not.
    - **ZERO runs in the window is UNKNOWN, not passing.** Write "no runs in window" and leave it
