@@ -520,6 +520,47 @@ test('no INSTALL.md snippet blanket-allows a prefix the ask list does not cover'
   );
 });
 
+/**
+ * ── Codex-only prompts ────────────────────────────────────────────────────
+ *
+ * hiveku-codex-plugin approves the hiveku server's tools by default and prompts
+ * per tool, deciding by the name of the tool called. hiveku_batch runs its calls
+ * on the Hiveku server, so in Codex a gated tool placed inside a batch ran with
+ * nobody asked. Codex therefore prompts on hiveku_batch itself (HK-29; pinned
+ * there by test/batch-prompt.test.mjs).
+ *
+ * hiveku_batch stays OFF this repo's ask list: lib/tool-safety.mjs reads the
+ * members and asks unless every one is a pre-approved read, and an ask rule on
+ * the wrapper would prompt every read sweep.
+ *
+ * This map is the only way a name may sit in the Codex map without being on the
+ * ask list, and every name here must be in the Codex map. Add names ONE AT A
+ * TIME, each with the reason Codex needs a prompt the ask list does not carry.
+ */
+const CODEX_ONLY_PROMPTS = new Map([
+  ['hiveku_batch',
+    'carries other tool calls and runs them on the server, and Codex asks by the called name ' +
+    'only, so without this prompt every gated tool placed inside a batch runs in Codex unasked'],
+]);
+
+test('every Codex-only prompt names a real tool that is not on the ask list', () => {
+  const gated = new Set(permFile.tools.map((t) => t.name));
+  const stale = [];
+  for (const [name, reason] of CODEX_ONLY_PROMPTS) {
+    if (!indexMethods.has(name)) {
+      stale.push(`${name}: not in lib/tool-index.json, so a renamed tool would leave Codex ` +
+        'prompting a name nothing calls. Re-judge the new name');
+    }
+    if (gated.has(name)) {
+      stale.push(`${name}: is on the ask list now, so the mirror already requires it. Delete it here`);
+    }
+    if (!reason || reason.length < 40) {
+      stale.push(`${name}: reason is missing or too thin to review`);
+    }
+  }
+  assert.deepEqual(stale, [], `stale Codex-only prompts:\n  ${stale.join('\n  ')}`);
+});
+
 test('the Codex plugin mirrors the gated list per tool (when the sibling checkout is present)', () => {
   // hiveku-codex-plugin pre-approves the hiveku server by default and prompts per tool
   // for the permission-critical names. Nothing regenerates that map, so a name added
@@ -531,8 +572,14 @@ test('the Codex plugin mirrors the gated list per tool (when the sibling checkou
   const codexNames = Object.keys(tools).sort();
   const gated = [...new Set(permFile.tools.map((t) => t.name))].sort();
   const missingFromCodex = gated.filter((name) => !tools[name]);
-  const extraInCodex = codexNames.filter((name) => !gated.includes(name));
-  assert.deepEqual({ missingFromCodex, extraInCodex }, { missingFromCodex: [], extraInCodex: [] });
+  // Codex holds the ask list plus CODEX_ONLY_PROMPTS, exactly: any other extra
+  // fails, and so does a Codex-only prompt Codex has dropped.
+  const extraInCodex = codexNames.filter((name) => !gated.includes(name) && !CODEX_ONLY_PROMPTS.has(name));
+  const codexOnlyMissing = [...CODEX_ONLY_PROMPTS.keys()].filter((name) => !tools[name]);
+  assert.deepEqual(
+    { missingFromCodex, extraInCodex, codexOnlyMissing },
+    { missingFromCodex: [], extraInCodex: [], codexOnlyMissing: [] },
+  );
   for (const name of codexNames) {
     assert.equal(tools[name]?.approval_mode, 'prompt', `${name} must prompt in Codex`);
   }
