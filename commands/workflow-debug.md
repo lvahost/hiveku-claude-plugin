@@ -19,7 +19,12 @@ submissions, the wrong cron rail, and a UTC schedule the client reads as local.
    auto-reply on tickets"), consider that no workflow owns it at all and jump to step 7.
 2. **Is it enabled?** `workflow_get({ workflow_id })`. A disabled workflow fires on nothing: not
    its webhook, not its schedule, not an internal event. It writes no run rows and logs no
-   failures, so it is identical in every run-history tool to a workflow nobody triggered.
+   failures, so it is identical in every run-history tool to a workflow nobody triggered. Its
+   webhook URLs still take posts (authentication is still checked): each one gets 200
+   "Workflow disabled", the submission is recorded in the Forms ledger and gets the usual
+   new-submission email, and the workflow does not run. `workflow_run_retry` on a run one of its
+   triggers started is refused with 409 `workflow_disabled` and runs nothing (if it races a
+   switch-off, a retry row may be left `cancelled`).
    `is_enabled: false` explains everything downstream, so STOP the ladder there, find out who
    switched it off and when (`audit_query({ tool_contains: 'workflow_disable' })` names the key and
    the time), and do not re-enable something whose disabling may have been deliberate without the
@@ -98,8 +103,9 @@ submissions, the wrong cron rail, and a UTC schedule the client reads as local.
    config in full. An EMPTY list is expected and correct for an internal event trigger, which is a
    graph node and needs no trigger row. A webhook row with `is_enabled: false` answers the sender
    200 "Trigger disabled" and runs nothing (deleting a webhook trigger node disarms its row that
-   way), and a sender still posting to a renamed URL gets 404: compare the URL the sender uses with
-   the row's `webhook_url`, never with one built from a label. `workflow_get_schedule({ workflow_id })` returning null
+   way); an enabled row on a switched-off workflow answers 200 "Workflow disabled" and runs
+   nothing in the same way (step 2). A sender still posting to a renamed URL gets 404: compare
+   the URL the sender uses with the row's `webhook_url`, never with one built from a label. `workflow_get_schedule({ workflow_id })` returning null
    means there is no scheduled trigger node at all; it does not mean the cron is fine. The schedule
    also reports whether the workflow is enabled, because a disabled workflow's schedule never
    fires. A cron that belongs to a website project is a different rail with incompatible syntax and

@@ -117,7 +117,10 @@ produced its subtasks, and the checklist view of any parent task.
 `pm_tasks_reassign_bulk({ task_ids, assigned_to_id })` reassigns many tasks in one call (a single
 updateMany) — a departed or vacationing team member's queue moves in one write instead of N
 `pm_tasks_update` calls. Both arguments are required; build `task_ids` from a `pm_tasks_list`
-sweep you have shown to the operator, never from a filter you did not read back first.
+sweep you have shown to the operator, never from a filter you did not read back first. Only a
+team member can take the tasks (on a task of a shared project, a member of an account it is
+shared with counts too): anyone else is refused with 400 `user_not_in_account` and no task
+changes.
 
 ## The agent queue: claim, release, submit for review
 

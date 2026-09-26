@@ -519,3 +519,360 @@ test('a real send goes out once: the proxy re-sends only a 429 refused before an
   assert.deepEqual(offenders, [], 'these tools are sent once after a 5xx or a lost connection: say to read the result back before calling again');
   assert.deepEqual(unqualified, [], 'a paragraph that says the proxy never re-sends a call must say a 429 (refused before any work) is re-sent');
 });
+
+// ── Forney round 3 (2026-09-25, builder e53c412a8) ───────────────────────────
+//
+// Three contracts the prose stated otherwise, or not at all:
+//   - a switched-off workflow (automation_workflows.is_enabled = false) runs
+//     from none of its triggers. Before, webhooks and website visitors kept
+//     running one. Its webhook URLs answer 200 "Workflow disabled"
+//     (webhooks/trigger/[...path]/route.ts), record the submission in the Forms
+//     ledger as trigger_disabled and send the usual new-submission email; a
+//     retry of a run a trigger started is refused 409 workflow_disabled
+//     (olympus runs/[runId]/retry/route.ts), the hourly retry sweep skips the
+//     workflow, a trigger-origin run waiting at a wait or approval step is
+//     cancelled when the wait resolves, and a replay (a person's run) still
+//     runs it;
+//   - the hourly workflow-setup-inbox sweep files and closes its own notices
+//     (workflow-setup:<workflow id> in workflow_reliability,
+//     webhook-auth-public:<trigger id> in workflow_security;
+//     src/lib/workflow/setup-inbox.ts). A dismissal holds 30 days and a resolve
+//     24 hours for the same problem, and the owner sees them on the Workflows
+//     page's "Needs your attention" strip;
+//   - credential URLs (Slack, Discord, Teams/Power Automate, Zapier, Google
+//     Chat, Make, IFTTT, Pipedream, Pabbly, user:password@) read '[redacted]'
+//     on every API read (security/credential-urls.ts). The marker round-trips,
+//     a clone copies hidden values as stored and its overrides never change
+//     one, and a retype drops a marker the new type would show.
+
+const TEMPLATES = 'skills/hiveku-automation-agency/references/templates.md';
+
+test('a switched-off workflow: its webhooks answer "Workflow disabled", record and email, and a trigger-origin retry is refused', () => {
+  for (const rel of [DEBUG, RELIABILITY, SKILL, NODE_RAIL]) {
+    const text = flat(read(rel));
+    assert.match(text, /200 "Workflow disabled"/, `${rel} must say what a switched-off workflow's webhook answers`);
+    assert.match(text, /Forms ledger/, `${rel} must say the submission is still recorded`);
+    assert.match(text, /usual new-submission email/, `${rel} must say the usual email still goes out`);
+  }
+  for (const rel of [DEBUG, RELIABILITY, NODE_RAIL]) {
+    assert.match(flat(read(rel)), /409 `workflow_disabled`/, `${rel} must say a retry of a run its triggers started is refused`);
+  }
+  const t1 = flat(section(read(RELIABILITY), '### T1.'));
+  assert.match(t1, /authentication is still checked first/);
+  assert.match(t1, /`workflow_status` `trigger_disabled`/);
+  assert.match(t1, /The hourly retry sweep skips a switched-off workflow/);
+  assert.match(t1, /cancelled when the wait resolves/);
+  assert.match(t1, /replays none of the runs the pause blocked/);
+  assert.match(
+    t1,
+    /`workflow_run_replay`, `workflow_stranded_replay` and `workflow_dead_letter_resolve` \(action `'replay'`\) still run it for real/,
+    'a replay is a person\'s run and still runs a switched-off workflow: say so, and that it needs the same yes',
+  );
+  assert.match(t1, /Switching it back on replays nothing that arrived while it was off/);
+  // A switched-off ROW still answers "Trigger disabled"; the ladder names both answers.
+  const debug = flat(read(DEBUG));
+  assert.match(debug, /200 "Trigger disabled" and runs nothing/);
+  assert.match(debug, /an enabled row on a switched-off workflow answers 200 "Workflow disabled"/);
+  assert.match(flat(read(SKILL)), /Switched off, it runs from none of its triggers/);
+});
+
+test('the setup sweep notices close themselves: fix the cause and leave them', () => {
+  const sweep = flat(read(SWEEP));
+  for (const pin of [
+    '`workflow-setup:<workflow id>` in category `workflow_reliability`',
+    '`webhook-auth-public:<trigger id>` in category `workflow_security`',
+    "`agent_inbox_list({ category: 'workflow_security' })`",
+    'then leave the item: it closes within the hour',
+    'Resolving it by hand while the cause is still there only holds it back for a day, and dismissing it silences the same problem for 30 days',
+    '`workflow_webhook_auth_set` issues a NEW secret, so every sender must be updated',
+    '"Needs your attention" strip on the Workflows page',
+  ]) {
+    assert.ok(sweep.includes(pin), `automation-sweep step 8 must say: ${pin}`);
+  }
+  const skill = flat(read(SKILL));
+  assert.match(skill, /`workflow-setup:<workflow id>` \(category `workflow_reliability`/);
+  assert.match(skill, /`webhook-auth-public:<trigger id>` \(category `workflow_security`/);
+  assert.match(skill, /"Needs your attention" strip on the Workflows page/);
+  assert.match(
+    flat(read(RELIABILITY)),
+    /`workflow-setup:<workflow id>` or `webhook-auth-public:<trigger id>`\) close themselves within the hour once the cause is fixed/,
+  );
+  assert.match(
+    flat(read(TEMPLATES)),
+    /`workflow-setup:<workflow id>` \(category `workflow_reliability`\) and `webhook-auth-public:<trigger id>` \(category `workflow_security`\)/,
+  );
+});
+
+test("credential URLs read '[redacted]': send the marker back, never copy one out, reuse by clone or {{env.NAME}}", () => {
+  const rail = flat(read(NODE_RAIL));
+  const at = rail.indexOf('**Credential URLs are hidden the same way.**');
+  assert.ok(at >= 0, 'node-rail 3.4 lost its credential-URL block');
+  const block = rail.slice(at, rail.indexOf('`workflow_node_delete` cascades', at));
+  for (const provider of ['Slack', 'Discord', 'Teams or Power Automate', 'Zapier', 'Google Chat', 'Make', 'IFTTT', 'Pipedream', 'Pabbly', '`user:password@`']) {
+    assert.ok(block.includes(provider), `node-rail's credential-URL block must name ${provider}`);
+  }
+  assert.match(block, /Send `'\[redacted\]'` back unchanged to keep the stored value/);
+  assert.match(block, /Never try to copy a credential out of a read/);
+  assert.match(block, /a new workflow or node that carries the marker is saved without that key, with a warning/);
+  assert.match(block, /a clone copies every hidden value exactly as stored, and `overrides` never change one/);
+  assert.match(block, /Changing a node's `type` in the same write leaves out an echoed `'\[redacted\]'` whose stored value the new type would show/);
+  assert.match(block, /the node references `\{\{env\.NAME\}\}`/);
+  assert.match(block, /Hiveku's own inbound webhook URL \(`webhook_url`\) is never hidden/);
+  assert.match(block, /A `name` or `description` sent back exactly as read keeps its stored text/);
+  assert.match(block, /`redacted_placeholder`/);
+  const skill = flat(read(SKILL));
+  assert.match(skill, /\*\*Credential URLs read `'\[redacted\]'` too\.\*\*/);
+  assert.match(skill, /never try to copy a credential out of a read/);
+  assert.match(skill, /credential URLs \(a Slack or Zapier webhook URL, say, even one a `\{\{token\}\}` resolved to\) read `'\[redacted\]'` throughout the report/);
+  assert.match(flat(read(AUTOMATE)), /a clone copies each hidden value exactly as stored, and `overrides` never change one/);
+  // Retired: clone overrides as a raw find/replace over the JSON (keys and node
+  // types included), and any advice to lift a hook URL out of a read.
+  const retired = /literal-replace (strings|text) in the cloned JSON|find\/replace over the (whole )?definition JSON|(copy|lift|take) the (Slack |Zapier |webhook )+URL (from|out of) (a |the )?`?workflow_get/i;
+  const offenders = [];
+  for (const rel of prose()) {
+    for (const p of paragraphsOf(read(rel))) if (retired.test(p.text)) offenders.push(`${rel}:${p.line}`);
+  }
+  assert.deepEqual(offenders, [], 'overrides edit string values only and never a hidden value, and a read never hands back a credential URL to copy');
+});
+
+test('source cross-check: the builder answers, refuses and files what the round-3 prose says', (t) => {
+  const builder = path.join(root, '..', 'hiveku_builder', 'src');
+  const files = {
+    receiver: path.join(builder, 'app', 'api', 'webhooks', 'trigger', '[...path]', 'route.ts'),
+    retry: path.join(builder, 'app', 'api', 'olympus', 'workflows', '[workflowId]', 'runs', '[runId]', 'retry', 'route.ts'),
+    inbox: path.join(builder, 'lib', 'workflow', 'setup-inbox.ts'),
+    urls: path.join(builder, 'lib', 'security', 'credential-urls.ts'),
+  };
+  if (!Object.values(files).every((f) => fs.existsSync(f))) {
+    t.diagnostic('source cross-check skipped: no round-3 hiveku_builder checkout beside this repo');
+    return;
+  }
+  const receiver = fs.readFileSync(files.receiver, 'utf8');
+  assert.match(receiver, /message: 'Workflow disabled', success: true, submission_id: submissionId/, 'the receiver no longer answers "Workflow disabled" - the prose must change');
+  assert.match(receiver, /automation_workflows\?\.is_enabled === false/);
+  // The response itself, not the header comment that also names it.
+  const retry = fs.readFileSync(files.retry, 'utf8');
+  assert.match(
+    retry,
+    /result\.refused === 'workflow_disabled'\) \{\s*return NextResponse\.json\(\s*\{\s*error: 'workflow_disabled',[\s\S]{0,200}?\{ status: 409 \}/,
+    'a retry refused on a switched-off workflow no longer answers 409 workflow_disabled - the prose must change',
+  );
+  const inbox = fs.readFileSync(files.inbox, 'utf8');
+  for (const constant of [
+    "SETUP_CATEGORY = 'workflow_reliability'",
+    "AUTH_CATEGORY = 'workflow_security'",
+    "SETUP_KEY_PREFIX = 'workflow-setup:'",
+    "AUTH_KEY_PREFIX = 'webhook-auth-public:'",
+    'DISMISS_RESPECT_DAYS = 30',
+    'OWNER_ACTION_COOLDOWN_H = 24',
+  ]) {
+    assert.ok(inbox.includes(constant), `setup-inbox.ts no longer has ${constant} - the prose must change`);
+  }
+  const urls = fs.readFileSync(files.urls, 'utf8');
+  for (const kind of ['slack', 'discord', 'teams_connector', 'azure_signed_trigger', 'zapier', 'google_chat', 'make', 'ifttt', 'pipedream', 'pabbly', 'userinfo_password']) {
+    assert.ok(urls.includes(`| '${kind}'`), `credential-urls.ts no longer hides ${kind} - the provider list in the prose must change`);
+  }
+});
+
+// ── Round 3 fact-check (2026-09-26, builder e53c412a8) ───────────────────────
+//
+// What the round-3 prose said, and what the builder does:
+//   - a setup notice's metadata.fix is workflow_validate, a diagnostic; the
+//     problem is metadata.first_issue. Only the auth notice's fix is the fixing
+//     tool, and its `note` offers a gentler path for a saved header secret
+//     (setup-inbox.ts buildSetupNotice / authFixNote);
+//   - workflow_node_update with a new `type` drops a hidden value even when the
+//     call sends no `data` (nodes/[nodeId]/route.ts sentByCaller), and a
+//     validate draft's retype drop is in neither redaction.restored nor
+//     redaction.dropped (setup-health.ts readSuppliedDefinition);
+//   - a test report's `error` replaces just the URL (runs/route.ts, test_mode);
+//   - a retry that races a switch-off leaves a 'cancelled' retry row
+//     (workflowRetryService.ts), so "writes nothing" was not exact;
+//   - deliveries to a switched-off workflow are only in the Forms ledger;
+//   - the workflow PM steps check the assignee on a real run, and the dry run
+//     simulates them (pmActions.ts, dry-run.ts).
+
+test('round-3 fact-check: a setup notice names a diagnostic and the problem; the auth note offers the gentler path', () => {
+  const analyst = flat(read(ANALYST));
+  assert.match(analyst, /for `workflow-setup:` run `metadata\.fix` \(`workflow_validate`/);
+  assert.match(analyst, /fix what `metadata\.first_issue` names/);
+  assert.match(analyst, /for `webhook-auth-public:` it is `metadata\.fix` \(`workflow_webhook_auth_set`, read its `note`/);
+  assert.doesNotMatch(analyst, /the plan names the fix \(`metadata\.fix`\), never a resolve/, 'a setup notice\'s fix is only the diagnostic');
+
+  const sweep = flat(read(SWEEP));
+  assert.ok(sweep.includes('On a setup notice `metadata.fix` is `workflow_validate`, the diagnostic'));
+  assert.ok(sweep.includes('`metadata.first_issue` (`code`, `node_id`, `field`, `message`)'));
+  assert.ok(sweep.includes('read `metadata.fix.note` first'));
+  assert.ok(sweep.includes('apply Header Auth in the editor with that header name and the value the sender already sends, and no sender changes'));
+  assert.ok(!sweep.includes('`metadata.fix` names the call'), 'automation-sweep: a setup notice\'s fix does not fix anything');
+
+  const skill = flat(read(SKILL));
+  assert.match(skill, /On a setup notice `metadata\.fix` is `workflow_validate`, the diagnostic, and `metadata\.first_issue` names the problem/);
+  assert.match(skill, /read `metadata\.fix\.note` before proposing `workflow_webhook_auth_set`/);
+});
+
+test('round-3 fact-check: a retype drops a hidden value even with no data, and a test report error keeps its text', () => {
+  const rail = flat(read(NODE_RAIL));
+  const at = rail.indexOf('**Credential URLs are hidden the same way.**');
+  const block = rail.slice(at, rail.indexOf('`workflow_node_delete` cascades', at));
+  assert.ok(
+    block.includes('With `workflow_node_update` the stored value is left out even when the call sends no `data`: only a value you send yourself in the same call survives the retype.'),
+    'node-rail 3.4: the retype drop does not need an echoed marker',
+  );
+  assert.ok(block.includes('neither counts it in `redaction.restored` nor lists it in `redaction.dropped`'));
+  assert.ok(block.includes("The one exception in a test's report is its `error`, where just the URL is replaced"));
+  for (const tool of ['`workflow_runs_recent`', '`workflow_run_summary`', '`workflow_stranded_list`', '`workflow_resume`', '`workflow_resolve_short_id`', '`workflow_dashboard_url`']) {
+    assert.ok(block.includes(tool), `node-rail 3.4 must name ${tool} among the reads that mask`);
+  }
+});
+
+test('round-3 fact-check: a trigger-origin retry on a switched-off workflow runs nothing; a race can leave a cancelled row', () => {
+  for (const rel of [DEBUG, RELIABILITY]) {
+    const text = flat(read(rel));
+    assert.ok(
+      text.includes('409 `workflow_disabled` and runs nothing (if it races a switch-off, a retry row may be left `cancelled`)'),
+      `${rel} must say a raced retry can leave a cancelled row`,
+    );
+    assert.doesNotMatch(text, /409 `workflow_disabled`,? and (writes nothing|nothing is written)/, `${rel}: a raced retry does write a cancelled row`);
+  }
+});
+
+test('round-3 fact-check: switched-off deliveries are only in the Forms ledger, and no tool replays them', () => {
+  const t1 = flat(section(read(RELIABILITY), '### T1.'));
+  assert.match(t1, /Those deliveries are leads, and they are only in the Forms ledger/);
+  assert.match(t1, /`workflow_stranded_list` and `workflow_stranded_replay` do not see them/);
+  assert.match(t1, /`marketing_form_conversion_audit` \(scoped with `project_id` or `form_key`\) lists them/);
+  assert.match(t1, /No tool replays them/);
+});
+
+test('round-3 fact-check: the workflow PM steps check the assignee on a real run, and a dry run never does', () => {
+  const rail = flat(read(NODE_RAIL));
+  const at = rail.indexOf('**Work management**');
+  assert.ok(at >= 0, 'node-rail lost its Work management entry');
+  const work = rail.slice(at, rail.indexOf('Mission Control (the', at));
+  assert.ok(work.includes('Could not assign the task: That person is not a team member of this account'));
+  assert.ok(work.includes('not found in this account'));
+  assert.ok(work.includes('A dry run never catches the assignee refusal'));
+  assert.ok(work.includes('`workflow_test` simulates `createTask`, `createSubtask`, `updateTask` and `completeTask`'));
+  assert.match(
+    flat(read('skills/hiveku-pm-mission-control/SKILL.md')),
+    /`workflow_test` simulates those steps, so a dry run never shows it/,
+    'pm-mission-control must point at the workflow steps\' assignee check',
+  );
+});
+
+test('source cross-check: the builder source the round-3 fact-check corrections describe', (t) => {
+  const builder = path.join(root, '..', 'hiveku_builder', 'src');
+  const files = {
+    inbox: path.join(builder, 'lib', 'workflow', 'setup-inbox.ts'),
+    nodeRoute: path.join(builder, 'app', 'api', 'olympus', 'workflows', '[workflowId]', 'nodes', '[nodeId]', 'route.ts'),
+    retry: path.join(builder, 'lib', 'workflowRetryService.ts'),
+    pm: path.join(builder, 'lib', 'workflow', 'nodeHandlers', 'pmActions.ts'),
+    dryRun: path.join(builder, 'lib', 'workflow', 'dry-run.ts'),
+  };
+  if (!Object.values(files).every((f) => fs.existsSync(f))) {
+    t.diagnostic('source cross-check skipped: no round-3 hiveku_builder checkout beside this repo');
+    return;
+  }
+  const inbox = fs.readFileSync(files.inbox, 'utf8');
+  assert.ok(inbox.includes("fix: { tool: 'workflow_validate', params: { workflow_id: input.workflowId } }"), 'the setup notice\'s fix changed - the prose must change');
+  assert.ok(inbox.includes('the owner can instead apply Header Auth in the editor with header'), 'the auth note no longer offers the header path');
+  // The drop callback keeps only what the caller itself sent, marker or not.
+  assert.match(fs.readFileSync(files.nodeRoute, 'utf8'), /\(_label, path\) => !sentByCaller\(sentData, path\)/);
+  assert.match(fs.readFileSync(files.retry, 'utf8'), /result\.refused === SWITCHED_OFF_REFUSAL\) \{[\s\S]{0,300}?status: 'cancelled'/);
+  const pm = fs.readFileSync(files.pm, 'utf8');
+  assert.ok(pm.includes('error: `Could not assign the task: ${assignee.body.error}`'));
+  assert.ok(pm.includes('not found in this account'));
+  const dryRun = fs.readFileSync(files.dryRun, 'utf8');
+  for (const type of ["'createTask'", "'createSubtask'", "'updateTask'", "'completeTask'"]) {
+    assert.ok(dryRun.includes(type), `dry-run.ts no longer simulates ${type} - the prose must change`);
+  }
+});
+
+// ── Round 3 re-check (2026-09-26, builder main after e53c412a8) ─────────────
+//
+// What the corrected text still said, and what the builder does:
+//   - T1 said marketing_form_conversion_audit returns field names and a masked
+//     preview: only with include_fields: true (form-submissions/route.ts). The
+//     rows sit in bucket "workflow_failed" beside the other failed statuses
+//     (form-attribution.ts), the window defaults to 30 days, and
+//     trigger_disabled also marks a delivery to a switched-off trigger and a
+//     paused workflow's queued form run.
+//   - a delivery that raced the switch-off leaves a trigger_runs row closed as
+//     completed with agent_response.skipped (triggerProcessing.ts), which the
+//     stranded list and replay select (stranded/route.ts).
+//   - a templated assignToId that is not a UUID fails with its own message
+//     (src/lib/pm/assignee.ts PM_ASSIGNEE_INVALID_ID via pmActions.ts).
+//   - agent_inbox_list masks a credential URL in a notice's title and body
+//     (mask-inbox-text.ts), so node-rail 3.4 names it among the reads.
+// Run against the round-3 text, every prose case below failed.
+
+test('round-3 re-check: how the Forms audit finds switched-off deliveries, and the raced one the stranded tools do see', () => {
+  const t1 = flat(section(read(RELIABILITY), '### T1.'));
+  for (const phrase of [
+    'The exception is a delivery that raced the switch-off: it leaves a `trigger_runs` row closed as `completed` with `agent_response.skipped`',
+    '`workflow_stranded_list` lists it and `workflow_stranded_replay` runs it',
+    'So a stranded count is not a count of what arrived while the workflow was off.',
+    '`bucket: "workflow_failed"` narrows to them, together with rows whose `workflow_status` is `error`, `degraded`, `trigger_missing` or `auth_failed`',
+    '`include_fields: true` adds field names and a masked contact preview, never the values',
+    'the window is 30 days unless `days` (or `from` and `to`) covers the whole time it was off',
+    '`trigger_disabled` alone does not mean a switched-off workflow: a delivery to a switched-off trigger, and a form run queued while the workflow was paused, carry it too',
+  ]) {
+    assert.ok(t1.includes(phrase), `reliability.md T1 must say: ${phrase}`);
+  }
+  assert.ok(!t1.includes('(barring one that raced the switch-off)'), 'T1: a raced delivery is visible to the stranded tools, say how');
+  assert.ok(
+    !t1.includes('`trigger_disabled`, with field names and a masked contact preview'),
+    'T1: field names come only with include_fields: true',
+  );
+});
+
+test('round-3 re-check: a templated assignee that is not a UUID has its own refusal', () => {
+  const rail = flat(read(NODE_RAIL));
+  const at = rail.indexOf('**Work management**');
+  const work = rail.slice(at, rail.indexOf('Mission Control (the', at));
+  assert.ok(
+    work.includes('A value that resolves to something that is not a UUID (a name, an email, an agent label) fails those steps with "Could not assign the task: assigned_to_id must be a UUID (public_users.id)", and nothing is written.'),
+    'node-rail 6.3 must quote the non-UUID refusal',
+  );
+});
+
+test('round-3 re-check: node-rail 3.4 names the inbox notices among the reads that mask', () => {
+  const rail = flat(read(NODE_RAIL));
+  const at = rail.indexOf('**Credential URLs are hidden the same way.**');
+  const block = rail.slice(at, rail.indexOf('`workflow_node_delete` cascades', at));
+  assert.ok(block.includes("a notice's `title` and `body` in `agent_inbox_list`"));
+  assert.ok(block.includes('`workflow_dead_letters_list`'));
+});
+
+test('source cross-check: the builder source the round-3 re-check corrections describe', (t) => {
+  const builder = path.join(root, '..', 'hiveku_builder', 'src');
+  const files = {
+    assignee: path.join(builder, 'lib', 'pm', 'assignee.ts'),
+    pm: path.join(builder, 'lib', 'workflow', 'nodeHandlers', 'pmActions.ts'),
+    triggerProcessing: path.join(builder, 'lib', 'triggerProcessing.ts'),
+    stranded: path.join(builder, 'app', 'api', 'olympus', 'workflows', '[workflowId]', 'stranded', 'route.ts'),
+    audit: path.join(builder, 'app', 'api', 'olympus', 'marketing', 'form-submissions', 'route.ts'),
+    attribution: path.join(builder, 'lib', 'marketing', 'form-attribution.ts'),
+    execQueue: path.join(builder, 'lib', 'queue', 'workflow-exec-queue.ts'),
+    deadLetters: path.join(builder, 'app', 'api', 'olympus', 'workflows', 'dead-letters', 'route.ts'),
+    maskInbox: path.join(builder, 'lib', 'agent-ops', 'mask-inbox-text.ts'),
+    inboxList: path.join(builder, 'app', 'api', 'olympus', 'agent-ops', 'inbox', 'route.ts'),
+  };
+  if (!Object.values(files).every((f) => fs.existsSync(f))) {
+    t.diagnostic('source cross-check skipped: no hiveku_builder checkout with the dead-letter and inbox masking beside this repo');
+    return;
+  }
+  const src = (key) => fs.readFileSync(files[key], 'utf8');
+  assert.ok(src('assignee').includes("error: 'assigned_to_id must be a UUID (public_users.id)'"), 'the non-UUID refusal changed - node-rail 6.3 must change');
+  assert.ok(src('pm').includes('error: `Could not assign the task: ${assignee.body.error}`'));
+  assert.match(src('triggerProcessing'), /status: 'completed',\s*processed_at: new Date\(\),\s*agent_response: \{ skipped: SWITCHED_OFF_REFUSAL \}/);
+  assert.equal(src('stranded').match(/status: \{ notIn: \['pending', 'processing'\] \}/g)?.length, 2, 'the stranded filter changed - T1 must change');
+  assert.ok(src('audit').includes("Number(sp.get('days')) || 30"));
+  assert.ok(src('audit').includes('...(includeFields ? { fields: fieldsById.get(row.id) ?? null } : {})'));
+  assert.match(src('attribution'), /FAILED_WORKFLOW_STATUSES = new Set\(\[\s*'error',\s*'degraded',\s*'trigger_missing',\s*'trigger_disabled',\s*'auth_failed',\s*\]\)/);
+  assert.match(src('execQueue'), /if \(wf\.is_paused\) \{[\s\S]*?stampFormOutcome\('trigger_disabled'\);\s*return;/);
+  assert.ok(src('deadLetters').includes('workflowName: maskWorkflowText(item.workflowName)'));
+  assert.ok(src('deadLetters').includes('workflowName: maskWorkflowText(w.workflowName)'));
+  assert.ok(src('inboxList').includes('data: rows.map(maskInboxItemText)'));
+});

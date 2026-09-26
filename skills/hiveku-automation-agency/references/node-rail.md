@@ -570,6 +570,12 @@ ran for real. The route was changed specifically to remove that window. A dry ru
 nothing the enabled flag guards, so there is no reason to arm a graph before testing it. If
 you find another note anywhere prescribing enable-then-test, it predates this and is wrong.
 
+Nothing a trigger fires runs a disabled workflow: not a webhook, a website visitor, a
+schedule, a database change or an internal event, and not a retry of a run one of those
+started (409 `workflow_disabled`). Its webhook URLs still answer each post that passes their
+authentication with 200 "Workflow disabled", and the submission is recorded in the Forms
+ledger and gets the usual new-submission email. A replay still runs it (reliability.md T1).
+
 Enabling remains comparatively safe on the ad-hoc rail because of what "enabled" does and
 does not do, and that is still worth understanding before you enable anything:
 
@@ -741,6 +747,45 @@ warning. The marker is never written into a definition. A trigger ROW whose stor
 the literal `'[redacted]'` counts as having no secret: the receiver answers 403, a
 `workflow_trigger_update` that would keep it gets 400 `auth_secret_missing`, and reads no
 longer show the key at all. Put a real secret on with `workflow_webhook_auth_set`.
+
+**Credential URLs are hidden the same way.** An outbound webhook URL whose path or query IS the
+secret has no secret key name to hide it by: a Slack, Discord, Teams or Power Automate, Zapier,
+Google Chat, Make, IFTTT, Pipedream or Pabbly webhook URL, and any URL carrying a
+`user:password@`. Every definition read (`workflow_get`, `workflow_version_get`, a trigger's
+`filter_config`, and the responses of the create, clone, update and node calls) and a test's
+report show the WHOLE string holding one as `'[redacted]'`, even when the URL sits inside
+longer text (an `executeCode` body), and a Slack, Discord or Teams notify node's literal
+`webhookUrl` is hidden whatever its host. The one exception in a test's report is its
+`error`, where just the URL is replaced and the rest of the message stays readable. Run reads
+(`workflow_run_get`, `workflow_runs_list`, `workflow_runs_recent`, `workflow_run_summary`,
+`workflow_run_logs`, `workflow_dead_letters_list`, `workflow_stranded_list` and
+`workflow_resume`), a trigger's `last_test_data`, the workflow's `name` and `description`
+(wherever a read returns them, `workflow_resolve_short_id` and `workflow_dashboard_url`
+included), a notice's `title` and `body` in `agent_inbox_list`, and `audit_query` replace just
+the URL, where it sits.
+Hiveku's own inbound webhook URL (`webhook_url`) is never hidden, and the owner's editor still
+shows every value.
+
+- Send `'[redacted]'` back unchanged to keep the stored value (the restore above). Never try to
+  copy a credential out of a read, into another workflow or anywhere else: there is nothing to
+  copy, and a new workflow or node that carries the marker is saved without that key, with a
+  warning.
+- To reuse a hook, `workflow_clone` the workflow: a clone copies every hidden value exactly as
+  stored, and `overrides` never change one (`warnings[]` says so, once). Set a new one with
+  `workflow_node_update` on the copy. Or the owner puts the URL in an environment variable
+  (Environment Variables in the editor's gear menu) and the node references `{{env.NAME}}`.
+- Changing a node's `type` in the same write leaves out an echoed `'[redacted]'` whose stored
+  value the new type would show, and `warnings[]` names the key: send the value itself to keep
+  it. With `workflow_node_update` the stored value is left out even when the call sends no
+  `data`: only a value you send yourself in the same call survives the retype. A
+  `workflow_validate` draft that changes a type leaves it out too, but neither counts it in
+  `redaction.restored` nor lists it in `redaction.dropped`; only the real write's `warnings[]`
+  names it.
+- A stored `'[redacted]'` in a required field counts as missing: on a node a run can reach,
+  `setup` reads `needs_setup`, validate names the field, and the enable gate refuses. Anywhere
+  else in a node it is a `redacted_placeholder` warning.
+- A `name` or `description` sent back exactly as read keeps its stored text. An edited one that
+  still holds `'[redacted]'` is saved as sent, with a warning.
 
 `workflow_node_delete` cascades: every edge whose source or target is that node is removed too,
 and the response lists the removed edge ids. `workflow_edge_delete` removes one edge and leaves
@@ -916,8 +961,9 @@ first is over). `_template` is sparse. The old whole-object marker
 
 Credentials never come back through a test. `would_have`, `_template` and each
 `template_values[].value` show credential-keyed values (an `Authorization` or `x-api-key`
-header, `apiKey`, `password`, `secret`, the same key list `workflow_get` hides) as
-`'[redacted]'`, env secret values are replaced with `•••` before any cap, and the same
+header, `apiKey`, `password`, `secret`, the same key list `workflow_get` hides) and every
+credential URL (3.4: a Slack or Zapier webhook URL, say, even one a `{{token}}` resolved to)
+as `'[redacted]'`, env secret values are replaced with `•••` before any cap, and the same
 redaction runs over `step_states` (each step on its own, so a node whose id looks like a
 credential key, `authorization` say, keeps its `status`, `dry_run` and `node_type`) and
 `output`, so a pure node's output reads `'[redacted]'` there too. A Date shows as its ISO
@@ -1351,7 +1397,22 @@ looks exactly like a broken workflow. Confirm with `workflow_event_trigger_types
 `respondToOutboundReply` (save a draft or send).
 
 **Work management**: `createTask`, `createSubtask`, `updateTask`, `completeTask`, `getTasks`,
-`pmProjectTrigger`, `pmTaskCreatedTrigger`, `pmTaskUpdatedTrigger`. Mission Control (the
+`pmProjectTrigger`, `pmTaskCreatedTrigger`, `pmTaskUpdatedTrigger`. The task steps keep to the
+workflow's own account and its team. `assignToId` is resolved like any other field (a
+`{{template}}` included) and then checked the way the PM tools check an assignee: someone who is
+not a team member (team members are the ids `crm_list_users` returns; on a shared project,
+members of an account it is shared with count too) fails `createTask`, `createSubtask` or
+`updateTask` (there, only when it moves the task to someone new) with "Could not assign the
+task: That person is not a team member of this account...", and nothing is written. A value
+that resolves to something that is not a UUID (a name, an email, an agent label) fails those
+steps with "Could not assign the task: assigned_to_id must be a UUID
+(public_users.id)", and nothing is written. A
+`projectId` or `taskId` from another account fails with "... not found in this account", and
+`getTasks` lists only the workflow's own account (it fails on a run with no account). A dry run
+never catches the assignee refusal: `workflow_test` simulates `createTask`, `createSubtask`,
+`updateTask` and `completeTask`, so only a real run fails. Before enabling, check every literal
+`assignToId` against `crm_list_users`, and trace a templated one to where its value comes from;
+when the person is not listed, leave `assignToId` empty. Mission Control (the
 human-in-the-loop board): `mcTaskCreate` (replay-safe, a retried run reuses the first card),
 `mcTaskUpdate`, `mcTaskTransition` (outputs a branchable `changed` flag),
 `mcTaskComment` ( no replay protection, so a resumed run posts a second comment),

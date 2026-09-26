@@ -22,8 +22,10 @@ with the account's full hydration (persona, brand voice, memory, skills), which 
    `sales` routes to the sales department agent (Morgan, the account's `_identity:sales`),
    hydrated with sales memory, skills, rules, brand and avatars; `list_departments` returns it.
    Three account gates ride along: the sales agent kill switch (403 `sales_agent_disabled` when
-   the account has it off in Settings → AI), the per-session cost cap (402
-   `session_cost_cap_reached`), and the account's sales model tier. Staged-approval caveat: through
+   the account has it switched off; an account owner or admin switches it on from the Sales
+   agent's memory page: CRM, then the Agent menu), the per-session cost cap (402
+   `session_cost_cap_reached`; an owner or admin raises it under Settings on that same memory
+   page), and the account's sales model tier. Staged-approval caveat: through
    this rail nobody can click an approval card, so the sales agent's own gated writes
    (`crm_email_send`, `crm_sequence_enroll`, `crm_deal_close`) come back "staged, awaiting
    approval" and do NOT execute - use it for generative and strategic work (drafts, plans,

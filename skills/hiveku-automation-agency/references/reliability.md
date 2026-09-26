@@ -43,7 +43,47 @@ workflow_get({ workflow_id })   # is_enabled on the workflow row
 
 A disabled workflow fires on nothing: not its webhook, not its schedule, not an internal
 event. It writes no run rows and logs no failures, so it is indistinguishable in every
-run-history tool from a workflow nobody triggered.
+run-history tool from a workflow nobody triggered. Its webhook URLs still take posts
+(authentication is still checked first): each one gets 200 "Workflow disabled", the
+submission is recorded in the Forms ledger (`workflow_status` `trigger_disabled`) and gets
+the usual new-submission email, and the workflow does not run, so a sender gets no Respond
+node body and no `data.output`. What else switching it off stops:
+
+- `workflow_run_retry` on a run one of its triggers started (a webhook, a website visitor, a
+  schedule, a database change, an internal event, or a retry of one of those) is refused
+  with 409 `workflow_disabled` and runs nothing (if it races a switch-off, a retry row may be
+  left `cancelled`). The hourly retry sweep skips a
+  switched-off workflow. A retry of a run a person or an agent started still runs (as a
+  replay).
+- A run one of its triggers started that is waiting at a wait or approval step is cancelled
+  when the wait resolves, instead of continuing.
+- The dashboard's Resume on a paused, switched-off workflow replays none of the runs the pause
+  blocked; they stay as they are.
+- It does NOT stop a person or an agent: `workflow_test` still dry-runs it, and
+  `workflow_run_replay`, `workflow_stranded_replay` and `workflow_dead_letter_resolve`
+  (action `'replay'`) still run it for real, so a replay needs the same yes on a
+  switched-off workflow as on a live one (a real `workflow_run` is refused with 400 until it
+  is enabled). Switching it back on replays nothing that arrived while it was off.
+- Those deliveries are leads, and they are only in the Forms ledger: the receiver answers
+  before the trigger pipeline, so there is no `trigger_runs` row and `workflow_stranded_list`
+  and `workflow_stranded_replay` do not see them. The exception is a delivery that raced the
+  switch-off: it leaves a `trigger_runs` row closed as `completed` with
+  `agent_response.skipped`, and when that row falls inside the stranded window (after the
+  pause, or after the last failed run) `workflow_stranded_list` lists it and
+  `workflow_stranded_replay` runs it. So a stranded count is not a count of what arrived while
+  the workflow was off. `marketing_form_conversion_audit` (scoped with `project_id` or
+  `form_key`) lists them as rows with `workflow_status` `trigger_disabled` (a raced one too):
+  `bucket: "workflow_failed"` narrows to them, together with rows whose `workflow_status` is
+  `error`, `degraded`, `trigger_missing` or `auth_failed`; `include_fields: true` adds field
+  names and a masked contact preview, never the values; and the window is 30 days unless
+  `days` (or `from` and `to`) covers the whole time it was off. `trigger_disabled` alone does
+  not mean a switched-off workflow: a delivery to a switched-off trigger, and a form run
+  queued while the workflow was paused, carry it too, so match `submitted_at` against when it
+  was off. No tool replays them: to run one, the owner reads it in the Forms tab, and one real
+  `workflow_run` with that body as `input_data`, on their yes, runs it once. Count them in
+  the report before anyone switches the workflow back on.
+
+What the flag tells you:
 
 - **`is_enabled: false` explains everything downstream.** Stop the ladder, ask WHO
   disabled it and why (`audit_query({ tool_contains: 'workflow_disable' })` names the key
@@ -444,8 +484,9 @@ keeps its label and never pauses, a retried run a person or an agent started is 
 can pause. The sweep is not a safety net: it only picks up a failed run from the last 24
 hours whose trigger data already carries a `retry_count`, and the engine stores every run's
 input there instead, so in practice it only retries a run somebody already retried by hand.
-Never promise an operator that a failed run will be retried on its own. The failure alert is
-opt-in:
+Never promise an operator that a failed run will be retried on its own. On a switched-off
+workflow a retry of a run its triggers started is refused with 409 `workflow_disabled` (T1),
+and the sweep skips the workflow. The failure alert is opt-in:
 `workflow_update({ workflow_id, settings: { notify_on_failure: true } })`, or the owner's
 failure-alerts switch in the workflow editor's gear menu ("Email admins when a triggered run
 fails"). It emails the account admins and raises one
@@ -497,10 +538,10 @@ The path back, and every step has a guard:
    misses in the test too.
 4. **Resume.** `workflow_resume({ workflow_id })` clears the pause and resets the failure
    counter. It runs nothing by itself (the dashboard's Resume replays the runs the guards
-   stopped, the `stopped_*` rows, but never stranded webhook deliveries: those come back
-   only through steps 5 to 7). It must come BEFORE replay: a replay against a
-   still-paused workflow is refused with a 409 (and, if it were not, would simply strand
-   the submissions again).
+   stopped, the `stopped_*` rows, unless the workflow is switched off (T1), but never
+   stranded webhook deliveries: those come back only through steps 5 to 7). It must come
+   BEFORE replay: a replay against a still-paused workflow is refused with a 409 (and, if it
+   were not, would simply strand the submissions again).
 5. **Review what is banked.** `workflow_stranded_list({ workflow_id })`, read-only. GET
    shows exactly what POST would run.
 6. **Show the operator the LIST, not the count, and get an explicit yes.** Names and
@@ -576,7 +617,7 @@ Weekly, per retainer account, read-only until the last step. This is the work th
 | 4 | `workflow_run_get` on each `last_failed_run_id`, on `template_misses.last_run_id_with_misses`, and on one recent GREEN run per workflow | No `degraded` steps, `unresolved_template_count` 0 with `unresolved_templates_recorded: true` (`'partial'` gives only a lower bound, so a clean one is not proof). The green-run spot check is the part everyone skips and it is where the silent failures live. |
 | 5 | `workflow_get_schedule` on every scheduled automation | Non-null, workflow enabled, `next_run_at` correct in the CLIENT's timezone. A null schedule on a workflow the client believes is scheduled is a finding, not a skip. |
 | 6 | `workflow_stranded_list` on anything paused or recently failing | Zero. A non-zero count is a lead count and goes to the top of the report. |
-| 7 | `agent_inbox_list` | The open queue (default `new,seen`) worked, not just read. Apply what should be applied through its own surface, THEN `agent_inbox_resolve`; resolving never executes the item. |
+| 7 | `agent_inbox_list` | The open queue (default `new,seen`) worked, not just read. Apply what should be applied through its own surface, THEN `agent_inbox_resolve`; resolving never executes the item. The setup sweep's own notices (`metadata.dedup_key` `workflow-setup:<workflow id>` or `webhook-auth-public:<trigger id>`) close themselves within the hour once the cause is fixed: fix the cause and leave them (`/hiveku:automation-sweep` step 8). |
 | 8 | `project_crons_list` / `project_cron_logs` where the client has project crons | No `failure` or `timeout` rows accumulating on the other rail. |
 | 9 | `workflow_get` on every customer-facing automation | `definition.settings.notify_on_failure` is `true`, above all on webhook lead forms, which never pause and so never announce an outage any other way. Off is a proposal (`workflow_update({ workflow_id, settings: { notify_on_failure: true } })` on the operator's yes), not a fix you make from the pass. |
 | 10 | `workflow_triggers_list` on every workflow with a public webhook | No live, public (`authentication: 'none'`) row reads `webhook_path_strength: 'guessable'`. One that does is a proposal to rotate (`/hiveku:automation-sweep` step 7), never a rotation made from the pass. |

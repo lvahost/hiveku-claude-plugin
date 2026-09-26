@@ -160,6 +160,18 @@ unless the row belongs to another webhook node still in the graph, or a remainin
 node links to it or shows its URL. Rename, disarm and restore rules:
 `references/node-rail.md` 3.3-3.5.
 
+**Credential URLs read `'[redacted]'` too.** A Slack, Discord, Teams or Power Automate,
+Zapier, Google Chat, Make, IFTTT, Pipedream or Pabbly webhook URL, and any
+`user:password@` URL, is itself the secret, so every API read hides it: the definition and
+its versions, runs, logs, a test's report, the workflow's name and description, and
+`audit_query`. The owner's editor still shows it, and runs still use it. Send the marker
+back unchanged to keep the stored value, and never try to copy a credential out of a read.
+To reuse one, `workflow_clone` copies hidden values exactly as stored (`overrides` never
+change them), or the owner puts the URL in an environment variable (Environment Variables in
+the editor's gear menu) and the node references `{{env.NAME}}`. A new workflow or node that
+carries the marker is saved without that key, with a warning, and a stored marker in a
+required field counts as missing (`needs_setup`). Full rules: `references/node-rail.md` 3.4.
+
 **Runs spend real allowances.** A real run debits the run quota (100/month included,
 then $0.01/run billed in arrears - or refused - per the overage switch), and the
 plan's active-automation cap counts ENABLED workflows, enforced only on the client's
@@ -224,7 +236,8 @@ afterwards. Read the response instead (shape: `references/node-rail.md` 5.1):
   node, the mock with `would_have` and a synthetic `id`), `template_values` (every
   `{{token}}` and what it resolved to, with a `status`), `unresolved_templates` (always an
   array, `[]` = clean), `warnings`, `error`. Credential-keyed values (an `Authorization`
-  header, an `apiKey`, a password) read `'[redacted]'` throughout the report, and env
+  header, an `apiKey`, a password) and credential URLs (a Slack or Zapier webhook URL, say,
+  even one a `{{token}}` resolved to) read `'[redacted]'` throughout the report, and env
   secret values read `•••`.
 - `data.not_reached` for nodes the run never got to: an untaken branch, or everything
   downstream of a failure. A node you expected that shows up here is wiring.
@@ -409,7 +422,17 @@ last step:
    scheduled is a finding, not a skip.
 5. `workflow_stranded_list` on anything paused - stranded submissions are leads.
 6. `agent_inbox_list` - the open staged-item queue. Apply what should be applied,
-   then resolve; dismiss only what is deliberately rejected.
+   then resolve; dismiss only what is deliberately rejected. The hourly setup sweep's
+   notices close themselves: `workflow-setup:<workflow id>` (category
+   `workflow_reliability`, a switched-on workflow that is not set up or does nothing) and
+   `webhook-auth-public:<trigger id>` (category `workflow_security`, a live public webhook
+   whose saved auth is not checked). Fix the cause and leave them; they close within the
+   hour. On a setup notice `metadata.fix` is `workflow_validate`, the diagnostic, and
+   `metadata.first_issue` names the problem. On an auth notice, read `metadata.fix.note`
+   before proposing `workflow_webhook_auth_set`, which issues a NEW secret every sender must
+   switch to: for a saved header secret the owner can instead apply Header Auth in the editor
+   with the value the sender already sends, and no sender changes. The owner sees them in the
+   "Needs your attention" strip on the Workflows page.
 
 Report it honestly. ZERO runs in the window is **unknown**, not passing - say "no
 runs in window", never fold it into a green summary. A summary that hit its 1000-run
@@ -660,7 +683,10 @@ unlinked rather than deleted, so the chat content survives, but the automation a
 entire history do not. Use it only when the operator has explicitly confirmed they
 want that workflow gone by name. When the intent is "stop this from running",
 `workflow_disable` is the answer - it keeps everything and is reversed by
-`workflow_enable`.
+`workflow_enable`. Switched off, it runs from none of its triggers, and its webhook URLs
+still answer each post that passes their authentication with 200 "Workflow disabled",
+record the submission in the Forms ledger and send the usual new-submission email, but
+run nothing (details: `references/reliability.md` T1). A replay still runs it for real.
 
 **The hard stop, worked.** "Clean up - delete all the old test workflows" is a
 refusal, not a task: deletion targets are never derived by pattern, prefix, or age.

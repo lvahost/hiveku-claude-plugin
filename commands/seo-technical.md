@@ -34,11 +34,25 @@ section 0 is the coverage contract, section 8 the checklist). Read-only througho
    the odd ones with `seo_gsc_inspect_url({ site_url, inspection_url })` (indexed snapshot only).
    Second engine: `seo_bing_inspect_url({ site_url, url })` and `seo_bing_crawl_stats({ site_url })`.
    Sitemaps: `seo_gsc_list_sitemaps({ site_url })` and `seo_gsc_get_sitemap` for submitted vs indexed.
-5. Headers: no Hiveku tool reads a production X-Robots-Tag. On a hosted project,
-   `preview_http_get({ project_id, path, headers_only: true })` on the home page and one path per
-   template (preview tier only) and `project_files_search({ project_id, query: "X-Robots-Tag" })` plus
-   `noindex` in `next.config.*` and `middleware.*` for over-broad matchers. The production check is an
-   EXTERNAL row: report it as not checked, with the one-line escalation from blind-spots section 2.
+5. Headers: a page can be noindexed by its `X-Robots-Tag` response header with no robots meta tag
+   in the HTML, so a missing meta tag is never proof a page is indexable. Hiveku's own development,
+   staging and preview hosts are noindexed this way on every page, by design and not a leak, and so
+   is every production address of a site whose owner turned off Search engine indexing (Site >
+   Hosting > Production). Read the header with `fetch_url({ url, mode: "none" })` on the home page
+   and one URL per template: `data.x_robots_tag` is the final response's header value (a `noindex`
+   or `none` directive means noindexed, whatever the HTML says) or `null` when that response sent
+   none, which counts as "no header" only on a 200 with `challenged` and `blocked` both false. The
+   full reading rules are in section 6 of the hiveku-orient skill's
+   `references/stating-coverage.md`. If the response has no `x_robots_tag` field at all, the builder
+   behind the tool predates it: the header was not read, the production check is an EXTERNAL row,
+   and you report it as not checked with the one-line escalation from blind-spots section 2 (where
+   the field is present, this step supersedes that section's "no Hiveku tool reads it"). Either way,
+   on a hosted project also check the source for over-broad rules:
+   `project_files_search({ project_id, query: "X-Robots-Tag" })` plus `noindex` in `next.config.*`
+   and `middleware.*`, and `preview_http_get({ project_id, path, headers_only: true })` for the
+   app's own headers (preview tier only). Step 4's `indexing_state` is Google's read of the header
+   as of its last crawl; when it disagrees with the live header, say so: the header changed since,
+   or the site sends Googlebot something different from Hiveku's user agent.
 6. Canonicals and redirects: `project_redirects_list({ project_id })` and walk the rule graph for
    chains, loops and dead terminals (exclude `is_active: false`, expand prefix rules); `web_crawl({ url,
    limit, scrapeOptions: { formats: ["rawHtml"], onlyMainContent: false } })` for the canonical graph
