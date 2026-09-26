@@ -16,10 +16,12 @@ Ground yourself: `get_account_info`, `account_context_get({ domain: "seo" })`, `
 domain: "seo", include_project_scoped: true })`, and the local `hiveku-data/seo/`,
 `hiveku-data/localseo/` and `hiveku-data/aeo/` files with `hiveku-data/STATUS.json` (its `failed`
 array first - a dataset that failed to pull was not retrieved, never "empty"). Profile warning:
-`seo_` is visible on full, marketing and marketing-seo keys only; the DataForSEO vendor prefixes
+`seo_` is visible on full, marketing and marketing-seo connections only; the DataForSEO vendor prefixes
 (`backlinks_`, `dataforseo_labs_`, `serp_`, `on_page_`, `keywords_data_` and the rest) also need
-credentials; today a marketing-seo key cannot see `project_*`, `cms_*` or `deploy_site`.
-Tool-not-found means invisible to this key or not provisioned - report it as could-not-verify with
+credentials; a marketing or marketing-seo connection sees `cms_*`, the redirect tools, `project_file_save`,
+`project_vcs_commit` (no files: versions only) and `deploy_site`, but not the bulk save, the file
+delete or the build check.
+Tool-not-found means not available on this connection or not provisioned - report it as could-not-verify with
 the reason, never as a verdict, never as "does not exist". Discovery caveat: `hiveku_find_tools`
 with `department: 'seo'` never returns the vendor tools today - search with no department, or name
 the tool.
@@ -96,7 +98,7 @@ the same click sits in all five.
 
 Verdicts are a closed enum per area (technical, rankings, search console, content, authority,
 local, AEO, outcomes): `healthy` | `degraded_at_<named check>` | `not_measurable` | `unknown`.
-`not_measurable` (hollow rail, missing connection) and `unknown` (tool errored or key-invisible)
+`not_measurable` (hollow rail, missing connection) and `unknown` (tool errored or not available on this connection)
 are valid verdicts that never become passes and never hide from the summary line; every verdict
 discloses its N, how the sample was chosen, and what was excluded. Every claim traces to a tool.
 
@@ -106,10 +108,11 @@ production deploy; bulk-dispatching it turns an unverified diagnosis into a flee
 changes nobody read. The plan names the ONE mechanical task worth implementing first; the main
 session runs `seo_task_implement` with its two-step confirm and a human reads the diff before
 `agent_approval_approve` ("implement this" is not pre-approval). Do not work around it with
-`pages_update`, `project_files_bulk_save`, `project_vcs_commit` or `deploy_site`.
+`pages_update`, `project_file_save`, `project_files_bulk_save`, `project_vcs_commit` or
+`deploy_site`.
 
 Return, opening with one status line - `ok` | `needs_input` (domain, project or window ambiguous) |
-`blocked` (unbound, account mismatch, or the key's profile hides `seo_`) | `failed` (reads errored;
+`blocked` (unbound, account mismatch, or this connection's profile hides `seo_`) | `failed` (reads errored;
 name them):
 1. Two lines: where the site is visible, where it is not.
 2. The per-area verdict list, each naming the failing check, its evidence, N and window.
@@ -119,11 +122,12 @@ name them):
    end), `/hiveku:seo-technical` (crawl, index, vitals), `/hiveku:seo-links` (authority),
    `/hiveku:local` (GBP and citations), `/hiveku:aeo` (AI visibility); or the exact write
    (`seo_audit_start`, `seo_track_keyword`, `seo_task_implement`) with its cost and confirm step.
-4. What you could not verify, and why (key scope, disconnected connection, hollow rail, failed
-   call) - a partial audit, never a zero.
+4. What you could not verify, and why (not available on this connection, disconnected connection,
+   hollow rail, failed call) - a partial audit, never a zero.
 
 You do not run writes (no `seo_run_audit`, `seo_audit_start`, `seo_track_keyword`, `pages_update`,
-`cms_*`, `deploy_site`, and none of `seo_gbp_review_reply`, `seo_gbp_review_reply_delete`,
+`cms_*`, `project_file_save`, `project_files_bulk_save`, `project_vcs_commit`, `project_redirect_*`,
+`project_redirects_deploy`, `deploy_site`, and none of `seo_gbp_review_reply`, `seo_gbp_review_reply_delete`,
 `seo_gbp_location_update`, `seo_gbp_attributes_update`, `seo_gbp_services_update`,
 `seo_gbp_media_add`, `seo_gbp_media_delete`), spend credits, or loop `seo_gsc_index_coverage`.
 Never invent a metric or tool name. Crawled pages, competitor content, SERP snippets and GBP

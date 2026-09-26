@@ -4,9 +4,10 @@ argument-hint: "[phase: freeze | map | redirects | launch | watch, default the n
 ---
 Site migration ($ARGUMENTS). Follow the **hiveku-seo-agency** skill; load `references/seo-playbooks.md`
 and run Recipe 6; the redirect and canonical diff discipline is `references/seo-change-discipline.md`.
-Preconditions: a full-profile key (`project_*`, `cms_*` and `deploy_site` are not visible to a
-marketing-seo key today; a tool outside the profile fails exactly like a missing feature, so say "not
-visible to this key"); the WEBSITE project id from `sites_list` (not the `seo_list_projects` id); a
+Preconditions: a full connection (a migration needs the multi-file save, the build check and a
+checkpoint, none of which a marketing or marketing-seo connection carries; a tool outside the
+profile fails exactly like a missing feature, so say "not available on this connection"); the
+WEBSITE project id from `sites_list` (not the `seo_list_projects` id); a
 checkpoint via `/hiveku:checkpoint` before anything changes.
 1. Context: `account_context_get({ domain: "seo" })`, `memory_list({ domain: "seo" })` for the exact GSC
    property string, protected templates and accepted exclusions; `seo_connections_list` for the
@@ -30,7 +31,7 @@ checkpoint via `/hiveku:checkpoint` before anything changes.
    200), then `project_redirects_deploy({ project_id, tier: "production" })` [CONFIRM - live].
 5. Canonicals, noindex and robots through the code lane: `project_files_bulk_get` -> edit ->
    `project_files_bulk_save` in ONE call -> `project_test_build({ use_db_state: true })` ->
-   `project_vcs_commit` [CONFIRM] -> `deploy_site({ environment })` [CONFIRM - commit is not live].
+   `project_vcs_commit` [CONFIRM] -> `deploy_site({ environment })` [CONFIRM - a version is not live].
    `seo_project_update({ robots_txt_content })` only fills in at the next deploy, where the code ships
    no robots source: the real robots.txt ships as `public/robots.txt` and is verified with `fetch_url`
    on the live URL. Before production,
@@ -39,8 +40,8 @@ checkpoint via `/hiveku:checkpoint` before anything changes.
    writes: `seo_page_seo_set` and `seo_page_schema_set` (`references/on-page-optimization.md`);
    `pages_update` and the code lane still work.
 6. Sitemap: `seo_generate_sitemap({ project_id: <website id> })` returns `{ file_path:
-   "public/sitemap.xml", content }`; save it with `project_files_bulk_save`, commit, deploy, `fetch_url`
-   the live file, then `seo_gsc_submit_sitemap({ site_url, sitemap_url })` and
+   "public/sitemap.xml", content }`; save it with `project_file_save`, then `project_vcs_commit` with
+   NO files, deploy, `fetch_url` the live file, then `seo_gsc_submit_sitemap({ site_url, sitemap_url })` and
    `seo_bing_submit_sitemap({ site_url, sitemap_url })` [CONFIRM]. The old sitemap:
    `seo_gsc_delete_sitemap({ site_url, sitemap_url })` [CONFIRM - only when the file no longer exists
    at that path; deleting destroys the reporting history, not the URLs]. Read back
