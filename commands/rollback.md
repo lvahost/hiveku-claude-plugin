@@ -67,13 +67,41 @@ the media library; for the database use `/hiveku:restore` (a checkpoint with `re
      while it ran, and `preview_effect` says what happened to the preview. Tell the person: "Your
      site now matches <version name>. The newer versions are still in the history, so this can be
      undone. The live website has not changed."
-   - 409 `branch_changed` (+ `head_commit_id`): someone saved in between. Nothing changed. Run the
-     dry run again, show the new counts, and ask again.
+   - 409 `branch_changed` (+ `head_commit_id`): someone saved in between. Nothing changed (unless it
+     answers a re-send after a timeout: see below). Run the dry run again, show the new counts, and
+     ask again. Never re-apply with the new head without showing the person, except to finish this
+     same rollback after a timeout, as described below.
    - 409 `ai_turn_running`: the in-app AI is mid-request on this project. Wait for it, then retry.
    - 409 `branch_busy` or 503 `branch_tree_unavailable`: retry shortly.
-   - 409 `rollback_incomplete` (`applied`, `failed`, `head_commit_id`): the files WERE written but
-     the rollback did not finish. Run the same apply again with `expected_head_commit_id` set to
-     that `head_commit_id` to finish it.
+   - 409 `rollback_incomplete` (Your site only; `applied`, `failed`, `saved_before`,
+     `head_commit_id`): the files WERE written, so never tell the person nothing changed; say what
+     happened in plain words (by page or count), not by repeating the error text, which can list
+     file paths. `failed` lists the files not put back; an empty `failed` means every file was put
+     back but the new version was not recorded.
+     To finish it: when the answer's `head_commit_id` is the dry run's `head_commit_id` or
+     `saved_before.id` (the rollback's own "Saved before rollback" version), apply again with
+     `expected_head_commit_id` set to THIS answer's `head_commit_id` and without
+     `expected_live_fingerprint`; the person's yes for this same version still stands. Re-sending
+     the first apply unchanged is refused as `branch_changed` once `saved_before` is set. Any other
+     `head_commit_id` means someone else saved as well: run the dry run again, show it to the
+     person, and apply with its `head_commit_id` only on a new yes.
+   - A 524 or a timeout on the apply does NOT mean it failed: a big rollback can outlast the edge's
+     limit of about 100 seconds and keep running. Call again with exactly the same arguments: an
+     identical call answers 409 `idempotency_pending` while the first run is still going (wait,
+     then call again). Once that run is done, the same call gives back its answer only when it
+     succeeded and nothing was saved since; otherwise the call runs again, and it is refused as 409
+     `branch_changed` when the first run finished, so it never rolls back twice. When unsure, read
+     `project_vcs_history` first: a version newer than the dry run's `head_commit_id` whose
+     `rolled_back_to` is the target means it finished. Do not start a new dry run until you know.
+     If the re-send answers 409 `branch_changed`, the first run may have finished or stopped part
+     way, so never say nothing changed: read `project_vcs_history`. A version newer than the dry
+     run's `head_commit_id` whose `rolled_back_to` is the target means it finished. A "Saved before
+     rollback" version at the top (the `branch_changed` answer's `head_commit_id`) that is the ONLY
+     version newer than the dry run's `head_commit_id` means it stopped part way: finish it as for
+     `rollback_incomplete` (apply with that `head_commit_id` as `expected_head_commit_id`, without
+     `expected_live_fingerprint`, on the same yes). Anything else, including a "Saved before
+     rollback" version with other versions between it and the dry run's `head_commit_id`, means
+     someone else saved as well: run a new dry run and ask again.
    - 409 `content_unavailable` (`paths`, `checkpoint_hash`): that version's files cannot be rebuilt.
      When `checkpoint_hash` is set, offer `/hiveku:restore` with it instead (dry run first).
    - 413 `content_too_large`: nothing was changed; the files to restore are too large for one
