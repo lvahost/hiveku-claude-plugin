@@ -292,6 +292,21 @@
  *   docs name only live or pending tools.
  *     HELPDESK-R3  helpdesk_assistant_knowledge_status (read-only, no
  *                  arguments; the account comes from the key).
+ *
+ *   Versions program, Wave 2 (2026-09-25, notes/DESIGN-versions-and-rollback-
+ *   2026-09-24.md, Part 2 sections A2 and E1): the two new version tools. The
+ *   builder routes are GET /vcs/status and POST /vcs/rollback on
+ *   feature/versions-core; the MCP declarations ship in the same wave. The
+ *   Stop hook (lib/stop-version.mjs) calls project_vcs_status to confirm a
+ *   project is clean, /hiveku:rollback, /hiveku:code, /hiveku:commit and
+ *   /hiveku:deploy teach both, and project_vcs_rollback is on the ask list
+ *   (data/permission-critical-tools.json), which is why that file's test
+ *   accepts it as PENDING. Release step, after the MCP deploy: regenerate
+ *   lib/tool-index.json and lib/readonly-tools.json from the LIVE server
+ *   (project_vcs_status is a GET, so it joins the read-only list), then delete
+ *   both entries; tool-names.test.mjs forces the deletion.
+ *     VERSIONS-W2  project_vcs_status (read-only), project_vcs_rollback
+ *                  (dry run unless dry_run: false; apply always asks).
  */
 const SEO_SINCE = '2026-08-30';
 const seo = (batch) => ({ since: SEO_SINCE, batch });
@@ -368,4 +383,8 @@ export const PENDING_TOOLS = new Map([
   // HELPDESK-R3: landed in the live index on 2026-09-25 (MCP #32, 515ec43,
   // deployed; index regenerated at 2144 tools, and it joined the read-only
   // list as a GET); entry deleted.
+
+  // VERSIONS-W2 (2026-09-25): see the batch note above.
+  ['project_vcs_status', { since: '2026-09-25', batch: 'VERSIONS-W2' }],
+  ['project_vcs_rollback', { since: '2026-09-25', batch: 'VERSIONS-W2' }],
 ]);

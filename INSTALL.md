@@ -117,6 +117,7 @@ Put this in `.claude/settings.json` (per project) or `~/.claude/settings.json` (
       "mcp__plugin_hiveku_hk__project_vcs_prune",
       "mcp__plugin_hiveku_hk__project_vcs_branch_preview_teardown",
       "mcp__plugin_hiveku_hk__project_vcs_revert",
+      "mcp__plugin_hiveku_hk__project_vcs_rollback",
       "mcp__plugin_hiveku_hk__project_checkpoint_restore",
       "mcp__plugin_hiveku_hk__checkpoint_restore",
       "mcp__plugin_hiveku_hk__history_restore_to_time",
@@ -376,6 +377,9 @@ tool call, walking up from the working directory to the first file it finds.
   `arg_ask` a week of drafts flows without a prompt and the one call that puts a time on a post
   stops for a human. In the example the two blocks overlap on purpose, belt and braces; a folder
   that wants drafts to flow freely drops the two names from `ask_tools` and keeps `arg_ask`.
+- `version_reminder`: `false` turns off the end-of-session version reminder for this folder (see
+  below). Any other value, or leaving it out, keeps it on. It is not a ceiling and changes nothing
+  else in the file.
 
 Precedence, strictest first: `deny_tools`, then the `reads-only` ceiling, then `ask_tools`, then
 `arg_ask`, then the plugin's read-only auto-allow. Inside `hiveku_batch` every rule is applied to
@@ -388,6 +392,27 @@ rest of the file stands.
 **This is a client-side rail.** It beats convention and stops accidents; it does not stop a user
 who edits the file. The wall is a read-only key: connect the account read-only during
 `/hiveku:connect` and the server refuses writes no matter what the client asks for.
+
+### The version reminder
+
+Saving website files changes the site straight away, but a save is not a version: the history only
+gets a named version when `project_vcs_commit` is called with no files. The plugin keeps a small
+record of which projects a session saved to (a file per session in the system temp folder, holding
+project ids and times, never file contents). When the session is about to finish with saved changes
+that no version holds, it first checks with Hiveku (`project_vcs_status`) and, if they are still
+unversioned, asks Claude to save one version with a plain-language name before stopping. If Claude
+was already sent back once, it only tells you the changes are saved but not a named version yet.
+To turn it off for a folder, put `"version_reminder": false` in that folder's
+`.hiveku/guardrails.json`. There is no environment-variable switch.
+
+The two version tools also get a decision from the plugin's permission hook: a version save with no
+files and a rollback dry run are pre-approved (they change no file), while a version save that sends
+files and a rollback that is actually applied always ask. Both stay on the ask list above as well,
+because Claude Code still applies a settings `ask` rule whatever a hook answers: on a machine with
+that list, every DIRECT call to either tool prompts, which is the safe side to be on. Inside
+`hiveku_batch` the settings rule only sees the batch, so the hook alone judges each member: a
+version save with no files or a rollback dry run runs without a prompt (neither writes a file),
+while a version save that sends files or an applied rollback still asks.
 
 ### If you also run the VS Code extension
 

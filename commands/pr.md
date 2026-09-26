@@ -45,8 +45,9 @@ STRICT and atomic: if ANY file conflicts, NOTHING is merged, the PR stays open, 
 conflicting path to the user, resolve them on the SOURCE branch (`/hiveku:code` with `branch`),
 and retry the same PR; never report a conflict-free failure because you looked in one place. On
 success the envelope is `{ data: { pr, merge, relabel_failed? } }`: `merge.commit` is the merge
-commit on the target (a `main` merge carries a `checkpoint_hash`, so the whole branch's work can
-be rolled back in one `project_checkpoint_restore`), and `relabel_failed` present means the PR row
+commit on the target (a merge into Your site is a version, so the whole branch's work can be
+undone with one `/hiveku:rollback`: dry run, the person's yes, apply with the dry run's
+`head_commit_id`), and `relabel_failed` present means the PR row
 merged but its status label could not be updated - the merge is real, mention it, do not retry.
 `merged` is terminal. Then offer the follow-ups: `deploy_site({ environment: "production" })`
 via `/hiveku:deploy` (a merge ships nothing by itself); `project_vcs_branch_delete` via

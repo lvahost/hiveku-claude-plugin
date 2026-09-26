@@ -1,5 +1,5 @@
 ---
-description: Show this project's version history - timeline, commits, checkpoints, and one file's versions.
+description: Show this project's version history - named versions, the timeline, checkpoints, and one file's versions.
 argument-hint: "[a file path, to show that file's version history; or 'on <branch>' for a branch's commits]"
 ---
 
@@ -14,13 +14,21 @@ Show the history for THIS project (all read-only - nothing changes). This projec
   path does not exist).
 - Otherwise show the PROJECT timeline: `project_version_log({ project_id: <the project_id> })` - one combined
   chronological feed of file edits, checkpoints, restores, and deploys ("what happened to this project").
-  For just commits use `project_vcs_history({ project_id: <the project_id>, branch? })` - omit `branch` for
-  EVERY branch's commits (a mixed feed, each entry carries its branch); pass `main` or a branch name to filter
-  to one. Read `revertable` before offering a rollback: a `main`
-  commit carries a `checkpoint_hash` for `project_checkpoint_restore`; a branch commit has `checkpoint_hash`
-  null and `revertable` false by design, and its rollback is `project_vcs_revert` (see `/hiveku:branch`).
+  For the named versions use `project_vcs_history({ project_id: <the project_id>, branch: "main" })` (Your
+  site) or a branch name; omit `branch` for EVERY branch's versions (a mixed feed, each entry carries its
+  branch). Show each version's NAME, when, and `source` in plain words: `ai_turn` = the in-app AI after a
+  request, `editor_idle` = saved automatically after someone edited, `mcp` / `vscode` / `sync_cli` = an
+  assistant or tool like this one, `deploy` = saved when publishing, `rollback` = a rollback (with
+  `rolled_back_to`), `merge`, `github`, `manual` = a person in the dashboard. `live_on` says which tiers
+  serve that version. Page older with `before: <meta.nextBefore>`; stop on an empty page or fewer than
+  `limit` entries (`meta.truncated` stays true on the last page). `revertable` concerns checkpoint
+  restores only; `restorable` is the one for rollback: a version with `restorable: true` on Your site
+  or a branch can be rolled back with `/hiveku:rollback`, and one with `restorable: false` cannot (its
+  files were never copied), so show its `restore_blocked_reason` as written instead of offering it.
+  An older platform sends no `restorable`: offer the version, and the rollback's dry run will say.
   `project_vcs_branches({ project_id: <the project_id> })` shows every branch with `ahead` / `behind` and
   whether its working tree has edits not yet in a commit (`uncommitted`). For snapshots use `checkpoint_list`
   (full checkpoints, incl. DB) and `project_checkpoint_list` (commit-tied checkpoints). Summarize the recent
-  entries with their ids/hashes + timestamps so the user can pick one to restore or diff. Restoring is a
-  separate step - `/hiveku:restore` on `main`, `/hiveku:branch revert` on a branch.
+  entries with their names, ids/hashes + timestamps so the user can pick one to go back to or diff. Going
+  back is a separate step - `/hiveku:rollback` for a version (Your site or a branch), `/hiveku:restore`
+  for one file, a checkpoint with its database, or a point in time.

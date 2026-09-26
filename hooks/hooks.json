@@ -1,5 +1,5 @@
 {
-  "description": "Reports which Hiveku account this directory is bound to, warns when a second Hiveku connection is live in the same session, and pre-approves Hiveku's read-only tools so a sweep does not stall on one permission check per tool, and keeps a throttled eye on plugin updates so long-lived sessions hear about a new version once.",
+  "description": "Reports which Hiveku account this directory is bound to, warns when a second Hiveku connection is live in the same session, pre-approves Hiveku's read-only tools so a sweep does not stall on one permission check per tool, keeps a throttled eye on plugin updates so long-lived sessions hear about a new version once, and notes which website projects a session changed so that, before it finishes, unversioned changes get one named version.",
   "hooks": {
     "SessionStart": [
       {
@@ -33,12 +33,47 @@
         ]
       }
     ],
+    "PostToolUse": [
+      {
+        "matcher": "^mcp__(plugin_hiveku_hk|hiveku)__(project_file_save|project_file_save_async|project_files_bulk_save|project_file_delete|project_files_bulk_delete|project_file_restore|project_file_move|project_folder_create|project_folder_delete|project_import_finalize|project_files_finalize|project_checkpoint_restore|checkpoint_restore|history_restore_to_time|project_vcs_commit|project_vcs_rollback|deploy_site|hiveku_batch)$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/bin/hiveku\" hook post-tool-use",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PostToolUseFailure": [
+      {
+        "matcher": "^mcp__(plugin_hiveku_hk|hiveku)__(project_vcs_commit|project_vcs_rollback|hiveku_batch)$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/bin/hiveku\" hook post-tool-use",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
     "UserPromptSubmit": [
       {
         "hooks": [
           {
             "type": "command",
             "command": "HIVEKU_PLUGIN_DATA=\"${CLAUDE_PLUGIN_DATA}\" \"${CLAUDE_PLUGIN_ROOT}/bin/hiveku\" hook prompt-submit"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "HIVEKU_PLUGIN_DATA=\"${CLAUDE_PLUGIN_DATA}\" \"${CLAUDE_PLUGIN_ROOT}/bin/hiveku\" hook stop",
+            "timeout": 20
           }
         ]
       }
