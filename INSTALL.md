@@ -167,6 +167,16 @@ Put this in `.claude/settings.json` (per project) or `~/.claude/settings.json` (
       "mcp__plugin_hiveku_hk__ppc_conversion_adjustments_run",
       "mcp__plugin_hiveku_hk__ppc_conversion_adjustments_set",
       "mcp__plugin_hiveku_hk__ppc_meta_lead_quality_test",
+      "mcp__plugin_hiveku_hk__ppc_experiment_schedule",
+      "mcp__plugin_hiveku_hk__ppc_experiment_graduate",
+      "mcp__plugin_hiveku_hk__ppc_offline_conversion_upload",
+      "mcp__plugin_hiveku_hk__ppc_customer_match_upload",
+      "mcp__plugin_hiveku_hk__ppc_goals_set",
+      "mcp__plugin_hiveku_hk__ppc_budget_target_set",
+      "mcp__plugin_hiveku_hk__ppc_connection_update",
+      "mcp__plugin_hiveku_hk__agent_approval_approve",
+      "mcp__plugin_hiveku_hk__seo_ga4_key_event_update",
+      "mcp__plugin_hiveku_hk__seo_ga4_event_create_rule_update",
       "mcp__plugin_hiveku_hk__accounting_bill_record_payment",
       "mcp__plugin_hiveku_hk__accounting_invoice_record_payment",
       "mcp__plugin_hiveku_hk__crm_contact_email_send",
@@ -348,6 +358,14 @@ Put this in `.claude/settings.json` (per project) or `~/.claude/settings.json` (
 `"ask": ["mcp__plugin_hiveku_hk__email_*"]` is skipped rather than applied, so it looks like
 protection and is not. Every entry in `ask` has to be a complete tool name, which is why the
 list above is spelled out. If you add to it, add whole names.
+
+**This list is a copy.** It lives in your settings file and only changes when you paste it
+again, so after a plugin update it can be missing names a newer release added. Paste the block
+again after an update. The plugin also asks on its own before the writes that change what
+department agents read, which forms a site captures (and erasing what it captured), live ad
+campaigns, the budget guardrail, conversion uploads, a staged production deploy and GA4
+conversion settings, whatever your settings allow, so those prompt even on a machine with an
+older copy.
 
 ### What is safe to leave on allow
 

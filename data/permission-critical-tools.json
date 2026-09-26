@@ -6,7 +6,7 @@
     "mcp__hiveku__"
   ],
   "plugin_version": "0.26.30",
-  "count": 234,
+  "count": 244,
   "tools": [
     {
       "name": "deploy_site",
@@ -317,6 +317,56 @@
       "name": "ppc_meta_lead_quality_test",
       "method": "POST",
       "why_gated": "sends an event into the client's Meta dataset; Meta keeps test events and uses them for targeting and measurement, and the Conversions API has no retraction"
+    },
+    {
+      "name": "ppc_experiment_schedule",
+      "method": "POST",
+      "why_gated": "starts a Google Ads experiment: from then on the test copy serves and spends its traffic split of the base campaign's budget (the Google counterpart of ppc_bing_experiment_create)"
+    },
+    {
+      "name": "ppc_experiment_graduate",
+      "method": "POST",
+      "why_gated": "turns an experiment's test copy into a permanent campaign on a NEW daily budget (up to 10,000/day) while the original keeps running, so account spend goes up by that budget every day"
+    },
+    {
+      "name": "ppc_offline_conversion_upload",
+      "method": "POST",
+      "why_gated": "uploads conversions to a Google Ads conversion action; Google keeps them and Smart Bidding starts learning from them, so a wrong row changes bidding"
+    },
+    {
+      "name": "ppc_customer_match_upload",
+      "method": "POST",
+      "why_gated": "uploads hashed customer details to a Google Ads Customer Match list and, on the confirmed call, accepts Google's Customer Match terms for the account; campaigns using the list then target or exclude those people"
+    },
+    {
+      "name": "ppc_goals_set",
+      "method": "POST",
+      "why_gated": "records the client's paid-ads goals including each connection's monthly budget target, which the daily guardrail and an armed auto-pause (pause_at_pct, a percentage of that target) are measured against: clearing it switches the auto-pause off and raising it moves the pause point up"
+    },
+    {
+      "name": "ppc_budget_target_set",
+      "method": "PATCH",
+      "why_gated": "sets or clears a connection's monthly budget target, which the daily guardrail and an armed auto-pause (pause_at_pct, a percentage of that target) are measured against: clearing it switches the auto-pause off and raising it moves the pause point up"
+    },
+    {
+      "name": "ppc_connection_update",
+      "method": "PATCH",
+      "why_gated": "changes an ad account connection's guardrail settings, active flag or credentials: clearing pause_at_pct or the budget target switches off an owner's auto-pause, settings_replace wipes the goals, and new credentials stop syncing until it is tested"
+    },
+    {
+      "name": "agent_approval_approve",
+      "method": "POST",
+      "why_gated": "executes a staged coder-agent action for real: deploy_project deploys code to the client's live production site and github_commit pushes to their repository; the approval is meant to be a person's yes"
+    },
+    {
+      "name": "seo_ga4_key_event_update",
+      "method": "POST",
+      "why_gated": "changes a GA4 key event's counting method or value, live on return, and the change flows into every Google Ads conversion imported from it, moving reported CPA and Smart Bidding"
+    },
+    {
+      "name": "seo_ga4_event_create_rule_update",
+      "method": "POST",
+      "why_gated": "changes a GA4 event create rule, live on return: renaming its destination or dropping a condition (the list is replaced) can silently stop an imported Google Ads conversion"
     },
     {
       "name": "accounting_bill_record_payment",
