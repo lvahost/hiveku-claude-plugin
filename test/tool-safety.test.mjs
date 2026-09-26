@@ -989,10 +989,14 @@ const FORM_CAPTURE_WRITES_THAT_ASK = [
   'marketing_form_capture_settings_update',
 ];
 
-test('the always-ask set is exactly the five memory writes and the two form-capture writes', () => {
+// Search engine indexing (HK-29, 2026-09-26): the switch that can take a live
+// site out of search results. Its pins are at the end of this file.
+const INDEXING_WRITES_THAT_ASK = ['project_indexing_set'];
+
+test('the always-ask set is exactly the memory, form-capture and indexing writes', () => {
   assert.deepEqual(
     [...ALWAYS_ASK_WRITES.keys()].sort(),
-    [...MEMORY_WRITES_THAT_ASK, ...FORM_CAPTURE_WRITES_THAT_ASK].sort(),
+    [...MEMORY_WRITES_THAT_ASK, ...FORM_CAPTURE_WRITES_THAT_ASK, ...INDEXING_WRITES_THAT_ASK].sort(),
   );
 });
 
@@ -1119,4 +1123,131 @@ test('NEGATIVE CONTROL: the three form-capture reads are not on the always-ask s
   for (const read of ['marketing_form_capture_settings_get', 'marketing_form_capture_list', 'marketing_form_capture_preview']) {
     assert.equal(ALWAYS_ASK_WRITES.has(read), false, `${read} is a read; it must not ask on every call`);
   }
+});
+
+// ── The search engine indexing switch always asks (HK-29, 2026-09-26) ─────
+//
+// project_indexing_set turns a site's search engine indexing on or off, and
+// off can take a live site out of Google's results for weeks. INSTALL.md hands
+// out `allow: ["mcp__plugin_hiveku_hk__*"]`, which matches it, and its ask
+// block cannot carry the name until the MCP server serves it (the server's own
+// test fails a listed name its registry lacks). So the hook's `ask` is the only
+// thing between an unattended session and the switch, and it must be in place
+// before the MCP deploy: the name rides on PENDING_TOOLS until then. Its
+// `confirm: true` argument is not a gate; the model fills it in itself.
+
+import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+import { probeIsStale, updateCheckPath } from '../lib/update-check.mjs';
+
+const INDEXING_TOOL = `${HIVEKU_TOOL_PREFIX}project_indexing_set`;
+
+/** INSTALL.md's main permissions block (the one with the long ask list). */
+function installPermissions() {
+  const install = readFileSync(new URL('../INSTALL.md', import.meta.url), 'utf8');
+  const blocks = [...install.matchAll(/```json\n([\s\S]*?)```/g)]
+    .map((m) => { try { return JSON.parse(m[1]); } catch { return null; } })
+    .filter((b) => Array.isArray(b?.permissions?.ask) && b.permissions.ask.length >= 10);
+  assert.equal(blocks.length, 1, 'could not find INSTALL.md\'s main permissions block');
+  return blocks[0].permissions;
+}
+
+/** A Claude Code permission rule: an exact name, or a prefix ending in `*`. */
+const ruleMatches = (rule, toolName) =>
+  rule.endsWith('*') ? toolName.startsWith(rule.slice(0, -1)) : rule === toolName;
+
+/**
+ * Runs the real hook exactly as hooks/hooks.json does (`bin/hiveku hook
+ * pre-tool-use`, the payload on stdin). The data folder carries a fresh
+ * update-check stamp, so the hook's update probe is not due and the run
+ * touches no network.
+ */
+function runPreToolUseHook(toolName, toolInput, cwd) {
+  const dataDir = mkdtempSync(join(tmpdir(), 'hk-idx-data-'));
+  writeFileSync(updateCheckPath(dataDir), JSON.stringify({ checked_at: new Date().toISOString() }));
+  assert.equal(probeIsStale(dataDir), false, 'the update probe would spawn; the fixture is wrong');
+  const env = { ...process.env, HIVEKU_PLUGIN_DATA: dataDir };
+  delete env.CLAUDE_PLUGIN_ROOT;
+  delete env.CLAUDE_PLUGIN_DATA;
+  return spawnSync(
+    process.execPath,
+    [fileURLToPath(new URL('../bin/hiveku', import.meta.url)), 'hook', 'pre-tool-use'],
+    {
+      input: JSON.stringify({ hook_event_name: 'PreToolUse', tool_name: toolName, tool_input: toolInput, cwd }),
+      encoding: 'utf8',
+      env,
+      timeout: 20_000,
+    },
+  );
+}
+
+test('the INSTALL.md blanket allow covers project_indexing_set, and the plugin hook runs on it', () => {
+  // The premise of every test below: without the hook's answer, this call
+  // would run unprompted on a machine set up per INSTALL.md.
+  const { allow } = installPermissions();
+  assert.ok(allow.some((rule) => ruleMatches(rule, INDEXING_TOOL)),
+    `no INSTALL.md allow rule matches ${INDEXING_TOOL}; the premise of these tests changed`);
+  const hooks = JSON.parse(readFileSync(new URL('../hooks/hooks.json', import.meta.url), 'utf8'));
+  const matchers = hooks.hooks.PreToolUse.map((h) => h.matcher);
+  assert.ok(matchers.some((m) => new RegExp(`^(?:${m})$`).test(INDEXING_TOOL)),
+    `no PreToolUse matcher in hooks/hooks.json reaches ${INDEXING_TOOL}`);
+});
+
+test('project_indexing_set ASKS on a direct call, whichever way it turns indexing and whatever confirm says', () => {
+  const cwd = folderWith(undefined);
+  for (const enabled of [false, true]) {
+    for (const extra of [{}, { confirm: true }, { confirm: false }]) {
+      const input = { project_id: 'p', enabled, ...extra };
+      const r = decideWithGuardrails({ ...payload('project_indexing_set', cwd), tool_input: input });
+      assert.equal(decision(r), 'ask',
+        `${JSON.stringify(input)} must ask; silence resolves to the blanket allow`);
+      const why = r.hookSpecificOutput.permissionDecisionReason;
+      assert.match(why, /^project_indexing_set /, 'the prompt must name the tool');
+      assert.match(why, /drop the live site from their results/);
+      assert.match(why, /even when your settings allow all Hiveku tools/);
+    }
+  }
+});
+
+test('the real hook process prints ask for project_indexing_set under the blanket allow', () => {
+  const cwd = folderWith(undefined);
+  const run = runPreToolUseHook(INDEXING_TOOL, { project_id: 'p', enabled: false, confirm: true }, cwd);
+  assert.equal(run.status, 0, run.stderr);
+  assert.notEqual(run.stdout, '',
+    'the hook printed nothing, so the blanket allow would run project_indexing_set unattended');
+  const out = JSON.parse(run.stdout);
+  assert.equal(out.hookSpecificOutput.hookEventName, 'PreToolUse');
+  assert.equal(out.hookSpecificOutput.permissionDecision, 'ask');
+  assert.match(out.hookSpecificOutput.permissionDecisionReason, /^project_indexing_set turns this site's search engine indexing on or off/);
+  // Contrast in the same folder: an ordinary write gets no answer at all, which
+  // is what the blanket allow then runs unattended. The indexing switch is not
+  // allowed to be that.
+  const ordinary = runPreToolUseHook(`${HIVEKU_TOOL_PREFIX}crm_deal_create`, { name: 'x' }, cwd);
+  assert.equal(ordinary.status, 0, ordinary.stderr);
+  assert.equal(ordinary.stdout, '', 'an ordinary write should get no answer from the hook');
+});
+
+test('a batch carrying project_indexing_set asks, a reads-only folder denies it, and no read list can pre-approve it', () => {
+  const cwd = folderWith(undefined);
+  const mixed = decideWithGuardrails(batch([
+    { tool: 'list_projects', args: {} },
+    { tool: 'project_indexing_set', args: { project_id: 'p', enabled: false, confirm: true } },
+  ], cwd));
+  assert.equal(decision(mixed), 'ask');
+  assert.match(mixed.hookSpecificOutput.permissionDecisionReason, /project_indexing_set/);
+  const readsOnly = folderWith({ version: 1, mode: 'reads-only' });
+  assert.equal(decision(decideWithGuardrails(payload('project_indexing_set', readsOnly))), 'deny');
+  assert.equal(isAutoApprovable('project_indexing_set', {}), false);
+  assert.equal(isReadOnlyTool('project_indexing_set'), false);
+});
+
+test('NEGATIVE CONTROL: project_indexing_get is not on the set and never prompts', () => {
+  // It is the read. It gets no prompt today (it is not on the read list yet, so
+  // the hook says nothing) and a pre-approval once the regenerated read list
+  // carries it; neither answer may be `ask`.
+  assert.equal(ALWAYS_ASK_WRITES.has('project_indexing_get'), false);
+  const cwd = folderWith(undefined);
+  const r = decideWithGuardrails({ ...payload('project_indexing_get', cwd), tool_input: { project_id: 'p' } });
+  assert.notEqual(decision(r), 'ask', 'the indexing read must not prompt on every call');
+  assert.notEqual(decision(r), 'deny');
 });

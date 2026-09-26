@@ -274,6 +274,27 @@
  *                     by default, and executing through an agent key answers
  *                     403 agent_execute_disabled until the plugin release).
  *
+ *   Search engine indexing (2026-09-26, HK-29): the switch under Site >
+ *   Hosting > Production > "Search engine indexing". The contract is the
+ *   builder's GET|PATCH /api/olympus/builder/projects/:projectId/indexing
+ *   (builder branch feature/indexing-toggle-olympus); the MCP declarations are
+ *   hiveku-mcp-api-server src/tools/indexing-tools.ts (branch
+ *   feature/indexing-toggle-tools), both for a person's own key only. The
+ *   write is on ALWAYS_ASK_WRITES (lib/tool-safety.mjs), gated like the
+ *   form-capture writes above, which is why that file's tests accept it as a
+ *   PENDING name until the index carries it. It is NOT on the ask list
+ *   (data/permission-critical-tools.json) yet: the MCP server's
+ *   permission-critical-tools.test.ts fails any listed name its registry does
+ *   not serve, and INSTALL.md must mirror that file, so both follow the MCP
+ *   deploy. The read, project_indexing_get, has no entry: no prose or gate
+ *   names it, and it joins lib/readonly-tools.json as a GET at the regen.
+ *   Release step, after the MCP deploy: regenerate the index and the read-only
+ *   list from the live server, add the ask-list and INSTALL.md entries (and
+ *   the Codex prompt), then delete this entry; tool-names.test.mjs forces the
+ *   deletion.
+ *     INDEXING-1  project_indexing_set (PATCH { enabled, confirm }; turning
+ *                 indexing off can remove a live site from search results).
+ *
  *   Helpdesk chat program, round 3 (2026-09-25, contract C7): what the website
  *   assistant answers from. The contract is the builder's
  *   GET /api/olympus/helpdesk/assistant/knowledge (getAssistantKnowledgeStatus,
@@ -364,6 +385,10 @@ export const PENDING_TOOLS = new Map([
 
   // FORM-CAPTURE-1: landed in the live index on 2026-09-24 (MCP #31, fe5e28674,
   // deployed; index regenerated at 2141 tools); entries deleted.
+
+  // INDEXING-1 (2026-09-26): pending until the MCP deploy and the index
+  // regeneration. See the batch note above.
+  ['project_indexing_set', { since: '2026-09-26', batch: 'INDEXING-1' }],
 
   // HELPDESK-R3: landed in the live index on 2026-09-25 (MCP #32, 515ec43,
   // deployed; index regenerated at 2144 tools, and it joined the read-only
