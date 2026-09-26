@@ -22,6 +22,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { PENDING_TOOLS } from './pending-tools.mjs';
+import { ALWAYS_ASK_WRITES, LIVE_CHANGE_WRITES } from '../lib/tool-safety.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -230,6 +231,238 @@ test('every re-execution exemption is still live and still an exemption', () => 
     }
   }
   assert.deepEqual(stale, [], `stale re-execution exemptions:\n  ${stale.join('\n  ')}`);
+});
+
+/**
+ * ── The server-confirm class ──────────────────────────────────────────────
+ *
+ * ★ THE GAP THIS JUDGES (release 0.26.30, 2026-09-26). The paid-ads program
+ * shipped 23 writes whose own contract is "the first call writes nothing and
+ * returns a preview_hash; repeat the SAME call with confirm: true". Not one of
+ * them reached this ask list, so on a machine set up per INSTALL.md they ran
+ * unprompted: ppc_google_auto_apply_set (lets Google change keywords, match
+ * types and targets on its own), ppc_negatives_remove (reopens blocked
+ * searches at once), ppc_conversion_adjustments_run (a retraction cannot be
+ * undone). The preview hash is a real protection against a STALE write, and
+ * no protection at all against an UNATTENDED one: the model reads the hash
+ * off the first answer and sends it straight back. That is the same reason
+ * given for `confirm: true` above, one field later.
+ *
+ * So a tool whose own description carries one of these signals is judged
+ * here, by name, the day it lands:
+ *   - `preview_hash`: the server-confirm contract above;
+ *   - `TWO-STEP CONFIRM` / `requires_confirm`: the older form of the same
+ *     contract, a first call that returns requires_confirm: true and a repeat
+ *     with confirm: true. The first cut of this test missed it, and so gated
+ *     the Microsoft experiment steps while ppc_experiment_schedule ("THIS IS
+ *     THE MONEY STEP") and ppc_experiment_graduate (a new daily budget) stayed
+ *     ungated on Google;
+ *   - `GATED WRITE`: the tool says of itself that it needs a human's yes
+ *     (ppc_bing_campaign_ai_settings_set, which has no preview hash at all);
+ *   - `HAS NO RETRACTION`: it sends something a third party keeps
+ *     (ppc_meta_lead_quality_test: Meta keeps even test events).
+ * Case-sensitive for the upper-case ones, for the reason REEXEC_SHOUT gives.
+ *
+ * ★ WHAT THE ASK LIST REACHES, AND WHAT IT DOES NOT. The ask list is a copy
+ * in each user's settings file, so a name added here prompts only on a
+ * machine whose settings are pasted from this release or later. Every earlier
+ * install keeps the blanket allow with an older list, and on those machines
+ * the name still runs unprompted. The plugin's PreToolUse hook is the rail
+ * that reaches every install on its next update, so each class member on the
+ * ask list must ALSO be on one of the hook's always-ask maps
+ * (lib/tool-safety.mjs ALWAYS_ASK_WRITES or LIVE_CHANGE_WRITES), except the
+ * frozen PRE_HOOK_ASK_CLASS below. The first cut of 0.26.30 stopped at the
+ * ask list and said the tools "now prompt"; on existing installs they would
+ * not have.
+ */
+const ASK_CLASS_SIGNALS = [
+  ['preview_hash', /preview_hash/],
+  ['two-step confirm', /TWO-STEP CONFIRM|requires_confirm/],
+  ['self-declared gated write', /(?:^|[^A-Za-z])GATED WRITE(?:[^A-Za-z]|$)/],
+  ['no retraction', /(?:^|[^A-Za-z])HAS NO RETRACTION(?:[^A-Za-z]|$)/],
+];
+
+function askClassSignals(tool) {
+  return ASK_CLASS_SIGNALS.filter(([, re]) => re.test(tool.description || '')).map(([label]) => label);
+}
+
+/** The writes in the index that carry a server-confirm signal. */
+function askClassWrites() {
+  // GETs are out of scope for the reason given at the re-execution test.
+  return indexTools
+    .filter((t) => t.method && t.method !== 'GET')
+    .filter((t) => askClassSignals(t).length > 0);
+}
+
+/**
+ * Server-confirm writes deliberately left OFF the ask list, each with the
+ * reason nobody outside the session would notice the call, or with why it is
+ * the direction that only narrows. Same rules as REEXEC_NOT_GATED: added one
+ * at a time, never to quiet a failure; if you cannot write the reason, gate it.
+ *
+ * ppc_goals_set was on this list in the first cut of 0.26.30, with the reason
+ * that it "cannot pause anything or arm auto-pause". True, and beside the
+ * point: the same call can CLEAR or RAISE monthly_budget_target_cents, and the
+ * owner's auto-pause (pause_at_pct) is measured against that target, so the
+ * call can switch an armed auto-pause off. It is gated now.
+ */
+const GTM_DRAFT_ONLY =
+  'the change lands in the GTM WORKSPACE only: a draft that serves nothing until ' +
+  'seo_gtm_version_create and then seo_gtm_publish, and seo_gtm_publish is on the ask list. ' +
+  'Until that publish it can be undone in the same workspace';
+const ASK_CLASS_NOT_GATED = new Map([
+  ['marketing_form_path_test',
+    'runs ONE labelled test submission through the intake code, written already deleted and ' +
+    'removed in the same request: nothing is emailed, triggered, written to the CRM or uploaded, ' +
+    'and confirms are capped at 5 per project per hour'],
+  ['ppc_claims_set',
+    'records approved and banned ad claims in Hiveku only; no ad platform is touched, and fixing a ' +
+    'live ad that breaks a claim is ppc_google_ad_text_update, which is on the ask list'],
+  ['ppc_google_account_negatives_add',
+    'adds negatives, the direction that narrows delivery and cuts spend (the asymmetry that leaves ' +
+    'pausing ungated everywhere); a term that would block an enabled keyword, a converting search ' +
+    'term, a targeted place or a protected term is held back unless include_conflicting is sent'],
+  ['ppc_experiment_discard',
+    'removes only an experiment that never started: nothing has served, the base campaign is ' +
+    'untouched, and a started experiment is refused (experiment_started)'],
+  ['seo_gtm_tag_delete', `deletes a tag; ${GTM_DRAFT_ONLY} with seo_gtm_tag_revert`],
+  ['seo_gtm_trigger_delete', `deletes a trigger; ${GTM_DRAFT_ONLY} with seo_gtm_trigger_revert`],
+  ['seo_gtm_variable_delete', `deletes a variable; ${GTM_DRAFT_ONLY} with seo_gtm_variable_revert`],
+  ['seo_gtm_tag_revert',
+    `puts a tag back to the live published version (or drops one added in this workspace); ${GTM_DRAFT_ONLY}`],
+  ['seo_gtm_trigger_revert',
+    `puts a trigger back to the live published version (or drops one added in this workspace); ${GTM_DRAFT_ONLY}`],
+  ['seo_gtm_variable_revert',
+    `puts a variable back to the live published version (or drops one added in this workspace); ${GTM_DRAFT_ONLY}`],
+]);
+
+/**
+ * Server-confirm writes that were on the ask list BEFORE this class test
+ * existed, and that the hook does not (yet) ask on. Frozen: it may only
+ * shrink. A name here still prompts on any machine whose settings carry the
+ * INSTALL.md list from the release that added it, and runs unprompted on one
+ * with an older copy.
+ *
+ * Why they were not moved onto the hook with the rest: a hook `ask` overrides
+ * the user's own allow for that exact tool too, and a non-interactive run has
+ * nobody to answer it. These tools are older (Google Business Profile edits
+ * and review replies, GTM install and publish, the SEO implement rail, GA4
+ * deletes), so an owner may already run them from a scheduled session on
+ * purpose. Moving them is a decision for the account owner, not a side effect
+ * of this release. Every NEW class member goes on the hook (see the test).
+ */
+const PRE_HOOK_ASK_CLASS = new Set([
+  'seo_ga4_event_create_rule_delete',
+  'seo_ga4_key_event_delete',
+  'seo_gbp_attributes_update',
+  'seo_gbp_location_update',
+  'seo_gbp_media_add',
+  'seo_gbp_media_delete',
+  'seo_gbp_review_reply',
+  'seo_gbp_review_reply_delete',
+  'seo_gbp_services_update',
+  'seo_gtm_install',
+  'seo_gtm_publish',
+  'seo_task_implement',
+]);
+
+const hookAsks = (name) => ALWAYS_ASK_WRITES.has(name) || LIVE_CHANGE_WRITES.has(name);
+
+test('every server-confirm write in the index is on the ask list or has a written reason', () => {
+  const gated = new Set(permFile.tools.map((t) => t.name));
+  const missing = askClassWrites()
+    .filter((t) => !gated.has(t.name) && !ASK_CLASS_NOT_GATED.has(t.name))
+    .map((t) => `${t.name} (${t.method}, matched by ${askClassSignals(t).join(' + ')})`);
+  assert.deepEqual(
+    missing,
+    [],
+    'writes that confirm on the SERVER only are NOT on the ask list. A preview hash or a ' +
+      'confirm field is filled in by the model itself, so on a machine configured per INSTALL.md ' +
+      'these run unprompted. Add each to data/permission-critical-tools.json, the INSTALL.md ask ' +
+      'block, the Codex .mcp.json AND LIVE_CHANGE_WRITES in lib/tool-safety.mjs (the hook, the ' +
+      'only one of the four that reaches installs whose settings predate the entry), or add it ' +
+      'to ASK_CLASS_NOT_GATED with the reason nobody outside the session would notice:\n  ' +
+      missing.join('\n  '),
+  );
+});
+
+test('every server-confirm write on the ask list also asks through the plugin hook', () => {
+  const gated = new Set(permFile.tools.map((t) => t.name));
+  const hookless = askClassWrites()
+    .filter((t) => gated.has(t.name) && !hookAsks(t.name) && !PRE_HOOK_ASK_CLASS.has(t.name))
+    .map((t) => `${t.name} (${t.method}, matched by ${askClassSignals(t).join(' + ')})`);
+  assert.deepEqual(
+    hookless,
+    [],
+    'server-confirm writes that are on the ask list but NOT on the hook. The ask list is a copy ' +
+      'in each settings file, so on every install whose copy predates the entry these still run ' +
+      'unprompted. Add each to LIVE_CHANGE_WRITES in lib/tool-safety.mjs with the reason the ' +
+      'prompt should show:\n  ' + hookless.join('\n  '),
+  );
+});
+
+test('every always-ask name on the hook is on the ask list, so INSTALL.md and Codex prompt too', () => {
+  const gated = new Map(permFile.tools.map((t) => [t.name, t.method]));
+  const offList = [...LIVE_CHANGE_WRITES.keys()].filter((n) => !gated.has(n));
+  assert.deepEqual(
+    offList,
+    [],
+    'LIVE_CHANGE_WRITES names missing from data/permission-critical-tools.json (and therefore ' +
+      'from the INSTALL.md block and the Codex prompts): ' + offList.join(', '),
+  );
+  const both = [...LIVE_CHANGE_WRITES.keys()].filter((n) => ALWAYS_ASK_WRITES.has(n));
+  assert.deepEqual(both, [], `names on both always-ask maps; keep each on one: ${both.join(', ')}`);
+});
+
+test('every server-confirm exemption is still live and still an exemption', () => {
+  const byName = new Map(indexTools.map((t) => [t.name, t]));
+  const gated = new Set(permFile.tools.map((t) => t.name));
+  const stale = [];
+  for (const [name, reason] of ASK_CLASS_NOT_GATED) {
+    const tool = byName.get(name);
+    if (!tool) {
+      stale.push(`${name}: no longer in the tool index - delete this entry and judge the new name`);
+      continue;
+    }
+    if (!tool.method || tool.method === 'GET') {
+      stale.push(`${name}: is no longer a write (method ${tool.method}), so this entry exempts nothing`);
+    }
+    if (askClassSignals(tool).length === 0) {
+      stale.push(`${name}: no longer carries a server-confirm signal, so this entry exempts nothing. Delete it`);
+    }
+    if (gated.has(name)) {
+      stale.push(`${name}: is BOTH exempted here and on the ask list. The ask list wins; delete the exemption`);
+    }
+    if (hookAsks(name)) {
+      stale.push(`${name}: is exempted here but the hook asks on it. Gate it everywhere or nowhere`);
+    }
+    if (!reason || reason.length < 40) {
+      stale.push(`${name}: exemption reason is missing or too thin to review`);
+    }
+  }
+  for (const name of PRE_HOOK_ASK_CLASS) {
+    const tool = byName.get(name);
+    if (!tool) {
+      stale.push(`${name}: no longer in the tool index - delete it from PRE_HOOK_ASK_CLASS and judge the new name`);
+      continue;
+    }
+    if (!gated.has(name)) {
+      stale.push(`${name}: is in PRE_HOOK_ASK_CLASS but not on the ask list; it is gated nowhere`);
+    }
+    if (askClassSignals(tool).length === 0) {
+      stale.push(`${name}: no longer carries a server-confirm signal. Delete it from PRE_HOOK_ASK_CLASS`);
+    }
+    if (hookAsks(name)) {
+      stale.push(`${name}: the hook asks on it now. Delete it from PRE_HOOK_ASK_CLASS`);
+    }
+  }
+  assert.deepEqual(stale, [], `stale server-confirm exemptions:\n  ${stale.join('\n  ')}`);
+});
+
+test('PRE_HOOK_ASK_CLASS is frozen: it may shrink, never grow', () => {
+  // The twelve names on the ask list before the class test existed. A new
+  // server-confirm write goes on the hook, never here.
+  assert.ok(PRE_HOOK_ASK_CLASS.size <= 12, `PRE_HOOK_ASK_CLASS grew to ${PRE_HOOK_ASK_CLASS.size}`);
 });
 
 /**
