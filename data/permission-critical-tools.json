@@ -5,8 +5,8 @@
     "mcp__plugin_hiveku_hk__",
     "mcp__hiveku__"
   ],
-  "plugin_version": "0.26.31",
-  "count": 244,
+  "plugin_version": "0.26.32",
+  "count": 245,
   "tools": [
     {
       "name": "deploy_site",
@@ -102,6 +102,11 @@
       "name": "site_firewall_remove",
       "method": "DELETE",
       "why_gated": "removes a firewall allowance and re-syncs the edge: the customer's monitor or audit tool is refused at the browser check again on its next request, which they see as a blank page, a 202, or a 403 with x-hiveku-firewall: blocked"
+    },
+    {
+      "name": "project_indexing_set",
+      "method": "PATCH",
+      "why_gated": "turns a site's search engine indexing on or off (Site > Hosting > Production): off tells Google and every other search engine to drop the live site from their results on every production address, custom domain included, and getting listed again can take weeks; on lets them list a site the owner may be keeping out of search on purpose"
     },
     {
       "name": "account_memory_append",
