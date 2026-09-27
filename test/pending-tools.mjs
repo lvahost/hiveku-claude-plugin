@@ -412,6 +412,10 @@ export const PENDING_TOOLS = new Map([
   // deployed; index regenerated at 2144 tools, and it joined the read-only
   // list as a GET); entry deleted.
 
+  // PM-TEAM-1: landed in the live index on 2026-09-27 (MCP #51, f6c83fe,
+  // deployed; index regenerated at 2147 tools, and it joined the read-only
+  // list as a GET); entry deleted.
+
   // VERSIONS-W2 (2026-09-25): see the batch note above.
   ['project_vcs_status', { since: '2026-09-25', batch: 'VERSIONS-W2' }],
   ['project_vcs_rollback', { since: '2026-09-25', batch: 'VERSIONS-W2' }],

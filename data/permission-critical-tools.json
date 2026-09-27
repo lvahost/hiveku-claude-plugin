@@ -5,8 +5,8 @@
     "mcp__plugin_hiveku_hk__",
     "mcp__hiveku__"
   ],
-  "plugin_version": "0.26.34",
-  "count": 246,
+  "plugin_version": "0.26.37",
+  "count": 256,
   "tools": [
     {
       "name": "deploy_site",
@@ -227,6 +227,51 @@
       "name": "ppc_campaign_create",
       "method": "POST",
       "why_gated": "creates a spending campaign"
+    },
+    {
+      "name": "ppc_enable_resource",
+      "method": "POST",
+      "why_gated": "turns a paused Google Ads campaign, ad group, ad or keyword back on: it serves and spends from that moment, with no confirm step and no budget check on the call"
+    },
+    {
+      "name": "ppc_platform_enable_resource",
+      "method": "POST",
+      "why_gated": "turns a paused campaign, ad set, ad group or ad back on (Google, Microsoft, Meta, LinkedIn, TikTok, Amazon, Vibe or ChatGPT Ads): it serves and spends from that moment, with no confirm step and no budget check on the call"
+    },
+    {
+      "name": "ppc_bulk_edit",
+      "method": "POST",
+      "why_gated": "sets the status of up to 100 Google Ads campaigns, ad groups or keywords in one call, and any ENABLED operation starts spend at once; gated by name, so a pause-only call asks too (a single pause through ppc_pause_resource does not)"
+    },
+    {
+      "name": "ppc_linkedin_creatives",
+      "method": "POST",
+      "why_gated": "set-status enabled makes a LinkedIn ad deliverable at once when its campaign and group are active, and its confirm field is filled in by the agent, not a person; gated by name, so list and detail ask too"
+    },
+    {
+      "name": "ppc_tiktok_split_tests",
+      "method": "POST",
+      "why_gated": "create starts a TikTok split test that copies the campaigns or ad groups under test into cells and spends its budget from the start time, and update extends a running one; no confirm step; gated by name, so its reads ask too"
+    },
+    {
+      "name": "ppc_recommendation_apply",
+      "method": "POST",
+      "why_gated": "applies a Google Ads recommendation with Google's default settings for its type: it can change the bidding strategy, switch on broad match or search partners, or add keywords, so reach and spend change at once"
+    },
+    {
+      "name": "ppc_meta_campaign_update",
+      "method": "POST",
+      "why_gated": "a later stop_time puts a Meta campaign that has ended back into delivery, or keeps one spending past its stop date, and a new bid strategy changes what it pays; gated by name, so a rename asks too"
+    },
+    {
+      "name": "ppc_linkedin_campaign_update",
+      "method": "POST",
+      "why_gated": "a later end_date puts a LinkedIn campaign that has ended back into delivery, or keeps one spending past its end date, and archive ends it for good; gated by name, so a rename asks too"
+    },
+    {
+      "name": "ppc_linkedin_campaign_group_update",
+      "method": "POST",
+      "why_gated": "a later end_date puts a LinkedIn campaign group's campaigns back into delivery, a higher daily or total budget lets them spend more (group budgets are set nowhere else), and archive ends the group for good; gated by name, so a rename asks too"
     },
     {
       "name": "ppc_google_auto_apply_set",
@@ -832,6 +877,11 @@
       "name": "workflow_enable",
       "method": "PATCH",
       "why_gated": "arms a live webhook or cron: from this call the automation reaches customers unattended"
+    },
+    {
+      "name": "workflow_resume",
+      "method": "POST",
+      "why_gated": "clears an automatic pause on a workflow, so its triggers run it for real again; Hiveku paused it because its runs kept failing or it looped, and whatever it sends reaches real customers"
     },
     {
       "name": "workflow_trigger_update",

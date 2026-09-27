@@ -29,9 +29,11 @@ that order.
   REPLACES the entire graph in one coarse snapshot - pass a whole `definition` only
   when you already have a known-good graph (from `workflow_version_get` or
   `workflow_duplicate`).
-- **Create disabled, dry-run disabled, enable LAST.** `workflow_create` defaults
-  `is_enabled: false` - leave it false through the entire build AND through the dry
-  run. **`workflow_test` runs on a DISABLED workflow**: the run route only rejects a
+- **Create disabled, dry-run disabled, enable LAST.** Every workflow starts switched
+  off, whichever tool creates it (`workflow_create`, a clone or duplicate, a template
+  install, `workflow_provision_webhook`, bulk form provisioning), and `workflow_enable`
+  is the only call that switches one on. Leave it off through the entire build AND
+  through the dry run. **`workflow_test` runs on a DISABLED workflow**: the run route only rejects a
   disabled workflow when `test_mode` is absent. Order: validate, `workflow_test`,
   read `data.step_states`, THEN `workflow_enable` on the operator's yes.
   (This changed. The route used to demand enable-first, which forced the unsafe
@@ -68,9 +70,10 @@ that order.
   429 that still comes back means nothing ran and nothing changed, so wait and send the same
   call again. Never repeat a rotation (`rotate_webhook_path: true`) you have not read back: a
   second one kills the URL the first one made live.
-- **Never pass `allow_incomplete: true` on your own judgment.** `workflow_enable` (and
-  `workflow_update` with `is_enabled: true`) refuses a disabled workflow that fails
-  validation with 422 `workflow_invalid` and the `issues` list. The answer is to fix those
+- **Never pass `allow_incomplete: true` on your own judgment.** `workflow_enable` refuses a
+  disabled workflow that fails validation with 422 `workflow_invalid` and the `issues` list.
+  (`workflow_update` cannot switch a workflow on at all: it refuses `is_enabled: true` with
+  `workflow_enable_required` and writes nothing from that call.) The answer is to fix those
   nodes. The override exists for an operator who has been told exactly which nodes will
   fail at run time and says to enable anyway; "just turn it on" is not that yes. The same
   holds for renaming a live webhook URL (`workflow_trigger_update({ webhook_path })` or a
@@ -280,12 +283,12 @@ then `workflow_create_from_template({ slug, name?, overrides })` - a missing req
 variable fails fast with a 400. Three invariants that will not wait for the
 reference:
 
-- `is_enabled` defaults to **true** here, unlike `workflow_create`: the workflow is
-  live the moment the call returns. Confirm with the operator first, or pass
-  `is_enabled: false` and enable after review. An enabled create is never refused for
-  validation: when the graph has problems the 201 carries `validation`, and on errors a
-  `validation_warning` naming them. Read it, then fix the nodes or
-  `workflow_update({ is_enabled: false })` at once.
+- **It is created switched off.** Pass `is_enabled: false` (the only value the tool
+  accepts). The install does nothing until `workflow_enable` switches it on, and that
+  comes only after the operator says yes. Before that: `workflow_validate`, fix what it
+  names, `workflow_test`, and show the operator what it would send. `workflow_enable`
+  runs the validation gate the create skipped. (Until late September 2026 this tool created
+  the workflow switched ON by default; a note or memory saying so is out of date.)
 - **Every PPC write inside the templates stages to the agent-ops inbox and never
   auto-applies.** Work that queue (`agent_inbox_list`, then `agent_inbox_resolve`
   AFTER applying through the PPC surface - resolving never executes the item) or the
@@ -658,10 +661,11 @@ graph from memory.
 The per-form and whole-project paths both exist: `workflow_bind_form` (one form),
 `workflow_bulk_provision_for_project` (every form on a project - **always
 `dry_run: true` first** and read `skipped`: a skipped form is a form whose leads go
-nowhere), `workflow_provision_webhook` (bare webhook-in/action-out - defaults
-`is_enabled: true`, URL LIVE the moment it returns, `bearer_token` shown exactly
-once; no API call issues a bearer token for an EXISTING URL, only the owner's Apply
-authentication in the editor does), `workflow_set_recipient`
+nowhere; every workflow it creates starts switched off), `workflow_provision_webhook`
+(bare webhook-in/action-out - created switched off, so its URL answers but runs nothing
+until `workflow_enable` on the operator's yes; `bearer_token` shown exactly once; no API
+call issues a bearer token for an EXISTING URL, only the owner's Apply authentication in
+the editor does), `workflow_set_recipient`
 (change who gets notified), `workflow_webhook_auth_set` (header auth on a vendor webhook
 without you ever seeing the secret; it returns the last 4 characters only, and when it
 cannot tell which URL to protect it changes nothing and answers 409
@@ -727,11 +731,15 @@ evidence of what the automation did to real customers.
 5. **A disabled workflow's schedule does not fire**, no matter how good the cron.
 6. **`workflow_node_delete` cascades every edge touching that node** - the response
    lists the removed edge ids. Read them; that is your rewiring list.
-7. **`workflow_create_from_template` and `workflow_provision_webhook` default to
-   enabled.** `workflow_create` and `workflow_clone` default to disabled. Do not
-   assume one behavior across all four. A create, template install or clone that lands
-   enabled skips the enable gate: read its `validation` / `validation_warning` instead
-   (`workflow_provision_webhook` reports neither).
+7. **Every create path starts the workflow switched off.** `workflow_create`,
+   `workflow_clone`, `workflow_duplicate`, `workflow_create_from_template`,
+   `workflow_provision_webhook` and `workflow_bulk_provision_for_project` all create it
+   off, and `workflow_enable` (after the operator's yes) is the only way on. Pass
+   `is_enabled: false` to the template and webhook tools anyway: until late September 2026 they
+   created the workflow switched ON by default, and the current server refuses any other
+   value (`workflow_enable_required`). A workflow an older server created on skipped the
+   enable gate: read its `setup` on `workflow_get` and switch it off with
+   `workflow_update({ is_enabled: false })` while you fix it.
 8. **Plain strings and `{mode, value}` objects both resolve.** A plain string config
    value is template-resolved at run time. `sendEmail`'s `to` / `cc` / `bcc` also accept
    the `{"mode":"expression","value":"..."}` wrapper the editor writes (`static` or

@@ -14,9 +14,9 @@ version-snapshotted and server-validated.
    `'[redacted]'` into a new workflow: it is saved without that key. And before hand-building
    anything recurring, call `workflow_templates_list`: the catalog is the form/newsletter migration defaults plus the standing SEO/PPC/reputation delivery plays
    (read the returned `count` rather than assuming a number - the catalog grows between releases); install one with
-   `workflow_create_from_template({ slug, overrides })` (it defaults to `is_enabled: true`, so
-   confirm first or pass `is_enabled: false`; an enabled create is never refused for validation,
-   so read its `validation_warning` and fix or disable at once).
+   `workflow_create_from_template({ slug, overrides, is_enabled: false })`. It is created switched
+   off, like every workflow: validate and dry-run it (steps 4 and 5), and switch it on only with
+   step 7's `workflow_enable`, after the operator says yes.
 2. Discover, do not guess. `workflow_event_trigger_types_list` for a trigger that fires on an
    internal Hiveku event (CRM, helpdesk, billing, shopify, voice, pm, deploy, form, survey);
    `workflow_trigger_types_list` for webhook / scheduled_trigger / database_trigger config keys

@@ -92,7 +92,9 @@ notification, both hanging directly off the trigger.
    overrides, is_enabled: false })`, or `quote-form-canonical` / `newsletter-canonical`.
    It auto-provisions the webhook trigger and returns `webhook_url`. For every form on a
    site: `workflow_bulk_provision_for_project({ project_id, dry_run: true })` FIRST and
-   read `skipped`, because a skipped form is a form whose leads go nowhere. `overrides`
+   read `skipped`, because a skipped form is a form whose leads go nowhere. Either way the
+   workflows are created switched off, and `workflow_enable` switches each on after the
+   operator's yes (step "Ship"). `overrides`
    apply to the whole batch, so per-form recipients need one
    `workflow_create_from_template` plus `workflow_bind_form` each instead.
 2. Hand-building: discover with `workflow_node_types_list`. The shape is `webhookTrigger`
@@ -425,8 +427,8 @@ alerts and the positive one does not (or routes to a review-request play instead
 `would_have` on any drafted reply and check it against the brand voice from
 `account_context_get`.
 
-**Ship.** `workflow_create_from_template` defaults `is_enabled` to **true**, so it is live
-the moment the call returns. Pass `is_enabled: false`, review, then enable.
+**Ship.** The install is created switched off (`is_enabled: false`). Review it, dry-run it,
+then `workflow_enable` on the operator's yes.
 
 **How this fails in the wild.** The client believes replies post automatically. They do
 not: `gbpReviewReply` stages, and somebody has to work `agent_inbox_list`. Say that at
@@ -630,7 +632,8 @@ or any "when something changes on the Webflow site, do X".
 registered its receiver on the site when it was connected, so the event is already
 arriving; the workflow just listens. The shipped template
 `webflow-item-published-social-draft` is this recipe (`workflow_templates_list`, then
-`workflow_create_from_template`); build by hand only to change the shape.
+`workflow_create_from_template`, created switched off; `workflow_enable` after the operator's
+yes); build by hand only to change the shape.
 
 **Superseded, do not build.** `webflow_webhook_create` pointed at a `webhookTrigger` URL
 was the bring-your-own pattern before the trigger nodes shipped. For a site connected to

@@ -21,13 +21,18 @@ workflow: `workflow_bind_form`, `workflow_bulk_provision_for_project`,
   `{ workflow_id, webhook_url, env_var, warnings }` plus `skipped` (no env var found,
   not a form) and `errored` lists. This is ~15 MCP calls per site collapsed to 1.
   **Always `dry_run: true` first** and read `skipped` - a form that gets skipped is a
-  form whose leads go nowhere.
+  form whose leads go nowhere. Every workflow the real run creates starts switched off
+  (one it reuses keeps its state): test each, then `workflow_enable` each on the
+  operator's yes, and check `workflow_list` for which are on before telling anyone the
+  forms are live.
   `overrides` apply to ALL forms in the batch, so a site that needs a different
   recipient per form needs `workflow_create_from_template` + `workflow_bind_form`
   per form instead.
 - **A bare webhook in, action out:** `workflow_provision_webhook({ name, http_method?, authentication?, is_enabled? })`
-  returns `{ workflow_id, webhook_url, trigger_id }` in one shot. Two traps: it
-  defaults `is_enabled: true`, so the URL is LIVE immediately, and if you pass
+  returns `{ workflow_id, webhook_url, trigger_id }` in one shot. Two traps: the
+  workflow is created switched off (pass `is_enabled: false`, the only value it accepts),
+  so the URL answers 200 but runs nothing until `workflow_enable` switches it on after the
+  operator's yes, and a sender pointed at it before then is not acted on; and if you pass
   `authentication: 'bearer'` the one-time `bearer_token` in the response is never
   shown again - record it at once. That token is enforced: the sender must send it as
   `Authorization: Bearer <token>`. (Tokens minted by this tool or
