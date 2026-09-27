@@ -416,7 +416,7 @@ export const PENDING_TOOLS = new Map([
   // deployed; index regenerated at 2147 tools, and it joined the read-only
   // list as a GET); entry deleted.
 
-  // VERSIONS-W2 (2026-09-25): see the batch note above.
-  ['project_vcs_status', { since: '2026-09-25', batch: 'VERSIONS-W2' }],
-  ['project_vcs_rollback', { since: '2026-09-25', batch: 'VERSIONS-W2' }],
+  // VERSIONS-W2: landed in the live index on 2026-09-27 (MCP #54, 4f99aab,
+  // deployed; index regenerated at 2151 tools, project_vcs_status joined the
+  // read-only list as a GET); entries deleted.
 ]);
