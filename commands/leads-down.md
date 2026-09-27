@@ -22,9 +22,12 @@ failure mode this play exists to prevent. Follow the **hiveku-analytics-agency**
    only if a paid channel's counts are in question - it loads live pages in a real browser and
    takes minutes; never loop it. Alongside the tag layer, check the four lead-swallowing pipes:
    - Form pipeline: `marketing_form_conversion_audit` for BOTH windows - its discrepancy buckets
-     SUM to the total (deleted, duplicate, spam, archived, workflow_failed, no_attribution,
-     unpaid_attribution, counted). Compare `buckets.counted` across the windows: a jump in spam
-     or workflow_failed IS the "drop", and `has_click_id` isolates the paid slice.
+     SUM to the total (deleted, duplicate, spam, archived, excluded, workflow_failed,
+     no_attribution, unpaid_attribution, counted). Compare `buckets.counted` across the windows:
+     a jump in spam or workflow_failed IS the "drop", and `has_click_id` isolates the paid slice.
+     `excluded` holds rows from forms today's capture settings exclude, judged the same way in
+     both windows: not leads, so not a drop - but a lead form sitting there is a wrong rule (see
+     the capture state below).
    - Delivery pipeline: `workflow_runs_recent({ status: "failed", since })` - a failed form
      workflow means the lead was captured and nobody was told, which reads as "down" from the
      inbox. If a lead-carrying workflow was PAUSED during the window,
