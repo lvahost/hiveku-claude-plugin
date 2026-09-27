@@ -31,9 +31,21 @@ A card is the WHY. A task is the WORK. Never let one exist without the other for
   **website_projects** UUID from `sites_list` / `project_get`. Passing one to the other 404s.
   `pm_projects_create` takes `website_project_id` to link a PM project to its site
   (`pm_projects_update` sets it later, `null` unlinks). A website's review feedback lands in the
-  website's linked PM project. If a site has more than one linked project, the annotation server
-  picks one arbitrarily, so check `project_annotation_settings_get`'s `review_assignee.pm_project`
-  before setting a cross-company review assignee.
+  site's oldest linked PM project that is not archived, and `project_annotation_settings_get`'s
+  `review_assignee.pm_project` names it. Linking a project created after the site's current one
+  does not move it, but linking an older one does: the rule goes by the project's creation date, not
+  the link date. A cloned site (`site_clone` or the dashboard's Clone Project) or a site made with
+  `site_create` or `site_create_external` has no linked PM project until the editor, the tasks page, a discussion convert or the first review
+  comment creates one, and on a site with no linked project that is not archived the project you
+  link becomes where feedback lands, so call `project_annotation_settings_get` before linking. To
+  move it, unlink each older one (`pm_projects_update` with `website_project_id: null`) or share the
+  existing one with the other company; unlinking keeps that project and its tasks in the PM project
+  lists, but they leave this site's Tasks page and the editor's "This Project" task view, and their
+  "Implement with AI" can no longer find the site's code. Archive the older project
+  (`status: 'archived'`) only when its work is finished, because archiving hides it and all its open
+  tasks from every list. Only that project's team can be the review assignee, so check
+  `project_annotation_settings_get`'s `review_assignee.pm_project` before setting a cross-company
+  review assignee.
 - `assigned_to_id`, `default_assignee_id`, `acting_as_user_id`, `project_manager_id` and friends
   are **public_users** UUIDs, NOT `clerk_user_id`. Sending a Clerk id into a uuid column errors
   the whole write.
@@ -267,20 +279,33 @@ project team, which is who `pm_project_team` lists: anyone else is refused with 
 - Setting or changing a default never touches tasks that already exist, assigned or not.
 
 **Review feedback tasks.** Each comment a client leaves on a website's review page becomes a task in
-the PM project linked to that website (a new "Website Feedback: <site>" project when none is linked
-yet), with no section, so a section default never reaches it. It goes to the website's review
-assignee when one is set, else to the project's default assignee, else to nobody. The review
-assignee is the review page's "Task assignment" setting, or
+the website's PM project, with no section, so a section default never reaches it. When no linked
+project is left (none was linked, or every linked one is archived), the next writer creates one: the
+first review comment makes "Website Feedback: <site>", while the editor Tasks panel, the tasks page,
+session recordings and discussion converts make "PM - <site>". Sites created new from the dashboard
+have "PM - <site>" from birth, but cloned sites (the dashboard's Clone Project or `site_clone`) and
+sites made with `site_create` or `site_create_external` have none until one of those writers makes one, and a project linked to a site with none becomes
+where feedback lands (call `project_annotation_settings_get` before linking). So read
+`review_assignee.pm_project` rather than assuming a name. It goes to the website's review assignee when one is set, else to the project's default assignee, else
+to nobody. The review assignee is the review page's "Task assignment" setting, or
 `project_annotation_settings_set({ project_id, review_assignee_id })` with the WEBSITE project id
 (`project_annotation_settings_get` reads it back); `''` or `null` clears it. Take the id from
 `project_annotation_settings_get`'s `review_assignee.people`: everyone the setting accepts, which is
-the team of the website's linked PM project (both companies when it is shared), or the account's
+the team of the PM project feedback lands in (both companies when it is shared), or the account's
 own team before any project is linked; anyone else is refused with 400 `user_not_in_account`,
-`field: 'review_assignee_id'`. The list comes with the setting, so it needs no `pm_project_team` or
-`crm_list_users` call and works on every key that can set it. `review_assignee.pm_project` names the
-project the tasks land in (the oldest when several are linked; null until one is linked); a
-`linked_project_count` above 1 means the annotation server picks one of them arbitrarily for each
-task. The person is checked again
+`field: 'review_assignee_id'`. Being on another linked project's team is not enough. The list comes
+with the setting, so it needs no `pm_project_team` or `crm_list_users` call and works on every key
+that can set it. `review_assignee.pm_project` names the project the tasks land in: review feedback
+lands in the site's oldest linked PM project that is not archived (null when none is left, until the
+next writer creates one). With a `linked_project_count` (linked projects that are not archived)
+above 1 it still lands only there. To move it, unlink each older one (`pm_projects_update` with
+`website_project_id: null`) so the next-oldest takes over, or share the existing project with the
+other company; its tasks stay in the PM project lists but leave this site's Tasks page and the
+editor's "This Project" task view, and their "Implement with AI" can no longer find the site's code.
+Archiving the older project also moves feedback, but hides it and all its open tasks from every
+list, so archive only a project whose work is finished. `review_assignee.stale` is true when the
+saved person is not on `review_assignee.pm_project`'s team (they left, or they are only on another
+linked project's team); new feedback then follows the project default. The person is checked again
 against the team of the project each task lands in: someone who has left is skipped and the
 project default applies. It covers only review feedback; the project default
 covers every other new task in that project too.
