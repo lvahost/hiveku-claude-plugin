@@ -30,7 +30,7 @@ import {
 } from '../lib/tool-safety.mjs';
 import { probeIsStale, updateCheckPath } from '../lib/update-check.mjs';
 
-/** Every name 0.26.30 and 0.26.33 put on the hook, which is every name on the map. */
+/** Every name 0.26.30 and 0.26.34 put on the hook, which is every name on the map. */
 const LIVE_CHANGE_NAMES = [
   // Google and Microsoft settings on live campaigns.
   'ppc_google_auto_apply_set',
@@ -54,7 +54,7 @@ const LIVE_CHANGE_NAMES = [
   'ppc_experiment_graduate',
   'ppc_experiment_promote',
   'ppc_experiment_treatment_set',
-  // Switching ads on or restarting them (0.26.33; test/spend-start-writes.test.mjs pins why).
+  // Switching ads on or restarting them (0.26.34; test/spend-start-writes.test.mjs pins why).
   'ppc_enable_resource',
   'ppc_platform_enable_resource',
   'ppc_bulk_edit',
@@ -64,7 +64,7 @@ const LIVE_CHANGE_NAMES = [
   'ppc_meta_campaign_update',
   'ppc_linkedin_campaign_update',
   'ppc_linkedin_campaign_group_update',
-  // Switching a workflow on (0.26.33). Both were on the ask list before, not on the hook.
+  // Switching a workflow on (0.26.34). Both were on the ask list before, not on the hook.
   'workflow_enable',
   'workflow_resume',
   // Conversions and audiences sent to the platforms.
@@ -137,7 +137,7 @@ function runPreToolUseHook(toolName, toolInput, cwd) {
   );
 }
 
-test('the live-change set is exactly the writes 0.26.30 and 0.26.33 put on the hook', () => {
+test('the live-change set is exactly the writes 0.26.30 and 0.26.34 put on the hook', () => {
   assert.deepEqual([...LIVE_CHANGE_WRITES.keys()].sort(), [...LIVE_CHANGE_NAMES].sort());
 });
 
