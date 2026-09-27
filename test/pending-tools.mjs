@@ -414,7 +414,7 @@ export const PENDING_TOOLS = new Map([
   // deployed; index regenerated at 2144 tools, and it joined the read-only
   // list as a GET); entry deleted.
 
-  // PM-TEAM-1 (2026-09-26): the PM project team roster. Delete once the
-  // regenerated index carries it (tool-names.test.mjs fails until you do).
-  ['pm_project_team', { since: '2026-09-26', batch: 'PM-TEAM-1' }],
+  // PM-TEAM-1: landed in the live index on 2026-09-27 (MCP #51, f6c83fe,
+  // deployed; index regenerated at 2147 tools, and it joined the read-only
+  // list as a GET); entry deleted.
 ]);
