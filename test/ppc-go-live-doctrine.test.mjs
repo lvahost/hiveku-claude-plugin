@@ -149,3 +149,10 @@ test('the checks fail on the old wording (negative control)', () => {
     assertBingKeywordExamples('`ppc_platform_keyword_bid_update({ connection_id, keyword_id, bid })`', 'bid'),
   );
 });
+
+test('no playbook still says Hiveku cannot read Microsoft per-goal conversions', () => {
+  // Hiveku reads Microsoft's goals report since the conversion-goal-volume action shipped.
+  const stale = /does not yet read Microsoft'?s per-goal/i;
+  const hits = PROSE.filter((file) => stale.test(flat(read(file))));
+  assert.deepEqual(hits, [], `stale per-goal claim in: ${hits.join(', ')}`);
+});
