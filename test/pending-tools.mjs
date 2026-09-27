@@ -316,6 +316,23 @@
  *   docs name only live or pending tools.
  *     HELPDESK-R3  helpdesk_assistant_knowledge_status (read-only, no
  *                  arguments; the account comes from the key).
+ *
+ *   PM team roster (2026-09-26, default assignees and shared-project teams,
+ *   after builder PR #205): the one roster for PM assignment. The contract is
+ *   the builder's GET /api/olympus/pm/projects/:id/team (listPmTeamRoster over
+ *   pmTeamAccountIds: the project's account plus every active co-owner
+ *   account, the other company's emails hidden); the MCP declaration is the
+ *   pmteam lane's commit in hiveku-mcp-api-server. The orient skill, the PM
+ *   skill and its pm-project-structure reference, and node-rail 6.3 tell every
+ *   PM assignment to take its ids from it, so until the index carries it
+ *   hiveku_find_tools cannot surface it. Release step, after the MCP deploy:
+ *   node scripts/gen-tool-index.mjs --dir <bound account> and
+ *   node scripts/gen-readonly-tools.mjs (it is a GET, so it joins the
+ *   read-only list), then delete this entry; tool-names.test.mjs forces the
+ *   deletion. pm_ is not a gated prefix, so pm-attribution-doctrine.test.mjs
+ *   is the test that checks the PM docs name only live or pending tools.
+ *     PM-TEAM-1  pm_project_team (read-only: { project_id }; teams, members,
+ *                the project's default_assignee_id, shared).
  */
 const SEO_SINCE = '2026-08-30';
 const seo = (batch) => ({ since: SEO_SINCE, batch });
@@ -396,4 +413,8 @@ export const PENDING_TOOLS = new Map([
   // HELPDESK-R3: landed in the live index on 2026-09-25 (MCP #32, 515ec43,
   // deployed; index regenerated at 2144 tools, and it joined the read-only
   // list as a GET); entry deleted.
+
+  // PM-TEAM-1 (2026-09-26): the PM project team roster. Delete once the
+  // regenerated index carries it (tool-names.test.mjs fails until you do).
+  ['pm_project_team', { since: '2026-09-26', batch: 'PM-TEAM-1' }],
 ]);

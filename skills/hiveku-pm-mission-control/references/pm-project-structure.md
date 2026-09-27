@@ -7,10 +7,20 @@ everything here.
 
 ## Projects: single read and edit
 
-- `pm_projects_get({ id })` fetches one PM project by UUID.
+- `pm_projects_get({ id })` fetches one PM project by UUID, including its `default_assignee_id`.
 - `pm_projects_update({ id, ... })` changes only the fields you pass. Renaming a project or
   flipping its status is an update, never a delete-and-recreate — `pm_projects_delete` cascades to
   every task, milestone and section under it.
+- `pm_projects_update({ id, default_assignee_id })` sets who a new task in the project goes to
+  when its creator names nobody and its section has no default of its own; `''` or `null` clears
+  it. The person must be on the project team (a member `id` from `pm_project_team`): anyone else
+  is refused with 400 `user_not_in_account`, `field: 'default_assignee_id'`, and nothing changes.
+  Existing tasks are never touched. The full rule: SKILL.md, "Default assignees".
+- `pm_project_team({ project_id })` is the roster for PM assignment: the project's own account's
+  people and, on a shared project, the other account's people too (labelled by company, emails
+  hidden), plus the project's `default_assignee_id` and whether it is `shared`. Take every
+  `assigned_to_id` and `default_assignee_id` from it; `crm_list_users` is this account's own team
+  only.
 
 ## Milestones
 
@@ -39,14 +49,26 @@ the `pm_tasks_list` filter accept.
 Sections are column-like groupings inside one project's board. This is where `section_id` comes
 from.
 
-- `pm_sections_list({ project_id })` — the sections of one project.
-- `pm_sections_create({ project_id, name, sort_order })` — required `project_id` + `name`.
-- `pm_sections_update({ project_id, section_id, name, sort_order, is_collapsed })` — rename,
-  reorder or collapse. Tasks in the section are never touched.
-- `pm_sections_delete({ project_id, section_id })` deletes ONE section. Tasks in it are UNASSIGNED
-  (`section_id` set to null), never deleted, and the response returns `tasks_unassigned` so you can
-  report the count. Clearing every section on a project is deliberately not a direct tool — the
-  route's own guidance is to stage `pm.section_delete_bulk` for human approval instead. Do not
+- `pm_sections_list({ project_id })` — the sections of one project, each with its
+  `default_assignee_id`.
+- `pm_sections_create({ project_id, name, sort_order, default_assignee_id })` — required
+  `project_id` + `name`.
+- `pm_sections_update({ project_id, section_id, name, sort_order, is_collapsed,
+  default_assignee_id })` — rename, reorder, collapse, or change the section's default assignee.
+  Tasks already in the section are never touched.
+- A section's `default_assignee_id` wins over the project's for a new top-level task created in
+  the section with no `assigned_to_id` key, and it is the ONLY default a move applies:
+  `pm_tasks_update({ id, section_id })` on an unassigned top-level task hands it to the new
+  section's default, unless that write also names `assigned_to_id`. `''` or `null` clears it.
+  The person must be on the project team (`pm_project_team`); anyone else is refused with 400
+  `user_not_in_account`, `field: 'default_assignee_id'`. The full rule: SKILL.md, "Default
+  assignees".
+- `pm_sections_delete({ project_id, section_id })` deletes ONE section. Tasks in it are taken out
+  of the section (`section_id` set to null; their assignee does not change), never deleted, and
+  the response returns `tasks_unassigned` (the count taken out of the section, not unassigned
+  from a person) so you can report it. Clearing every section on a project is deliberately not
+  a direct tool — the route's own guidance is to stage `pm.section_delete_bulk` for human
+  approval instead. Do not
   simulate the bulk clear by looping `pm_sections_delete`; that loop is exactly what the missing
   tool refuses to be.
 
@@ -119,8 +141,18 @@ updateMany) — a departed or vacationing team member's queue moves in one write
 `pm_tasks_update` calls. Both arguments are required; build `task_ids` from a `pm_tasks_list`
 sweep you have shown to the operator, never from a filter you did not read back first. Only a
 team member can take the tasks (on a task of a shared project, a member of an account it is
-shared with counts too): anyone else is refused with 400 `user_not_in_account` and no task
-changes.
+shared with counts too; `pm_project_team` lists both): anyone else is refused with 400
+`user_not_in_account` and no task changes.
+
+When the person leaving is also a project or section default (`pm_projects_get`,
+`pm_sections_list`, or `default_assignee_id` on `pm_project_team`), new tasks skip them once they
+are off the team, because every default is checked at the moment it applies. The stale default
+stays stored until someone changes it, so replace or clear it with `pm_projects_update` /
+`pm_sections_update` (`default_assignee_id`, `''` clears) as part of the same hand-over. The same
+goes for a website's review assignee (`review_assignee_id` on
+`project_annotation_settings_get` / `project_annotation_settings_set`):
+`project_annotation_settings_get`'s `review_assignee.stale` is true once that person has left, and
+the replacement's id comes from its `review_assignee.people`.
 
 ## The agent queue: claim, release, submit for review
 

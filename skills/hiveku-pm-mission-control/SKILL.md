@@ -29,16 +29,35 @@ A card is the WHY. A task is the WORK. Never let one exist without the other for
   update, never a delete-and-recreate.
 - `project_id` on every builder tool (files, preview, deploy, CMS, env, domains) is a
   **website_projects** UUID from `sites_list` / `project_get`. Passing one to the other 404s.
-  `pm_projects_create` takes `website_project_id` to link a PM project to its site.
-- `assigned_to_id`, `acting_as_user_id`, `project_manager_id` and friends are **public_users** UUIDs:
-  the `id` field from `crm_list_users`, NOT `clerk_user_id`. Sending a Clerk id into a uuid column
-  errors the whole write.
-- **An empty roster is a real answer.** `crm_list_users` lists the account's Team Members only
-  (home users plus invited members); an agency or SaaS operator working the account without an
-  invitation is not in it and cannot be assigned. When it returns `{ users: [], hint }`, or the
-  person the work belongs to is not listed, leave `assigned_to_id` unset and create the task
-  unassigned. Never borrow another member's id to stand in for them, and never use an id from
-  another account. Tell the user once that inviting them under Team Members makes them
+  `pm_projects_create` takes `website_project_id` to link a PM project to its site
+  (`pm_projects_update` sets it later, `null` unlinks). A website's review feedback lands in the
+  website's linked PM project. If a site has more than one linked project, the annotation server
+  picks one arbitrarily, so check `project_annotation_settings_get`'s `review_assignee.pm_project`
+  before setting a cross-company review assignee.
+- `assigned_to_id`, `default_assignee_id`, `acting_as_user_id`, `project_manager_id` and friends
+  are **public_users** UUIDs, NOT `clerk_user_id`. Sending a Clerk id into a uuid column errors
+  the whole write.
+- **The PM roster is `pm_project_team({ project_id })`.** It lists everyone who may be assigned
+  on that project: its own account's team and, when the project is shared, the other account's
+  team, each person labelled by company (`team_account_name`, `is_other_company`) with the other
+  company's emails hidden (`email: null`). It also returns the project's `default_assignee_id`,
+  `shared`, and the `teams` involved. Use a member `id` as `assigned_to_id` or
+  `default_assignee_id`. `crm_list_users` is this account's own team only: the roster for CRM
+  owners and for `acting_as_user_id` (below). On a shared project it misses the other company's
+  people, so prefer `pm_project_team` for any PM assignment.
+- **Omit, null, or an id.** On `pm_tasks_create`, `create_task`, `mc_task_spawn_pm` and each row
+  of `pm_tasks_create_bulk`: leave `assigned_to_id` out and a new top-level task goes to its
+  section's default assignee, else the project's (Default assignees, under PM tasks). Pass
+  `null` (or `''`) to create it unassigned even when a default is set. Pass an id to assign that
+  person. A subtask never takes a default.
+- **An empty roster is a real answer.** The roster lists Team Members only (home users plus
+  invited members); an agency or SaaS operator working the account without an invitation is not
+  in it and cannot be assigned. When it comes back empty (`members: []` from `pm_project_team`,
+  `{ users: [], hint }` from `crm_list_users`), or the person the work belongs to is not listed,
+  leave `assigned_to_id` out: the task goes to the default assignee when one is set and is
+  created unassigned otherwise. Never borrow another member's id to stand in for them, and never
+  use an id from another account unless `pm_project_team` lists that person (the other company
+  on a shared project). Tell the user once that inviting them under Team Members makes them
   assignable. (Every PM write that sets an assignee refuses someone who is not a team member
   with 400 `user_not_in_account`, and an id that is not a UUID with 400 `invalid_assignee_id`;
   the body is `{ error, code, field: 'assigned_to_id' }`, so read the code from `code`, and
@@ -46,12 +65,14 @@ A card is the WHY. A task is the WORK. Never let one exist without the other for
   `pm_tasks_create`, `pm_tasks_update` when the assignee changes, `pm_tasks_create_bulk` (the
   whole batch, with `invalid` listing each `{ index, assigned_to_id }`), `pm_tasks_reassign_bulk`,
   `mc_task_spawn_pm` and the recurrence tools. On a shared project, members of an account it is
-  shared with count too. On that refusal, tell the user they can invite the person under
-  Settings > Team Members, or create the task unassigned. Editing other fields of a task already
-  held by a non-member still works, and so does unassigning. A workflow's `createTask`,
-  `createSubtask` or `updateTask` step makes the same check when a real run reaches it and fails
-  the step on a non-member; `workflow_test` simulates those steps, so a dry run never shows it:
-  `hiveku-automation-agency/references/node-rail.md` 6.3.)
+  shared with count too: they are the other company in `pm_project_team`. On that refusal, tell
+  the user they can invite the person under Settings > Team Members, or create the task
+  unassigned (`null`), or leave `assigned_to_id` out so the default applies. Editing other
+  fields of a task already held by a non-member still works, and so does unassigning. A default
+  assignee that is refused the same way answers with `field: 'default_assignee_id'`. A
+  workflow's `createTask`, `createSubtask` or `updateTask` step makes the same check when a real
+  run reaches it and fails the step on a non-member; `workflow_test` simulates those steps, so a
+  dry run never shows it: `hiveku-automation-agency/references/node-rail.md` 6.3.)
 
 ## Key scope
 
@@ -59,12 +80,14 @@ Tool visibility is decided server-side by the MCP key's profile, and this manual
 profiles. The **pm profile** grants `pm_*` and **no `mc_*` at all** — under a pm-scoped key every
 Mission Control tool here (intake, decisions, the bridge's mc_ side, schedules, templates, digest
 reads) is invisible; `mc_*` goes only to the **communications** profile and unscoped (full) keys.
-Also absent from the pm profile: `crm_list_users` (the attribution-id source above — it grants no
-`crm_` anything), `sites_list` / `project_get`, and `account_audit_health` (full-only). A tool
+The PM roster, `pm_project_team`, is a `pm_` tool and is present. Absent from the pm profile:
+`crm_list_users` (it grants no `crm_` anything), `sites_list` / `project_get`, and
+`account_audit_health` (full-only). A tool
 named here but absent from your session is the key's profile, not a missing feature: flag it and
 ask for the right key — never guess a UUID or skip the attribution field to work around it. That
-is different from `crm_list_users` being present and returning an empty list: that is the
-account's real roster, and the answer is an unassigned task (Ids, above), not a different key.
+is different from `pm_project_team` or `crm_list_users` being present and returning an empty
+list: that is the real roster, and the answer is to leave `assigned_to_id` out (Ids, above), not a
+different key.
 
 ## The board
 
@@ -217,8 +240,50 @@ verifies a recurrence spawn actually produced its subtasks.
 
 `pm_tasks_create({ project_id, title, ... })` - required `project_id` + `title`. The field is
 `title`, NOT `name` (`name` is `pm_projects_create`); the route accepts `name` as a forgiving alias
-but do not rely on it. `pm_tasks_create_bulk` takes up to 500 and validates every `project_id`
-before any insert, so one bad id blocks the whole batch.
+but do not rely on it. `assigned_to_id`: leave it out for the default assignee, `null` for
+unassigned, or a member `id` from `pm_project_team` (Ids, above). `pm_tasks_create_bulk` takes up
+to 500 and validates every `project_id` before any insert, so one bad id blocks the whole batch.
+
+**Default assignees: who a new task goes to when nobody is named.** A project and each of its
+sections can carry a `default_assignee_id`. Set it with `pm_projects_update({ id,
+default_assignee_id })`, `pm_sections_create({ project_id, name, default_assignee_id })` or
+`pm_sections_update({ project_id, section_id, default_assignee_id })`; `''` or `null` clears it.
+`pm_projects_get`, `pm_sections_list` and `pm_project_team` read it back. The person must be on the
+project team, which is who `pm_project_team` lists: anyone else is refused with 400
+`user_not_in_account` (a value that is not a UUID with 400 `invalid_assignee_id`), and the body's
+`field` is `default_assignee_id`, not `assigned_to_id`. How it applies:
+
+- A new top-level task created with no `assigned_to_id` key takes its section's default, else the
+  project's. Each is checked against the current team at that moment, so someone who has left
+  (removed from the account, or the share ended) is skipped rather than assigned.
+- `null` or `''` on the create means unassigned, default or not. A subtask never takes a default,
+  and neither does a task handed to an AI agent.
+- `pm_tasks_update` that moves an unassigned top-level task into a section with a default assigns
+  it to that section's default (the section's only, never the project's). A write that also names
+  `assigned_to_id` keeps what it names, `null` included.
+- The same defaults reach recurrence occurrences with nobody on them (Recurring work, below), a
+  workflow `createTask` step with an empty `assignToId`, and `mc_task_spawn_pm` without an
+  `assigned_to_id`.
+- Setting or changing a default never touches tasks that already exist, assigned or not.
+
+**Review feedback tasks.** Each comment a client leaves on a website's review page becomes a task in
+the PM project linked to that website (a new "Website Feedback: <site>" project when none is linked
+yet), with no section, so a section default never reaches it. It goes to the website's review
+assignee when one is set, else to the project's default assignee, else to nobody. The review
+assignee is the review page's "Task assignment" setting, or
+`project_annotation_settings_set({ project_id, review_assignee_id })` with the WEBSITE project id
+(`project_annotation_settings_get` reads it back); `''` or `null` clears it. Take the id from
+`project_annotation_settings_get`'s `review_assignee.people`: everyone the setting accepts, which is
+the team of the website's linked PM project (both companies when it is shared), or the account's
+own team before any project is linked; anyone else is refused with 400 `user_not_in_account`,
+`field: 'review_assignee_id'`. The list comes with the setting, so it needs no `pm_project_team` or
+`crm_list_users` call and works on every key that can set it. `review_assignee.pm_project` names the
+project the tasks land in (the oldest when several are linked; null until one is linked); a
+`linked_project_count` above 1 means the annotation server picks one of them arbitrarily for each
+task. The person is checked again
+against the team of the project each task lands in: someone who has left is skipped and the
+project default applies. It covers only review feedback; the project default
+covers every other new task in that project too.
 
 You are not the only writer on a board. Claim before working a queued task:
 `pm_task_claim({ task_id, agent_codename })` — only `todo`/`queued` tasks claim; a 409 means
@@ -301,10 +366,13 @@ Four things that bite:
 `assigned_to_id` on a recurrence follows the Ids rule above: a person who is not a team member is
 refused with 400 `user_not_in_account` when the recurrence is created or its assignee changed. If
 the assignee is not a team member when an occurrence fires (they left, or the recurrence predates
-the check), each occurrence spawns unassigned and its `ai_metadata` records `assignee_dropped`;
+the check), each occurrence spawns without them and its `ai_metadata` records `assignee_dropped`;
 the fire itself never fails for it. Every fire checks again, so sending the current assignee back
-on `pm_task_recurrence_update` is accepted but does not stop that: pick a team member, or leave it
-unassigned.
+on `pm_task_recurrence_update` is accepted but does not stop that: pick a team member, or clear it.
+An occurrence with nobody on it (no assignee on the recurrence, or one that was dropped) goes to
+the recurrence section's default assignee, then the project's, like any new top-level task, and
+stays unassigned only when neither is set; its subtasks stay unassigned. There is no setting that
+keeps occurrences unassigned while a default is set.
 
 On a takeover account, audit the engine before adding to it: `pm_task_recurrence_list` WITHOUT
 `active_only` — look for paused rows the client believes are running, rows spawning into a
