@@ -29,6 +29,11 @@ Send `previewUrl` for sign-off, then merge (`/hiveku:pr`), then
 also reaped automatically). Without `branch`, `preview_screenshot` / `preview_http_get` /
 `preview_sync` / `preview_logs` are the MAIN container and never show branch edits.
 
+**Showing an earlier version:** there is no tool that opens a version in a preview directly. The
+rollback dry run (`/hiveku:rollback`) says exactly which pages and files would change without touching
+anything; for a checkpoint, `history_preview_restore` spins it up in an isolated preview app. After a
+rollback on Your site the preview follows on its own (read `preview_effect`).
+
 **If the page renders but behaves wrong** (dead interactivity, a hydration mismatch), the server log is
 the wrong place to look - it stays completely clean. Use `preview_client_errors({ project_id })`. An
 empty result is not proof: `capture_installed: false` means the check never ran (recreate with

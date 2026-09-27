@@ -35,8 +35,18 @@ write of the session.
    `project_redirects_deploy({ project_id, tier })`; a narrow mechanical page edit on a hosted site ->
    `seo_task_implement` (two-step, human `agent_approval_approve`, never yours). `seo_project_update({
    robots_txt_content })` only fills in at the next deploy, where the code ships no robots source: a
-   real robots.txt is `public/robots.txt` through the code lane. On a marketing-seo key `cms_*`, `project_*` and `deploy_site` are not visible: say "not
-   visible to this key", use `pages_update` or the implement rail, never "does not exist".
+   real robots.txt is `public/robots.txt` through the code lane. On a marketing or marketing-seo
+   connection the code lane is one `project_file_save` per file, then `project_vcs_commit({
+   project_id, message })` with NO files (files or deletions in that call are refused there), then
+   `deploy_site`; the bulk save, file delete, build check and rollback are not there: say "not
+   available on this connection", use the implement rail or a full connection, never "does not
+   exist". Read `project_vcs_status({ project_id, detail: "files" })` before the first save: when
+   `head_commit_id` is null, `uncommitted` is true or the reason is 'unknown', tell the person and
+   first save the site as it stands (`project_vcs_commit` with NO files; a 409 `nothing_to_commit`
+   is success and carries `latest_version`). That version, or else `head_commit_id`, is the
+   version to go back to; the UNDO line names it by its name and time
+   (`references/seo-change-discipline.md` gate 1, `references/on-page-optimization.md` section
+   1.2).
 5. Pre-flight card before EACH write [CONFIRM - one artifact per yes]: the object and its id space, the
    exact before/after diff, blast radius (pages and templates touched), reversibility, the verification
    call and its date. Anything index-affecting (canonical, noindex, robots, redirects, sitemap, deploy)

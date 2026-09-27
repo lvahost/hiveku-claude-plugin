@@ -329,6 +329,12 @@ const KNOWN_NON_TOOLS = new Map([
   // The account-memory append route's 409 code when 40 suggestions are
   // waiting for an owner (/hiveku:remember names it).
   ['account_memory_full', 'error'],
+  // Versions Wave 2 (2026-09-25): the builder's 413 code for a read or a
+  // branch start over the 150 MB full-copy cap (vcs checkout unpaged, branch
+  // create, rollback prefetch). code.md, commit.md, branch.md, rollback.md and
+  // the web skill name it so a session pages or stays on Your site instead of
+  // retrying. An error code, not a call.
+  ['content_too_large', 'error'],
 ]);
 
 /**

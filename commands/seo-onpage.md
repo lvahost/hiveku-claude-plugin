@@ -49,8 +49,12 @@ section 1).
     hosted site -> `seo_task_implement` two-step with a human `agent_approval_approve`. The per-page SEO
     field and schema writes that go live after deploy are `seo_page_seo_set` and `seo_page_schema_set`
     (see the reference's Availability table); `pages_update` and the code lane still work. On a
-    marketing-seo key the `cms_*`
-    and `project_*` tools are not visible: say so, use `pages_update` or the implement rail.
+    marketing or marketing-seo connection the code lane is one `project_file_save` per file, then
+    `project_vcs_commit({ project_id, message })` with NO files (files or deletions in that call are
+    refused there), then `deploy_site`; there is no bulk save or build check on those profiles, and
+    `pages_update` is on marketing-seo only. Read `project_vcs_status({ project_id, detail: "files"
+    })` before the first save for the version to go back to, and send the development deploy with
+    `branch: "main"` (the reference's section 1.2).
 12. Verify and track: `fetch_url({ url })` and read the changed title, meta, headings and JSON-LD in the
     body (never the write's 200); `seo_track_keyword({ keyword, target_domain, location_code })` for
     the head term if untracked [CONFIRM]; record the ship date. Proof at 28 days:

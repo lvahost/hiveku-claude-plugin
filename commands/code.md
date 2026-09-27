@@ -1,5 +1,5 @@
 ---
-description: Work on one of the account's Hiveku website projects - pull the code local, edit, verify, commit, deploy.
+description: Work on one of the account's Hiveku website projects - pull the code local, edit, verify, save a version, deploy.
 argument-hint: "[project name or id, and what to change]"
 ---
 
@@ -35,7 +35,7 @@ same map as `.hiveku-manifest.json` at its root). Step 5 is impossible without i
 **3. Change it.** Edit the local files. Understand the framework from the files before editing; match the
 project's existing patterns.
 
-**4. VERIFY before you ship - a commit is not a deploy, and a green build is not a typecheck:**
+**4. VERIFY before you ship - a version is not a deploy, and a green build is not a typecheck:**
  - `verify_typecheck`, `verify_lint`, `verify_run_tests` as applicable.
  - `project_test_build({ project_id, use_db_state: true })`. It is ASYNC: it returns
      `{ build_session_id }` and nothing else, so poll `project_test_build_log_get({ project_id,
@@ -86,10 +86,26 @@ instead: `COPYFILE_DISABLE=1 tar czf site.tar.gz -C <dir> .` excluding `node_mod
 `.next/` → `project_import_presign({ project_id })` → PUT to `upload_url` replaying `required_headers`
 → `project_import_finalize` → verify the returned per-file sha256 manifest against your local hashes.
 Nothing goes through the model on that path, so no escaping, newline, or truncation corruption, and
-binaries are lane-routed automatically. Archive cap 200MB compressed. Then
-`project_vcs_commit({ project_id, message })` to version on `main` (add `branch` to version work off to the side instead — see /hiveku:commit). Commit ≠ live.
+binaries are lane-routed automatically. Archive cap 200MB compressed.
+Saving is NOT a version: the saved files are live in the preview and are what a deploy ships, but
+nothing in the history holds them yet. So once the change is saved and verified, VERSION it:
+`project_vcs_commit({ project_id, message })` with NO `files` and NO `deletedFiles` - that saves
+everything on Your site that is not a version yet as ONE version. It changes no file, so you need
+not ask the person before it, but their settings may show a permission prompt for it; that is
+expected. Once per change the site owner would recognize (usually once per request), never
+per file or per batch; two unrelated changes get two versions. `message` is a plain-language name of
+what changed for visitors, e.g. "Updated the pricing section on the Home page" or "Added a contact
+form to the About page" - never file paths, file extensions, `fix:`-style prefixes, tool names or an
+"AI:" byline; the owner reads it in the dashboard's history. 409 `nothing_to_commit` means it is
+already a version: not an error. You are not the only writer, so the version also holds anyone
+else's unversioned changes on Your site; `project_vcs_status({ project_id })` first shows them
+(`uncommitted`, `latest_changes`). Add `branch` to version work off to the side instead (see
+/hiveku:commit). A version is not live either: deploying is step 7.
 
-**7. Deploy when asked.** `deploy_site({ project_id, environment })` - `environment` is required and is
+**7. Deploy when asked.** First `project_vcs_status({ project_id })`: if `uncommitted` is true,
+version it (step 6) so what ships has a name you chose. (A production deploy saves leftover changes
+as a version itself - `promoted_commit_id` in its answer - but with a generic name.)
+`deploy_site({ project_id, environment })` - `environment` is required and is
 the TIER: `development` (default, safe, ship here first), `staging` (412 `staging_not_enabled` unless
 opted in per project), `production` (slow CodeBuild path). Confirm with `deploy_status` /
 `deploy_get`. Confirm with the user before a production deploy. Note that the tiers DO NOT share code
@@ -101,8 +117,13 @@ touches no deployed tier.
 byte-identical when `branch` is omitted. When the user names a branch, or the work must not touch
 the live project until it is reviewed, run the same loop with `branch` on every file tool. There is
 no switch: `project_vcs_checkout` is a read, nothing server-side changes, and the working branch is
-whatever `branch` you pass (see `/hiveku:commit` for the model). Create it first if needed:
-`project_vcs_branch_create({ project_id, name, from? })`.
+whatever `branch` you pass (see `/hiveku:commit` for the model). `project_vcs_checkout` pages: send
+`limit` (up to 2000 files), then `cursor: <next_cursor>` until `next_cursor` is null; unpaged, a
+read of Your site over 150 MB answers 413 `content_too_large` (nothing changed) - page it, or use
+`project_files_bulk_get`, which pages too. Create the branch first if needed:
+`project_vcs_branch_create({ project_id, name, from? })`. On a site over 150 MB that answers 413
+`content_too_large` ("Branches aren't available for sites this large yet"): work on Your site
+instead - every version there can still be rolled back (`/hiveku:rollback`).
  - 2b. PULL: `project_files_bulk_get({ project_id, branch })` - same 1MB/20MB caps and the same
      `next_cursor` rule; entries carry `version: null` (tree entries, not builder_code_versions rows);
      the response carries `branch` and `basis: { kind: "branch", working_tree_etag }`.
@@ -135,8 +156,9 @@ whatever `branch` you pass (see `/hiveku:commit` for the model). Create it first
      is refused (`branch_unsupported_for_tool`) rather than silently writing `main`; express a move
      on a branch as a save plus a `project_file_delete({ branch })`. Then PROMOTE:
      `project_vcs_commit({ project_id, branch, message })` with no `files` - the working tree becomes
-     a commit (`data.promoted: true`). 409 `nothing_to_commit` = clean, nothing to do; 409
-     `branch_changed` = re-read `project_vcs_branches` and retry; 409 `branch_busy` = retry shortly.
+     a version (`data.promoted: true`), named by the same plain-language rule as step 6. 409
+     `nothing_to_commit` = clean, nothing to do; 409 `branch_changed` = re-read
+     `project_vcs_branches` and retry; 409 `branch_busy` = retry shortly.
  - 7b. DEPLOY: `project_vcs_env_bindings({ project_id })` FIRST - the bindings decide which tree a
      tier ships, not the call. `production` always ships `main`; `development` / `staging` ship the
      branch they are bound to, else `main`. Bound to your branch → `deploy_site({ project_id,
@@ -150,5 +172,8 @@ whatever `branch` you pass (see `/hiveku:commit` for the model). Create it first
      for the whole project. A branch versions FILES; CMS writes land on `main`.
 
 Rules: never deploy an unverified or red build. Never skip the step-5 (or 5b) handoff check before a
-save. Show the diff and confirm before committing or deploying.
+save. Show the diff and confirm before a save that overwrites files, and before deploying. Version
+every finished change (step 6); the automatic version Hiveku saves before a publish, a merge or a
+rollback is a safety net with a generic name, not the plan. To go back to an earlier version,
+`/hiveku:rollback`.
 Keep `projects/` out of anything you push elsewhere - it holds the account's code.

@@ -46,8 +46,8 @@ four lanes, Plays A to F, the outreach handoff). Unlinked mentions follow
 8. Tasks: `pm_tasks_create({ project_id, title })` per recoverable link (source domain plus
    classification in the title), per campaign with segment counts and a target link count, per asset
    to build. Log a won link with `seo_backlink_tracker_add` (see the reference's
-   Availability table) and mirror it in the PM task; `crm_create_activity` is not visible on
-   a marketing-seo key.
+   Availability table) and mirror it in the PM task; `crm_create_activity` is not available on
+   a marketing or marketing-seo connection.
 9. Honesty rules: a data event (referring domains moving over 20 percent between reads) is verified
    with the second source before it is reported; vendor DR is directional; close rates are quoted as
    the reference's bands (reclamation 30 to 60 percent, relevance gap 3 to 8), never as this client's

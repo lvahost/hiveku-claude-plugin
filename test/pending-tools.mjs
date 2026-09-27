@@ -317,22 +317,20 @@
  *     HELPDESK-R3  helpdesk_assistant_knowledge_status (read-only, no
  *                  arguments; the account comes from the key).
  *
- *   PM team roster (2026-09-26, default assignees and shared-project teams,
- *   after builder PR #205): the one roster for PM assignment. The contract is
- *   the builder's GET /api/olympus/pm/projects/:id/team (listPmTeamRoster over
- *   pmTeamAccountIds: the project's account plus every active co-owner
- *   account, the other company's emails hidden); the MCP declaration is the
- *   pmteam lane's commit in hiveku-mcp-api-server. The orient skill, the PM
- *   skill and its pm-project-structure reference, and node-rail 6.3 tell every
- *   PM assignment to take its ids from it, so until the index carries it
- *   hiveku_find_tools cannot surface it. Release step, after the MCP deploy:
- *   node scripts/gen-tool-index.mjs --dir <bound account> and
- *   node scripts/gen-readonly-tools.mjs (it is a GET, so it joins the
- *   read-only list), then delete this entry; tool-names.test.mjs forces the
- *   deletion. pm_ is not a gated prefix, so pm-attribution-doctrine.test.mjs
- *   is the test that checks the PM docs name only live or pending tools.
- *     PM-TEAM-1  pm_project_team (read-only: { project_id }; teams, members,
- *                the project's default_assignee_id, shared).
+ *   Versions program, Wave 2 (2026-09-25, notes/DESIGN-versions-and-rollback-
+ *   2026-09-24.md, Part 2 sections A2 and E1): the two new version tools. The
+ *   builder routes are GET /vcs/status and POST /vcs/rollback on
+ *   feature/versions-core; the MCP declarations ship in the same wave. The
+ *   Stop hook (lib/stop-version.mjs) calls project_vcs_status to confirm a
+ *   project is clean, /hiveku:rollback, /hiveku:code, /hiveku:commit and
+ *   /hiveku:deploy teach both, and project_vcs_rollback is on the ask list
+ *   (data/permission-critical-tools.json), which is why that file's test
+ *   accepts it as PENDING. Release step, after the MCP deploy: regenerate
+ *   lib/tool-index.json and lib/readonly-tools.json from the LIVE server
+ *   (project_vcs_status is a GET, so it joins the read-only list), then delete
+ *   both entries; tool-names.test.mjs forces the deletion.
+ *     VERSIONS-W2  project_vcs_status (read-only), project_vcs_rollback
+ *                  (dry run unless dry_run: false; apply always asks).
  */
 const SEO_SINCE = '2026-08-30';
 const seo = (batch) => ({ since: SEO_SINCE, batch });
@@ -417,4 +415,8 @@ export const PENDING_TOOLS = new Map([
   // PM-TEAM-1: landed in the live index on 2026-09-27 (MCP #51, f6c83fe,
   // deployed; index regenerated at 2147 tools, and it joined the read-only
   // list as a GET); entry deleted.
+
+  // VERSIONS-W2: landed in the live index on 2026-09-27 (MCP #54, 4f99aab,
+  // deployed; index regenerated at 2151 tools, project_vcs_status joined the
+  // read-only list as a GET); entries deleted.
 ]);

@@ -1,6 +1,6 @@
 ---
-description: Hiveku-native branches for this project - list (with uncommitted markers), create, status, bind or unbind an environment, revert, delete. No GitHub involved.
-argument-hint: "[list | create <name> [from <branch>] | status <branch> | bind <development|staging> <branch> | unbind <tier> | revert <branch> <commit_id> | delete <branch>]"
+description: Hiveku-native branches for this project - list (with unsaved-changes markers), create, status, bind or unbind an environment, roll back to an earlier version, delete. No GitHub involved.
+argument-hint: "[list | create <name> [from <branch>] | status <branch> | bind <development|staging> <branch> | unbind <tier> | rollback <branch> <version_id> | delete <branch>]"
 ---
 
 Work on one of the account's Hiveku website projects. Resolve the `project_id` first with `sites_list` (every buildable website_project with its dev/staging/prod URLs, canonical GitHub state and container status) or `project_get({ project_id })` for one, or take it from what the user names. Do NOT use `list_projects` / `get_project` here: those return pm_projects rows, a different id space, and a website UUID 404s against them.
@@ -24,13 +24,16 @@ project_id, status: "open" })` so a branch with an open PR is labelled.
 from? })`. Names: letters, numbers, `. _ / -` only; use `feature/`, `fix/`, `task-<id>/`; keep them
 short (preview machines cap the name). `from` defaults to `main`; branching off a branch with
 uncommitted edits promotes them first, server-side. Creating changes nothing live. Tell the user the
-next move: edit with `branch` on the file tools (`/hiveku:code`), commit with `/hiveku:commit`.
+next move: edit with `branch` on the file tools (`/hiveku:code`), save a version with `/hiveku:commit`.
+On a site over 150 MB the create answers 413 `content_too_large`: say "Branches aren't available
+for sites this large yet. You can still roll Your site back to any version." and keep the work on
+Your site.
 
 **status <branch>**: `project_vcs_branches` for that row (`uncommitted`, `working_tree_etag`,
-`ahead` / `behind`), `project_vcs_history({ project_id, branch, limit: 10 })` for its commits (a
-branch commit has `checkpoint_hash` null and `revertable` false by design - its rollback is
-`revert` below), `project_vcs_compare({ project_id, from: "main", to: <branch> })` for the changed
-paths, and `project_vcs_branch_preview_status({ project_id })` with no `session_id` to list its live
+`ahead` / `behind`), `project_vcs_history({ project_id, branch, limit: 10 })` for its versions (a
+branch version has `checkpoint_hash` null and `revertable` false by design - `revertable` is about
+checkpoint restores only; its rollback is `rollback` below), `project_vcs_compare({ project_id,
+from: "main", to: <branch> })` for the changed paths, and `project_vcs_branch_preview_status({ project_id })` with no `session_id` to list its live
 previews. Read one file's both sides with `project_vcs_diff_file({ project_id, from: "main", to:
 <branch>, path })`.
 
@@ -51,16 +54,19 @@ CMS content there. The response is the full bindings object.
 is required so a malformed call can never clear a binding by accident; `"main"` (or `""`) means
 "track `main` again". The tier's NEXT deploy ships `main`; nothing redeploys by itself.
 
-**revert <branch> <commit_id>**: first `project_vcs_history({ project_id, branch })` to pick a commit
-ON THIS BRANCH and note the current head (`project_vcs_branches` `head_commit_id`, or the newest
-history entry). Then `project_vcs_revert({ project_id: <the project_id>, branch, commit_id,
-expected_head_commit_id, message? })`. It writes a NEW commit (kind `revert`) whose tree is the
-target's and moves the head there - linear history, nothing deleted - and DISCARDS the branch's
-uncommitted working-tree edits (they are what is being reverted; say so before calling). Always pass
-`expected_head_commit_id`: 409 `branch_changed` means the head moved since you looked - re-read and
-ask again. 400 `not_revertable` = the commit is not on this branch; 400 `main_not_allowed` = `main`
-reverts through `/hiveku:restore` with a checkpoint, never here. A live branch preview is NOT
-resynced - re-run `project_vcs_branch_preview` to see the reverted tree.
+**rollback <branch> <version_id>**: the `/hiveku:rollback` flow with `branch` on every call. First
+`project_vcs_history({ project_id, branch })` to pick a version in THIS branch's history, then the
+dry run `project_vcs_rollback({ project_id: <the project_id>, branch, commit_id })` (a dry run is
+the default) and show the person its counts and the version's name. On their yes, apply:
+`project_vcs_rollback({ project_id, branch, commit_id, dry_run: false, expected_head_commit_id:
+<the dry run's head_commit_id>, message? })`. It saves a NEW version whose files match the target -
+nothing is deleted, the newer versions stay in the history - and it saves the branch's unsaved
+edits first as their own version ("Saved before rollback"), so nothing is lost. 409
+`branch_changed` means someone saved since the dry run: run it again and ask again. 400
+`not_in_history` = that version is not in this branch's history. Your site is untouched; a tier
+bound to the branch changes only on its next deploy, and a live branch preview reports what
+happened in `preview_effect`. `project_vcs_revert` is the older branch-only form: use
+`project_vcs_rollback`, which works on Your site too.
 
 **delete <branch>**: DESTRUCTIVE - once the ref is gone a later `project_vcs_prune` destroys its
 tree bytes. Get an explicit yes naming the branch. Before deleting, the server promotes any

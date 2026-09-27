@@ -584,3 +584,20 @@ test('the Codex plugin mirrors the gated list per tool (when the sibling checkou
     assert.equal(tools[name]?.approval_mode, 'prompt', `${name} must prompt in Codex`);
   }
 });
+
+test('the version tools: a rollback apply is gated, and a version save stays gated', () => {
+  // Versions Wave 2 (design Part 2 E1). project_vcs_rollback moves Your site or
+  // a branch back; it asks. The design planned to move project_vcs_commit OFF
+  // this list so the PreToolUse hook could pre-approve a no-files save, but
+  // only "if a hook allow beats a settings ask", and it does not: Claude Code
+  // still evaluates settings deny and ask rules whatever a hook returns. So the
+  // commit stays here (its files form writes Your site, like bulk_save), and
+  // the hook's allow pays off only where no ask rule exists (auto mode, other
+  // installs). The VS Code prefix and the Codex mirror read this same file.
+  const gated = new Map(permFile.tools.map((t) => [t.name, t]));
+  const rollback = gated.get('project_vcs_rollback');
+  assert.ok(rollback, 'project_vcs_rollback must be on the ask list');
+  assert.equal(rollback.method, 'POST');
+  assert.match(rollback.why_gated, /earlier version/);
+  assert.ok(gated.has('project_vcs_commit'), 'project_vcs_commit stays on the ask list (see above)');
+});

@@ -5,8 +5,8 @@
     "mcp__plugin_hiveku_hk__",
     "mcp__hiveku__"
   ],
-  "plugin_version": "0.26.37",
-  "count": 255,
+  "plugin_version": "0.27.0",
+  "count": 256,
   "tools": [
     {
       "name": "deploy_site",
@@ -67,6 +67,11 @@
       "name": "project_vcs_revert",
       "method": "POST",
       "why_gated": "moves a branch head back to an earlier commit and discards its uncommitted working-tree edits"
+    },
+    {
+      "name": "project_vcs_rollback",
+      "method": "POST",
+      "why_gated": "moves Your site or a branch back to an earlier version (saved as a new version; no deployed tier changes)"
     },
     {
       "name": "project_checkpoint_restore",

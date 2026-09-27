@@ -209,6 +209,24 @@ const FROM_SOURCE = ARGV.includes('--from-source');
 // reported a skip as a pass and the index went 125 tools stale behind it.
 const DIR_ARG = resolveDirArg(ARGV);
 
+/**
+ * [alias, original] pairs for tools the MCP server builds with renamedAlias():
+ * `const x = byName.get('original')` ... `renamedAlias(x, 'alias', ...)`.
+ */
+function collectAliasesFromSource() {
+  const pairs = [];
+  for (const f of fs.readdirSync(SERVER_SRC).filter((x) => x.endsWith('.ts') && !x.includes('.test.'))) {
+    const text = fs.readFileSync(path.join(SERVER_SRC, f), 'utf8');
+    if (!text.includes('renamedAlias(')) continue;
+    const vars = new Map([...text.matchAll(/const\s+(\w+)\s*=\s*byName\.get\(\s*'([a-z0-9_]+)'\s*\)/g)].map((m) => [m[1], m[2]]));
+    for (const m of text.matchAll(/renamedAlias\(\s*(\w+)\s*,\s*'([a-z0-9_]+)'/g)) {
+      const original = vars.get(m[1]);
+      if (original) pairs.push([m[2], original]);
+    }
+  }
+  return pairs;
+}
+
 /** Parse from source. Undercounts by design; see the header. */
 function collectFromSource() {
   if (!fs.existsSync(SERVER_SRC)) {
@@ -262,6 +280,14 @@ if (FROM_SOURCE || !DIR_ARG) {
     for (const t of collectFromSource()) {
       if (t.method) methods.set(t.name, t.method);
       if (t.timeoutMs != null) timeouts.set(t.name, t.timeoutMs);
+    }
+    // Renamed aliases (hiveku-mcp-api-server src/tools/versions-tools.ts,
+    // renamedAlias): built at runtime as copies of another tool, so the parse
+    // above never sees their name. They share the original's mapping, so they
+    // take its method and timeout.
+    for (const [alias, original] of collectAliasesFromSource()) {
+      if (!methods.has(alias) && methods.has(original)) methods.set(alias, methods.get(original));
+      if (!timeouts.has(alias) && timeouts.has(original)) timeouts.set(alias, timeouts.get(original));
     }
   }
   raw = live.map((t) => ({

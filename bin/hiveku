@@ -47,6 +47,8 @@ import {
   toolResultJson,
 } from '../lib/memory-changes.mjs';
 import { HIVEKU_APP_URL, HIVEKU_MCP_URL, CLIENT_ID, PLUGIN_VERSION, keyPreview, isUuid, mapLimit } from '../lib/util.mjs';
+import { runPostToolUseHook } from '../lib/vcs-ledger.mjs';
+import { runStopHook } from '../lib/stop-version.mjs';
 
 const HELP = `hiveku ${PLUGIN_VERSION} — Hiveku for Claude Code
 
@@ -72,7 +74,7 @@ const HELP = `hiveku ${PLUGIN_VERSION} — Hiveku for Claude Code
   focus [<departments...>|--clear] [--json]
   env pull <project_id> write .env.local for local dev (values never printed)
   fleet                 read-only portfolio sweep across every connected account
-  hook <session-start|cwd-changed|pre-tool-use|prompt-submit|probe-remote>
+  hook <session-start|cwd-changed|pre-tool-use|post-tool-use|stop|prompt-submit|probe-remote>
   update                        Refresh the marketplace and apply the plugin update
   doctor [--fix]                Check (and repair) the Claude settings Hiveku needs on this machine
                                 Internal: used by the plugin's hooks
@@ -1113,6 +1115,30 @@ async function cmdHook(positional) {
       const dd = resolveDataDir();
       if (probeIsStale(dd)) spawnDetachedProbe(process.argv[1]);
     } catch { /* silent — probing is a courtesy */ }
+    return;
+  }
+
+  // ── PostToolUse / PostToolUseFailure: the version ledger ───────────────
+  // Same budget as pre-tool-use: no credentials, no binding, no network, no
+  // output. It appends what the call did to this session's ledger
+  // (lib/vcs-ledger.mjs) and returns.
+  if (which === 'post-tool-use') {
+    runPostToolUseHook(payload);
+    return;
+  }
+
+  // ── Stop: the version reminder (lib/stop-version.mjs) ───────────────────
+  // ★ EXIT EXPLICITLY. The confirm step may leave an upstream request in
+  // flight when its six-second budget ends, and a live socket keeps Node
+  // running until the hook's own timeout discards everything it printed.
+  // Print, then exit once the write has flushed (a pipe write is
+  // asynchronous on macOS).
+  if (which === 'stop') {
+    let text = '';
+    try { text = await runStopHook(payload); } catch { text = ''; }
+    setTimeout(() => process.exit(0), 2000).unref();
+    if (text) process.stdout.write(text, () => process.exit(0));
+    else process.exit(0);
     return;
   }
 

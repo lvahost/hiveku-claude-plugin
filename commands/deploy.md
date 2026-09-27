@@ -22,11 +22,10 @@ tier, and why, then wait for the confirmation before calling `deploy_site`.
 0. WHICH TREE SHIPS: `project_vcs_env_bindings({ project_id: <the project_id> })` before anything
    else. The environment BINDINGS decide, not the call. `production` ALWAYS ships `main` and can
    never be pointed at a branch. `development` and `staging` ship the branch they are bound to, or
-   `main` when unbound. A bound tier ships that branch's tree, and the deploy first COMMITS the
-   branch's unsaved (uncommitted working-tree) edits server-side before pinning it, so what ships is
-   always a commit - the response's `note` says so when that happened (the field name
-   `promotedCommitId` belongs to the builder's own deploy lanes, not to `deploy_site`). State the tree in
-   the confirmation ("development will ship `feature/x` at its current head"). To put branch work
+   `main` when unbound. A bound tier ships that branch's tree, and the deploy first SAVES the
+   branch's unsaved (uncommitted working-tree) edits as a version server-side before pinning it, so
+   what ships is always a version - the response's `note` says so when that happened. State the tree in
+   the confirmation ("development will ship `feature/x` as its latest version"). To put branch work
    into production, promote it through `/hiveku:pr` (merge into `main`) and then deploy
    `production`; to point a tier at a branch, `/hiveku:branch bind`. On `deploy_site`, `branch` is an
    ASSERTION, never a selector: pass the branch you believe the tier serves and the server refuses a
@@ -37,9 +36,16 @@ tier, and why, then wait for the confirmation before calling `deploy_site`.
    GitHub-connected projects keep the legacy meaning of `branch` (a GitHub branch label).
 
 1. GATE: the build is green (`/hiveku:commit` step 3 - with `branch` when a bound branch ships) and
-   the work is committed. On a bound branch the deploy promotes uncommitted edits itself, but a
-   deliberate `project_vcs_commit({ project_id, branch, message })` first gives the commit a
-   message you chose.
+   the work is saved as a version. `project_vcs_status({ project_id: <the project_id>, branch? })`:
+   if `uncommitted` is true, first `project_vcs_commit({ project_id, message, branch? })` with NO
+   files and a plain-language name of what changed for visitors, e.g. "Updated the pricing section
+   on the Home page" - so what ships is a version with a name you chose. When the status cannot
+   tell (`uncommitted_reason: "unknown"`, or the tool is not available), version anyway:
+   `nothing_to_commit` is a fine answer. A production deploy saves any leftover changes on Your site as a version
+   before it ships, but with a generic name: its answer carries `vcs_commit_id` (the version that
+   ships), `promoted_commit_id` (the version this deploy saved; null when everything was already a
+   version) and a `note` - relay the note. A bound branch is versioned the same way before its tree
+   is pinned.
 
 2. PREFLIGHT: `project_deploy_preflight({ project_id: <the project_id> })` → `{ ready, blockers[],
    hints[] }`. Surface `blockers[]` VERBATIM to the user - only they can fix those. Read `hints[]` for
@@ -60,8 +66,8 @@ tier, and why, then wait for the confirmation before calling `deploy_site`.
 4. CONFIRM with the user: the tier, the pages/routes affected, and anything in `warnings`.
 
 5. SHIP: `deploy_site({ project_id: <the project_id>, environment, branch? })` - `branch` only as the
-   step-0 assertion. It returns a deployment id; on a bound tier whose branch had unsaved edits the
-   response `note` says they were committed first (tell the user).
+   step-0 assertion. It returns a deployment id; when unsaved changes were saved as a version first,
+   the response `note` says so and names the version (tell the user).
    Watch it with `deploy_subscribe({ project_id: <the project_id>, deployment_id, wait_seconds: 20 })`.
    It is a JSON LONG POLL, not a stream: the server holds the request (max `wait_seconds` 25),
    checks every 1.5s, and answers the moment the deployment is terminal - so call it in a LOOP until
@@ -95,10 +101,11 @@ tier, and why, then wait for the confirmation before calling `deploy_site`.
    1,000 free paths a month across every project, so never enumerate). Skip invalidation entirely for
    `_next/static` hashed bundles.
 
-8. REGRESSION: roll back by restoring the prior good checkpoint (`/hiveku:restore`, dry-run first) and
-   re-deploying. On a tier bound to a branch there is no checkpoint: `project_vcs_revert({ project_id,
-   branch, commit_id, expected_head_commit_id })` moves the branch back to an earlier commit of its
-   own, then re-deploy the tier. Do not hot-patch production under pressure.
+8. REGRESSION: roll back to the last good version with `/hiveku:rollback` (dry run, the person's
+   yes, then the apply), and then re-deploy the tier as its OWN step with its own yes: a rollback
+   never changes a deployed tier by itself. On a tier bound to a branch, roll that branch back
+   (`project_vcs_rollback` with `branch`) and re-deploy the tier. Only when the database must come
+   back too, restore a checkpoint (`/hiveku:restore`). Do not hot-patch production under pressure.
 
 Afterwards, log what shipped and the deployment id with `memory_create` or on the `pm_tasks_complete`
 note, so the monthly report writes itself.
