@@ -1,6 +1,6 @@
 /**
  * Every write that can switch ads on, or restart them, asks first
- * (release 0.26.35).
+ * (release 0.26.36).
  *
  * Budgets, bids, bidding strategy and campaign create already asked, but the
  * call that turns ads on did not. ppc_enable_resource and
@@ -139,7 +139,7 @@ const SPEND_START_SIGNALS = [
   ['on-status value', (t) => /'(?:ENABLED|enabled|ACTIVE|active)'|\bstatus (?:enabled|ENABLED|ACTIVE)\b|set-status/.test(t.description || '')],
   ['split test', (t) => /split test/i.test(t.description || '')],
   // An update tool that edits a run's end date: a later one can put a campaign
-  // that has ended back into delivery (release 0.26.35).
+  // that has ended back into delivery (release 0.26.36).
   ['end-date edit', (t) => /_update$/.test(t.name) && /\b(?:stop_time|end_date)\b/.test(t.description || '')],
 ];
 const spendStartSignals = (t) => SPEND_START_SIGNALS.filter(([, match]) => match(t)).map(([label]) => label);

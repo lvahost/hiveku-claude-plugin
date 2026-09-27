@@ -1,6 +1,6 @@
 /**
  * Every workflow is created switched off, and only workflow_enable turns one on
- * (release 0.26.35, with MCP #47).
+ * (release 0.26.36, with MCP #47).
  *
  * The MCP server now creates every workflow off: workflow_create,
  * workflow_clone, workflow_duplicate, workflow_create_from_template,

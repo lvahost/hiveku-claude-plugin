@@ -12,7 +12,7 @@
  * called without ad_group_id, and that Microsoft rejects in-place match-type
  * edits (both false on the live server).
  *
- * Release 0.26.35 made the plugin ask on its own before the five calls that
+ * Release 0.26.36 made the plugin ask on its own before the five calls that
  * can switch ads on by status and the four that can restart or widen delivery
  * (test/spend-start-writes.test.mjs), so the ask-rule step now names only the
  * VS Code extension's tools: that extension does not run the plugin's hook,
@@ -96,7 +96,7 @@ const PLUGIN_ASKS_TOKENS = [
   'ppc_linkedin_campaign_group_update',
 ];
 /**
- * Claims 0.26.35 made false: that enabling has no gate at all, and an ASK-rule
+ * Claims 0.26.36 made false: that enabling has no gate at all, and an ASK-rule
  * instruction naming the plugin's own prefix (its hook asks already, and an
  * owner told to add rules for it would believe the plugin does not).
  */
