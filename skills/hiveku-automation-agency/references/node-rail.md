@@ -560,6 +560,9 @@ rejects a disabled workflow only when `test_mode` is absent:
 400  Workflow is disabled. Enable it first via PATCH /workflows/:id { "is_enabled": true }
 ```
 
+Through the Hiveku tools that PATCH is `workflow_enable`, on the operator's yes. `workflow_update`
+refuses `is_enabled: true` (`workflow_enable_required`).
+
 `workflow_test` is exempt. The correct order is validate, `workflow_test` while still
 disabled, read `data.step_states` (5.1), and only then `workflow_enable`.
 
@@ -591,8 +594,10 @@ nothing changes: fix the named nodes with `workflow_node_update` and enable agai
 node no trigger connects to is only a warning and never blocks it. `allow_incomplete: true`
 overrides the gate. Pass it ONLY on the operator's explicit yes, after telling them which
 nodes will fail at run time, and never on your own judgment to get past a refusal.
-`workflow_update({ is_enabled: true })` goes through the same gate. Re-enabling an
-already-enabled workflow, or editing one that is enabled, is never refused. With warnings only
+`workflow_update` cannot switch a workflow on: it refuses `is_enabled: true` with
+`workflow_enable_required` and writes nothing from that call, so `workflow_enable` is the one
+way through this gate. Re-enabling an already-enabled workflow, or editing one that is
+enabled, is never refused. With warnings only
 (or with the override) the 200 carries `validation { ok, errors, warnings, issues }`; read it.
 Separately, a project-bound node (a coding-agent or CMS node) with no project bound is refused
 with 422 `unbound_project_nodes`. `workflow_validate` reports the same nodes as
@@ -607,17 +612,21 @@ and every `workflow_list` row carry `setup: { state, errors, first_issue }` (`ok
 plain `live_warning` for a switched-on workflow that is not `ok`.
 `workflow_list({ needs_setup: 'true' })` lists only the ones that are not `ok`.
 
-The gate covers turning a workflow on, not creating one on. `workflow_create` or
-`workflow_clone` with `is_enabled: true`, and `workflow_create_from_template` (enabled by
-default), are never refused for validation: the 201 carries `validation`, plus a
-`validation_warning` when there are errors ("created ENABLED ... will make its runs fail").
-Fix the named nodes or `workflow_update({ is_enabled: false })` straight away.
-`workflow_provision_webhook` reports neither.
+No tool creates a workflow switched on, so every workflow reaches this gate through
+`workflow_enable`. `workflow_create`, `workflow_clone`, `workflow_duplicate`,
+`workflow_create_from_template`, `workflow_provision_webhook` and
+`workflow_bulk_provision_for_project` all create it off; the create tools refuse
+`is_enabled: true` with `workflow_enable_required`, so pass `is_enabled: false`. Until late
+September 2026 the template and webhook tools created the workflow switched ON by default,
+and a workflow created on that way skipped the gate: its `setup` on `workflow_get` shows
+whether it is runnable, and `workflow_update({ is_enabled: false })` switches it off while
+you fix it.
 
 Important: Note what does provision a listener, because it is more than the obvious calls. Webhook
 trigger rows are created when a `definition` is sent to PATCH (that is, via `workflow_update`),
-by `workflow_provision_webhook`, by `workflow_create_from_template` (which defaults the created
-workflow to enabled so the URL goes live immediately), **and by `workflow_node_add` itself**:
+by `workflow_provision_webhook`, by `workflow_create_from_template` (the URL exists as soon as
+the call returns, but the workflow is created switched off and runs nothing until
+`workflow_enable`), **and by `workflow_node_add` itself**:
 adding a `webhookTrigger` (or `webhook_trigger`) node creates the live `workflow_triggers` row
 in the same call and returns `webhook_url`, `webhook_path` and `trigger_id` (plus
 `webhook_path_note` when the minted path differs from what you sent, `webhook_trigger_warnings`,
@@ -1584,8 +1593,8 @@ The last three are read-only and exist to be fed into an `aiAgent` prompt.
   SLA, weekly GBP post drafts, Core Web Vitals watch, search-terms-to-negatives for Google and
   Bing, disapproval triage, and impression-share review. `workflow_create_from_template({
   slug, overrides })` installs one per client. Read the template's `variables[]` first; a
-  missing required variable fails with a 400. It defaults `is_enabled: true`, so pass
-  `is_enabled: false` if you want to review before it goes live.
+  missing required variable fails with a 400. Pass `is_enabled: false`: the workflow is
+  created switched off, and `workflow_enable` switches it on after the operator says yes.
 - **The graph is getting big.** More than about six nodes for a one-shot answer means you are
   building a real automation. Stop, name it properly, and follow the automation skill's build
   loop with the operator in the room.

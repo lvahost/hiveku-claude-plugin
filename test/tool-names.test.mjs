@@ -174,6 +174,10 @@ const KNOWN_NON_TOOLS = new Map([
   // Workflow engine tables the automation references name by their real
   // database identity. Each is a table, not a tool.
   ['workflow_pending_waits', 'table'],
+  // The MCP refusal code (MCP #47) when a create or workflow_update is sent
+  // is_enabled: true: only workflow_enable switches a workflow on. An error
+  // code, not a call.
+  ['workflow_enable_required', 'error'],
   ['voice_calls', 'table'],
   ['voice_numbers', 'table'],
   ['voice_sms_messages', 'table'],

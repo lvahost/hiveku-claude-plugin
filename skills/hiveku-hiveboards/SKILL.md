@@ -369,7 +369,8 @@ vocabulary.
 Check the shipped templates BEFORE assembling by hand: `workflow_templates_list` returns the
 canonical agent-instantiable templates (16 ship, including 13 delivery playbooks) with their
 required variables; `workflow_create_from_template` instantiates one with your overrides in
-one call. Only when no template matches, build by hand: `workflow_node_types_list` is the
+one call, created switched off (`workflow_enable` switches it on after the user says yes).
+Only when no template matches, build by hand: `workflow_node_types_list` is the
 source of truth for node type strings — do not guess them: verified examples include
 `sendEmail`, `sms` (not `sendSms`), `delay`, `waitUntil`, `conditional` (the If branch), and
 `switch` (multi-branch). Build order is `workflow_create` -> `workflow_node_add` for each

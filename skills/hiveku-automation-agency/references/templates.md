@@ -49,13 +49,14 @@ The server substitutes every `{{var.NAME}}` token with `overrides[NAME]`, create
 workflow, AND auto-provisions its webhook triggers in one call. It returns
 `{ workflow_id, definition, webhook_url, webhook_triggers[] }`. A missing required
 variable fails fast with a 400 - it does not silently create a half-configured
-workflow. Note `is_enabled` defaults to **true** here, unlike `workflow_create`: the
-workflow is live the moment the call returns, so confirm with the operator before
-instantiating, or pass `is_enabled: false` and enable after review. An enabled install
-never passes through the enable gate and is never refused for validation: when the
-substituted graph has problems the 201 carries `validation { ok, errors, warnings, issues }`,
-and on errors a `validation_warning` ("created ENABLED ... will make its runs fail"). Read
-it, then fix the named nodes or `workflow_update({ workflow_id, is_enabled: false })` at once.
+workflow. **It is created switched off**: pass `is_enabled: false` (the only value the
+tool accepts; anything else is refused with `workflow_enable_required`). Its webhook URL
+exists at once but runs nothing until `workflow_enable` switches the workflow on, after the
+operator says yes. Before that: `workflow_validate` the substituted graph, fix what it
+names, and `workflow_test` it. `workflow_enable` runs the validation gate the install
+skipped. (Until late September 2026 this tool created the workflow switched ON by default. An
+install from then that is on and failing: read `setup` on `workflow_get`, and
+`workflow_update({ workflow_id, is_enabled: false })` switches it off while you fix it.)
 
 ## Working the staged queues (finish what the template starts)
 

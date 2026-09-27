@@ -22,6 +22,15 @@ test('the catalogue is present and complete', () => {
   assert.equal(idx.filter((t) => !t.description).length, 0, 'every tool needs a description to be findable');
 });
 
+test('★ no name or description in the catalogue carries a replacement character', () => {
+  // The generators read the bridge's stdout in chunks. Decoding each chunk on
+  // its own turned a character split across two chunks into U+FFFD, and one
+  // regeneration garbled backlinks_bulk_spam_score's closing quote that way.
+  // The scripts now decode each stream as one UTF-8 stream.
+  const garbled = loadIndex().filter((t) => /\uFFFD/.test(`${t.name} ${t.description}`)).map((t) => t.name);
+  assert.deepEqual(garbled, []);
+});
+
 test('search finds the obvious thing for realistic questions', () => {
   const cases = [
     ['conversion tracking', 'ppc_conversion_tracking_status'],

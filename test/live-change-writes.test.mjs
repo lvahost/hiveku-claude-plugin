@@ -30,7 +30,7 @@ import {
 } from '../lib/tool-safety.mjs';
 import { probeIsStale, updateCheckPath } from '../lib/update-check.mjs';
 
-/** Every name 0.26.30 added to the ask list, which is every name on the map. */
+/** Every name 0.26.30 and 0.26.36 put on the hook, which is every name on the map. */
 const LIVE_CHANGE_NAMES = [
   // Google and Microsoft settings on live campaigns.
   'ppc_google_auto_apply_set',
@@ -54,6 +54,19 @@ const LIVE_CHANGE_NAMES = [
   'ppc_experiment_graduate',
   'ppc_experiment_promote',
   'ppc_experiment_treatment_set',
+  // Switching ads on or restarting them (0.26.36; test/spend-start-writes.test.mjs pins why).
+  'ppc_enable_resource',
+  'ppc_platform_enable_resource',
+  'ppc_bulk_edit',
+  'ppc_linkedin_creatives',
+  'ppc_tiktok_split_tests',
+  'ppc_recommendation_apply',
+  'ppc_meta_campaign_update',
+  'ppc_linkedin_campaign_update',
+  'ppc_linkedin_campaign_group_update',
+  // Switching a workflow on (0.26.36). Both were on the ask list before, not on the hook.
+  'workflow_enable',
+  'workflow_resume',
   // Conversions and audiences sent to the platforms.
   'ppc_conversion_adjustments_run',
   'ppc_conversion_adjustments_set',
@@ -124,7 +137,7 @@ function runPreToolUseHook(toolName, toolInput, cwd) {
   );
 }
 
-test('the live-change set is exactly the writes 0.26.30 added to the ask list', () => {
+test('the live-change set is exactly the writes 0.26.30 and 0.26.36 put on the hook', () => {
   assert.deepEqual([...LIVE_CHANGE_WRITES.keys()].sort(), [...LIVE_CHANGE_NAMES].sort());
 });
 
@@ -229,6 +242,37 @@ test('a batch carrying a live-change write asks, a reads-only folder denies it, 
 test('the set is case-insensitive and does not reach another server\'s tool of the same name', () => {
   assert.equal(decision(decideForPayload(payload('PPC_Goals_Set', undefined))), 'ask');
   assert.equal(decideForPayload({ tool_name: 'mcp__other__ppc_goals_set', tool_input: {} }), null);
+});
+
+test('switching a workflow on asks through the real hook, whatever the settings allow', () => {
+  // workflow_enable is the one tool that switches a workflow on (every create
+  // makes it off, MCP #47), and workflow_resume clears an automatic pause. Both
+  // were on the ask list only, so an install with an older copy of that list and
+  // the blanket allow ran them unasked.
+  const cwd = folderWith(undefined);
+  for (const [name, pattern] of [
+    ['workflow_enable', /^workflow_enable switches a workflow on\. From this call its webhook, schedule or event trigger runs it/],
+    ['workflow_resume', /^workflow_resume clears an automatic pause, so the workflow's triggers run it for real again/],
+  ]) {
+    const run = runPreToolUseHook(`${HIVEKU_TOOL_PREFIX}${name}`, { workflow_id: 'w' }, cwd);
+    assert.equal(run.status, 0, run.stderr);
+    assert.notEqual(run.stdout, '', `the hook printed nothing, so the blanket allow would run ${name} unattended`);
+    const out = JSON.parse(run.stdout).hookSpecificOutput;
+    assert.equal(out.permissionDecision, 'ask', name);
+    assert.match(out.permissionDecisionReason, pattern);
+  }
+  // A batch that carries one asks too, and the switch-off direction stays silent.
+  const batch = decideWithGuardrails({
+    tool_name: `${HIVEKU_TOOL_PREFIX}hiveku_batch`,
+    tool_input: { calls: [{ tool: 'workflow_list', args: {} }, { tool: 'workflow_enable', args: { workflow_id: 'w' } }] },
+    cwd,
+  });
+  assert.equal(decision(batch), 'ask');
+  assert.match(reason(batch), /workflow_enable/);
+  assert.equal(decideWithGuardrails(payload('workflow_disable', cwd, { workflow_id: 'w' })), null, 'switching off is the safe direction');
+  for (const read of ['workflow_list', 'workflow_get', 'workflow_stranded_list']) {
+    assert.equal(decision(decideWithGuardrails(payload(read, cwd, { workflow_id: 'w' }))), 'allow', `${read} must stay pre-approved`);
+  }
 });
 
 test('NEGATIVE CONTROL: the matching reads stay pre-approved and the exempt writes stay silent', () => {
