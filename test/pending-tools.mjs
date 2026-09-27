@@ -274,6 +274,30 @@
  *                     by default, and executing through an agent key answers
  *                     403 agent_execute_disabled until the plugin release).
  *
+ *   Search engine indexing (2026-09-26, HK-29): the switch under Site >
+ *   Hosting > Production > "Search engine indexing". The contract is the
+ *   builder's GET|PATCH /api/olympus/builder/projects/:projectId/indexing
+ *   (builder branch feature/indexing-toggle-olympus); the MCP declarations are
+ *   hiveku-mcp-api-server src/tools/indexing-tools.ts (branch
+ *   feature/indexing-toggle-tools), both for a person's own key only. The
+ *   write is on ALWAYS_ASK_WRITES (lib/tool-safety.mjs) and on the ask list
+ *   (data/permission-critical-tools.json, mirrored in INSTALL.md and in the
+ *   Codex plugin's prompts), gated like the form-capture writes above, which
+ *   is why both of those tests accept it as a PENDING name until the index
+ *   carries it. The ask-list entry is why this merges only after the MCP
+ *   tools merge: the MCP server's permission-critical-tools.test.ts reads this
+ *   file from its sibling checkout and fails any listed name its registry
+ *   does not serve. Until this release and the Codex prompt are out, the
+ *   builder refuses every change through its Olympus route (403
+ *   agent_changes_not_enabled). The read, project_indexing_get, has no entry:
+ *   no prose or gate names it, and it joins lib/readonly-tools.json as a GET
+ *   at the regen. Release step, after the MCP deploy: regenerate the index and
+ *   the read-only list from the live server, then delete this entry;
+ *   tool-names.test.mjs forces the deletion.
+ *     INDEXING-1  project_indexing_set (PATCH { enabled, confirm }; turning
+ *                 indexing off can remove a live site from search results).
+ *                 Landed in the live index on 2026-09-26; entry deleted.
+ *
  *   Helpdesk chat program, round 3 (2026-09-25, contract C7): what the website
  *   assistant answers from. The contract is the builder's
  *   GET /api/olympus/helpdesk/assistant/knowledge (getAssistantKnowledgeStatus,
@@ -379,6 +403,10 @@ export const PENDING_TOOLS = new Map([
 
   // FORM-CAPTURE-1: landed in the live index on 2026-09-24 (MCP #31, fe5e28674,
   // deployed; index regenerated at 2141 tools); entries deleted.
+
+  // INDEXING-1: landed in the live index on 2026-09-26 (MCP #46, 4f1a061,
+  // deployed; index regenerated at 2146 tools in release 0.26.31, and
+  // project_indexing_get joined the read-only list as a GET); entry deleted.
 
   // HELPDESK-R3: landed in the live index on 2026-09-25 (MCP #32, 515ec43,
   // deployed; index regenerated at 2144 tools, and it joined the read-only

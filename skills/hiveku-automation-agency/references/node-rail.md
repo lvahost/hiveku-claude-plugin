@@ -1400,10 +1400,11 @@ looks exactly like a broken workflow. Confirm with `workflow_event_trigger_types
 `pmProjectTrigger`, `pmTaskCreatedTrigger`, `pmTaskUpdatedTrigger`. The task steps keep to the
 workflow's own account and its team. `assignToId` is resolved like any other field (a
 `{{template}}` included) and then checked the way the PM tools check an assignee: someone who is
-not a team member (team members are the ids `crm_list_users` returns; on a shared project,
-members of an account it is shared with count too) fails `createTask`, `createSubtask` or
-`updateTask` (there, only when it moves the task to someone new) with "Could not assign the
-task: That person is not a team member of this account...", and nothing is written. A value
+not a team member (team members are the ids `pm_project_team` returns for the step's project:
+this account's people and, on a shared project, the other account's people too) fails
+`createTask`, `createSubtask` or `updateTask` (there, only when it moves the task to someone
+new) with "Could not assign the task: That person is not a team member of this account...", and
+nothing is written. A value
 that resolves to something that is not a UUID (a name, an email, an agent label) fails those
 steps with "Could not assign the task: assigned_to_id must be a UUID
 (public_users.id)", and nothing is written. A
@@ -1411,8 +1412,14 @@ steps with "Could not assign the task: assigned_to_id must be a UUID
 `getTasks` lists only the workflow's own account (it fails on a run with no account). A dry run
 never catches the assignee refusal: `workflow_test` simulates `createTask`, `createSubtask`,
 `updateTask` and `completeTask`, so only a real run fails. Before enabling, check every literal
-`assignToId` against `crm_list_users`, and trace a templated one to where its value comes from;
-when the person is not listed, leave `assignToId` empty. Mission Control (the
+`assignToId` against `pm_project_team({ project_id })` for the step's project, and trace a
+templated one to where its value comes from; when the person is not listed, leave `assignToId`
+empty. An empty `assignToId` (or a template that resolves to nothing) on `createTask` is not
+"unassigned": the task goes to its section's default assignee, then the project's (each checked
+against the current team), and is unassigned only when neither is set. The step has no way to
+force "unassigned" past a default; `createSubtask` never takes one. Defaults are set with
+`pm_projects_update` and `pm_sections_create` / `pm_sections_update` (`default_assignee_id`):
+`hiveku-pm-mission-control`, "Default assignees". Mission Control (the
 human-in-the-loop board): `mcTaskCreate` (replay-safe, a retried run reuses the first card),
 `mcTaskUpdate`, `mcTaskTransition` (outputs a branchable `changed` flag),
 `mcTaskComment` ( no replay protection, so a resumed run posts a second comment),

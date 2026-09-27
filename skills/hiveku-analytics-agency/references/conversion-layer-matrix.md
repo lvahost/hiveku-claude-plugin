@@ -93,7 +93,9 @@ lives on (`analytics_probe_page`), and hand the fix to the owning department as 
 hand-assemble. It returns form submissions with their source attribution (UTMs, click ids,
 channel, landing page), aggregated the way a platform aggregates (source/medium/campaign, by day
 in a timezone you pass), plus named discrepancy buckets that SUM TO THE TOTAL: deleted,
-duplicate, spam, archived, workflow_failed, no_attribution, unpaid_attribution, counted.
+duplicate, spam, archived, excluded, workflow_failed, no_attribution, unpaid_attribution, counted.
+`excluded` is rows from forms the site's capture settings now exclude - not leads, and not
+uploaded as conversions (one uploaded before the exclusion stays with the platform).
 - Use `buckets.counted` as OUR number and explain the gap with the rest - "40 vs 22, and here
   are 11 spam, 4 duplicates, 3 with no UTMs" answers the question; a bare number does not.
 - `has_click_id: true` isolates submissions tied to a paid click (gclid/fbclid/msclkid and
