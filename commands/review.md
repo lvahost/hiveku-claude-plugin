@@ -77,9 +77,17 @@ Per-tier flags on the project decide where the review overlay exists
 TIME - flipping a flag does nothing until that tier is redeployed. Reviewers never use the raw
 site URL: the share page (`project_review_link_get`) iframes the tier and hosts the pin UI - the
 injected bridge deliberately does nothing outside that iframe. Each pin they drop becomes a
-browser annotation (screenshot captured async) AND a PM task in the "Website Feedback" project,
-linked 2-way: completing the task resolves the annotation. Coordinates are a POINT `{xPct,yPct}`
-in percent FRACTIONS 0..1 - not a rect, not 0..100.
+browser annotation (screenshot captured async) AND a PM task in the PM project linked to the
+website (a new "Website Feedback: <site>" project when none is linked yet), linked 2-way:
+completing the task resolves the annotation. The task goes to the website's review assignee
+(`review_assignee_id` on `project_annotation_settings_get` / `project_annotation_settings_set`;
+the review page calls it "Task assignment"), else to that PM project's default assignee, else
+to nobody. Take the assignee's id from `project_annotation_settings_get`'s `review_assignee.people`
+(it lists the team even before a PM project is linked); its `review_assignee.pm_project` is where
+the tasks land, but with more than one linked project (`linked_project_count` above 1) the
+annotation server picks one arbitrarily.
+Coordinates are a POINT `{xPct,yPct}` in percent FRACTIONS 0..1 - not a rect, not
+0..100.
 
 ## Setup: get annotations onto a site (the enable → deploy → share loop)
 
