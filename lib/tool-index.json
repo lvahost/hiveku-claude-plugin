@@ -758,7 +758,7 @@
       "dept": "backlinks",
       "method": null,
       "timeoutMs": null,
-      "description": "This endpoint will provide you with spam scores of the domains, subdomains, and pages you specified in the targets array. Spam Score is DataForSEO’s proprietary metric that indicates how “spammy��� your target is on a scale from 0 to 100"
+      "description": "This endpoint will provide you with spam scores of the domains, subdomains, and pages you specified in the targets array. Spam Score is DataForSEO’s proprietary metric that indicates how “spammy” your target is on a scale from 0 to 100"
     },
     {
       "name": "backlinks_competitors",

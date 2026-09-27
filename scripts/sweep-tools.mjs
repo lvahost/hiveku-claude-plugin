@@ -86,6 +86,10 @@ class McpClient {
     this.pending = new Map();
     this.stderr = '';
     this.buf = '';
+    // One decoder per stream, so a character split across two chunks is not
+    // turned into U+FFFD (see scripts/gen-tool-index.mjs).
+    this.proc.stdout.setEncoding('utf8');
+    this.proc.stderr.setEncoding('utf8');
     this.proc.stderr.on('data', (d) => { this.stderr += d.toString(); });
     this.proc.stdout.on('data', (d) => this.onData(d));
     this.exited = new Promise((resolve) => this.proc.on('exit', resolve));

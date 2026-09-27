@@ -63,6 +63,11 @@ function liveTools(dir) {
       env: { ...process.env, HIVEKU_PROJECT_DIR: dir, HIVEKU_TOOL_MODE: 'all' },
     });
     let buf = '', err = '';
+    // One decoder per stream. Decoding each chunk on its own turns a character
+    // that straddles two chunks into U+FFFD: a regeneration on 2026-09-27
+    // garbled backlinks_bulk_spam_score's closing quote that way.
+    proc.stdout.setEncoding('utf8');
+    proc.stderr.setEncoding('utf8');
     const timer = setTimeout(() => { proc.kill(); reject(new Error('timed out after 60s')); }, 60_000);
     proc.stderr.on('data', (d) => { err += d.toString(); });
     proc.stdout.on('data', (d) => {
