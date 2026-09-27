@@ -50,7 +50,7 @@ A client reviewing the live preview through Hiveku leaves annotations on a PM TA
 
 S1 - FIND the tasks carrying open annotations:
   - Task or annotation named by the user → `pm_tasks_get({ id })` (or `get_task`) directly; both return the `annotations` array plus `annotation_count`.
-  - Otherwise find the PM project with `pm_projects_list` (it filters only by `status` - scan the list for the `website` project_type yourself; this is a pm_projects id, NOT the website_projects id used above, linked through `website_project_id`), then `pm_tasks_list({ project_id, status })` for the open review tasks and `pm_tasks_get` on each.
+  - Otherwise `project_annotations_list({ project_id, state: "open" })` with the WEBSITE project id: one call returns every open annotation on the site with its `task_id`, whichever PM project that task sits in (older review tasks can sit in a project that was unlinked since). Then `pm_tasks_get({ id: task_id })` on each task. New review tasks land in `project_annotation_settings_get({ project_id })`'s `review_assignee.pm_project.id` (a pm_projects id, NOT the website id), so `pm_tasks_list({ project_id: <that id>, status })` lists those. Do not pick the project from `pm_projects_list` by its `project_type`: feedback projects are `website_design`, and projects created with a site are `website`, `general` or `python-lambda`.
   Per annotation: `{ id, annotation_type, priority, annotation_text, page_url, page_title, coordinates, screenshot_url, screenshot_key, screenshot_status, capture_method, viewport_size, created_by_name, created_by_email, created_at, resolved_at }`. Process ONLY annotations whose `resolved_at` is null.
 
 S2 - CLAIM before starting: `pm_task_claim({ task_id, agent_codename })` - BOTH required (verified against the tool schema; `{ id }` alone 400s). Use a stable codename like `claude-review`. A 409 means another agent already holds it (or it is not in a claimable status) - respect the claim, STOP and report; do not work a task you could not claim. If you claimed it and cannot finish, `pm_task_release` it.
@@ -77,15 +77,37 @@ Per-tier flags on the project decide where the review overlay exists
 TIME - flipping a flag does nothing until that tier is redeployed. Reviewers never use the raw
 site URL: the share page (`project_review_link_get`) iframes the tier and hosts the pin UI - the
 injected bridge deliberately does nothing outside that iframe. Each pin they drop becomes a
-browser annotation (screenshot captured async) AND a PM task in the PM project linked to the
-website (a new "Website Feedback: <site>" project when none is linked yet), linked 2-way:
-completing the task resolves the annotation. The task goes to the website's review assignee
-(`review_assignee_id` on `project_annotation_settings_get` / `project_annotation_settings_set`;
-the review page calls it "Task assignment"), else to that PM project's default assignee, else
-to nobody. Take the assignee's id from `project_annotation_settings_get`'s `review_assignee.people`
-(it lists the team even before a PM project is linked); its `review_assignee.pm_project` is where
-the tasks land, but with more than one linked project (`linked_project_count` above 1) the
-annotation server picks one arbitrarily.
+browser annotation (screenshot captured async) AND a PM task in the site's PM project, linked
+2-way: completing the task resolves the annotation. Review feedback lands in the site's oldest
+linked PM project that is not archived: `project_annotation_settings_get`'s
+`review_assignee.pm_project` names it, even when `linked_project_count` (the linked projects that
+are not archived) is above 1. Sites created new from the dashboard have a "PM - <site>" project
+from birth; cloned sites (the dashboard's Clone Project or `site_clone`) and sites made with
+`site_create` or `site_create_external` have no linked PM project until one of the writers below
+creates one. On a site with no linked project that is not
+archived, a project you link with `website_project_id` becomes where feedback lands, so call
+`project_annotation_settings_get` before linking one. When no linked
+project is left, the next writer creates one: the first review comment makes "Website Feedback:
+<site>", while the editor Tasks panel, the tasks page, session recordings and discussion converts
+make "PM - <site>". So read `review_assignee.pm_project` instead of assuming a name.
+
+To send feedback to another project, link it (`website_project_id`), then unlink each older one
+(`pm_projects_update` with `website_project_id: null`) so the next-oldest takes over, or share the
+existing project with the other company instead. Unlinking keeps the old project and its tasks in
+the PM project lists, but they leave this site's Tasks page and the editor's "This Project" task
+view, and their "Implement with AI" can no longer find the site's code. Archiving the old
+project (`status: 'archived'`) also moves feedback, but it hides that project and all its open
+tasks from every list, so archive only a project whose work is finished.
+
+The task goes to the website's review assignee (`review_assignee_id` on
+`project_annotation_settings_get` / `project_annotation_settings_set`; the review page calls it
+"Task assignment"), else to that PM project's default assignee, else to nobody. The review assignee
+must be on `review_assignee.pm_project`'s team, not just on another linked project's team. Take the
+assignee's id from `project_annotation_settings_get`'s `review_assignee.people` (it lists the team
+even before a PM project is linked). `review_assignee.stale` is true when the saved person is not on
+that team (they left, or they are only on another linked project's team); new feedback then follows
+the project default.
+
 Coordinates are a POINT `{xPct,yPct}` in percent FRACTIONS 0..1 - not a rect, not
 0..100.
 

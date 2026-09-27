@@ -312,7 +312,31 @@ test('Default assignees: the PM skill says where a default is set, how it applie
     "or the account's own team before any project is linked",
     'it needs no `pm_project_team` or `crm_list_users` call and works on every key that can set it',
     '`review_assignee.pm_project` names the project the tasks land in',
-    'a `linked_project_count` above 1 means the annotation server picks one of them arbitrarily',
+    // One primary linked project (2026-09-27): the oldest that is not archived,
+    // never an arbitrary one, and a new one only when none is left.
+    "review feedback lands in the site's oldest linked PM project that is not archived (null when none is left, until the next writer creates one)",
+    'With a `linked_project_count` (linked projects that are not archived) above 1 it still lands only there',
+    // Who creates a missing project, and read pm_project rather than assume a name.
+    'When no linked project is left (none was linked, or every linked one is archived), the next writer creates one: the first review comment makes "Website Feedback: <site>", while the editor Tasks panel, the tasks page, session recordings and discussion converts make "PM - <site>"',
+    // Only sites created new from the dashboard have it from birth: cloned sites
+    // (the dashboard's Clone Project, site_clone), site_create and
+    // site_create_external make no PM project (rounds 7 and 8).
+    'Sites created new from the dashboard have "PM - <site>" from birth, but cloned sites (the dashboard\'s Clone Project or `site_clone`) and sites made with `site_create` or `site_create_external` have none until one of those writers makes one, and a project linked to a site with none becomes where feedback lands (call `project_annotation_settings_get` before linking). So read `review_assignee.pm_project` rather than assuming a name',
+    // Moving it: unlink first (and what that costs) or share; archive only a
+    // finished project, because it hides the project and its open tasks.
+    // Round 8: EACH older one, since unlinking only the oldest of three hands
+    // feedback to the next-oldest.
+    'To move it, unlink each older one (`pm_projects_update` with `website_project_id: null`) so the next-oldest takes over, or share the existing project with the other company',
+    // Unlinking keeps the project in the PM lists, but the site's Tasks page loads
+    // only projects linked to the site (hiveku_builder useTasks.ts) and the
+    // editor's "This Project" view only the primary one (TasksPanel.tsx).
+    'its tasks stay in the PM project lists but leave this site\'s Tasks page and the editor\'s "This Project" task view, and their "Implement with AI" can no longer find the site\'s code',
+    'Archiving the older project also moves feedback, but hides it and all its open tasks from every list, so archive only a project whose work is finished',
+    // The team is that one project's team (it was the union of every linked
+    // project's team while the pick was arbitrary), and stale follows it.
+    'the team of the PM project feedback lands in (both companies when it is shared)',
+    "Being on another linked project's team is not enough",
+    "`review_assignee.stale` is true when the saved person is not on `review_assignee.pm_project`'s team (they left, or they are only on another linked project's team); new feedback then follows the project default",
   ]) {
     assert.ok(review.includes(phrase), `PM Review feedback tasks must say: ${phrase}`);
   }
@@ -326,6 +350,19 @@ test('Default assignees: the PM skill says where a default is set, how it applie
   assert.ok(structure.includes('their assignee does not change'), 'pm-project-structure: deleting a section never unassigns a person');
 
   const review2 = flat(read(REVIEW));
+  for (const phrase of [
+    "Review feedback lands in the site's oldest linked PM project that is not archived: `project_annotation_settings_get`'s `review_assignee.pm_project` names it, even when `linked_project_count` (the linked projects that are not archived) is above 1",
+    'Sites created new from the dashboard have a "PM - <site>" project from birth; cloned sites (the dashboard\'s Clone Project or `site_clone`) and sites made with `site_create` or `site_create_external` have no linked PM project until one of the writers below creates one',
+    'On a site with no linked project that is not archived, a project you link with `website_project_id` becomes where feedback lands, so call `project_annotation_settings_get` before linking one',
+    'When no linked project is left, the next writer creates one: the first review comment makes "Website Feedback: <site>", while the editor Tasks panel, the tasks page, session recordings and discussion converts make "PM - <site>". So read `review_assignee.pm_project` instead of assuming a name.',
+    'To send feedback to another project, link it (`website_project_id`), then unlink each older one (`pm_projects_update` with `website_project_id: null`) so the next-oldest takes over, or share the existing project with the other company instead',
+    'Unlinking keeps the old project and its tasks in the PM project lists, but they leave this site\'s Tasks page and the editor\'s "This Project" task view, and their "Implement with AI" can no longer find the site\'s code',
+    "Archiving the old project (`status: 'archived'`) also moves feedback, but it hides that project and all its open tasks from every list, so archive only a project whose work is finished",
+    "The review assignee must be on `review_assignee.pm_project`'s team, not just on another linked project's team",
+    "`review_assignee.stale` is true when the saved person is not on that team (they left, or they are only on another linked project's team); new feedback then follows the project default",
+  ]) {
+    assert.ok(review2.includes(phrase), `/hiveku:review must say: ${phrase}`);
+  }
   assert.ok(
     review2.includes("The task goes to the website's review assignee (`review_assignee_id` on `project_annotation_settings_get` / `project_annotation_settings_set`"),
     '/hiveku:review: who a feedback task goes to',
@@ -335,7 +372,7 @@ test('Default assignees: the PM skill says where a default is set, how it applie
     '/hiveku:review: where the review assignee id comes from',
   );
   assert.ok(
-    structure.includes("`project_annotation_settings_get`'s `review_assignee.stale` is true once that person has left, and the replacement's id comes from its `review_assignee.people`"),
+    structure.includes("`project_annotation_settings_get`'s `review_assignee.stale` is true once that person is not on the team of `review_assignee.pm_project` (they left, or they are only on another linked project's team), and the replacement's id comes from its `review_assignee.people`"),
     'pm-project-structure: a stale review assignee and where the replacement comes from',
   );
 });
@@ -352,13 +389,83 @@ test('the website link and the review assignee roster are taught where a PM proj
       '`pm_projects_create` ',
       '`website_project_id`',
       '(`pm_projects_update` sets it later, `null` unlinks)',
-      "A website's review feedback lands in the website's linked PM project",
-      'If a site has more than one linked project, the annotation server picks one arbitrarily',
+      "A website's review feedback lands in the site's oldest linked PM project that is not archived, and `project_annotation_settings_get`'s `review_assignee.pm_project` names it.",
+      // Round 8: the rule orders by the project's creation date (hiveku_builder
+      // primary-link.ts primaryLinkOrderBy), not the link date, so linking an
+      // existing project created before the site's current one moves feedback.
+      "Linking a project created after the site's current one does not move it, but linking an older one does: the rule goes by the project's creation date, not the link date.",
+      // Rounds 7 and 8: cloned sites (the dashboard's Clone Project too) and the
+      // sites agents create start with no linked project, so the first project
+      // linked there becomes the feedback destination.
+      "A cloned site (`site_clone` or the dashboard's Clone Project) or a site made with `site_create` or `site_create_external` has no linked PM project until the editor, the tasks page, a discussion convert or the first review comment creates one, and on a site with no linked project that is not archived the project you link becomes where feedback lands, so call `project_annotation_settings_get` before linking.",
+      "To move it, unlink each older one (`pm_projects_update` with `website_project_id: null`) or share the existing one with the other company; unlinking keeps that project and its tasks in the PM project lists, but they leave this site's Tasks page and the editor's \"This Project\" task view, and their \"Implement with AI\" can no longer find the site's code.",
+      "Archive the older project (`status: 'archived'`) only when its work is finished, because archiving hides it and all its open tasks from every list.",
+      "Only that project's team can be the review assignee",
       "check `project_annotation_settings_get`'s `review_assignee.pm_project` before setting a cross-company review assignee",
     ]) {
       assert.ok(text.includes(phrase), `${rel}: the website link must say: ${phrase}`);
     }
   }
+  // The retired rule: the annotation server no longer picks a linked project
+  // arbitrarily (hiveku_builder src/lib/pm/primary-link.ts, mirrored by
+  // hiveku_annotation), so no page that teaches the link may still say it does.
+  for (const rel of [ORIENT, PM, REVIEW]) {
+    const text = flat(read(rel));
+    assert.doesNotMatch(text, /picks? one (of them )?arbitrarily/i, `${rel}: still says a linked PM project is picked arbitrarily`);
+    assert.doesNotMatch(text, /the oldest when several are linked/, `${rel}: still gives the old archived-blind rule`);
+    // Round 6 (review of round 5): archiving hides the project and all its open
+    // tasks, so it is never offered as the first way to move feedback; a
+    // builder-born site is linked from birth, so no timing advice; and pm_project
+    // is null only when no linked project is left.
+    assert.doesNotMatch(text, /archive or unlink the old project/i, `${rel}: still offers archiving first`);
+    assert.doesNotMatch(text, /before the first (review )?comment/i, `${rel}: still times a project before the first comment`);
+    assert.doesNotMatch(text, /null until one is linked/, `${rel}: still says pm_project is null only until one is linked`);
+    assert.doesNotMatch(text, /stale[^.]*(once|when) (that|the saved) person has left/i, `${rel}: still says stale only means the person left`);
+    // Round 7: an unlinked project's tasks are not "visible" everywhere: they
+    // leave the site's Tasks page and the editor's "This Project" view.
+    assert.doesNotMatch(text, /tasks (stay )?visible/i, `${rel}: still says an unlinked project's tasks stay visible`);
+    // Round 7: only dashboard-created sites have "PM - <site>" from birth, so a
+    // new link is not always harmless, and "no PM project yet" is not how an
+    // all-archived site is described.
+    assert.doesNotMatch(text, /"PM - <site>"[^.]*from (creation|the start)/i, `${rel}: still says every site has "PM - <site>" from creation`);
+    assert.doesNotMatch(text, /most sites (already )?have (a )?"PM - <site>"/i, `${rel}: still says most sites have "PM - <site>"`);
+    assert.doesNotMatch(text, /created in the builder have "PM - <site>"/i, `${rel}: still says builder-created sites have "PM - <site>"`);
+    assert.doesNotMatch(text, /Linking a newer project does not move it\./, `${rel}: still says a new link never moves feedback`);
+    assert.doesNotMatch(text, /no PM project yet/i, `${rel}: still says "no PM project yet"`);
+    // Round 8: a site cloned on the dashboard starts with none too, so "created
+    // from the dashboard" alone overclaims; with three or more linked projects,
+    // unlinking only the oldest hands feedback to the next-oldest; and linking
+    // an older existing project does move feedback.
+    assert.doesNotMatch(text, /created from the dashboard have[^.]*from birth/i, `${rel}: still counts a dashboard clone as born with "PM - <site>"`);
+    assert.doesNotMatch(text, /unlink the older (project|one)\b/i, `${rel}: still says to unlink only the older project`);
+    assert.doesNotMatch(text, /(a new link|linking a new one) does not move (it|feedback)/i, `${rel}: still says a new link never moves feedback`);
+  }
+  // Round 7: /hiveku:review S1 found the review project by the `website`
+  // project_type, which most feedback projects do not have (hiveku_annotation
+  // pm-project.js creates 'website_design'; builder-born "PM - <site>" projects
+  // are 'website', 'general' or 'python-lambda'). It now lists the site's
+  // annotations by WEBSITE id (they carry task_id whatever PM project the task
+  // is in) and reads review_assignee.pm_project for where new tasks land.
+  const reviewCmd = flat(read(REVIEW));
+  assert.doesNotMatch(reviewCmd, /scan the list for the `website` project_type/, '/hiveku:review S1 still picks the review project by the `website` project_type');
+  assert.ok(
+    reviewCmd.includes('Otherwise `project_annotations_list({ project_id, state: "open" })` with the WEBSITE project id: one call returns every open annotation on the site with its `task_id`, whichever PM project that task sits in'),
+    '/hiveku:review S1: find open review tasks through project_annotations_list',
+  );
+  assert.ok(
+    reviewCmd.includes("New review tasks land in `project_annotation_settings_get({ project_id })`'s `review_assignee.pm_project.id` (a pm_projects id, NOT the website id)"),
+    '/hiveku:review S1: where new review tasks land',
+  );
+  // The department registry the plugin ships (lib/dept-manifest.json, copied
+  // from hiveku-vscode src/dept-manifest.json by its sync:registry). Nothing
+  // gates it at release time (scripts/check-drift.mjs does not compare it), so
+  // the retired sentence is scanned here. lib/tool-index.json is NOT scanned:
+  // it is regenerated from the live MCP server at release time
+  // (scripts/gen-tool-index.mjs --check in release.mjs), so it follows the
+  // server's descriptions once the MCP change is deployed.
+  const manifest = flat(read('lib/dept-manifest.json'));
+  assert.doesNotMatch(manifest, /picks? one (of them )?arbitrarily/i, 'lib/dept-manifest.json: still says a linked PM project is picked arbitrarily');
+  assert.doesNotMatch(manifest, /archive or unlink the old project/i, 'lib/dept-manifest.json: still offers archiving first');
   const orient = bulletContaining(ORIENT, '**PM tasks are required.**');
   assert.match(
     flat(orient),
@@ -504,9 +611,26 @@ test('source cross-check: the builder applies and refuses defaults the way the p
   assert.match(resolve, /for \(const id of \[sectionDefault, includeProject \? projectDefault : null\]\)/, 'the section default no longer wins over the project default');
   assert.match(resolve, /await checkPmAssignee\(\{ candidate, teamAccountIds: team \}\)/, 'a default is no longer re-checked against the current team');
 
-  // Create: only an absent key, only a top-level task, never an agent's.
-  const create = src('app', 'api', 'olympus', 'pm', 'tasks', 'route.ts');
-  assert.match(create, /if \(assigned_to_id === undefined && !parent_task_id && !agent_codename\) \{\s*assignedToId = await resolvePmDefaultAssignee/, 'pm_tasks_create no longer applies the default only to an absent key on a top-level, non-agent task');
+  // Create: only an absent key, only a top-level task, never an agent's. The
+  // create moved out of the Olympus route into src/lib/pm/create-task.ts (shared
+  // with the agent servers' internal route), with its own local names, so read
+  // whichever file carries it. The guard's names are pinned in both shapes: a
+  // shape-only match (\w+) also passed a guard on the RESOLVED assignee (never
+  // undefined, so no default would ever apply) or on the section instead of the
+  // agent.
+  const createHelper = path.join(BUILDER, 'src', 'lib', 'pm', 'create-task.ts');
+  const hasHelper = fs.existsSync(createHelper);
+  const create = hasHelper
+    ? fs.readFileSync(createHelper, 'utf8')
+    : src('app', 'api', 'olympus', 'pm', 'tasks', 'route.ts');
+  assert.match(create, /if \((?:assigned_to_id|assignedToIdInput) === undefined && !(?:parent_task_id|hasParent) && !(?:agent_codename|agentCodename)\) \{\s*assignedToId = await resolvePmDefaultAssignee/, 'pm_tasks_create no longer applies the default only to an absent key on a top-level, non-agent task');
+  if (hasHelper) {
+    // The raw body key, before any resolution: only a missing key means "apply
+    // the default". Anchored to the end of the statement: `body.assigned_to_id
+    // ?? null` would never be undefined, so no default would ever apply.
+    assert.match(create, /^[ \t]*const assignedToIdInput = body\.assigned_to_id[ \t]*;?[ \t]*$/m, 'create-task.ts no longer reads the guard\'s assignee from the raw body key');
+    assert.doesNotMatch(create, /const assignedToIdInput = body\.assigned_to_id\s*(\?\?|\|\||&&|\?)/, 'create-task.ts defaults the raw assignee key, so it is never undefined');
+  }
   const bulk = src('app', 'api', 'olympus', 'pm', 'tasks', 'bulk', 'route.ts');
   assert.match(bulk, /if \(t\.assigned_to_id !== undefined \|\| t\.parent_task_id\) \{/, 'bulk create no longer skips the default for a named assignee or a subtask');
 
@@ -620,4 +744,59 @@ test('source cross-check: the MCP server declares the roster and the assignee fi
   // review2 C1: create_task (no bodyParams) declares section_id, so the
   // "section's default" the PM skill promises for it can apply.
   assert.match(toolDecl(olympus, 'create_task'), /section_id: \{/, 'create_task no longer declares section_id - the Omit, null, or an id bullet names it');
+});
+
+// Round 7: the prose says only sites created new from the dashboard have
+// "PM - <site>" from birth, and names site_create, site_create_external and
+// site_clone as the ones that start with none. Round 8: the dashboard's Clone
+// Project posts to its own clone route, which runs the same clone service, so
+// cloned sites are named too. Read both sides so the sentence follows the code.
+test('source cross-check: only the dashboard create makes "PM - <site>"; the MCP site tools and both clone routes make none', (t) => {
+  const dashboard = path.join(BUILDER, 'src', 'app', 'api', 'builder', 'projects', 'route.ts');
+  const olympusCreate = path.join(BUILDER, 'src', 'app', 'api', 'olympus', 'builder', 'projects', 'route.ts');
+  const olympusClone = path.join(BUILDER, 'src', 'app', 'api', 'olympus', 'builder', 'projects', '[projectId]', 'clone', 'route.ts');
+  const dashboardClone = path.join(BUILDER, 'src', 'app', 'api', 'builder', 'projects', '[projectId]', 'clone', 'route.ts');
+  const clone = path.join(BUILDER, 'src', 'lib', 'builder', 'project-clone.service.ts');
+  const cardMenu = path.join(BUILDER, 'src', 'components', 'dashboard', 'ProjectCardMenu.tsx');
+  const olympusTools = path.join(MCP, 'src', 'tools', 'olympus-tools.ts');
+  if (![dashboard, olympusCreate, olympusClone, dashboardClone, clone, cardMenu, olympusTools].every((f) => fs.existsSync(f))) {
+    t.diagnostic('source cross-check skipped: no hiveku_builder and hiveku-mcp-api-server checkouts (set HIVEKU_BUILDER_PATH and HIVEKU_MCP_PATH)');
+    return;
+  }
+  assert.ok(fs.readFileSync(dashboard, 'utf8').includes('name: `PM - ${name}`'), 'the dashboard create no longer makes "PM - <site>" - the prose must change');
+  for (const file of [olympusCreate, olympusClone, dashboardClone, clone]) {
+    assert.doesNotMatch(fs.readFileSync(file, 'utf8'), /pm_projects|PrimaryLinkedPmProject/, `${path.relative(BUILDER, file)} now touches PM projects - the "cloned sites ... start with none" prose must change`);
+  }
+  for (const file of [olympusClone, dashboardClone]) {
+    assert.ok(fs.readFileSync(file, 'utf8').includes('projectCloneService.cloneProject('), `${path.relative(BUILDER, file)} no longer runs the clone service`);
+  }
+  assert.ok(
+    fs.readFileSync(cardMenu, 'utf8').includes('fetch(`/api/builder/projects/${project.id}/clone`'),
+    "the dashboard's Clone Project no longer posts to /api/builder/projects/:projectId/clone",
+  );
+  const olympus = fs.readFileSync(olympusTools, 'utf8');
+  for (const tool of ['site_create', 'site_create_external']) {
+    assert.match(toolDecl(olympus, tool), /path: '\/api\/olympus\/builder\/projects',/, `${tool} no longer posts to /api/olympus/builder/projects`);
+  }
+  assert.match(toolDecl(olympus, 'site_clone'), /path: '\/api\/olympus\/builder\/projects\/:projectId\/clone',/, 'site_clone no longer posts to .../clone');
+});
+
+// Round 8: the orient and PM skills say linking an older existing project moves
+// feedback, because the rule goes by the project's creation date, not the link
+// date. That holds while the primary-link order is created_at then id and the
+// Olympus PATCH that links a project cannot write created_at.
+test('source cross-check: the primary linked project is ordered by creation date, which a PATCH cannot change', (t) => {
+  const primaryLink = path.join(BUILDER, 'src', 'lib', 'pm', 'primary-link.ts');
+  const patchRoute = path.join(BUILDER, 'src', 'app', 'api', 'olympus', 'pm', 'projects', '[id]', 'route.ts');
+  if (![primaryLink, patchRoute].every((f) => fs.existsSync(f))) {
+    t.diagnostic('source cross-check skipped: no hiveku_builder checkout with src/lib/pm/primary-link.ts (set HIVEKU_BUILDER_PATH)');
+    return;
+  }
+  assert.ok(
+    fs.readFileSync(primaryLink, 'utf8').includes("return [{ created_at: 'asc' }, { id: 'asc' }]"),
+    'the primary-link order is no longer created_at then id - the "creation date, not the link date" prose must change',
+  );
+  const allowed = fs.readFileSync(patchRoute, 'utf8').match(/const allowed = \[([\s\S]*?)\]/);
+  assert.ok(allowed, 'the Olympus PM project PATCH no longer declares its allow-list as `const allowed = [...]`');
+  assert.doesNotMatch(allowed[1], /'created_at'/, 'the Olympus PM project PATCH now writes created_at - linking could reorder projects');
 });

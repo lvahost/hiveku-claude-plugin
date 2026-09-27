@@ -151,7 +151,8 @@ stays stored until someone changes it, so replace or clear it with `pm_projects_
 `pm_sections_update` (`default_assignee_id`, `''` clears) as part of the same hand-over. The same
 goes for a website's review assignee (`review_assignee_id` on
 `project_annotation_settings_get` / `project_annotation_settings_set`):
-`project_annotation_settings_get`'s `review_assignee.stale` is true once that person has left, and
+`project_annotation_settings_get`'s `review_assignee.stale` is true once that person is not on the
+team of `review_assignee.pm_project` (they left, or they are only on another linked project's team), and
 the replacement's id comes from its `review_assignee.people`.
 
 ## The agent queue: claim, release, submit for review
