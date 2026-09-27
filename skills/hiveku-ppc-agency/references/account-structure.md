@@ -256,7 +256,8 @@ because the API reaches only 30 days.
    **Client approval always**: CAMPAIGN_BUDGET, MOVE_UNUSED_BUDGET, TARGET_CPA_OPT_IN, BIDDING_STRATEGY,
    ENHANCED_CPC_OPT_IN.
 4. Apply **one at a time**: `ppc_recommendation_apply({ connection_id, resource_name })`, which uses
-   Google's defaults exactly like the UI Apply button, so you do not control the specifics. UI-only types
+   Google's defaults exactly like the UI Apply button, so you do not control the specifics. The plugin
+   asks the owner before every call, so each apply is its own yes. UI-only types
    return a structured 400 with a reason: surface it rather than retrying. Re-read with `ppc_campaign_get`
    afterwards to confirm the defaults did what you expected.
 

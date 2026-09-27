@@ -153,6 +153,10 @@ Put this in `.claude/settings.json` (per project) or `~/.claude/settings.json` (
       "mcp__plugin_hiveku_hk__ppc_bulk_edit",
       "mcp__plugin_hiveku_hk__ppc_linkedin_creatives",
       "mcp__plugin_hiveku_hk__ppc_tiktok_split_tests",
+      "mcp__plugin_hiveku_hk__ppc_recommendation_apply",
+      "mcp__plugin_hiveku_hk__ppc_meta_campaign_update",
+      "mcp__plugin_hiveku_hk__ppc_linkedin_campaign_update",
+      "mcp__plugin_hiveku_hk__ppc_linkedin_campaign_group_update",
       "mcp__plugin_hiveku_hk__ppc_google_auto_apply_set",
       "mcp__plugin_hiveku_hk__ppc_google_campaign_settings_set",
       "mcp__plugin_hiveku_hk__ppc_google_ad_schedule_set",
@@ -274,6 +278,7 @@ Put this in `.claude/settings.json` (per project) or `~/.claude/settings.json` (
       "mcp__plugin_hiveku_hk__seo_page_schema_delete",
       "mcp__plugin_hiveku_hk__workflow_run",
       "mcp__plugin_hiveku_hk__workflow_enable",
+      "mcp__plugin_hiveku_hk__workflow_resume",
       "mcp__plugin_hiveku_hk__workflow_trigger_update",
       "mcp__plugin_hiveku_hk__workflow_delete",
       "mcp__plugin_hiveku_hk__workflow_delete_schedule",
@@ -369,10 +374,21 @@ list above is spelled out. If you add to it, add whole names.
 again, so after a plugin update it can be missing names a newer release added. Paste the block
 again after an update. The plugin also asks on its own before the writes that change what
 department agents read, which forms a site captures (and erasing what it captured), a site's
-search engine indexing, live ad campaigns, switching ads on (every enable, a bulk status edit, a
-LinkedIn creative's status and a TikTok split test), the budget guardrail, conversion uploads, a
-staged production deploy and GA4 conversion settings, whatever your settings allow, so those
-prompt even on a machine with an older copy.
+search engine indexing, live ad campaigns, switching ads on or restarting them, switching a
+workflow on or clearing its automatic pause (`workflow_enable`, `workflow_resume`), the budget
+guardrail, conversion uploads, a staged production deploy and GA4 conversion settings, whatever
+your settings allow, so those prompt even on a machine with an older copy.
+
+Switching ads on or restarting them covers every enable, a bulk status edit, a LinkedIn
+creative's status, a TikTok split test, applying a Google recommendation, a later end date on a
+Meta or LinkedIn campaign or a LinkedIn campaign group, and a LinkedIn group budget. Several of
+those tools do more than that, and the ask is on the whole tool, so these calls ask too, reads
+included: every `ppc_bulk_edit` call (a pause-only one too), every `ppc_linkedin_creatives` call
+(list and detail too), every `ppc_tiktok_split_tests` call (its reads too), and every call to
+`ppc_meta_campaign_update`, `ppc_linkedin_campaign_update` or `ppc_linkedin_campaign_group_update`
+(a rename too). A scheduled or `-p` run has nobody to answer those prompts, so those calls are
+refused there. A single pause through `ppc_pause_resource` or `ppc_platform_pause_resource` never
+asks.
 
 ### What is safe to leave on allow
 

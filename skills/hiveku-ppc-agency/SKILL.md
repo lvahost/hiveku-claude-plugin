@@ -275,9 +275,12 @@ ad group), because Hiveku's local mirror may not hold them yet. On "not found in
 the passed parent id is not honored until the enable-parent fix deploys, so re-sending it alone fails
 the same way. **The plugin asks before each enable:** its hook asks the owner before
 `ppc_enable_resource`, `ppc_platform_enable_resource`, `ppc_bulk_edit`, `ppc_linkedin_creatives` and
-`ppc_tiktok_split_tests` whatever the settings allow, and auto mode still shows that prompt, so show
-the diff first and let the card be the owner's yes. **A Claude Code auto-mode denial never turns into
-a prompt.** On an older plugin or the VS Code extension's tools (the hook never sees them) a
+`ppc_tiktok_split_tests` (and before the restart calls: `ppc_recommendation_apply`, and the end-date
+edits on `ppc_meta_campaign_update`, `ppc_linkedin_campaign_update` and
+`ppc_linkedin_campaign_group_update`) whatever the settings allow, and auto mode still shows that
+prompt, so show the diff first and let the card be the owner's yes. **A Claude Code auto-mode
+denial never turns into a prompt.** On an older plugin or the VS Code extension's tools (the
+hook never sees them) a
 classifier can still deny the enable (e.g. "[Production Deploy]"): nothing is then waiting for
 approval, so never promise the owner a prompt (one comes only from the plugin's ask or the steps
 below) and never retry around the denial. Give the owner the exact steps: to run the denied call, in
@@ -467,8 +470,11 @@ NOT a bare `memory_create`. Link the report file in the PM task.
   `ppc_platform_keyword_match_type_change` REQUIRE `ad_group_id` (the row's `platform_ad_group_id` from
   `ppc_bing_keyword_performance`). A Microsoft match-type change edits in place; the bid response says
   nothing about smart bidding, so read the campaign's `bidding_strategy` (`ppc_campaign_get`) first.
-- **The plugin asks before every call that can switch ads on** (the two enables, `ppc_bulk_edit`,
-  `ppc_linkedin_creatives`, `ppc_tiktok_split_tests`), even in auto mode. **An auto-mode classifier
+- **The plugin asks before the calls that can switch ads on or restart them** (the two enables,
+  `ppc_bulk_edit`, `ppc_linkedin_creatives`, `ppc_tiktok_split_tests`, `ppc_recommendation_apply`,
+  `ppc_meta_campaign_update`, `ppc_linkedin_campaign_update`, `ppc_linkedin_campaign_group_update`),
+  even in auto mode. Adding keywords (`ppc_keyword_add`, `ppc_platform_keyword_add`) does not ask:
+  that yes is yours to get. **An auto-mode classifier
   denial of an enable never turns into a prompt** (5): nothing is waiting for approval. The owner
   retries that call from `/permissions` -> Recently denied (`r`, CLI), switches to Manual for the
   go-live turn, or (VS Code extension only) adds an ASK rule naming the `mcp__hiveku__` enable tool;

@@ -12,19 +12,24 @@
  * called without ad_group_id, and that Microsoft rejects in-place match-type
  * edits (both false on the live server).
  *
- * Release 0.26.32 made the plugin ask on its own before every call that can
- * switch ads on (test/spend-start-writes.test.mjs), so the ask-rule step now
- * names only the VS Code extension's tools: that extension does not run the
- * plugin's hook, and the hook ignores its mcp__hiveku__ prefix anyway.
+ * Release 0.26.33 made the plugin ask on its own before the five calls that
+ * can switch ads on by status and the four that can restart or widen delivery
+ * (test/spend-start-writes.test.mjs), so the ask-rule step now names only the
+ * VS Code extension's tools: that extension does not run the plugin's hook,
+ * and the hook ignores its mcp__hiveku__ prefix anyway.
  *
  * These pins keep:
  *   - the auto-mode rule, the exact owner steps (the Recently denied retry,
  *     Manual for the go-live turn, or an ASK rule naming both enable tools
  *     under the extension's prefix) and the no-ALLOW rule in the PPC hub
  *     SKILL.md and in spend-change-discipline.md;
- *   - that both say the plugin asks before each enable and name the five
+ *   - that both say the plugin asks before each enable and name the nine
  *     tools it asks about, and that neither tells owners to add an ask rule
- *     for the plugin's own names or says enabling has no gate;
+ *     for the plugin's own names, says enabling has no gate, or claims the
+ *     plugin asks before "every call that can switch ads on" (the 0.26.32
+ *     draft said so while the end-date edits did not ask);
+ *   - that the discipline names the keyword adds as a rail that does not
+ *     exist, and says the Codex prompt on hiveku_batch covers batches;
  *   - the re-test-before-"broken" rule in the hub;
  *   - no "approve it when it asks" promise anywhere in the plugin's prose, and
  *     neither retracted claim (a denial is "final for that call"; an ask rule
@@ -85,15 +90,21 @@ const PLUGIN_ASKS_TOKENS = [
   'ppc_bulk_edit',
   'ppc_linkedin_creatives',
   'ppc_tiktok_split_tests',
+  'ppc_recommendation_apply',
+  'ppc_meta_campaign_update',
+  'ppc_linkedin_campaign_update',
+  'ppc_linkedin_campaign_group_update',
 ];
 /**
- * Claims 0.26.32 made false: that enabling has no gate at all, and an ASK-rule
+ * Claims 0.26.33 made false: that enabling has no gate at all, and an ASK-rule
  * instruction naming the plugin's own prefix (its hook asks already, and an
  * owner told to add rules for it would believe the plugin does not).
  */
 const STALE_GATE_CLAIMS = [
   /Enabling has no gate on the Google lane/i,
   /ASK rule[\s\S]{0,400}?mcp__plugin_hiveku_hk__ppc_(?:platform_)?enable_resource/i,
+  // Inexact while any call that can switch ads on or restart them is not gated.
+  /asks?(?: the owner)? before every (?:call|tool) that can switch (?:ads|delivery) on/i,
 ];
 function assertPluginAsks(text, label) {
   const f = flat(text);
@@ -140,6 +151,13 @@ test('both say the plugin asks before each enable, and neither asks owners for a
   for (const rel of PROSE) {
     assert.doesNotMatch(flat(read(rel)), STALE_GATE_CLAIMS[0], `${rel} says enabling has no gate`);
   }
+});
+
+test('the discipline names the keyword adds as ungated and says batches prompt in Codex', () => {
+  const f = flat(read(DISCIPLINE));
+  assert.ok(f.includes('Adding keywords does not ask.'), `${DISCIPLINE} must say keyword adds do not ask`);
+  assert.ok(f.includes('ppc_keyword_add and ppc_platform_keyword_add'), DISCIPLINE);
+  assert.match(f, /prompts before every hiveku_batch call, so none of them runs inside a batch without a yes/);
 });
 
 test('the PPC hub tells the agent to re-test a tool before calling it broken', () => {
@@ -191,6 +209,14 @@ test('the checks fail on the old wording (negative control)', () => {
   assert.throws(
     () => assertPluginAsks(`${PLUGIN_ASKS_TOKENS.join(' ')}. ${oldGoLive}`, 'old go-live with tokens'),
     /Enabling has no gate/,
+  );
+  // The 0.26.32 draft: "every call that can switch ads on" while the end-date
+  // edits did not ask.
+  const draft32 = `${PLUGIN_ASKS_TOKENS.join(' ')}. The plugin now asks the owner before every call that can switch ads on.`;
+  assert.throws(() => assertPluginAsks(draft32, '0.26.32 draft'), /switch/);
+  assert.throws(
+    () => assertPluginAsks(PLUGIN_ASKS_TOKENS.filter((t) => t !== 'ppc_meta_campaign_update').join(' '), 'no Meta'),
+    /ppc_meta_campaign_update/,
   );
   const oldStep3 = oldGoLive.split('\n').slice(1).join('\n');
   assert.throws(
