@@ -409,8 +409,9 @@ ICP; wrong seniority = targeting fix, not creative fix). Pause/enable anywhere:
 10. Log everything: pm_tasks_comment on the weekly task - changes made (with confirmations), changes
     proposed, tests running and their end dates.
 
-These plays ship as installable workflow templates - roster, install mechanics, and the
-`is_enabled: true` default trap: `references/workflow-templates.md`. Install them on a retainer account
+These plays ship as installable workflow templates - roster, install mechanics, and switching an
+install on (created off; `workflow_enable` on the operator's yes): `references/workflow-templates.md`.
+Install them on a retainer account
 rather than performing the same steps by hand every Monday.
 
 ## 8. Monthly report (client deliverable)
@@ -517,7 +518,7 @@ covers" section. Load ONE when the work actually goes there, not preemptively (t
 | --- | --- |
 | `references/spend-change-discipline.md` | BEFORE your first write of the session on an account you did not build: the reads that earn each mutation, diff discipline, code-enforced gates vs prose-only warnings, the go-live enable (auto-mode denials, parent ids), verify-after-write. |
 | `references/memory-protocol.md` | Before ANY `memory_create` / `memory_update` - read-merge-write, recovery, what belongs in the record. |
-| `references/workflow-templates.md` | Putting a retainer account on the recurring cadence / "automate this play" - template roster, install mechanics, the `is_enabled: true` default trap. |
+| `references/workflow-templates.md` | Putting a retainer account on the recurring cadence / "automate this play" - template roster, install mechanics, created switched off and `workflow_enable` on the operator's yes. |
 | `references/account-structure.md` | Auditing or rebuilding account wiring: campaigns, ad groups, naming, bulk ops, change history, recommendations triage. |
 | `references/keywords-search-terms-negatives.md` | Search-term mining (`ppc_search_terms_mine`), the negatives manager (audit, lint, remove), match-type strategy or migration, keyword research (`ppc_keyword_ideas`) and forecasting on Google and Microsoft. |
 | `references/bidding-budgets-pacing.md` | Anything about money: the goals record, bid strategies, the bid and budget simulator, modifiers and dayparting, budget caps, pacing, spend control, impression-share economics. |
