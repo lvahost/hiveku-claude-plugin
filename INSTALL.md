@@ -124,6 +124,7 @@ Put this in `.claude/settings.json` (per project) or `~/.claude/settings.json` (
       "mcp__plugin_hiveku_hk__site_delete",
       "mcp__plugin_hiveku_hk__site_firewall_allow",
       "mcp__plugin_hiveku_hk__site_firewall_remove",
+      "mcp__plugin_hiveku_hk__project_indexing_set",
       "mcp__plugin_hiveku_hk__account_memory_append",
       "mcp__plugin_hiveku_hk__memory_update",
       "mcp__plugin_hiveku_hk__memory_delete",
@@ -362,10 +363,10 @@ list above is spelled out. If you add to it, add whole names.
 **This list is a copy.** It lives in your settings file and only changes when you paste it
 again, so after a plugin update it can be missing names a newer release added. Paste the block
 again after an update. The plugin also asks on its own before the writes that change what
-department agents read, which forms a site captures (and erasing what it captured), live ad
-campaigns, the budget guardrail, conversion uploads, a staged production deploy and GA4
-conversion settings, whatever your settings allow, so those prompt even on a machine with an
-older copy.
+department agents read, which forms a site captures (and erasing what it captured), a site's
+search engine indexing, live ad campaigns, the budget guardrail, conversion uploads, a staged
+production deploy and GA4 conversion settings, whatever your settings allow, so those prompt
+even on a machine with an older copy.
 
 ### What is safe to leave on allow
 
