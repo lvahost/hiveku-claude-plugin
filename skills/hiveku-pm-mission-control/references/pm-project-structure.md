@@ -16,6 +16,14 @@ everything here.
   it. The person must be on the project team (a member `id` from `pm_project_team`): anyone else
   is refused with 400 `user_not_in_account`, `field: 'default_assignee_id'`, and nothing changes.
   Existing tasks are never touched. The full rule: SKILL.md, "Default assignees".
+- Every new site gets a linked "PM - <site>" project when it is created: from the dashboard,
+  `site_create`, `site_create_external`, a clone (`site_clone` or the dashboard's Clone Project), a
+  Webflow site added in the account hub, or a GitHub import that makes a new site. `site_create`
+  and `site_create_external` return it as `pm_project: { id, name }` and `site_clone` as
+  `data.pm_project` (null only when it could not be made). A site created before that by
+  `site_create`, `site_create_external` or `site_clone`, or by the dashboard's Clone Project, may
+  have none. `project_annotation_settings_get`'s `review_assignee.pm_project` names the project
+  the site's review feedback lands in (SKILL.md, "Review feedback tasks").
 - `pm_project_team({ project_id })` is the roster for PM assignment: the project's own account's
   people and, on a shared project, the other account's people too (labelled by company, emails
   hidden), plus the project's `default_assignee_id` and whether it is `shared`. Take every

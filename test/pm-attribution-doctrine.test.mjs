@@ -318,10 +318,10 @@ test('Default assignees: the PM skill says where a default is set, how it applie
     'With a `linked_project_count` (linked projects that are not archived) above 1 it still lands only there',
     // Who creates a missing project, and read pm_project rather than assume a name.
     'When no linked project is left (none was linked, or every linked one is archived), the next writer creates one: the first review comment makes "Website Feedback: <site>", while the editor Tasks panel, the tasks page, session recordings and discussion converts make "PM - <site>"',
-    // Only sites created new from the dashboard have it from birth: cloned sites
-    // (the dashboard's Clone Project, site_clone), site_create and
-    // site_create_external make no PM project (rounds 7 and 8).
-    'Sites created new from the dashboard have "PM - <site>" from birth, but cloned sites (the dashboard\'s Clone Project or `site_clone`) and sites made with `site_create` or `site_create_external` have none until one of those writers makes one, and a project linked to a site with none becomes where feedback lands (call `project_annotation_settings_get` before linking). So read `review_assignee.pm_project` rather than assuming a name',
+    // Round 9 (builder #242): every new site gets "PM - <site>" when it is
+    // created, on every birth path (createSiteBirthPmProject). Only a site made
+    // before that by the MCP site tools or a clone may have none.
+    'Every new site gets "PM - <site>" when it is created (from the dashboard, `site_create`, `site_create_external`, a clone with `site_clone` or the dashboard\'s Clone Project, a Webflow site added in the account hub, or a GitHub import that makes a new site), but a site created before that by `site_create`, `site_create_external` or `site_clone`, or by the dashboard\'s Clone Project, may have none until one of those writers makes one, and a project linked to a site with none becomes where feedback lands (call `project_annotation_settings_get` before linking). So read `review_assignee.pm_project` rather than assuming a name',
     // Moving it: unlink first (and what that costs) or share; archive only a
     // finished project, because it hides the project and its open tasks.
     // Round 8: EACH older one, since unlinking only the oldest of three hands
@@ -348,11 +348,19 @@ test('Default assignees: the PM skill says where a default is set, how it applie
   assert.ok(structure.includes("`field: 'default_assignee_id'`"), 'pm-project-structure: the refusal field');
   assert.ok(structure.includes('`pm_project_team({ project_id })` is the roster for PM assignment'), 'pm-project-structure: the roster');
   assert.ok(structure.includes('their assignee does not change'), 'pm-project-structure: deleting a section never unassigns a person');
+  // Round 9 (builder #242): the site-birth project, and where the site tools return it.
+  for (const phrase of [
+    'Every new site gets a linked "PM - <site>" project when it is created: from the dashboard, `site_create`, `site_create_external`, a clone (`site_clone` or the dashboard\'s Clone Project), a Webflow site added in the account hub, or a GitHub import that makes a new site.',
+    '`site_create` and `site_create_external` return it as `pm_project: { id, name }` and `site_clone` as `data.pm_project` (null only when it could not be made)',
+    "A site created before that by `site_create`, `site_create_external` or `site_clone`, or by the dashboard's Clone Project, may have none.",
+  ]) {
+    assert.ok(structure.includes(phrase), `pm-project-structure must say: ${phrase}`);
+  }
 
   const review2 = flat(read(REVIEW));
   for (const phrase of [
     "Review feedback lands in the site's oldest linked PM project that is not archived: `project_annotation_settings_get`'s `review_assignee.pm_project` names it, even when `linked_project_count` (the linked projects that are not archived) is above 1",
-    'Sites created new from the dashboard have a "PM - <site>" project from birth; cloned sites (the dashboard\'s Clone Project or `site_clone`) and sites made with `site_create` or `site_create_external` have no linked PM project until one of the writers below creates one',
+    'Every new site gets a linked "PM - <site>" project when it is created: from the dashboard, from `site_create` or `site_create_external`, from a clone (the dashboard\'s Clone Project or `site_clone`), from a Webflow site added in the account hub, or from a GitHub import that makes a new site. A site created before that by `site_create`, `site_create_external` or `site_clone`, or by the dashboard\'s Clone Project, may have no linked PM project until one of the writers below creates one',
     'On a site with no linked project that is not archived, a project you link with `website_project_id` becomes where feedback lands, so call `project_annotation_settings_get` before linking one',
     'When no linked project is left, the next writer creates one: the first review comment makes "Website Feedback: <site>", while the editor Tasks panel, the tasks page, session recordings and discussion converts make "PM - <site>". So read `review_assignee.pm_project` instead of assuming a name.',
     'To send feedback to another project, link it (`website_project_id`), then unlink each older one (`pm_projects_update` with `website_project_id: null`) so the next-oldest takes over, or share the existing project with the other company instead',
@@ -394,10 +402,11 @@ test('the website link and the review assignee roster are taught where a PM proj
       // primary-link.ts primaryLinkOrderBy), not the link date, so linking an
       // existing project created before the site's current one moves feedback.
       "Linking a project created after the site's current one does not move it, but linking an older one does: the rule goes by the project's creation date, not the link date.",
-      // Rounds 7 and 8: cloned sites (the dashboard's Clone Project too) and the
-      // sites agents create start with no linked project, so the first project
-      // linked there becomes the feedback destination.
-      "A cloned site (`site_clone` or the dashboard's Clone Project) or a site made with `site_create` or `site_create_external` has no linked PM project until the editor, the tasks page, a discussion convert or the first review comment creates one, and on a site with no linked project that is not archived the project you link becomes where feedback lands, so call `project_annotation_settings_get` before linking.",
+      // Round 9 (builder #242): every new site is born with "PM - <site>".
+      // Only a site made before that by the MCP site tools or a clone may have
+      // none, and there the first project linked becomes the feedback
+      // destination.
+      "Every new site gets a linked \"PM - <site>\" project when it is created: from the dashboard, `site_create`, `site_create_external`, a clone (`site_clone` or the dashboard's Clone Project), a Webflow site added in the account hub, or a GitHub import that makes a new site. A site created before that by `site_create`, `site_create_external` or `site_clone`, or by the dashboard's Clone Project, may have none until the editor Tasks panel, the tasks page, a session recording, a discussion convert or the first review comment creates one, and on a site with no linked project that is not archived the project you link becomes where feedback lands, so call `project_annotation_settings_get` before linking.",
       "To move it, unlink each older one (`pm_projects_update` with `website_project_id: null`) or share the existing one with the other company; unlinking keeps that project and its tasks in the PM project lists, but they leave this site's Tasks page and the editor's \"This Project\" task view, and their \"Implement with AI\" can no longer find the site's code.",
       "Archive the older project (`status: 'archived'`) only when its work is finished, because archiving hides it and all its open tasks from every list.",
       "Only that project's team can be the review assignee",
@@ -439,6 +448,12 @@ test('the website link and the review assignee roster are taught where a PM proj
     assert.doesNotMatch(text, /created from the dashboard have[^.]*from birth/i, `${rel}: still counts a dashboard clone as born with "PM - <site>"`);
     assert.doesNotMatch(text, /unlink the older (project|one)\b/i, `${rel}: still says to unlink only the older project`);
     assert.doesNotMatch(text, /(a new link|linking a new one) does not move (it|feedback)/i, `${rel}: still says a new link never moves feedback`);
+    // Round 9 (builder #242): every new site is born with "PM - <site>", so no
+    // page may say only dashboard sites are, or that cloned and agent-made
+    // sites start with none.
+    assert.doesNotMatch(text, /created new from the dashboard have/i, `${rel}: still says only dashboard sites are born with "PM - <site>"`);
+    assert.doesNotMatch(text, /\bcloned sites?\b[^.]*\b(have|has|start with) (none|no linked PM project)\b/i, `${rel}: still says a cloned site starts with no linked PM project`);
+    assert.doesNotMatch(text, /made with `?site_create`? or `?site_create_external`? (have|has|start with) (none|no linked)/i, `${rel}: still says sites made with site_create start with no linked PM project`);
   }
   // Round 7: /hiveku:review S1 found the review project by the `website`
   // project_type, which most feedback projects do not have (hiveku_annotation
@@ -509,6 +524,52 @@ test('no surface says an omitted assignee always creates an unassigned task', ()
     for (const re of retired) if (re.test(text)) offenders.push(`${rel}: ${re}`);
   }
   assert.deepEqual(offenders, [], 'an omitted assigned_to_id takes the section or project default; only null or \'\' is unassigned');
+});
+
+// Round 9: pm_tasks_update moving a task out of done clears completed_at (the
+// Olympus PATCH did before builder #245, and src/lib/pm/update-task.ts still
+// does). What it does not do is reset progress, which stays at 100. The old
+// reason ("the allow-list cannot clear completed_at") contradicted the MCP
+// tool descriptions an agent reads beside it, so it is retired everywhere.
+const REOPEN_REASON =
+  '`pm_tasks_update` moving the status out of done also clears `completed_at`, but it leaves progress at 100 unless you send `progress_percentage` too, so the task still reads as finished in progress reports';
+
+test('reopening: the prose gives the true reason to prefer pm_tasks_uncomplete', () => {
+  for (const rel of [ORIENT, PM]) {
+    const text = flat(read(rel));
+    assert.ok(text.includes(REOPEN_REASON), `${rel}: the reopen passage must say: ${REOPEN_REASON}`);
+    assert.ok(text.includes('reopens the linked review annotation'), `${rel}: say that pm_tasks_uncomplete reopens the linked review annotation`);
+  }
+  const retired = [
+    /allow-list (cannot clear|can't clear|does not include|doesn't include) `?completed_at/i,
+    /reopen leaves `?completed_at`? set/i,
+    /keeps reading as done in every report/i,
+  ];
+  const offenders = [];
+  for (const rel of [...markdownFiles('skills'), ...markdownFiles('commands'), ...markdownFiles('agents')]) {
+    const text = flat(read(rel));
+    for (const re of retired) if (re.test(text)) offenders.push(`${rel}: ${re}`);
+  }
+  assert.deepEqual(offenders, [], 'pm_tasks_update leaving done clears completed_at; only progress stays at 100');
+});
+
+test('source cross-check: a PATCH out of done clears completed_at and leaves progress; uncomplete resets both', (t) => {
+  const update = path.join(BUILDER, 'src', 'lib', 'pm', 'update-task.ts');
+  const complete = path.join(BUILDER, 'src', 'lib', 'pm', 'complete-task.ts');
+  if (!fs.existsSync(update) || !fs.existsSync(complete)) {
+    t.diagnostic(`source cross-check skipped: ${BUILDER} has no src/lib/pm/update-task.ts (builder #245); set HIVEKU_BUILDER_PATH`);
+    return;
+  }
+  const src = fs.readFileSync(update, 'utf8');
+  const at = src.indexOf('} else if (!nextDone && prevDone) {');
+  assert.ok(at > 0, 'update-task.ts no longer has an out-of-done branch');
+  const branch = src.slice(at, src.indexOf('}', at + 40) + 1);
+  assert.ok(branch.includes('data.completed_at = null'), 'update-task.ts: moving out of done no longer clears completed_at');
+  assert.ok(!branch.includes('progress_percentage'), 'update-task.ts: moving out of done now resets progress, so the prose reason is stale');
+  const done = fs.readFileSync(complete, 'utf8');
+  const un = done.slice(done.indexOf('export async function uncompletePmTaskForAccount'));
+  assert.ok(/completed_at: null, progress_percentage: targetProgress/.test(un), 'complete-task.ts: uncomplete no longer clears completed_at and resets progress');
+  assert.ok(un.includes('syncAnnotationsFromTask('), 'complete-task.ts: uncomplete no longer reopens the linked annotation');
 });
 
 test('source cross-check: the builder answers an empty roster with the hint the prose describes', (t) => {
@@ -591,6 +652,22 @@ test('source cross-check: a recurrence fire checks the stored assignee with no c
 
 // Default assignees (builder PR #205). Each branch the prose describes, read
 // from the builder source; skipped on a checkout that predates the defaults.
+/**
+ * A route's source plus the src/lib/pm helpers it imports. Builder PR #245
+ * moved the Olympus PM writes into shared helpers (update-task.ts,
+ * project-write.ts, sections.ts) that the agent servers' internal routes run
+ * too, so a rule pinned on the route may now live in the helper. On a builder
+ * where the route still does the work, the route's own text is what matches.
+ */
+function withPmHelpers(routeText) {
+  let out = routeText;
+  for (const m of routeText.matchAll(/from '@\/lib\/pm\/([a-z-]+)'/g)) {
+    const helper = path.join(BUILDER, 'src', 'lib', 'pm', `${m[1]}.ts`);
+    if (fs.existsSync(helper)) out += '\n' + fs.readFileSync(helper, 'utf8');
+  }
+  return out;
+}
+
 test('source cross-check: the builder applies and refuses defaults the way the prose says', (t) => {
   const src = (...p) => {
     const file = path.join(BUILDER, 'src', ...p);
@@ -635,19 +712,19 @@ test('source cross-check: the builder applies and refuses defaults the way the p
   assert.match(bulk, /if \(t\.assigned_to_id !== undefined \|\| t\.parent_task_id\) \{/, 'bulk create no longer skips the default for a named assignee or a subtask');
 
   // Move: section default only, only when the write names no assignee.
-  const update = src('app', 'api', 'olympus', 'pm', 'tasks', '[id]', 'route.ts');
+  const update = withPmHelpers(src('app', 'api', 'olympus', 'pm', 'tasks', '[id]', 'route.ts'));
   const move = update.slice(update.indexOf('const nextSectionId'), update.indexOf('prisma.pm_tasks.update(', update.indexOf('const nextSectionId')));
   assert.ok(move.includes("!('assigned_to_id' in data)"), 'a move now applies the default even when the write names an assignee');
   assert.ok(move.includes('!existing.assigned_to_id'), 'a move now reassigns a task someone holds');
   assert.ok(move.includes('includeProjectDefault: false'), 'a move now applies the project default too');
 
   // Where defaults are written.
-  const projects = src('app', 'api', 'olympus', 'pm', 'projects', '[id]', 'route.ts');
+  const projects = withPmHelpers(src('app', 'api', 'olympus', 'pm', 'projects', '[id]', 'route.ts'));
   // Any key may follow it in the allow-list (website_project_id does since review2 C3).
   assert.match(projects, /const allowed = \[[^\]]*'default_assignee_id',[^\]]*\] as const/, 'pm_projects_update no longer allows default_assignee_id');
   assert.ok(projects.includes('checkPmDefaultAssignee('), 'the project default is no longer validated');
   for (const p of [['sections', 'route.ts'], ['sections', '[sectionId]', 'route.ts']]) {
-    assert.ok(src('app', 'api', 'olympus', 'pm', 'projects', '[id]', ...p).includes('checkPmDefaultAssignee('), `${p.join('/')} no longer validates default_assignee_id`);
+    assert.ok(withPmHelpers(src('app', 'api', 'olympus', 'pm', 'projects', '[id]', ...p)).includes('checkPmDefaultAssignee('), `${p.join('/')} no longer validates default_assignee_id`);
   }
 
   // Recurrence occurrences and workflow createTask take the default too.
@@ -746,27 +823,61 @@ test('source cross-check: the MCP server declares the roster and the assignee fi
   assert.match(toolDecl(olympus, 'create_task'), /section_id: \{/, 'create_task no longer declares section_id - the Omit, null, or an id bullet names it');
 });
 
-// Round 7: the prose says only sites created new from the dashboard have
-// "PM - <site>" from birth, and names site_create, site_create_external and
-// site_clone as the ones that start with none. Round 8: the dashboard's Clone
-// Project posts to its own clone route, which runs the same clone service, so
-// cloned sites are named too. Read both sides so the sentence follows the code.
-test('source cross-check: only the dashboard create makes "PM - <site>"; the MCP site tools and both clone routes make none', (t) => {
-  const dashboard = path.join(BUILDER, 'src', 'app', 'api', 'builder', 'projects', 'route.ts');
-  const olympusCreate = path.join(BUILDER, 'src', 'app', 'api', 'olympus', 'builder', 'projects', 'route.ts');
-  const olympusClone = path.join(BUILDER, 'src', 'app', 'api', 'olympus', 'builder', 'projects', '[projectId]', 'clone', 'route.ts');
-  const dashboardClone = path.join(BUILDER, 'src', 'app', 'api', 'builder', 'projects', '[projectId]', 'clone', 'route.ts');
-  const clone = path.join(BUILDER, 'src', 'lib', 'builder', 'project-clone.service.ts');
-  const cardMenu = path.join(BUILDER, 'src', 'components', 'dashboard', 'ProjectCardMenu.tsx');
+// Rounds 7 and 8 pinned "only the dashboard create makes PM - <site>". Round 9
+// (builder #242, "Give every new site one linked PM project when it is
+// created"): every path that creates a website_projects row calls
+// createSiteBirthPmProject (src/lib/pm/site-birth.ts) after the site has
+// committed, so the prose now says every new site gets "PM - <site>" when it
+// is created, and names the MCP site tools and clones only for sites made
+// before that. Read both sides so the sentence follows the code.
+test('source cross-check: every site birth path calls the site-birth helper, which makes "PM - <site>" and never throws', (t) => {
+  const src = (...p) => path.join(BUILDER, 'src', ...p);
+  const helper = src('lib', 'pm', 'site-birth.ts');
+  const dashboard = src('app', 'api', 'builder', 'projects', 'route.ts');
+  const olympusCreate = src('app', 'api', 'olympus', 'builder', 'projects', 'route.ts');
+  const olympusClone = src('app', 'api', 'olympus', 'builder', 'projects', '[projectId]', 'clone', 'route.ts');
+  const dashboardClone = src('app', 'api', 'builder', 'projects', '[projectId]', 'clone', 'route.ts');
+  const clone = src('lib', 'builder', 'project-clone.service.ts');
+  const webflow = src('app', 'api', 'builder', 'webflow', 'projects-from-site', 'route.ts');
+  const githubImport = src('app', 'api', 'github', 'import', 'route.ts');
+  const githubImportStream = src('app', 'api', 'github', 'import-stream', 'route.ts');
+  const cardMenu = src('components', 'dashboard', 'ProjectCardMenu.tsx');
   const olympusTools = path.join(MCP, 'src', 'tools', 'olympus-tools.ts');
-  if (![dashboard, olympusCreate, olympusClone, dashboardClone, clone, cardMenu, olympusTools].every((f) => fs.existsSync(f))) {
-    t.diagnostic('source cross-check skipped: no hiveku_builder and hiveku-mcp-api-server checkouts (set HIVEKU_BUILDER_PATH and HIVEKU_MCP_PATH)');
+  const files = [helper, dashboard, olympusCreate, olympusClone, dashboardClone, clone, webflow, githubImport, githubImportStream, cardMenu, olympusTools];
+  if (!files.every((f) => fs.existsSync(f))) {
+    t.diagnostic('source cross-check skipped: no hiveku_builder checkout with src/lib/pm/site-birth.ts (builder #242) and no hiveku-mcp-api-server checkout (set HIVEKU_BUILDER_PATH and HIVEKU_MCP_PATH)');
     return;
   }
-  assert.ok(fs.readFileSync(dashboard, 'utf8').includes('name: `PM - ${name}`'), 'the dashboard create no longer makes "PM - <site>" - the prose must change');
-  for (const file of [olympusCreate, olympusClone, dashboardClone, clone]) {
-    assert.doesNotMatch(fs.readFileSync(file, 'utf8'), /pm_projects|PrimaryLinkedPmProject/, `${path.relative(BUILDER, file)} now touches PM projects - the "cloned sites ... start with none" prose must change`);
+  const read = (f) => fs.readFileSync(f, 'utf8');
+  const rel = (f) => path.relative(BUILDER, f);
+
+  // The helper: "PM - <site>" through the one get-or-create under the
+  // per-website lock, and a failure is reported, never thrown.
+  const birth = read(helper);
+  assert.ok(birth.includes('export async function createSiteBirthPmProject('), 'site-birth.ts no longer exports createSiteBirthPmProject - the prose must change');
+  assert.ok(birth.includes('`PM - ${'), 'the site-birth project is no longer named "PM - <site>"');
+  assert.ok(birth.includes('getOrCreatePrimaryLinkedPmProject('), 'the site-birth project no longer goes through getOrCreatePrimaryLinkedPmProject (a second writer could make a duplicate)');
+  const body = birth.slice(birth.indexOf('export async function createSiteBirthPmProject('));
+  assert.match(body, /\} catch \(\w+\) \{[\s\S]*?return null;?/, 'createSiteBirthPmProject no longer catches and returns null - a PM failure could fail a site create');
+
+  // Every birth path calls it: the dashboard create in each branch (external,
+  // python-lambda, expo, regular), the Olympus create behind site_create and
+  // site_create_external (external, name reuse, hosted), the clone service
+  // behind both clone routes, Webflow projects-from-site and both GitHub
+  // createNew imports.
+  const calls = (f) => (read(f).match(/\bcreateSiteBirthPmProject\(/g) ?? []).length;
+  for (const [file, min] of [[dashboard, 4], [olympusCreate, 3], [clone, 1], [webflow, 1], [githubImport, 1], [githubImportStream, 1]]) {
+    assert.ok(calls(file) >= min, `${rel(file)} calls createSiteBirthPmProject ${calls(file)} time(s), expected at least ${min} - "every new site gets PM - <site>" must change`);
   }
+  // No birth path still makes its own PM project beside the helper.
+  for (const file of [dashboard, olympusCreate, clone, webflow, githubImport, githubImportStream]) {
+    assert.doesNotMatch(read(file), /\b(prisma|tx)\.pm_projects\.create\(/, `${rel(file)} creates a PM project itself again - a second "PM - <site>" path`);
+  }
+  // Webflow makes it after the site's transaction has committed, not inside it.
+  const wf = read(webflow);
+  assert.ok(wf.indexOf('createSiteBirthPmProject(') > wf.indexOf('prisma.$transaction('), 'Webflow projects-from-site makes the PM project inside (or before) the site transaction');
+  // A clone copies nothing PM-related; it gets its own fresh project.
+  assert.doesNotMatch(read(clone), /\bpm_(tasks|task_sections|milestones|projects)\b/, 'the clone service now copies PM rows - the "the clone gets its own new PM - <name>" prose must change');
   for (const file of [olympusClone, dashboardClone]) {
     assert.ok(fs.readFileSync(file, 'utf8').includes('projectCloneService.cloneProject('), `${path.relative(BUILDER, file)} no longer runs the clone service`);
   }
@@ -796,7 +907,7 @@ test('source cross-check: the primary linked project is ordered by creation date
     fs.readFileSync(primaryLink, 'utf8').includes("return [{ created_at: 'asc' }, { id: 'asc' }]"),
     'the primary-link order is no longer created_at then id - the "creation date, not the link date" prose must change',
   );
-  const allowed = fs.readFileSync(patchRoute, 'utf8').match(/const allowed = \[([\s\S]*?)\]/);
+  const allowed = withPmHelpers(fs.readFileSync(patchRoute, 'utf8')).match(/const allowed = \[([\s\S]*?)\]/);
   assert.ok(allowed, 'the Olympus PM project PATCH no longer declares its allow-list as `const allowed = [...]`');
   assert.doesNotMatch(allowed[1], /'created_at'/, 'the Olympus PM project PATCH now writes created_at - linking could reorder projects');
 });

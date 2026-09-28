@@ -34,10 +34,14 @@ A card is the WHY. A task is the WORK. Never let one exist without the other for
   site's oldest linked PM project that is not archived, and `project_annotation_settings_get`'s
   `review_assignee.pm_project` names it. Linking a project created after the site's current one
   does not move it, but linking an older one does: the rule goes by the project's creation date, not
-  the link date. A cloned site (`site_clone` or the dashboard's Clone Project) or a site made with
-  `site_create` or `site_create_external` has no linked PM project until the editor, the tasks page, a discussion convert or the first review
-  comment creates one, and on a site with no linked project that is not archived the project you
-  link becomes where feedback lands, so call `project_annotation_settings_get` before linking. To
+  the link date. Every new site gets a linked "PM - <site>" project when it is created: from the
+  dashboard, `site_create`, `site_create_external`, a clone (`site_clone` or the dashboard's Clone
+  Project), a Webflow site added in the account hub, or a GitHub import that makes a new site. A
+  site created before that by `site_create`, `site_create_external` or `site_clone`, or by the
+  dashboard's Clone Project, may have none until the editor Tasks panel, the tasks page, a session
+  recording, a discussion convert or the first review comment creates one, and on a site with no
+  linked project that is not archived the project you link becomes where feedback lands, so call
+  `project_annotation_settings_get` before linking. To
   move it, unlink each older one (`pm_projects_update` with `website_project_id: null`) or share the
   existing one with the other company; unlinking keeps that project and its tasks in the PM project
   lists, but they leave this site's Tasks page and the editor's "This Project" task view, and their
@@ -282,10 +286,13 @@ project team, which is who `pm_project_team` lists: anyone else is refused with 
 the website's PM project, with no section, so a section default never reaches it. When no linked
 project is left (none was linked, or every linked one is archived), the next writer creates one: the
 first review comment makes "Website Feedback: <site>", while the editor Tasks panel, the tasks page,
-session recordings and discussion converts make "PM - <site>". Sites created new from the dashboard
-have "PM - <site>" from birth, but cloned sites (the dashboard's Clone Project or `site_clone`) and
-sites made with `site_create` or `site_create_external` have none until one of those writers makes one, and a project linked to a site with none becomes
-where feedback lands (call `project_annotation_settings_get` before linking). So read
+session recordings and discussion converts make "PM - <site>". Every new site gets "PM - <site>"
+when it is created (from the dashboard, `site_create`, `site_create_external`, a clone with
+`site_clone` or the dashboard's Clone Project, a Webflow site added in the account hub, or a GitHub
+import that makes a new site), but a site created before that by `site_create`,
+`site_create_external` or `site_clone`, or by the dashboard's Clone Project, may have none until one
+of those writers makes one, and a project linked to a site with none becomes where feedback lands
+(call `project_annotation_settings_get` before linking). So read
 `review_assignee.pm_project` rather than assuming a name. It goes to the website's review assignee when one is set, else to the project's default assignee, else
 to nobody. The review assignee is the review page's "Task assignment" setting, or
 `project_annotation_settings_set({ project_id, review_assignee_id })` with the WEBSITE project id
@@ -331,10 +338,12 @@ task whose deliverable lives only in chat history is not a work record.
 argument; attribution is `assigned_to_id` at create or update time.
 
 **Reopening: `pm_tasks_uncomplete({ id, status, progress_percentage, summary })`, never
-`pm_tasks_update`.** The update PATCH allow-list does not include `completed_at`, so an "update"
-reopen leaves `completed_at` set and progress at 100: the task reads as done in every client report
-while sitting in an open status. Defaults are `status='in_progress'` and `progress_percentage=0`,
-capped at 99.
+`pm_tasks_update`.** `pm_tasks_uncomplete` clears `completed_at`, resets progress, reopens the
+linked review annotation and records the optional summary as a reopen comment, all in one call.
+`pm_tasks_update` moving the status out of done also clears `completed_at`, but it leaves progress
+at 100 unless you send `progress_percentage` too, so the task still reads as finished in progress
+reports while sitting in an open status. Defaults are `status='in_progress'` and
+`progress_percentage=0`, capped at 99.
 
 `pm_tasks_get({ id })` returns more than the task. Its `data` carries an `annotations` array and
 `annotation_count` - the browser annotations a reviewer or client dropped on the live preview. Each
