@@ -81,10 +81,12 @@ browser annotation (screenshot captured async) AND a PM task in the site's PM pr
 2-way: completing the task resolves the annotation. Review feedback lands in the site's oldest
 linked PM project that is not archived: `project_annotation_settings_get`'s
 `review_assignee.pm_project` names it, even when `linked_project_count` (the linked projects that
-are not archived) is above 1. Sites created new from the dashboard have a "PM - <site>" project
-from birth; cloned sites (the dashboard's Clone Project or `site_clone`) and sites made with
-`site_create` or `site_create_external` have no linked PM project until one of the writers below
-creates one. On a site with no linked project that is not
+are not archived) is above 1. Every new site gets a linked "PM - <site>" project when it is
+created: from the dashboard, from `site_create` or `site_create_external`, from a clone (the
+dashboard's Clone Project or `site_clone`), from a Webflow site added in the account hub, or from a
+GitHub import that makes a new site. A site created before that by `site_create`,
+`site_create_external` or `site_clone`, or by the dashboard's Clone Project, may have no linked PM
+project until one of the writers below creates one. On a site with no linked project that is not
 archived, a project you link with `website_project_id` becomes where feedback lands, so call
 `project_annotation_settings_get` before linking one. When no linked
 project is left, the next writer creates one: the first review comment makes "Website Feedback:
