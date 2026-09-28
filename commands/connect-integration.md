@@ -13,8 +13,14 @@ Confirm the account with `get_account_info` first so the link is minted for the 
 
 `integration_connectors_list` (no arguments). For every connector it returns `ready` (a link can be
 minted now), the OAuth client it would use (`client.would_use`: the account's own app, or Hiveku's
-platform app), the existing `connections[]` with their ids and statuses, and, when nothing can front
-the consent, `client.how_to_get_ready` with the exact prerequisite.
+platform app), the existing `connections[]` with their ids, statuses and `client_source`, and, when
+nothing can front the consent, `client.how_to_get_ready` with the exact prerequisite.
+
+Hiveku's policy: every Google product except Gmail (Google Analytics, Search Console, Business
+Profile, Google Ads, Calendar) runs on Hiveku's own Google app and, for Google Ads, Hiveku's
+developer token. For those, never ask for a developer token, a client id or a secret, never pass an
+own `oauth_app_id`, and never send anyone into a Google Cloud project of their own. The only Google
+app an account may own is its internal Gmail app.
 
 Map the user's words to a connector slug (`ga4` / `analytics` -> `google_analytics`, `gsc` ->
 `google_search_console`, `gbp` -> `google_business_profile`, `google ads` -> `google_ads`,
@@ -27,10 +33,17 @@ Decide the mode from the catalog, not from the request wording:
   lacks analytics.edit") -> **reconnect** with `target_connection_id` = that row's id. Credentials
   are replaced in place under the client that minted the row; bindings (property, site, customer id,
   location) are kept.
+- That row is a Google connection other than Gmail with `client_source: 'byok'` (it still signs in
+  through the account's own Google app, or is a Google Ads row with a developer token of its own) ->
+  **move** it: reconnect with `target_connection_id` AND `oauth_app_id: 'platform'`. It moves onto
+  Hiveku's app with the same id, bindings and history. Never fix it by enabling an API or editing a
+  consent screen in the account's own Cloud project.
 - No connection, or the user wants an additional one -> **create**.
 - `ready` is false and `linkable` is true -> the account has no OAuth client for it and Hiveku has
   no platform app on this environment. Read `client.how_to_get_ready` aloud and stop; do not invent a
-  workaround. Gmail and Outlook are always bring-your-own-client.
+  workaround. For a Google connector other than Gmail that means Hiveku's app is not configured on
+  this environment: report it to Hiveku support, never register an own Google app for it. Gmail and
+  Outlook are always bring-your-own-client.
 - `linkable` is false -> that provider is dashboard-only for now. Give the account-scoped path
   `https://app.hiveku.com/<accountId>/dashboard/<dashboard_path>` and stop.
 
@@ -39,18 +52,20 @@ Decide the mode from the catalog, not from the request wording:
 - `gmail`, `outlook`, `google_calendar`: whose inbox or calendar it is (`owner_user_email`). On a
   one-user account the server picks them; otherwise it answers 400 `owner_required` with the
   candidates - ask, do not guess.
-- `google_ads` create with the account's OWN Google app: `developer_token` and `customer_id` up
-  front (the server refuses without them). On Hiveku's app neither is needed; the customer is picked
-  after consent.
+- `google_ads`: nothing up front. It runs on Hiveku's app and Hiveku's developer token, and the
+  customer id is picked after consent. Never ask for a developer token: the server refuses one (400
+  `developer_token_not_allowed`), and an own `oauth_app_id` for any Google product but Gmail (400
+  `google_own_app_not_allowed`).
 - `shopify`: the `*.myshopify.com` domain.
 - Everything else needs nothing. Bindings such as the Analytics property or the Search Console site
   are chosen after consent; the status tells you which ones are still missing.
 
 ## 3. Mint the link - once, when the user says go
 
-`integration_connect_link_create({ connector, target_connection_id?, source: 'plugin', ...fields })`.
-It returns `url`, `link_id`, `expires_at` (24 hours by default) and a `handoff` block. The URL is
-shown once - the server keeps only a hash - so deliver it in the same message.
+`integration_connect_link_create({ connector, target_connection_id?, oauth_app_id?, source: 'plugin', ...fields })`
+(`oauth_app_id: 'platform'` only for the move above). It returns `url`, `link_id`, `expires_at` (24
+hours by default) and a `handoff` block, plus `client_change` on a move. The URL is shown once - the
+server keeps only a hash - so deliver it in the same message.
 
 Do not mint links the user did not ask for. Offer, and mint when they pick it.
 
@@ -61,7 +76,11 @@ has all of them):
 
 1. The URL itself, unmangled.
 2. What they will see: a Hiveku page that explains the connection with a Continue button, then the
-   provider's sign-in and consent screen.
+   provider's sign-in and consent screen. For Google Ads, Google first shows an 'unverified app'
+   screen (Advanced, then continue); if Google says 'Access blocked' instead, their Google Workspace
+   admin blocks unverified apps, and nothing changes until the admin allows Hiveku's app (on a move,
+   the connection stays as it is). On a move, also say it moves onto Hiveku's Google app, and that a
+   Google Ads connection's own developer token is dropped (Hiveku's is used).
 3. Which account to pick on the provider's chooser (`handoff.pick_hint`), and what the scary-sounding
    permission is for (`handoff.permissions`).
 4. That the link is valid until `expires_at`, and that the provider's own consent window is five
@@ -96,10 +115,10 @@ Every admin on the account also gets an in-app notification (and email) when a l
 
 ## Traps
 
-- `integration_oauth_initiate` still exists and still works for the four Google products when the
-  account has its own OAuth app; it hands out Google's raw consent URL. Prefer the connect link:
-  it covers every provider, never dead-ends on a missing app when Hiveku's platform app can front
-  the consent, lasts hours instead of minutes, and reports denial as `failed` instead of silence.
+- `integration_oauth_initiate` still exists for the four Google products, but a new connection
+  there also goes out as a connect link on Hiveku's app, and it refuses an own app id and a developer
+  token the same way. Prefer the connect link: it covers every provider, lasts hours instead of
+  minutes, and reports denial as `failed` instead of silence.
   When `integration_oauth_initiate` answers with `connect_link: true`, treat it exactly like a link
   from `integration_connect_link_create` (poll with `link_id`).
 - Do not delete and recreate a connection to fix a token. Reconnect with `target_connection_id`.

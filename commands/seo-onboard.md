@@ -14,9 +14,10 @@ not to drop it. Nothing on the site changes in this command.
 3. Sources: `seo_connections_list`. For each of google_search_console, bing_webmaster,
    google_business_profile, google_analytics and DataForSEO: present or not, status, `last_error`.
    Copy the GSC `site_url` VERBATIM (sc-domain vs url-prefix are different properties). A missing
-   source caps what you can honestly report: connect it with `seo_connection_create` using the
-   per-platform arguments in `references/outcomes-and-measurement.md` [CONFIRM - BYOK credentials;
-   GSC needs the FULL webmasters scope], then verify with `seo_sync`.
+   source caps what you can honestly report: connect a Google source with
+   `integration_connect_link_create({ connector })` (Hiveku's own Google app: never an own Google app,
+   client id or refresh token), and Bing Webmaster with `seo_connection_create` per
+   `references/outcomes-and-measurement.md` [CONFIRM], then verify with `seo_sync`.
 4. Fresh data: `seo_sync({ project_id, full: true })` [CONFIRM on a large account: it fans out across
    every connection]. Read back `seo_rankings_list({ domain, group_by_keyword: true, limit: 200 })`:
    `pagination.total_groups` is the keyword count; a blank AI column is untracked, never not-ranking.
