@@ -22,6 +22,8 @@ at a non-technical user.
 
 "claude settings complete" does not mean updates arrive by themselves. If the auto-update line
 says off, tell the user that new Hiveku versions install only when they run /hiveku:update (the
-desktop app switches Claude's background updater off for its chats). If the claude CLI line says
+desktop app switches Claude's background updater off for its chats). If it says on in terminal
+Claude Code but off in desktop app chats (doctor was run from a terminal, not a chat), the same
+applies to anyone who uses the desktop app. If the claude CLI line says
 not found, /hiveku:update cannot install updates here: point them to Settings > Plugins in the
 desktop app (or /plugin in terminal Claude Code) to update hiveku.

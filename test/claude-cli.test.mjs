@@ -38,6 +38,8 @@ import {
 import { writeBinding } from '../lib/binding.mjs';
 
 const BIN = fileURLToPath(new URL('../bin/hiveku', import.meta.url));
+/** Hides /opt/homebrew/bin/claude and /usr/local/bin/claude from a spawned bin (see the file). */
+const SEAL = new URL('./no-system-claude.mjs', import.meta.url).href;
 const POSIX = process.platform !== 'win32';
 
 const tmp = (prefix = 'hk-cli-') => fs.mkdtempSync(path.join(os.tmpdir(), prefix));
@@ -398,7 +400,7 @@ test('readInstalledVersion reads Claude\'s own record, newest scope first', () =
 /* ── end to end through bin/hiveku ──────────────────────────────────────── */
 
 function runBin(args, env) {
-  return spawnSync(process.execPath, [BIN, ...args], { encoding: 'utf8', env, timeout: 60_000 });
+  return spawnSync(process.execPath, [`--import=${SEAL}`, BIN, ...args], { encoding: 'utf8', env, timeout: 60_000 });
 }
 
 test('bin/hiveku update --json uses the session CLI when claude is not on PATH', { skip: !POSIX }, () => {
@@ -440,6 +442,64 @@ test('bin/hiveku doctor reports the CLI it found and that auto-update is off in 
   const human = runBin(['doctor'], { ...base, DISABLE_AUTOUPDATER: '1', CLAUDE_CODE_ENTRYPOINT: 'claude-desktop' });
   assert.match(human.stdout, /auto-update +off in this session — the Claude desktop app switches it off/);
   assert.match(human.stdout, /claude CLI +.*\/bin\/claude/);
+});
+
+/** A throwaway HOME whose Claude settings are complete (written by doctor --fix itself). */
+function homeWithCompleteSettings() {
+  const home = tmp('hk-cli-doc é ');
+  const env = { HOME: home, PATH: `${path.join(home, 'empty')}:/usr/bin:/bin`, HIVEKU_PLUGIN_DATA: path.join(home, 'data') };
+  const fix = runBin(['doctor', '--fix', '--json'], env);
+  assert.equal(fix.status, 0, fix.stderr);
+  const again = JSON.parse(runBin(['doctor', '--json'], env).stdout);
+  assert.deepEqual(again.missing, [], 'settings are complete');
+  return { home, env };
+}
+
+test('bin/hiveku doctor from a plain terminal on a desktop-only Mac says auto-update is off, not on', { skip: process.platform !== 'darwin' }, () => {
+  // The customer case: no terminal Claude Code, only the desktop app's copy.
+  // Run outside any Claude session, this env has no DISABLE_AUTOUPDATER, but
+  // every chat on the machine is a desktop chat, where it is always off.
+  const { home, env } = homeWithCompleteSettings();
+  const ver = path.join(home, 'Library', 'Application Support', 'Claude', 'claude-code', '2.1.281');
+  const app = fakeClaude(path.join(ver, 'claude.app', 'Contents', 'MacOS', 'claude'), { log: path.join(home, 'argv.log') });
+  write(path.join(ver, '.verified'), '');
+
+  const json = JSON.parse(runBin(['doctor', '--json'], env).stdout);
+  assert.deepEqual(json.claude_cli, { path: app, source: 'desktop', version: '2.1.281' });
+  assert.equal(json.auto_update.on, false);
+  assert.equal(json.auto_update.enabled_in_settings, true);
+  assert.equal(json.auto_update.in_session, false);
+  assert.equal(json.auto_update.reason, 'desktop_app');
+
+  const human = runBin(['doctor'], env);
+  assert.equal(human.status, 0, human.stderr);
+  assert.match(human.stdout, /auto-update +off — the only Claude on this machine is the desktop app, and the Claude desktop app switches it off for its chats\. Updates install only through \/hiveku:update\./);
+  assert.doesNotMatch(human.stdout, /auto-update +on/);
+});
+
+test('bin/hiveku doctor with settings complete: a blocker in the session turns it off; a terminal session is on; a plain terminal says it depends on the app', { skip: !POSIX }, () => {
+  const { home, env } = homeWithCompleteSettings();
+  const session = fakeClaude(path.join(home, 'bin', 'claude'), { log: path.join(home, 'argv.log') });
+
+  // Desktop chat: settings say enabled, the app's DISABLE_AUTOUPDATER=1 wins.
+  const desk = JSON.parse(runBin(['doctor', '--json'], {
+    ...env, CLAUDECODE: '1', CLAUDE_CODE_ENTRYPOINT: 'claude-desktop', DISABLE_AUTOUPDATER: '1', CLAUDE_CODE_EXECPATH: session,
+  }).stdout);
+  assert.equal(desk.auto_update.enabled_in_settings, true);
+  assert.equal(desk.auto_update.on, false);
+  assert.equal(desk.auto_update.blocked_by, 'DISABLE_AUTOUPDATER');
+
+  // Terminal Claude Code session with nothing blocking it.
+  const term = runBin(['doctor', '--json'], { ...env, CLAUDECODE: '1', CLAUDE_CODE_ENTRYPOINT: 'cli', CLAUDE_CODE_EXECPATH: session });
+  assert.equal(JSON.parse(term.stdout).auto_update.on, true);
+
+  // A plain terminal with a terminal claude on PATH: cannot speak for desktop chats.
+  const plainEnv = { ...env, PATH: `${path.join(home, 'bin')}:/usr/bin:/bin` };
+  const plain = JSON.parse(runBin(['doctor', '--json'], plainEnv).stdout);
+  assert.equal(plain.claude_cli.source, 'path');
+  assert.equal(plain.auto_update.on, null);
+  assert.equal(plain.auto_update.reason, 'depends_on_app');
+  assert.match(runBin(['doctor'], plainEnv).stdout, /auto-update +on in terminal Claude Code; off in Claude desktop app chats/);
 });
 
 test('session start in a desktop-app chat: the release notice says it will not install by itself', { skip: !POSIX }, async () => {

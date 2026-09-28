@@ -29,6 +29,7 @@ import {
   chooseUpdateNotice,
   maybePeriodicNotice,
   pluginAutoUpdateBlocker,
+  autoUpdateStatus,
 } from '../lib/update-check.mjs';
 import {
   findClaudeCandidates,
@@ -1014,28 +1015,24 @@ async function cmdDoctor(flags) {
   // ★ "claude settings complete" only means the keys are in settings.json. In
   // the desktop app that says nothing about updates arriving: the app switches
   // Claude Code's auto-updater off for its sessions, so say what actually runs.
+  // Run from a plain terminal, this environment is no chat's environment, so
+  // autoUpdateStatus() never answers "on" for a machine whose only Claude is
+  // the desktop app (lib/update-check.mjs).
   let globalConfig = null;
   try { globalConfig = JSON.parse(await fs.readFile(globalConfigPath(), 'utf8')); } catch { /* absent or invalid */ }
-  const blocker = pluginAutoUpdateBlocker(process.env, globalConfig);
-  const autoUpdateEnabled = !missing.includes('marketplace auto-update');
-  const blockerWhy = !blocker
-    ? null
-    : blocker.kind === 'config'
-      ? `autoUpdates is false in ${globalConfigPath()}`
-      : process.env.CLAUDE_CODE_ENTRYPOINT === 'claude-desktop'
-        ? `the Claude desktop app switches it off for its chats (${blocker.name}=1)`
-        : `${blocker.name} is set in this session`;
-  const autoUpdateOn = autoUpdateEnabled && !blocker;
+  const { text: autoUpdateText, ...autoUpdate } = autoUpdateStatus({
+    env: process.env,
+    globalConfig,
+    enabledInSettings: !missing.includes('marketplace auto-update'),
+    cliSource: cli?.source ?? null,
+    globalConfigFile: globalConfigPath(),
+  });
 
   const rows = [
     `plugin            ${PLUGIN_VERSION}`,
     `data dir          ${writable.ok ? 'writable' : `NOT writable (${writable.code}) — ${dataDir}`}`,
     `claude settings   ${missing.length ? `missing: ${missing.join(', ')}` : 'complete'}`,
-    `auto-update       ${autoUpdateOn
-      ? 'on — Claude checks for plugin updates in the background during interactive sessions'
-      : blocker
-        ? `off in this session — ${blockerWhy}. Updates install only through /hiveku:update.`
-        : 'off — not enabled for the hiveku marketplace yet (see claude settings)'}`,
+    `auto-update       ${autoUpdateText}`,
     `claude CLI        ${cli
       ? `${cli.path} (${describeCli(cli)}) — /hiveku:update can install updates`
       : 'not found — /hiveku:update cannot install updates on this machine; update from the plugin screen instead'}`,
@@ -1049,7 +1046,7 @@ async function cmdDoctor(flags) {
     data_dir_writable: writable.ok,
     missing,
     fixed,
-    auto_update: { on: autoUpdateOn, enabled_in_settings: autoUpdateEnabled, blocked_by: blocker?.name ?? null },
+    auto_update: autoUpdate,
     claude_cli: cli ? { path: cli.path, source: cli.source, version: cli.version ?? null } : null,
     claude_cli_tried: cliTried,
   }, rows);
