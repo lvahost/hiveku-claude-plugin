@@ -28,9 +28,12 @@ every folder.
 > **Then turn on auto-update — one click, easy to miss.** Claude Code enables auto-update for
 > Anthropic's own marketplaces, but third-party ones like this start with it **off**. Leave it off
 > and you keep the version you installed forever: no new skills, no fixes, and nothing tells you
-> you are behind. Open `/plugin` (or Settings → Plugins), go to **Marketplaces**, select
-> **hiveku**, and choose **Enable auto-update**. To update by hand instead:
-> `/plugin marketplace update hiveku` then `/plugin update hiveku@hiveku`.
+> you are behind. Open `/plugin`, go to **Marketplaces**, select **hiveku**, and choose
+> **Enable auto-update**. To update by hand instead: `/hiveku:update`.
+>
+> **In the Claude desktop app, auto-update does not run** (the app switches Claude Code's
+> background updater off for its chats). Run `/hiveku:update` when a chat says a new version is
+> out; it installs through the app's built-in copy of Claude's command-line tool.
 
 Then connect your accounts and create the workspace:
 

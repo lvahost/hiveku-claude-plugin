@@ -21,9 +21,10 @@ Everything below is the same on macOS, Windows, and Linux.
 5. The **hiveku** plugin now appears in the list. Click it, then click **Install**.
    If you are asked to choose a scope, pick the one that covers **all projects** (user scope)
    so Hiveku follows you into every folder.
-6. **Turn on auto-update — do not skip this.** Still in **Plugins**, find the **hiveku**
-   marketplace, open it, and choose **Enable auto-update**. See "Staying up to date" below for
-   why this matters.
+6. **Updates come through `/hiveku:update`.** The desktop app does not update plugins by
+   itself: it switches Claude Code's background updater off for its chats. Hiveku tells you at
+   the start of a chat when a new version is out; type `/hiveku:update` in any chat to install
+   it, then completely quit and reopen Claude. See "Staying up to date" below.
 
 If the plugin list says something like `Run /reload-plugins to activate`, open a Claude Code
 session and run `/reload-plugins`.
@@ -537,7 +538,9 @@ folder and network access to unlisted hosts. Hiveku needs three settings to work
 `core.hiveku.com`, and marketplace auto-update). **You do not set these by hand.** From 0.10.8
 the plugin adds them to your Claude settings itself at session start - additively, with a
 backup - and tells you to start one new session. `hiveku doctor` shows the state;
-`hiveku doctor --fix` repairs it on demand.
+`hiveku doctor --fix` repairs it on demand. (The auto-update setting takes effect in terminal
+Claude Code only; the desktop app switches the background updater off, so there updates come
+through `/hiveku:update`. `hiveku doctor` says which applies on its auto-update line.)
 
 For a team, an admin can push the same three settings once through managed settings so no
 machine ever needs the first-session repair:
@@ -556,10 +559,17 @@ machine ever needs the first-session repair:
 
 ## Staying up to date
 
-**Read this part.** Claude Code enables auto-update by default for Anthropic's own
-marketplaces, but **third-party marketplaces like this one start with auto-update OFF**. If you
-leave it off, you keep the exact version you installed and never receive new skills, commands,
-or fixes, with nothing telling you that you are behind.
+**In the Claude desktop app, run `/hiveku:update`.** The desktop app does not install plugin
+updates by itself: it starts every chat with Claude Code's background updater switched off, so
+the auto-update setting described below has no effect there. When a newer Hiveku is out, a chat
+starts with a one-line notice naming it. `/hiveku:update` installs it using the app's own
+built-in copy of Claude's command-line tool (no terminal install needed), and it takes effect
+once you completely quit and reopen Claude.
+
+**In terminal Claude Code, read this part.** Claude Code enables auto-update by default for
+Anthropic's own marketplaces, but **third-party marketplaces like this one start with
+auto-update OFF**. If you leave it off, you keep the exact version you installed and never
+receive new skills, commands, or fixes, with nothing telling you that you are behind.
 
 From 0.10.5 the plugin also tells you itself: when a newer version has already arrived on your
 machine but is not applied, every new session starts with a one-line notice naming it, and
@@ -567,10 +577,11 @@ machine but is not applied, every new session starts with a one-line notice nami
 
 So either:
 
-- **Turn on auto-update once** (step 6 above, or the Marketplaces tab in `/plugin`). Claude Code
-  then refreshes shortly after a session starts and picks up new versions on its own. This is
-  what we recommend. Scriptable/pushable form — the same thing as a settings block, useful for
-  provisioning a whole team's machines at once:
+- **Turn on auto-update once** (the Marketplaces tab in `/plugin`). In an interactive terminal
+  session Claude Code then refreshes within about ten minutes of your first message and picks
+  up new versions on its own. This is what we recommend for terminal users. Scriptable/pushable
+  form — the same thing as a settings block, useful for provisioning a whole team's machines at
+  once:
 
   ```json
   {
@@ -584,9 +595,10 @@ So either:
   ```
 
   in `~/.claude/settings.json` (per user) or managed settings (org-wide, users cannot turn it off).
-- **Or update by hand** whenever you want the latest. The usual path: click the terminal icon
-  in the Claude app (it opens a shell in whatever folder you have open — which folder does not
-  matter, the plugin is installed for your whole user account) and run:
+- **Or update by hand** whenever you want the latest: run `/hiveku:update` in any chat (desktop
+  app or terminal). It finds Claude's command-line tool itself, including the desktop app's
+  built-in copy, and reports exactly what it installed. From a shell where `claude` is on PATH
+  (a terminal install of Claude Code; the desktop app does not add one), the same two steps are:
 
   ```bash
   claude plugin marketplace update hiveku

@@ -19,6 +19,7 @@ import {
   probeIsStale,
   readUpdateCheck,
   maybePeriodicNotice,
+  pluginAutoUpdateBlocker,
   updateCheckPath,
   CHECK_TTL_MS,
   NOTICE_TTL_MS,
@@ -107,4 +108,42 @@ test('maybePeriodicNotice speaks once per throttle window and stamps only when i
   // Skew never nags mid-session.
   const skew = await maybePeriodicNotice(dir, { running: '0.1.0', installedNewest: '9.9.9', cloneVersion: null, now: 10_000 + 3 * NOTICE_TTL_MS });
   assert.equal(skew, null);
+});
+
+/* ── auto-update that cannot run (the Claude desktop app) ─────────────────── */
+
+test('pluginAutoUpdateBlocker mirrors Claude Code\'s own gate, FORCE_AUTOUPDATE_PLUGINS included', () => {
+  // The desktop app starts every Code session with DISABLE_AUTOUPDATER=1.
+  assert.deepEqual(pluginAutoUpdateBlocker({ DISABLE_AUTOUPDATER: '1' }), { kind: 'env', name: 'DISABLE_AUTOUPDATER' });
+  assert.deepEqual(pluginAutoUpdateBlocker({ DISABLE_UPDATES: 'true' }), { kind: 'env', name: 'DISABLE_UPDATES' });
+  assert.deepEqual(
+    pluginAutoUpdateBlocker({ CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: 'yes' }),
+    { kind: 'env', name: 'CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC' },
+  );
+  assert.equal(pluginAutoUpdateBlocker({ DISABLE_AUTOUPDATER: '1', FORCE_AUTOUPDATE_PLUGINS: '1' }), null);
+  assert.equal(pluginAutoUpdateBlocker({ DISABLE_AUTOUPDATER: '0' }), null);
+  assert.equal(pluginAutoUpdateBlocker({}), null);
+  assert.deepEqual(pluginAutoUpdateBlocker({}, { autoUpdates: false }), { kind: 'config', name: 'autoUpdates' });
+  assert.equal(pluginAutoUpdateBlocker({}, { autoUpdates: false, installMethod: 'native', autoUpdatesProtectedForNative: true }), null);
+  assert.equal(pluginAutoUpdateBlocker({ FORCE_AUTOUPDATE_PLUGINS: 'on' }, { autoUpdates: false }), null);
+});
+
+test('when auto-update cannot run, the notice says it will not install by itself and names /hiveku:update', async () => {
+  const off = chooseUpdateNotice({ running: '0.26.12', installedNewest: '0.26.12', cloneVersion: null, remoteVersion: '0.27.4', autoUpdateOff: true });
+  assert.equal(off.kind, 'remote');
+  assert.match(off.text, /0\.27\.4 has been released \(this machine has 0\.26\.12\)/);
+  assert.match(off.text, /auto-update is switched off in this Claude session, so it will not install by itself/);
+  assert.match(off.text, /run \/hiveku:update/);
+  assert.match(off.text, /quit and reopen Claude/);
+
+  const apply = chooseUpdateNotice({ running: '0.26.12', installedNewest: '0.26.12', cloneVersion: '0.27.4', remoteVersion: null, autoUpdateOff: true });
+  assert.match(apply.text, /switched off in this Claude session/);
+
+  const on = chooseUpdateNotice({ running: '0.26.12', installedNewest: '0.26.12', cloneVersion: null, remoteVersion: '0.27.4' });
+  assert.doesNotMatch(on.text, /switched off/);
+
+  const dir = tmp();
+  await fs.writeFile(updateCheckPath(dir), JSON.stringify({ checked_at: 1, remote_version: '0.27.4' }));
+  const periodic = await maybePeriodicNotice(dir, { running: '0.26.12', installedNewest: '0.26.12', cloneVersion: null, autoUpdateOff: true, now: 5 });
+  assert.match(periodic.text, /switched off in this Claude session/);
 });
