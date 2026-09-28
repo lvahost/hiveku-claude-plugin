@@ -75,10 +75,9 @@ const FORBIDDEN = [
   /(now|no longer) (answers|returns|gets) (a )?(202|403)/i,
   /since the (edge )?switch/i,
   /is now a 403/i,
-  // A blocked row mixes the site's own 403s with the firewall's, and the rollup
-  // classifies on the status alone, so no network number says which one a row is:
-  // once the edge answers 403, a spoofed crawler on rented Azure (8075) lands in the
-  // same blocked bucket as the site's own refusals.
+  // No network number says whether a blocked row's client is real: a spoofed crawler on
+  // rented Azure (8075) is blocked like any unidentified client, and days rolled before
+  // 2026-09-28 also count the site's own 403s as blocked.
   /usually means the site refused it/i,
   /a blocked row from [^.]*\b(15169|8075)\b/i,
 ];
@@ -96,10 +95,10 @@ function assertFirewallReference(text) {
   for (const token of [
     "q: 'Googlebot'",
     "q: 'bingbot'",
-    "outcome keeps one kind of refusal: 'challenged', 'blocked' or 'rate_limited'",
+    "outcome keeps one kind of refusal: 'challenged', 'blocked', 'rate_limited', or 'site_refused' for the site's own",
     'limit (1 to 200, default 20) and offset (default 0)',
     'totalClients',
-    'blocked counts the site\'s own 403s as well as the firewall\'s',
+    'siteRefused counts 403s and 429s the site itself sent',
     'A Googlebot row on Google Cloud (asn 396982) is usually an impostor',
     'Real bingbot comes from 8075 (Microsoft / Azure)',
     'the network number alone cannot prove a bingbot real or fake',
@@ -111,7 +110,7 @@ function assertFirewallReference(text) {
     'null means "not read", never zero',
     'It never lifts the per-address rate limit (429), the fingerprint volume challenge, or the scraper-network block (403 with x-hiveku-firewall: blocked-network)',
     'Decide on the status and the x-hiveku-firewall header, never on the body text',
-    'The row cannot tell them apart, and neither can its network number',
+    'Its network number cannot say whether the client is real',
   ]) {
     assert.ok(f.includes(token), `${FIREWALL} does not teach: ${token}`);
   }
