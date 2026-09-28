@@ -40,7 +40,8 @@ Investigate with exactly these tools (GET or read-only POST). Nothing outside th
   (present whenever an X row exists) is the budget: `eligible`, `used`, `limit` (60 published X
   posts per calendar month, Premium only, UTC), `remaining`; `eligible: false` is a plan
   conversation, not a content one. `social_provider_list` for a wanted platform with no row
-  (`hiveku_native: false` means a BYOK connect, not an unsupported platform). No tool activates,
+  (`hiveku_native: false` means a BYOK connect, not an unsupported platform; on Google Business
+  Profile it means Hiveku's Google app is not configured, never a BYOK connect). No tool activates,
   disconnects or re-authenticates a row; the plan names the dashboard picker or
   `/hiveku:connect-integration`, both a human's act.
 - **Delivery, calendar and the queue.** `social_calendar_gaps({ from_date, to_date })` (default 14
