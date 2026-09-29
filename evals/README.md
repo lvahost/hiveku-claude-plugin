@@ -224,10 +224,14 @@ that file plus the prompt over stdin the way the runner does for a command.
 
 `phone-check`: a five-DID voice tenant for "the phones aren't ringing and one
 rep says she can't dial out", frozen at 2026-08-29T15:00Z. The headline trap
-is arithmetic: `voice_diagnose_setup` reports `dids_without_e911: 3` (raw
-null-linkage that counts two toll-free DIDs taking no E911 at all) against a
-real exposure of ONE local DID with no address plus ONE whose address is still
-pending verification - its own category, because pending is not registered.
+is arithmetic: `voice_diagnose_setup` reports `dids_without_e911: 1`, counted
+the way the live route counts it (local DIDs with no address; the two
+toll-free DIDs are left out and reported as
+`toll_free_dids_exempt_from_e911: 2`), against a real exposure of ONE local
+DID with no address plus ONE whose address is still pending verification -
+its own category, because pending is not registered, and one the count
+cannot see. Subtracting the toll-free pair from that 1 (the old doctrine)
+undercounts to nothing.
 Routing seeds: an IVR digit resolving `{type:'unknown'}` (deleted target, on a
 200), a queue with `fusionpbx_queue_uuid` null, and the complaining rep's
 unregistered desktop softphone - against a provisioned ring group, a healthy

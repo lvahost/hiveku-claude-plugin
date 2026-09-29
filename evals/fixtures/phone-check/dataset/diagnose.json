@@ -1,5 +1,5 @@
 {
-  "_comment": "Inner object of the { data: ... } envelope the diagnostics route returns (builder src/app/api/olympus/voice/diagnostics/route.ts, action=diagnose_setup). dids_without_e911 is the route's raw count of is_active DIDs with a null e911_address_id - it does NOT exempt toll-free numbers, which is the seeded inflation trap (3 reported; the pinned blocking_issues string is the route's own template). verified_e911_addresses counts voice_e911_addresses rows with verified_at NOT NULL.",
+  "_comment": "Inner object of the { data: ... } envelope the diagnostics route returns (builder src/app/api/olympus/voice/diagnostics/route.ts, action=diagnose_setup). dids_without_e911 counts is_active DIDs with a null e911_address_id that are NOT toll-free (the route leaves toll-free out and reports it as toll_free_dids_exempt_from_e911), so it is 1 here (did_5) and it cannot see did_3, whose address exists but is still pending verification. The pinned blocking_issues string is the route's own template; the 'no verified E911 addresses' blocker stays off because one address is verified. verified_e911_addresses counts voice_e911_addresses rows with verified_at NOT NULL.",
   "data": {
     "tenant_provisioned": true,
     "fusionpbx_domain": "brightsidefixtures.pbx.hiveku.example",
@@ -7,13 +7,14 @@
     "recording_enabled": false,
     "hipaa_mode": false,
     "active_dids": 5,
-    "dids_without_e911": 3,
+    "dids_without_e911": 1,
+    "toll_free_dids_exempt_from_e911": 2,
     "extensions": 2,
     "ring_groups": 1,
     "ivrs": 1,
     "verified_e911_addresses": 1,
     "blocking_issues": [
-      "3 active DID(s) have no E911 address — calls may not connect emergency services."
+      "1 active DID(s) have no E911 address — calls may not connect emergency services."
     ]
   }
 }
