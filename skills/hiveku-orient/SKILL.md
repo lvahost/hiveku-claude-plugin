@@ -347,13 +347,18 @@ department.
 
 `memory_update`, `memory_delete`, `memory_restore_version`, `memory_bulk_create` and
 `account_memory_append` always ask the person first, even when their settings allow every Hiveku
-tool, and the prompt names the agent that follows what changes (from the last `/hiveku:knowledge`
-pull, when there was one). Before the call, say in one line what will change so the prompt is easy
-to answer. `memory_create` asks only when it would make a rule, skill, shortcut (`command`) or
-specialist (`agent`) that names no agent: that one is Shared with every agent, so every agent
-follows it. Name the agent it is for (start its text with `<!-- department: x -->`, and pass
-`department` where the tool offers it) unless every agent really should follow it. A note, a
-profile and the reads do not ask.
+tool. For an update or a delete the prompt names the agent that follows the entry (from the last
+`/hiveku:knowledge` pull, when there was one), and for an update it also says when the new text
+moves the entry to another agent: a rule, skill, shortcut or specialist can be filed by the
+`<!-- department: x -->` line in its text, so keep that line when you rewrite one. A restore names
+only a version, so its prompt cannot name the entry or its agent: say which entry it is. Before the
+call, say in one line what will change so the prompt is easy to answer. `memory_create` asks only
+when it would make a rule, skill, shortcut (`command`) or specialist (`agent`) that is Shared with
+every agent, so every agent follows it. Name the agent it is for by starting its text with
+`<!-- department: x -->` unless every agent really should follow it: that line is what Hiveku reads
+today. A `department` argument on `memory_create` is not sent by the MCP server yet, so on its own
+it still leaves the entry shared, and the prompt says so. A note, a profile and the reads do not
+ask.
 
 If no entry exists, `memory_create({ type: 'memory', name: '<dept>', content })`; a 409 means one
 already exists, so go back to step 1 rather than duplicating.
