@@ -50,8 +50,14 @@ const ACCOUNT = '3f2504e0-4f89-11d3-9a0c-0305e82c3301';
  */
 const INCOMING = new Set([]); // memory_log_list and memory_log_summary landed in the index (MCP #28, 2026-09-25)
 
-/** memory_* tokens in prose that are field or argument names, not tools. */
-const MEMORY_NON_TOOLS = new Set(['memory_id', 'memory_domain', 'memory_entry_id', 'memory_promoted', 'memory_links']);
+/**
+ * memory_* tokens in prose that are field or argument names, not tools.
+ * memory_page and memory_page_url: the front matter /hiveku:knowledge writes
+ * (and memory_list's `memory_page_url`), where the Memory page shows an entry.
+ */
+const MEMORY_NON_TOOLS = new Set([
+  'memory_id', 'memory_domain', 'memory_entry_id', 'memory_promoted', 'memory_links', 'memory_page', 'memory_page_url',
+]);
 
 /**
  * The closer follow-up landed (G16): the closer line is checked like any other.

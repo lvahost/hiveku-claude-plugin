@@ -748,7 +748,8 @@ mechanism.
 - `/hiveku:remember` - persist a learning into the right department memory, read-merge-write.
 - `/hiveku:memory-changes` - what changed in this account's memory since a date, by department: who,
   from which app, when and why.
-- `/hiveku:knowledge` - mirror the account's memory, rules and skills locally (account-level only).
+- `/hiveku:knowledge` - mirror the account's memory, rules and skills locally, filed by the agent that
+  owns each one, with each skill also written as a Claude Code skill (account-level only).
 
 ## Deep reference
 
