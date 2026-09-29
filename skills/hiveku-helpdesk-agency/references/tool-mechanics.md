@@ -278,9 +278,11 @@ denominator - report the count.
 `memory_create` accepts only `type: memory | skill | rule | command | agent | identity`; there
 is no `report` or `baseline` type and anything else is a 400. It returns 409 when the (domain,
 project_id) pair already exists - that means the document exists: `memory_list({ domain:
-'helpdesk' })` to read it, merge, then `memory_update({ memory_id, content })` with the whole
-merged body, because `memory_update` REPLACES the whole document. If one gets clobbered,
-recover with `memory_list_versions({ memory_id })` then `memory_restore_version({ version_id })`.
+'helpdesk' })` to read it, merge (check `memory_log_list({ memory_id, since })` for any change since you
+read it), then `memory_update({ memory_id, content, reason, expected_version })` with the whole
+merged body and a one-line `reason`, because `memory_update` REPLACES the whole document. If one
+gets clobbered, recover with `memory_list_versions({ memory_id })` then
+`memory_restore_version({ version_id, reason })`.
 Durable policy belongs in the `helpdesk` document itself - that is the one hydration loads.
 
 ## CRM context and mirroring

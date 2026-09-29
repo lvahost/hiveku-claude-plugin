@@ -153,6 +153,31 @@ test('the session closer checks the log before its memory_update and sends reaso
   }
 });
 
+test('no skill, command or agent shows the pre-log call memory_update({ memory_id, content }) (G16)', () => {
+  const offenders = walkMarkdown()
+    .filter((file) => /memory_update\(\{\s*memory_id,\s*content\s*\}\)/.test(fs.readFileSync(file, 'utf8')))
+    .map((file) => path.relative(root, file));
+  assert.deepEqual(offenders, [], `these still teach the call without reason and expected_version:\n  ${offenders.join('\n  ')}`);
+});
+
+test('every skill or agent file that teaches a memory_update call also teaches the log check and a reason', () => {
+  const teaching = [];
+  const missing = [];
+  for (const file of walkMarkdown()) {
+    const rel = path.relative(root, file);
+    if (rel.startsWith('commands')) continue; // the commands test above
+    const text = fs.readFileSync(file, 'utf8');
+    if (!/memory_update\(\{/.test(text)) continue;
+    teaching.push(rel);
+    if (!/memory_log_list/.test(text) || !/reason/.test(text)) missing.push(rel);
+  }
+  // Refuse the vacuous pass: the SEO, PPC and books skills teach it today.
+  for (const rel of ['skills/hiveku-seo-agency/SKILL.md', 'skills/hiveku-books-agency/SKILL.md', 'skills/hiveku-ppc-agency/references/account-structure.md']) {
+    assert.ok(teaching.includes(rel), `${rel} should be detected as teaching a memory_update write`);
+  }
+  assert.deepEqual(missing, [], `these teach memory_update without the log check or a reason:\n  ${missing.join('\n  ')}`);
+});
+
 test('the detector itself catches a command that teaches the old loop (negative control)', () => {
   const old = 'Persist: `memory_list({ domain })`, append, `memory_update({ memory_id, content })`.';
   const teaches = /memory_update\(\{/.test(old);

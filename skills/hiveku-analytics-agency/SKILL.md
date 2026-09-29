@@ -82,8 +82,10 @@ Criteria and the response ladder: `hiveku-orient/references/foundation-first.md`
   deliverable has its own rail: `marketing_report_create` and its siblings (see
   references/monthly-report.md) - the decisions behind it still live in memory.
 - Memory is ONE document per domain and `memory_update` REPLACES it. Read before you write:
-  `memory_list({ domain: 'marketing' })`, append to the `content` it returns, then
-  `memory_update({ memory_id, content })` with the whole merged body. `memory_create({ type:
+  `memory_list({ domain: 'marketing' })`, append to the `content` it returns, check
+  `memory_log_list({ memory_id, since })` for any change since you read it and merge it, then
+  `memory_update({ memory_id, content, reason, expected_version })` with the whole merged body
+  (`reason` is one line on why; `expected_version` is the version you read). `memory_create({ type:
   'memory', name: 'marketing', content })` only when nothing exists (a 409 means it does).
 - Confirm before writes. This department reads freely, but a `memory_create`, a
   `pm_tasks_create`, a `marketing_report_create` (it schedules recurring client email), or a

@@ -306,9 +306,9 @@ configured, so you stop guessing and getting 404s. Both tools are full-key surfa
 
 ## Memory is ONE document per department - read before you write
 
-Memory lives in `account_ai_memory`, one row per (domain, project_id). `memory_update({ memory_id,
-content })` REPLACES that row's whole content. Sending only today's note deletes everything the
-department had accumulated.
+Memory lives in `account_ai_memory`, one row per (domain, project_id). `memory_update` REPLACES
+that row's whole content. Sending only today's note deletes everything the department had
+accumulated.
 
 Always read-modify-write:
 
