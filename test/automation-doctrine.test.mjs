@@ -690,7 +690,8 @@ test('source cross-check: the builder answers, refuses and files what the round-
 //     (workflowRetryService.ts), so "writes nothing" was not exact;
 //   - deliveries to a switched-off workflow are only in the Forms ledger;
 //   - the workflow PM steps check the assignee on a real run, and the dry run
-//     simulates them (pmActions.ts, dry-run.ts).
+//     simulates them (pmActions.ts; node-effects/specs/pm.ts gives each a
+//     strategy in GATED_STRATEGIES, which the engine mocks in a test).
 
 test('round-3 fact-check: a setup notice names a diagnostic and the problem; the auth note offers the gentler path', () => {
   const analyst = flat(read(ANALYST));
@@ -768,7 +769,10 @@ test('source cross-check: the builder source the round-3 fact-check corrections 
     nodeRoute: path.join(builder, 'app', 'api', 'olympus', 'workflows', '[workflowId]', 'nodes', '[nodeId]', 'route.ts'),
     retry: path.join(builder, 'lib', 'workflowRetryService.ts'),
     pm: path.join(builder, 'lib', 'workflow', 'nodeHandlers', 'pmActions.ts'),
-    dryRun: path.join(builder, 'lib', 'workflow', 'dry-run.ts'),
+    // Since the workflow simulator (builder, simulator phase 2c), how a test
+    // treats a node lives in its node-effects spec, not in dry-run.ts.
+    pmEffects: path.join(builder, 'lib', 'workflow', 'node-effects', 'specs', 'pm.ts'),
+    effectTypes: path.join(builder, 'lib', 'workflow', 'node-effects', 'types.ts'),
   };
   if (!Object.values(files).every((f) => fs.existsSync(f))) {
     t.diagnostic('source cross-check skipped: no round-3 hiveku_builder checkout beside this repo');
@@ -783,9 +787,18 @@ test('source cross-check: the builder source the round-3 fact-check corrections 
   const pm = fs.readFileSync(files.pm, 'utf8');
   assert.ok(pm.includes('error: `Could not assign the task: ${assignee.body.error}`'));
   assert.ok(pm.includes('not found in this account'));
-  const dryRun = fs.readFileSync(files.dryRun, 'utf8');
-  for (const type of ["'createTask'", "'createSubtask'", "'updateTask'", "'completeTask'"]) {
-    assert.ok(dryRun.includes(type), `dry-run.ts no longer simulates ${type} - the prose must change`);
+  // "workflow_test simulates createTask, createSubtask, updateTask and
+  // completeTask": each spec's strategy must be one the engine mocks in a test
+  // (GATED_STRATEGIES), so the handler never runs.
+  const effects = fs.readFileSync(files.pmEffects, 'utf8');
+  const types = fs.readFileSync(files.effectTypes, 'utf8');
+  const gatedBlock = types.match(/GATED_STRATEGIES[^=]*=\s*new Set<[^>]*>\(\[([\s\S]*?)\]\)/);
+  assert.ok(gatedBlock, 'node-effects/types.ts no longer declares GATED_STRATEGIES - re-check the prose');
+  const gated = new Set([...gatedBlock[1].matchAll(/'([a-z_]+)'/g)].map((m) => m[1]));
+  for (const type of ['createTask', 'createSubtask', 'updateTask', 'completeTask']) {
+    const spec = effects.match(new RegExp(`defineEffect\\(\\['${type}'[^\\]]*\\],\\s*\\{[\\s\\S]*?strategy:\\s*'([a-z_]+)'`));
+    assert.ok(spec, `node-effects/specs/pm.ts no longer declares ${type} - the prose must change`);
+    assert.ok(gated.has(spec[1]), `${type} now uses '${spec[1]}', which runs the handler in a test - the prose must change`);
   }
 });
 
