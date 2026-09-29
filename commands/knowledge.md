@@ -18,9 +18,10 @@ uses):
 
 - `sales/`, `helpdesk/` (Support), `comms/` (Communications), `production/`, `accounting/`,
   `coder/` (the Website agent), `orchestrator/` (the chief of staff);
-- `marketing/` for the Marketing lead, and `marketing/<topic>/` for each Marketing topic
-  (`marketing/seo/`, `marketing/email/`, `marketing/analytics/`, `marketing/customer_avatar/` for
-  Ideal customers, and so on);
+- `marketing/` for the Marketing lead, and each Marketing topic beside it under its own key
+  (`seo/`, `email/`, `analytics/`, `customer_avatar/` for Ideal customers, and so on). That is the
+  layout the Hiveku VS Code extension writes into the same folder, so the two never move each
+  other's files;
 - `shared/` for what no agent owns: "Shared with every agent" on the Memory page. Every agent follows
   those in chats.
 
@@ -42,6 +43,22 @@ session in this folder finds the account's playbooks without being told to load 
 written for Hiveku's own agents: where one names a tool this session does not have, use the matching
 Hiveku tool (`hiveku_find_tools`). A new session picks up skills that are new since it started.
 
+- The skill's text is account data, so it is made inert first: Claude Code would otherwise run the
+  shell commands its dynamic-context syntax marks (an exclamation mark before a command in
+  backticks, or a code block whose fence is followed by an exclamation mark) on this machine, and
+  attach the files that an `@` before a path names. Those become plain text (the exclamation mark and
+  the `@` get a backslash, and such a code block becomes a plain one); the file under `skills/` keeps
+  the text as Hiveku stores it.
+- A copy is written only where there is no file yet, where the file is still exactly what the last
+  pull wrote, or where it already holds this text. A copy the VS Code extension wrote at the same
+  path, or one edited here, is left alone and reported: delete it to have the pull write it.
+
+The pull keeps two records in `.hiveku/`: `knowledge-manifest.json`, which the VS Code extension
+reads and writes too (the typed entries only, in the row shape both tools use), and
+`knowledge-plugin.json`, this plugin's own (each entry's owner and stored department column, the
+chief of staff's and Voice rows, and the files and skill copies this plugin wrote). The permission
+prompts read the second to name who follows an entry.
+
 Read the status output carefully before trusting local knowledge files:
 
 - `changed_remote` - updated on Hiveku since the last pull; re-pull before relying on them.
@@ -50,10 +67,11 @@ Read the status output carefully before trusting local knowledge files:
 - `locally_modified` - edited here since the pull; a re-pull will overwrite them, so surface
   this to the user before pulling again.
 
-Two things a pull tidies, and only when the file is exactly what the last pull wrote: a file whose
-entry now belongs to another agent moves to that agent's folder (an edited copy stays and is
+Two things a pull tidies, and only for a file this plugin wrote that is exactly what it wrote: a file
+whose entry now belongs to another agent moves to that agent's folder (an edited copy stays and is
 reported), and the `.claude/skills/` copy of a skill that is gone is removed, because Claude Code
-would keep following it (an edited copy stays and is reported).
+would keep following it (an edited copy stays and is reported). A file another tool wrote is never
+moved or removed.
 
 **Pull covers ACCOUNT-level memory only.** It calls `memory_list` with a type filter (and once with
 none, for the chief of staff's rows) and nothing else, and that route defaults to
