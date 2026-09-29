@@ -347,8 +347,13 @@ department.
 
 `memory_update`, `memory_delete`, `memory_restore_version`, `memory_bulk_create` and
 `account_memory_append` always ask the person first, even when their settings allow every Hiveku
-tool. Before the call, say in one line what will change so the prompt is easy to answer.
-`memory_create` and the reads do not ask.
+tool, and the prompt names the agent that follows what changes (from the last `/hiveku:knowledge`
+pull, when there was one). Before the call, say in one line what will change so the prompt is easy
+to answer. `memory_create` asks only when it would make a rule, skill, shortcut (`command`) or
+specialist (`agent`) that names no agent: that one is Shared with every agent, so every agent
+follows it. Name the agent it is for (start its text with `<!-- department: x -->`, and pass
+`department` where the tool offers it) unless every agent really should follow it. A note, a
+profile and the reads do not ask.
 
 If no entry exists, `memory_create({ type: 'memory', name: '<dept>', content })`; a 409 means one
 already exists, so go back to step 1 rather than duplicating.

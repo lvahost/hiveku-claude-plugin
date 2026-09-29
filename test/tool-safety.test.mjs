@@ -1012,16 +1012,23 @@ test('every memory write on the set ASKS on a direct call with no guardrails fil
   }
 });
 
-test('memory_update asks with the whole-document reason, not a generic one', () => {
+test('memory_update asks with the whole-text reason and says who follows it', () => {
   const r = decideForPayload({ tool_name: `${HIVEKU_TOOL_PREFIX}memory_update`, tool_input: {} });
   assert.equal(r?.hookSpecificOutput?.permissionDecision, 'ask');
-  assert.match(r.hookSpecificOutput.permissionDecisionReason, /replaces a whole department memory document/);
+  assert.match(r.hookSpecificOutput.permissionDecisionReason, /replaces the whole text of a memory entry/);
+  // m14: the reason names who follows the entry, or says it cannot know (test/memory-hook-reasons.test.mjs).
+  assert.match(r.hookSpecificOutput.permissionDecisionReason, /Who follows it: /);
 });
 
-test('NEGATIVE CONTROL: memory_create and ordinary writes stay silent, memory reads stay pre-approved', () => {
-  // memory_create is deliberately not on the set: it only makes a new entry.
+test('NEGATIVE CONTROL: memory_create of a note and ordinary writes stay silent, memory reads stay pre-approved', () => {
+  // memory_create is not on the set as a whole tool: a note or a profile only makes a new entry.
+  // (A rule, skill, shortcut or specialist that names no agent asks: test/memory-hook-reasons.test.mjs.)
   const cwd = folderWith(undefined);
   assert.equal(decideWithGuardrails(payload('memory_create', cwd)), null);
+  assert.equal(
+    decideWithGuardrails({ ...payload('memory_create', cwd), tool_input: { type: 'memory', name: 'seo', content: 'x' } }),
+    null,
+  );
   assert.equal(decideWithGuardrails(payload('crm_deal_create', cwd)), null);
   assert.equal(decideWithGuardrails(payload('onboarding_write_department_memory', cwd)), null);
   for (const read of ['memory_get', 'memory_list', 'memory_list_versions']) {
