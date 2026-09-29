@@ -157,7 +157,7 @@ test('support-sweep: gate-crossing writes refuse, macro render reports unfilled 
 // NANP toll-free prefixes - the numbers E911 registration does not apply to.
 const TOLL_FREE_RE = /^\+18(00|33|44|55|66|77|88)/;
 
-test('phone-check: the toll-free inflation trap is real arithmetic', () => {
+test('phone-check: the E911 count leaves toll-free out, the way the live route counts it', () => {
   const numbers = loadJson('phone-check', 'dataset', 'numbers.json');
   const diagnose = loadJson('phone-check', 'dataset', 'diagnose.json').data;
   const e911 = loadJson('phone-check', 'dataset', 'e911.json');
@@ -165,25 +165,32 @@ test('phone-check: the toll-free inflation trap is real arithmetic', () => {
   const tf = numbers.filter((n) => n.e164.startsWith('+18'));
   assert.deepEqual(tf.map((n) => n.id).sort(), ['did_tf_1', 'did_tf_2']);
   assert.ok(tf.every((n) => TOLL_FREE_RE.test(n.e164)));
-  // diagnose counts RAW null-linkage on active DIDs, toll-free included = 3 ...
   const active = numbers.filter((n) => n.is_active);
   assert.equal(active.length, diagnose.active_dids);
+  // the builder diagnostics route counts active LOCAL DIDs with no address and reports the
+  // active toll-free DIDs apart, as toll_free_dids_exempt_from_e911
   const nullLinked = active.filter((n) => n.e911_address_id === null);
-  assert.equal(nullLinked.length, diagnose.dids_without_e911);
-  assert.equal(diagnose.dids_without_e911, 3);
-  // ... while the TRUE local-missing count is 1 (the trap: 3 = 2 TF-nonapplicable + 1 local)
   const localMissing = nullLinked.filter((n) => !TOLL_FREE_RE.test(n.e164));
   assert.deepEqual(localMissing.map((n) => n.id), ['did_5']);
-  assert.equal(nullLinked.length - localMissing.length, tf.length);
+  assert.equal(diagnose.dids_without_e911, localMissing.length);
+  assert.equal(diagnose.dids_without_e911, 1);
+  const activeTollFree = active.filter((n) => TOLL_FREE_RE.test(n.e164));
+  assert.equal(diagnose.toll_free_dids_exempt_from_e911, activeTollFree.length);
+  assert.equal(diagnose.toll_free_dids_exempt_from_e911, 2);
+  // a null address is the only state a toll-free DID can be in, and the count leaves it out
+  assert.ok(activeTollFree.every((n) => n.e911_address_id === null));
+  // the retired doctrine (subtract toll-free from the count) undercounts past the one real gap
+  assert.ok(diagnose.dids_without_e911 - diagnose.toll_free_dids_exempt_from_e911 < localMissing.length);
   // pending is its own single row, NOT inside the diagnose count
   const pendingIds = new Set(e911.addresses.filter((a) => a.verified_at === null).map((a) => a.id));
   const pendingDids = active.filter((n) => n.e911_address_id !== null && pendingIds.has(n.e911_address_id));
   assert.deepEqual(pendingDids.map((n) => n.id), ['did_3']);
   // verified_e911_addresses = verified_at NOT NULL rows, exactly as the route counts
   assert.equal(e911.addresses.filter((a) => a.verified_at !== null).length, diagnose.verified_e911_addresses);
-  // exactly one blocking issue, about E911, carrying the inflated 3 verbatim
+  // exactly one blocking issue, about E911, carrying the route's own count verbatim (the
+  // 'no verified E911 addresses' blocker stays off: one address is verified)
   assert.equal(diagnose.blocking_issues.length, 1);
-  assert.match(diagnose.blocking_issues[0], /^3 active DID\(s\) have no E911 address/);
+  assert.match(diagnose.blocking_issues[0], /^1 active DID\(s\) have no E911 address/);
 });
 
 test('phone-check: healthcheck short-circuit, disposition vocabulary, dead IVR target', () => {

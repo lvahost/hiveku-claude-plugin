@@ -39,7 +39,8 @@ the cheapest health signal available: `tenant_provisioned`, active DIDs, DIDs mi
 / ring group / IVR / verified-E911 counts, and a ready-made `blocking_issues[]` of human-readable
 problems. A non-empty `blocking_issues[]` is a top-of-report finding - a broken phone system outranks
 every other department's numbers. Follow it with `voice_e911_addresses_list` against
-`voice_numbers_list({ is_active: 'true' })` when DIDs are missing E911, and name the actual numbers.
+`voice_numbers_list({ is_active: 'true' })` when DIDs are missing E911, and name the actual local
+numbers (toll-free numbers cannot carry an E911 address, and the count already leaves them out).
 Your voice surface is exactly those three reads (`voice_diagnose_setup`, `voice_e911_addresses_list`,
 `voice_numbers_list`). The `voice_*` family as a whole is NOT read-only - roughly half of it is
 writes (`voice_extension_create/update/delete`, `voice_ivr_*`, `voice_ring_group_*` writes,

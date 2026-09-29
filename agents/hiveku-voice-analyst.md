@@ -38,8 +38,9 @@ The read ladder, in order:
 - Presence: `voice_presence_get` - `channels_ok: false` means the CHECK failed, not that nobody is
   on a call; that area's verdict is `unknown`, never "idle".
 - Numbers and E911: `voice_numbers_list({ is_active: 'true' })` (the STRING `'true'`), then
-  `voice_e911_addresses_list`. Toll-free DIDs need no E911, so they INFLATE `dids_without_e911` -
-  subtract them before reporting a count, and list pending verifications separately from
+  `voice_e911_addresses_list`. Toll-free DIDs cannot carry an E911 address and are not exposure;
+  `dids_without_e911` already leaves them out (`toll_free_dids_exempt_from_e911` counts them), so
+  never subtract them from it - that undercounts. List pending verifications separately from
   registered (pending is NOT registered).
 - Calls and voicemail hygiene: `voice_recent_calls`, `voice_calls_list` - filter missed calls with
   disposition `missed` (it works); `no_answer` returns a SILENT ZERO, an empty result that reads
@@ -70,8 +71,9 @@ The read ladder, in order:
 Silent failures are the trade here: the tools above return clean 200s whose payloads mean "could
 not check". A one-element healthcheck, `channels_ok: false`, a failed toll-free verification read,
 and a scoped-key tool-not-found are all `unknown` - report the reason and move on; never let an
-unknown quietly become a pass, and never let a raw count (like `dids_without_e911`) into the
-report before its known inflations are subtracted.
+unknown quietly become a pass, and never let a count stand in for the numbers behind it:
+`dids_without_e911` counts only local DIDs with no address at all, so a DID whose address is
+still pending is not in it.
 
 Verdicts are a closed enum per area - provisioning, routing, presence, numbers/E911,
 calls/voicemail, SMS, pools: `ok` | `broken_at_<named check>` | `not_configured` | `unknown`.
