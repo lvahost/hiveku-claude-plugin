@@ -18,10 +18,11 @@
  * are not; and every memory_* token in the prose is a real tool, one of the
  * two incoming log tools, or a known field name.
  *
- * The canonical session closer (test/closer.test.mjs) is NOT changed here: three
- * of its 92 carriers are held by another lane today, and the closer changes in
- * one commit or not at all. Until it lands, the closer line is the one place a
- * command may name memory_update without the log (see CLOSER_PENDING).
+ * The canonical session closer (test/closer.test.mjs) carries both rules too,
+ * since the closer change landed in one commit across its 93 carriers (memory
+ * surfaces audit G16, 2026-09-29): it checks memory_log_list before its
+ * memory_update and sends reason and expected_version. CLOSER_PENDING is false,
+ * so the closer line is held to the same rule as every other line.
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -52,9 +53,13 @@ const INCOMING = new Set([]); // memory_log_list and memory_log_summary landed i
 /** memory_* tokens in prose that are field or argument names, not tools. */
 const MEMORY_NON_TOOLS = new Set(['memory_id', 'memory_domain', 'memory_entry_id', 'memory_promoted', 'memory_links']);
 
-/** Until the closer follow-up lands, its line may name memory_update alone. */
+/**
+ * The closer follow-up landed (G16): the closer line is checked like any other.
+ * Set this back to true only to exempt the closer again, which the test below
+ * refuses unless the closer really lacks the rules.
+ */
 const CLOSER_OPENER = 'Finish every session of work the same way:';
-const CLOSER_PENDING = true;
+const CLOSER_PENDING = false;
 
 const outsideCloser = (text) =>
   text
@@ -125,6 +130,27 @@ test('every command that teaches a memory_update call also teaches the log check
     assert.ok(teaching.includes(f), `${f} should be detected as teaching a memory_update write`);
   }
   assert.deepEqual(missing, [], `these commands teach memory_update without the log check or a reason:\n  ${missing.join('\n  ')}`);
+});
+
+test('the session closer checks the log before its memory_update and sends reason and expected_version (G16)', () => {
+  assert.equal(CLOSER_PENDING, false, 'the closer is held to the memory log rules like every other line');
+  const dir = path.join(root, 'commands');
+  const lines = [];
+  for (const f of fs.readdirSync(dir).sort()) {
+    if (!f.endsWith('.md')) continue;
+    for (const line of fs.readFileSync(path.join(dir, f), 'utf8').split('\n')) {
+      if (line.includes(CLOSER_OPENER)) lines.push([f, line]);
+    }
+  }
+  // Refuse the vacuous pass: 93 commands carried the closer when it changed.
+  assert.ok(lines.length >= 90, `only ${lines.length} closer lines found; the opener or the walker broke`);
+  for (const [f, line] of lines) {
+    const check = line.indexOf('`memory_log_list({ memory_id, since: "<when you read it>" })`');
+    const save = line.indexOf('`memory_update({ memory_id, content, reason, expected_version })`');
+    assert.ok(check > 0 && save > check, `${f}: the closer must check memory_log_list, then memory_update with reason and expected_version`);
+    assert.match(line, /409 `version_conflict`/, `${f}: the closer must say what a stale save returns`);
+    assert.doesNotMatch(line, /memory_update\(\{ memory_id, content \}\)/, `${f}: the pre-G16 closer call is back`);
+  }
 });
 
 test('the detector itself catches a command that teaches the old loop (negative control)', () => {
