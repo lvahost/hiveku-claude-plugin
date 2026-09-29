@@ -23,6 +23,11 @@
  * surfaces audit G16, 2026-09-29): it checks memory_log_list before its
  * memory_update and sends reason and expected_version. CLOSER_PENDING is false,
  * so the closer line is held to the same rule as every other line.
+ *
+ * And every memory_update CALL FORM taught anywhere sends expected_version
+ * (PR #50 review, F2): /hiveku:talk taught the one form without it, right
+ * where it warns that the department agent may have changed the document, and
+ * no test failed when it went missing.
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -164,6 +169,35 @@ test('no skill, command or agent shows the pre-log call memory_update({ memory_i
     .filter((file) => /memory_update\(\{\s*memory_id,\s*content\s*\}\)/.test(fs.readFileSync(file, 'utf8')))
     .map((file) => path.relative(root, file));
   assert.deepEqual(offenders, [], `these still teach the call without reason and expected_version:\n  ${offenders.join('\n  ')}`);
+});
+
+/** A memory_update call form in prose: `memory_update({ ... })`, its arguments captured (across lines too). */
+const MEMORY_UPDATE_CALL = /memory_update\(\{([^}]*)\}\)/g;
+
+test('every memory_update call form taught in a skill, command or agent sends expected_version (F2)', () => {
+  const missing = [];
+  let forms = 0;
+  for (const file of walkMarkdown()) {
+    for (const m of fs.readFileSync(file, 'utf8').matchAll(MEMORY_UPDATE_CALL)) {
+      forms++;
+      if (!/\bexpected_version\b/.test(m[1])) missing.push(`${path.relative(root, file)}: ${m[0].replace(/\s+/g, ' ')}`);
+    }
+  }
+  // Refuse the vacuous pass: 128 call forms are taught today.
+  assert.ok(forms >= 100, `only ${forms} memory_update call forms seen; the walker or the pattern broke`);
+  assert.deepEqual(
+    missing,
+    [],
+    `these teach a memory_update call without expected_version, so a stale whole-document replace overwrites a newer change:\n  ${missing.join('\n  ')}`,
+  );
+});
+
+test('the expected_version detector catches the call form /hiveku:talk used to teach (negative control)', () => {
+  const old = 'send the full merged body to\n   `memory_update({ memory_id, content, reason })`, which REPLACES the document';
+  const unsafe = [...old.matchAll(MEMORY_UPDATE_CALL)].filter((m) => !/\bexpected_version\b/.test(m[1]));
+  assert.equal(unsafe.length, 1);
+  assert.match(read('commands/talk.md'), /`memory_update\(\{ memory_id, content, reason, expected_version \}\)`/);
+  assert.match(read('commands/talk.md'), /409\s+`version_conflict`/);
 });
 
 test('every skill or agent file that teaches a memory_update call also teaches the log check and a reason', () => {

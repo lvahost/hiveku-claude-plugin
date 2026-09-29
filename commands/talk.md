@@ -52,11 +52,14 @@ with the account's full hydration (persona, brand voice, memory, skills), which 
 3. **Persist** the output with the matching direct tool so it becomes account state, not just chat -
    `content_create` for content, `crm_create_deal` / `crm_*` for pipeline, and memory for a decision or
    a reusable play. For memory, read first: `memory_list({ domain })` returns the department's WHOLE
-   document, so append your note to that text and send the full merged body to
-   `memory_update({ memory_id, content, reason })`, which REPLACES the document; `reason` is one line
-   on why. The department agent may have changed that document during the conversation, so check
-   `memory_log_list({ memory_id, since })` (since you read it) and merge any newer change first. Only
-   use `memory_create({ type: "memory", name: "<dept>", content })` when no entry exists yet.
+   document and its `version`, so append your note to that text and send the full merged body to
+   `memory_update({ memory_id, content, reason, expected_version })`, which REPLACES the document;
+   `reason` is one line on why, and `expected_version` is the version you merged into. The department
+   agent may have changed that document during the conversation, so check
+   `memory_log_list({ memory_id, since })` (since you read it) and merge any newer change first. A 409
+   `version_conflict` means it changed again after that: merge into the `content` that answer carries
+   and save with its `version`, never resend blind. Only use
+   `memory_create({ type: "memory", name: "<dept>", content })` when no entry exists yet.
    Generative work that is never persisted is lost.
 
 `talk_to_department` is a WRITE-capable primitive (it runs an agent with its own full toolset), so a
