@@ -70,7 +70,7 @@ Criteria and the response ladder: `hiveku-orient/references/foundation-first.md`
   It returns persona, brand voice, avatars, domain memory, and rules; re-read its instructions
   field before every generative call. Skipping it is the most common cause of a report that
   misreads what the business actually cares about. **`domain: 'analytics'` is NOT valid here** -
-  the context route accepts 15 values and analytics is not one of them, so it returns HTTP 400
+  the context route accepts 16 values and analytics is not one of them, so it returns HTTP 400
   `invalid_domain`. It IS a valid `talk_to_department` domain, which is exactly the trap; the two
   enums differ. Use `marketing` for context, `analytics` for the chat.
 - Hiveku is the source of truth. Durable findings (agreed KPIs, channel taxonomy, what counts as
