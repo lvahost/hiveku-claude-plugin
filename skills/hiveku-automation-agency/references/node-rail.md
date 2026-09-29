@@ -431,12 +431,17 @@ workflow_node_add({
   "workflow_id": "<uuid>",
   "type": "manualTrigger",
   "id": "trigger",
-  "position": { "x": 100, "y": 100 },
   "data": { "label": "Manual start" }
 })
 ```
 
-`workflow_node_add` accepts an optional explicit `id`. Use it. If you omit it the server
+Leave `position` out: the server places a node sent without one (free space right of the
+graph, and beside its source once `workflow_edge_add` connects it) and says so with
+`position_assigned: true`. Send a position only to put a node somewhere specific.
+
+`workflow_node_add` accepts an optional explicit `id`. Use it. An id the workflow already has
+is refused with 409 `node_id_exists` and nothing is written; after a retried call, read the
+workflow with `workflow_get` before adding the node again. If you omit it the server
 generates `<type>_<8hex>`, so your downstream templates read
 `{{manualTrigger_a1b2c3d4.output.requests}}`, which is unreadable and breaks the moment anyone
 deletes and re-adds the node. Every shipped Hiveku template gives its trigger the literal id
@@ -454,7 +459,6 @@ workflow_node_add({
   "workflow_id": "<uuid>",
   "type": "batchHttpRequests",
   "id": "sweep",
-  "position": { "x": 400, "y": 100 },
   "data": {
     "label": "Sweep URLs",
     "config": {
