@@ -57,8 +57,8 @@ assignment - on a 911 call too. Hiveku picks it by one rule: an active LOCAL num
 verified E911 address - a `main` number in no pool and with no tracking source first, then any
 other such number, then one with a tracking source, then a pool member, oldest first - and never
 a toll-free number, which cannot carry an E911 address. The nightly repair, `voice_tenant_repair`
-and click-to-call all use that rule. The voice server also re-picks the default on its own:
-after it restarts, after a number purchase and after a ported number is adopted. Until voice #7
+and click-to-call all use that rule. The voice server also re-picks the default after a restart,
+a number purchase, a port adoption, and a repair run from Hiveku's staff console. Until voice #7
 is deployed that re-pick is simply the oldest active number, toll-free and pool numbers
 included, and it holds until the nightly repair puts the rule's pick back (an account with no
 eligible number keeps it). After voice #7 is deployed the voice server uses the same rule, so a
@@ -167,8 +167,8 @@ Guardrails carried from its session twin:
   account default by the rule in section 1 (local with a verified E911 address, never toll-free)
   -> `409 no_caller_id` with no number to present. Local presence never picks a tracking or pool
   DID: a callback to one lands unrouted and pollutes attribution. The account default can land
-  on a number with a tracking source or a pool member, but only when no other local number
-  qualifies.
+  on a number with a tracking source or a pool member, but only when every local number that
+  qualifies has a tracking source or is in a pool.
 
 ## 3. What the callee sees: the full chain
 
@@ -299,8 +299,11 @@ read-back API for carrier analytics.
   extension case adds no warning at all. Verify by list read plus a test call.
 - **Setting a toll-free DID as caller ID.** Refused for 911 reasons; and the check only knows
   NANP 8xx, so a non-US TF slips through - do not do it manually either.
-- **Assigning a tracking or pool DID.** Callbacks land unrouted and attribution corrupts. The
-  originate path refuses to auto-pick them; do not hand-pick one.
+- **Assigning a tracking or pool DID.** Callbacks land unrouted and attribution corrupts, and
+  `voice_extension_update` accepts one: do not hand-pick one. Click-to-call's local-presence step
+  skips numbers marked tracking or pool; the account default can still land on a number with a
+  tracking source or a pool member, but only when every local number that qualifies (section 1)
+  has a tracking source or is in a pool.
 - **"Fixing" an old SMS thread onto the rep's new number.** Threads are sticky by design; the
   customer texts the number they have.
 - **Promising Spam-Likely removal on a date.** Registration is the lever; propagation and label

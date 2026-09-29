@@ -57,9 +57,10 @@ One `voice_numbers` row per DID the account owns. The fields that drive everythi
   A LOCAL number cannot activate without one (RAY BAUM's Act, enforced server-side on both create
   and update). Toll-free numbers never carry one - not E911-capable at the carrier.
 - **`purpose`** - `main | tracking | did_pool`. `main` is the business line and the account-default
-  caller ID and SMS sender; `tracking` and `did_pool` are attribution numbers that must never be
-  presented as caller ID or handed out as the business's number. Old rows may carry the legacy
-  spelling `pool` for `did_pool`.
+  SMS sender. The account-default caller ID prefers `main` too, but only a local number with a
+  verified E911 address qualifies (the full rule is in `caller-id-and-reputation.md` section 1).
+  `tracking` and `did_pool` are attribution numbers: never assign one as caller ID or hand it out
+  as the business's number. Old rows may carry the legacy spelling `pool` for `did_pool`.
 - **`provider_number_id`** - the carrier's own id for the number. NULL on a half-provisioned row
   and on some ported-in rows whose adoption has not completed (or that predate the porting-v1
   adopter). A NULL here blocks `voice_number_cnam_set` with a misleading error (section 7).

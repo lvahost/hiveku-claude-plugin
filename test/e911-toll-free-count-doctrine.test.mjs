@@ -18,7 +18,11 @@
  * Hiveku's own picks already (builder #296), the voice server's re-pick only
  * after voice #7 is deployed (merged, not deployed). The caller-ID reference
  * said the default was "the oldest active main DID" and that click-to-call fell
- * back to "any active DID".
+ * back to "any active DID". It also said click-to-call never presents a
+ * tracking or pool number. Only its local-presence step skips them
+ * (originate/route.ts); the rule's last two tiers are a number with a tracking
+ * source and a pool member (fallback-caller-id.ts), reached when every local
+ * number that qualifies is one of those.
  *
  * These pins keep:
  *   - no prose (skills, commands, agents, the department manifest) telling the
@@ -26,8 +30,9 @@
  *     count is inflated by them;
  *   - the sites that teach the count saying it already leaves toll-free out,
  *     naming toll_free_dids_exempt_from_e911, and saying what it cannot see;
- *   - the fallback caller-ID rule described as it runs, with every mention of
- *     voice #7 conditional on its deploy.
+ *   - the fallback caller-ID rule described as it runs, tracking and pool
+ *     numbers included, with every mention of voice #7 conditional on its
+ *     deploy.
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -121,6 +126,7 @@ const PINNED = {
     'Toll-free numbers are left out of it and counted in toll_free_dids_exempt_from_e911',
     'subtracting the toll-free set again undercounts',
     'What the count cannot see: a local number whose address is attached but still pending carrier verification',
+    'The account-default caller ID prefers main too, but only a local number with a verified E911 address qualifies',
   ],
   'skills/hiveku-phone-agency/references/pbx-routing.md': [
     'the toll-free ones are already left out (toll_free_dids_exempt_from_e911), so never subtract them again',
@@ -133,6 +139,9 @@ const PINNED = {
     'never a toll-free number, which cannot carry an E911 address',
     'Until voice #7 is deployed that re-pick is simply the oldest active number, toll-free and pool numbers included',
     'After voice #7 is deployed the voice server uses the same rule, so a toll-free number is never picked or written as the fallback caller ID',
+    "after a restart, a number purchase, a port adoption, and a repair run from Hiveku's staff console",
+    'The account default can land on a number with a tracking source or a pool member, but only when every local number that qualifies has a tracking source or is in a pool',
+    "voice_extension_update accepts one: do not hand-pick one. Click-to-call's local-presence step skips numbers marked tracking or pool; the account default can still land on a number with a tracking source or a pool member",
   ],
 };
 
@@ -145,12 +154,16 @@ test('the sites that teach the E911 count say toll-free is already out and what 
   assert.deepEqual(missing, [], `missing:\n  ${missing.join('\n  ')}`);
 });
 
-/** Said anywhere, these describe the fallback caller-ID pick the live code no longer makes. */
+/** Said anywhere, these describe a fallback caller-ID pick the live code does not make. */
 const RETIRED_FALLBACK = [
   /DERIVED: the oldest active purpose: 'main' DID/,
   /the oldest main -> any active DID/,
   /the main-purpose DID, else the oldest\s+active one/,
   /unset = account default \(oldest main\)/,
+  /main is the business line and the account-default caller ID/,
+  // Click-to-call's account default can present a tracking or pool number.
+  /Tracking DIDs are never presented/,
+  /originate path refuses to auto-pick/,
 ];
 
 function retiredFallbackClaims(text) {
@@ -158,7 +171,7 @@ function retiredFallbackClaims(text) {
   return RETIRED_FALLBACK.filter((re) => re.test(f)).map(String);
 }
 
-test('no prose describes the fallback caller ID as the oldest main number, else any active one', () => {
+test('no prose describes the fallback caller ID the old way (oldest main, else any active; never tracking or pool)', () => {
   const offenders = [];
   for (const [rel, text] of sources()) {
     for (const claim of retiredFallbackClaims(text)) offenders.push(`${rel}: ${claim}`);
@@ -217,6 +230,12 @@ test('the checks fail on the old wording (negative control)', () => {
     clickToCall: 'code, tracking and pool numbers excluded) -> the oldest `main` -> any active DID -> `409` with',
     repair: 'one DID baked in as the tenant-wide fallback caller ID (the `main`-purpose DID, else the oldest\nactive one)',
     quickRef: "unset = account default (oldest `main`). Then `voice_calls_list`",
+    purposeMain:
+      "- **`purpose`** - `main | tracking | did_pool`. `main` is the business line and the account-default\n  caller ID and SMS sender;",
+    clickToCallTracking:
+      'no number to present. Tracking DIDs are never presented: a callback to one lands unrouted and\n  pollutes attribution.',
+    pitfall:
+      '- **Assigning a tracking or pool DID.** Callbacks land unrouted and attribution corrupts. The\n  originate path refuses to auto-pick them; do not hand-pick one.',
   };
   for (const [label, text] of Object.entries(oldFallback)) {
     assert.notDeepEqual(retiredFallbackClaims(text), [], `${label}: the old fallback wording should be caught`);

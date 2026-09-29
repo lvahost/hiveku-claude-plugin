@@ -184,7 +184,7 @@ DID's inbound route to this tenant. Refusals: 409 `not_provisioned` with no tena
 `no_caller_id_did` when the account has no active DID - outbound would fail at the carrier
 anyway, so it refuses rather than half-repairing; 409 `no_e911_caller_id` when the account has
 active numbers but none is a local number with a verified E911 address. The voice server also
-re-picks the fallback on its own (`caller-id-and-reputation.md` section 1). It is
+re-picks the fallback at other times (`caller-id-and-reputation.md` section 1 says when). It is
 idempotent and it does fix the classic red rows (duplicate domains, missing outbound rule), but
 it is a wholesale rewrite of live routing: run `voice_tenant_healthcheck` first, name the red
 rows to the human, and get an explicit yes before firing it. Never run it speculatively, and
