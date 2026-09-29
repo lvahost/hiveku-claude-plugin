@@ -14,7 +14,7 @@
  * minus two toll-free numbers, reads as nothing missing.
  *
  * The same program moved the tenant's fallback caller ID (what a seat with no
- * caller ID of its own presents, on a 911 call too) off toll-free numbers:
+ * caller ID of its own presents) off toll-free numbers:
  * Hiveku's own picks already (builder #296), the voice server's re-pick only
  * after voice #7 is deployed (merged, not deployed). The caller-ID reference
  * said the default was "the oldest active main DID" and that click-to-call fell

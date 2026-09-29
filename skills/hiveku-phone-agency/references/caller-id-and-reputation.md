@@ -53,7 +53,7 @@ did not:
 3. **SMS** - a text composed by a person resolves the SENDER's assigned DID first (section 4).
 
 **The account default** (the tenant's fallback caller ID), presented by every seat with no
-assignment - on a 911 call too. Hiveku picks it by one rule: an active LOCAL number with a
+assignment. Hiveku picks it by one rule: an active LOCAL number with a
 verified E911 address - a `main` number in no pool and with no tracking source first, then any
 other such number, then one with a tracking source, then a pool member, oldest first - and never
 a toll-free number, which cannot carry an E911 address. The nightly repair, `voice_tenant_repair`
