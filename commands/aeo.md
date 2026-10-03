@@ -29,7 +29,7 @@ the two scoreboards, citation tiering, the answer-block format rules, the brand-
    `chatgpt`, `claude`, `gemini`, `perplexity`. A blank lane means the keyword predates the engines:
    untracked, never "not ranking". To add lanes: `seo_aeo_rankings_sync({ target_domain, keywords,
    search_engines: ["ai_overview"], skip_sync: true })` creates rows free, then the identical call
-   without `skip_sync` [CONFIRM; SPENDS - class G, about $0.10 per keyword per engine; `location_code`
+   without `skip_sync` [CONFIRM; class G - one live check per keyword per engine, against the account's daily re-check limit; `location_code`
    is a STRING here]. The perplexity lane routes through Google today: footnote it, never sell it as
    Perplexity.
 7. Brand side: `seo_aeo_brand_profile_get({})` (`profile: null` means the brand audit 400s and the
