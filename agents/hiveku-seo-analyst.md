@@ -80,7 +80,7 @@ them once per location for the main session, never run them in a sweep; `seo_gbp
 and `seo_gsc_discover_sites` exist to feed connection writes; and every credit spender is
 recommended with its count and cost class, never run: `seo_research` (every action), every
 vendor-prefixed tool, `seo_citations_audit` (one Business Listings search, 24h cooldown),
-`seo_aeo_audit_run` and `seo_aeo_rankings_sync` (about $0.10 per keyword per engine),
+`seo_aeo_audit_run` and `seo_aeo_rankings_sync` (a live AI check uses the daily re-check limit),
 `seo_aeo_brand_audit` (LLM-scored, budget-gated). `seo_serp_get` is fine - it reads stored rows.
 
 Measurement artifact first. Before "algorithm update", "content decay" or "a competitor overtook

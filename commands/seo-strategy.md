@@ -46,8 +46,9 @@ qualified keyword universe sits in a sheet tab from `/hiveku:seo-keywords`; busi
    status: "published" })`.
 9. Tracking list [CONFIRM - the reviewed list of 20 to 100: about 40 percent money terms, 30 striking
    distance, 20 cluster heads in flight, 10 sentinels]: `seo_track_keyword({ keyword, target_domain,
-   location_code })` per keyword, `location_code` explicit for any non-US client. AI-engine lanes cost
-   about $0.10 per keyword per engine and are added only on the priority set. Read back
+   location_code })` per keyword, `location_code` explicit for any non-US client. AI-engine lanes add
+   nothing to the bill (it is per tracked keyword) but each live check uses the daily re-check limit, so
+   they are added only on the priority set. Read back
    `seo_rankings_list({ domain, group_by_keyword: true })`: `pagination.total_groups` equals the list
    you approved.
 10. Tell the client: the ordered clusters with the reason for each, refresh vs new, the technical debt

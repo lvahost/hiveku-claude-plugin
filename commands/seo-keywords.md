@@ -45,8 +45,8 @@ open that only at step 3.
 8. Tracking proposal, not executed here: 20 to 100 keywords in the 40/30/20/10 mix from section Play 7,
    presented as a list. Only on an explicit yes [CONFIRM]: `seo_track_keyword({ keyword,
    target_domain, location_code })` per keyword, `location_code` set for any non-US client (2840 on a
-   Canadian client produces plausible, wrong rankings silently); AI lanes cost about $0.10 per keyword
-   per engine and wait for the priority set. Read back `seo_rankings_list({ domain, group_by_keyword:
+   Canadian client produces plausible, wrong rankings silently); AI lanes add nothing to the bill (it is
+   per tracked keyword) but each live check uses the daily re-check limit, so they wait for the priority set. Read back `seo_rankings_list({ domain, group_by_keyword:
    true })`.
 9. Honesty rules: every volume, KD and intent comes from a tool call in this session or the sheet tab,
    never from recall; every aggregate discloses N, how the sample was chosen and what was excluded
