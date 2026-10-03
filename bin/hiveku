@@ -59,6 +59,7 @@ import {
 import { HIVEKU_APP_URL, HIVEKU_MCP_URL, CLIENT_ID, PLUGIN_VERSION, keyPreview, isUuid, mapLimit } from '../lib/util.mjs';
 import { runPostToolUseHook } from '../lib/vcs-ledger.mjs';
 import { runStopHook } from '../lib/stop-version.mjs';
+import { collectReports, formatReports } from '../lib/feedback-reports.mjs';
 
 const HELP = `hiveku ${PLUGIN_VERSION} — Hiveku for Claude Code
 
@@ -86,6 +87,7 @@ const HELP = `hiveku ${PLUGIN_VERSION} — Hiveku for Claude Code
   focus [<departments...>|--clear] [--json]
   env pull <project_id> write .env.local for local dev (values never printed)
   fleet                 read-only portfolio sweep across every connected account
+  reports [--json]      read-only list of every connected account's Agent Feedback reports
   hook <session-start|cwd-changed|pre-tool-use|post-tool-use|stop|prompt-submit|probe-remote>
   update [--json]               Refresh the marketplace and install the plugin update through
                                 Claude's command-line tool (the desktop app's own copy included)
@@ -727,6 +729,21 @@ async function cmdFleet(flags) {
       `${r.error ? ` - ${r.error}` : ''}\n`);
     for (const u of r.urgent || []) process.stdout.write(`             ! ${u}\n`);
   }
+}
+
+/**
+ * `hiveku reports` - every connected account's Agent Feedback reports, each
+ * read with that account's own key (lib/feedback-reports.mjs). Read-only.
+ */
+async function cmdReports(flags) {
+  const creds = await readCredentials(resolveDataDir());
+  if (!Object.keys(creds.accounts || {}).length) fail('No accounts connected. Run /hiveku:connect first.');
+  const rows = await collectReports(creds.accounts, (opts) => new Upstream(opts));
+  if (flags.json) {
+    process.stdout.write(JSON.stringify({ accounts: rows }, null, 2) + '\n');
+    return;
+  }
+  process.stdout.write(formatReports(rows));
 }
 
 async function cmdStatus(flags) {
@@ -1382,6 +1399,7 @@ async function main() {
     case 'unbind': return cmdUnbind(flags);
     case 'status': return cmdStatus(flags);
     case 'fleet': return cmdFleet(flags);
+    case 'reports': return cmdReports(flags);
     case 'env': return cmdEnv(flags, positional);
     case 'pull': return cmdPull(flags, positional);
     case 'knowledge': return cmdKnowledge(flags, positional);
