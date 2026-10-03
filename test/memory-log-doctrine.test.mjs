@@ -53,15 +53,21 @@ const ACCOUNT = '3f2504e0-4f89-11d3-9a0c-0305e82c3301';
  * the release that regenerates the index is forced to clean this up (the same
  * contract as test/pending-tools.mjs).
  */
-const INCOMING = new Set([]); // memory_log_list and memory_log_summary landed in the index (MCP #28, 2026-09-25)
+// memory_log_list and memory_log_summary landed in the index (MCP #28, 2026-09-25).
+// memory_log_add is live on the MCP server (MCP #100, 2026-10-03) and lands in the
+// index with the next release's regeneration, which must delete it from here.
+const INCOMING = new Set(['memory_log_add']);
 
 /**
  * memory_* tokens in prose that are field or argument names, not tools.
  * memory_page and memory_page_url: the front matter /hiveku:knowledge writes
  * (and memory_list's `memory_page_url`), where the Memory page shows an entry.
+ * memory_write_refused: the error code of a refused memory write (403, builder
+ * #486), which hiveku-orient teaches the session to show, not to retry.
  */
 const MEMORY_NON_TOOLS = new Set([
   'memory_id', 'memory_domain', 'memory_entry_id', 'memory_promoted', 'memory_links', 'memory_page', 'memory_page_url',
+  'memory_write_refused',
 ]);
 
 /**
