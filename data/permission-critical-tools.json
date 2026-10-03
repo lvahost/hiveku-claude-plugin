@@ -5,8 +5,8 @@
     "mcp__plugin_hiveku_hk__",
     "mcp__hiveku__"
   ],
-  "plugin_version": "0.27.7",
-  "count": 256,
+  "plugin_version": "0.27.8",
+  "count": 257,
   "tools": [
     {
       "name": "deploy_site",
@@ -317,6 +317,11 @@
       "name": "ppc_google_ads_text_replace",
       "method": "POST",
       "why_gated": "find-and-replace across up to 100 live Google ads in one call; every edited ad goes back through policy review"
+    },
+    {
+      "name": "ppc_bing_rsa_text_update",
+      "method": "POST",
+      "why_gated": "rewrites the text customers see on a live Microsoft ad in place; the ad goes back through editorial review"
     },
     {
       "name": "ppc_negatives_remove",
