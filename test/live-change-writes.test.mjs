@@ -44,6 +44,7 @@ const LIVE_CHANGE_NAMES = [
   // Live ad text, negatives and extensions.
   'ppc_google_ad_text_update',
   'ppc_google_ads_text_replace',
+  'ppc_bing_rsa_text_update', // 0.27.8: Microsoft's twin of ppc_google_ad_text_update (HK-86)
   'ppc_negatives_remove',
   'ppc_bing_ad_extension_update',
   'ppc_bing_ad_extension_remove',
