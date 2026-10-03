@@ -65,7 +65,12 @@ test('the ranking fixes from the A/B review hold', () => {
   assert.equal(names('development environment url', 1)[0], 'sites_list');
   assert.equal(names('page speed', 1)[0], 'seo_core_web_vitals');
   assert.ok(names('voicemail transcription', 5).includes('voice_call_transcript_get'));
-  assert.equal(names('broken links', 1)[0], 'seo_internal_links');
+  // 2026-10-03: seo_audit_start's live text now names the site crawl's broken-links action, and the
+  // crawl it starts (read with seo_research) is the only path to broken links. seo_internal_links is the
+  // static internal-link graph (orphans, click depth) and never reports a broken link, so it no
+  // longer owns this query; it keeps "internal links".
+  assert.equal(names('broken links', 1)[0], 'seo_audit_start');
+  assert.equal(names('internal links', 1)[0], 'seo_internal_links');
 });
 
 test('every indexed tool still scores against its own name', () => {

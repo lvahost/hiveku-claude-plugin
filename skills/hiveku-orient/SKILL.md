@@ -354,11 +354,10 @@ moves the entry to another agent: a rule, skill, shortcut or specialist can be f
 only a version, so its prompt cannot name the entry or its agent: say which entry it is. Before the
 call, say in one line what will change so the prompt is easy to answer. `memory_create` asks only
 when it would make a rule, skill, shortcut (`command`) or specialist (`agent`) that is Shared with
-every agent, so every agent follows it. Name the agent it is for by starting its text with
-`<!-- department: x -->` unless every agent really should follow it: that line is what Hiveku reads
-today. A `department` argument on `memory_create` is not sent by the MCP server yet, so on its own
-it still leaves the entry shared, and the prompt says so. A note, a profile and the reads do not
-ask.
+every agent, so every agent follows it. Name the agent it is for, with `department: "x"` or by
+starting its text with `<!-- department: x -->`, unless every agent really should follow it
+(`department: "shared"`). Hiveku stamps that line from the argument, so the two say the same
+thing. A note, a profile and the reads do not ask.
 
 If no entry exists, `memory_create({ type: 'memory', name: '<dept>', content })`; a 409 means one
 already exists, so go back to step 1 rather than duplicating.
