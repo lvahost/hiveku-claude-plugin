@@ -228,22 +228,23 @@ test('memory_create ASKS for a rule, skill, shortcut or specialist that names no
     assert.equal(decision(r), 'ask', `${JSON.stringify(input)} must ask`);
     assert.match(reason(r), new RegExp(`^memory_create creates a ${kind} that names no agent, so it is Shared with every agent`));
     assert.match(reason(r), /start its text with the line <!-- department: x -->/);
-    assert.doesNotMatch(reason(r), /pass `department`/, 'the tool does not send it yet');
+    // Since MCP #63 is live the argument is sent too, so the prompt offers it.
+    assert.match(reason(r), /pass `department: "x"`, or start its text/);
   }
 });
 
-test('F3: memory_create with only a `department` argument asks while the MCP server drops it, and says how to name the agent', () => {
+test('F3: memory_create with only a `department` argument names the agent, now that the MCP server sends it', () => {
   const cwd = mkdtempSync(join(tmpdir(), 'hk-mem-hook-create-'));
-  assert.equal(MEMORY_CREATE_SENDS_DEPARTMENT, false, 'the live MCP server drops it (hiveku-mcp-api-server PR #63 is not live)');
-  const r = call('memory_create', { type: 'rule', name: 'tone', content: 'be warm', department: 'sales' }, cwd);
-  assert.equal(decision(r), 'ask');
-  assert.match(reason(r), /^memory_create creates a rule with `department: "sales"`, which Hiveku does not apply to a new entry from this app yet, so it is Shared with every agent/);
-  assert.match(reason(r), /To give it to the Sales agent only, start its text with the line <!-- department: sales -->/);
-  // The line the prompt asks for is what makes it silent; "shared" is a choice either way.
+  assert.equal(MEMORY_CREATE_SENDS_DEPARTMENT, true, 'the live MCP server sends it (hiveku-mcp-api-server PR #63, live 2026-10-03)');
+  // The argument decides the owner (newEntryOwner's departmentArg, test/memory-owner.test.mjs),
+  // as memory_bulk_create's entries already did: nothing is shared by accident, so no prompt.
+  assert.equal(call('memory_create', { type: 'rule', name: 'tone', content: 'be warm', department: 'sales' }, cwd), null);
   assert.equal(call('memory_create', { type: 'rule', name: 'tone', content: '<!-- department: sales -->\nbe warm', department: 'sales' }, cwd), null);
   assert.equal(call('memory_create', { type: 'rule', name: 'tone', content: 'be warm', department: 'shared' }, cwd), null);
-  // Where the server does send it, the argument decides (newEntryOwner's departmentArg,
-  // test/memory-owner.test.mjs); memory_bulk_create's entries are that case today (above).
+  // A value that is not an agent still names no one, so the prompt still asks.
+  const r = call('memory_create', { type: 'rule', name: 'tone', content: 'be warm', department: 'engineering' }, cwd);
+  assert.equal(decision(r), 'ask');
+  assert.match(reason(r), /^memory_create creates a rule that names no agent, so it is Shared with every agent/);
 });
 
 test('MEMORY_CREATE_SENDS_DEPARTMENT follows the tool index: the release that regenerates it from a server with `department` must flip it', () => {
