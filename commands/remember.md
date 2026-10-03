@@ -94,7 +94,9 @@ always NULL for these types. Start the content with:
 <!-- department: sales -->
 ```
 
-Omit the tag only when the entry should apply to EVERY department; an untagged skill is global.
+Omit the tag only when the entry should apply to EVERY department; an untagged skill is global:
+the Memory page files it under "Shared with every agent", and every agent follows it. Hiveku asks
+the person before creating a rule, skill, shortcut or specialist that names no agent.
 
 `memory_create({ type: "skill", name: "discovery-call-prep", content, reason })` creates it; on a 409
 read the existing entry, check `memory_log_list` for it as in step 2b, and use `memory_update` with the

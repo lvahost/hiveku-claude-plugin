@@ -102,7 +102,7 @@ HARD RULES:
 
 Finish by persisting decisions (palette calls, template choices, residual issues) to the `branding`
 memory document per the skill's `references/memory-protocol.md` - `memory_list({ domain:
-"branding" })`, merge, `memory_update({ memory_id, content })` with the WHOLE body
+"branding" })`, merge, `memory_update({ memory_id, content, reason, expected_version })` with the WHOLE body
 (`memory_create({ type: "memory", name: "branding", content })` only on first run; 409 = exists;
 if you read that document earlier in the session, check `memory_log_list({ memory_id, since })`
 first and merge any newer change, and pass `reason`, one line on why) - and reflect the deliverable in PM: `pm_tasks_create({ project_id, title })` (the field is `title`),

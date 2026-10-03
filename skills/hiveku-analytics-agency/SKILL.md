@@ -70,7 +70,7 @@ Criteria and the response ladder: `hiveku-orient/references/foundation-first.md`
   It returns persona, brand voice, avatars, domain memory, and rules; re-read its instructions
   field before every generative call. Skipping it is the most common cause of a report that
   misreads what the business actually cares about. **`domain: 'analytics'` is NOT valid here** -
-  the context route accepts 15 values and analytics is not one of them, so it returns HTTP 400
+  the context route accepts 16 values and analytics is not one of them, so it returns HTTP 400
   `invalid_domain`. It IS a valid `talk_to_department` domain, which is exactly the trap; the two
   enums differ. Use `marketing` for context, `analytics` for the chat.
 - Hiveku is the source of truth. Durable findings (agreed KPIs, channel taxonomy, what counts as
@@ -82,8 +82,10 @@ Criteria and the response ladder: `hiveku-orient/references/foundation-first.md`
   deliverable has its own rail: `marketing_report_create` and its siblings (see
   references/monthly-report.md) - the decisions behind it still live in memory.
 - Memory is ONE document per domain and `memory_update` REPLACES it. Read before you write:
-  `memory_list({ domain: 'marketing' })`, append to the `content` it returns, then
-  `memory_update({ memory_id, content })` with the whole merged body. `memory_create({ type:
+  `memory_list({ domain: 'marketing' })`, append to the `content` it returns, check
+  `memory_log_list({ memory_id, since })` for any change since you read it and merge it, then
+  `memory_update({ memory_id, content, reason, expected_version })` with the whole merged body
+  (`reason` is one line on why; `expected_version` is the version you read). `memory_create({ type:
   'memory', name: 'marketing', content })` only when nothing exists (a 409 means it does).
 - Confirm before writes. This department reads freely, but a `memory_create`, a
   `pm_tasks_create`, a `marketing_report_create` (it schedules recurring client email), or a

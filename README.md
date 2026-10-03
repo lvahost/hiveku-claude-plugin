@@ -56,7 +56,7 @@ account is live — the session banner names it. Prefer your own folder layout? 
 | `/hiveku:unbind` | Remove this directory's binding. |
 | `/hiveku:status` | What is bound here, and whether a second Hiveku connection is live. |
 | `/hiveku:pull` | Pull department data (SEO, PPC, CRM, social, …) into `hiveku-data/` as local files — 25 departments, 100+ datasets. Local files beat live calls. |
-| `/hiveku:knowledge` | Sync the account's memory, rules, and skills into local files by department; `status` reports drift without writing. Account-level entries only. |
+| `/hiveku:knowledge` | Sync the account's memory, rules, and skills into local files, filed by the agent that owns each one (`shared/` for what every agent follows), with each skill also written as a Claude Code skill under `.claude/skills/`; `status` reports drift without writing. Account-level entries only. |
 | `/hiveku:seed` | Seed a brand-new account's department memory in one `memory_bulk_create` call. |
 | `/hiveku:remember` | Persist a learning into the right department memory (read-merge-write, never a blind overwrite). |
 | `/hiveku:brief` | Load the account's persona and context before strategic work. |

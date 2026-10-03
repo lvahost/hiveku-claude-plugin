@@ -40,5 +40,5 @@ A truly empty account needs seeding, not improvisation - point at `/hiveku:seed`
 `data.content` - persona, brand guide, account memory, every skill and rule tagged for that domain,
 avatars, journeys, KB index, recent content, plus cross-domain memory. Write it to `./CLAUDE.md` and
 the session picks all of it up automatically. Ask before overwriting an existing `CLAUDE.md`. Same
-15 domains as `account_context_get`; `agent_identity_domains_list` shows which ones this account has
+16 domains as `account_context_get`; `agent_identity_domains_list` shows which ones this account has
 actually configured.

@@ -41,8 +41,10 @@ build a play on it.
 - Hiveku is the source of truth. Durable findings (the chart of accounts you settled on, vendor
   terms, who approves what, the close calendar, recurring-schedule inventory) go to department
   memory: read the current document with `memory_list({ domain })`, append your note to the
-  `content` it returns, and send the WHOLE merged body to `memory_update({ memory_id, content })`,
-  which REPLACES the document - sending only the new note destroys what was there.
+  `content` it returns, check `memory_log_list({ memory_id, since })` for any change since you read it and
+  merge it, and send the WHOLE merged body to `memory_update({ memory_id, content, reason, expected_version })`
+  (`reason` is one line on why), which REPLACES the document - sending only the new note destroys
+  what was there.
   `memory_create({ type: 'memory', name: '<dept>', content })` only when no entry exists yet. Work
   items -> `pm_tasks_create` / `pm_tasks_complete`.
 - Reads are free, writes are not. Every write here commits a payable, books cash, pays people,

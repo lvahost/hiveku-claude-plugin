@@ -232,6 +232,6 @@ after confirming the list with the user, with the concrete fix in the descriptio
 durable (which OAuth client serves which product, which connections are BYOK, which provider is
 dashboard-only on this account) to department memory so the next session does not re-derive it: read
 the current document with `memory_list({ domain: "<dept>" })`, append to the `content` it returns,
-and send the WHOLE merged document to `memory_update({ memory_id, content })`, which REPLACES it.
+and send the WHOLE merged document to `memory_update({ memory_id, content, reason, expected_version })`, which REPLACES it.
 Use `memory_create({ type: "memory", name: "<dept>", content })` only when no entry exists.
 If you read that document earlier in the session, check `memory_log_list({ memory_id, since })` first and merge any newer change; pass `reason`, one line on why.

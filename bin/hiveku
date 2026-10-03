@@ -77,10 +77,12 @@ const HELP = `hiveku ${PLUGIN_VERSION} — Hiveku for Claude Code
                                 Pull department data into hiveku-data/ for the
                                 bound account (local files beat live calls), plus
                                 a read-only copy of the account memory
-  knowledge [pull|status]       Sync department memory/rules/skills into this
-                                folder by department (pull), or report drift
-                                (status). Never deletes local files. Pull also
-                                refreshes the read-only account memory copy.
+  knowledge [pull|status]       Sync memory/rules/skills into this folder, filed
+                                by the agent that owns each one (pull), skills
+                                also as Claude Code skills in .claude/skills/, or
+                                report drift (status). Never deletes an entry's
+                                local file. Pull also refreshes the read-only
+                                About your business copy.
   focus [<departments...>|--clear] [--json]
   env pull <project_id> write .env.local for local dev (values never printed)
   fleet                 read-only portfolio sweep across every connected account
@@ -593,10 +595,13 @@ async function cmdKnowledge(flags, positional) {
     log: (line) => process.stdout.write(line + '\n'),
   });
   out(flags.json, result, [
-    `Pulled ${result.written} knowledge entr${result.written === 1 ? 'y' : 'ies'} for ${account.label} (by department).`,
+    `Pulled ${result.written} knowledge entr${result.written === 1 ? 'y' : 'ies'} for ${account.label} (filed by the agent that owns each one; shared/ is what every agent follows).`,
+    ...(result.skills?.written
+      ? [`Claude Code skills: ${result.skills.written} in .claude/skills/ (hiveku-<agent>-<name>); a new session picks up new ones.`]
+      : []),
     result.accountMemory?.ok
-      ? `Account memory: ${result.accountMemory.file} (read-only copy; owners and admins edit it on the dashboard).`
-      : `Account memory: not refreshed (${String(result.accountMemory?.error || 'unknown error').slice(0, 160)}).`,
+      ? `About your business: ${result.accountMemory.file} (read-only copy; owners and admins edit it on the Memory page).`
+      : `About your business: not refreshed (${String(result.accountMemory?.error || 'unknown error').slice(0, 160)}).`,
   ]);
 }
 

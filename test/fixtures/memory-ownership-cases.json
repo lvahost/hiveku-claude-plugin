@@ -1,0 +1,1593 @@
+{
+  "about": "The canonical cases for THE ONE OWNER RULE (who owns an account_ai_memory row) and the follow rule (which agents follow a rule, skill, shortcut or specialist), memory surfaces audit G9, 2026-09-29. Source of truth: hiveku_builder src/lib/olympus/memory-department.ts (resolveOwnerDepartment, resolveWriteOwnerDepartment, rowVisibleToAny, rowWritableByAny, foreignWriteIntent, followersOfOwner, rowFollowers, followedOnCalls; read its header) with parseIdentity in src/lib/olympus/agent-identity.ts (how front matter is read). The builder runs the module, the Memory page's browser copy (src/components/memory/sources/department-rows.ts) and the team summary's text-free path over these cases (src/lib/olympus/__tests__/memory-ownership-parity.test.ts); each Python agent server vendors this file byte for byte and runs its own copy of the rule (app/tools/memory_ownership.py) over it with pytest. Change the rule and this file together, then re-vendor. Every expectation was written by hand from the rule, never generated from the code.",
+  "rule": [
+    "Typed rows are the domains that, trimmed and lower-cased, start with '_rule:', '_skill:', '_command:' or '_agent:'. '_account:_rule:x' is not one.",
+    "The column is the department column trimmed (JavaScript trim, which also strips U+FEFF and U+00A0) and lower-cased; empty is no column.",
+    "The marker is the FIRST '<!-- department: x -->' anywhere in the text: '<!--', whitespace, 'department:' (case-insensitive), whitespace, a word of [A-Za-z0-9_]+ (JavaScript's \\w: compile Python patterns with re.ASCII), whitespace, '-->'. Its word is lower-cased. A later marker never counts.",
+    "Owner of a typed row: (a) the column when it is set and is not 'marketing', taken as written even when it names no department ('graphic_design', 'mini'); (b) when the column is empty or 'marketing' and the marker's word is in marketing_family, that topic; (c) column 'marketing' otherwise: 'marketing' (the Marketing parent); (d) no column: the marker when it names any canonical department, else the front matter's department when it names one, else the shape of the domain (none for a typed row): no owner (null, shared with every agent).",
+    "(b) is the only change from the column-first rule: it moves a row only between 'marketing' and one of its topics. The front matter never beats a 'marketing' column, and neither does a marker naming a department outside the family.",
+    "Every other row is decided as before: 'account' and 'account-suggestions' (trimmed, any case) are owned by 'account'; an '_identity:x' row by its slug when x is a canonical department, else by its front matter's department (not checked against the list), and never by a marker or its column (the write owner falls back to the column); anything else by the column, else the marker or front matter naming a canonical department, else the domain's own name when that is a department.",
+    "Front matter: skip ONE leading marker line (ASCII whitespace around it, [A-Za-z0-9_]+ word, then LF), then the text must open with '---\\n'. A byte-order mark, a CR LF or anything else before it declares nothing (as in identity-pick-cases.json). A 'department:' line elsewhere in the prose is not a declaration.",
+    "canonical departments: marketing_family plus sales, helpdesk, production, accounting, comms, coder, orchestrator (follower_departments). 'analytics' is a Marketing topic; 'graphic_design' is no department.",
+    "departments / visible / writable / foreign: rowVisibleToAny(row, departments) is true when the owner is null, false when it is 'account', else whether the owner is in departments (trimmed, lower-cased). rowWritableByAny is the same over write_owner. foreign is foreignWriteIntent(row.domain, row.content, departments): the first department the caller's domain and text could land the row in that departments do not cover, or null ('account' for account memory; for an identity its slug, else its front matter; else the domain shape and the in-text declaration (marker, else front matter, canonical only), both)."
+  ],
+  "follow_rule": [
+    "followers is null for a row that is not a rule, skill, shortcut or specialist: a profile follows the profile rule (identity-pick-cases.json), a note is its owner's own, '_account:*' rows are placed by their name, About your business is read through its own loader.",
+    "A website's own row (project_id set): ['coder'], the website agent on that website only, whoever owns it.",
+    "No owner (shared with every agent): every agent in follower_departments, the chief of staff included (Abe's decision 5; her server still leaves out a rule that briefs her on a department that is switched off, a matter of the account's switches, not of the row).",
+    "An owner in follower_departments: that agent. 'marketing' is ALSO followed by every Marketing topic. The website agent ('coder') also follows website_agent_followed_owners, and website_agent_followed_skill_owners for a skill only (SEO's skills, never its rules).",
+    "'orchestrator': nobody. The chief of staff's rules and skills are her '_account:*' rows; a typed row filed for her outside them is one she never reads (the Memory page hides it).",
+    "An owner that names no agent ('account', 'graphic_design', 'mini'): nobody.",
+    "on_calls (followedOnCalls): a phone call carries only the receptionist's own call rules: an account-level '_rule:' row owned by 'comms' whose text has no '<!-- origin: reflection -->' marker (the communications server's kept_on_public_call). Never a shared rule, a skill, a shortcut or a specialist (Abe's decision 2).",
+    "Compare followers as sets; they are sorted here."
+  ],
+  "marketing_family": [
+    "marketing",
+    "content",
+    "seo",
+    "social",
+    "ppc",
+    "outbound",
+    "branding",
+    "customer_avatar",
+    "customer_journey",
+    "website_design",
+    "knowledge_base",
+    "workflow",
+    "before_after_grid",
+    "email",
+    "analytics"
+  ],
+  "follower_departments": [
+    "accounting",
+    "analytics",
+    "before_after_grid",
+    "branding",
+    "coder",
+    "comms",
+    "content",
+    "customer_avatar",
+    "customer_journey",
+    "email",
+    "helpdesk",
+    "knowledge_base",
+    "marketing",
+    "orchestrator",
+    "outbound",
+    "ppc",
+    "production",
+    "sales",
+    "seo",
+    "social",
+    "website_design",
+    "workflow"
+  ],
+  "website_agent_followed_owners": [
+    "marketing",
+    "branding",
+    "content",
+    "website_design",
+    "customer_avatar",
+    "customer_journey",
+    "knowledge_base",
+    "before_after_grid"
+  ],
+  "website_agent_followed_skill_owners": [
+    "seo"
+  ],
+  "row_fields": "domain, department (the column as stored, or null), project_id (null for an account-level row), content.",
+  "expect_fields": "owner = resolveOwnerDepartment(row); write_owner = resolveWriteOwnerDepartment(row); visible = rowVisibleToAny(row, departments); writable = rowWritableByAny(row, departments); foreign = foreignWriteIntent(row.domain, row.content, departments); followers = rowFollowers(row); on_calls = followedOnCalls(row).",
+  "cases": [
+    {
+      "name": "column only (a): a Sales rule",
+      "row": {
+        "domain": "_rule:quote-after-call",
+        "department": "sales",
+        "project_id": null,
+        "content": "Never quote a price before a discovery call."
+      },
+      "departments": [
+        "sales"
+      ],
+      "expect": {
+        "owner": "sales",
+        "write_owner": "sales",
+        "visible": true,
+        "writable": true,
+        "foreign": null,
+        "followers": [
+          "sales"
+        ],
+        "on_calls": false
+      }
+    },
+    {
+      "name": "marker only (d): an empty column and a Sales marker",
+      "row": {
+        "domain": "_rule:log-calls",
+        "department": null,
+        "project_id": null,
+        "content": "<!-- department: sales -->\nLog every call within an hour."
+      },
+      "departments": [
+        "helpdesk"
+      ],
+      "expect": {
+        "owner": "sales",
+        "write_owner": "sales",
+        "visible": false,
+        "writable": false,
+        "foreign": "sales",
+        "followers": [
+          "sales"
+        ],
+        "on_calls": false
+      }
+    },
+    {
+      "name": "column and marker agree",
+      "row": {
+        "domain": "_skill:refund-steps",
+        "department": "helpdesk",
+        "project_id": null,
+        "content": "<!-- department: helpdesk -->\nStep 1. Check the order."
+      },
+      "departments": [
+        "helpdesk"
+      ],
+      "expect": {
+        "owner": "helpdesk",
+        "write_owner": "helpdesk",
+        "visible": true,
+        "writable": true,
+        "foreign": null,
+        "followers": [
+          "helpdesk"
+        ],
+        "on_calls": false
+      }
+    },
+    {
+      "name": "the seeded shape (b): column marketing plus the SEO marker is SEO's",
+      "row": {
+        "domain": "_rule:title-length",
+        "department": "marketing",
+        "project_id": null,
+        "content": "<!-- department: seo -->\nKeep page titles under 60 characters."
+      },
+      "departments": [
+        "seo"
+      ],
+      "expect": {
+        "owner": "seo",
+        "write_owner": "seo",
+        "visible": true,
+        "writable": true,
+        "foreign": null,
+        "followers": [
+          "seo"
+        ],
+        "on_calls": false
+      }
+    },
+    {
+      "name": "the seeded shape (b): the Marketing parent alone neither lists nor changes it",
+      "row": {
+        "domain": "_rule:meta-descriptions",
+        "department": "marketing",
+        "project_id": null,
+        "content": "<!-- department: seo -->\nWrite a meta description for every page."
+      },
+      "departments": [
+        "marketing"
+      ],
+      "expect": {
+        "owner": "seo",
+        "write_owner": "seo",
+        "visible": false,
+        "writable": false,
+        "foreign": "seo",
+        "followers": [
+          "seo"
+        ],
+        "on_calls": false
+      }
+    },
+    {
+      "name": "the seeded shape (b): an Email skill with front matter under the marker",
+      "row": {
+        "domain": "_skill:welcome-series",
+        "department": "marketing",
+        "project_id": null,
+        "content": "<!-- department: email -->\n---\nname: Welcome series\n---\nStep 1. Send the welcome email."
+      },
+      "departments": [
+        "marketing",
+        "content",
+        "seo",
+        "social",
+        "ppc",
+        "outbound",
+        "branding",
+        "customer_avatar",
+        "customer_journey",
+        "website_design",
+        "knowledge_base",
+        "workflow",
+        "before_after_grid",
+        "email",
+        "analytics"
+      ],
+      "expect": {
+        "owner": "email",
+        "write_owner": "email",
+        "visible": true,
+        "writable": true,
+        "foreign": null,
+        "followers": [
+          "email"
+        ],
+        "on_calls": false
+      }
+    },
+    {
+      "name": "the seeded shape (b): a Content skill the website agent also follows",
+      "row": {
+        "domain": "_skill:blog-outline",
+        "department": "marketing",
+        "project_id": null,
+        "content": "<!-- department: content -->\nOutline before you write."
+      },
+      "departments": [
+        "content"
+      ],
+      "expect": {
+        "owner": "content",
+        "write_owner": "content",
+        "visible": true,
+        "writable": true,
+        "foreign": null,
+        "followers": [
+          "coder",
+          "content"
+        ],
+        "on_calls": false
+      }
+    },
+    {
+      "name": "the seeded shape (b): an SEO skill the website agent also follows (SEO skills only)",
+      "row": {
+        "domain": "_skill:keyword-research",
+        "department": "marketing",
+        "project_id": null,
+        "content": "<!-- department: seo -->\nFind three keywords for every page."
+      },
+      "departments": [
+        "coder"
+      ],
+      "expect": {
+        "owner": "seo",
+        "write_owner": "seo",
+        "visible": false,
+        "writable": false,
+        "foreign": "seo",
+        "followers": [
+          "coder",
+          "seo"
+        ],
+        "on_calls": false
+      }
+    },
+    {
+      "name": "the seeded shape (b): a Paid ads shortcut",
+      "row": {
+        "domain": "_command:ppc-report",
+        "department": "marketing",
+        "project_id": null,
+        "content": "<!-- department: ppc -->\nPull last week's spend."
+      },
+      "departments": [
+        "ppc"
+      ],
+      "expect": {
+        "owner": "ppc",
+        "write_owner": "ppc",
+        "visible": true,
+        "writable": true,
+        "foreign": null,
+        "followers": [
+          "ppc"
+        ],
+        "on_calls": false
+      }
+    },
+    {
+      "name": "the seeded shape (b): a Social specialist",
+      "row": {
+        "domain": "_agent:caption-writer",
+        "department": "marketing",
+        "project_id": null,
+        "content": "<!-- department: social -->\nWrites captions."
+      },
+      "departments": [
+        "social"
+      ],
+      "expect": {
+        "owner": "social",
+        "write_owner": "social",
+        "visible": true,
+        "writable": true,
+        "foreign": null,
+        "followers": [
+          "social"
+        ],
+        "on_calls": false
+      }
+    },
+    {
+      "name": "the seeded shape (b): an Ideal customers rule the website agent also follows",
+      "row": {
+        "domain": "_rule:persona-tone",
+        "department": "marketing",
+        "project_id": null,
+        "content": "<!-- department: customer_avatar -->\nWrite to the persona's goals."
+      },
+      "departments": [
+        "customer_avatar"
+      ],
+      "expect": {
+        "owner": "customer_avatar",
+        "write_owner": "customer_avatar",
+        "visible": true,
+        "writable": true,
+        "foreign": null,
+        "followers": [
+          "coder",
+          "customer_avatar"
+        ],
+        "on_calls": false
+      }
+    },
+    {
+      "name": "the seeded shape (b): a Workflow rule",
+      "row": {
+        "domain": "_rule:no-weekend-runs",
+        "department": "marketing",
+        "project_id": null,
+        "content": "<!-- department: workflow -->\nNever run on weekends."
+      },
+      "departments": [
+        "workflow"
+      ],
+      "expect": {
+        "owner": "workflow",
+        "write_owner": "workflow",
+        "visible": true,
+        "writable": true,
+        "foreign": null,
+        "followers": [
+          "workflow"
+        ],
+        "on_calls": false
+      }
+    },
+    {
+      "name": "an empty column and a topic marker (d gives what b gives)",
+      "row": {
+        "domain": "_rule:subject-lines",
+        "department": null,
+        "project_id": null,
+        "content": "Keep subject lines short.\n\n<!-- department: email -->"
+      },
+      "departments": [
+        "email"
+      ],
+      "expect": {
+        "owner": "email",
+        "write_owner": "email",
+        "visible": true,
+        "writable": true,
+        "foreign": null,
+        "followers": [
+          "email"
+        ],
+        "on_calls": false
+      }
+    },
+    {
+      "name": "column sales and an Email marker: the column wins (a)",
+      "row": {
+        "domain": "_rule:follow-up-email",
+        "department": "sales",
+        "project_id": null,
+        "content": "<!-- department: email -->\nFollow up within a day."
+      },
+      "departments": [
+        "email"
+      ],
+      "expect": {
+        "owner": "sales",
+        "write_owner": "sales",
+        "visible": false,
+        "writable": false,
+        "foreign": null,
+        "followers": [
+          "sales"
+        ],
+        "on_calls": false
+      }
+    },
+    {
+      "name": "column marketing and no marker: the Marketing parent (c), followed by every topic and the website agent",
+      "row": {
+        "domain": "_rule:one-brand-voice",
+        "department": "marketing",
+        "project_id": null,
+        "content": "One brand voice on every channel."
+      },
+      "departments": [
+        "seo"
+      ],
+      "expect": {
+        "owner": "marketing",
+        "write_owner": "marketing",
+        "visible": false,
+        "writable": false,
+        "foreign": null,
+        "followers": [
+          "analytics",
+          "before_after_grid",
+          "branding",
+          "coder",
+          "content",
+          "customer_avatar",
+          "customer_journey",
+          "email",
+          "knowledge_base",
+          "marketing",
+          "outbound",
+          "ppc",
+          "seo",
+          "social",
+          "website_design",
+          "workflow"
+        ],
+        "on_calls": false
+      }
+    },
+    {
+      "name": "column marketing and the Marketing marker: the Marketing parent",
+      "row": {
+        "domain": "_skill:campaign-brief",
+        "department": "marketing",
+        "project_id": null,
+        "content": "<!-- department: marketing -->\nStep 1. Name the goal."
+      },
+      "departments": [
+        "marketing",
+        "content",
+        "seo",
+        "social",
+        "ppc",
+        "outbound",
+        "branding",
+        "customer_avatar",
+        "customer_journey",
+        "website_design",
+        "knowledge_base",
+        "workflow",
+        "before_after_grid",
+        "email",
+        "analytics"
+      ],
+      "expect": {
+        "owner": "marketing",
+        "write_owner": "marketing",
+        "visible": true,
+        "writable": true,
+        "foreign": null,
+        "followers": [
+          "analytics",
+          "before_after_grid",
+          "branding",
+          "coder",
+          "content",
+          "customer_avatar",
+          "customer_journey",
+          "email",
+          "knowledge_base",
+          "marketing",
+          "outbound",
+          "ppc",
+          "seo",
+          "social",
+          "website_design",
+          "workflow"
+        ],
+        "on_calls": false
+      }
+    },
+    {
+      "name": "an empty column and the Marketing marker: the Marketing parent",
+      "row": {
+        "domain": "_skill:quarterly-plan",
+        "department": null,
+        "project_id": null,
+        "content": "<!-- department: marketing -->\nStep 1. Review last quarter."
+      },
+      "departments": [
+        "email"
+      ],
+      "expect": {
+        "owner": "marketing",
+        "write_owner": "marketing",
+        "visible": false,
+        "writable": false,
+        "foreign": "marketing",
+        "followers": [
+          "analytics",
+          "before_after_grid",
+          "branding",
+          "coder",
+          "content",
+          "customer_avatar",
+          "customer_journey",
+          "email",
+          "knowledge_base",
+          "marketing",
+          "outbound",
+          "ppc",
+          "seo",
+          "social",
+          "website_design",
+          "workflow"
+        ],
+        "on_calls": false
+      }
+    },
+    {
+      "name": "column marketing and a Sales marker: the Marketing parent (c); only a topic's marker beats the column",
+      "row": {
+        "domain": "_rule:hand-off",
+        "department": "marketing",
+        "project_id": null,
+        "content": "<!-- department: sales -->\nHand hot leads to Sales."
+      },
+      "departments": [
+        "marketing"
+      ],
+      "expect": {
+        "owner": "marketing",
+        "write_owner": "marketing",
+        "visible": true,
+        "writable": true,
+        "foreign": "sales",
+        "followers": [
+          "analytics",
+          "before_after_grid",
+          "branding",
+          "coder",
+          "content",
+          "customer_avatar",
+          "customer_journey",
+          "email",
+          "knowledge_base",
+          "marketing",
+          "outbound",
+          "ppc",
+          "seo",
+          "social",
+          "website_design",
+          "workflow"
+        ],
+        "on_calls": false
+      }
+    },
+    {
+      "name": "column marketing and front matter declaring SEO, no marker: the Marketing parent (front matter never beats the column)",
+      "row": {
+        "domain": "_skill:site-audit",
+        "department": "marketing",
+        "project_id": null,
+        "content": "---\nname: Site audit\ndepartment: seo\n---\nStep 1. Crawl the site."
+      },
+      "departments": [
+        "seo"
+      ],
+      "expect": {
+        "owner": "marketing",
+        "write_owner": "marketing",
+        "visible": false,
+        "writable": false,
+        "foreign": null,
+        "followers": [
+          "analytics",
+          "before_after_grid",
+          "branding",
+          "coder",
+          "content",
+          "customer_avatar",
+          "customer_journey",
+          "email",
+          "knowledge_base",
+          "marketing",
+          "outbound",
+          "ppc",
+          "seo",
+          "social",
+          "website_design",
+          "workflow"
+        ],
+        "on_calls": false
+      }
+    },
+    {
+      "name": "two markers: only the first counts, and Sales does not beat the marketing column (c)",
+      "row": {
+        "domain": "_rule:two-markers",
+        "department": "marketing",
+        "project_id": null,
+        "content": "<!-- department: sales -->\n<!-- department: seo -->\nMixed."
+      },
+      "departments": [
+        "marketing"
+      ],
+      "expect": {
+        "owner": "marketing",
+        "write_owner": "marketing",
+        "visible": true,
+        "writable": true,
+        "foreign": "sales",
+        "followers": [
+          "analytics",
+          "before_after_grid",
+          "branding",
+          "coder",
+          "content",
+          "customer_avatar",
+          "customer_journey",
+          "email",
+          "knowledge_base",
+          "marketing",
+          "outbound",
+          "ppc",
+          "seo",
+          "social",
+          "website_design",
+          "workflow"
+        ],
+        "on_calls": false
+      }
+    },
+    {
+      "name": "two markers: the first names a topic (b)",
+      "row": {
+        "domain": "_rule:first-marker-wins",
+        "department": "marketing",
+        "project_id": null,
+        "content": "<!-- department: ppc -->\n<!-- department: sales -->\nPause ads that spend without leads."
+      },
+      "departments": [
+        "ppc"
+      ],
+      "expect": {
+        "owner": "ppc",
+        "write_owner": "ppc",
+        "visible": true,
+        "writable": true,
+        "foreign": null,
+        "followers": [
+          "ppc"
+        ],
+        "on_calls": false
+      }
+    },
+    {
+      "name": "an empty column and front matter declaring Sales (d)",
+      "row": {
+        "domain": "_skill:discovery-call",
+        "department": null,
+        "project_id": null,
+        "content": "---\nname: Discovery call prep\ndepartment: sales\n---\nStep 1."
+      },
+      "departments": [
+        "sales"
+      ],
+      "expect": {
+        "owner": "sales",
+        "write_owner": "sales",
+        "visible": true,
+        "writable": true,
+        "foreign": null,
+        "followers": [
+          "sales"
+        ],
+        "on_calls": false
+      }
+    },
+    {
+      "name": "a department: line in the prose declares nothing: shared with every agent",
+      "row": {
+        "domain": "_rule:weekly-report",
+        "department": null,
+        "project_id": null,
+        "content": "Send the weekly report on Mondays.\ndepartment: sales\n"
+      },
+      "departments": [
+        "helpdesk"
+      ],
+      "expect": {
+        "owner": null,
+        "write_owner": null,
+        "visible": true,
+        "writable": true,
+        "foreign": null,
+        "followers": [
+          "accounting",
+          "analytics",
+          "before_after_grid",
+          "branding",
+          "coder",
+          "comms",
+          "content",
+          "customer_avatar",
+          "customer_journey",
+          "email",
+          "helpdesk",
+          "knowledge_base",
+          "marketing",
+          "orchestrator",
+          "outbound",
+          "ppc",
+          "production",
+          "sales",
+          "seo",
+          "social",
+          "website_design",
+          "workflow"
+        ],
+        "on_calls": false
+      }
+    },
+    {
+      "name": "a department: line in the prose under a marketing column: the Marketing parent",
+      "row": {
+        "domain": "_rule:launch-checklist",
+        "department": "marketing",
+        "project_id": null,
+        "content": "Check every link before launch.\ndepartment: seo\n"
+      },
+      "departments": [
+        "marketing"
+      ],
+      "expect": {
+        "owner": "marketing",
+        "write_owner": "marketing",
+        "visible": true,
+        "writable": true,
+        "foreign": null,
+        "followers": [
+          "analytics",
+          "before_after_grid",
+          "branding",
+          "coder",
+          "content",
+          "customer_avatar",
+          "customer_journey",
+          "email",
+          "knowledge_base",
+          "marketing",
+          "outbound",
+          "ppc",
+          "seo",
+          "social",
+          "website_design",
+          "workflow"
+        ],
+        "on_calls": false
+      }
+    },
+    {
+      "name": "case and whitespace around the column",
+      "row": {
+        "domain": "_rule:callback-window",
+        "department": "  Sales ",
+        "project_id": null,
+        "content": "Call back within an hour."
+      },
+      "departments": [
+        "SALES"
+      ],
+      "expect": {
+        "owner": "sales",
+        "write_owner": "sales",
+        "visible": true,
+        "writable": true,
+        "foreign": null,
+        "followers": [
+          "sales"
+        ],
+        "on_calls": false
+      }
+    },
+    {
+      "name": "case and whitespace inside the marker",
+      "row": {
+        "domain": "_rule:alt-text",
+        "department": null,
+        "project_id": null,
+        "content": "Describe every image. <!--   DEPARTMENT:   SEO   -->"
+      },
+      "departments": [
+        "seo"
+      ],
+      "expect": {
+        "owner": "seo",
+        "write_owner": "seo",
+        "visible": true,
+        "writable": true,
+        "foreign": null,
+        "followers": [
+          "seo"
+        ],
+        "on_calls": false
+      }
+    },
+    {
+      "name": "the seeded shape with a padded, upper-case column and marker (b)",
+      "row": {
+        "domain": "_rule:preheader",
+        "department": " Marketing\t",
+        "project_id": null,
+        "content": "<!-- DEPARTMENT: Email -->\nAlways write a preheader."
+      },
+      "departments": [
+        "email"
+      ],
+      "expect": {
+        "owner": "email",
+        "write_owner": "email",
+        "visible": true,
+        "writable": true,
+        "foreign": null,
+        "followers": [
+          "email"
+        ],
+        "on_calls": false
+      }
+    },
+    {
+      "name": "a byte-order mark before the marker: the marker is still read (b)",
+      "row": {
+        "domain": "_rule:hashtags",
+        "department": "marketing",
+        "project_id": null,
+        "content": "\ufeff<!-- department: social -->\nThree hashtags at most."
+      },
+      "departments": [
+        "social"
+      ],
+      "expect": {
+        "owner": "social",
+        "write_owner": "social",
+        "visible": true,
+        "writable": true,
+        "foreign": null,
+        "followers": [
+          "social"
+        ],
+        "on_calls": false
+      }
+    },
+    {
+      "name": "a byte-order mark before the front matter hides it: shared with every agent",
+      "row": {
+        "domain": "_skill:bom-front-matter",
+        "department": null,
+        "project_id": null,
+        "content": "\ufeff---\nname: Pipeline review\ndepartment: sales\n---\nStep 1."
+      },
+      "departments": [
+        "sales"
+      ],
+      "expect": {
+        "owner": null,
+        "write_owner": null,
+        "visible": true,
+        "writable": true,
+        "foreign": null,
+        "followers": [
+          "accounting",
+          "analytics",
+          "before_after_grid",
+          "branding",
+          "coder",
+          "comms",
+          "content",
+          "customer_avatar",
+          "customer_journey",
+          "email",
+          "helpdesk",
+          "knowledge_base",
+          "marketing",
+          "orchestrator",
+          "outbound",
+          "ppc",
+          "production",
+          "sales",
+          "seo",
+          "social",
+          "website_design",
+          "workflow"
+        ],
+        "on_calls": false
+      }
+    },
+    {
+      "name": "a marker that names no department is no owner",
+      "row": {
+        "domain": "_rule:bad-marker",
+        "department": null,
+        "project_id": null,
+        "content": "<!-- department: Engineering -->\nA marker that is no department is no owner."
+      },
+      "departments": [
+        "sales"
+      ],
+      "expect": {
+        "owner": null,
+        "write_owner": null,
+        "visible": true,
+        "writable": true,
+        "foreign": null,
+        "followers": [
+          "accounting",
+          "analytics",
+          "before_after_grid",
+          "branding",
+          "coder",
+          "comms",
+          "content",
+          "customer_avatar",
+          "customer_journey",
+          "email",
+          "helpdesk",
+          "knowledge_base",
+          "marketing",
+          "orchestrator",
+          "outbound",
+          "ppc",
+          "production",
+          "sales",
+          "seo",
+          "social",
+          "website_design",
+          "workflow"
+        ],
+        "on_calls": false
+      }
+    },
+    {
+      "name": "graphic_design is no department: its marker is no owner",
+      "row": {
+        "domain": "_rule:brand-colours",
+        "department": null,
+        "project_id": null,
+        "content": "<!-- department: graphic_design -->\nUse the brand colours."
+      },
+      "departments": [
+        "website_design"
+      ],
+      "expect": {
+        "owner": null,
+        "write_owner": null,
+        "visible": true,
+        "writable": true,
+        "foreign": null,
+        "followers": [
+          "accounting",
+          "analytics",
+          "before_after_grid",
+          "branding",
+          "coder",
+          "comms",
+          "content",
+          "customer_avatar",
+          "customer_journey",
+          "email",
+          "helpdesk",
+          "knowledge_base",
+          "marketing",
+          "orchestrator",
+          "outbound",
+          "ppc",
+          "production",
+          "sales",
+          "seo",
+          "social",
+          "website_design",
+          "workflow"
+        ],
+        "on_calls": false
+      }
+    },
+    {
+      "name": "graphic_design under a marketing column: the Marketing parent (c)",
+      "row": {
+        "domain": "_skill:mockup-steps",
+        "department": "marketing",
+        "project_id": null,
+        "content": "<!-- department: graphic_design -->\nStep 1. Start from the brand kit."
+      },
+      "departments": [
+        "website_design"
+      ],
+      "expect": {
+        "owner": "marketing",
+        "write_owner": "marketing",
+        "visible": false,
+        "writable": false,
+        "foreign": null,
+        "followers": [
+          "analytics",
+          "before_after_grid",
+          "branding",
+          "coder",
+          "content",
+          "customer_avatar",
+          "customer_journey",
+          "email",
+          "knowledge_base",
+          "marketing",
+          "outbound",
+          "ppc",
+          "seo",
+          "social",
+          "website_design",
+          "workflow"
+        ],
+        "on_calls": false
+      }
+    },
+    {
+      "name": "a graphic_design column names no agent: nobody follows it",
+      "row": {
+        "domain": "_rule:banner-sizes",
+        "department": "graphic_design",
+        "project_id": null,
+        "content": "Banners are 1200 by 628."
+      },
+      "departments": [
+        "website_design"
+      ],
+      "expect": {
+        "owner": "graphic_design",
+        "write_owner": "graphic_design",
+        "visible": false,
+        "writable": false,
+        "foreign": null,
+        "followers": [],
+        "on_calls": false
+      }
+    },
+    {
+      "name": "a marker that is no department does not hide the front matter below it (d)",
+      "row": {
+        "domain": "_skill:call-notes",
+        "department": null,
+        "project_id": null,
+        "content": "<!-- department: graphic_design -->\n---\nname: Call notes\ndepartment: sales\n---\nStep 1."
+      },
+      "departments": [
+        "sales"
+      ],
+      "expect": {
+        "owner": "sales",
+        "write_owner": "sales",
+        "visible": true,
+        "writable": true,
+        "foreign": null,
+        "followers": [
+          "sales"
+        ],
+        "on_calls": false
+      }
+    },
+    {
+      "name": "Analytics is a Marketing topic: the seeded shape (b)",
+      "row": {
+        "domain": "_rule:utm-tags",
+        "department": "marketing",
+        "project_id": null,
+        "content": "<!-- department: analytics -->\nTag every link with UTM parameters."
+      },
+      "departments": [
+        "analytics"
+      ],
+      "expect": {
+        "owner": "analytics",
+        "write_owner": "analytics",
+        "visible": true,
+        "writable": true,
+        "foreign": null,
+        "followers": [
+          "analytics"
+        ],
+        "on_calls": false
+      }
+    },
+    {
+      "name": "Analytics by its column (a)",
+      "row": {
+        "domain": "_skill:weekly-traffic",
+        "department": "analytics",
+        "project_id": null,
+        "content": "Step 1. Compare with last week."
+      },
+      "departments": [
+        "marketing",
+        "content",
+        "seo",
+        "social",
+        "ppc",
+        "outbound",
+        "branding",
+        "customer_avatar",
+        "customer_journey",
+        "website_design",
+        "knowledge_base",
+        "workflow",
+        "before_after_grid",
+        "email",
+        "analytics"
+      ],
+      "expect": {
+        "owner": "analytics",
+        "write_owner": "analytics",
+        "visible": true,
+        "writable": true,
+        "foreign": null,
+        "followers": [
+          "analytics"
+        ],
+        "on_calls": false
+      }
+    },
+    {
+      "name": "the website agent's own rule",
+      "row": {
+        "domain": "_rule:no-inline-styles",
+        "department": "coder",
+        "project_id": null,
+        "content": "<!-- department: coder -->\nNever use inline styles."
+      },
+      "departments": [
+        "coder"
+      ],
+      "expect": {
+        "owner": "coder",
+        "write_owner": "coder",
+        "visible": true,
+        "writable": true,
+        "foreign": null,
+        "followers": [
+          "coder"
+        ],
+        "on_calls": false
+      }
+    },
+    {
+      "name": "a rule filed for the chief of staff outside her own rows: she never reads it",
+      "row": {
+        "domain": "_rule:brief-the-team",
+        "department": "orchestrator",
+        "project_id": null,
+        "content": "Brief the team on Mondays."
+      },
+      "departments": [
+        "orchestrator"
+      ],
+      "expect": {
+        "owner": "orchestrator",
+        "write_owner": "orchestrator",
+        "visible": true,
+        "writable": true,
+        "foreign": null,
+        "followers": [],
+        "on_calls": false
+      }
+    },
+    {
+      "name": "legacy tool state in a column that names no agent",
+      "row": {
+        "domain": "_rule:lead-score",
+        "department": "mini",
+        "project_id": null,
+        "content": "Score leads 1 to 5."
+      },
+      "departments": [
+        "coder"
+      ],
+      "expect": {
+        "owner": "mini",
+        "write_owner": "mini",
+        "visible": false,
+        "writable": false,
+        "foreign": null,
+        "followers": [],
+        "on_calls": false
+      }
+    },
+    {
+      "name": "shared with every agent: an untagged rule, never on calls",
+      "row": {
+        "domain": "_rule:no-em-dashes",
+        "department": null,
+        "project_id": null,
+        "content": "No em dashes."
+      },
+      "departments": [
+        "comms"
+      ],
+      "expect": {
+        "owner": null,
+        "write_owner": null,
+        "visible": true,
+        "writable": true,
+        "foreign": null,
+        "followers": [
+          "accounting",
+          "analytics",
+          "before_after_grid",
+          "branding",
+          "coder",
+          "comms",
+          "content",
+          "customer_avatar",
+          "customer_journey",
+          "email",
+          "helpdesk",
+          "knowledge_base",
+          "marketing",
+          "orchestrator",
+          "outbound",
+          "ppc",
+          "production",
+          "sales",
+          "seo",
+          "social",
+          "website_design",
+          "workflow"
+        ],
+        "on_calls": false
+      }
+    },
+    {
+      "name": "the receptionist's own call rule: carried on calls",
+      "row": {
+        "domain": "_rule:greeting",
+        "department": "comms",
+        "project_id": null,
+        "content": "<!-- department: comms -->\nAnswer with the business name."
+      },
+      "departments": [
+        "comms"
+      ],
+      "expect": {
+        "owner": "comms",
+        "write_owner": "comms",
+        "visible": true,
+        "writable": true,
+        "foreign": null,
+        "followers": [
+          "comms"
+        ],
+        "on_calls": true
+      }
+    },
+    {
+      "name": "a Communications rule reflection wrote: chats only",
+      "row": {
+        "domain": "_rule:callers-ask-prices",
+        "department": "comms",
+        "project_id": null,
+        "content": "<!-- department: comms -->\n<!-- origin: reflection -->\nCallers often ask about prices."
+      },
+      "departments": [
+        "comms"
+      ],
+      "expect": {
+        "owner": "comms",
+        "write_owner": "comms",
+        "visible": true,
+        "writable": true,
+        "foreign": null,
+        "followers": [
+          "comms"
+        ],
+        "on_calls": false
+      }
+    },
+    {
+      "name": "a Communications skill: never on calls",
+      "row": {
+        "domain": "_skill:transfer-steps",
+        "department": "comms",
+        "project_id": null,
+        "content": "Step 1. Offer a callback."
+      },
+      "departments": [
+        "comms"
+      ],
+      "expect": {
+        "owner": "comms",
+        "write_owner": "comms",
+        "visible": true,
+        "writable": true,
+        "foreign": null,
+        "followers": [
+          "comms"
+        ],
+        "on_calls": false
+      }
+    },
+    {
+      "name": "a Communications rule by its marker alone (d): carried on calls",
+      "row": {
+        "domain": "_rule:after-hours",
+        "department": null,
+        "project_id": null,
+        "content": "<!-- department: comms -->\nAfter hours, take a message."
+      },
+      "departments": [
+        "comms"
+      ],
+      "expect": {
+        "owner": "comms",
+        "write_owner": "comms",
+        "visible": true,
+        "writable": true,
+        "foreign": null,
+        "followers": [
+          "comms"
+        ],
+        "on_calls": true
+      }
+    },
+    {
+      "name": "a profile: the slug beats the column (not a followed kind)",
+      "row": {
+        "domain": "_identity:sales",
+        "department": "customer_avatar",
+        "project_id": null,
+        "content": "---\nname: \"Patrick Smith\"\ndepartment: sales\n---\nWarm and direct."
+      },
+      "departments": [
+        "customer_avatar"
+      ],
+      "expect": {
+        "owner": "sales",
+        "write_owner": "sales",
+        "visible": false,
+        "writable": false,
+        "foreign": "sales",
+        "followers": null,
+        "on_calls": false
+      }
+    },
+    {
+      "name": "a profile under a marketing column: its front matter decides, never a marker ((b) is for rules, skills, shortcuts and specialists)",
+      "row": {
+        "domain": "_identity:lumen",
+        "department": "marketing",
+        "project_id": null,
+        "content": "<!-- department: seo -->\n---\nname: \"Lumen\"\ndepartment: email\n---\nEmail coach."
+      },
+      "departments": [
+        "email"
+      ],
+      "expect": {
+        "owner": "email",
+        "write_owner": "email",
+        "visible": true,
+        "writable": true,
+        "foreign": null,
+        "followers": null,
+        "on_calls": false
+      }
+    },
+    {
+      "name": "a profile nothing declares: owned by nobody for reading, by its column for writing",
+      "row": {
+        "domain": "_identity:morgan",
+        "department": "marketing",
+        "project_id": null,
+        "content": "No front matter."
+      },
+      "departments": [
+        "sales"
+      ],
+      "expect": {
+        "owner": null,
+        "write_owner": "marketing",
+        "visible": true,
+        "writable": false,
+        "foreign": null,
+        "followers": null,
+        "on_calls": false
+      }
+    },
+    {
+      "name": "the chief of staff's How it works (_account:soul)",
+      "row": {
+        "domain": "_account:soul",
+        "department": "orchestrator",
+        "project_id": null,
+        "content": "# How Iris works"
+      },
+      "departments": [
+        "orchestrator"
+      ],
+      "expect": {
+        "owner": "orchestrator",
+        "write_owner": "orchestrator",
+        "visible": true,
+        "writable": true,
+        "foreign": null,
+        "followers": null,
+        "on_calls": false
+      }
+    },
+    {
+      "name": "the chief of staff's own rule (_account:_rule:*) is not a typed row: its column decides",
+      "row": {
+        "domain": "_account:_rule:no-stock-photos",
+        "department": "orchestrator",
+        "project_id": null,
+        "content": "<!-- department: seo -->\nNever use stock photos."
+      },
+      "departments": [
+        "orchestrator"
+      ],
+      "expect": {
+        "owner": "orchestrator",
+        "write_owner": "orchestrator",
+        "visible": true,
+        "writable": true,
+        "foreign": "seo",
+        "followers": null,
+        "on_calls": false
+      }
+    },
+    {
+      "name": "pronunciations (_account:*) with no column: no owner",
+      "row": {
+        "domain": "_account:pronunciations",
+        "department": null,
+        "project_id": null,
+        "content": "Locus: LOH-kus"
+      },
+      "departments": [
+        "comms"
+      ],
+      "expect": {
+        "owner": null,
+        "write_owner": null,
+        "visible": true,
+        "writable": true,
+        "foreign": null,
+        "followers": null,
+        "on_calls": false
+      }
+    },
+    {
+      "name": "About your business: owned by the account, listed and changed by no department",
+      "row": {
+        "domain": "account",
+        "department": "account",
+        "project_id": null,
+        "content": "## About the business\nWe fit kitchens."
+      },
+      "departments": [
+        "sales"
+      ],
+      "expect": {
+        "owner": "account",
+        "write_owner": "account",
+        "visible": false,
+        "writable": false,
+        "foreign": "account",
+        "followers": null,
+        "on_calls": false
+      }
+    },
+    {
+      "name": "a plain note under a marketing column keeps its column ((b) is for rules, skills, shortcuts and specialists)",
+      "row": {
+        "domain": "seo",
+        "department": "marketing",
+        "project_id": null,
+        "content": "<!-- department: seo -->\nTarget cities: Plano, Frisco."
+      },
+      "departments": [
+        "seo"
+      ],
+      "expect": {
+        "owner": "marketing",
+        "write_owner": "marketing",
+        "visible": false,
+        "writable": false,
+        "foreign": null,
+        "followers": null,
+        "on_calls": false
+      }
+    },
+    {
+      "name": "a website's own rule: the website agent follows it on that website only",
+      "row": {
+        "domain": "_rule:use-brand-colors",
+        "department": "coder",
+        "project_id": "22222222-2222-4222-8222-222222222222",
+        "content": "Use the brand colours."
+      },
+      "departments": [
+        "coder"
+      ],
+      "expect": {
+        "owner": "coder",
+        "write_owner": "coder",
+        "visible": true,
+        "writable": true,
+        "foreign": null,
+        "followers": [
+          "coder"
+        ],
+        "on_calls": false
+      }
+    },
+    {
+      "name": "a website's own rule with a topic's marker under a marketing column: owned by the topic, followed on that website only",
+      "row": {
+        "domain": "_rule:hero-copy",
+        "department": "marketing",
+        "project_id": "22222222-2222-4222-8222-222222222222",
+        "content": "<!-- department: content -->\nLead with the benefit."
+      },
+      "departments": [
+        "coder"
+      ],
+      "expect": {
+        "owner": "content",
+        "write_owner": "content",
+        "visible": false,
+        "writable": false,
+        "foreign": "content",
+        "followers": [
+          "coder"
+        ],
+        "on_calls": false
+      }
+    },
+    {
+      "name": "a website's own profile",
+      "row": {
+        "domain": "_identity:coder",
+        "department": "coder",
+        "project_id": "22222222-2222-4222-8222-222222222222",
+        "content": "---\nname: \"Maya\"\ndepartment: coder\n---\n"
+      },
+      "departments": [
+        "coder"
+      ],
+      "expect": {
+        "owner": "coder",
+        "write_owner": "coder",
+        "visible": true,
+        "writable": true,
+        "foreign": null,
+        "followers": null,
+        "on_calls": false
+      }
+    }
+  ]
+}
