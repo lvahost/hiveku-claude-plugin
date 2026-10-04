@@ -541,6 +541,10 @@ const CODEX_ONLY_PROMPTS = new Map([
   ['hiveku_batch',
     'carries other tool calls and runs them on the server, and Codex asks by the called name ' +
     'only, so without this prompt every gated tool placed inside a batch runs in Codex unasked'],
+  ['memory_create',
+    'asks here only when it would make a rule, skill, shortcut or specialist that names no agent ' +
+    '(lib/memory-tool-rules.mjs reads the arguments), and Codex asks by the called name only, so ' +
+    'Codex prompts on every memory_create (Codex plugin 0.3.0, memory surfaces audit G7)'],
 ]);
 
 test('every Codex-only prompt names a real tool that is not on the ask list', () => {

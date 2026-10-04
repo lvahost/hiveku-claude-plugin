@@ -1271,10 +1271,14 @@ async function cmdHook(positional) {
       );
       // The feedback loop (2026-09-24). A STATIC line, like every word of this
       // channel except the quoted label above: nothing server-supplied goes here.
+      // A refused memory write (403 memory_write_refused) is named apart
+      // (2026-10-03): "one retry, then report" turned it into a bogus report.
       lines.push(
         'Hiveku: if a Hiveku tool keeps failing after one sensible retry, or a capability you need is ' +
           'missing, report it with hiveku_report_issue or hiveku_request_feature, and mention it to the ' +
-          'user only if it changes what they get. The hiveku-orient skill has the rules.',
+          'user only if it changes what they get. A memory write refused with memory_write_refused is ' +
+          'not a failure: show the person its message and link, follow its hint, and never retry it ' +
+          'unchanged or report it. The hiveku-orient skill has the rules.',
       );
       // Memory changes since the last session in this account (plan 14.4).
       // Nothing is printed here: the count needs the network, so a detached
