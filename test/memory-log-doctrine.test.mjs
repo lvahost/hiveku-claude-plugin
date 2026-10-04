@@ -56,7 +56,7 @@ const ACCOUNT = '3f2504e0-4f89-11d3-9a0c-0305e82c3301';
 // memory_log_list and memory_log_summary landed in the index (MCP #28, 2026-09-25).
 // memory_log_add is live on the MCP server (MCP #100, 2026-10-03) and lands in the
 // index with the next release's regeneration, which must delete it from here.
-const INCOMING = new Set(['memory_log_add']);
+const INCOMING = new Set([]);
 
 /**
  * memory_* tokens in prose that are field or argument names, not tools.
