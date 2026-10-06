@@ -152,8 +152,15 @@ The platform notifies on EVERY submission, and a user-built notification workflo
 - `website_projects.form_notify_email` is the per-project routing control.
 - Recipients resolve ONLY server-side. There is no client-side recipient in markup, so never put an email address in a form attribute expecting it to route anything.
 - Cap is 60 emails per account per hour, then a rollup.
+- Each recipient gets their own email, and Hiveku records what became of it: sent, delivered, bounced, marked as spam. Each lead in the Forms tab says who was told, address by address.
+- A bouncing address is left out of later lead emails and shows in red in Notifications, and the site's other recipients and the account's people get one warning a week about it. A lead whose every recipient bounces goes to the account's people instead (the billing email, else every member), saying why. Do not tell an owner a lead "was emailed" without checking its Who was told line.
+- The subject is a per-site template, set in Analytics > Forms > Notifications. The default is `New lead: {name}, {form} ({site})`; `{email}`, `{phone}`, `{page}` and `{source}` work too. The email names the site and says where the visitor came from ("Came from: Google Ads (Paid Search), campaign Spring"), read from the same attribution as every report.
+- "Open this lead" in the email, the Slack post and the phone push opens that one lead (`?submission=<id>`), not the Forms list. The Slack post carries what the email carries.
+- Account members whose address gets a site's leads also get a phone push and a bell notification for each lead. Tapping it switches the app to the lead's account first, since a person can belong to many.
+- "Send a test email" (Notifications) sends the saved settings to the site's recipients, at most 5 an hour per site. It is also how a fixed mailbox is checked again: a bouncing address gets the test too.
 - Sender is `Hiveku Forms <no-reply@notifications.hiveku.com>`. The apex `hiveku.com` is NOT verified and silently rejects, so never tell an owner to expect mail from the apex.
-- Reply goes to the no-reply sender unless the site's "Reply to the person who filled in the form" switch is on (Analytics > Forms > Notifications, `website_projects.form_notify_reply_to_submitter`, off by default). With it on, each notification's Reply-To is the email the visitor entered, when that is a well-formed address; From stays the no-reply sender. The switch is dashboard-only (no MCP tool). The summary email for leads held back by the hourly cap never carries a Reply-To. A notify workflow's Send Email step has its own Reply-To field.
+- Reply goes to the no-reply sender unless the site's "Reply to the person who filled in the form" switch is on (Analytics > Forms > Notifications, `website_projects.form_notify_reply_to_submitter`, off by default). With it on, each notification's Reply-To is the email the visitor entered, when that is a well-formed address; From stays the no-reply sender. The summary email for leads held back by the hourly cap never carries a Reply-To. A notify workflow's Send Email step has its own Reply-To field.
+- Every setting above is dashboard-only: no MCP tool manages notification settings.
 
 ## Part 3: Workflows behind a form
 
