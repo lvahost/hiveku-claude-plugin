@@ -251,9 +251,10 @@ only; no branded rail exists for books, PPC or helpdesk numbers).
 **They say.** "Deals just sit there and nobody notices." / "We forget to follow up and
 the lead goes cold."
 
-**What this actually is.** A scheduled sweep that finds the stale records and stages a
-task per record. It does NOT send the follow-up. Automate the finding; keep the outreach
-human.
+**What this actually is.** A scheduled sweep that finds the stale records and stages ONE
+task or digest listing them. It does NOT send the follow-up. Automate the finding; keep
+the outreach human. A task per record would need For Each to run the steps after it once
+per item, which it does not do yet (step 2).
 
 **Preconditions.** Staleness is a number of days per stage that the OPERATOR defines,
 written down, not inferred. Size the problem first with the direct tools:
@@ -265,23 +266,26 @@ should say so.
 1. `workflow_node_types_list`, read the `fields[]` on `crmListDeals` (or
    `crmListContacts`) for the real filter keys. Do not assume an age filter exists; if
    the node cannot filter by age, filter downstream with `filterArray` on a date field.
-2. `scheduledTrigger` to `crmListDeals`, to `filterArray`, to `forEach`, to
-   `crmCreateTask` (or `mcTaskCreate`, which is replay-safe: a retried run reuses the
-   first card). Or one `sendEmail` digest at the end instead of N tasks.
+2. `scheduledTrigger` to `crmListDeals`, to `filterArray`, to ONE step for the whole
+   list: a `sendEmail` digest, or one `mcTaskCreate` (replay-safe: a retried run reuses
+   the first card) whose body lists the deals. Do not put a `forEach` in front of
+   `crmCreateTask` for a task per record: For Each does not yet run the steps after it
+   once per item. They run once for the whole list, so you get one task, and
+   `workflow_validate` warns about it.
 3. Weekly with an explicit timezone. A daily stale sweep trains people to ignore it.
 
 **Prove it works.** Read the terminal output for the record COUNT the sweep would act on.
-400 means your threshold is wrong and you are about to create 400 tasks; 0 means your
-filter is wrong. Then read one `would_have` from the task node and confirm the title
-names the specific deal rather than a blank merge.
+400 means your threshold is wrong and the digest will be unreadable; 0 means your filter
+is wrong. Then read the `would_have` from the digest or task node and confirm it names the
+specific deals rather than a blank merge.
 
-**Ship.** Show the operator the count and three sample task titles before enabling.
+**Ship.** Show the operator the count and the digest (or the task body) before enabling.
 
-**How this fails in the wild.** The first run creates hundreds of tasks because the sweep
+**How this fails in the wild.** The first run lists hundreds of records because the sweep
 has no floor and every historically-dormant record qualifies on day one. Early symptom:
-the dry-run count is far larger than the operator's mental model. Cap the first run with
-`batchArray` or a tighter date floor, or run it once manually and let the backlog be
-worked before the schedule takes over. Note `mcTaskComment` has no replay protection, so
+the dry-run count is far larger than the operator's mental model. Use a tighter date
+floor, or run it once manually and let the backlog be worked before the schedule takes
+over. Note `mcTaskComment` has no replay protection, so
 a resumed run posts a second comment; `mcTaskCreate` does not.
 
 ---
