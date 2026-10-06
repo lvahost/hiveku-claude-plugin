@@ -153,6 +153,7 @@ The platform notifies on EVERY submission, and a user-built notification workflo
 - Recipients resolve ONLY server-side. There is no client-side recipient in markup, so never put an email address in a form attribute expecting it to route anything.
 - Cap is 60 emails per account per hour, then a rollup.
 - Sender is `Hiveku Forms <no-reply@notifications.hiveku.com>`. The apex `hiveku.com` is NOT verified and silently rejects, so never tell an owner to expect mail from the apex.
+- Reply goes to the no-reply sender unless the site's "Reply to the person who filled in the form" switch is on (Analytics > Forms > Notifications, `website_projects.form_notify_reply_to_submitter`, off by default). With it on, each notification's Reply-To is the email the visitor entered, when that is a well-formed address; From stays the no-reply sender. The switch is dashboard-only (no MCP tool). The summary email for leads held back by the hourly cap never carries a Reply-To. A notify workflow's Send Email step has its own Reply-To field.
 
 ## Part 3: Workflows behind a form
 
