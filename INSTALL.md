@@ -169,6 +169,7 @@ Put this in `.claude/settings.json` (per project) or `~/.claude/settings.json` (
       "mcp__plugin_hiveku_hk__ppc_google_ad_text_update",
       "mcp__plugin_hiveku_hk__ppc_google_ads_text_replace",
       "mcp__plugin_hiveku_hk__ppc_bing_rsa_text_update",
+      "mcp__plugin_hiveku_hk__ppc_meta_ad_text_update",
       "mcp__plugin_hiveku_hk__ppc_negatives_remove",
       "mcp__plugin_hiveku_hk__ppc_bing_url_tracking_set",
       "mcp__plugin_hiveku_hk__ppc_bing_ad_extension_update",
