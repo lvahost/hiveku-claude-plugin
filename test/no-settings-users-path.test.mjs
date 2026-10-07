@@ -4,10 +4,11 @@
  * Hiveku has no such page. A role's permissions are edited under Settings >
  * Team Members > Manage Roles, and admins are made on Team Members; the
  * builder's own messages say so since builder #785. This reads every file the
- * plugin ships (whitespace collapsed, so a wrapped line still counts), so the
- * old path cannot come back. Google Search Console's own Settings > Users is a
- * real page and is left alone. lib/tool-index.json is generated from the live
- * MCP server and follows it on the next regeneration.
+ * plugin ships (skills, commands, agents, scripts and hooks, the generated tool
+ * index included; whitespace collapsed, so a wrapped line still counts), so
+ * the old path cannot come back. Google Search Console's own Settings > Users
+ * is a real page and is left alone; another product's real page of that name
+ * would need its own exception here.
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -16,17 +17,18 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const OLD_PATH = /Settings ?(>|&gt;|,|→|\/|:) ?Users\b/;
-const SHIPPED = /\.(md|mjs|js|json|txt)$/;
+const OLD_PATH = /Settings[*_`]* ?(>|&gt;|,|→|\/|:|->|›|») ?[*_`]*Users\b/;
+const SHIPPED = /\.(md|mjs|cjs|js|json|txt|sh|yaml|yml)$/;
+const SCRIPT_DIRS = new Set(['bin', 'hooks']);
 const SKIP_DIRS = new Set(['.git', 'node_modules', 'test']);
-const GENERATED = new Set([path.join('lib', 'tool-index.json')]);
 
 function shippedFiles(dir = ROOT) {
   return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
     const full = path.join(dir, entry.name);
     if (entry.isDirectory()) return SKIP_DIRS.has(entry.name) ? [] : shippedFiles(full);
-    const rel = path.relative(ROOT, full);
-    return SHIPPED.test(entry.name) && !GENERATED.has(rel) ? [rel] : [];
+    // Scripts in bin/ and hooks/ often have no extension.
+    const inScriptDir = SCRIPT_DIRS.has(path.basename(dir));
+    return SHIPPED.test(entry.name) || inScriptDir ? [path.relative(ROOT, full)] : [];
   });
 }
 
@@ -46,7 +48,15 @@ test('no shipped file names "Settings > Users"', () => {
 });
 
 test('the check sees each form, a wrapped line included, and lets the real path through', () => {
-  for (const text of ['under Settings > Users.', 'under Settings >\n  Users.', 'Settings, Users', 'Settings → Users']) {
+  for (const text of [
+    'under Settings > Users.',
+    'under Settings >\n  Users.',
+    'Settings, Users',
+    'Settings → Users',
+    'Settings -> Users',
+    'Settings › Users',
+    'under **Settings** > **Users**.',
+  ]) {
     assert.equal(oldPathMentions(text).length, 1, text);
   }
   assert.equal(oldPathMentions('under Settings > Team Members > Manage Roles.').length, 0);
