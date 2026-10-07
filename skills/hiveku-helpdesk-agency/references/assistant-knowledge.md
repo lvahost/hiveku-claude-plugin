@@ -130,5 +130,6 @@ shows what was.
 
 A 403 with code `key_creator_lacks_access` is not a missing tool: the person who created this
 connection has no helpdesk access on this account. Tell the user plainly that an account owner
-or admin can give them helpdesk access under Settings > Users. Any other 403 carries a `message`
+or admin can give them helpdesk access under Settings > Team Members > Manage Roles. Any other 403
+carries a `message`
 in plain words: pass it on as it is.

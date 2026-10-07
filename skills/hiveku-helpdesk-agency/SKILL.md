@@ -402,7 +402,8 @@ chat, and before counting chats in a sweep or report; the essentials:
   `advice`, and never invent a tool to change a source: the switches are the owner's, in
   Helpdesk > AI agent. A server without the tool is older and may skip a site on a Hiveku-named
   address, so never promise that one is read without it; a 403 `key_creator_lacks_access` means
-  an owner or admin must give the user helpdesk access under Settings > Users. Full field guide,
+  an owner or admin must give the user helpdesk access under Settings > Team Members > Manage
+  Roles. Full field guide,
   wording and the fallback when the tool is missing: `references/assistant-knowledge.md`.
 
 ## Daily cadence (every business day, protects SLA)
