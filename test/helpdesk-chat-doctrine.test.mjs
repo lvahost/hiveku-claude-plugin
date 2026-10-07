@@ -629,9 +629,9 @@ test('a 403 key_creator_lacks_access is a missing grant, not a missing tool', ()
   const missing = between(know + '\n## ', '## When the tool is not there', '\n## ');
   assert.match(missing, /unknown tool, `hiveku_find_tools` does not find it, or a 404/);
   assert.match(missing, /A 403 with code `key_creator_lacks_access` is not a missing tool/);
-  assert.match(missing, /an account owner or admin can give them helpdesk access under Settings > Users/);
+  assert.match(missing, /an account owner or admin can give them helpdesk access under Settings > Team Members > Manage Roles/);
   assert.match(missing, /Any other 403 carries a `message` in plain words: pass it on as it is/);
-  assert.match(skillChatsOf(), /a 403 `key_creator_lacks_access` means an owner or admin must give the user helpdesk access under Settings > Users/);
+  assert.match(skillChatsOf(), /a 403 `key_creator_lacks_access` means an owner or admin must give the user helpdesk access under Settings > Team Members > Manage\s+Roles/);
 });
 
 test('a chat the assistant has is never merged, as the source or the target', () => {
