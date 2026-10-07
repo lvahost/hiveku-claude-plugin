@@ -170,7 +170,8 @@ The platform notifies on EVERY submission, and a user-built notification workflo
     - to an address on the suppression list (a bounce, a complaint, do-not-contact) or a reserved test domain;
     - more than once per mailbox per site per day (a `+tag` or Gmail's dots are the same person);
     - more than 20 times per site per hour, or 200 per account per day, from the account's own domain;
-    - more than 10 times per site per hour, or 50 per account per day, for Hiveku's standard thank-you, since every customer's lead emails share that domain.
+    - more than 10 times per site per hour, or 50 per account per day, for Hiveku's standard thank-you, since every customer's lead emails share that domain;
+    - for Hiveku's standard thank-you, more than 3 times a day to one mailbox across every Hiveku site and account, so a bot cannot flood a stranger's inbox through many customers' forms. All of them also pause, Hiveku-wide, while 20 or more bounced or were marked as spam in a day and those are at least 1 in 20 of the ones sent.
   - **It pauses itself** while a site's replies keep bouncing: 3 or more bounces or complaints, and at least 1 in 10 of the last week's replies. Bots typing other people's addresses would otherwise spend the client's sending reputation. The panel says so, and replies start again once those bounces are a week old.
   - **A bounce or complaint on it** puts the address on the account's suppression list for good, and the team is not alerted.
   - **Forms whose workflow tells the team** send no automatic reply: add a Send Email step to the workflow instead.
