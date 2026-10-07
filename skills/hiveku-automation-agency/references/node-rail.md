@@ -1282,8 +1282,12 @@ rate-limit setting; see 3.3 for the URL rules),
 `scheduledTrigger` (cron), `inboundWebhook` (alias handler).
 
 **Flow control**: `conditional` (branch, handles `true` / `false`), `switch` (multi-branch),
-`forEach` (lists an array's items; the steps after it run once, not once per item, until
-per-item runs are built), `parallelExecute` (branches with a concurrency cap),
+`forEach` (the steps on its Each item exit, `sourceHandle: 'loop'`, run once per item with
+`{{forEach.item}}` and `{{forEach.index}}`; the steps on Done, `'output'` or no handle, run
+once after the last item with `{{<forEachId>.items}}`; at most 1,000 items a run, and a loop
+cannot hold a wait step, `respond`, a nested `forEach`, `parallelExecute`, `transactionBlock`,
+a `delay` over 5 seconds, or a step also connected from outside the loop: `workflow_validate`
+names each), `parallelExecute` (branches with a concurrency cap),
 `errorHandler` (try/catch with retry and fallback), `transactionBlock` (DB ops with
 auto-rollback), `callWorkflow` and `parallelWorkflows` (subworkflows), `delay` (in-process
 pause), `waitUntil` (parks the run in the database and is resumed by cron, so it survives
@@ -1506,8 +1510,8 @@ only through `webflowSitePublish`, which is explicit-only, needs `confirm: true`
 moves, robots replace, webhook update and delete), and is allowed one publish per minute
 per site (`wait_for_cooldown` waits out a `publish_cooldown` once). `webflowCmsItemPublish`
 makes items live by id without a site publish, so never chain it into
-`webflowSitePublish`. Past ~50 item writes a minute use the `*_bulk` nodes. A `forEach` is no substitute: it
-does not run the single-item node once per item (the steps after it run once).
+`webflowSitePublish`. Past ~50 item writes a minute use the `*_bulk` nodes; a `forEach`
+over the single-item node shares the connection's 60-a-minute budget with every agent.
 
 **Builder and deploy**: `builderListProjects`, `builderGetProject`, `builderListBranches`,
 `builderListChanges` (files modified but not committed), `builderListCommits`,
