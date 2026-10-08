@@ -5,8 +5,8 @@
     "mcp__plugin_hiveku_hk__",
     "mcp__hiveku__"
   ],
-  "plugin_version": "0.27.13",
-  "count": 259,
+  "plugin_version": "0.27.14",
+  "count": 261,
   "tools": [
     {
       "name": "deploy_site",
@@ -449,6 +449,11 @@
       "why_gated": "records money moving"
     },
     {
+      "name": "accounting_subscription_create",
+      "method": "POST",
+      "why_gated": "starts a customer subscription and can charge the client's saved card for the first period at once; the preview_hash it confirms with is filled in by the model, not a person"
+    },
+    {
       "name": "crm_contact_email_send",
       "method": "POST",
       "why_gated": "sends a real email from the connected inbox, no draft or recall"
@@ -822,6 +827,11 @@
       "name": "seo_ga4_key_event_delete",
       "method": "POST",
       "why_gated": "un-marks a GA4 conversion - any Google Ads conversion imported from it flatlines silently, irreversible"
+    },
+    {
+      "name": "seo_ga4_custom_definition_archive",
+      "method": "POST",
+      "why_gated": "archives a GA4 custom dimension or metric: reports on it stop at once and Google holds its slot for 48 hours, and the two-step confirm is filled in by the model"
     },
     {
       "name": "seo_ga4_event_create_rule_delete",

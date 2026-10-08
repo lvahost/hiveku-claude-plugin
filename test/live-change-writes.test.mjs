@@ -84,6 +84,9 @@ const LIVE_CHANGE_NAMES = [
   'agent_approval_approve',
   'seo_ga4_key_event_update',
   'seo_ga4_event_create_rule_update',
+  // 0.27.14: a subscription that can charge a card, and a GA4 archive.
+  'accounting_subscription_create',
+  'seo_ga4_custom_definition_archive',
 ];
 
 function folderWith(guardrails) {
