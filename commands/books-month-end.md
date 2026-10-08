@@ -28,8 +28,11 @@ month. All money is integer CENTS; convert for the human, keep the integer in th
    number. AP aging counts `open`, `partially_paid`, `submitted`, `approved`; AR aging counts
    `sent`, `viewed`, `partially_paid`. Drafts are in neither.
 4. **Payroll total.** `accounting_payroll_run_list` - the runs whose period falls inside the month.
-   Report it as its own line, because step 2 does not carry it. Note any run still in `draft`: it is
-   not finalized, not exported, and nobody has been paid from it.
+   Report it as its own line, because step 2 does not carry it. Read each run's status: a `draft`
+   is not finalized, not exported, and nobody has been paid from it; a `finalized` run is locked
+   and exportable but not yet marked paid; only `paid` means a person marked the payouts as sent.
+   Pay is private - this read answers only for a key whose creator may read payroll in the app, so
+   a 403 makes the payroll line unknown, never zero.
 5. **Bank reconcile.** Import the month's statement with `accounting_bank_import` - **CSV only;
    OFX/QFX is not supported yet**, so have the bank export CSV. Map columns explicitly
    (`column_mapping`: a single signed `amount` column, or `debit`/`credit`), and pass the bank's
@@ -55,8 +58,9 @@ month. All money is integer CENTS; convert for the human, keep the integer in th
    is the file form. Read the refund semantics before handing it over: a refund appears as
    `refunded_cents` ON the original captured row, dated by CAPTURE and lifetime-to-date at export
    time - a January payment refunded in June shows its refund in the January export, NOT as June
-   cash movement. Payroll and platform billing are excluded BY NAME (payroll has its own Wise CSV
-   rail; Hiveku charging this account is not the tenant's books) - which is why step 4's payroll
+   cash movement. Payroll and platform billing are excluded BY NAME (payroll has its own payout
+   downloads on each finalized run in the dashboard - Wise, a plain CSV, Gusto, a QuickBooks
+   journal; Hiveku charging this account is not the tenant's books) - which is why step 4's payroll
    line stays its own line. This journal is also the year-end 1099 rail: `direction: "out"` with
    `vendor_id` (400 without `direction: "out"` - AR rows have no vendor) gives per-vendor payment
    rows, and a calendar year fits in one call.

@@ -37,6 +37,14 @@ than the whole string - AP and AR word several of them differently and some carr
 - 409 `A card charge on this invoice is still being confirmed with the payment processor. Resolve
   that hold before recording a manual payment, so the client cannot end up paying twice.` STOP
   and escalate to a human. Never route around this one.
+- 409 `Approve this bill before recording a payment.` (AP only). A bill still `draft` or
+  `submitted` takes no payment: approval comes first, on the owner's word for that bill
+  (`accounting_bill_approve`), then the payment. Never approve a bill yourself just to clear
+  this refusal.
+- 400 `The payment date cannot be in the future.` (AP) / `The date received cannot be in the
+  future.` (AR). A `paid_at` / `received_at` on a UTC day later than tomorrow is refused.
+  Record the day the money actually moved; a future date means the payment is being recorded
+  before it happened.
 - 409 `Cannot pay a "void" bill` / `Cannot record payment on a voided invoice`.
 - 409 `This bill was just updated by another payment. Reload and try again.` (AR: `This invoice
   was just updated by another payment. Reload and try again.`) Re-read with `accounting_bill_get`

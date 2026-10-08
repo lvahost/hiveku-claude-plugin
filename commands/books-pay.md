@@ -35,7 +35,8 @@ instruction: reversed to zero paid, the bill becomes voidable again.
 3. **Record it, one call per bill.**
    `accounting_bill_record_payment({ bill_id, amount_cents, method, reference, paid_at })`.
  - `bill_id` and `amount_cents` are required. `method` is one of check, ach, wire, card, cash,
-     credit, other (defaults to check).
+     credit, other (defaults to check). `paid_at` is the day the money actually left - a date on
+     a UTC day later than tomorrow is refused.
  - **Always pass a distinct `reference`** (check number, ACH trace, confirmation code) **and
      `paid_at`.** The MCP proxy stamps every write with an idempotency hash over account + path +
      body and the builder replays a matching response for one hour, so two genuinely separate
@@ -46,6 +47,11 @@ instruction: reversed to zero paid, the bill becomes voidable again.
  - **Verify `balance_due_cents` in the response actually moved** before reporting the payment as
      recorded. Then move to the next bill.
 4. **Refusals are guardrails, not obstacles.** Do not work around them.
+ - 409 `Approve this bill before recording a payment.` - a bill is paid only once it is approved.
+     A bill the owner named that is still `draft` or `submitted` goes back through
+     `/hiveku:books-close` for its approval first; never approve it yourself to clear the refusal.
+ - 400 `The payment date cannot be in the future.` - `paid_at` falls on a UTC day later than
+     tomorrow. The payment has not happened yet; record it after it has.
  - 400 `Amount exceeds balance due` - overpayment is refused, never split. One wire covering three
      bills is three calls against three `bill_id`s.
  - 409 `Cannot pay a "void" bill` (or any other terminal status).

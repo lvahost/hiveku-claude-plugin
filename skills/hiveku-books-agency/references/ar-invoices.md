@@ -36,11 +36,22 @@ anyone the invoice went out because a create succeeded.
 - Exactly one of `contact_id` or `company_id` is REQUIRED (400 with neither; both together is
   allowed), and every linked contact/company/deal must belong to this account or the call
   400s.
-- `line_items` needs at least one of `{ description (1-500 chars), quantity, unit_cents,
-  discount_cents?, tax_bps?, product_id?, sort_order?, metadata? }`. Money in CENTS.
-- `invoice_number` is minted by the per-account atomic counter (INV-YYYY-000042 style). There
-  is no way to supply one, and a gap in the sequence after a failed create is NORMAL - do
-  not chase it.
+- `line_items` needs at least one of `{ description (plain text or simple HTML, up to 2,000
+  visible characters), quantity, unit_cents, discount_cents?, tax_bps?, product_id?,
+  sort_order?, metadata? }`. Money in CENTS.
+- A line's `product_id` comes from `accounting_product_list` - the account's Products &
+  services catalog (`q`, `archived`, `plan_only`, `limit` up to 200, `offset`; page until
+  `next_offset` is null). Each row carries `id`, `name`, `sku`, `default_unit_price_cents`,
+  `unit_label`, `tax_default_bps`, `is_plan` and `is_archived`; active products only unless
+  `archived: true`, and a 403 when the key's creator may not read products in the app. The
+  `product_id` only links the line to the catalog - it fills in nothing, so send the
+  `description` and `unit_cents` yourself.
+- `invoice_number` is minted by the per-account atomic counter (INV-YYYY-000042 style) when
+  you omit it, and a gap in the sequence after a failed create is NORMAL - do not chase it.
+  Supply one only to keep the ORIGINAL number of an invoice moved over from another app: at
+  most 20 characters, letters, digits, spaces and `. _ / # -`, starting with a letter or
+  digit, never starting `P-` (400 `invoice_number_invalid` otherwise), and unique per
+  account (409 `invoice_number_taken` - pick another, never retry the same one).
 - **`tax_bps` is deliberately THREE-STATE**: omit it (or send null) and the rate resolves
   from the customer's jurisdiction and the account default; send a number - INCLUDING an
   explicit 0 - and that is stamped forever (a later tax-rule edit never re-rates an issued

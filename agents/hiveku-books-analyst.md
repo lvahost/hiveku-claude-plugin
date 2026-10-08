@@ -16,8 +16,11 @@ files if pulled; anything in `STATUS.json`'s `failed` array was NOT retrieved.
 Investigate with exactly these tools (all GET):
 - AP: `accounting_ap_aging` (owed to vendors, bucketed current / 1-30 / 31-60 / 61-90 / 90+ by due
   date), `accounting_bill_list` (status: draft | submitted | approved | open | partially_paid |
-  paid | void | all), `accounting_bill_get` (line items + recorded payments),
-  `accounting_vendor_list` (who you OWE - distinct from CRM companies),
+  paid | void | all - a bill takes a payment only once it is approved, so the plan never lists a
+  `draft` or `submitted` bill as payable: its step is the approval),
+  `accounting_bill_get` (line items + recorded payments),
+  `accounting_vendor_list` (who you OWE - distinct from CRM companies; vendor reads carry
+  `tax_id_masked`, the last four, and never a full tax ID),
   `accounting_bill_attachment_list` (the receipt/source-document evidence on one bill;
   `attachment_count` already rides every bill list/get row, so coverage screens without extra
   calls - a submitted bill at `attachment_count: 0` fails the no-source-doc-no-approval gate:
@@ -50,10 +53,21 @@ Investigate with exactly these tools (all GET):
   `accounting_payroll_run_get` - the only Olympus surface carrying per-member amounts.
   `accounting_time_entries_list` (member + date range) against the run periods: never call a period
   unpaid without checking the run list first, and never recommend generating a run for a period
-  that already has one. `accounting_member_list` for the roster.
+  that already has one (the server refuses a period that shares a day with any other run).
+  `accounting_member_list` for the roster - a run pays only members who are `status: active` and
+  not archived. Read each run's `status`: draft -> finalized -> paid, the last two set by a person
+  in the dashboard, and only `paid` means the payouts were marked sent. A run item's `minutes` can
+  exceed the logged entries - hourly pay also counts task time and approved paid leave, and fixed
+  pay is prorated to the run's period - so name those before calling a difference an error.
+  **Pay is private**: the member reads and the run reads answer only for a key whose creator may
+  read payroll in the app. A 403 there blocks the payroll section - report it as an access gap for
+  the owner to fix, never as a zero, and never infer pay from other reads.
 - PTO: `accounting_pto_requests_list` (the approver's queue), `accounting_pto_balances_list`
-  (granted/used/remaining - the plan cites the balance behind every approve/deny recommendation),
-  `accounting_pto_policies_list`.
+  (this calendar year, per member and policy: granted, carried in, accrued, used, pending and
+  `available_minutes` - the plan cites the available balance behind every approve/deny
+  recommendation; the server refuses an approval that does not fit it),
+  `accounting_pto_policies_list`. Approved leave under a paid policy is paid in the run for those
+  days, so a PTO recommendation is also a pay recommendation.
 - `accounting_expense_category_list` for the chart of accounts - caveat: on an account that has
   never called it, it AUTO-SEEDS industry-default categories (a write side effect inside a GET).
   If you were first, say so in the report.

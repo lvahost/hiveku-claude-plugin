@@ -29,7 +29,9 @@ build a play on it.
   period when fixed; the route multiplies by 100), while every READ reports `pay_rate_cents` /
   `bill_rate_cents`. Sending 5000 for $50/hr books a $5,000/hr rate; sending `pay_rate_cents`
   to the update is silently dropped (200, unchanged).
-- **PTO writes take HOURS**, stored as minutes (hours x 60): `references/pto-administration.md`.
+- **PTO writes take HOURS**, stored as minutes (hours x 60) - except a policy's
+  `max_balance_minutes` / `carryover_max_minutes`, which are whole MINUTES:
+  `references/pto-administration.md`.
 - Before any write carrying a number, echo BOTH forms back and get the integer confirmed:
   "$1,200.00 = amount_cents: 120000". A missing 00 books $12.00 against a $1,200 bill and leaves
   an $1,188 phantom balance that no tool can undo.
@@ -102,6 +104,12 @@ call, so the confirmation lives HERE:
 cash in) both **book the payment only. Neither moves money.** Record AFTER the wire or check has
 actually left, never before, or the books say paid while the money never went.
 
+**A bill is paid only once it is approved.** `accounting_bill_record_payment` on a `draft` or
+`submitted` bill is refused 409 `Approve this bill before recording a payment.` - approval
+comes first (Play 2, on the owner's word for that bill), and you never approve one yourself
+to clear the refusal. A `paid_at` on a UTC day later than tomorrow is refused 400 `The payment
+date cannot be in the future.`
+
 **An AP payment is correctable, never erasable.** `accounting_payment_reverse` (the explicit
 payment id plus a REQUIRED `reason`, kept on the reversal row) writes an OFFSETTING negative
 payment row pointing at the original via `reversal_of_payment_id` - the original row is never
@@ -138,7 +146,9 @@ never blind-retry a payment.
 1. `accounting_settings_get` -> `bill_prefix`, `default_currency`, `default_payment_terms`.
    **There is no dashboard page for these - this tool pair is the only surface that reads or
    writes them.** `accounting_settings_update` sets them. Do it before the first bill is
-   created, because `bill_prefix` shapes every generated bill number from then on.
+   created, because `bill_prefix` shapes every generated bill number from then on, and
+   `default_payment_terms` ("Net 30") is what a recurring bill falls due by when its vendor
+   carries no terms of its own.
 2. `accounting_expense_category_list` -> the chart of accounts bills code to. It **auto-seeds
    niche defaults from the account industry on the first call**, so calling it early is how the
    account gets a chart of accounts at all. Extra categories:
@@ -162,24 +172,31 @@ never blind-retry a payment.
 2. `accounting_expense_category_list` -> pick the category this vendor's bills will code to.
 3. `accounting_vendor_create({ name, email, default_payment_terms, is_1099, tax_id, phone,
    notes })`. `name` is the only required field; `is_1099` plus `tax_id` (EIN or SSN) are what
-   the year-end 1099 worksheet walk reads.
+   the dashboard's 1099 summary and the year-end worksheet read. **A tax ID goes in whole and
+   never comes back whole**: every vendor read returns `tax_id_masked` (the last four) and no
+   `tax_id`.
    **Do not pass `target_currency`.** The tool advertises it, but `accounting_vendors` has no
    such column and both vendor writes silently drop it - it looks accepted and stores nothing.
    Payout currency is a PAYROLL MEMBER field; the Wise CSV is built from payroll run items,
    not vendors. Full mechanism: `references/record-editing.md`.
 4. Wrong data is fixable in place: `accounting_vendor_update({ vendor_id, ... })` patches
-   contact fields, `tax_id`, `is_1099`, defaults, `notes`, `is_archived` - stored labels with
-   no automatic consumer (`accounting_bill_create` never inherits the default category or
-   terms). Field list and traps: `references/record-editing.md`.
+   contact fields, `tax_id`, `is_1099`, defaults, `notes`, `is_archived`.
+   `accounting_bill_create` never inherits the default category or terms, but
+   `default_payment_terms` sets the due date of every bill the vendor's recurring schedules
+   generate. Never write a `tax_id_masked` value back as `tax_id` - it would replace the real
+   number with the mask. Field list and traps: `references/record-editing.md`.
 5. Retiring follows the delete ladder. Archive first - reversible, and `accounting_bill_create`
    STILL accepts an archived vendor (it checks `deleted_at` only). `accounting_vendor_delete`
-   is one-way, and **any active recurring schedule pointed at the deleted vendor KEEPS
-   generating bills on its cron** - pause the schedules first.
+   is one-way. **A recurring schedule whose vendor is archived or deleted no longer
+   generates**: at its next due run the compiler pauses it (`is_active: false`, `pause_reason`
+   set) instead of billing - so archiving a vendor stops its recurring bills, and bringing
+   them back means un-archiving the vendor AND resuming the schedule.
 
 ## Play 2 - Accounts payable, end to end
 
 Lifecycle: **create (draft) -> submit -> approve (open) -> record payment (partially_paid ->
-paid)**, with `void` available only until the first payment lands.
+paid)**, with `void` available only until the first payment lands and no payment accepted
+before approval (409).
 
 Before creating anything, `accounting_bill_schedules_list`: a schedule already covering this
 vendor and cadence will generate the bill for you, and a hand-created one double-books the
@@ -190,15 +207,18 @@ not_required`, silently bypassing the submit -> approve gate this play is built 
   `{ description, quantity, unit_cents, ... }` and `bill_number` is auto-generated from
   `bill_prefix`. **Always set `category_id`** (bill level, line level, or both) or the expense
   lands uncategorized and the P&L grouping is wrong for the rest of the year. Foreign
-  `vendor_id` / `category_id` are rejected. Full shape: `references/record-editing.md`.
+  `vendor_id` / `category_id` are rejected. **It applies no default terms and no due date** -
+  send `due_date` yourself; a bill without one sits in the `current` aging bucket and gets no
+  due-date reminder. Full shape: `references/record-editing.md`.
 - `accounting_bill_update({ bill_id, ... })` - fix an unpaid bill in place instead of
   void-and-recreate (only while draft/submitted/approved/open AND nothing paid; else 409).
   **`line_items` REPLACES the whole set - a one-line payload silently destroys the rest.**
   Read-modify-write, always: `accounting_bill_get`, edit the FULL array, resend every line
   with `sort_order`. Full mechanics: `references/record-editing.md`.
 - `accounting_bill_submit` (draft -> submitted), `accounting_bill_approve` (-> open; accepts a
-  draft too - owner's word only; `approve: false` rejects), `accounting_bill_void({ bill_id,
-  reason })` (only while nothing paid). Status-verb details: `references/record-editing.md`.
+  draft too - owner's word only; `approve: false` rejects it back to draft),
+  `accounting_bill_void({ bill_id, reason })` (only while nothing paid). Status-verb details:
+  `references/record-editing.md`.
 - `accounting_bill_delete({ bill_id })` - soft-delete for a bill no money has moved against
   (409 once any payment exists; no status guard otherwise). The right verb for a duplicate
   draft; void is the right verb for a cancelled bill that should stay on the record. One-way
@@ -210,14 +230,20 @@ not_required`, silently bypassing the submit -> approve gate this play is built 
   receipt before `accounting_bill_approve` - `accounting_bill_attachment_create` takes it
   (base64 PDF/image, max 15MB; works on any non-deleted bill, so even a paid bill can receive
   its receipt after the fact) - or take the owner's explicit on-the-record waiver.
-  `accounting_bill_attachment_list` shows the documents (`cdn_url` to eyeball each);
-  `accounting_bill_attachment_delete` is by explicit id only, IRREVERSIBLE, and confirm-first
-  by its own contract - the receipt may BE the approval evidence. The same file uploaded
-  twice stores TWO attachments. Full mechanics: `references/record-editing.md`.
+  `accounting_bill_attachment_list` shows the documents. **Receipts are private**: each row
+  carries `view_url`, the app's own link, which opens only for a signed-in person who may see
+  bills - no `cdn_url` or other public address is handed out, so give a person the `view_url`
+  and never promise a public download link. `accounting_bill_attachment_delete` is by
+  explicit id only, IRREVERSIBLE, and confirm-first by its own contract - the receipt may BE
+  the approval evidence. The same file uploaded twice stores TWO attachments. Full mechanics:
+  `references/record-editing.md`.
 
 **Drafts are invisible.** AP aging counts only `open`, `partially_paid`, `submitted` and
-`approved`. A bill you create and forget to submit appears in no aging report and no approve
-queue, and ages past due with nothing surfacing it. Sweep `status: "draft"` every pass.
+`approved`, and so do the due-date reminders: from 9 am in the account's time zone, the people
+who may pay bills are told which unpaid bills are due in three days, due today, or went
+overdue yesterday. A bill you create and forget to submit appears in no aging report, no
+approve queue and no reminder, and ages past due with nothing surfacing it. Sweep
+`status: "draft"` every pass.
 
 **Paginate.** `accounting_bill_list` defaults to `limit: 50`, caps at 200, pages with `offset`,
 and returns a `total`. Loop `limit: 200` with a rising `offset` until you have seen `total` rows.
@@ -238,7 +264,11 @@ catalog) live there. The headlines that must survive even a skim:
 - `accounting_invoice_create` makes a **DRAFT and sends nothing** - the client cannot see it
   until it is sent; never report an invoice as "out" on the strength of a create. Exactly one
   of `contact_id` / `company_id` is required; `invoice_number` is minted by the per-account
-  atomic counter (you cannot supply one, and a sequence gap after a failed create is normal).
+  atomic counter when you omit it (a sequence gap after a failed create is normal) - supply
+  one only to keep the ORIGINAL number of an invoice moved over from another app. A line's
+  `product_id` comes from `accounting_product_list` (the Products & services catalog, with
+  each product's default price and tax); the link fills in nothing, so still send
+  `unit_cents`.
   `crm_estimate_convert_to_invoice({ estimate_id })` remains the path from an accepted
   estimate: also a draft, 409 if already converted (see the commerce skill).
 - `accounting_invoice_send` - **the confirm contract is the play**: without `confirm: true` it
@@ -269,43 +299,60 @@ catalog) live there. The headlines that must survive even a skim:
 
 ## Play 4 - Timesheets and payroll
 
-Payroll has three traps that produce wrong pay, and it does not finish here.
+Three inputs decide what a run pays - who is on the roster, the period's dates, and the time
+logged in it - and payroll does not finish here.
 
-1. **`accounting_payroll_run_list` FIRST.** There is no unique constraint on the run period, so a
-   second create for the same period makes a SECOND run and a second payable total. Check before
-   you generate, every time.
-2. **`accounting_member_list`** -> the roster. Only members with `status: 'active'` are picked
-   up by a run. **The off-switch is `accounting_member_update({ member_id, status: 'inactive'
-   })` and nothing else: run creation never reads `is_archived`, so an ARCHIVED member is
-   STILL PAID in every new run.** Wrong `pay_rate`, `pay_period` or Wise payout fields are
-   fixable via `accounting_member_update` (rates in DOLLARS - see the money rule), verified
-   with `accounting_member_get` (cents on the read). Field traps and member delete:
-   `references/record-editing.md`.
-3. **Reconcile time before generating.** `accounting_payroll_run_create` computes each hourly
-   member from the time entries logged over the period; fixed members get the flat rate. **A
-   run generated with no logged time snapshots every hourly member at ZERO and still looks
-   like a valid run.** So: `accounting_time_entries_list({ member_id?, from, to })` (returns
+1. **`accounting_payroll_run_list` FIRST.** The same time cannot be paid twice: a create whose
+   period shares a day with ANY other run (draft, finalized or paid) is refused 409, with
+   `overlapping_run_id` naming the run in the way. Read the list before you generate, every
+   time, so the dates you propose start after the last run ends.
+2. **`accounting_member_list`** -> the roster. A run pays only members who are
+   `status: 'active'` AND not archived, so either switch takes someone out of future runs:
+   `accounting_member_update({ member_id, status: 'inactive' })` (they stay on the list) or
+   `is_archived: true` (they leave the list too). Wrong `pay_rate`, `pay_period` or Wise payout
+   fields are fixable via `accounting_member_update` (rates in DOLLARS - see the money rule),
+   verified with `accounting_member_get` (cents on the read). **Pay is private**: the member
+   reads and the payroll-run reads answer only for a key whose creator may read payroll in
+   the app - 403 otherwise, and a key with no recorded owner is refused. That is an access
+   answer, not a missing tool: say who has to grant it, do not work around it. Field traps
+   and member delete: `references/record-editing.md`.
+3. **Reconcile time before generating.** `accounting_payroll_run_create` pays each hourly
+   member their rate x (logged time entries + task time from the workspaces the account
+   counts toward pay + approved PAID leave in the period). A fixed member's rate is PRORATED
+   to how much of their own pay period the run's dates cover - a monthly rate on a half-month
+   run pays half, a weekly rate on a two-week run pays double - so the dates are a pay input,
+   not a label. **An hourly member with nothing logged is snapshotted at ZERO and the run
+   still looks valid.** So: `accounting_time_entries_list({ member_id?, from, to })` (returns
    `{ entries, total_minutes }`, capped at 500 rows) and confirm the hours per hourly member
-   against what they actually worked first.
-   **You cannot log NEW time from here.** `accounting_time_entry_create` is in the registry
-   but is not callable: its schema declares `properties: {}`, so the proxy drops every
-   argument and the route 400s each call. Missing time is a dashboard entry - name the member,
-   date and hours, have the owner add them, then confirm the minutes landed before you
-   generate. **Existing entries ARE fixable**: `accounting_time_entry_update` (`member_id` NOT
+   against what they actually worked first. It lists the logged entries only: task time and
+   paid leave are added by the run, so a run item's `minutes` can exceed it.
+   **Missing time is loggable from here**: `accounting_time_entry_create({ member_id,
+   work_date, hours, project?, billable?, note? })` (`minutes` in place of `hours` works too) -
+   name the member, the date and the hours, get the yes, log it, then re-read the list.
+   **Existing entries are fixable**: `accounting_time_entry_update` (`member_id` NOT
    patchable) and `accounting_time_entry_delete` (HARD delete, unrecoverable - confirm first).
-   Full mechanics: `references/record-editing.md`.
+   **A day inside a finalized or paid run's period is locked**: create, update and delete
+   there all return 409 - late time goes in the next period (a finalized run can be
+   unfinalized in the dashboard; a paid one cannot). Full mechanics:
+   `references/record-editing.md`.
 4. `accounting_payroll_run_create({ period_start, period_end, source_currency?, label? })` -
-   dates are `YYYY-MM-DD`. It returns the run with per-member items; show those amounts for
-   approval before anyone acts on them. For any run you did NOT just create,
-   `accounting_payroll_run_get` is the only surface carrying per-member amounts.
-5. **Runs are snapshots.** Amounts are computed at create time and NOTHING recomputes them:
-   editing or deleting time entries afterwards never changes what a run pays, and a second
-   `run_create` for the period ADDS a run rather than correcting the first (no Olympus tool
-   deletes a run). Fix the time FIRST, then generate, once.
-6. **Then hand off, and do not claim payroll is done.** A run is born `draft`; no MCP tool
-   finalizes it, and the Wise batch CSV export is dashboard-session-only and refuses a draft
-   run. End the play by telling the owner exactly which run id to finalize and export in the
-   Hiveku dashboard. Run semantics: `references/record-editing.md`.
+   dates are `YYYY-MM-DD`; a period that starts after it ends is a 400. It returns the run
+   with per-member items; show those amounts for approval before anyone acts on them. For any
+   run you did NOT just create, `accounting_payroll_run_get` is the only surface carrying
+   per-member amounts.
+5. **Runs are snapshots.** Amounts are computed at create time and no MCP tool recomputes
+   them: time logged or changed afterwards does not move what a run pays until someone
+   presses Recalculate on the DRAFT in the dashboard (it rebuilds every item from current
+   rates and time, replacing hand-edited amounts). A second `run_create` for the period is
+   refused, not added, and no Olympus tool deletes a run. Fix the time FIRST, then generate,
+   once.
+6. **Then hand off, and do not claim payroll is done.** A run moves only draft -> finalized ->
+   paid (a finalized run can go back to draft; a paid one never changes), and every move is a
+   person's step in the dashboard - no MCP tool finalizes a run or marks it paid. Finalize
+   locks the item amounts and the period's time; the payout downloads (Wise, a plain CSV,
+   Gusto, a QuickBooks journal) are dashboard-session-only and refuse a draft run. End the
+   play by telling the owner exactly which run id to finalize and export in the Hiveku
+   dashboard. Run semantics: `references/record-editing.md`.
 
 Payroll also never touches AP: runs write payroll rows, not bill payments, so nothing you do here
 appears in `accounting_pnl_summary`. See the P&L caveats below.
@@ -313,16 +360,21 @@ appears in `accounting_pnl_summary`. See the P&L caveats below.
 ## Play 5 - PTO administration
 
 PTO is a full read-write surface: policies (`accounting_pto_policy_create` / `_update` /
-`_deactivate`), grants (`accounting_pto_balance_set` - an ABSOLUTE set that overwrites the
-previous grant with no history), requests (`accounting_pto_request_create`) and decisions
+`_deactivate`), grants (`accounting_pto_balance_set` - an ABSOLUTE set of the hours granted
+for ONE calendar year, overwriting that year's grant with no history), requests
+(`accounting_pto_request_create`) and decisions
 (`accounting_pto_request_review({ request_id, action: 'approve' | 'deny' | 'cancel' })`).
-The tools carry none of the guardrails an approval flow needs - no balance check, no status
-guard, and `reviewed_by_user_id` is forced to NULL, so the system records no approver. **Load
-`references/pto-administration.md` before ANY PTO write**; the `_list` reads stay free. The
-non-negotiables: balances before approvals; a NAMED human's yes per request (never
-batch-approve - "approve all the PTO" gets the queue listed per member with balances, not a
-loop of approvals); log the approver to memory/PM because nothing else will. Approved PTO
-creates no time entries and feeds no payroll run.
+The server carries the checks an approval flow needs: balances are per calendar year, a
+request or an approval that does not fit the balance is refused 409, and a request moves
+only pending -> approved / denied / cancelled and approved -> cancelled. What it still does
+not carry is a name: `reviewed_by_user_id` is forced to NULL, so the system records no
+approver. **Load `references/pto-administration.md` before ANY PTO write**; the `_list` reads
+stay free. The non-negotiables: balances before approvals; a NAMED human's yes per request
+(never batch-approve - "approve all the PTO" gets the queue listed per member with balances,
+not a loop of approvals); log the approver to memory/PM because nothing else will. **Approved
+leave under a PAID policy is paid**: it creates no time entries, but an hourly member's run
+pays those hours at their rate - so an approval is a pay decision, and logging the same
+leave as a time entry pays it twice.
 
 ## Play 6 - Recurring bill schedules
 
@@ -331,11 +383,16 @@ A schedule is a **standing authorization to pay**: its bills are born `open` wit
 payments, and `references/recurring-bill-schedules.md` is REQUIRED reading before any schedule
 write. The headlines that must survive even a skim: only a FUTURE `start_date` defers the
 first bill (anything else can bill at the next 05:00 UTC tick, and `is_active: false` on
-create is silently stripped); **a cadence edit is a billing event** and `_update` is NOT
-idempotency-protected - a repeated edit can generate a second bill; `is_active: false` via
-`_update` is the reversible stop; `_delete` is a hard delete that orphans every generated
-bill's provenance. Diagnose with `accounting_bill_schedule_get` - `is_active: true` with
-`next_run_at: null` never fires again.
+create is silently stripped); **an edit re-arms the next run only when the cadence really
+changes** - resending the stored `interval_unit` / `interval_count` / `anchor_day` /
+`start_date` moves nothing, while a real change or a resume picks a next date that is never
+already past (a real change can still land on today's date and bill at the next tick); a
+generated bill is dated the day of its period and falls due by its vendor's
+`default_payment_terms`, else the account's (no terms: due on the bill date); monthly dates
+are month-end safe; a schedule whose vendor is archived or deleted is paused instead of
+billed; `is_active: false` via `_update` is the reversible stop; `_delete` is a hard delete
+that orphans every generated bill's provenance. Diagnose with `accounting_bill_schedule_get` -
+`is_active: true` with `next_run_at: null` never fires again.
 
 ## Play 7 - Profit and loss, honestly
 
@@ -363,9 +420,9 @@ between them is usually definitional, not missing money.
 
 **Artifact first, story second.** Before narrating any move ("expenses doubled"), rule out
 measurement artifacts: all-time vs period P&L (omitted dates), truncated pagination (page one
-vs `total`), a schedule burst from a cadence edit, a duplicate payroll run, cash-basis timing
-(one big bill paid a week late moves two months' stories). Only then does the move get a
-narrative.
+vs `total`), a schedule burst from a backdated start, an overlapping payroll run left from
+before the server refused them, cash-basis timing (one big bill paid a week late moves two
+months' stories). Only then does the move get a narrative.
 
 ## Play 8 - Bank reconciliation
 
@@ -408,8 +465,9 @@ to produce.
    lines join the exceptions.
 6. **Timesheets** - `accounting_time_entries_list({ from, to })` for the week. Missing time
    from an hourly member is next period's wrong paycheck; chase it now, not on run day. Wrong
-   hours on an EXISTING entry are fixable now (`accounting_time_entry_update`, confirmed);
-   missing entries are theirs to make in the dashboard.
+   hours on an EXISTING entry are fixable (`accounting_time_entry_update`, confirmed) and a
+   missing entry is loggable (`accounting_time_entry_create`, confirmed) - unless the day sits
+   inside a finalized or paid run's period, which is locked (409).
 7. **Exceptions to PM** - duplicate vendor, a bill with no matching schedule, an amount out of
    pattern, a live bill with `attachment_count: 0`, an invoice sitting in draft, a cleared
    bank line with no books entry, a member with zero logged hours.
@@ -424,6 +482,8 @@ Run it against an explicit period, in this order:
    P&L leaves out.
 4. `accounting_payroll_run_list` -> the period's runs, then `accounting_payroll_run_get` per
    run for the per-member amounts. Payroll is its own line because the P&L does not carry it.
+   Read each run's `status`: only `paid` means a person marked the payouts as sent - a `draft`
+   or `finalized` run has paid nobody yet.
 5. **Bank reconcile** - Play 8 against the month's statement: import (re-import is safe; read
    the per-row `errors`), sweep `matched: 'unmatched'`, suggestions, then explicit confirmed
    matches. A cleared line with no books entry - or a recorded payment no line cleared - is a
@@ -432,9 +492,10 @@ Run it against an explicit period, in this order:
    (json's `pagination` totals prove completeness; csv is the file form). A refund appears as
    `refunded_cents` ON the original captured row, dated by CAPTURE and lifetime-to-date at
    export time - a prior month's payment refunded this month is NOT this month's cash
-   movement. Payroll and platform billing are excluded BY NAME (payroll has its own Wise CSV
-   rail; Hiveku charging this account is not the tenant's books) - which is why step 4 stays
-   its own line.
+   movement. Payroll and platform billing are excluded BY NAME (payroll has its own payout
+   downloads on each finalized run in the dashboard - Wise, a plain CSV, Gusto, a QuickBooks
+   journal; Hiveku charging this account is not the tenant's books) - which is why step 4
+   stays its own line.
 7. Owner update: cash in, cash out, payroll separately, what is owed, what is owed to us, and the
    three things that need a decision. Every figure traceable to a named tool call - never a
    model estimate. **Each line carries a status from a closed set: sourced, partial (a source
@@ -446,12 +507,19 @@ Run it against an explicit period, in this order:
 
 ## Year-end 1099
 
-No tool aggregates 1099 totals - build it, and start in December, not April.
-1. `accounting_vendor_list` -> filter to `is_1099`. A flagged vendor missing `tax_id` is now
-   fixable in place via `accounting_vendor_update`; a wrongly un-flagged vendor gets
-   `is_1099: true` the same way. These are stored labels - no 1099 generator reads them; the
-   worksheet below is still the only aggregation. `accounting_vendor_get` per flagged vendor
-   frames expectations (`lifetime_paid_cents` is all-time, never a period figure).
+No tool aggregates 1099 totals - build it, and start in December, not April. The dashboard
+does aggregate them: its 1099 summary page (linked from Vendors) lists each vendor flagged
+`is_1099` with the year's bill payments, the tax ID's last four and whether an address is on
+file, and downloads as a CSV. It applies no reporting threshold and files no form, and no MCP
+tool reads it - so the worksheet below is still how you build the figures from here, and they
+should agree with that page (it also counts archived vendors, which `accounting_vendor_list`
+hides - look there first when the two differ).
+1. `accounting_vendor_list` -> filter to `is_1099`. A flagged vendor whose `tax_id_masked` is
+   null has no tax ID on file - fixable in place via `accounting_vendor_update` (send the full
+   number as `tax_id`); a wrongly un-flagged vendor gets `is_1099: true` the same way. Both
+   feed the dashboard's 1099 summary; from the tools, the worksheet below is still the only
+   aggregation. `accounting_vendor_get` per flagged vendor frames expectations
+   (`lifetime_paid_cents` is all-time, never a period figure).
 2. `accounting_payments_list({ from, to, direction: 'out', vendor_id })` per flagged vendor -
    the payments JOURNAL, built for exactly this handoff, replaces the old bill-by-bill walk.
    `from`/`to` are REQUIRED (YYYY-MM-DD, inclusive, max 366 days per call - a calendar year
@@ -461,9 +529,11 @@ No tool aggregates 1099 totals - build it, and start in December, not April.
    default json `pagination` (`out_total`/`in_total`/`total`) lets the worksheet PROVE it saw
    every row - page to it before summing. Payroll and platform billing are excluded BY
    DESIGN - right for a vendor worksheet, but say so when disclosing coverage.
-3. Hand the owner a per-vendor total with the vendor's `tax_id`, disclose the sample (rows
-   summed vs the journal's `out_total`), and say plainly that Hiveku does not file 1099s -
-   this is the worksheet, not the filing. Vendors carry no payout currency, so do not put one
+3. Hand the owner a per-vendor total with the vendor's `tax_id_masked` - the last four is all
+   any read returns, so the full number for the form comes from the owner's own records, never
+   from you. Disclose the sample (rows summed vs the journal's `out_total`), and say plainly
+   that Hiveku does not file 1099s and applies no reporting threshold - this is the worksheet,
+   not the filing. Vendors carry no payout currency, so do not put one
    on the worksheet; if the owner needs it, it comes from their Wise records.
 
 ## Pitfalls
@@ -474,25 +544,35 @@ No tool aggregates 1099 totals - build it, and start in December, not April.
   required, original untouched, second attempt 409); an AR payment still has no reversal
   tool. Reversal is correction, not undo - confirm before, never after - and neither
   recording a payment, reversing one, nor generating a payroll run moves any money.
+- A payment needs an APPROVED bill (409 on a draft or submitted one) and a `paid_at` no later
+  than tomorrow UTC (400). Approval comes first, on the owner's word; never record ahead of
+  the money.
 - Identical payment bodies within an hour are deduplicated; the second books nothing while
   returning success. Distinct `reference` and date on every one.
 - A 200 from a PATCH proves nothing - unknown keys are silently stripped. Re-read the row.
 - 50-row list defaults; paginate to `total` and reconcile AR to the aging bucket. Drafts hide
   from aging on BOTH sides - sweep them explicitly.
-- Schedule-generated bills skip the approval gate, and a cadence edit can bill on the next
-  tick. Schedule writes are payment-grade.
-- Archived is recoverable, deleted is not - and an archived member is STILL PAID; only
-  `status: 'inactive'` stops payroll.
+- Schedule-generated bills skip the approval gate, and a real cadence change can still bill
+  on the next tick (resending the stored values re-arms nothing). Schedule writes are
+  payment-grade.
+- Archived is recoverable, deleted is not. A run pays only members who are `status: 'active'`
+  and not archived - either switch stops pay - and an archived vendor's recurring schedules
+  pause instead of billing.
+- A run's period is a pay input: fixed pay is prorated to it, an overlapping period is
+  refused, and once a run is finalized its amounts and its period's time are locked.
+- Approved leave under a PAID policy is paid in the run for those days. Never also log it as
+  time.
 - P&L is cash basis and excludes payroll - never hand it over as "profit" without the label
   and the AP aging beside it.
 - `attachment_count` rides every bill list/get row - "no source doc, no approval" is
   enforceable now. Attachment delete is irreversible and confirm-first; the same receipt
-  uploaded twice stores two copies.
+  uploaded twice stores two copies. Receipts are private: reads return `view_url`, never a
+  public address, and vendor reads return `tax_id_masked`, never the full tax ID.
 - Still missing from the surface, so name the dashboard action instead of guessing a tool: no
-  AR payment reversal, no invoice void tool, no payroll finalize (or run delete) tool, no
-  working time-entry create (`accounting_time_entry_create` exists but drops every argument),
-  and no bank balance or live feed - reconciliation is statement CSV upload only (OFX/QFX not
-  yet). Do not report a number you could only have gotten from one.
+  AR payment reversal, no invoice void tool, no payroll finalize, mark-paid, recalculate or
+  run delete tool, no read of the payout downloads or the 1099 summary, and no bank balance
+  or live feed - reconciliation is statement CSV upload only (OFX/QFX not yet). Do not report
+  a number you could only have gotten from one.
 
 ## Reference files (load on demand)
 
