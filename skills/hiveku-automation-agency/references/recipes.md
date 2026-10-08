@@ -265,9 +265,13 @@ should say so.
 1. `workflow_node_types_list`, read the `fields[]` on `crmListDeals` (or
    `crmListContacts`) for the real filter keys. Do not assume an age filter exists; if
    the node cannot filter by age, filter downstream with `filterArray` on a date field.
-2. `scheduledTrigger` to `crmListDeals`, to `filterArray`, to `forEach`, to
-   `crmCreateTask` (or `mcTaskCreate`, which is replay-safe: a retried run reuses the
-   first card). Or one `sendEmail` digest at the end instead of N tasks.
+2. `scheduledTrigger` to `crmListDeals`, to `filterArray`, to `forEach` (its
+   `forEachConfig.arrayExpression` is the filtered list). Connect `crmCreateTask` (or
+   `mcTaskCreate`, which is replay-safe: a retried run reuses each item's card) to the For
+   Each's **Each item** exit, `sourceHandle: 'loop'`, so it runs once per deal, and name
+   the deal in the title with `{{forEach.item.<field>}}` (read the field names off a dry
+   run's `crmListDeals` output). A step on the **Done** exit (`'output'`) runs once, after
+   the last deal. Or one `sendEmail` digest at the end instead of N tasks.
 3. Weekly with an explicit timezone. A daily stale sweep trains people to ignore it.
 
 **Prove it works.** Read the terminal output for the record COUNT the sweep would act on.
@@ -280,7 +284,8 @@ names the specific deal rather than a blank merge.
 **How this fails in the wild.** The first run creates hundreds of tasks because the sweep
 has no floor and every historically-dormant record qualifies on day one. Early symptom:
 the dry-run count is far larger than the operator's mental model. Cap the first run with
-`batchArray` or a tighter date floor, or run it once manually and let the backlog be
+`batchArray` or a tighter date floor (a For Each refuses a list over 1,000 items before any
+item runs), or run it once manually and let the backlog be
 worked before the schedule takes over. Note `mcTaskComment` has no replay protection, so
 a resumed run posts a second comment; `mcTaskCreate` does not.
 
