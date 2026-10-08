@@ -104,7 +104,9 @@ test('the generated list is present and plausible', () => {
   // A missing or corrupt list makes isReadOnlyTool() return false for
   // everything -- degraded but safe. This catches that silently shipping.
   assert.ok(readOnlyCount() > 400, `only ${readOnlyCount()} read-only tools loaded`);
-  assert.ok(readOnlyCount() < 900, `${readOnlyCount()} is too many to be GET-only`);
+  // 902 of the 2,137 declared tools at 0.27.12 (the ceiling was 900 from 0.7.0, when the
+  // catalogue was about 1,500). Room to grow, not room for a list that swallowed the writes.
+  assert.ok(readOnlyCount() < 1100, `${readOnlyCount()} is too many to be GET-only`);
 });
 
 test('outward-facing actions are never auto-approved', () => {
