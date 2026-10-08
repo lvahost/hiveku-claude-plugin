@@ -3,8 +3,10 @@ description: Pull this account's department data into hiveku-data/ as local file
 allowed-tools: ["Bash(\"${CLAUDE_PLUGIN_ROOT}/bin/hiveku\" pull:*)"]
 ---
 
-Pull department data for the account this directory is bound to. Local files beat live tool
-calls: one pull replaces dozens of MCP round-trips, and analysis can then run entirely on disk.
+Pull department data for the account this directory is bound to. One pull replaces dozens of MCP
+round-trips for a broad look across a department, but the files are a copy of the last pull, and
+Hiveku is the source of truth: read anything again from Hiveku before you act on it (the last
+section below says how).
 
 The user's request decides the arguments ($ARGUMENTS may already carry them):
 
@@ -29,9 +31,12 @@ What lands on disk, per department, under `hiveku-data/<dept>/`:
 - `README.md` - dataset inventory with freshness; `SETUP.md` where an integration needs connecting.
 - `../STATUS.json` - machine-readable summary; its `failed` array is the first thing to read.
 
-The account memory, the facts about the business that every department agent reads, comes down
-with every pull except `--dataset`, as `hiveku-data/account/ACCOUNT_MEMORY.md`:
+The account memory (About your business on the Memory page), the facts about the business that
+every department agent reads, comes down with every pull except `--dataset`, as
+`hiveku-data/account/ACCOUNT_MEMORY.md`:
 
+- It may be out of date: before you act on it, read it again with `account_memory_get`
+  (memory_list and memory_get leave it out).
 - It is a READ-ONLY copy. Owners and admins edit the account memory on the Hiveku dashboard; the
   file's header gives the link (`https://app.hiveku.com/<account id>/dashboard/memory`). Never edit
   the file to change it: the next pull replaces the file and nothing uploads it. When the user wants
@@ -43,8 +48,10 @@ with every pull except `--dataset`, as `hiveku-data/account/ACCOUNT_MEMORY.md`:
 - `STATUS.json` records it under `account_memory`; a failed read is in `failed` as department
   `account` and leaves the previous copy in place.
 
-A failed refresh never clobbers a previous good snapshot. Data is a SNAPSHOT: work from these
-files for reading and analysis, but make changes through the live MCP tools, then refresh the
-affected dataset with `--dataset <dept>:<id>`.
+A failed refresh never clobbers a previous good snapshot. The files are a copy of the last pull
+and may be out of date: Hiveku, not this folder, is the source of truth. Before you act on anything
+in them, read it again from Hiveku with the live tools (the dataset's own `tool`, named in its file
+and its README; `account_memory_get` for About your business), make changes through the live MCP
+tools, then refresh the affected dataset with `--dataset <dept>:<id>`.
 
 If the directory is not bound, the tool says so - run /hiveku:bind (or /hiveku:connect first).
