@@ -45,7 +45,9 @@ needs a human to rule on which twin is the fake. Resolution runs through `/hivek
    enforces it, which is why this screen exists), and again when `attachment_count` is 0 - a first
    bill with no source document attached is the full fake-invoice silhouette.
    `accounting_bill_attachment_list` shows what evidence a flagged bill does carry (`file_name`,
-   `file_size`, `cdn_url` to eyeball the document) - a read, which is all this pass makes. Note the rollup's own blind spot: drafts and
+   `file_size`, and `view_url` - the app's own link, which opens the document only for a signed-in
+   person who may see bills; receipts are private and no public address is returned) - a read,
+   which is all this pass makes. Note the rollup's own blind spot: drafts and
    voids are invisible to `open_bill_count`.
 5. **Flag D - out-of-pattern amount.** Per vendor, take the median `total_cents` of `paid` +
    `partially_paid` history and flag any live bill above 2x that median. **Fewer than 3 historical

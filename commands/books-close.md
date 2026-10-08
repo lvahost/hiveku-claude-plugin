@@ -1,9 +1,10 @@
 ---
 description: Work the AP books - aging, draft/submitted/open sweeps, approve queue with the receipt gate (no source doc, no approval), exceptions to PM. Confirms every approval.
 ---
-Books pass. **All accounting money is integer CENTS and tax is BASIS POINTS (875 = 8.75%).** The one
-exception in the whole surface is `accounting_member_create.pay_rate`, which is DOLLARS. Echo both
-forms before any write that carries a number: "$1,200.00 = amount_cents: 120000".
+Books pass. **All accounting money is integer CENTS and tax is BASIS POINTS (875 = 8.75%).** The
+exceptions are the payroll member rates - `accounting_member_create.pay_rate` and
+`accounting_member_update.pay_rate` / `.bill_rate` - which are DOLLARS. Echo both forms before any
+write that carries a number: "$1,200.00 = amount_cents: 120000".
 
 1. **State.** `accounting_ap_aging` + `accounting_ar_aging` return bucket TOTALS only (current /
    1-30 / 31-60 / 61-90 / 90+ and `total_cents`) - no per-bill or per-invoice rows, so detail always
@@ -33,20 +34,27 @@ forms before any write that carries a number: "$1,200.00 = amount_cents: 120000"
    uploaded twice stores TWO attachments - only literal retries of the same call dedupe, so
    `accounting_bill_attachment_list` first when unsure) - or take the owner's explicit
    on-the-record waiver for that bill. `accounting_bill_attachment_list` shows what is already
-   there (newest first, with `cdn_url` to eyeball the document);
-   `accounting_bill_attachment_delete` is by explicit id only, irreversible with no undelete route
-   - confirm with the human first, especially where the receipt IS the approval evidence. Then get
-   explicit approval and `accounting_bill_approve({ bill_id })`. `approve: false` rejects it back to draft.
+   there (newest first). Receipts are private: each row carries `view_url`, the app's own link,
+   which opens only for a signed-in person who may see bills - there is no `cdn_url` and no public
+   address to hand out. `accounting_bill_attachment_delete` is by explicit id only, irreversible
+   with no undelete route - confirm with the human first, especially where the receipt IS the
+   approval evidence. Then get explicit approval and `accounting_bill_approve({ bill_id })`.
+   `approve: false` rejects it back to draft.
    The route accepts both `draft` and `submitted`, so a draft can be approved without ever being
    submitted - do that only when the owner says so, otherwise submit first so the trail is real.
-   Any other status returns 409 `Cannot approve a bill in status "<x>"`.
+   Any other status returns 409 `Cannot approve a bill in status "<x>"`. Approval is the payment
+   gate too: a bill still `draft` or `submitted` takes no payment (409 `Approve this bill before
+   recording a payment.`).
 4. **Before creating any bill, read `accounting_bill_schedules_list`.** These are the recurring
    definitions that generate bills on a cadence (retainers, SaaS). If a schedule already covers the
-   vendor and period, hand-creating the bill double-books the payable. Schedules are READ-ONLY from
-   here - no create or update tool exists; changes happen in the dashboard. When you do create one,
-   `accounting_bill_create` requires `vendor_id` and `line_items`, produces a DRAFT, and should
-   always carry a `category_id` from `accounting_expense_category_list` or the expense grouping is
-   wrong for the rest of the year.
+   vendor and period, hand-creating the bill double-books the payable. Schedules are read-only in
+   THIS pass: the schedule writes (`accounting_bill_schedule_create` / `_update` / `_delete`) are
+   payment-grade and belong to the books skill's recurring-schedules play, never to a close sweep.
+   A schedule's bills arrive dated to their period and due by the vendor's payment terms, else the
+   account's. When you do create a bill, `accounting_bill_create` requires `vendor_id` and
+   `line_items`, produces a DRAFT, applies no default terms and no due date - send `due_date`
+   yourself - and should always carry a `category_id` from `accounting_expense_category_list` or
+   the expense grouping is wrong for the rest of the year.
 5. **Exceptions become PM tasks, not guesses** - duplicate vendor, missing terms, an amount out of
    pattern, a bill with no matching schedule, a live bill with `attachment_count: 0`. One exception
    has a rail of its own now: **a wrong payment caught** is no longer a dead end -

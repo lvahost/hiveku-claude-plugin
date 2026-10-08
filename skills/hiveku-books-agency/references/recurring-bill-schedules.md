@@ -2,7 +2,9 @@
 
 Load this before ANY write to `accounting_bill_schedule_create`, `accounting_bill_schedule_update`
 or `accounting_bill_schedule_delete`, and when diagnosing why a schedule did or did not generate
-a bill. Every claim below is from the tools' registered descriptions.
+a bill. Every claim below is from the tools' registered descriptions or, where the server's
+rules have moved on from a description, from the builder routes behind them - the route is
+what answers.
 
 ## What a schedule IS
 
@@ -15,6 +17,15 @@ as a payment (vendor, cadence, the per-cycle cents total, and a human yes on tha
 The compile-bills cron runs daily at 05:00 UTC and issues a bill for every schedule matching
 `is_active: true` AND `next_run_at` at or before now.
 
+**What a generated bill looks like.** It is dated the day of the period it pays for (the
+scheduled date, not the moment the cron ran) and falls due by payment terms: its vendor's
+`default_payment_terms`, else the account's `default_payment_terms` from
+`accounting_settings_get`. `Net 15` is 15 days after the bill date; with no terms, or terms
+that name no days, the bill is due on its bill date. The next run then keeps the schedule's
+day of the month, clamped to a shorter month - a schedule on the 31st bills February 28 and
+March 31, with no skipped month and no drift to the 28th. `accounting_bill_create` does none
+of this: a bill created through it gets no terms and no due date unless you send them.
+
 ## Create (`accounting_bill_schedule_create`)
 
 - `name` and `line_items` are required (at least one line, each carrying `description`,
@@ -24,7 +35,8 @@ The compile-bills cron runs daily at 05:00 UTC and issues a bill for every sched
   `start_date`; an omitted or unparseable `start_date` falls back to now, and a PAST
   `start_date` is kept as-is. Only a FUTURE `start_date` defers the first bill. Never "test" a
   schedule by creating it with a past or missing start date - that is a real payable on the
-  next 05:00 UTC tick.
+  next 05:00 UTC tick, and a start several periods back bills one period per daily tick until
+  it has caught up.
 - **`is_active` is NOT in the create schema** - `is_active: false` is silently stripped and the
   schedule goes live anyway. To create paused: create, then immediately
   `accounting_bill_schedule_update({ schedule_id, is_active: false })`, and verify the
@@ -39,16 +51,25 @@ The compile-bills cron runs daily at 05:00 UTC and issues a bill for every sched
   instead of creating a second schedule - and a rejected payload replays the same 400 for an
   hour until the body changes.
 
-## Update (`accounting_bill_schedule_update`) - a cadence edit is a billing event
+## Update (`accounting_bill_schedule_update`) - a real cadence change is a billing event
 
-- Sending `interval_unit`, `interval_count`, `anchor_day` or `start_date` - or sending
-  `is_active: true` while the schedule is paused or its `next_run_at` is null - RECOMPUTES
-  `next_run_at`, and only a FUTURE `start_date` defers it. Anything else recomputes to now
-  (for monthly schedules with an `anchor_day`, to that day of the CURRENT month, already past
-  once the day has gone by), so the cron issues a bill at the next 05:00 UTC tick.
-- **This route is NOT idempotency-protected.** Repeating a cadence edit re-arms `next_run_at`
-  every time and can produce a second bill. One confirmed edit, then verify via
-  `accounting_bill_schedule_get`; never re-send an edit because the response was slow.
+- `next_run_at` is re-armed in two cases only: a cadence field (`interval_unit`,
+  `interval_count`, `anchor_day`, `start_date`) arrives with a value that DIFFERS from the
+  stored one, or `is_active: true` arrives while the schedule is paused or its `next_run_at`
+  is null. Resending the stored values - a full read-modify-write, a rename, a line edit -
+  moves nothing, so an edit that leaves the cadence alone never bills.
+- A resume keeps the stored next date when it is still ahead; otherwise it takes the first
+  scheduled date AFTER now, so the dates missed while paused are not billed. It also clears
+  `pause_reason`.
+- A real cadence change never picks a date already past. On a schedule that has billed and
+  whose next date is still ahead, the billed period runs out first: the new cadence starts on
+  or after that next date. Otherwise it starts from today - a `start_date` still ahead is
+  that date, but with no future start the first new date CAN be today, and the cron bills it
+  at the next 05:00 UTC tick. Confirm a real cadence change like a payment, and read
+  `next_run_at` back.
+- **This route is NOT idempotency-protected**, but a repeat does not re-arm: the second
+  identical edit carries values equal to the stored ones and changes nothing. One confirmed
+  edit, then verify via `accounting_bill_schedule_get`.
 - Reactivating a schedule that already reached `max_iterations` resets `iteration_count` to 0,
   granting the whole allowance again.
 - `line_items` REPLACES the entire template instead of merging - a one-line payload deletes
@@ -68,6 +89,8 @@ Returns the full runtime state: `next_run_at`, `last_run_at`, `iteration_count` 
 `max_iterations`, `is_active`, `paused_at`, `pause_reason` and the line template.
 **`is_active: true` with `next_run_at: null` means the schedule is exhausted or stopped and
 will NEVER fire again, however active it looks** - read both fields before concluding anything.
+`is_active: false` with `pause_reason` `Paused: the vendor was archived.` is the compiler's
+own stop: the schedule came due while its vendor was archived or deleted.
 A schedule owned by another account 404s exactly like a missing id.
 
 ## Delete (`accounting_bill_schedule_delete`) - prefer pause, almost always
@@ -82,13 +105,15 @@ explicit human yes naming the schedule.
 
 ## Cross-tool traps
 
-- **A deleted vendor does not stop its schedules.** `accounting_vendor_delete` retires the
-  vendor, but any active schedule pointed at it KEEPS generating bills on its cron - the
-  compiler copies `vendor_id` forward without checking `deleted_at`. Stopping the money means
-  pausing the schedule, not deleting the vendor.
+- **An archived or deleted vendor stops its schedules - at their next due run, not at once.**
+  The compiler checks the vendor when a schedule comes due: if the vendor is archived or
+  deleted it pauses the schedule (`is_active: false`, `paused_at`, the `pause_reason` above)
+  and makes no bill. Until that run the schedule still reads active. Bringing the vendor
+  back does not resume it - that is a deliberate `is_active: true`, confirmed like any
+  reactivation - and resuming while the vendor is still archived only pauses it again.
 - **An archived expense category does not stop schedules coding to it** - archiving a category
   leaves every schedule's `category_id` in place and new bills keep landing in it.
 - Weekly reconciliation: for every `open` bill, check its `schedule_id`. A schedule-generated
-  bill that nobody expected means a cadence edit re-armed something or a schedule everyone
-  forgot is still live. A hand-created bill duplicating a schedule's cadence is a
-  double-booked payable.
+  bill that nobody expected means a real cadence change or a resume re-armed something, or a
+  schedule everyone forgot is still live. A hand-created bill duplicating a schedule's
+  cadence is a double-booked payable.
