@@ -5,8 +5,8 @@
     "mcp__plugin_hiveku_hk__",
     "mcp__hiveku__"
   ],
-  "plugin_version": "0.27.11",
-  "count": 258,
+  "plugin_version": "0.27.12",
+  "count": 259,
   "tools": [
     {
       "name": "deploy_site",
@@ -347,6 +347,11 @@
       "name": "ppc_bing_ad_extension_remove",
       "method": "POST",
       "why_gated": "detaches extensions from live Microsoft ads, or deletes them from the library, which Microsoft cannot restore"
+    },
+    {
+      "name": "ppc_google_sitelink_update",
+      "method": "POST",
+      "why_gated": "rewrites a live Google sitelink in place (the link text, description lines or landing page customers see) everywhere it is attached; the sitelink goes back through policy review"
     },
     {
       "name": "ppc_bing_experiment_create",

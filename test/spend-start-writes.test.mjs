@@ -158,9 +158,6 @@ const SPEND_START_NOT_GATED = new Map([
     'can create a Google ad group already enabled, but a new ad group has no ads, and every Google ad '
     + 'this surface creates (ppc_responsive_search_ad_create, ppc_google_pmax groups) is PAUSED, so '
     + 'the step that starts spend is always the gated ppc_enable_resource on the ad'],
-  ['ppc_google_conversion_actions',
-    'its ENABLED status is a conversion action being counted, not an ad serving; nothing is shown '
-    + 'or spent, and the conversion writes that move bidding are gated on their own'],
   ['ppc_linkedin_campaign_push',
     'names set-status only to say it refuses DRAFT to ACTIVE: the campaign is pushed as a DRAFT, '
     + 'drafts never spend, and only a person in LinkedIn Campaign Manager can launch one'],

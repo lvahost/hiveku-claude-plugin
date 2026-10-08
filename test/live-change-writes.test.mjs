@@ -49,6 +49,7 @@ const LIVE_CHANGE_NAMES = [
   'ppc_negatives_remove',
   'ppc_bing_ad_extension_update',
   'ppc_bing_ad_extension_remove',
+  'ppc_google_sitelink_update', // 0.27.12: Google's sitelink edit, the twin of ppc_bing_ad_extension_update
   // Experiments.
   'ppc_bing_experiment_create',
   'ppc_bing_experiment_update',
