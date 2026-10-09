@@ -92,6 +92,8 @@ const LIVE_CHANGE_NAMES = [
   'ppc_bing_campaign_budget_move',
   'ppc_bing_shared_budget_update',
   'ppc_google_campaign_conversion_goals_set',
+  // 0.27.19: joining the merge line is the approval to merge into Your site.
+  'project_vcs_queue_add',
 ];
 
 function folderWith(guardrails) {

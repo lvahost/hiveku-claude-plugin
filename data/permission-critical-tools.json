@@ -5,8 +5,8 @@
     "mcp__plugin_hiveku_hk__",
     "mcp__hiveku__"
   ],
-  "plugin_version": "0.27.20",
-  "count": 267,
+  "plugin_version": "0.27.21",
+  "count": 268,
   "tools": [
     {
       "name": "deploy_site",
@@ -87,6 +87,11 @@
       "name": "project_vcs_pr_update",
       "method": "PATCH",
       "why_gated": "edits an open review: a new target branch changes where it merges and dismisses the approvals people gave, and marking a draft ready lets it merge"
+    },
+    {
+      "name": "project_vcs_queue_add",
+      "method": "POST",
+      "why_gated": "adds a review to its merge line, which then merges it into its target (into main: Your site) in the background with nobody asking again: joining the line is the approval to merge"
     },
     {
       "name": "project_checkpoint_restore",

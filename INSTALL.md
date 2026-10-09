@@ -122,6 +122,7 @@ Put this in `.claude/settings.json` (per project) or `~/.claude/settings.json` (
       "mcp__plugin_hiveku_hk__project_vcs_rollback",
       "mcp__plugin_hiveku_hk__project_vcs_resolve",
       "mcp__plugin_hiveku_hk__project_vcs_pr_update",
+      "mcp__plugin_hiveku_hk__project_vcs_queue_add",
       "mcp__plugin_hiveku_hk__project_checkpoint_restore",
       "mcp__plugin_hiveku_hk__checkpoint_restore",
       "mcp__plugin_hiveku_hk__history_restore_to_time",
