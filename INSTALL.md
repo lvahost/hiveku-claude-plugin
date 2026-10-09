@@ -119,6 +119,8 @@ Put this in `.claude/settings.json` (per project) or `~/.claude/settings.json` (
       "mcp__plugin_hiveku_hk__project_vcs_branch_preview_teardown",
       "mcp__plugin_hiveku_hk__project_vcs_revert",
       "mcp__plugin_hiveku_hk__project_vcs_rollback",
+      "mcp__plugin_hiveku_hk__project_vcs_resolve",
+      "mcp__plugin_hiveku_hk__project_vcs_pr_update",
       "mcp__plugin_hiveku_hk__project_checkpoint_restore",
       "mcp__plugin_hiveku_hk__checkpoint_restore",
       "mcp__plugin_hiveku_hk__history_restore_to_time",
@@ -483,6 +485,11 @@ that list, every DIRECT call to either tool prompts, which is the safe side to b
 `hiveku_batch` the settings rule only sees the batch, so the hook alone judges each member: a
 version save with no files or a rollback dry run runs without a prompt (neither writes a file),
 while a version save that sends files or an applied rollback still asks.
+
+Settling merge conflicts (`project_vcs_resolve`) always asks too, from the hook and from the ask list:
+it writes the version of each conflicting file you chose onto the branch and saves a version there,
+which is what Your site gets when the pull request merges, and its prompt says how many files keep
+the branch's version, take the other side's, or get new text.
 
 ### If you also run the VS Code extension
 

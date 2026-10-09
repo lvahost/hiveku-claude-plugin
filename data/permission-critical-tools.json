@@ -6,7 +6,7 @@
     "mcp__hiveku__"
   ],
   "plugin_version": "0.27.16",
-  "count": 264,
+  "count": 266,
   "tools": [
     {
       "name": "deploy_site",
@@ -72,6 +72,16 @@
       "name": "project_vcs_rollback",
       "method": "POST",
       "why_gated": "moves Your site or a branch back to an earlier version (saved as a new version; no deployed tier changes)"
+    },
+    {
+      "name": "project_vcs_resolve",
+      "method": "POST",
+      "why_gated": "settles merge conflicts on a branch by writing the chosen side, or the final text, of each conflicting file there and saving a version; that text replaces Your site's version when the review merges"
+    },
+    {
+      "name": "project_vcs_pr_update",
+      "method": "PATCH",
+      "why_gated": "edits an open review: a new target branch changes where it merges and dismisses the approvals people gave, and marking a draft ready lets it merge"
     },
     {
       "name": "project_checkpoint_restore",
