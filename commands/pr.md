@@ -26,22 +26,28 @@ server-side, but tell the user the PR will include the working tree as it stands
 `project_vcs_compare({ project_id, from: <target>, to: <source> })` so the title describes a real
 change (an empty compare means nothing to review). Then `project_vcs_pr_create({ project_id,
 source_branch, target_branch?, title, description? })` - `target_branch` defaults to `main`. Report
-the PR `number`; offer a branch preview for sign-off (`/hiveku:preview`).
+the PR `number`, and what its answer's `mergeable` says (see **merge**): whether it merges cleanly
+and which other open PRs it collides with. Offer a branch preview for sign-off (`/hiveku:preview`).
 
 **list**: `project_vcs_pr_list({ project_id, status? })` (`open` | `merged` | `closed`). Read
 `source_branch_recreated`: `true` means the branch name was deleted and reused after the PR, so the
 PR's history does not describe the branch wearing that name now; `null` means not checked - never
-read it as an assurance.
+read it as an assurance. Each PR also carries `mergeable_state` (`clean` | `conflicts` | `unknown`,
+about its target only) and `conflicts_with` (the numbers of other open PRs into the same target it
+would conflict with). Both come from the last check; a list never runs one, so `unknown` means call
+`project_vcs_pr_get`, which checks.
 
 **review <number>**: read before you judge. `project_vcs_pr_get({ project_id, number })` returns
-`{ data: { pr, diff, diff_error } }` - the path-level diff is live on every read, and a non-null
-`diff_error` means the diff could not be computed (say so; do not report "no changes"). Then
+`{ data: { pr, changes, diff, diff_error, mergeable } }`. Describe and review the PR from `changes`,
+its OWN changes since its merge base: `diff` compares the source with the target as it is now, so it
+also lists what the target changed after the branch started. Both are live on every read, and a
+non-null `diff_error` means the diff could not be computed (say so; do not report "no changes"). Then
 `project_vcs_pr_reviews({ project_id, number })` for the reviews so far and `review_status`
 (`required` = the site's "Require an approval" rule is on; `approved`, `blocked`, `ready`,
 `approvals`, `changes_requested_by`, `stale_approvals`, `source_fingerprint`), and
 `project_vcs_pr_comments({ project_id, number })` for the conversations (`outdated` = the line
-changed since, `resolved`; page with `after: <next_after>`). Read EVERY changed path you
-are asked to review with `project_vcs_diff_file({ project_id, from: <pr.target_branch>, to:
+changed since, `resolved`; page with `after: <next_after>`). Read EVERY path in `changes.entries`
+you are asked to review with `project_vcs_diff_file({ project_id, from: <pr.target_branch>, to:
 <pr.source_branch>, path })` - `base` is the file on the target, `head` the file on the source, a
 side is null where the path does not exist, `status` is `added` / `removed` / `modified` / `same`,
 and sides over 1 MB come back with `tooLarge` instead of content. Uncommitted working-tree edits on
@@ -72,7 +78,14 @@ deleting someone else's comment is likewise a person's act in the dashboard.
 live project). Before asking, read `project_vcs_settings({ project_id })`: with `require_approval`
 on, a PR into Your site merges only with an approval of its current changes from a person who is not
 its author, and while nobody asks for changes. If `review_status` says it is not approved (or a
-draft), say so and who must approve, and do not try the merge.
+draft), say so and who must approve, and do not try the merge. Then read `mergeable` from
+`project_vcs_pr_get` and tell the person what it says. `state` (`clean` | `conflicts` | `unknown`)
+is about the target only, and `unknown` (see `reason`) is not a pass. `conflicts_with_target` are
+files to settle with **resolve** below before the merge can land. `conflicts_with_prs` are other
+open PRs into the same target that will conflict once one of them merges: `order` (`this_first` |
+`other_first`) says which lands first, and the second will need a resolve after the first merges.
+`overlaps_with_prs` change the same files but are expected to merge cleanly. That PR-to-PR check
+compares two at a time and is advisory (`skipped_prs` and `truncated` say what it could not check).
 `project_vcs_pr_merge({ project_id: <the project_id>, number, message? })` is STRICT and atomic: if
 ANY file conflicts, NOTHING is merged, the PR stays open. Its refusals change nothing:
 - 409 `merge_conflicts`: read the conflicts at `details.conflicts` (also `details.conflict_details` /

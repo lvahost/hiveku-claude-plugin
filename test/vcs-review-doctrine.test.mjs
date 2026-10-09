@@ -205,6 +205,39 @@ test('the new reads are pre-approved as reads', () => {
   }
 });
 
+test('a review reads the PR\'s own changes, and a merge reads mergeable first (builder #955, MCP #177)', () => {
+  const r = flat(read(REVIEW_PR));
+  // Step 3 lists the files from `changes` (own changes since the merge base), never from the two-dot `diff`.
+  const step3 = r.slice(r.indexOf('3. READ EVERY CHANGE'), r.indexOf('4. CHECK THAT IT WORKS'));
+  assert.match(step3, /For each path in changes\.entries, the pull request's OWN changes since its merge base/);
+  assert.match(step3, /not diff\.entries, which compares with the target as it is now/);
+  assert.match(step3, /project_vcs_diff_file\(\{ project_id, from: <target_branch>, to: <source_branch>, path \}\)/);
+  // NEGATIVE CONTROL: the old step 3 is what this replaces.
+  assert.doesNotMatch(step3, /For each path in diff\.entries:/);
+  assert.match('3. READ EVERY CHANGE. For each path in diff.entries: project_vcs_diff_file', /For each path in diff\.entries:/);
+  const step8 = r.slice(r.indexOf('8. HAND OFF'), r.indexOf('LATER PASSES'));
+  for (const field of ['mergeable', 'conflicts_with_target', 'conflicts_with_prs', 'overlaps_with_prs', 'order']) {
+    assert.ok(step8.includes(field), `review-pr step 8 must explain ${field}`);
+  }
+  assert.match(step8, /the second will need a resolve after the first merges/);
+  assert.match(step8, /unknown \(see reason\) is not a pass/);
+  assert.match(r.slice(0, r.indexOf('2. READ WHAT WAS ALREADY SAID')), /mergeable/);
+
+  const pr = flat(read(PR));
+  assert.match(pr, /Describe and review the PR from changes, its OWN changes since its merge base/);
+  assert.match(pr, /Read EVERY path in changes\.entries/);
+  const merge = pr.slice(pr.indexOf('**merge <number>**'), pr.indexOf('project_vcs_pr_merge({ project_id: <the project_id>, number, message? })'));
+  for (const field of ['mergeable', 'conflicts_with_target', 'conflicts_with_prs', 'overlaps_with_prs', 'this_first', 'other_first']) {
+    assert.ok(merge.includes(field), `pr.md must read ${field} before offering the merge`);
+  }
+  assert.match(merge, /the second will need a resolve after the first merges/);
+  const list = pr.slice(pr.indexOf('**list**'), pr.indexOf('**review <number>**'));
+  assert.match(list, /mergeable_state/);
+  assert.match(list, /conflicts_with/);
+  assert.match(list, /a list never runs one, so unknown means call project_vcs_pr_get/);
+  assert.match(flat(read(REFERENCE)), /Review from changes, the PR's own changes since its merge base/);
+});
+
 test('the changed prose carries no emoji', () => {
   for (const f of VCS_PROSE) assert.doesNotMatch(read(f), /\p{Extended_Pictographic}/u, `${f} carries an emoji`);
 });
