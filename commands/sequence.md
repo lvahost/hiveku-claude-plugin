@@ -8,6 +8,14 @@ This is the MARKETING drip rail (`email_sequence_*`). A rep's 1:1 sales follow-u
 `crm_*_sequence` rail, sent from the connected inbox) is `/hiveku:sales-sequence` - the two rails
 share nothing, not even template stores.
 
+**First, the list: permission only.** This rail is Hiveku email marketing. Before building or
+enrolling, ask how the people came to be on the list (`platform_rules` in `account_context_get`
+carries the rule): it carries only people who signed up, bought, asked to be contacted, or are in
+a conversation with the business. A cold list - association, chamber or directory members, event
+lists without a "yes, contact me", bought, rented or scraped rows, data-provider contacts - never
+goes into a sequence here: it goes to Outbound (`/hiveku:outbound-campaign`). No step checks this
+for you.
+
 **The order below is mandatory, and getting it wrong fails silently.** `email_sequence_enroll`
 refuses only on ARCHIVED sequences, not inactive ones - so enrolling into a sequence you never
 activated SUCCEEDS, writes enrollment rows, and then the tick EXITS every one of them with

@@ -7,12 +7,22 @@ connected inbox), NOT the marketing drip rail (`email_sequence_*` → `/hiveku:s
 `account_context_get({ domain: "sales" })`, and load
 `hiveku-sales-agency/references/sequence-program.md` - the id-vs-sequence_id argument matrix and the
 full program discipline live there.
+0. **Who it may email.** CRM sequences send from the connected Gmail or Outlook, at most 100 emails
+   a day per inbox, and they are for permission lists and one-to-one follow-up (signed up,
+   customers, asked to be contacted, in a conversation). Ask how the list was built
+   (`platform_rules` in the context call carries the rule). A cold contact - association, chamber
+   or directory member, event list without a "yes, contact me", bought, rented or scraped row,
+   data-provider contact - rides this rail only as small cold outreach from a connected inbox on a
+   separate domain, never the business's main domain or everyday inbox; a bigger cold program goes
+   to Outbound (`/hiveku:outbound-campaign`). No tool checks either for you.
 1. Build by cloning - there is no callable create: `crm_list_sequences` → `crm_sequence_clone({
    sequence_id })` (lands INACTIVE, all steps copied) → rewrite with `crm_update_sequence_step` per
    step (preferred; passing `steps` to `crm_update_sequence` REPLACES the whole array). Draft step
    copy yourself from the loaded sales context - personal, plain, referencing something true.
 2. Preflight, always, before activation:
- - `crm_inbox_connections` - no connected sendable inbox means the sequence sends nothing.
+ - `crm_inbox_connections` - no connected sendable inbox means the sequence sends nothing. If any
+     enrollee is cold, the sending inbox must be on a separate domain, not the business's main
+     domain (step 0).
  - Merge tags: every `{{tag}}` the steps use needs a value per enrollee
      (`crm_set_custom_field_value` / `crm_get_custom_field_values`) or enrollment is refused with a
      422 listing the missing tags.

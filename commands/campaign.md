@@ -22,8 +22,13 @@ Context FIRST: `account_context_get({ domain: "marketing" })`.
    scheduler for CMS-linked rows). Report it as "recorded for <date>", never as "it will
    publish". The publish itself is a confirmed `content_publish_to_site` + deploy on the day;
    `/hiveku:ship-week` lists the rows that will NOT ship themselves.
-   If the campaign includes email, the send is GATED and the gates fail at SEND time, not at build
-   time - run `marketing_setup_status` (do not build until `ready_to_send: true`) AND
+   If the campaign includes email, first ask how the people on the list came to be there: Hiveku
+   email marketing is for permission lists only (signed up, customers, asked to be contacted, in a
+   conversation), and a cold list (association or directory members, event lists without a "yes,
+   contact me", bought, rented or
+   scraped rows) goes to Outbound (`/hiveku:prospect`, `/hiveku:outbound-campaign`), never into this
+   campaign (`platform_rules` in the context call). The send is GATED and the gates fail at SEND
+   time, not at build time - run `marketing_setup_status` (do not build until `ready_to_send: true`) AND
    `email_service_status` (read `sending_enabled`; setup_status does not check SES suspension) BEFORE
    drafting, and every body needs `{{unsubscribe_link}}` plus the physical mailing address or
    validation fails even the test send. `email_campaign_create` is only the draft step - use
