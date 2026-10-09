@@ -90,11 +90,18 @@ commit, never `main`.
    any conflict refuses the whole merge, nothing half-applied. The partial alternative is
    `project_vcs_merge({ project_id, branch, into?, message? })`: it applies the non-conflicting
    changes, returns `{ merged_into, applied, deleted, conflicts, commit }`, and files changed on
-   BOTH sides come back in `conflicts` and are NOT overwritten - resolve them and merge again. Either
-   way the branch survives. Merging into `main` is what changes the live project, and it is the ONLY
-   way branch work reaches production: production always ships `main`. A development or staging tier
-   bound to the branch ships it directly (`/hiveku:deploy`). To let a client sign off before the
-   merge, use the branch preview in `/hiveku:preview`.
+   BOTH sides come back in `conflicts` and are NOT overwritten. Either way, conflicts are settled with
+   `project_vcs_conflicts` and `project_vcs_resolve` on the branch the answer's `resolve` names,
+   deciding each file with the person (`/hiveku:pr resolve`), then merge again: editing the file on
+   the branch and saving a version never clears a conflict. With the site's "Require an approval"
+   rule on (`project_vcs_settings`), a PR into Your site merges only once a person approves its
+   current changes in the Hiveku dashboard (agents never approve), and a direct `project_vcs_merge`
+   into Your site answers 409 `pull_request_required`. A merge that lands everything archives the
+   source branch: hidden from the list, refusing changes (409 `branch_archived`), restorable for 30
+   days with `/hiveku:branch restore`. Merging into `main` is what changes the live project, and it
+   is the ONLY way branch work reaches production: production always ships `main`. A development or
+   staging tier bound to the branch ships it directly (`/hiveku:deploy`). To let a client sign off
+   before the merge, use the branch preview in `/hiveku:preview`.
 
 GitHub-connected projects are a different path: if `project_deployment_mode_get` reports
 `mode: "github_sync"`, the repo is the source of truth and a save without a GitHub push

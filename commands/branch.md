@@ -1,6 +1,6 @@
 ---
-description: Hiveku-native branches for this project - list (with unsaved-changes markers), create, status, bind or unbind an environment, roll back to an earlier version, delete. No GitHub involved.
-argument-hint: "[list | create <name> [from <branch>] | status <branch> | bind <development|staging> <branch> | unbind <tier> | rollback <branch> <version_id> | delete <branch>]"
+description: Hiveku-native branches for this project - list (with unsaved-changes markers), create, status, bind or unbind an environment, roll back to an earlier version, restore an archived branch, delete. No GitHub involved.
+argument-hint: "[list | create <name> [from <branch>] | status <branch> | bind <development|staging> <branch> | unbind <tier> | rollback <branch> <version_id> | restore <branch> | delete <branch>]"
 ---
 
 Work on one of the account's Hiveku website projects. Resolve the `project_id` first with `sites_list` (every buildable website_project with its dev/staging/prod URLs, canonical GitHub state and container status) or `project_get({ project_id })` for one, or take it from what the user names. Do NOT use `list_projects` / `get_project` here: those return pm_projects rows, a different id space, and a website UUID 404s against them.
@@ -18,7 +18,10 @@ base - null means "does not apply", never "in sync"), an UNCOMMITTED marker when
 true (its working tree has edits not yet promoted into a commit), and the short
 `working_tree_etag`. Then `project_vcs_env_bindings({ project_id })` and mark which branch
 `development` / `staging` serve (`production` is always `main`). Also `project_vcs_pr_list({
-project_id, status: "open" })` so a branch with an open PR is labelled.
+project_id, status: "open" })` so a branch with an open PR is labelled. A branch whose pull request
+(a review, in the dashboard) merged is ARCHIVED and left out of this list; `project_vcs_branches({
+project_id, include_archived: true })` shows those too, each with `archived_at`,
+`archived_pr_number` and `restorable_until`.
 
 **create <name> [from <branch>]**: `project_vcs_branch_create({ project_id: <the project_id>, name,
 from? })`. Names: letters, numbers, `. _ / -` only; use `feature/`, `fix/`, `task-<id>/`; keep them
@@ -68,6 +71,18 @@ bound to the branch changes only on its next deploy, and a live branch preview r
 happened in `preview_effect`. `project_vcs_revert` is the older branch-only form: use
 `project_vcs_rollback`, which works on Your site too.
 
+**restore <branch>**: an archived branch still reads (history, files, compare), but every write to it
+answers 409 `branch_archived` ("Restore it first. Nothing was changed."): saves, versions, merges
+into it, previews, binds, conflict resolves, rollbacks, a branch started from it, and a new or
+reopened pull request. When the person wants to keep working on it,
+`project_vcs_branch_restore({ project_id: <the project_id>, branch })` brings it back within 30 days
+of the archive (`restorable_until`) and answers `{ data: { branch, restored, archived_at,
+archived_pr_number } }`; restoring a branch that is not archived changes nothing. Refusals: 409
+`restore_expired` (archived more than 30 days ago; Hiveku deletes it then), 409 `branch_name_taken`
+(another branch has that name now), 409 `branch_busy` / `branch_changed` (retry), 404
+`branch_missing`. Its merged work is already on its target, so new work usually belongs on a new
+branch from `main`; restore when the person asks to continue this one.
+
 **delete <branch>**: DESTRUCTIVE - once the ref is gone a later `project_vcs_prune` destroys its
 tree bytes. Get an explicit yes naming the branch. Before deleting, the server promotes any
 uncommitted edits into a final commit ("Snapshot before delete") so nothing becomes unreferenced.
@@ -76,8 +91,10 @@ travels as a query parameter and is required (400 `confirm_required`). The refus
 fix: `main` (400; never deletable); bound to an environment (409 - `unbind` that tier first); an open
 pull request (409 - merge or close it in `/hiveku:pr` first); a stash branch `pending/*` or
 `stash/*` (409 - it holds scooped customer work; merge it back first, and pass `force: true` ONLY
-when the user explicitly says to discard it). Only delete a branch the user asked to clean up or
-whose PR you just merged. `project_vcs_prune` (storage GC of orphaned trees, `dry_run` default
+when the user explicitly says to discard it). Only delete a branch the user asked to clean up. A
+branch whose pull request merged needs no delete: Hiveku archives it at the merge (unless an
+environment is bound to it, another open pull request uses it, or the pull request was set to keep
+it) and deletes it after 30 days. `project_vcs_prune` (storage GC of orphaned trees, `dry_run` default
 true) is a different, heavier operation - do not run it as part of a delete.
 
 Shared, not per-branch: the project database, secrets, media assets and CMS entries are one set for
