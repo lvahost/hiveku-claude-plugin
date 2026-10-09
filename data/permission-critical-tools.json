@@ -6,7 +6,7 @@
     "mcp__hiveku__"
   ],
   "plugin_version": "0.27.16",
-  "count": 266,
+  "count": 267,
   "tools": [
     {
       "name": "deploy_site",
@@ -37,6 +37,11 @@
       "name": "project_vcs_pr_merge",
       "method": "POST",
       "why_gated": "merges a pull request (atomic branch merge)"
+    },
+    {
+      "name": "github_pr_merge",
+      "method": "POST",
+      "why_gated": "merges a pull request on the project's GitHub repository, and that push can deploy the site to every environment that follows the branch"
     },
     {
       "name": "project_vcs_env_bind",
