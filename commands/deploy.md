@@ -26,8 +26,9 @@ tier, and why, then wait for the confirmation before calling `deploy_site`.
    branch's unsaved (uncommitted working-tree) edits as a version server-side before pinning it, so
    what ships is always a version - the response's `note` says so when that happened. State the tree in
    the confirmation ("development will ship `feature/x` as its latest version"). To put branch work
-   into production, promote it through `/hiveku:pr` (merge into `main`) and then deploy
-   `production`; to point a tier at a branch, `/hiveku:branch bind`. On `deploy_site`, `branch` is an
+   into production, promote it through `/hiveku:pr` (merge into `main`; with the site's "Require an
+   approval" rule on, a person approves that pull request in the Hiveku dashboard first) and then
+   deploy `production`; to point a tier at a branch, `/hiveku:branch bind`. On `deploy_site`, `branch` is an
    ASSERTION, never a selector: pass the branch you believe the tier serves and the server refuses a
    mismatch instead of shipping the wrong tree - 409 `branch_not_bound` (the tier is bound elsewhere
    or unbound and tracking `main`; the hint names `project_vcs_env_bind`), 400

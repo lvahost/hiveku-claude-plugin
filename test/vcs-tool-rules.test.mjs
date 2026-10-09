@@ -5,7 +5,8 @@
  * project_vcs_commit with no files only saves what is already in the project
  * as a version, so it is pre-approved; with files it writes them, so it asks.
  * project_vcs_rollback is a dry run unless dry_run is literally false; an apply
- * always asks and is never auto-approved. These drive decideWithGuardrails,
+ * always asks and is never auto-approved. project_vcs_resolve (2026-10-08) has
+ * no dry run: every call asks, and its reason counts what each file keeps. These drive decideWithGuardrails,
  * the function `bin/hiveku hook pre-tool-use` calls. Deleting the
  * argGatedWriteDecision call from tool-safety.mjs turns every allow below into
  * null and every ask into null.
@@ -99,14 +100,52 @@ test('the version prompts speak plain language: "version", never commit/HEAD/rev
     ['project_vcs_commit', 'garbage'],
     ['project_vcs_rollback', { project_id: PROJECT }],
     ['project_vcs_rollback', { project_id: PROJECT, dry_run: false }],
+    ['project_vcs_resolve', { project_id: PROJECT, branch: 'feature/x', files: [{ path: 'a', choice: 'parent' }] }],
   ];
   for (const [tool, input] of inputs) {
     const { reason } = argGatedWriteDecision(tool, input);
     assert.match(reason, /version/i, `${tool}: the reason must say "version"`);
     assert.doesNotMatch(reason, /\bcommit|HEAD|revert|\bmain\b/i, `${tool}: "${reason}"`);
   }
-  assert.deepEqual([...ARG_GATED_WRITES.keys()].sort(), ['project_vcs_commit', 'project_vcs_rollback']);
+  assert.deepEqual([...ARG_GATED_WRITES.keys()].sort(), ['project_vcs_commit', 'project_vcs_resolve', 'project_vcs_rollback']);
   assert.equal(argGatedWriteDecision('project_file_save', {}), null, 'other tools get no version rule');
+});
+
+test('a conflict resolve always asks, and the prompt counts what each file keeps', () => {
+  const cwd = folderWith(undefined);
+  const r = decideWithGuardrails(vcs('project_vcs_resolve', {
+    project_id: PROJECT,
+    branch: 'feature/pricing',
+    files: [
+      { path: 'src/app/page.tsx', choice: 'branch', parent_hash: 'abc' },
+      { path: 'src/app/about/page.tsx', choice: 'branch', parent_hash: null },
+      { path: 'public/logo.svg', choice: 'parent' },
+      { path: 'src/styles.css', choice: 'content', content: 'body {}', parent_hash: 'def' },
+    ],
+  }, cwd));
+  assert.equal(decision(r), 'ask');
+  const reason = r.hookSpecificOutput.permissionDecisionReason;
+  assert.match(reason, /on the branch "feature\/pricing"/);
+  assert.match(reason, /keeps the branch's version of 2 files/);
+  assert.match(reason, /for 1 file/);
+  assert.match(reason, /writes new text into 1 file/);
+  assert.match(reason, /when the pull request merges/);
+  // Never pre-approved, whatever it carries, and an unreadable call asks too.
+  for (const input of [{ project_id: PROJECT, branch: 'x', files: [] }, { project_id: PROJECT, branch: 'x' }, 'garbage']) {
+    const q = decideWithGuardrails(vcs('project_vcs_resolve', input, cwd));
+    assert.equal(decision(q), 'ask', JSON.stringify(input));
+    assert.match(q.hookSpecificOutput.permissionDecisionReason, /could not be read/);
+  }
+  // Inside a batch it is a gated member, so the batch asks.
+  const batched = decideWithGuardrails(batch([
+    { tool: 'project_vcs_conflicts', args: { project_id: PROJECT, branch: 'x' } },
+    { tool: 'project_vcs_resolve', args: { project_id: PROJECT, branch: 'x', files: [{ path: 'a', choice: 'branch', parent_hash: null }] } },
+  ], cwd));
+  assert.equal(decision(batched), 'ask');
+  assert.match(batched.hookSpecificOutput.permissionDecisionReason, /project_vcs_resolve/);
+  // NEGATIVE CONTROL: its read stays pre-approved.
+  assert.equal(isAutoApprovable('project_vcs_conflicts', { project_id: PROJECT, branch: 'x' }), true);
+  assert.equal(isAutoApprovable('project_vcs_resolve', {}), false);
 });
 
 test('guardrails still come first: reads-only denies a promote, ask_tools prompts for it', () => {
