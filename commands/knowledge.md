@@ -86,7 +86,9 @@ it at account level, which silently changes its scope.
 holds what memory said at the last pull. Before you act on one, or change an entry starting from
 one, re-read the entry live (`memory_get({ memory_id })` with the `id` in the file's front matter):
 follow what that read says, and where it disagrees with the file, trust memory and say so. Merge
-your change into the text that read returns and send its `version` as `expected_version`.
+your change into the text that read returns and send its `version` as `expected_version`. About
+your business (`hiveku-data/account/ACCOUNT_MEMORY.md`, below) is read again with
+`account_memory_get`: memory_list and memory_get leave it out.
 
 To change knowledge, use the live memory_* MCP tools, then `knowledge pull` to bring the change down:
 
