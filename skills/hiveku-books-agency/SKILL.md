@@ -303,9 +303,11 @@ catalog) live there. The headlines that must survive even a skim:
   kind })`, `_update({ payment_page_id, ... })` and `_delete` do the rest. A page nobody could
   pay yet (a fixed page with no price, any new subscription page) starts switched off, and
   switching it on is refused 409 `not_ready` until it can be paid. Prices are cents, the
-  currency locks after the first payment, and `config` is sent back whole (read it with `_get`
-  first). A subscription page needs the key creator's right to sell subscriptions. Pause a page
-  with `is_active: false`; a delete takes the link down for good.
+  currency locks after the first payment, a slug another page uses is refused (409), and
+  `config` is sent back whole: read it with `_get` first (a config missing a section is refused,
+  400 `config_incomplete`). A subscription page needs the key creator's right to sell
+  subscriptions, so a key with no recorded owner cannot set one up. Pause a page with
+  `is_active: false`; a delete takes the link down for good.
 
 ## Play 4 - Timesheets and payroll
 
