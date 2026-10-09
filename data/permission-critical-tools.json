@@ -5,8 +5,8 @@
     "mcp__plugin_hiveku_hk__",
     "mcp__hiveku__"
   ],
-  "plugin_version": "0.27.14",
-  "count": 261,
+  "plugin_version": "0.27.15",
+  "count": 264,
   "tools": [
     {
       "name": "deploy_site",
@@ -352,6 +352,21 @@
       "name": "ppc_google_sitelink_update",
       "method": "POST",
       "why_gated": "rewrites a live Google sitelink in place (the link text, description lines or landing page customers see) everywhere it is attached; the sitelink goes back through policy review"
+    },
+    {
+      "name": "ppc_bing_campaign_budget_move",
+      "method": "POST",
+      "why_gated": "moves a live Microsoft campaign onto or off a shared budget, which changes how much it can spend from that moment"
+    },
+    {
+      "name": "ppc_bing_shared_budget_update",
+      "method": "POST",
+      "why_gated": "changes a live Microsoft shared budget's daily amount, and every campaign on that budget spends at the new amount"
+    },
+    {
+      "name": "ppc_google_campaign_conversion_goals_set",
+      "method": "POST",
+      "why_gated": "changes which conversions a live Google campaign counts and bids toward, which changes its bidding at once"
     },
     {
       "name": "ppc_bing_experiment_create",

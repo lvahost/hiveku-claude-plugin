@@ -87,6 +87,11 @@ const LIVE_CHANGE_NAMES = [
   // 0.27.14: a subscription that can charge a card, and a GA4 archive.
   'accounting_subscription_create',
   'seo_ga4_custom_definition_archive',
+  // 0.27.15: moving a Microsoft campaign between budgets, a Microsoft shared budget's amount, and
+  // which conversions a Google campaign bids toward (each confirmed on the server only).
+  'ppc_bing_campaign_budget_move',
+  'ppc_bing_shared_budget_update',
+  'ppc_google_campaign_conversion_goals_set',
 ];
 
 function folderWith(guardrails) {
