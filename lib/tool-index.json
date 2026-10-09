@@ -10327,7 +10327,7 @@
       "dept": "project",
       "method": "POST",
       "timeoutMs": null,
-      "description": "Open a Hiveku-native pull request: source_branch → target_branch (default `main`). Works on EVERY project — no GitHub needed (for GitHub repos use github_pr_create instead). The PR records merge intent and shows a live diff (project_vcs_pr_get); merge it atomically with project_vcs_pr_merge. 409 when a PR for the same source→target pair is already open. Returns the PR { id, number, status, source_branch, target_branch, title, ... } — `number` is per-project."
+      "description": "Open a Hiveku-native pull request: source_branch → target_branch (default `main`). Works on EVERY project — no GitHub needed (for GitHub repos use github_pr_create instead). The PR records merge intent and shows a live diff (project_vcs_pr_get); merge it atomically with project_vcs_pr_merge. 409 when a PR for the same source→target pair is already open. Returns the PR { id, number, status, source_branch, target_branch, title, ... } — `number` is per-project. ★ The answer also carries `mergeable` and `changes` (described on project_vcs_pr_get): tell the user right away whether it merges cleanly and which other open PRs it collides with."
     },
     {
       "name": "project_vcs_pr_decline",
@@ -10341,14 +10341,14 @@
       "dept": "project",
       "method": "GET",
       "timeoutMs": null,
-      "description": "Get one Hiveku-native pull request by its per-project number, INCLUDING a live diff recomputed on every read ({ added, removed, modified, entries }). A merged/closed PR whose source branch was deleted still returns, with diff: null and a diff_error explaining why. Use before merging to review exactly what will change."
+      "description": "Get one Hiveku-native pull request by its per-project number. ★ `changes` is the PR's OWN changes since its merge base ({ added, removed, modified, entries }): describe and review the PR from it. `diff` is the live comparison of the source with the target now, so it also counts what the target changed since the branch started. ★ `mergeable`: { state: 'clean' | 'conflicts' | 'unknown', reason, conflicts_with_target: [{ path, kind }], conflicts_with_prs: [{ number, title, files, order }], overlaps_with_prs, skipped_prs, checked_at, stale, truncated }. `state` is about the target only. conflicts_with_prs lists other open PRs into the same target that would conflict once one of them merges, and `order` ('this_first' | 'other_first') says which lands first; that check compares two PRs at a time and is advisory, and skipped_prs / truncated say what it could not check. 'unknown' (see `reason`) is not a pass, and stale: true is an earlier answer shown while another check ran. A conflict with the target is fixed with project_vcs_conflicts and project_vcs_resolve; a conflict with another PR is settled by merging one, then resolving the other. `review_status` says whether the site requires an approval, who approved which version, and who asked for changes. A merged/closed PR whose source branch was deleted still returns, with diff: null and a diff_error explaining why. Use before merging to review exactly what will change."
     },
     {
       "name": "project_vcs_pr_list",
       "dept": "project",
       "method": "GET",
       "timeoutMs": null,
-      "description": "List Hiveku-native pull requests for a project (project_pull_requests-backed — NOT GitHub PRs; those are github_pr_list). Filter by status open | merged | closed. Each entry: { id, number, status, source_branch, target_branch, title, description, created_at, merged_at, closed_at, ... }. ★ Each PR carries source_branch_recreated: true means a branch by that name exists now but was created AFTER the PR - the name was deleted and reused, so this PR's history does NOT describe the branch currently wearing it. null means not checked (the branch is gone, or the lookup was unavailable); never read null as an assurance."
+      "description": "List Hiveku-native pull requests for a project (project_pull_requests-backed — NOT GitHub PRs; those are github_pr_list). Filter by status open | merged | closed. Each entry: { id, number, status, source_branch, target_branch, title, description, created_at, merged_at, closed_at, ... }. ★ Each PR carries source_branch_recreated: true means a branch by that name exists now but was created AFTER the PR - the name was deleted and reused, so this PR's history does NOT describe the branch currently wearing it. null means not checked (the branch is gone, or the lookup was unavailable); never read null as an assurance. ★ Each PR also carries mergeable_state ('clean' | 'conflicts' | 'unknown'; about its target only) and conflicts_with (numbers of other open PRs into the same target it would conflict with; advisory). Both come from the last check of the PR's current state, and the list never runs a check: 'unknown' means none was made for this state yet, so call project_vcs_pr_get, which checks."
     },
     {
       "name": "project_vcs_pr_merge",
