@@ -1,6 +1,6 @@
 ---
-description: Hiveku-native pull requests (reviews, in the dashboard) for this project - open, review every changed file, comment and ask for changes, merge strict (any conflict means nothing merges), resolve conflicts, edit, decline, close, reopen. The only road from a branch to production.
-argument-hint: "[open <source> [into <target>] | list | review <number> | merge <number> | resolve <number> | update <number> | decline <number> | close <number> | reopen <number>]"
+description: Hiveku-native pull requests (reviews, in the dashboard) for this project - open, review every changed file, comment and ask for changes, merge strict (any conflict means nothing merges) or add to the merge line, resolve conflicts, edit, decline, close, reopen. The only road from a branch to production.
+argument-hint: "[open <source> [into <target>] | list | review <number> | merge <number> | queue <number> | resolve <number> | update <number> | decline <number> | close <number> | reopen <number>]"
 ---
 
 Work on one of the account's Hiveku website projects. Resolve the `project_id` first with `sites_list` (every buildable website_project with its dev/staging/prod URLs, canonical GitHub state and container status) or `project_get({ project_id })` for one, or take it from what the user names. Do NOT use `list_projects` / `get_project` here: those return pm_projects rows, a different id space, and a website UUID 404s against them.
@@ -27,7 +27,9 @@ server-side, but tell the user the PR will include the working tree as it stands
 change (an empty compare means nothing to review). Then `project_vcs_pr_create({ project_id,
 source_branch, target_branch?, title, description? })` - `target_branch` defaults to `main`. Report
 the PR `number`, and what its answer's `mergeable` says (see **merge**): whether it merges cleanly
-and which other open PRs it collides with. Offer a branch preview for sign-off (`/hiveku:preview`).
+and which other open PRs it collides with. Offer a branch preview for sign-off (`/hiveku:preview`). When several agents work on one site, read
+`project_vcs_queue({ project_id })` before starting: it shows what is ahead in the merge line and
+what your change will collide with.
 
 **list**: `project_vcs_pr_list({ project_id, status? })` (`open` | `merged` | `closed`). Read
 `source_branch_recreated`: `true` means the branch name was deleted and reused after the PR, so the
@@ -101,6 +103,8 @@ ANY file conflicts, NOTHING is merged, the PR stays open. Its refusals change no
   approved. Relay the sentence that names who must approve, and give the review's page.
 - 409 `source_changed`: the changes moved after the approval. A person approves the current changes.
 - 409 `pull_request_is_draft`: a draft never merges. Mark it ready (`update`, with the person's yes).
+- 409 `pr_merge_busy`: another merge of this site is running. Wait the `Retry-After` seconds and
+  call again; when several PRs are open, the merge line (**queue** below) merges them in order.
 On success the envelope is `{ data: { pr, merge, branch_archive, relabel_failed? } }`: `merge.commit`
 is the merge commit on the target (a merge into Your site is a version, so the whole branch's work
 can be undone with one `/hiveku:rollback`: dry run, the person's yes, apply with the dry run's
@@ -112,6 +116,26 @@ hidden from the branch list, refusing changes, and restorable for 30 days
 to delete it. `archived: false` gives the `reason` it was kept (for example `bound` to an
 environment, `open_review` when another open PR uses it, `keep_requested`). Then offer the follow-up:
 `deploy_site({ environment: "production" })` via `/hiveku:deploy` (a merge ships nothing by itself).
+
+**queue <number>** (the merge line; prefer it when several PRs are open): **joining the line is the
+approval to merge.** The line merges the PR into its target in order, in the background, with nobody
+asking again (into `main` = Your site changes; publishing stays a separate `/hiveku:deploy`). So ask
+the person first, in plain words: "Add review #12 to the merge line? It merges into Your site by
+itself, after #10 and #11." Then `project_vcs_queue_add({ project_id, number, priority?, depends_on? })`
+(it always asks). Report its answer: `position` (1 merges next), `ahead` (what goes first), and any
+`conflicts_with_ahead`: a PR ahead it collides with, so it will be sent back after that one merges;
+then settle it with **resolve** and add it again. Before it merges, the line checks that it still
+merges cleanly, that it adds no secret keys to code (a key found sends it back: move the value to the
+site's secrets), and, with the "Require an approval" rule on, that a person approved its current
+changes; it waits for that approval without holding up the PRs behind it (`entry.waiting` says what
+it waits for). Refusals change nothing: 409 `merge_conflicts` (resolve first), `already_queued`,
+`pull_request_is_draft`, `queue_full`, `dependency_not_open`; 400 `dependency_cycle`; `urgent`
+priority is an owner's or admin's (403 `owner_or_admin_only`). Watch it with
+`project_vcs_queue({ project_id })` (each entry's `position`, `status`, `waiting`, `checks`) or
+`project_vcs_pr_get` (its `queue`); the person is told when it merges or leaves the line. Take it out
+with `project_vcs_queue_remove({ project_id, number })` (the PR stays open, and PRs that waited for it
+leave with it); change its priority or what it waits for with `project_vcs_queue_update({ project_id,
+number, priority?, depends_on? })`.
 
 **resolve <number>** (a PR refused with 409 `merge_conflicts`): conflicts are settled on the branch
 that `resolve.branch` names, against the branch it was started from (`resolve.parent`; `main` is
