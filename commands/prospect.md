@@ -4,12 +4,26 @@ argument-hint: "[segment - e.g. 'HVAC owners in Austin, 5-50 employees']"
 ---
 Build a prospect list: $ARGUMENTS. Context: `account_context_get({ domain: "outbound" })`, and the
 methodology lives in hiveku-outbound-agency SKILL §3 - load the skill before a first-ever list.
+0. **This builds a COLD list, and cold has one path.** Read `platform_rules` from the context call
+   (Hiveku's email rules; they outrank account memory). People who never asked to hear from the
+   business - association, chamber, club or directory members, event lists without a "yes, contact
+   me", bought, rented or scraped rows, data-provider contacts, people found online - are emailed
+   only through Outbound: a cold email platform the business pays for (SmartLead through Hiveku's
+   Outbound page; Instantly works on its own), from inboxes on separate domains. Never through
+   Hiveku email marketing, never from the business's main domain. Ask how any list the user hands
+   you was built, and whether the business has run cold email before: Outbound is for businesses
+   that already know it, so a first-timer starts with the platform's own setup guide. Never offer
+   Hiveku's team to set it up (hiveku-outbound-agency SKILL 1a).
 1. ICP first: `customer_avatar_list` → the avatar this segment maps to. No avatar → build one WITH
    the user before buying data (`customer_avatar_populate` refuses ungrounded input, correctly).
    One campaign = one segment; a mixed list gets generic copy that converts nowhere.
 2. Warm before cold - the cheapest list is people who already know the account:
    `crm_contacts_gone_cold({ days })` and identified website visitors that match the ICP
-   (`analytics_visitors`, full/marketing keys). Route those to `/hiveku:followups`, not cold copy.
+   (`analytics_visitors`, full/marketing keys). Route the ones with permission - in a conversation
+   (they replied, met or called), customers, or visitors who filled a form or asked to be
+   contacted - to `/hiveku:followups`, not cold copy. A gone-cold contact whose only signal was a
+   sequence open or click is as cold as the list it came from, and a visitor who never asked to
+   hear from the business is cold: those from cold lists stay on this list, for Outbound.
 3. Source the cold rows:
  - CSV from the user or a vendor → parse it yourself, then `crm_import_preflight` with the rows
      BEFORE any bulk create - it reports invalid rows with reasons, intra-batch dupes, cross-DB
@@ -28,7 +42,9 @@ methodology lives in hiveku-outbound-agency SKILL §3 - load the skill before a 
    A DNC'd address or a current client on a cold list is a STOP, and you name who you removed.
 6. **Confirm gate on the final list:** N rows, the segment definition, and every exclusion bucket
    with its count. Then mirror to the CRM: `crm_contacts_bulk_create` (or one-by-one
-   `crm_create_contact`) with a REAL `lead_source` - search-then-create, never upsert, because
+   `crm_create_contact`) with a REAL `lead_source` naming where the rows came from (the vendor,
+   the directory, the event), so whoever builds an email-marketing audience later can see they are
+   cold and leave them out - search-then-create, never upsert, because
    `crm_contact_upsert_by_email` stamps `lead_source='upsert'` and that attribution is
    irreversible.
 7. This command enrolls and sends NOTHING. The campaign, the lead load into the sending provider,

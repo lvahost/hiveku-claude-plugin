@@ -1,9 +1,11 @@
 ---
-description: Pre-launch go/no-go gate for an outbound campaign - health blockers, suppression sweep, upstream sequence read, list verify - ending in the named approval and the confirmed START that puts it live.
+description: Pre-launch go/no-go gate for an outbound campaign - health blockers, suppression sweep, upstream sequence read, list verify, the separate sending domain and the opt-out, postal address and open-tracking checks - ending in the named approval and the confirmed START that puts it live.
 ---
 Outbound launch gate. This is a GO/NO-GO check that ENDS in the activation: nothing starts sending
 until step 7's named approval and the confirmed status call, and the campaign IS live after that
-call. Context: `account_context_get({ domain: "outbound" })`.
+call. Context: `account_context_get({ domain: "outbound" })` - read its `platform_rules` (Hiveku's
+email rules; they outrank account memory where the two disagree): this gate is for a cold list
+on a cold email platform, never a list that belongs in Hiveku email marketing.
 
 1. `outbound_health_status` (no arguments). **REFUSE to green-light the launch if `blockers[]` is
    non-empty** - state each blocker and stop. Report `readinessScore`, `healthStatus`,
@@ -39,7 +41,22 @@ call. Context: `account_context_get({ domain: "outbound" })`.
 5. Copy check on the steps read back in step 3 (the provider's copy, not the draft): plain text,
    under ~120 words, one CTA, every merge tag has a fallback, no link shorteners, no ALL CAPS or
    "free/guarantee/act now" clusters. Confirm the sending domain is a secondary lookalike domain
-   with SPF + DKIM + DMARC, not the client's primary.
+   with SPF + DKIM + DMARC, not the client's primary - checked in SmartLead's own domain and
+   mailbox health (`email_domain_check_dns` checks only Hiveku email-marketing domains and cannot
+   vet it). Then confirm three more with the user, as named checks - these are rules you check,
+   not checks Hiveku runs for you:
+ - **Opt-out:** every step carries a clear way to opt out, and opt-outs are honored within 10
+     business days.
+ - **Postal address and sender:** every step shows the business's postal address and comes from a
+     real person's name and the business's name.
+ - **Open tracking off:** `outbound_list_campaigns({ search })` shows the campaign's
+     `tracking.opens` - `false` is off; `true` means turn it off in SmartLead's campaign settings
+     (no Hiveku tool sets it); `null` means the setting has not synced yet, so the user checks it
+     in SmartLead.
+   An unconfirmed opt-out or postal address is a no-go: that is the law (CAN-SPAM in the US). Open
+   tracking left on is a warning to read out, since the pixel hurts delivery. Canada and much of
+   Europe need permission first: recipients there stop the launch until the business has checked
+   the rules for those countries (not legal advice; if unsure, do not send).
 6. `outbound_list_sequence_learnings({ is_winner: "true" })` - if a past winner contradicts this
    sequence, raise it before launch, not after.
 7. **Explicit human approval of the LIST and the COPY, named separately.** Then the activation,

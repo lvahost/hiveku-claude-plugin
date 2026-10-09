@@ -17,7 +17,8 @@ Stand up the memory substrate for a newly bound account$ARGUMENTS. A new account
 3. **Draft one memory document per department.** Keep `<dept>` to a canonical department name:
    `marketing`, `content`, `seo`, `social`, `ppc`, `outbound`, `branding`, `customer_avatar`,
    `customer_journey`, `website_design`, `knowledge_base`, `workflow`, `before_after_grid`, `email`,
-   `sales`, `helpdesk`, `production`, `accounting`, `comms`, `coder`, `orchestrator`. Anything else lands
+   `sales`, `helpdesk`, `production`, `accounting`, `comms`, `coder`, `orchestrator` (the chief of
+   staff). Anything else lands
    with department NULL and is hydrated into nothing.
 
 4. **Write them in ONE call:**

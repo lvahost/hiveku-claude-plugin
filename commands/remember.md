@@ -34,7 +34,7 @@ Everything else - what one department learned - goes to that department's memory
    domain against this canonical list: `marketing`, `content`, `seo`, `social`, `ppc`, `outbound`,
    `branding`, `customer_avatar`, `customer_journey`, `website_design`, `knowledge_base`, `workflow`,
    `before_after_grid`, `email`, `sales`, `helpdesk`, `production`, `accounting`, `comms`, `coder`,
-   `orchestrator`. `dev`, `crm`, `pm`, `analytics`, `commerce` and `web` are NOT canonical: a memory
+   `orchestrator` (the chief of staff). `dev`, `crm`, `pm`, `analytics`, `commerce` and `web` are NOT canonical: a memory
    filed under those gets department NULL and is hydrated into nothing, and the MCP `memory_create`
    tool exposes no `department` parameter to correct it afterwards. Use `coder` for dev notes,
    `marketing` for analytics, `sales` for commerce, `website_design` for web.

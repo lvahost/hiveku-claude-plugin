@@ -1,10 +1,22 @@
 ---
-description: Stand up a cold-email campaign - one segment, mirrored campaign (the API creates it EMPTY upstream), steps written to the provider by tool on a confirmed save and read back, chunked lead load, then the /hiveku:outbound-launch gate. Not an activation - launch is the gate command that starts sending.
+description: Stand up a cold-email campaign - one segment of a cold list, the campaign created with its approved steps pushed to the provider and read back (a confirmed save when they need writing), chunked lead load, then the /hiveku:outbound-launch gate. Not an activation - launch is the gate command that starts sending.
 argument-hint: "[segment/campaign name - e.g. 'Austin HVAC v1']"
 ---
 Stand up an outbound campaign: $ARGUMENTS. Context: `account_context_get({ domain: "outbound" })`,
 and load `hiveku-outbound-agency/references/tool-traps.md` BEFORE the first call - every write below
 has a documented failure mode.
+0. **The list and the business, first.** Read `platform_rules` from the context call (Hiveku's
+   email rules; they outrank account memory where the two disagree). This play is for a cold list
+   only - people who never asked to hear from the business, including association, chamber, club,
+   directory lists, event lists without a "yes, contact me", bought, rented or scraped rows and
+   data-provider contacts; a
+   permission list (signed up, customers, asked to be contacted, in a conversation) belongs in
+   `/hiveku:email` or `/hiveku:sales-sequence`. If you do not know how the list was built, ask.
+   Outbound is for businesses that already know cold email: if this one has never run it, say so
+   and point them to the platform's own setup guide instead of building; never offer Hiveku's team
+   to set it up. The business pays for SmartLead itself (the platform Hiveku's Outbound page
+   connects; Instantly works on its own, not through Hiveku) and buys its own inboxes on separate
+   sending domains - never its main domain. Full guide: `hiveku-outbound-agency` SKILL 1a.
 1. Wiring: `outbound_list_integrations` → the `integration_id` (read it here, not off old campaign
    rows). Then `outbound_list_campaigns({ search })` for a duplicate-name check - the POST creates a
    REAL upstream campaign every time it runs. `outbound_list_email_accounts` for a quick mailbox
@@ -14,15 +26,25 @@ has a documented failure mode.
    subject/step shape gets reused before a new one is invented; templates worth reusing are in
    `outbound_list_email_templates({ is_active: "true" })`. Draft via
    `talk_to_department({ domain: "outbound", message })`: 3-4 steps, plain text, under ~120 words,
-   one CTA, every merge tag with a fallback.
-3. **Confirm gate #1 - the campaign.** Show name, integration, and the step drafts. On a yes:
-   `outbound_create_campaign({ name, integration_id, sequences })` - and say plainly what just
-   happened: the 201 created a REAL upstream campaign with the NAME; the `sequences` passed here
-   are mirrored as LOCAL JSON only, and the provider-side campaign holds NO steps yet. Never report
-   the campaign as "built" off the 201. Verify identity with `outbound_get_campaign({ campaign_id })`
-   (name, status, integration) - its `sequences` are that same local mirror until step 4 refreshes
-   it, and prove nothing upstream on their own.
-4. **Confirm gate #2 - the steps, written to the provider.** Preview first:
+   one CTA, every merge tag with a fallback. Every step signs off with the sender's real name and
+   business, the business's postal address and a plain opt-out line (CAN-SPAM; opt-outs are
+   honored within 10 business days).
+3. **Confirm gate #1 - the campaign and its steps.** Show name, integration, and the exact step
+   drafts. On a yes: `outbound_create_campaign({ name, integration_id, sequences })`. The steps are
+   validated before anything is created (400 `sequences_invalid` creates nothing), then pushed to
+   SmartLead after the create and read back into the mirror; the campaign is always created
+   DRAFTED, so nothing sends. This call has NO preview: the yes on the drafts you showed is the
+   approval for these steps, so never pass steps the user has not seen. Say plainly what the 201
+   reports: `sequences_saved`, `steps_with_content`, `merge_tags_used[]` (every tag needs a value
+   on every lead or a fallback) and `warnings[]`. `sequences_saved: false` means the campaign EXISTS
+   with NO steps - write them in step 4 on the returned id, never re-create (that makes a second
+   upstream campaign); a read-back warning means saved-but-unverified, and step 4's read settles
+   it. Never report the campaign as "built" off the 201. Verify identity with
+   `outbound_get_campaign({ campaign_id })` (name, status, integration).
+4. **The steps the provider holds - read back, and confirm gate #2 when they need writing.** Read
+   first: `outbound_campaign_sequences_get({ campaign_id })` (fields below); `steps_with_content`
+   must equal the steps approved at gate #1. When the steps need writing - `sequences_saved: false`
+   on the create, a step that came back wrong, or any later change - preview first:
    `outbound_campaign_sequences_save({ campaign_id, sequences })` WITHOUT `confirm`. `sequences` is
    `[{ seq_number?, delay_in_days?, subject, body, variants?: [{ label?, subject?, body }] }]` -
    bodies are PLAIN TEXT (newlines become HTML the way the dashboard converts them); a step needs a
