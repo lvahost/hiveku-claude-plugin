@@ -70,7 +70,8 @@ build a play on it.
 The surface carries real deletes and none takes a confirm field - the route writes on the first
 call, so the confirmation lives HERE:
 
-1. **Prefer the reversible rung**: `is_archived: true` (vendor), `is_active: false` (schedule),
+1. **Prefer the reversible rung**: `is_archived: true` (vendor), `is_active: false` (schedule,
+   payment page),
    `accounting_expense_category_archive` (soft), `status: 'inactive'` (member). Never delete
    when archive answers the actual request.
 2. **Read the blast radius first**: `accounting_vendor_get` (`open_bill_count`,
@@ -80,7 +81,7 @@ call, so the confirmation lives HERE:
    only explicit ids the human named.
 4. **Know which are truly gone.** Schedule, time-entry and bill-attachment deletes are HARD
    deletes, no restore;
-   vendor, member and bill deletes are soft but nothing un-deletes them from here. Archive is
+   vendor, member, bill and payment page deletes are soft but nothing un-deletes them from here. Archive is
    the only reversible rung, and only while you hold the id - archived rows vanish from every
    list and only the matching `_get` still resolves them. Details:
    `references/record-editing.md`.
@@ -296,6 +297,17 @@ catalog) live there. The headlines that must survive even a skim:
   DIFFERENT; never copy a method between the two (details in
   `references/payment-refusals.md`). Re-read the one-way door section first - the AR side
   still has NO payment reversal tool.
+- **Payment pages** (Commerce > Payment pages: public links a client pays by card; each payment
+  a page takes is recorded on an invoice of its own). `accounting_payment_page_list` returns
+  every page with its link (`share_url`) and what it has taken; `_get`, `_create({ title,
+  kind })`, `_update({ payment_page_id, ... })` and `_delete` do the rest. A page nobody could
+  pay yet (a fixed page with no price, any new subscription page) starts switched off, and
+  switching it on is refused 409 `not_ready` until it can be paid. Prices are cents, the
+  currency locks after the first payment, a slug another page uses is refused (409), and
+  `config` is sent back whole: read it with `_get` first (a config missing a section is refused,
+  400 `config_incomplete`). A subscription page needs the key creator's right to sell
+  subscriptions, so a key with no recorded owner cannot set one up. Pause a page with
+  `is_active: false`; a delete takes the link down for good.
 
 ## Play 4 - Timesheets and payroll
 
