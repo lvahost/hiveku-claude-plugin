@@ -6,7 +6,7 @@
     "mcp__hiveku__"
   ],
   "plugin_version": "0.27.26",
-  "count": 272,
+  "count": 275,
   "tools": [
     {
       "name": "deploy_site",
@@ -112,6 +112,21 @@
       "name": "project_secrets_reveal",
       "method": "POST",
       "why_gated": "hands the AI the plaintext values of a site's non-sensitive variables for one tier; a person also approves each reveal in the dashboard"
+    },
+    {
+      "name": "project_ab_test_create",
+      "method": "POST",
+      "why_gated": "drafts a page A/B test; with make_copy it also commits a copy of the page to the site's code (saved as a version, not deployed)"
+    },
+    {
+      "name": "project_ab_test_update",
+      "method": "PATCH",
+      "why_gated": "changes a page A/B test; on a running test a new split moves the site's live visitors between the original and the second version"
+    },
+    {
+      "name": "project_ab_test_action",
+      "method": "POST",
+      "why_gated": "starts, pauses, resumes or ends a page A/B test on the live site, which decides the page real visitors get; ending on a winner also adds a redirect"
     },
     {
       "name": "project_checkpoint_restore",
