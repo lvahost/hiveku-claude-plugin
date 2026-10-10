@@ -419,4 +419,8 @@ export const PENDING_TOOLS = new Map([
   // VERSIONS-W2: landed in the live index on 2026-09-27 (MCP #54, 4f99aab,
   // deployed; index regenerated at 2151 tools, project_vcs_status joined the
   // read-only list as a GET); entries deleted.
+
+  // AB-DELETE: landed in the live index on 2026-10-10 (MCP #194, a7f2fc9,
+  // deployed; index regenerated at 2274 tools in release 0.27.29; a DELETE,
+  // so the read-only list did not change); entry deleted.
 ]);
