@@ -149,9 +149,10 @@ Reading the result honestly:
 
 ## The backlog (experiments live and run as pm_tasks)
 
-No experimentation platform exists on this surface - `seo_cro_audit` v1 says it itself: audit
-only, run experiments as pm_tasks for now. The backlog IS the PM board, and the task IS the
-experiment record.
+On a Hiveku-hosted Next.js site a page experiment can run as a real A/B test (see "Page A/B
+tests" below). Everywhere else no experimentation platform exists - `seo_cro_audit` v1 says it
+itself: audit only, run experiments as pm_tasks. Either way the backlog IS the PM board and the
+task IS the experiment record; an A/B test's task names the test.
 
 - **Anatomy of an experiment task** (`pm_tasks_create({ project_id, title })` - the field is
   `title`, not `name`): title = page + change ("Pricing page: cut form from 9 fields to 4");
@@ -179,6 +180,40 @@ experiment record.
   page's normal week-to-week wobble - on a page counting single-digit weekly conversions that
   means extending the window, not shrinking the claim.
 
+### Page A/B tests (Hiveku-hosted Next.js sites)
+
+A test shows a second version of a page, at its own address, to a share of NEW visitors and
+counts which version brings more conversions, on that page and anywhere on the site afterwards.
+The split runs at Hiveku's edge with no deploy, and every visitor keeps the version they got.
+- **Can this site run one?** `project_ab_tests_list({ project_id })`: `can_start_tests` and,
+  when false, `why_not` in plain words (external or static hosting, or the edge not ready). Older
+  Pages Router pages cannot be tested. A page that already belongs to a running or paused test
+  cannot get a second one.
+- **The second version** is either an existing page (`variant_path`) or a test copy
+  (`make_copy: true` on `project_ab_test_create`): the page's code copied to the next free
+  address (/pricing -> /pricing-b) as one version, NOT deployed. The change itself goes through
+  /hiveku:code on the copy's files, then a production deploy; the test cannot start until the
+  copy answers on the live site.
+- **The goal** defaults to leads anywhere on the site (a form or a call). Narrower goals: a form
+  on the tested page, reaching a page (a thank-you page), a marked button, calls, or a defined
+  conversion. Pick the one the hypothesis predicts; the others can be added as secondary goals.
+- **The split** defaults to 50/50, the fastest to a verdict. An uneven split (90/10) limits the
+  risk of a bold change and takes longer; say how much longer.
+- **Every live change needs the user's yes.** create (a draft changes nothing live), then
+  `project_ab_test_action` start, pause, resume or end, and a new split through
+  `project_ab_test_update`: each answers a plain preview without `confirm: true`. Show it, ask,
+  and only then confirm. The start check lists every problem (a page not live, a redirect on
+  either page, a third-party cookie banner) in the user's words.
+- **Reading out**: `project_ab_test_get` returns each version's visitors, conversions and rate,
+  the lift with its 95% range, the chance it beats the original and a verdict. Quote
+  `verdict.headline` as it is; never call a winner before `verdict.kind` is `winning` or `won`
+  (the floors: 7 days, 100 visitors per version, 20 conversions). Visitors who have not allowed
+  analytics in the site's Hiveku cookie banner see the original and are not counted.
+- **Ending**: keep the original, or send everyone to the winner, which adds a 302 redirect from
+  the original page on the Redirects page. Making the winner the page itself later is a code
+  change through /hiveku:code. Wins AND losses go to the `marketing` memory, as for any
+  experiment.
+
 ### One worked experiment, end to end
 
 The format every backlog entry follows, from a real-shaped finding:
@@ -200,13 +235,19 @@ The format every backlog entry follows, from a real-shaped finding:
 ## Honesty (what this surface cannot do, and the truthful alternative)
 
 Say these plainly, before the client asks, each with what you CAN do instead:
-- **No A/B testing platform.** Nothing here serves variant A to half the visitors. The truthful
-  alternative is a sequential before/after comparison over named equal windows, presented as
-  exactly that - with the confounds stated (seasonality, traffic-mix shift, concurrent
-  campaigns) - never as a controlled test result.
-- **No traffic splitter.** Every shipped change reaches 100% of visitors immediately. That is
-  why the backlog ships ONE experiment per page per review window: two simultaneous changes on
-  one page cannot be attributed to either.
+- **A/B tests only where the site supports them.** Hiveku-hosted Next.js sites (App Router
+  pages) can split new visitors between two versions of a page and measure the difference (Page
+  A/B tests, above). External sites, static sites and older Pages Router pages cannot; there the
+  truthful alternative is a sequential before/after comparison over named equal windows,
+  presented as exactly that - with the confounds stated (seasonality, traffic-mix shift,
+  concurrent campaigns) - never as a controlled test result.
+- **Outside a test, every change reaches 100% of visitors.** A change shipped without a test is
+  seen by everyone at once. That is why the before/after backlog ships ONE experiment per page
+  per review window: two simultaneous changes on one page cannot be attributed to either. A
+  running test owns its page: change neither version until it ends.
+- **A test counts consenting visitors only.** Visitors who have not allowed analytics in the
+  site's Hiveku cookie banner see the original and are not counted; say so beside a test's
+  numbers.
 - **No heatmaps or scroll maps.** No tool for this - it lives in the dashboard's behavior view,
   not the MCP. The structural substitute is the audit's friction and cta sections, which
   localize above-fold and form problems without watching anyone.

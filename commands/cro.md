@@ -70,7 +70,10 @@ as a hypothesis, scored with `ice_score`, persisted as a pm_task in the backlog.
    ranks, it does not measure - present the order and components, not score-precision theater.
 9. STOP: present the ranked backlog table - rank, experiment, page, metric with baseline, the
    three ICE components and score, evidence - with absolute numbers beside every percentage on
-   low-traffic pages (a 40% swing on 10 conversions is noise). Nothing has been created yet. On
+   low-traffic pages (a 40% swing on 10 conversions is noise), and for each entry whether it
+   runs as an A/B test (a Hiveku-hosted Next.js site with enough traffic; the method is in
+   `hiveku-analytics-agency/references/cro-experiments.md`, Page A/B tests) or as a
+   before/after. Nothing has been created yet. On
    an explicit yes, `pm_tasks_create({ project_id, title })` one task per APPROVED experiment -
    confirm the exact
    list first, then one confirmation covers the batch (tasks are reversible), but say which
@@ -85,11 +88,13 @@ as a hypothesis, scored with `ice_score`, persisted as a pm_task in the backlog.
     `pm_tasks_complete({ id, summary })` with the observed result - "no detectable change" is a
     valid result.
     - When the KPI is a sale rather than a form fill, the sale reaches the ad platform through the declared offline-conversions lane (`marketing_offline_conversions_status` first; opting in lands in validate-only, nothing recorded until a human goes live in the dashboard) - doctrine in `hiveku-conversion-tracking/references/offline-conversions.md`, never run from this pass.
-11. Honesty close, said to the client unprompted: this surface has no A/B platform, no traffic
-    splitter, no heatmaps, and no session recordings. Experiments are sequential before/after
-    comparisons over named equal windows with the confounds stated (seasonality, traffic-mix
-    shift, concurrent campaigns) - never presented as a controlled test - and every change ships
-    to 100% of visitors, which is why it is ONE experiment per page per review window. If the
+11. Honesty close, said to the client unprompted: page A/B tests run only on Hiveku-hosted
+    Next.js sites (App Router pages; `project_ab_tests_list` says whether this one can), and
+    there are no heatmaps or session recordings anywhere. Every other experiment is a sequential
+    before/after comparison over named equal windows with the confounds stated (seasonality,
+    traffic-mix shift, concurrent campaigns) - never presented as a controlled test - and every
+    change outside a test ships to 100% of visitors, which is why it is ONE experiment per page
+    per review window. A test counts only visitors who allowed analytics. If the
     page under test is a review-funnel page, its styling write
     (`marketing_funnel_appearance_update`) replaces the WHOLE appearance object on a live public
     page - read `marketing_funnel_appearance_get` first, send its appearance back edited, and

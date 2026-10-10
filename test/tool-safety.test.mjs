@@ -998,10 +998,13 @@ const INDEXING_WRITES_THAT_ASK = ['project_indexing_set'];
 // The secrets reveal (0.27.25): its answer is a site's plaintext values.
 const SECRETS_REVEAL_THAT_ASKS = ['project_secrets_reveal'];
 
-test('the always-ask set is exactly the memory, form-capture and indexing writes, and the secrets reveal', () => {
+// Page A/B tests: each changes which page live visitors get, or commits a test copy.
+const AB_TEST_WRITES_THAT_ASK = ['project_ab_test_create', 'project_ab_test_update', 'project_ab_test_action'];
+
+test('the always-ask set is exactly the memory, form-capture and indexing writes, the secrets reveal and the A/B test writes', () => {
   assert.deepEqual(
     [...ALWAYS_ASK_WRITES.keys()].sort(),
-    [...MEMORY_WRITES_THAT_ASK, ...FORM_CAPTURE_WRITES_THAT_ASK, ...INDEXING_WRITES_THAT_ASK, ...SECRETS_REVEAL_THAT_ASKS].sort(),
+    [...MEMORY_WRITES_THAT_ASK, ...FORM_CAPTURE_WRITES_THAT_ASK, ...INDEXING_WRITES_THAT_ASK, ...SECRETS_REVEAL_THAT_ASKS, ...AB_TEST_WRITES_THAT_ASK].sort(),
   );
 });
 
