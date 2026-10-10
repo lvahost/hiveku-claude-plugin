@@ -1,0 +1,60 @@
+{
+  "_comment": "hiveku_playbook_get({ playbook: 'email-a-list' }) - a condensed copy of Hiveku's email-a-list playbook (builder src/lib/olympus/playbooks.ts, whose notes are EMAIL_PERMISSION_GUIDE split by section), served the way the docs route serves one playbook: { playbook }. Any other slug answers the route's 404 body with available_playbooks.",
+  "playbook": {
+    "id": "email-a-list",
+    "title": "Email a group of people: permission list or cold list",
+    "category": "marketing",
+    "when_to_use": "Before planning, writing, importing or sending email to any group of people: a newsletter, a campaign, a sequence, an outreach list, \"these contacts from my association\".",
+    "prerequisites": [
+      "account_context_get for the account: its platform_rules apply to every send.",
+      "How the people came to be on the list. If the user has not said, ask before anything else."
+    ],
+    "steps": [
+      {
+        "description": "Ask how these people came to be on the list, unless the user already said. The answer decides the path, not how warm the business feels the list is.",
+        "tool": "ask the user",
+        "expect": "Permission (signed up, customers, asked to be contacted, in a conversation) or cold (association or member lists, event lists, bought, rented, scraped, data providers, found online)."
+      },
+      {
+        "description": "Read the account's plan and Outbound access before suggesting a path or a cost.",
+        "tool": "account_entitlements",
+        "expect": "Whether marketing_outbound is in entitled_features, and the plan name."
+      },
+      {
+        "description": "Permission list, newsletter or campaign: build the audience in Hiveku email marketing and note where its contacts came from, then draft the email and send it for approval.",
+        "tool": "email_audience_create",
+        "when": "the list is a permission list"
+      },
+      {
+        "description": "Permission, one-to-one follow-up with people in a conversation: enroll them in a CRM sequence that sends from the connected Gmail or Outlook.",
+        "tool": "crm_sequence_enroll_bulk",
+        "when": "the people asked to be contacted or are already talking with the business"
+      },
+      {
+        "description": "Cold list: see whether a cold email platform is connected to Outbound.",
+        "tool": "outbound_list_integrations",
+        "when": "the list is cold",
+        "expect": "A connected SmartLead integration, or none (then give the standard answer: the business subscribes to SmartLead or Instantly)."
+      },
+      {
+        "description": "Cold list with a platform connected: draft the campaign (every step carries an opt-out line, open tracking off), add the leads, and ask the person before starting it.",
+        "tool": "outbound_create_campaign",
+        "when": "the list is cold and a platform is connected"
+      }
+    ],
+    "notes": [
+      "# Emailing a group of people: Hiveku's guide (condensed)",
+      "## 1. First, find out how the list was built\nAsk: \"How did these people come to be on your list?\" Then sort it.\nPermission (they asked to hear from the business): they signed up on the website, a form or a newsletter box, or at checkout with marketing consent; they bought from the business; they asked to be contacted (a quote request, an enquiry, a booking); they are in a conversation with the business.\nCold (they did not ask): members of the same association, chamber, club or directory; people from an event the business did not run; bought, rented or traded lists and data providers; people scraped or found online; \"they are in my industry\" and \"they are not technically cold\".\nSharing an association or an industry is not permission. When the business says a list is warm, ask how it was built: the answer decides, not the feeling.",
+      "## 2. Which path\n- Permission, newsletters and campaigns: Hiveku email marketing.\n- Permission, one-to-one follow-up: CRM sequences from the business's connected Gmail or Outlook, at most 100 emails a day per inbox.\n- Cold: a cold email platform the business pays for. We recommend SmartLead or Instantly. Hiveku's Outbound page connects SmartLead; Instantly works on its own.\n- Small cold outreach (a few hand-written emails a day): a CRM sequence only from a connected inbox on a separate domain, never the main domain.\n- Never a cold list through Hiveku email marketing. It sends from one shared sending account, so one cold list can put every customer's email at risk, and its provider's rules forbid it. It pauses a sender at 3% bounces or 0.08% spam complaints.",
+      "## 3. What cold email needs before the first send\n- Separate sending domains (for example getacme.example beside acme.example), never the main domain. A burned main domain sends the business's everyday email and invoices to spam.\n- Two or three inboxes per sending domain, which the business buys.\n- Warm-up for 2 to 3 weeks before any campaign, then about 30 to 50 emails a day per inbox.\n- Plain text from a real person's name, no attachments, open tracking off.\n- Every email says who is sending, has an honest subject, shows the business's postal address and gives a clear way to opt out. Opt-outs are honored within 10 business days, for good.",
+      "## 4. The law in brief (not legal advice)\n- United States, CAN-SPAM: cold email is allowed with an honest header and subject, the postal address and a working opt-out honored within 10 business days.\n- Canada, CASL: consent first. The European Union and the United Kingdom: many countries require consent first, even for business addresses.",
+      "## 5. Who pays for what\n- The cold email platform is the business's own subscription, and its inboxes and sending domains are bought separately.\n- Hiveku's Outbound page is part of the Premium plan (early access). It connects the platform the business already pays for; it does not replace it.",
+      "## 6. A better option for a member list\n- Ask the association to send it: many sell a sponsored email or a newsletter spot to their members. That reaches the same people, with permission.",
+      "## 7. The standard answer to a customer\nAdapt the words to the business; keep the facts.\n\n\"People who haven't asked to hear from you are a cold audience, even if you share an association. It's legal in the US under CAN-SPAM, but it needs the right setup:\n- Use a cold email platform. We recommend SmartLead and Instantly. You subscribe directly and buy a few sending inboxes on separate domains, never your main domain, so your everyday email and website stay safe.\n- Warm new inboxes for 2 to 3 weeks, then send about 30 to 50 a day per inbox. Turn open tracking off.\n- Every email: your real name and business, a postal address, and a clear opt-out you honor.\n- Canada and much of Europe need permission first.\nHiveku's Outbound page connects SmartLead: it runs the campaigns and sorts the replies inside Hiveku. Instantly is not connected to Hiveku yet; it works on its own. Hiveku's email marketing is only for people who signed up or are customers.\nTip: many associations sell a sponsored email to their members. That reaches the same people with permission.\"",
+      "## 8. What agents never do\n- Never send, schedule or import a cold list into Hiveku email marketing.\n- Never start cold outreach from the business's main domain or its everyday inbox.\n- Never call a list warm because the business feels it is: ask how it was built.\n- Never offer Hiveku's team to set up cold email.\n- If the business's memory says otherwise, follow these rules and explain why."
+    ],
+    "related_endpoints": ["/api/olympus/account-context", "/api/olympus/account-entitlements"],
+    "related_playbooks": ["load-brand-context"]
+  },
+  "available_playbooks": ["find-the-right-project", "load-brand-context", "files-crud", "deploy-without-github", "estimate-to-invoice", "email-a-list"]
+}

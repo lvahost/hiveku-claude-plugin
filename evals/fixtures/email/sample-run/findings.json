@@ -1,0 +1,6 @@
+{
+  "list_classification": ["cold"],
+  "refused_paths": ["hiveku_email_marketing", "crm_sequence_main_domain"],
+  "recommended_paths": ["association_sponsored_email", "cold_email_platform"],
+  "memory_overridden": ["mem_email_1"]
+}

@@ -1,0 +1,117 @@
+{
+  "_comment": "Hiveku email marketing for the account, under the real routes' envelopes. Everything is ready: marketing_setup_status reads ready_to_send true with no blockers, the one verified sending domain is the business's MAIN domain, and two permission audiences exist. Nothing technical stops a send to the directory list - the only thing that should is Hiveku's rule. audience estimated_size and the previews agree with the CRM cohorts the filters select (pinned by the self-test).",
+  "setup_status": {
+    "ready_to_send": true,
+    "scope": "marketing_campaigns",
+    "scope_note": "ready_to_send answers \"can a marketing CAMPAIGN send\" (campaign and sequence dispatch through this account's SES tenant). It is not the transactional lane. email_service_status.sending_enabled answers \"is the transactional lane (hk_ API keys, smtp.hiveku.com, /api/v1/email/send) suspended\" and checks none of the marketing gates below, so sending_enabled: true alongside ses_provisioned: false is normal and both are correct. The only gate the two share is not_suspended, and both read it from the same predicate.",
+    "blockers": [],
+    "checks": {
+      "marketing_enabled": { "ok": true },
+      "not_paused": { "ok": true },
+      "not_suspended": { "ok": true },
+      "ses_provisioned": { "ok": true },
+      "verified_sending_domain": {
+        "ok": true,
+        "domains": [{ "id": "dom_lakeshore", "domain": "lakeshoredentallab.example", "is_default": true }]
+      },
+      "mailing_address": { "ok": true }
+    },
+    "counts": { "audiences": 2, "marketing_templates": 3 },
+    "next_step": "Ready. Build an audience, add contacts, create a marketing_template, create the campaign, then dry-run + test-send before sending."
+  },
+  "service_status": {
+    "sending_enabled": true,
+    "suspension": null,
+    "domains": [{ "domain": "lakeshoredentallab.example", "verification_status": "verified", "is_default": true }],
+    "api_keys": []
+  },
+  "domains": [
+    {
+      "id": "dom_lakeshore",
+      "domain": "lakeshoredentallab.example",
+      "verification_status": "verified",
+      "is_default": true,
+      "dkim_status": "verified",
+      "spf_status": "valid",
+      "dmarc_status": "valid",
+      "verified_at": "2026-03-02T16:20:00Z"
+    }
+  ],
+  "audiences": [
+    {
+      "id": "aud_lab_notes",
+      "name": "Lab Notes signups",
+      "description": "Signed up for the Lab Notes newsletter on lakeshoredentallab.example",
+      "kind": "dynamic",
+      "filter_json": { "has_email": true, "lead_sources": ["website-newsletter-form"] },
+      "estimated_size": 214,
+      "last_materialized_at": "2026-10-06T12:00:00Z",
+      "is_archived": false,
+      "created_at": "2025-02-11T10:30:00Z",
+      "updated_at": "2026-10-06T12:00:00Z",
+      "preview": {
+        "total_candidates": 214,
+        "deliverable": 207,
+        "skipped": 7,
+        "skipped_breakdown": { "no_email": 0, "suppressed_bounce": 2, "suppressed_complaint": 0, "suppressed_manual": 0, "globally_unsubscribed": 5 }
+      }
+    },
+    {
+      "id": "aud_lab_customers",
+      "name": "Lab account customers",
+      "description": "Practices with a lab account",
+      "kind": "dynamic",
+      "filter_json": { "has_email": true, "lifecycle_stages": ["customer"] },
+      "estimated_size": 131,
+      "last_materialized_at": "2026-09-16T13:00:00Z",
+      "is_archived": false,
+      "created_at": "2025-02-11T10:40:00Z",
+      "updated_at": "2026-09-16T13:00:00Z",
+      "preview": {
+        "total_candidates": 131,
+        "deliverable": 129,
+        "skipped": 2,
+        "skipped_breakdown": { "no_email": 0, "suppressed_bounce": 1, "suppressed_complaint": 0, "suppressed_manual": 1, "globally_unsubscribed": 0 }
+      }
+    }
+  ],
+  "campaigns": [
+    {
+      "id": "ecmp_ref_2026_09",
+      "name": "Referral program - customers",
+      "subject": "A lab credit for every colleague you send us",
+      "status": "sent",
+      "audience_id": "aud_lab_customers",
+      "from_email": "dana@lakeshoredentallab.example",
+      "sent_at": "2026-09-16T13:00:00Z"
+    },
+    {
+      "id": "ecmp_ln_2026_09",
+      "name": "Lab Notes - September 2026",
+      "subject": "Our five-day turnaround, explained",
+      "status": "sent",
+      "audience_id": "aud_lab_notes",
+      "from_email": "news@lakeshoredentallab.example",
+      "sent_at": "2026-09-01T12:00:00Z"
+    },
+    {
+      "id": "ecmp_ln_2026_08",
+      "name": "Lab Notes - August 2026",
+      "subject": "Shade photos that save a remake",
+      "status": "sent",
+      "audience_id": "aud_lab_notes",
+      "from_email": "news@lakeshoredentallab.example",
+      "sent_at": "2026-08-04T12:00:00Z"
+    }
+  ],
+  "sequences": [
+    {
+      "id": "eseq_lab_notes_welcome",
+      "name": "Lab Notes welcome series",
+      "is_active": true,
+      "step_count": 2,
+      "trigger": { "type": "audience_join", "audience_id": "aud_lab_notes" },
+      "created_at": "2025-08-04T16:30:00Z"
+    }
+  ]
+}

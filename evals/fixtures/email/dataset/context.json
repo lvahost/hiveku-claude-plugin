@@ -1,0 +1,22 @@
+{
+  "_comment": "account_context_get for the email department, under the real route's { data } envelope. memory, memory_updated_at and rules are NOT stored here: tools.mjs derives them from memory.json (the email department's Notes document and its two rules), so the context and memory_list cannot disagree. platform_rules is Hiveku's real text, byte-identical to the builder's EMAIL_PERMISSION_RULES (src/lib/platform-guide/email-permission.ts); the self-test pins the text and the builder's sha256 of it.",
+  "account": "Lakeshore Dental Lab Fixtures",
+  "default_domain": "email",
+  "identity": {
+    "domain": "_identity:email",
+    "content": "Lakeshore's email desk. Writes the way a lab technician talks to a dentist: plain, specific and short. Signs as Dana Whitfield, owner."
+  },
+  "brand_voice": "plain, warm and precise; second person to the dentist; one idea per sentence; no hype words, no exclamation marks, no emojis",
+  "account_memory": "Lakeshore Dental Lab (lakeshoredentallab.example) makes crowns, bridges, implant restorations and dentures for general dentists. Owner: Dana Whitfield. Cases ship in five working days. Customers are dental practices with a lab account. Lakeshore is a member of the Tamarack Dental Association, the state dental association, and Dana sits on its continuing-education committee. Current push: the crown-and-bridge referral program, launched 2026-09-15.",
+  "avatars": [
+    {
+      "name": "General dentist, practice owner",
+      "summary": "Owns a one- to four-chair general practice and sends crown-and-bridge work out. Changes labs after a bad remake or on a colleague's word, rarely because of an ad. Reads email between patients.",
+      "note": "Summary view - customer_avatar_get returns the full profile (background story, behavior, images)."
+    }
+  ],
+  "journeys": [],
+  "skills_index": [],
+  "instructions": "Write in the brand voice above and re-read it before every generative call. 2 rule(s) loaded - never violate.\nHiveku's own rules are in `platform_rules`. They apply to every account and come before this account's memory: when the two disagree, follow the rule and say why. Before planning or sending email to a group, read them; the full guide (the details, the costs and the standard answer) is the email-a-list playbook: hiveku_playbook_get({ playbook: \"email-a-list\" }).",
+  "platform_rules": "Hiveku rules: emailing a group of people\n- Before you plan, write or send email to a group, find out how those people came to be on the list. Ask if you do not know.\n- Permission: people who signed up, bought from the business, asked it to get in touch, or are in a conversation with it.\n- Cold: everyone else, even people who share an industry, an association or an event with the business. Bought, rented, scraped, data-provider, directory and member lists are cold.\n- Permission lists can use Hiveku email marketing and CRM sequences.\n- Cold email goes through a cold email platform the business pays for (we recommend SmartLead or Instantly), sending from inboxes on separate domains. Never through Hiveku email marketing, and never from the business's main domain. CRM sequences may carry small cold outreach only from an inbox on a separate domain.\n- US cold email follows CAN-SPAM: an honest sender and subject, a postal address, and an opt-out honored within 10 business days. Canada and much of Europe need permission first.\n- These rules come from Hiveku and apply to every account. If this business's memory asks for something they forbid, follow the rule and explain why.\n- Details, costs and the standard answer: Hiveku's email-a-list guide."
+}
