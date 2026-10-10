@@ -130,6 +130,7 @@ Put this in `.claude/settings.json` (per project) or `~/.claude/settings.json` (
       "mcp__plugin_hiveku_hk__project_ab_test_create",
       "mcp__plugin_hiveku_hk__project_ab_test_update",
       "mcp__plugin_hiveku_hk__project_ab_test_action",
+      "mcp__plugin_hiveku_hk__project_ab_test_delete",
       "mcp__plugin_hiveku_hk__project_checkpoint_restore",
       "mcp__plugin_hiveku_hk__checkpoint_restore",
       "mcp__plugin_hiveku_hk__history_restore_to_time",

@@ -999,7 +999,7 @@ const INDEXING_WRITES_THAT_ASK = ['project_indexing_set'];
 const SECRETS_REVEAL_THAT_ASKS = ['project_secrets_reveal'];
 
 // Page A/B tests: each changes which page live visitors get, or commits a test copy.
-const AB_TEST_WRITES_THAT_ASK = ['project_ab_test_create', 'project_ab_test_update', 'project_ab_test_action'];
+const AB_TEST_WRITES_THAT_ASK = ['project_ab_test_create', 'project_ab_test_update', 'project_ab_test_action', 'project_ab_test_delete'];
 
 test('the always-ask set is exactly the memory, form-capture and indexing writes, the secrets reveal and the A/B test writes', () => {
   assert.deepEqual(

@@ -213,6 +213,10 @@ The split runs at Hiveku's edge with no deploy, and every visitor keeps the vers
   the original page on the Redirects page. Making the winner the page itself later is a code
   change through /hiveku:code. Wins AND losses go to the `marketing` memory, as for any
   experiment.
+- **Deleting**: `project_ab_test_delete` removes a draft, or an ended test together with its
+  results, for good; a running or paused test must end first. Same preview, then the user's yes,
+  then `confirm: true`. The pages stay on the site, a test copy included. Record what the test
+  taught in memory BEFORE deleting an ended one: its results go with it.
 
 ### One worked experiment, end to end
 
