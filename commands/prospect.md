@@ -41,10 +41,12 @@ methodology lives in hiveku-outbound-agency SKILL §3 - load the skill before a 
    and `crm_search_contacts` for existing customers and live threads (`crm_email_thread_search`).
    A DNC'd address or a current client on a cold list is a STOP, and you name who you removed.
 6. **Confirm gate on the final list:** N rows, the segment definition, and every exclusion bucket
-   with its count. Then mirror to the CRM: `crm_contacts_bulk_create` (or one-by-one
-   `crm_create_contact`) with a REAL `lead_source` naming where the rows came from (the vendor,
-   the directory, the event), so whoever builds an email-marketing audience later can see they are
-   cold and leave them out - search-then-create, never upsert, because
+   with its count. Then mirror to the CRM: `crm_contacts_bulk_create` with `list_source` set to
+   the cold source (`data_provider`, `directory`, `member_list`, `bought`, `scraped` or
+   `other_event`): every contact it creates is marked cold, so Hiveku email marketing never mails
+   it. Give each row a REAL `lead_source` too, naming where it came from (the vendor, the
+   directory, the event). One by one, `crm_create_contact` carries no list source, so prefer the
+   bulk call for a prospect list - search-then-create, never upsert, because
    `crm_contact_upsert_by_email` stamps `lead_source='upsert'` and that attribution is
    irreversible.
 7. This command enrolls and sends NOTHING. The campaign, the lead load into the sending provider,
