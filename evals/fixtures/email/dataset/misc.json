@@ -1,0 +1,54 @@
+{
+  "_comment": "Account identity, plan access, the Outbound surface and PM. Outbound has no cold email platform connected (outbound_list_integrations answers the real route's { data: [], total: 0 }), and the plan does not include the Outbound page - so the honest path for a cold list is a platform the business subscribes to on its own. The marketing PM project is where an owner task lands.",
+  "account": { "account": "Lakeshore Dental Lab Fixtures", "account_id": "acct_fixture_email", "plan": "standard" },
+  "entitlements": {
+    "plan": "standard",
+    "access_tier": "ga",
+    "account": { "id": "acct_fixture_email", "name": "Lakeshore Dental Lab Fixtures" },
+    "page_access": {
+      "crm": true,
+      "marketing": true,
+      "marketing_seo": true,
+      "marketing_ppc": false,
+      "marketing_outbound": false,
+      "communications": true,
+      "helpdesk": false,
+      "workflows": true,
+      "pm_projects": true
+    },
+    "lock_reason": {
+      "crm": null,
+      "marketing": null,
+      "marketing_seo": null,
+      "marketing_ppc": "plan",
+      "marketing_outbound": "plan",
+      "communications": null,
+      "helpdesk": "plan",
+      "workflows": null,
+      "pm_projects": null
+    }
+  },
+  "outbound": { "integrations": [], "campaigns": [] },
+  "pm": {
+    "projects": [
+      {
+        "id": "proj_email",
+        "name": "Email & Lab Notes",
+        "description": "Newsletter, customer notices and email marketing",
+        "status": "active",
+        "project_type": "marketing",
+        "task_count": 6,
+        "created_at": "2025-02-11T10:00:00Z"
+      },
+      {
+        "id": "proj_site",
+        "name": "Website refresh",
+        "description": "lakeshoredentallab.example rebuild",
+        "status": "active",
+        "project_type": "website",
+        "task_count": 11,
+        "created_at": "2026-05-19T09:00:00Z"
+      }
+    ]
+  }
+}

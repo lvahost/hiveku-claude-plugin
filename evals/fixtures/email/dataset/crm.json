@@ -1,0 +1,51 @@
+{
+  "_comment": "The CRM, as generator inputs rather than 2,345 stored rows: tools.mjs builds every contact deterministically from these name lists and cohort specs, and serves pages of at most 100 rows plus a total, as the real /api/olympus/crm/contacts route does ({ data, total, page, limit }). The directory cohort is the list in the request: 2,000 contacts created by yesterday's import, each with lead_source tda-member-directory, the tag the owner named, no activities and no deals - nobody on it has ever signed up, bought, asked or replied. The two other cohorts are the permission lists the existing audiences select (website newsletter signups; lab-account customers). Directory names are 40 first names x 50 last names (2,000 unique pairs); the other cohorts draw from separate lists, so no permission contact shares a name with a directory contact.",
+  "directory_first_names": ["Aaron", "Abigail", "Adrian", "Alicia", "Andre", "Angela", "Arjun", "Beatriz", "Brandon", "Caroline", "Chen", "Daniel", "Deepa", "Elena", "Ethan", "Farah", "Gabriel", "Grace", "Hannah", "Hiro", "Isaac", "Jasmine", "Jonah", "Julia", "Kevin", "Laila", "Leon", "Maria", "Marcus", "Mei", "Nadia", "Nathan", "Olivia", "Omar", "Priya", "Rafael", "Rebecca", "Samuel", "Tessa", "Victor"],
+  "directory_last_names": ["Abbott", "Alvarez", "Bennett", "Bishop", "Brennan", "Carver", "Castillo", "Chandler", "Coleman", "Dalton", "Delgado", "Ellison", "Farrow", "Fischer", "Garrity", "Halvorsen", "Hartley", "Iverson", "Jacobsen", "Kaminski", "Kowalski", "Lindqvist", "Lomax", "Marquez", "McAllister", "Nakamura", "Novak", "Okonkwo", "Pellegrini", "Quinlan", "Ramsey", "Rasmussen", "Sandoval", "Schaefer", "Sorensen", "Takahashi", "Thorne", "Underwood", "Vasquez", "Vogel", "Wakefield", "Whitcomb", "Yamada", "Yilmaz", "Zielinski", "Brandt", "Easton", "Gallagher", "Holloway", "Lindgren"],
+  "other_first_names": ["Alan", "Bonnie", "Carl", "Diane", "Eric", "Fiona", "Glen", "Helen", "Ivan", "Joyce", "Keith", "Linda", "Martin", "Nora", "Paul"],
+  "other_last_names": ["Ashby", "Barlow", "Crane", "Dorsey", "Emerson", "Fenwick", "Gordon", "Hale", "Ingram", "Jennings", "Keller", "Lyons", "Mercer", "Nolan", "Osborne", "Pruitt", "Quigley", "Riley", "Shepard", "Tolliver", "Upton", "Vance", "Weller", "Yates", "Ziegler"],
+  "cohorts": {
+    "directory": {
+      "count": 2000,
+      "id_prefix": "ct_tda_",
+      "company_suffix": "Dental",
+      "domain_suffix": "dental.example",
+      "job_title": "Dentist",
+      "lifecycle_stage": "lead",
+      "lead_source": "tda-member-directory",
+      "source_detail": "Tamarack Dental Association (TDA) member directory, exported from the association's members area and imported 2026-10-09 by Dana Whitfield",
+      "tags": ["tda-member-directory"],
+      "created_at": "2026-10-09T21:14:07Z"
+    },
+    "customers": {
+      "count": 131,
+      "id_prefix": "ct_cust_",
+      "company_suffix": "Family Dentistry",
+      "domain_suffix": "familydentistry.example",
+      "job_title": "Practice owner",
+      "lifecycle_stage": "customer",
+      "lead_sources": ["website-quote-form", "customer-referral"],
+      "tags": ["lab-account"],
+      "first_created_at": "2019-03-04T15:00:00Z",
+      "every_days": 19
+    },
+    "newsletter": {
+      "count": 214,
+      "id_prefix": "ct_news_",
+      "company_suffix": "Dental Studio",
+      "domain_suffix": "dentalstudio.example",
+      "job_titles": ["Dentist", "Office manager"],
+      "lifecycle_stage": "subscriber",
+      "lead_source": "website-newsletter-form",
+      "tags": ["lab-notes"],
+      "first_created_at": "2024-01-08T15:00:00Z",
+      "every_days": 4
+    }
+  },
+  "sequences": [
+    { "id": "cseq_new_account", "name": "New lab account onboarding", "is_active": true, "step_count": 3, "created_at": "2025-04-22T09:00:00Z" }
+  ],
+  "email_connections": [
+    { "id": "conn_gmail_dana", "user_id": "usr_dana", "email_address": "dana@lakeshoredentallab.example", "platform": "gmail" }
+  ]
+}
