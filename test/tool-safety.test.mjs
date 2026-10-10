@@ -995,11 +995,22 @@ const FORM_CAPTURE_WRITES_THAT_ASK = [
 // site out of search results. Its pins are at the end of this file.
 const INDEXING_WRITES_THAT_ASK = ['project_indexing_set'];
 
-test('the always-ask set is exactly the memory, form-capture and indexing writes', () => {
+// The secrets reveal (0.27.25): its answer is a site's plaintext values.
+const SECRETS_REVEAL_THAT_ASKS = ['project_secrets_reveal'];
+
+test('the always-ask set is exactly the memory, form-capture and indexing writes, and the secrets reveal', () => {
   assert.deepEqual(
     [...ALWAYS_ASK_WRITES.keys()].sort(),
-    [...MEMORY_WRITES_THAT_ASK, ...FORM_CAPTURE_WRITES_THAT_ASK, ...INDEXING_WRITES_THAT_ASK].sort(),
+    [...MEMORY_WRITES_THAT_ASK, ...FORM_CAPTURE_WRITES_THAT_ASK, ...INDEXING_WRITES_THAT_ASK, ...SECRETS_REVEAL_THAT_ASKS].sort(),
   );
+});
+
+test('the secrets reveal asks on a direct call with no guardrails file, and through a batch', () => {
+  const cwd = folderWith(undefined);
+  const direct = decideWithGuardrails({ ...payload('project_secrets_reveal', cwd), tool_input: { project_id: 'p', tier: 'production' } });
+  assert.equal(direct?.hookSpecificOutput?.permissionDecision, 'ask');
+  const batch = decideForPayload({ tool_name: `${HIVEKU_TOOL_PREFIX}hiveku_batch`, tool_input: { calls: [{ tool: 'project_secrets_reveal', args: {} }] } });
+  assert.equal(batch?.hookSpecificOutput?.permissionDecision, 'ask');
 });
 
 test('every memory write on the set ASKS on a direct call with no guardrails file', () => {
