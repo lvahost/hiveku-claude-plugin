@@ -420,9 +420,7 @@ export const PENDING_TOOLS = new Map([
   // deployed; index regenerated at 2151 tools, project_vcs_status joined the
   // read-only list as a GET); entries deleted.
 
-  // AB-DELETE (2026-10-10): deleting a page A/B test (builder DELETE on
-  // /ab-tests/:testId, MCP project_ab_test_delete). Named in
-  // skills/hiveku-analytics-agency/references/cro-experiments.md and on the
-  // ask lists; delete this entry when the regenerated index carries it.
-  ['project_ab_test_delete', { since: '2026-10-10', batch: 'AB-DELETE' }],
+  // AB-DELETE: landed in the live index on 2026-10-10 (MCP #194, a7f2fc9,
+  // deployed; index regenerated at 2274 tools in release 0.27.29; a DELETE,
+  // so the read-only list did not change); entry deleted.
 ]);
