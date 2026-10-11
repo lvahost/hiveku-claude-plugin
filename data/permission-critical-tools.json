@@ -5,8 +5,8 @@
     "mcp__plugin_hiveku_hk__",
     "mcp__hiveku__"
   ],
-  "plugin_version": "0.27.29",
-  "count": 276,
+  "plugin_version": "0.27.30",
+  "count": 278,
   "tools": [
     {
       "name": "deploy_site",
@@ -112,6 +112,16 @@
       "name": "project_secrets_reveal",
       "method": "POST",
       "why_gated": "hands the AI the plaintext values of a site's non-sensitive variables for one tier; a person also approves each reveal in the dashboard"
+    },
+    {
+      "name": "project_secrets_mark_sensitive",
+      "method": "PATCH",
+      "why_gated": "makes a site's stored variables write-only: their values are never shown again, to people or to AI tools, and only a person can make one readable again, with a new value"
+    },
+    {
+      "name": "project_secrets_replace",
+      "method": "POST",
+      "why_gated": "replaces one tier's environment variables with the set given: with apply it adds, changes and removes variables in one write, synced into the running site"
     },
     {
       "name": "project_ab_test_create",

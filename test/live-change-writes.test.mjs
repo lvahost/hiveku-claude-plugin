@@ -98,6 +98,8 @@ const LIVE_CHANGE_NAMES = [
   'project_secrets_set',
   'project_secrets_delete',
   'project_secrets_apply_to_preview',
+  'project_secrets_mark_sensitive',
+  'project_secrets_replace',
 ];
 
 function folderWith(guardrails) {
