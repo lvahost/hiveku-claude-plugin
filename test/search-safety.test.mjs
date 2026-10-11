@@ -43,6 +43,20 @@ test('the read sibling outranks its own delete', () => {
   if (del !== -1) assert.ok(list < del, `delete (${del}) ranked above list (${list})`);
 });
 
+test('a thing named with no action offers its reads before its writes', () => {
+  // 2026-10-11: the secrets cutover lengthened project_secrets_list's description and it fell to
+  // sixth for "secrets for a project", behind four writes whose names hold the same two words.
+  for (const q of ['secrets for a project', 'project secrets']) {
+    const top = searchTools(q, { limit: 2 });
+    assert.ok(top.every((t) => t.method === 'GET'), `"${q}" offered ${top.map((t) => t.name).join(', ')} first`);
+    assert.ok(names(q, 3).includes('project_secrets_list'), `"${q}": ${names(q, 3).join(', ')}`);
+  }
+  // Naming the change still finds the write first.
+  assert.equal(names('set project secrets', 1)[0], 'project_secrets_set');
+  assert.equal(names('mark secrets sensitive', 1)[0], 'project_secrets_mark_sensitive');
+  assert.equal(names('reveal project secrets', 1)[0], 'project_secrets_reveal');
+});
+
 test('★ asking to delete still finds the delete tool', () => {
   // The penalty must be intent-aware, or it becomes a censor: someone who says
   // "delete" cannot be handed only readers.
