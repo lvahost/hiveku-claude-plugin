@@ -37,8 +37,8 @@ Investigate with exactly these tools (GET or read-only POST). Nothing outside th
   days; `unknown` is a Meta page token that cannot be predicted, not "fine"), and `byok: true` rows
   whose scopes and limits are the customer's app. `social_account_get({ social_account_id })` on
   every row not plainly healthy, for `last_error` and the granted scopes. The top-level `quota.x`
-  (present whenever an X row exists) is the budget: `eligible`, `used`, `limit` (60 published X
-  posts per calendar month, Premium only, UTC), `remaining`; `eligible: false` is a plan
+  (present whenever an X row exists) is the budget: `eligible`, `used`, `limit` (published X
+  posts per calendar month by plan, UTC: Starter 5, Standard 30, Premium 60), `remaining`; `eligible: false` is a plan
   conversation, not a content one. `social_provider_list` for a wanted platform with no row
   (`hiveku_native: false` means a BYOK connect, not an unsupported platform; on Google Business
   Profile it means Hiveku's Google app is not configured, never a BYOK connect). No tool activates,
