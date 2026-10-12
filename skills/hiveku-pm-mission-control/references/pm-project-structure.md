@@ -9,8 +9,9 @@ everything here.
 
 - `pm_projects_get({ id })` fetches one PM project by UUID, including its `default_assignee_id`.
 - `pm_projects_update({ id, ... })` changes only the fields you pass. Renaming a project or
-  flipping its status is an update, never a delete-and-recreate — `pm_projects_delete` cascades to
-  every task, milestone and section under it.
+  flipping its status is an update, never a delete-and-recreate — `pm_projects_delete` is permanent
+  (every task, milestone, section, comment, file and logged hour goes with it) and takes only an
+  archived project, with a person's own key.
 - `pm_projects_update({ id, default_assignee_id })` sets who a new task in the project goes to
   when its creator names nobody and its section has no default of its own; `''` or `null` clears
   it. The person must be on the project team (a member `id` from `pm_project_team`): anyone else
