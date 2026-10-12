@@ -36,8 +36,9 @@ then `memory_list` for consent posture, protected campaigns, and the approval th
    verify nothing broke for a week, then remove via `ppc_audience_ops` (irreversible) - STOP and
    confirm per list, never as a batch. New prospecting segments go through
    `ppc_custom_audience_create` (populates in hours to days - do not judge it on day one), and
-   `ppc_audience_attach` RESTRICTS serving to members - observation mode is
-   `ppc_bid_modifier_update` at 1.0, and the reach tradeoff gets its own STOP and confirmation.
+   `ppc_audience_attach` attaches in OBSERVATION mode (reach unchanged; it can carry a starting
+   bid_modifier, 1.0 = no change). `ppc_bid_modifier_update` then changes an attached audience's
+   adjustment; it never attaches one, and refuses an audience that is not attached.
    **Exclusions** (existing customers and recent converters out of prospecting - usually the
    highest-value audience move): `ppc_google_audience_exclusions_set({ connection_id, params: {
    campaign_id | ad_group_id, add_audience_resource_names } })`, preview-first. STOP on the preview's
