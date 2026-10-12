@@ -1001,10 +1001,14 @@ const SECRETS_REVEAL_THAT_ASKS = ['project_secrets_reveal'];
 // Page A/B tests: each changes which page live visitors get, or commits a test copy.
 const AB_TEST_WRITES_THAT_ASK = ['project_ab_test_create', 'project_ab_test_update', 'project_ab_test_action', 'project_ab_test_delete'];
 
-test('the always-ask set is exactly the memory, form-capture and indexing writes, the secrets reveal and the A/B test writes', () => {
+// Mobile (Expo) app settings: the SDK upgrade rewrites the app in one go, a store ID becomes
+// permanent once a build is uploaded, and the Apple account decides who publishes the app.
+const MOBILE_WRITES_THAT_ASK = ['mobile_app_sdk_upgrade', 'mobile_app_identity_set', 'mobile_app_apple_account_set'];
+
+test('the always-ask set is exactly the memory, form-capture and indexing writes, the secrets reveal, the A/B test writes and the mobile app writes', () => {
   assert.deepEqual(
     [...ALWAYS_ASK_WRITES.keys()].sort(),
-    [...MEMORY_WRITES_THAT_ASK, ...FORM_CAPTURE_WRITES_THAT_ASK, ...INDEXING_WRITES_THAT_ASK, ...SECRETS_REVEAL_THAT_ASKS, ...AB_TEST_WRITES_THAT_ASK].sort(),
+    [...MEMORY_WRITES_THAT_ASK, ...FORM_CAPTURE_WRITES_THAT_ASK, ...INDEXING_WRITES_THAT_ASK, ...SECRETS_REVEAL_THAT_ASKS, ...AB_TEST_WRITES_THAT_ASK, ...MOBILE_WRITES_THAT_ASK].sort(),
   );
 });
 
