@@ -495,17 +495,21 @@ an item after the underlying problem is fixed, never instead of fixing it). A di
 ## Confirm gates
 
 Ask before: `mc_task_decide` with `force: true` (overriding another human's claim), `mc_lane_delete`,
-`pm_task_recurrence_delete`, `pm_projects_delete` (cascades to tasks, milestones and sections),
-`pm_tasks_delete`, and any `mc_schedule_fire` that is not a dry run. Everything on that list is
-either irreversible or lands on a client's board.
+`pm_task_recurrence_delete`, `pm_projects_delete` (permanent: the project's tasks, milestones,
+sections, comments, files and logged hours go with it), `pm_tasks_delete`, and any `mc_schedule_fire`
+that is not a dry run. Everything on that list is either irreversible or lands on a client's board.
 
 The nightmare request, as a response contract: *"Clean up the board — delete everything that's
 done."* → Refuse the deletion and offer the reversible motion: done cards archive
 (`mc_task_transition({ to_status: 'archived' })`), lanes retire with
 `mc_lane_update({ archived: true })`, recurrences pause. Deletion targets are NEVER derived from a
 status filter, a search, or any pattern — only from explicit ids the operator named, read back
-before the call. `pm_projects_delete` cascades to every task, milestone and section under the
-project, with no undo.
+before the call. `pm_projects_delete` deletes only an ARCHIVED project, so it is always two steps:
+archive (`pm_projects_update({ id, status: 'archived' })`), then delete with the person's go-ahead.
+It needs a person's own key whose creator holds the delete right; an agent's call is refused with
+403 `person_only` (agents archive, people delete). It is refused with 409 `not_archived` for an
+active project and 409 `hours_in_closed_payroll` while a finalized or paid payroll run counted any
+of its logged hours (keep it archived). There is no undo.
 
 The doctrine, one line each: no human answer, no `mc_task_decide`. No dry run, no live fire. No
 explicit ids, no deletion. No claim, no edit of another writer's task.

@@ -5,8 +5,8 @@
     "mcp__plugin_hiveku_hk__",
     "mcp__hiveku__"
   ],
-  "plugin_version": "0.27.34",
-  "count": 278,
+  "plugin_version": "0.27.37",
+  "count": 281,
   "tools": [
     {
       "name": "deploy_site",
@@ -142,6 +142,21 @@
       "name": "project_ab_test_delete",
       "method": "DELETE",
       "why_gated": "deletes a page A/B test for good: a draft, or an ended test together with its results; a running or paused test must end first"
+    },
+    {
+      "name": "mobile_app_sdk_upgrade",
+      "method": "POST",
+      "why_gated": "moves a mobile app to a newer Expo SDK: rewrites its package files, app config and untouched template files in one go (a checkpoint is saved first) and restarts its preview"
+    },
+    {
+      "name": "mobile_app_identity_set",
+      "method": "PATCH",
+      "why_gated": "sets a mobile app's store identity (iOS bundle ID, Android package, link scheme); the IDs become permanent once a build is uploaded to a store"
+    },
+    {
+      "name": "mobile_app_apple_account_set",
+      "method": "PUT",
+      "why_gated": "chooses which Apple developer account (store connection) a mobile app's builds and App Store submissions use; one shared by another account publishes the app from that account's Apple team"
     },
     {
       "name": "project_checkpoint_restore",
