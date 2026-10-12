@@ -187,8 +187,11 @@ counts which version brings more conversions, on that page and anywhere on the s
 The split runs at Hiveku's edge with no deploy, and every visitor keeps the version they got.
 - **Can this site run one?** `project_ab_tests_list({ project_id })`: `can_start_tests` and,
   when false, `why_not` in plain words (external or static hosting, or the edge not ready). Older
-  Pages Router pages cannot be tested. A page that already belongs to a running or paused test
-  cannot get a second one.
+  Pages Router pages cannot be tested. A page can run one test for everyone, plus routes and tests
+  limited to some visitors (below); a second version belongs to one test only.
+- **Main only.** Tests run on the live site, which is always built from Main: a test copy is
+  saved to Main, and a page that exists only on another branch cannot be tested until it is merged
+  and deployed. Say so when the user is working on a branch.
 - **The second version** is either an existing page (`variant_path`) or a test copy
   (`make_copy: true` on `project_ab_test_create`): the page's code copied to the next free
   address (/pricing -> /pricing-b) as one version, NOT deployed. The change itself goes through
@@ -212,11 +215,37 @@ The split runs at Hiveku's edge with no deploy, and every visitor keeps the vers
 - **Ending**: keep the original, or send everyone to the winner, which adds a 302 redirect from
   the original page on the Redirects page. Making the winner the page itself later is a code
   change through /hiveku:code. Wins AND losses go to the `marketing` memory, as for any
-  experiment.
+  experiment. A route, or a test limited to some visitors, can only end keeping the original:
+  its audience is not everyone (`audience_end`).
 - **Deleting**: `project_ab_test_delete` removes a draft, or an ended test together with its
   results, for good; a running or paused test must end first. Same preview, then the user's yes,
   then `confirm: true`. The pages stay on the site, a test copy included. Record what the test
   taught in memory BEFORE deleting an ended one: its results go with it.
+
+### Routes and tests for some visitors (where visitors came from)
+
+A route sends the visitors who came from somewhere to a page made for them, at the same edge and
+with no flash: Google Ads visitors who land on / see /google, everyone else sees / as usual. The
+same `audience` can also limit an ordinary A/B test, for example to phones only.
+- **Who can be matched** (every condition must hold, up to 5): the ad platform, read from the
+  ad's click id in the address (Google, Microsoft, Meta, TikTok, LinkedIn, X); a UTM tag (source,
+  medium or campaign; is, or contains); the referring site; the device (phone, tablet,
+  computer); the country; the state or region. The exact shapes are in the
+  `project_ab_test_create` description.
+- **Make one**: `project_ab_test_create({ project_id, kind: "source_route", page_path,
+  variant_path, audience })`, a draft like any test; `make_copy: true` makes the routed page as a
+  copy of the original to edit for those visitors.
+- **Measure it or not**: `holdout_percent` 5 to 50 keeps that share of the matched visitors on
+  the original, and the route then reads out like a test (same floors, same verdict rules).
+  With 0 (the default) every match is sent and the read-out is routing only: how many went and
+  how many converted, with nothing to compare. Recommend a holdout whenever the user wants to
+  know whether the page made for them is better.
+- **Order on one page**: routes first, then tests for some visitors, then the one test for
+  everyone; the first that applies wins. A route sends matching visitors whether or not they
+  allowed analytics (only counting needs that).
+- **Changing it**: who it is for changes only on a draft. A live route's holdout changes with
+  `project_ab_test_update` (`holdout_percent`, with the preview and the user's yes); 0 stops
+  comparing and keeps routing. Ending a route stops routing.
 
 ### One worked experiment, end to end
 

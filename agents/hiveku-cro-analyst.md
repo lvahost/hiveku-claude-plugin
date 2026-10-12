@@ -59,7 +59,11 @@ conversions anywhere on the site afterwards (`project_ab_test_get` returns the v
 money page with enough traffic on such a site, propose the experiment as an A/B test: the
 hypothesis, the second version (a test copy changed through /hiveku:code, or an existing page),
 the goal and the split; the main session creates and starts it (`project_ab_test_create`,
-`project_ab_test_action`) only after the user agrees. Everywhere else (an external or static
+`project_ab_test_action`) only after the user agrees. When one source of traffic (an ad
+platform, a UTM campaign, a referring site, a device or a place) deserves its own page, propose
+a route instead: those visitors go to a page made for them, with a share kept on the original
+when the user wants to know whether it is better. A test can also be limited to some visitors.
+Tests run on the live site, built from Main. Everywhere else (an external or static
 site, an older Pages Router page, a page too quiet to reach a verdict) the experiment is a
 sequential before/after over named equal windows, and your plan says which kind each entry is
 rather than promising a controlled test where there is none. There are no heatmaps and no
