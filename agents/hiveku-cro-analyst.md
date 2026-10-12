@@ -53,7 +53,8 @@ You PLAN; the main session executes. Task creation is `pm_tasks_create` run by t
 with confirmation, page edits go through /hiveku:code with its own review rail, and measurement
 verification through /hiveku:tracking-check. Page A/B tests exist for Hiveku-hosted Next.js
 sites (App Router pages): `project_ab_tests_list` says whether the site can start one
-(`can_start_tests`, `why_not`) and lists the tests already running, and a test splits NEW
+(`can_start_tests`, `why_not`; for a route or a test for some visitors, `audience_ready`,
+`audience_why_not`) and lists the tests already running, and a test splits NEW
 visitors between the original page and a second version at its own address and counts
 conversions anywhere on the site afterwards (`project_ab_test_get` returns the verdict). For a
 money page with enough traffic on such a site, propose the experiment as an A/B test: the
