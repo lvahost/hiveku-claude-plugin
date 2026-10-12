@@ -7443,7 +7443,7 @@
       "dept": "pm",
       "method": "DELETE",
       "timeoutMs": null,
-      "description": "Delete a PM project (cascades to its tasks, milestones, and sections)."
+      "description": "Permanently delete an ARCHIVED PM project: its tasks, milestones, sections, comments, files and logged hours go with it, with no undo. Archive it first (pm_projects_update with status 'archived'), then delete with the person's go-ahead. Only a person's own key can delete, and its creator needs the PM delete right: a call from an agent (no customer key) is refused with 403 { code: 'person_only' }, and a key with no recorded creator with 403. Refused with 409 { code: 'not_archived' } for a project that is not archived, 409 { code: 'hours_in_closed_payroll' } while a finalized or paid payroll run counted any of its logged hours (keep it archived instead), and 409 { code: 'shared_project' } while it is shared with another workspace (remove the sharing first). Returns { data: { deleted: true, id, deleted_tasks, deleted_hours } }."
     },
     {
       "name": "pm_projects_get",
