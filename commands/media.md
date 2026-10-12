@@ -127,8 +127,8 @@ VIDEO - three separate lanes. Pick the lane before you spend anything.
      Confirm with the user before either call.
 
 2. ONE CLIP: `marketing_generate_video({ prompt, aspect_ratio })` - ~10s, 720p. **ALWAYS call with
-   `dry_run: true` first**: it returns `{ allowed, used, limit, required_plan }` (Premium plan only,
-   20 clips/account/month, ~$1 each). Tell the user the remaining quota before spending. The real
+   `dry_run: true` first**: it returns `{ allowed, used, limit, required_plan }` (every paid plan,
+   1, 8 or 20 clips/account/month on Starter, Standard and Premium, ~$1 each). Tell the user the remaining quota before spending. The real
    call BLOCKS 30-90s. One good prompt beats three retries; NEVER re-generate a clip that succeeded
    (the asset is already in the library). Errors: 402 plan_upgrade_required / monthly_cap_reached,
    429 `video_quota_exhausted` (platform capacity, resets overnight - schedule and move on, don't
