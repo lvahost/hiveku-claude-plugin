@@ -9,6 +9,7 @@
  *     stay on the original; a route sends one platform's clicks to its own page; page tests are not
  *     the ad platforms' campaign experiments.
  *   - SEO: the test copy is canonical to the original and kept out of the sitemap on purpose; the
+ *     canonical travels in the HTTP headers, not the HTML, and a route's page gets none; the
  *     A/B redirect is a temporary 302; a running or recently ended test is ruled out first.
  */
 import { test } from 'node:test';
@@ -59,6 +60,9 @@ test('SEO: the copy is canonical and out of the sitemap on purpose, the redirect
     assert.ok(text.includes('kept out of the sitemap on purpose'), rel);
     assert.ok(/link to it, add it to the sitemap or "fix" it as duplicate content/.test(text), rel);
     assert.ok(text.includes('The A/B redirect is a temporary 302'), rel);
+    // The edge sends the canonical as an HTTP header, and never for a route's page.
+    assert.ok(text.includes("The canonical is sent in the page's HTTP headers, not in its HTML, so an audit that reads only the HTML reports it missing."), rel);
+    assert.ok(text.includes("A route's page gets no canonical."), rel);
     assert.ok(text.includes('running or recently ended'), rel);
   }
   // In the analyst it sits in the ordered "rule out the artifact" list, before the world.

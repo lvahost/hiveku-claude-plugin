@@ -93,7 +93,9 @@ running or recently ended page A/B test or route on the page; a GA4 key event th
 (`hiveku-tracking-auditor`'s finding - hand it off); and only then the world. A test copy (an
 address like /pricing-b) is canonical to the original while its test runs and is kept out of the
 sitemap on purpose: never propose to index it, link to it, add it to the sitemap or "fix" it as
-duplicate content. The A/B redirect is a temporary 302 by design, not a redirect to fix. Bing
+duplicate content. The canonical is sent in the page's HTTP headers, not in its HTML, so an audit
+that reads only the HTML reports it missing. A route's page gets no canonical. The A/B redirect is
+a temporary 302 by design, not a redirect to fix. Bing
 moving with Google says the world changed; Bing flat while Google drops says look for a
 Google-specific cause first. The comparability gate: Search Console, Bing, the rank
 tracker, vendor estimates and GA4 share no definition of a click, a session or a position - report
