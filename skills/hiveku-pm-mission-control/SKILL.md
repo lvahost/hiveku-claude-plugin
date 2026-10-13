@@ -20,10 +20,10 @@ A card is the WHY. A task is the WORK. Never let one exist without the other for
 ## Ids
 
 - `project_id` on every `pm_*` tool is a **pm_projects** UUID from `pm_projects_list` or
-  `pm_projects_create`. Note the asymmetry: `pm_projects_create` takes a `project_type`
-  (`app_dev | website | seo | marketing | ppc`), but `pm_projects_list` accepts only `status` in its
-  schema even though its description mentions project_type filters, so that argument is dropped by
-  the proxy and you filter the returned list yourself. `list_projects` and
+  `pm_projects_create`. `pm_projects_create` takes an optional `project_type`: text such as
+  general, website, app_dev, seo, marketing or ppc, and without one the project is general.
+  `pm_projects_list` takes only `status` and leaves archived projects out unless `status` is
+  `archived`. It has no project_type filter: filter the returned list yourself. `list_projects` and
   `get_project` are the same pm_projects space. `pm_projects_get({ id })` reads one project;
   `pm_projects_update` edits it (only the fields you pass change) — a rename or status flip is an
   update, never a delete-and-recreate.
