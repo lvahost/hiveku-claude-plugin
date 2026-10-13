@@ -420,6 +420,11 @@ export const PENDING_TOOLS = new Map([
   // deployed; index regenerated at 2151 tools, project_vcs_status joined the
   // read-only list as a GET); entries deleted.
 
+  // PPC-OVERRIDE (MCP #211, builder #1246; the PPC change ledger's override contract): delete both
+  // once the release regenerates the index from the live server that serves them.
+  ['ppc_recent_change_override', { since: '2026-10-13', batch: 'PPC-OVERRIDE' }],
+  ['ppc_recent_changes', { since: '2026-10-13', batch: 'PPC-OVERRIDE' }],
+
   // AB-DELETE: landed in the live index on 2026-10-10 (MCP #194, a7f2fc9,
   // deployed; index regenerated at 2274 tools in release 0.27.29; a DELETE,
   // so the read-only list did not change); entry deleted.
