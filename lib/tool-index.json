@@ -1892,7 +1892,7 @@
       "dept": "create",
       "method": "POST",
       "timeoutMs": null,
-      "description": "Create a new PM task with title, description, priority, type, assignee, and due date. Field is `title` (NOT `name` — that's the pm_projects field). The route also accepts `name` as a forgiving alias if you forget. Assignee: pass an id from pm_project_team, omit assigned_to_id to let the default assignee take the task (the section's when section_id names one that has a default, else the project's), or pass null to create it unassigned. Prefer pm_tasks_create going forward; this name is kept for backwards compatibility."
+      "description": "Create a new PM task with title, description, priority, type, assignee, and due date. Field is `title` (NOT `name` — that's the pm_projects field). The route also accepts `name` as a forgiving alias if you forget. Assignee: pass an id from pm_project_team, omit assigned_to_id to let the default assignee take the task (the section's when section_id names one that has a default, else the project's), or pass null to create it unassigned. Prefer pm_tasks_create going forward; this name is kept for backwards compatibility. A person's key needs its creator's permission to add tasks; without it the call is refused with 403 key_creator_lacks_access, which says who can grant it."
     },
     {
       "name": "crm_account_summary",
@@ -6505,7 +6505,7 @@
       "dept": "mc",
       "method": "POST",
       "timeoutMs": null,
-      "description": "One-shot: create a NEW pm_task from a Mission Control card and link them. Use this when you need the MC decision-context PLUS a trackable work item on the project board. Defaults: title and description carry over from the MC card; priority maps P0→urgent, P1→high, P2→medium, P3→low; task_type defaults to 'marketing'; status starts at 'queued'. Override any field via the body. With no assigned_to_id key the task goes to the section's default assignee, else the project's; pass null to spawn it unassigned. The new pm_task carries an ai_metadata.spawned_from { kind: 'mission_control', mc_task_id } back-reference so a later agent picking up the pm_task can pull the decision context via pm_task_get_mc_link. Refuses with 409 if the MC card is already linked to a pm_task; pass { force: true } to replace."
+      "description": "One-shot: create a NEW pm_task from a Mission Control card and link them. Use this when you need the MC decision-context PLUS a trackable work item on the project board. Defaults: title and description carry over from the MC card; priority maps P0→urgent, P1→high, P2→medium, P3→low; task_type defaults to 'marketing'; status starts at 'queued'. Override any field via the body. With no assigned_to_id key the task goes to the section's default assignee, else the project's; pass null to spawn it unassigned. The new pm_task carries an ai_metadata.spawned_from { kind: 'mission_control', mc_task_id } back-reference so a later agent picking up the pm_task can pull the decision context via pm_task_get_mc_link. Refuses with 409 if the MC card is already linked to a pm_task; pass { force: true } to replace. A person's key needs its creator's permission to add tasks; without it the call is refused with 403 key_creator_lacks_access, which says who can grant it."
     },
     {
       "name": "mc_task_transition",
@@ -6995,7 +6995,7 @@
       "dept": "onboarding",
       "method": "POST",
       "timeoutMs": null,
-      "description": "Create a PM task tied to the onboarding (e.g. \"Set up E911 addresses\", \"Connect GHL\")."
+      "description": "Create a PM task tied to the onboarding (e.g. \"Set up E911 addresses\", \"Connect GHL\"). A person's key needs its creator's permission to add tasks; without it the call is refused with 403 key_creator_lacks_access, which says who can grant it."
     },
     {
       "name": "onboarding_link_website_project",
@@ -7562,7 +7562,7 @@
       "dept": "pm",
       "method": "POST",
       "timeoutMs": null,
-      "description": "Create a recurring PM task template. On every cron match, the materializer spawns a NEW parent pm_task (status='queued') plus a child task for each entry in subtask_templates. Use this when work repeats on a cadence — weekly status reports, monthly billing, daily standup checklists, quarterly reviews. Cron is standard 5-field (minute hour day-of-month month day-of-week). Examples: '0 9 * * 1' → every Monday 9am (timezone-adjusted) '0 0 1 * *' → 1st of every month at midnight '*/15 * * * *' → every 15 minutes '0 9 * * 1-5' → 9am on weekdays on_overlap='skip' (default) refuses to spawn when a prior occurrence is still open (avoids stacking 'weekly status report' when last week's isn't done). on_overlap='spawn' fires every time regardless — use for monthly invoices where each occurrence is a distinct unit of work. Subtasks are cloned from subtask_templates on each fire — each entry needs at minimum a `title`; description / priority / ai_instructions / estimated_hours / tags / labels are optional and inherit sensible defaults from the parent template when omitted. Max 50 subtasks per recurrence. After creating, the first occurrence fires on the NEXT cron match (could be tomorrow morning). Call pm_task_recurrence_run_now to spawn one immediately for testing."
+      "description": "Create a recurring PM task template. On every cron match, the materializer spawns a NEW parent pm_task (status='queued') plus a child task for each entry in subtask_templates. Use this when work repeats on a cadence — weekly status reports, monthly billing, daily standup checklists, quarterly reviews. Cron is standard 5-field (minute hour day-of-month month day-of-week). Examples: '0 9 * * 1' → every Monday 9am (timezone-adjusted) '0 0 1 * *' → 1st of every month at midnight '*/15 * * * *' → every 15 minutes '0 9 * * 1-5' → 9am on weekdays on_overlap='skip' (default) refuses to spawn when a prior occurrence is still open (avoids stacking 'weekly status report' when last week's isn't done). on_overlap='spawn' fires every time regardless — use for monthly invoices where each occurrence is a distinct unit of work. Subtasks are cloned from subtask_templates on each fire — each entry needs at minimum a `title`; description / priority / ai_instructions / estimated_hours / tags / labels are optional and inherit sensible defaults from the parent template when omitted. Max 50 subtasks per recurrence. After creating, the first occurrence fires on the NEXT cron match (could be tomorrow morning). Call pm_task_recurrence_run_now to spawn one immediately for testing. A person's key needs its creator's permission to add tasks; without it the call is refused with 403 key_creator_lacks_access, which says who can grant it."
     },
     {
       "name": "pm_task_recurrence_delete",
@@ -7604,7 +7604,7 @@
       "dept": "pm",
       "method": "POST",
       "timeoutMs": null,
-      "description": "Spawn one occurrence right now, off-schedule. Useful for testing a freshly-created recurrence, backfilling a missed fire after a worker outage, or kicking the loop while keeping the regular schedule. Respects on_overlap unless force=true is passed."
+      "description": "Spawn one occurrence right now, off-schedule. Useful for testing a freshly-created recurrence, backfilling a missed fire after a worker outage, or kicking the loop while keeping the regular schedule. Respects on_overlap unless force=true is passed. A person's key needs its creator's permission to add tasks; without it the call is refused with 403 key_creator_lacks_access, which says who can grant it."
     },
     {
       "name": "pm_task_recurrence_update",
@@ -7660,14 +7660,14 @@
       "dept": "pm",
       "method": "POST",
       "timeoutMs": null,
-      "description": "Create a PM task. task_number auto-increments per project. Field is `title` (NOT `name` — that's pm_projects_create). The route also accepts `name` as a forgiving alias if you forget. Assignee: pass an id from pm_project_team, omit assigned_to_id to let the section's default assignee (else the project's) take the task, or pass null to create it unassigned."
+      "description": "Create a PM task. task_number auto-increments per project. Field is `title` (NOT `name` — that's pm_projects_create). The route also accepts `name` as a forgiving alias if you forget. Assignee: pass an id from pm_project_team, omit assigned_to_id to let the section's default assignee (else the project's) take the task, or pass null to create it unassigned. A person's key needs its creator's permission to add tasks; without it the call is refused with 403 key_creator_lacks_access, which says who can grant it."
     },
     {
       "name": "pm_tasks_create_bulk",
       "dept": "pm",
       "method": "POST",
       "timeoutMs": null,
-      "description": "Bulk-create PM tasks (up to 500 per call). Each task must include project_id + title (or `name` as alias). task_number is auto-assigned per project. Validates ownership of every project_id before any insert — one bad project_id blocks the whole batch. A task with no assigned_to_id key goes to its section's default assignee, else its project's; null creates it unassigned. Assignee ids come from pm_project_team."
+      "description": "Bulk-create PM tasks (up to 500 per call). Each task must include project_id + title (or `name` as alias). task_number is auto-assigned per project. Validates ownership of every project_id before any insert — one bad project_id blocks the whole batch. A task with no assigned_to_id key goes to its section's default assignee, else its project's; null creates it unassigned. Assignee ids come from pm_project_team. A person's key needs its creator's permission to add tasks; without it the call is refused with 403 key_creator_lacks_access, which says who can grant it."
     },
     {
       "name": "pm_tasks_delete",
