@@ -165,7 +165,12 @@ if they differ. Confirm with `get_account_info` before writing.
 
 ## Requirements
 
-Node 20 or newer. The plugin has **no dependencies** — nothing is installed when you add it.
+Node.js 22.12 or newer (the LTS download from nodejs.org), or 20.19 or newer on Node 20: earlier
+releases cannot load the plugin's modules. The plugin has **no dependencies** — nothing is
+installed when you add it.
+
+On Windows, also Git for Windows (git-scm.com/downloads/win). Claude Code runs the plugin's
+commands and hooks in Git Bash, which comes with it; without it they cannot run.
 
 ## Evals
 

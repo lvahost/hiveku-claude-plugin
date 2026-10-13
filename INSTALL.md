@@ -3,7 +3,16 @@
 Two steps: add the Hiveku marketplace, then install the plugin from it. Takes about a minute.
 Pick the section that matches how you use Claude.
 
-Everything below is the same on macOS, Windows, and Linux.
+## Before you start
+
+- **Node.js.** The plugin runs on it. Install the LTS version from nodejs.org. If you already
+  have it, `node --version` must print v22.12 or later, or v20.19 or later on Node 20.
+- **On Windows, Git for Windows** (git-scm.com/downloads/win). Claude Code runs the plugin's
+  commands and hooks in Git Bash, which comes with it; without it `/hiveku:connect` cannot run.
+- A Claude plan that includes Claude Code (Pro, Max, Team or Enterprise, or an Anthropic Console
+  account), and a Hiveku login.
+
+With those in place, everything below is the same on macOS, Windows, and Linux.
 
 ---
 
@@ -72,7 +81,10 @@ Once the plugin is installed, in any Claude session:
 Your browser opens the Hiveku consent page. Sign in, tick the accounts you want to work with,
 and mark any of them read-only if you want a look-but-do-not-touch connection. Nothing is
 pasted and no key is typed anywhere: the keys come back over a one-time local callback and are
-stored encrypted on your machine.
+stored on your machine: encrypted, with the encryption key in your Mac's Keychain (on Linux,
+the system's secret service). Windows has no keychain the plugin can use yet, so there the keys
+sit in a file in your Windows user folder, protected by your Windows account rather than
+encrypted.
 
 Then create a folder for each account:
 
