@@ -2669,28 +2669,28 @@
       "dept": "crm",
       "method": "POST",
       "timeoutMs": null,
-      "description": "Create or update the account's recurring contact import from GoHighLevel (source 'ghl') or HubSpot ('hubspot') into the Hiveku CRM. One row per source; a second call updates it. One way only: nothing is written back to the source CRM. THE RECURRING SYNC IMPORTS NEW CONTACTS ONLY. Every run forces filter.only_new=true, so a contact already imported (linked by its CRM id) is skipped and later edits to it in the source CRM are not copied. Each run reads the source's contacts from the beginning, and those already imported count toward plan_json limit: once the source holds more contacts than limit, new ones can stop arriving (see limit). Deals are not synced: importing deals is a one-time job the Sales department stages for approval (talk_to_department with domain 'sales'; refused when the account's sales agent is off). That department can also preview a contact import and propose a plan before you save one here. MATCHING: each contact is matched to an existing Hiveku contact by its CRM id, then by email (case-insensitive), then by phone (exact). A match fills only blank standard fields (name, email, phone, HubSpot job title) and the CRM id, then adds tags and history and writes the mapped custom fields; no match creates a contact with lead source 'offline-sources'. Each contact's company name is linked to a Hiveku company, created when none has that name. RUNS: a row with no plan_json, or an empty plan {}, never runs, so pass a plan with at least one key (its shape is under plan_json). A new row stays off unless enabled=true. A cron tick every 15 minutes runs each enabled row whose frequency has elapsed; crm_integration_sync_run_now makes the next tick run it. The source must be connected (crm_ghl_status / crm_hubspot_status). Each run writes its counts (created, patched, skipped_duplicate, failed_total, ...) to last_result_json and any failure to last_error: read them with crm_integration_sync_list."
+      "description": "Create or update a recurring import into the Hiveku CRM: contacts from GoHighLevel (source 'ghl') or HubSpot ('hubspot'), or deals from HubSpot (object 'deals'). One row per source and object; a second call updates it. One way only: nothing is written back to the source CRM. CONTACTS SYNC IMPORTS NEW CONTACTS ONLY. Every run forces filter.only_new=true, so a contact already imported (linked by its CRM id) is skipped and later edits to it in the source CRM are not copied. HubSpot is read by change time from where the last run stopped; GoHighLevel and a HubSpot list restart at the beginning each run, so new contacts can stop arriving (see limit). MATCHING: each contact is matched by its CRM id, then email (case-insensitive), then phone (exact). A match fills only blank standard fields and the CRM id; no match creates a contact with lead source 'offline-sources'. DEALS SYNC (HubSpot) brings in the deals that changed in HubSpot and updates those it imported before, won or lost with HubSpot's close date, linked to their contacts (imported when missing). For a won deal it first copies its contacts' ad click ids (plan click_id_properties) onto the contact, so the deal can go to Microsoft Ads and Google Ads through the offline conversion uploads (marketing_offline_conversions_*). Needs plan pipeline_mapping and stage_mapping (crm_hubspot_pipelines_list, crm_list_pipelines). A one-time import of existing deals is a Sales department job (talk_to_department with domain 'sales'; refused when the account's sales agent is off). RUNS: a row with no plan_json, or an empty plan {}, never runs. A new row stays off unless enabled=true. A cron tick every 15 minutes runs each enabled row whose frequency has elapsed; crm_integration_sync_run_now makes the next tick run it. The source must be connected (crm_ghl_status / crm_hubspot_status). Each run writes its counts to last_result_json and any failure to last_error: read them with crm_integration_sync_list."
     },
     {
       "name": "crm_integration_sync_disable",
       "dept": "crm",
       "method": "DELETE",
       "timeoutMs": null,
-      "description": "Disable a sync job (keeps the row for audit). Re-enable via _configure with enabled=true."
+      "description": "Disable a sync (keeps the row and its plan for audit). Re-enable via crm_integration_sync_configure with enabled=true. object is 'contacts' (default) or 'deals'."
     },
     {
       "name": "crm_integration_sync_list",
       "dept": "crm",
       "method": "GET",
       "timeoutMs": null,
-      "description": "List configured external-CRM sync jobs (GHL / HubSpot → Hiveku) for the account."
+      "description": "List the account's recurring CRM syncs (contacts from GoHighLevel or HubSpot, deals from HubSpot): source, object, enabled, frequency_seconds, last_run_at, last_result_json (a run's counts; a deals run also has won, click_ids_written and click_id_error) and last_error."
     },
     {
       "name": "crm_integration_sync_run_now",
       "dept": "crm",
       "method": "POST",
       "timeoutMs": null,
-      "description": "Trigger a sync to run on the next cron tick (zeros last_run_at)."
+      "description": "Trigger a sync to run on the next cron tick (zeros last_run_at). object is 'contacts' (default) or 'deals'."
     },
     {
       "name": "crm_invoice_template_create",
@@ -3845,7 +3845,7 @@
       "dept": "delete",
       "method": "DELETE",
       "timeoutMs": null,
-      "description": "Delete a task by ID"
+      "description": "Permanently delete one PM task, by UUID or task number: its comments, logged hours, attachments and dependencies go with it; its subtasks stay, without a parent. Refused with 409 { code: 'hours_in_closed_payroll' } while a finalized or paid payroll run counted its logged hours (mark it done or cancelled instead), and with 409 { code: 'task_referenced' } while other rows still point at it. Returns { data: { deleted: true, id, title } }."
     },
     {
       "name": "department_turn_get",
@@ -5385,7 +5385,7 @@
       "dept": "hiveku",
       "method": "POST",
       "timeoutMs": null,
-      "description": "Follow up on a report you filed (ref such as HK-1042). acknowledge: you told the user about the latest update, so it stops resurfacing. confirm_fixed: you retried and it works now. still_broken: you retried after a resolution and it still fails; describe what you saw in text, and the team gets a follow-up. add_info: extra detail for the team. Never include secrets or customer personal details."
+      "description": "Follow up on a report you filed (ref such as HK-1042). acknowledge: you told the user about the latest update, so it stops resurfacing. confirm_fixed: the team marked it resolved, you retried, and it works now (before that, use add_info to say it works again). still_broken: you retried after a resolution and it still fails; describe what you saw in text, and the team gets a follow-up. add_info: extra detail for the team. Never include secrets or customer personal details."
     },
     {
       "name": "hiveku_feedback_status",
@@ -6232,7 +6232,7 @@
       "dept": "marketing",
       "method": "POST",
       "timeoutMs": null,
-      "description": "Create a template a CAMPAIGN can use (marketing_template). Author it EITHER way: 1. `layout_json` — the visual builder's block tree. Compiled to HTML/text server-side via MJML, so the template stays EDITABLE in the Hiveku visual builder afterwards. Prefer this. Shape: { version: 1, styles: {...}, blocks: [ { type, ...props } ] }. Block types: heading | text | image | button | divider | spacer | hero | social | columns | footer | quote | card | list | stats. 2. `compiled_html` (+ optional `compiled_text`) — paste-in raw HTML. Faster, but NOT editable in the visual builder. The body MUST carry an unsubscribe link and the account's physical address to pass CAN-SPAM footer validation at send time ({{unsubscribe_link}} is substituted per-recipient). Run marketing_setup_status first if unsure. ⚠️ Do NOT use email_template_create for campaigns — that writes the TRANSACTIONAL template store (/api/v1 send API) and a campaign cannot reference it."
+      "description": "Create a template a CAMPAIGN can use (marketing_template). Author it EITHER way: 1. `layout_json` — the visual builder's block tree. Compiled to HTML/text server-side via MJML, so the template stays EDITABLE in the Hiveku visual builder afterwards. Prefer this. Shape: { version: 1, styles: {...}, blocks: [...] }. Every block needs a unique `id` (letters, digits, - or _; a UUID is best), a `type`, and that type's required fields: heading: content | text: content | image: src | button: label, href | divider: none | spacer: none | hero: imageSrc, headline | social: platforms | columns: columnCount, contents | footer: content | quote: content | card: heading, body | list: style, items | stats: items | product: title, price, productUrl | product_recs: source, count. Text lives in `content` (HTML for text, footer and quote), never in a `text` key; a card's text is `body`. A tree that breaks a rule is refused with 422 validation_failed and an `issues` list naming each field; nothing is saved. Minimal valid example: {\"version\":1,\"blocks\":[{\"id\":\"b1\",\"type\":\"heading\",\"content\":\"Welcome, {{first_name}}\"},{\"id\":\"b2\",\"type\":\"text\",\"content\":\"<p>Thanks for joining.</p>\"},{\"id\":\"b3\",\"type\":\"button\",\"label\":\"Get started\",\"href\":\"https://example.com\"},{\"id\":\"b4\",\"type\":\"footer\",\"content\":\"<a href='{{unsubscribe_link}}'>Unsubscribe</a> · {{tenant.address}}, {{tenant.city}}\"}]} 2. `compiled_html` (+ optional `compiled_text`) — paste-in raw HTML. Faster, but NOT editable in the visual builder. The body MUST carry an unsubscribe link and the account's physical address to pass CAN-SPAM footer validation at send time ({{unsubscribe_link}} is substituted per-recipient). Run marketing_setup_status first if unsure. Do NOT use email_template_create for campaigns — that writes the TRANSACTIONAL template store (/api/v1 send API) and a campaign cannot reference it."
     },
     {
       "name": "marketing_template_get",
@@ -6253,7 +6253,7 @@
       "dept": "marketing",
       "method": "PATCH",
       "timeoutMs": null,
-      "description": "Update a marketing template. Passing layout_json recompiles the HTML/text from the block tree; passing compiled_html/compiled_text alone edits the raw body without touching the tree."
+      "description": "Update a marketing template. Passing layout_json recompiles the HTML/text from the block tree; passing compiled_html/compiled_text alone edits the raw body without touching the tree. layout_json replaces the whole tree, it is not a patch: read it with marketing_template_get, change it, send it all back. Every block needs a unique `id` (letters, digits, - or _; a UUID is best), a `type`, and that type's required fields: heading: content | text: content | image: src | button: label, href | divider: none | spacer: none | hero: imageSrc, headline | social: platforms | columns: columnCount, contents | footer: content | quote: content | card: heading, body | list: style, items | stats: items | product: title, price, productUrl | product_recs: source, count. Text lives in `content` (HTML for text, footer and quote), never in a `text` key; a card's text is `body`. A tree that breaks a rule is refused with 422 validation_failed and an `issues` list naming each field; nothing is saved. Minimal valid example: {\"version\":1,\"blocks\":[{\"id\":\"b1\",\"type\":\"heading\",\"content\":\"Welcome, {{first_name}}\"},{\"id\":\"b2\",\"type\":\"text\",\"content\":\"<p>Thanks for joining.</p>\"},{\"id\":\"b3\",\"type\":\"button\",\"label\":\"Get started\",\"href\":\"https://example.com\"},{\"id\":\"b4\",\"type\":\"footer\",\"content\":\"<a href='{{unsubscribe_link}}'>Unsubscribe</a> · {{tenant.address}}, {{tenant.city}}\"}]}"
     },
     {
       "name": "marketing_testimonial_media_replace",
@@ -6694,7 +6694,7 @@
       "dept": "media",
       "method": "POST",
       "timeoutMs": null,
-      "description": "Create a media folder. Optional parent_id makes it a sub-folder. Slug + name unique per (account, parent). description / color / icon are UI hints only."
+      "description": "Create a media folder. Optional parent_id (a folder UUID from media_folders_list) makes it a sub-folder. Name and slug are unique per (account, parent); the slug is always derived from the name. description / color / icon are UI hints only. color must be a hex color, #RGB or #RRGGBB (e.g. #FF684A); icon a lucide-react icon name of 1 to 50 characters (e.g. book-open); \"\" or null means none. Any other value, a name over 255 characters, or a parent_id that is not a UUID is refused with 400 and a `field` naming it; nothing is created."
     },
     {
       "name": "media_folder_delete",
@@ -6715,7 +6715,7 @@
       "dept": "media",
       "method": "PATCH",
       "timeoutMs": null,
-      "description": "Rename / reparent / restyle a folder. Allow-listed fields: name, slug, parent_id, description, color, icon."
+      "description": "Rename / reparent / restyle a folder; send only the fields that change: name (the slug follows it), parent_id, description, color, icon. color must be a hex color, #RGB or #RRGGBB (e.g. #FF684A); icon a lucide-react icon name of 1 to 50 characters (e.g. book-open); null or \"\" clears color, icon or parent_id. Any other value, a blank name or one over 255 characters, or a folder_id / parent_id that is not a UUID is refused with 400 naming the field; nothing changes."
     },
     {
       "name": "media_folders_list",
@@ -7443,7 +7443,7 @@
       "dept": "pm",
       "method": "DELETE",
       "timeoutMs": null,
-      "description": "Delete a PM project (cascades to its tasks, milestones, and sections)."
+      "description": "Permanently delete an ARCHIVED PM project: its tasks, milestones, sections, comments, files and logged hours go with it, with no undo. Archive it first (pm_projects_update with status 'archived'), then delete with the person's go-ahead. Only a person's own key can delete, and its creator needs the PM delete right: a call from an agent (no customer key) is refused with 403 { code: 'person_only' }, and a key with no recorded creator with 403. Refused with 409 { code: 'not_archived' } for a project that is not archived, 409 { code: 'hours_in_closed_payroll' } while a finalized or paid payroll run counted any of its logged hours (keep it archived instead), and 409 { code: 'shared_project' } while it is shared with another workspace (remove the sharing first). Returns { data: { deleted: true, id, deleted_tasks, deleted_hours } }."
     },
     {
       "name": "pm_projects_get",
@@ -7674,7 +7674,7 @@
       "dept": "pm",
       "method": "DELETE",
       "timeoutMs": null,
-      "description": "Delete a PM task."
+      "description": "Permanently delete one PM task, by UUID or task number: its comments, logged hours, attachments and dependencies go with it; its subtasks stay, without a parent. Refused with 409 { code: 'hours_in_closed_payroll' } while a finalized or paid payroll run counted its logged hours (mark it done or cancelled instead), and with 409 { code: 'task_referenced' } while other rows still point at it. Returns { data: { deleted: true, id, title } }."
     },
     {
       "name": "pm_tasks_get",
@@ -9312,14 +9312,14 @@
       "dept": "ppc",
       "method": "POST",
       "timeoutMs": 120000,
-      "description": "Trigger a pull of campaigns + metrics from all active PPC connections — Google Ads, Meta Ads, Microsoft Ads (Bing Ads), LinkedIn Ads, TikTok Ads — (or a specific one via connection_id). SYNCHRONOUS, and the route SELF-BOUNDS at about 95 seconds so it answers with a structured partial result rather than leaving you on a timeout: that sits under the 120s client budget and under the edge, which closes an unanswered request at about 120 seconds with an HTTP 524 that no client timeout can extend. Each connection reports four legs (campaigns / ad_groups / ads / metrics), and each leg carries exactly one of: 'synced (Nd)' PROVED complete; 'pending: ...' the leg was cut at the wall or the platform report is still generating upstream, so it is STILL RUNNING and is neither a failure nor a zero; 'unknown: ...' the tool's own output could not be read, so completion is unproven; 'error: ...' a real reported failure; or a not-attempted / not-supported form. Read the legs, not just the top-level counts: a pending or unknown leg means that data is not in yet. PREFER ppc_sync_async (202 + job_id, polled with job_status_get) for a full 5-year backfill, for any account with many campaigns or connections, and after any pending leg here: it survives restarts, accepts an idempotency_key, and is the only variant that can finish long work. Do not re-fire this on a pending leg; poll or re-read instead. Note last_synced_at can advance from the campaigns pull alone, so a fresh timestamp is NOT proof that ad groups, ads or metrics landed. Reconciles upstream REMOVALS on Google Ads, Meta Ads and TikTok Ads: after a complete campaign listing, local campaigns no longer present upstream are marked status='removed' (never deleted — metrics history stays), reported as campaigns_marked_removed. Microsoft/LinkedIn/ChatGPT/Amazon/Vibe pulls are not reconciled yet (listing completeness is not provable there), so a deleted campaign can linger with its last status on those platforms. Microsoft now syncs Search, Shopping, Dynamic Search Ads, Audience and Performance Max campaigns (it used to see Search only, so non-Search campaigns can appear for the first time). The campaigns leg runs before the metrics leg, so their metrics land in the same sync; a Microsoft report row whose campaign is not in the local mirror is skipped, not stored, so when a Microsoft campaigns leg is not 'synced' treat that connection's metrics as incomplete and sync again. The legs here are status strings only: the Microsoft pull's own detail (the unmirrored spend it skipped, or a fallback to Search-only visibility when Microsoft refuses the all-types read) is not surfaced by this route."
+      "description": "Trigger a pull of campaigns + metrics from all active PPC connections — Google Ads, Meta Ads, Microsoft Ads (Bing Ads), LinkedIn Ads, TikTok Ads — (or a specific one via connection_id). SYNCHRONOUS, and the route SELF-BOUNDS at about 95 seconds so it answers with a structured partial result rather than leaving you on a timeout: that sits under the 120s client budget and under the edge, which closes an unanswered request at about 120 seconds with an HTTP 524 that no client timeout can extend. Each connection reports four legs (campaigns / ad_groups / ads / metrics), and each leg carries exactly one of: 'synced (Nd)' PROVED complete; 'pending: ...' the leg was cut at the wall or the platform report is still generating upstream, so it is STILL RUNNING and is neither a failure nor a zero; 'unknown: ...' the tool's own output could not be read, so completion is unproven; 'error: ...' a real reported failure; or a not-attempted / not-supported form. Read the legs, not just the top-level counts: a pending or unknown leg means that data is not in yet. PREFER ppc_sync_async (202 + job_id, polled with job_status_get) for a full history backfill, for any account with many campaigns or connections, and after any pending leg here: it survives restarts, accepts an idempotency_key, and is the only variant that can finish long work. Do not re-fire this on a pending leg; poll or re-read instead. Note last_synced_at can advance from the campaigns pull alone, so a fresh timestamp is NOT proof that ad groups, ads or metrics landed. Reconciles upstream REMOVALS on Google Ads, Meta Ads and TikTok Ads: after a complete campaign listing, local campaigns no longer present upstream are marked status='removed' (never deleted — metrics history stays), reported as campaigns_marked_removed. Microsoft/LinkedIn/ChatGPT/Amazon/Vibe pulls are not reconciled yet (listing completeness is not provable there), so a deleted campaign can linger with its last status on those platforms. Microsoft now syncs Search, Shopping, Dynamic Search Ads, Audience and Performance Max campaigns (it used to see Search only, so non-Search campaigns can appear for the first time). The campaigns leg runs before the metrics leg, so their metrics land in the same sync; a Microsoft report row whose campaign is not in the local mirror is skipped, not stored, so when a Microsoft campaigns leg is not 'synced' treat that connection's metrics as incomplete and sync again. The legs here are status strings only: the Microsoft pull's own detail (the unmirrored spend it skipped, or a fallback to Search-only visibility when Microsoft refuses the all-types read) is not surfaced by this route."
     },
     {
       "name": "ppc_sync_async",
       "dept": "ppc",
       "method": "POST",
       "timeoutMs": null,
-      "description": "Async variant of ppc_sync for the 5-year backfill case where ppc_sync's HTTP call exceeds the agent's client timeout. Returns a job_id immediately (HTTP 202); agent polls job_status_get { job_id } until status is 'succeeded' / 'failed'. The job runs in-process on the builder; its result carries the same shape as ppc_sync's results array (campaigns / ad_groups / ads / metrics statuses). Typical wall time: 3-8 minutes per connection. Supports an idempotency_key — retries with the same key return the existing job instead of re-running the work. Use this when the agent might fire the same sync twice (e.g. on conversation resume)."
+      "description": "Async variant of ppc_sync for the history backfill case (5 years; 3 for Meta and Microsoft) where ppc_sync's HTTP call exceeds the agent's client timeout. Returns a job_id immediately (HTTP 202); agent polls job_status_get { job_id } until status is 'succeeded' / 'failed'. The job runs in-process on the builder; its result carries the same shape as ppc_sync's results array (campaigns / ad_groups / ads / metrics statuses). Typical wall time: 3-8 minutes per connection. Supports an idempotency_key — retries with the same key return the existing job instead of re-running the work. Use this when the agent might fire the same sync twice (e.g. on conversation resume)."
     },
     {
       "name": "ppc_tiktok_audiences",
@@ -12875,7 +12875,7 @@
       "dept": "site",
       "method": "DELETE",
       "timeoutMs": null,
-      "description": "DESTRUCTIVE — fully delete a website project AND every external resource it owns: Supabase database (drops billing!), Lambda function, ECR repo, ACM cert, CloudFront distributions (production + staging), Cloudflare DNS, S3 hosting bucket, project assets in S3, AWS Secrets, dev containers, Fly preview, EAS project (archive). Then the DB row. Best-effort cleanup: each step logs + continues on failure so a flaky external dependency cannot orphan the row. A nightly orphan-sweep cron deletes any Supabase projects left behind by silent failures, but reach out to ops if you see one stuck. This is the same chain the dashboard delete button runs. Use ONLY when the user has explicitly confirmed they want the project gone — there is no undo. Accepts `id` or `project_id`."
+      "description": "DESTRUCTIVE, no undo: delete a website project and everything it owns (hosting, domains, database, files, previews). Use only after the person has confirmed. Only a person's own key can delete, and its creator needs the website delete right: a call from an agent (no customer key) is refused with 403 { code: 'person_only' }, and a key with no recorded creator with 403. The answer comes at once: 200 { success: true, status: 'deleting', project_name, job_id }. The site leaves every list right away, and the teardown (Fly preview, Lambda, Supabase database, Cloudflare DNS, CloudFront, S3 buckets and assets, secrets, ACM certificate, EAS) finishes in the background, usually within minutes: poll job_status_get with job_id. A second call returns the same job_id (status 'deleted' once it has finished). PM projects linked to the site go with it, except ones shared with another workspace or whose logged hours a closed payroll run counted (kept and unlinked). Refused with 409 { code: 'project_transfer_in_flight' } while the site is being moved. Accepts `id` or `project_id`."
     },
     {
       "name": "site_firewall_allow",
