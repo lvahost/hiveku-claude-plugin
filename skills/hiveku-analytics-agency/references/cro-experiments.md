@@ -198,8 +198,12 @@ got for 90 days.
 - **The second version** is either an existing page (`variant_path`) or a test copy
   (`make_copy: true` on `project_ab_test_create`): the page's code copied to the next free
   address (/pricing -> /pricing-b) as one version, NOT deployed. The change itself goes through
-  /hiveku:code on the copy's files, then a production deploy; the test cannot start until the
-  copy answers on the live site.
+  /hiveku:code on the copy's files (never the original's), then a production deploy; the test
+  cannot start until the copy answers on the live site.
+- **During a test**: while a test runs or is paused, change neither page, the original or the
+  second version. A change mixes two versions into one result, and nothing in the read-out shows
+  it. If a page must change, end the test (or end it and start a new one) and tell the user why.
+  The same holds for a route that keeps a share on the original.
 - **The goal** defaults to leads anywhere on the site (a form or a call). Narrower goals: a form
   on the tested page, reaching a page (a thank-you page), a marked button, calls, or a defined
   conversion. Pick the one the hypothesis predicts; the others can be added as secondary goals.
@@ -291,7 +295,7 @@ Say these plainly, before the client asks, each with what you CAN do instead:
 - **Outside a test, every change reaches 100% of visitors.** A change shipped without a test is
   seen by everyone at once. That is why the before/after backlog ships ONE experiment per page
   per review window: two simultaneous changes on one page cannot be attributed to either. A
-  running test owns its page: change neither version until it ends.
+  running or paused test owns its page: change neither version until it ends.
 - **A test counts consenting visitors only.** Visitors who have not allowed analytics in the
   site's Hiveku cookie banner are not counted (a split test shows them the original; a route
   still sends them); say so beside a test's numbers.

@@ -59,6 +59,8 @@ server-side; still the read surface). Nothing outside this list:
   class - it is not yours to run.
 - Technical: `seo_core_web_vitals({ url })` (CrUX field p75 plus lab, any URL including a
   competitor's, free) and `seo_cro_audit({ url })` (free) - the evidence for a page-level verdict.
+  `project_ab_tests_list` (the site's page A/B tests and routes, running and ended) for any page
+  that moved.
 - Authority: `seo_backlinks_list` (needs the SEO project id), `seo_backlink_opportunities`,
   `seo_new_lost_backlinks` (the MANUAL link tracker, not DataForSEO new/lost),
   `seo_competitors_list` (alias `seo_list_competitors`), `seo_competitor_changes`.
@@ -87,9 +89,13 @@ Measurement artifact first. Before "algorithm update", "content decay" or "a com
 us", rule out the artifact in this order: a disconnected or erroring connection (`last_error`,
 `connection_status`); a stale `last_checked_at` or a lane never tracked; GSC's Pacific day boundary
 and 3-day lag splitting your window; a sitemap or robots change that altered what is crawlable; a
-GA4 key event that stopped firing (`hiveku-tracking-auditor`'s finding - hand it off); and only
-then the world. Bing moving with Google says the world changed; Bing flat while Google drops says
-look for a Google-specific cause first. The comparability gate: Search Console, Bing, the rank
+running or recently ended page A/B test or route on the page; a GA4 key event that stopped firing
+(`hiveku-tracking-auditor`'s finding - hand it off); and only then the world. A test copy (an
+address like /pricing-b) is canonical to the original while its test runs and is kept out of the
+sitemap on purpose: never propose to index it, link to it, add it to the sitemap or "fix" it as
+duplicate content. The A/B redirect is a temporary 302 by design, not a redirect to fix. Bing
+moving with Google says the world changed; Bing flat while Google drops says look for a
+Google-specific cause first. The comparability gate: Search Console, Bing, the rank
 tracker, vendor estimates and GA4 share no definition of a click, a session or a position - report
 them side by side, each with its source and window, never summed and never reconciled into one
 "true" number. Inside Search Console the stored metrics carry five dimension signatures (date-only,
