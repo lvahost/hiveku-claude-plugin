@@ -21,10 +21,11 @@ With those in place, everything below is the same on macOS, Windows, and Linux.
 1. Open **Settings** (the gear, or `Cmd+,` / `Ctrl+,`).
 2. In the left sidebar under **Customize**, click **Plugins**.
 3. Click **Add** at the top right, then choose **Add from a repository**.
-4. Paste this and confirm:
+4. Paste this full address and confirm (the desktop app needs the whole address, starting
+   `https://`):
 
    ```
-   lvahost/hiveku-claude-plugin
+   https://github.com/lvahost/hiveku-claude-plugin
    ```
 
 5. The **hiveku** plugin now appears in the list. Click it, then click **Install**.

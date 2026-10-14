@@ -14,9 +14,9 @@ hundreds of thousands.
 Full walkthrough, including troubleshooting: **[INSTALL.md](INSTALL.md)**.
 
 **Claude desktop app:** Settings → Plugins → **Add** → **Add from a repository** →
-paste `lvahost/hiveku-claude-plugin`. When the **hiveku** plugin appears, install
-it — choose the all-projects option if asked for a scope, so it follows you into
-every folder.
+paste the full address `https://github.com/lvahost/hiveku-claude-plugin` (the app
+needs the whole address). When the **hiveku** plugin appears, install it — choose
+the all-projects option if asked for a scope, so it follows you into every folder.
 
 **Terminal:**
 
