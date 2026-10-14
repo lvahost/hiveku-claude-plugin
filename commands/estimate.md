@@ -21,12 +21,12 @@ Create a quote: $ARGUMENTS. Context: `account_context_get({ domain: "sales" })`,
    `crm_estimate_update` (editable in draft/sent/viewed/expired/declined; 409 on
    accepted/converted - duplicate instead; passing `line_items` REPLACES the whole set).
 5. Send only on an explicit yes: `crm_estimate_send({ estimate_id, channel, idempotency_key,
-   attach_pdf? })` - `channel` is required ('email' | 'sms' | 'both'; SMS needs phones set up on the
-   account: a 402 `voice_not_enabled` means they are not yet, and an owner or admin sets them up in
-   Communications),
-   `attach_pdf: true` renders and attaches the PDF, and one portal token (TTL 30 days) is shared
-   across channels. On an ambiguous timeout, `crm_estimate_get({ estimate_id })` BEFORE any retry,
-   then retry with the SAME idempotency_key.
+   attach_pdf? })` - `channel` is required: 'email' | 'sms' | 'both'. The SMS branch needs phones
+   set up on the account (they come with every paid plan, and an owner or admin sets them up in
+   Communications); otherwise the text is not sent and the answer says why (channel sms: an error;
+   channel both: sms.ok false beside the email result). `attach_pdf: true` renders and attaches the
+   PDF, and one portal token (TTL 30 days) is shared across channels. On an ambiguous timeout,
+   `crm_estimate_get({ estimate_id })` BEFORE any retry, then retry with the SAME idempotency_key.
 6. After-care: say out loud that the portal link dies in 30 days regardless of `expires_at`
    (a stale quote needs a RE-SEND, not a nudge - `/hiveku:quotes` runs that sweep). Log the send as
    `crm_create_activity` and open a PM task on the follow-up date. If "proposal sent" is a real

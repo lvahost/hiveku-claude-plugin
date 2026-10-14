@@ -57,6 +57,7 @@ import {
   toolResultJson,
 } from '../lib/memory-changes.mjs';
 import { HIVEKU_APP_URL, HIVEKU_MCP_URL, CLIENT_ID, PLUGIN_VERSION, keyPreview, isUuid, mapLimit } from '../lib/util.mjs';
+import { PLAN_LIMIT_LINE } from '../lib/shim.mjs';
 import { runPostToolUseHook } from '../lib/vcs-ledger.mjs';
 import { runStopHook } from '../lib/stop-version.mjs';
 import { collectReports, formatReports } from '../lib/feedback-reports.mjs';
@@ -1318,6 +1319,14 @@ async function cmdHook(positional) {
           'not a failure: show the person its message and link, follow its hint, and never retry it ' +
           'unchanged or report it. The hiveku-orient skill has the rules.',
       );
+      // A tool answer with limit_kind (a plan's number, AI credits, billing or
+      // setup said no) is named apart the same way (agent plan and usage,
+      // builder #1332): the builder's PLAN_LIMIT_LINE, byte for byte, then the
+      // pointer to account_usage_get (the line Codex #51 prints). STATIC TEXT.
+      // The shim's initialize instructions carry it too, but Claude Code shows
+      // only their first 2,048 characters and the plan rules start near
+      // character 1,850, so this hook line is what reaches the session.
+      lines.push('Hiveku: ' + PLAN_LIMIT_LINE + ' Before work the plan counts, call account_usage_get.');
       // Memory changes since the last session in this account (plan 14.4).
       // Nothing is printed here: the count needs the network, so a detached
       // probe fetches it and the prompt-submit hook says it once.
