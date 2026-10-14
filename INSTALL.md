@@ -21,8 +21,7 @@ With those in place, everything below is the same on macOS, Windows, and Linux.
 1. Open **Settings** (the gear, or `Cmd+,` / `Ctrl+,`).
 2. In the left sidebar under **Customize**, click **Plugins**.
 3. Click **Add** at the top right, then choose **Add from a repository**.
-4. Paste this full address and confirm (the desktop app needs the whole address, starting
-   `https://`):
+4. Paste this address and confirm:
 
    ```
    https://github.com/lvahost/hiveku-claude-plugin
