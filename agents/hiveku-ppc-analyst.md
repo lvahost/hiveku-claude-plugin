@@ -35,6 +35,9 @@ compute server-side; they are still the read surface:
   plus the per-channel split of where PMax delivery actually went.
 - What changed: `ppc_change_history` (POST) - who/what/when, max 30 days back; check it before any
   causal story, so a metric that moved after a human change is not blamed on the market.
+- Who changed what through Hiveku: `ppc_recent_changes` (GET) - people, apps and agents on every
+  platform, with the hold each change sets (7 days for budget and bidding, 24 hours for the rest);
+  a plan never proposes going over someone else's hold without naming them and asking first.
 - The 2026-09-24 reads (all read-only, POST or GET; Google or Microsoft unless noted):
   `ppc_goals_get` (the targets to optimize toward - read it instead of asking; a missing one goes
   back as `needs_input`, never invented); `ppc_search_terms_mine` (where the waste sits: read

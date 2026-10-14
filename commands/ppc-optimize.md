@@ -18,6 +18,14 @@ stopping to ask.
      changed before judging what is happening.
    - Ownership check: anything recently changed by someone else is not yours to re-change. Flag
      it with who and when; never silently revert another operator's work.
+   - Hiveku's own record: `ppc_recent_changes({ connection_id })` names who changed what through
+     Hiveku lately (people, apps, agents), on every platform, in one read. A change someone else made
+     holds the same thing for 7 days (budget and bidding, for the whole campaign) or 24 hours (the
+     rest). Once Hiveku enforces that hold, a write over it is refused with who, when and what: tell
+     the person exactly that and ask whether to change it anyway. Only on a clear yes, call
+     `ppc_recent_change_override({ override_token })` with the token the refusal gave, then send the
+     same change again with `override_recent_change` set to the token it returns. Never say yes for
+     them, and never for a change that was not theirs.
 4. Waste, per connection (Google and Microsoft): `ppc_search_terms_mine({ connection_id, params: {
    days: 28, protected_terms, target_cpa } })` first (`target_cpa` in currency units: the goals'
    `target_cpa_cents` / 100). Its `verdict.kind` decides the fix: `long_tail` is structure (match

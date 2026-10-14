@@ -15,7 +15,10 @@ callback listener mid-consent and the browser would land on a dead port):
 
 This opens the Hiveku consent page in a browser, where the user picks which accounts to grant
 access to and whether each should be read-only. Nothing is pasted; the keys come back over a
-one-time local callback and are stored encrypted in the plugin's private data directory.
+one-time local callback and are stored in the plugin's private data directory: encrypted on
+macOS and Linux (the encryption key is in the system keychain), protected by the Windows account
+on Windows, which has no keychain the plugin can use yet. Never tell a Windows user the keys are
+encrypted.
 
 It waits up to ten minutes. If the tool prints a URL because it could not open a browser (SSH,
 headless), show that URL to the user and keep waiting - they can open it from any browser on the
