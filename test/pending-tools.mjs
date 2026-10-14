@@ -420,6 +420,10 @@ export const PENDING_TOOLS = new Map([
   // deployed; index regenerated at 2151 tools, project_vcs_status joined the
   // read-only list as a GET); entries deleted.
 
+  // PPC-OVERRIDE: landed in the live index on 2026-10-13 (MCP #211, 91834b6, deployed; index
+  // regenerated in release 0.27.47, ppc_recent_changes joined the read-only list as a GET);
+  // entries deleted.
+
   // AB-DELETE: landed in the live index on 2026-10-10 (MCP #194, a7f2fc9,
   // deployed; index regenerated at 2274 tools in release 0.27.29; a DELETE,
   // so the read-only list did not change); entry deleted.

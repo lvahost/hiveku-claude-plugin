@@ -1005,11 +1005,23 @@ const AB_TEST_WRITES_THAT_ASK = ['project_ab_test_create', 'project_ab_test_upda
 // permanent once a build is uploaded, and the Apple account decides who publishes the app.
 const MOBILE_WRITES_THAT_ASK = ['mobile_app_sdk_upgrade', 'mobile_app_identity_set', 'mobile_app_apple_account_set'];
 
-test('the always-ask set is exactly the memory, form-capture and indexing writes, the secrets reveal, the A/B test writes and the mobile app writes', () => {
+// The PPC change ledger's override: a person's yes to going over someone else's recent change.
+const PPC_OVERRIDE_THAT_ASKS = ['ppc_recent_change_override'];
+
+test('the always-ask set is exactly the memory, form-capture and indexing writes, the secrets reveal, the A/B test writes, the mobile app writes and the PPC override', () => {
   assert.deepEqual(
     [...ALWAYS_ASK_WRITES.keys()].sort(),
-    [...MEMORY_WRITES_THAT_ASK, ...FORM_CAPTURE_WRITES_THAT_ASK, ...INDEXING_WRITES_THAT_ASK, ...SECRETS_REVEAL_THAT_ASKS, ...AB_TEST_WRITES_THAT_ASK, ...MOBILE_WRITES_THAT_ASK].sort(),
+    [...MEMORY_WRITES_THAT_ASK, ...FORM_CAPTURE_WRITES_THAT_ASK, ...INDEXING_WRITES_THAT_ASK, ...SECRETS_REVEAL_THAT_ASKS, ...AB_TEST_WRITES_THAT_ASK, ...MOBILE_WRITES_THAT_ASK, ...PPC_OVERRIDE_THAT_ASKS].sort(),
   );
+});
+
+test('the PPC override asks on a direct call with no guardrails file, and through a batch', () => {
+  const cwd = folderWith(undefined);
+  const direct = decideWithGuardrails({ ...payload('ppc_recent_change_override', cwd), tool_input: { override_token: 'pco1~a~b' } });
+  assert.equal(direct?.hookSpecificOutput?.permissionDecision, 'ask');
+  assert.match(direct.hookSpecificOutput.permissionDecisionReason, /^ppc_recent_change_override /);
+  const batch = decideForPayload({ tool_name: `${HIVEKU_TOOL_PREFIX}hiveku_batch`, tool_input: { calls: [{ tool: 'ppc_recent_change_override', args: {} }] } });
+  assert.equal(batch?.hookSpecificOutput?.permissionDecision, 'ask');
 });
 
 test('the secrets reveal asks on a direct call with no guardrails file, and through a batch', () => {

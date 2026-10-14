@@ -5,8 +5,8 @@
     "mcp__plugin_hiveku_hk__",
     "mcp__hiveku__"
   ],
-  "plugin_version": "0.27.46",
-  "count": 281,
+  "plugin_version": "0.27.47",
+  "count": 282,
   "tools": [
     {
       "name": "deploy_site",
@@ -297,6 +297,11 @@
       "name": "ppc_platform_keyword_bid_update",
       "method": "POST",
       "why_gated": "changes ad spend"
+    },
+    {
+      "name": "ppc_recent_change_override",
+      "method": "POST",
+      "why_gated": "turns a refused PPC change's override token into a person's yes: the same change sent again within 15 minutes goes over someone else's recent change to that budget, bid or setting, which the hold (7 days for budget and bidding, 24 hours for the rest) exists to protect"
     },
     {
       "name": "ppc_bidding_strategy_update",

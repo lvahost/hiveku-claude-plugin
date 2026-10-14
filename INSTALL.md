@@ -176,6 +176,7 @@ Put this in `.claude/settings.json` (per project) or `~/.claude/settings.json` (
       "mcp__plugin_hiveku_hk__ppc_bid_modifier_update",
       "mcp__plugin_hiveku_hk__ppc_keyword_bid_update",
       "mcp__plugin_hiveku_hk__ppc_platform_keyword_bid_update",
+      "mcp__plugin_hiveku_hk__ppc_recent_change_override",
       "mcp__plugin_hiveku_hk__ppc_bidding_strategy_update",
       "mcp__plugin_hiveku_hk__ppc_platform_bidding_strategy_update",
       "mcp__plugin_hiveku_hk__ppc_campaign_create",
