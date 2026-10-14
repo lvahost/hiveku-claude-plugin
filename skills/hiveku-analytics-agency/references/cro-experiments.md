@@ -184,16 +184,26 @@ task IS the experiment record; an A/B test's task names the test.
 
 A test shows a second version of a page, at its own address, to a share of NEW visitors and
 counts which version brings more conversions, on that page and anywhere on the site afterwards.
-The split runs at Hiveku's edge with no deploy, and every visitor keeps the version they got.
-- **Can this site run one?** `project_ab_tests_list({ project_id })`: `can_start_tests` and,
-  when false, `why_not` in plain words (external or static hosting, or the edge not ready). Older
-  Pages Router pages cannot be tested. A page that already belongs to a running or paused test
-  cannot get a second one.
+The split runs at Hiveku's edge with no deploy, and every visitor counted keeps the version they
+got for 90 days.
+- **Can this site run one?** `project_ab_tests_list({ project_id })`: `can_start_tests` (a test
+  for everyone) and, when false, `why_not` in plain words (external or static hosting, or the edge
+  not ready). A route or a test for some visitors also needs the edge to read audiences:
+  `audience_ready`, and when false `audience_why_not`; until then it cannot start or resume. Older
+  Pages Router pages cannot be tested. A page can run one test for everyone, plus routes and tests
+  limited to some visitors (below); a second version belongs to one test only.
+- **Main only.** Tests run on the live site, which is always built from Main: a test copy is
+  saved to Main, and a page that exists only on another branch cannot be tested until it is merged
+  and deployed. Say so when the user is working on a branch.
 - **The second version** is either an existing page (`variant_path`) or a test copy
   (`make_copy: true` on `project_ab_test_create`): the page's code copied to the next free
   address (/pricing -> /pricing-b) as one version, NOT deployed. The change itself goes through
-  /hiveku:code on the copy's files, then a production deploy; the test cannot start until the
-  copy answers on the live site.
+  /hiveku:code on the copy's files (never the original's), then a production deploy; the test
+  cannot start until the copy answers on the live site.
+- **During a test**: while a test runs or is paused, change neither page, the original or the
+  second version. A change mixes two versions into one result, and nothing in the read-out shows
+  it. If a page must change, end the test (or end it and start a new one) and tell the user why.
+  The same holds for a route that keeps a share on the original.
 - **The goal** defaults to leads anywhere on the site (a form or a call). Narrower goals: a form
   on the tested page, reaching a page (a thank-you page), a marked button, calls, or a defined
   conversion. Pick the one the hypothesis predicts; the others can be added as secondary goals.
@@ -208,15 +218,52 @@ The split runs at Hiveku's edge with no deploy, and every visitor keeps the vers
   the lift with its 95% range, the chance it beats the original and a verdict. Quote
   `verdict.headline` as it is; never call a winner before `verdict.kind` is `winning` or `won`
   (the floors: 7 days, 100 visitors per version, 20 conversions). Visitors who have not allowed
-  analytics in the site's Hiveku cookie banner see the original and are not counted.
+  analytics in the site's Hiveku cookie banner are not counted, and a split test shows them the
+  original (a route still sends them).
 - **Ending**: keep the original, or send everyone to the winner, which adds a 302 redirect from
   the original page on the Redirects page. Making the winner the page itself later is a code
   change through /hiveku:code. Wins AND losses go to the `marketing` memory, as for any
-  experiment.
+  experiment. A route, or a test limited to some visitors, can only end keeping the original:
+  its audience is not everyone (`audience_end`).
 - **Deleting**: `project_ab_test_delete` removes a draft, or an ended test together with its
   results, for good; a running or paused test must end first. Same preview, then the user's yes,
   then `confirm: true`. The pages stay on the site, a test copy included. Record what the test
   taught in memory BEFORE deleting an ended one: its results go with it.
+
+### Routes and tests for some visitors (where visitors came from)
+
+A route sends the visitors who came from somewhere to a page made for them, at the same edge and
+with no flash: Google Ads visitors who land on / see /google, everyone else sees / as usual. The
+same `audience` can also limit an ordinary A/B test, for example to phones only.
+- **Who can be matched** (every condition must hold, up to 5): the ad platform, read from the
+  ad's click id in the address (Google, Microsoft, Meta, TikTok, LinkedIn, X); a UTM tag (source,
+  medium or campaign; is, or contains); the referring site; the device (phone, tablet,
+  computer); the country; the state or region. A click id counts as an ad click only when the
+  visit's utm_medium does not say it was unpaid (social, organic, referral, email, newsletter,
+  organic_social, organic-social, organic social, post or bio), the same rule Hiveku's own source
+  reports use: an organic post's link can carry a click id too. The exact shapes are in the
+  description of the `audience` parameter itself (on `project_ab_test_create` and
+  `project_ab_test_update`).
+- **Make one**: `project_ab_test_create({ project_id, kind: "source_route", page_path,
+  variant_path, audience })`, a draft like any test (a route without an audience is refused);
+  `make_copy: true` makes the routed page as a copy of the original to edit for those visitors.
+- **Measure it or not**: `holdout_percent` 5 to 50 keeps that share of the matched visitors on
+  the original, and the route then reads out like a test (same floors, same verdict rules). Only
+  visitors who allowed analytics can be kept: the others are always sent. With 0 (the default)
+  every match is sent and the read-out is routing only: how many went and how many converted,
+  with nothing to compare (no lift, chance or p-value). A route that starts keeping a share later
+  is compared only on the visitors from then on (`comparedFrom` in its results). Recommend a
+  holdout whenever the user wants to know whether the page made for them is better.
+- **Order on one page**: routes first and tests for some visitors next, both in the order they
+  started, then the one test for everyone; the first that applies wins.
+- **Who stays routed**: a route sends matching visitors whether or not they allowed analytics
+  (only counting needs that). A visitor who allowed it is remembered for the visit when nobody is
+  kept on the original, and for 90 days when a share is kept: a later visit that does not match
+  (no click id, say) is still routed, or kept on the original. One who did not, or who withdrew
+  it, is sent only on a request that carries the match.
+- **Changing it**: who it is for changes only on a draft. A live route's holdout changes with
+  `project_ab_test_update` (`holdout_percent`, with the preview and the user's yes); 0 stops
+  comparing and keeps routing. Ending a route stops routing.
 
 ### One worked experiment, end to end
 
@@ -248,10 +295,10 @@ Say these plainly, before the client asks, each with what you CAN do instead:
 - **Outside a test, every change reaches 100% of visitors.** A change shipped without a test is
   seen by everyone at once. That is why the before/after backlog ships ONE experiment per page
   per review window: two simultaneous changes on one page cannot be attributed to either. A
-  running test owns its page: change neither version until it ends.
+  running or paused test owns its page: change neither version until it ends.
 - **A test counts consenting visitors only.** Visitors who have not allowed analytics in the
-  site's Hiveku cookie banner see the original and are not counted; say so beside a test's
-  numbers.
+  site's Hiveku cookie banner are not counted (a split test shows them the original; a route
+  still sends them); say so beside a test's numbers.
 - **No heatmaps or scroll maps.** No tool for this - it lives in the dashboard's behavior view,
   not the MCP. The structural substitute is the audit's friction and cta sections, which
   localize above-fold and form problems without watching anyone.

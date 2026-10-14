@@ -72,8 +72,10 @@ as a hypothesis, scored with `ice_score`, persisted as a pm_task in the backlog.
    three ICE components and score, evidence - with absolute numbers beside every percentage on
    low-traffic pages (a 40% swing on 10 conversions is noise), and for each entry whether it
    runs as an A/B test (a Hiveku-hosted Next.js site with enough traffic; the method is in
-   `hiveku-analytics-agency/references/cro-experiments.md`, Page A/B tests) or as a
-   before/after. Nothing has been created yet. On
+   `hiveku-analytics-agency/references/cro-experiments.md`, Page A/B tests), as a route (the
+   visitors from one source, such as one ad platform, sent to a page made for them, with a share
+   kept on the original to compare; same file, Routes) or as a before/after. Nothing has been
+   created yet. On
    an explicit yes, `pm_tasks_create({ project_id, title })` one task per APPROVED experiment -
    confirm the exact
    list first, then one confirmation covers the batch (tasks are reversible), but say which
