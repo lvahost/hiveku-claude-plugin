@@ -6,7 +6,10 @@ Build an automation for THIS account$ARGUMENTS. You do the build; the human appr
 Never hand-author a whole `{nodes, edges}` blob. Use the granular tools so every change is
 version-snapshotted and server-validated.
 
-1. Context: `account_context_get({ domain: "workflow" })`. Then `workflow_list`. If something close
+1. Context: `account_context_get({ domain: "workflow" })`, then `account_usage_get`: tell the person
+   what the plan includes (`active_automations`, `automation_runs`), what is used and what happens
+   past the number (past the active automations, `workflow_enable` answers 402
+   `plan_limit_reached` and the workflow stays off). Then `workflow_list`. If something close
    already exists, `workflow_clone({ workflow_id, new_name, overrides? })` (clone starts disabled)
    beats rebuilding. It is also one way to reuse a Slack or Zapier webhook URL, which every API
    read shows as `'[redacted]'`: a clone copies each hidden value exactly as stored, and `overrides`

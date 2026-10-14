@@ -243,8 +243,10 @@ USE THE RESULT:
   the publishers trust the declared type over the extension); onto a post that already exists or is
   scheduled, `social_update_post({ post_id, media_urls, media_types })`, which REPLACES the whole
   media list (send every URL; omitting `media_types` keeps the old types) and 400s on a published
-  post. Check the platform's media rules first (TikTok posts land as inbox drafts; X posting is
-  Premium-gated).
+  post. Check the platform's media rules first (TikTok posts land as inbox drafts; X posts come
+  with every paid plan, Starter 5, Standard 30 and Premium 60 a month, Free none, and scheduled X
+  posts past the number move to the 1st of next month: `account_usage_get` has the `x_posts`
+  level).
 - Ads: image sets sized per placement; note ad platforms re-crop - keep the subject centered.
 - Site: for website projects use `assets_upload` (the S3/CDN lane) - the marketing Media Library and
   website-project assets are SEPARATE stores; download + re-upload when moving between them.

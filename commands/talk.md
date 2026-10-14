@@ -64,9 +64,11 @@ with the account's full hydration (persona, brand voice, memory, skills), which 
 
 `talk_to_department` is a WRITE-capable primitive (it runs an agent with its own full toolset), so a
 read-only key cannot use it - that is by design. Two other refusals read differently and need
-different handling: an entitlement refusal ("This account does not have access to the '<x>'
-department. Upgrade or enable it in the dashboard settings") is fixed in the dashboard, not by
-picking a different department; a timeout ("did not respond within Ns… may be cold-starting or
-overloaded") is transient, so wait 30s and retry once or split the ask, and if a partial answer came
-back in `response` alongside a stall message, salvage that rather than re-running the whole thing.
+different handling: an entitlement refusal ("This account cannot use the '<x>' department: its
+plan does not include it, or it is not released to this account yet. list_departments shows what it
+can use; an owner or admin sees the plan options in Settings > Billing.") is for an owner or admin
+in Settings > Billing, not fixed by picking a different department; a timeout ("did not respond
+within Ns… may be cold-starting or overloaded") is transient, so wait 30s and retry once or split
+the ask, and if a partial answer came back in `response` alongside a stall message, salvage that
+rather than re-running the whole thing.
 Show drafts and confirm before anything leaves the account (email/social/outbound sends).

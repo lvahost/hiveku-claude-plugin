@@ -16,7 +16,9 @@ has a documented failure mode.
    and point them to the platform's own setup guide instead of building; never offer Hiveku's team
    to set it up. The business pays for SmartLead itself (the platform Hiveku's Outbound page
    connects; Instantly works on its own, not through Hiveku) and buys its own inboxes on separate
-   sending domains - never its main domain. Full guide: `hiveku-outbound-agency` SKILL 1a.
+   sending domains - never its main domain. Outbound is a paid add-on at $125 a month, by request
+   (hello@hiveku.com); without it, outbound tools answer 402 `outbound_not_enabled` (limit_kind
+   add_on). Full guide: `hiveku-outbound-agency` SKILL 1a.
 1. Wiring: `outbound_list_integrations` → the `integration_id` (read it here, not off old campaign
    rows). Then `outbound_list_campaigns({ search })` for a duplicate-name check - the POST creates a
    REAL upstream campaign every time it runs. `outbound_list_email_accounts` for a quick mailbox

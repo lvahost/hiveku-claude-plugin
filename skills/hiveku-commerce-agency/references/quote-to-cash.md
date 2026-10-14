@@ -61,8 +61,9 @@ or a rounding-error tax line on a document you already sent.
   same key returns `idempotent_replay=true` instead of a second email landing in the
   client's inbox.
 - `attach_pdf: true` renders and attaches the PDF; text plus the portal link is otherwise
-  sufficient. The SMS branch requires the voice add-on enabled on the account - an
-  SMS-channel failure on an account without it is entitlement, not payload.
+  sufficient. The SMS branch needs phones set up on the account (they come with every paid
+  plan, and an owner or admin sets them up in Communications): a 402 `voice_not_enabled` on the
+  SMS channel is that, not the payload.
 - The portal token TTL is 30 DAYS, regardless of `expires_at`. A quote with a 60-day
   expiry has a dead client link on day 31. Never set an expiry past 30 days without
   planning a re-send.

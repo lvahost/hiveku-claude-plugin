@@ -234,8 +234,10 @@ check day. `check_frequency` defaults to weekly.
 | H LLM-scored, budget-gated | sweeps | `seo_eeat_scores`, `seo_aeo_brand_audit` daily budget |
 | I one search, 24h cooldown | listings footprint | `seo_citations_audit` |
 
-The DataForSEO balance can go NEGATIVE: every metered call then returns 402 with no per-tool
-warning; 503 `dataforseo_unconfigured` means no credentials. Neither means "clean" or "no data".
+A metered call the plan refuses returns 402 `seo_research_limit` (limit_kind plan_limit): this
+month's research lookups are used up; they start again next month, and the next plan has more
+(`account_usage_get`, `research_lookups`). Nothing was spent; do not retry it. 503
+`dataforseo_unconfigured` means no credentials. Neither means "clean" or "no data".
 
 ## Dispatch table - play, first tools, then load the reference
 
