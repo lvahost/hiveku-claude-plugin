@@ -29,8 +29,9 @@ failure mode this play exists to prevent. Follow the **hiveku-analytics-agency**
      both windows: not leads, so not a drop - but a lead form sitting there is a wrong rule (see
      the capture state below).
    - Delivery pipeline: `workflow_runs_recent({ status: "failed", since })` - a failed form
-     workflow means the lead was captured and nobody was told, which reads as "down" from the
-     inbox. If a lead-carrying workflow was PAUSED during the window,
+     workflow means the lead was captured but the workflow's own steps (a CRM write, a hand-off,
+     its own email) did not run; Hiveku's lead email still went out unless the form is muted or
+     the site's lead emails are off, so read the lead's Who was told line before calling it down. If a lead-carrying workflow was PAUSED during the window,
      `workflow_stranded_list({ workflow_id })` - a paused workflow's webhook still accepts
      payloads that produce no CRM record and no notification; those leads are invisible, not
      lost. It takes ONE workflow id; there is no account-wide stranded sweep.

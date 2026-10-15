@@ -331,6 +331,27 @@
  *   both entries; tool-names.test.mjs forces the deletion.
  *     VERSIONS-W2  project_vcs_status (read-only), project_vcs_rollback
  *                  (dry run unless dry_run: false; apply always asks).
+ *
+ *   Lead emails (2026-10-15, HK-255): who gets a website's lead emails
+ *   (Website > Forms > Notifications). The contract is the builder's
+ *   GET|PATCH /api/olympus/marketing/form-notifications (builder #1403); the
+ *   MCP declarations are hiveku-mcp-api-server src/tools/
+ *   form-notification-tools.ts (MCP #228), the write for a person's own key
+ *   only and refused inside hiveku_batch. The write is on ALWAYS_ASK_WRITES
+ *   (lib/tool-safety.mjs) and on the ask list (data/permission-critical-
+ *   tools.json, mirrored in INSTALL.md and the Codex plugin's prompts), which
+ *   is why both of those tests accept it as a PENDING name until the index
+ *   carries it, and why this merges only after MCP #228 is deployed. Until
+ *   this release and the Codex prompt are out, the builder refuses every
+ *   change (403 agent_changes_not_enabled). Spelled in prose by both forms
+ *   references and /hiveku:form-capture. Release step, after the MCP deploy:
+ *   regenerate the index and the read-only list from the live server
+ *   (marketing_form_notifications_get is a GET, so it joins the read-only
+ *   list), then delete both entries; tool-names.test.mjs forces the deletion.
+ *     LEAD-EMAILS-1  marketing_form_notifications_get (read-only),
+ *                    marketing_form_notifications_update (PATCH; merges; at
+ *                    most 25 forms; held for agents until the asking
+ *                    releases are out).
  */
 const SEO_SINCE = '2026-08-30';
 const seo = (batch) => ({ since: SEO_SINCE, batch });
@@ -427,4 +448,8 @@ export const PENDING_TOOLS = new Map([
   // AB-DELETE: landed in the live index on 2026-10-10 (MCP #194, a7f2fc9,
   // deployed; index regenerated at 2274 tools in release 0.27.29; a DELETE,
   // so the read-only list did not change); entry deleted.
+
+  // LEAD-EMAILS-1 (HK-255): delete both once the regenerated index carries them.
+  ['marketing_form_notifications_get', { since: '2026-10-15', batch: 'LEAD-EMAILS-1' }],
+  ['marketing_form_notifications_update', { since: '2026-10-15', batch: 'LEAD-EMAILS-1' }],
 ]);

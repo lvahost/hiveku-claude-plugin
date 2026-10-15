@@ -60,7 +60,7 @@ operator should DO, not a data dump.
  - Automations: `workflow_runs_recent({ status: "failed", since: <last 24h> })` is account-wide across
      every workflow, so one call tells you whether a form notification, a CRM write, or a scheduled
      report silently stopped overnight. A failed automation is invisible everywhere else in this brief:
-     the lead is captured and nobody was told. Status vocabulary is
+     the lead is captured, but the workflow's own steps (a CRM write, a hand-off, its own email) did not run. Status vocabulary is
      `pending | waiting | running | completed | failed | cancelled` plus `stopped_*`. There is no
      `queued` and no `succeeded`, and filtering on those returns an empty list that reads as healthy.
      A `stopped_paused` row means an internal EVENT trigger fired while the workflow was paused. The
