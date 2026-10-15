@@ -5,8 +5,8 @@
     "mcp__plugin_hiveku_hk__",
     "mcp__hiveku__"
   ],
-  "plugin_version": "0.27.52",
-  "count": 282,
+  "plugin_version": "0.27.53",
+  "count": 283,
   "tools": [
     {
       "name": "deploy_site",
@@ -1172,6 +1172,11 @@
       "name": "marketing_form_capture_purge",
       "method": "POST",
       "why_gated": "permanently erases captured form submissions, their files and CRM notes, and the contacts that exist only because of them; there is no undo (a dry run is the default, and executing needs the confirm token from one)"
+    },
+    {
+      "name": "marketing_form_notifications_update",
+      "method": "PATCH",
+      "why_gated": "changes who gets a site's lead emails (Website > Forms > Notifications): \"Don't email anyone\" or a muted form stops the lead email, Slack post, phone alert and visitor's automatic reply from the next lead, and a changed or emptied list sends leads to other people (an empty list goes to the billing email, else every member)"
     },
     {
       "name": "social_publish_post",

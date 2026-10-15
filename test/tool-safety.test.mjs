@@ -1008,11 +1008,25 @@ const MOBILE_WRITES_THAT_ASK = ['mobile_app_sdk_upgrade', 'mobile_app_identity_s
 // The PPC change ledger's override: a person's yes to going over someone else's recent change.
 const PPC_OVERRIDE_THAT_ASKS = ['ppc_recent_change_override'];
 
-test('the always-ask set is exactly the memory, form-capture and indexing writes, the secrets reveal, the A/B test writes, the mobile app writes and the PPC override', () => {
+// Who gets a site's lead emails (HK-255): turning them off, muting a form or rerouting its leads.
+const LEAD_EMAIL_WRITES_THAT_ASK = ['marketing_form_notifications_update'];
+
+test('the always-ask set is exactly the memory, form-capture and indexing writes, the secrets reveal, the A/B test writes, the mobile app writes, the PPC override and the lead-email change', () => {
   assert.deepEqual(
     [...ALWAYS_ASK_WRITES.keys()].sort(),
-    [...MEMORY_WRITES_THAT_ASK, ...FORM_CAPTURE_WRITES_THAT_ASK, ...INDEXING_WRITES_THAT_ASK, ...SECRETS_REVEAL_THAT_ASKS, ...AB_TEST_WRITES_THAT_ASK, ...MOBILE_WRITES_THAT_ASK, ...PPC_OVERRIDE_THAT_ASKS].sort(),
+    [...MEMORY_WRITES_THAT_ASK, ...FORM_CAPTURE_WRITES_THAT_ASK, ...INDEXING_WRITES_THAT_ASK, ...SECRETS_REVEAL_THAT_ASKS, ...AB_TEST_WRITES_THAT_ASK, ...MOBILE_WRITES_THAT_ASK, ...PPC_OVERRIDE_THAT_ASKS, ...LEAD_EMAIL_WRITES_THAT_ASK].sort(),
   );
+});
+
+test('the lead-email change asks on a direct call with no guardrails file, and through a batch; its read stays pre-approved', () => {
+  const cwd = folderWith(undefined);
+  const direct = decideWithGuardrails({ ...payload('marketing_form_notifications_update', cwd), tool_input: { project_id: 'p', enabled: false } });
+  assert.equal(direct?.hookSpecificOutput?.permissionDecision, 'ask');
+  assert.match(direct.hookSpecificOutput.permissionDecisionReason, /^marketing_form_notifications_update /);
+  assert.match(direct.hookSpecificOutput.permissionDecisionReason, /who gets this site's lead emails/);
+  const batch = decideForPayload({ tool_name: `${HIVEKU_TOOL_PREFIX}hiveku_batch`, tool_input: { calls: [{ tool: 'marketing_form_notifications_update', args: {} }] } });
+  assert.equal(batch?.hookSpecificOutput?.permissionDecision, 'ask');
+  assert.notEqual(decision(decideWithGuardrails({ ...payload('marketing_form_notifications_get', cwd), tool_input: { project_id: 'p' } })), 'ask');
 });
 
 test('the PPC override asks on a direct call with no guardrails file, and through a batch', () => {
