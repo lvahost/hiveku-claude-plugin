@@ -10,7 +10,8 @@ open that only at step 3.
    protected terms; `memory_list({ domain: "seo" })` for the seed vocabulary, rejected terms and
    location code a prior session agreed. `seo_list_projects` for the SEO tracking `project_id`;
    `seo_connections_list` to confirm DataForSEO is configured (a 503 `dataforseo_unconfigured` later
-   means it is not; a 402 means the balance is negative; neither is "no keywords").
+   means it is not; a 402 `seo_research_limit` means this month's research lookups are used up -
+   they start again next month, and the next plan has more; neither is "no keywords").
 2. Seeds per section 1.2: offer, problem, comparison and geography seeds, in the customer's words
    (the avatars carry them). Validate vocabulary free: `web_search` two or three problem seeds and
    read the language in the results; `web_scrape` the client's service pages and one rival's for the

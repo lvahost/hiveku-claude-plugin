@@ -10,7 +10,9 @@ methodology lives in hiveku-outbound-agency SKILL §3 - load the skill before a 
    me", bought, rented or scraped rows, data-provider contacts, people found online - are emailed
    only through Outbound: a cold email platform the business pays for (SmartLead through Hiveku's
    Outbound page; Instantly works on its own), from inboxes on separate domains. Never through
-   Hiveku email marketing, never from the business's main domain. Ask how any list the user hands
+   Hiveku email marketing, never from the business's main domain. Outbound is a paid add-on at
+   $125 a month, by request (hello@hiveku.com); without it, outbound tools answer 402
+   `outbound_not_enabled` (limit_kind add_on). Ask how any list the user hands
    you was built, and whether the business has run cold email before: Outbound is for businesses
    that already know it, so a first-timer starts with the platform's own setup guide. Never offer
    Hiveku's team to set it up (hiveku-outbound-agency SKILL 1a).

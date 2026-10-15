@@ -128,7 +128,9 @@ the `email-a-list` playbook: `hiveku_playbook_get({ playbook: "email-a-list" })`
 - **What connects today:** Hiveku's Outbound page connects SmartLead: it runs the campaigns and
   sorts the replies inside Hiveku. Instantly is recommended too, but it is not connected to Hiveku
   yet; it works on its own. The business subscribes to the platform itself and buys its sending
-  inboxes and separate sending domains separately: Outbound includes neither.
+  inboxes and separate sending domains separately: Outbound includes neither. Outbound is a paid
+  add-on at $125 a month, by request (hello@hiveku.com); without it, outbound tools answer 402
+  `outbound_not_enabled` (limit_kind add_on).
 - **Experience first.** Outbound is for businesses that already know cold email. Before suggesting
   it, ask whether they have run cold email before; if not, start them with the platform's own setup
   guide. Never offer Hiveku's team to set cold email up: the Hiveku team offers that itself.

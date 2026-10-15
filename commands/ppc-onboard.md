@@ -6,7 +6,9 @@ Onboarding audit for an ad account this operator has not worked before. Follow t
 optimize yet"): audited before touched, measured before optimized. Context:
 `account_context_get({ domain: "ppc" })` + `memory_list({ domain: "ppc" })` for anything already
 on record (protected campaigns, approval thresholds), and `ppc_goals_get` for the recorded targets
-(its `missing[]` is the list of questions for step 6).
+(its `missing[]` is the list of questions for step 6). Call `account_usage_get` first too, and tell
+the person what the plan includes (its `ad_campaigns` level), what is used and what happens past
+the number before the audit recommends a new campaign.
 1. `ppc_connection_list`, then `ppc_connection_test` on anything suspect, then
    `ppc_sync({ connection_id })` - nothing below is trusted on a stale connection. On Google,
    `ppc_connection_test` also reports `data_manager_scope`: `missing` comes with a `needs_reconnect`

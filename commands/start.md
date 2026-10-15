@@ -32,11 +32,12 @@ per-client folders exist.
 - `connections_status` — which integrations are actually live (Google Ads, GSC, GA4, email, voice,
   social). This is the whole basis of a useful answer: a suggestion that depends on a connection
   they have not made is noise.
-- `account_entitlements` — which sections their plan actually includes, so you never propose work
-  behind a lock
+- `account_usage_get` — where the account stands against its plan: what it includes, what is used,
+  and which numbers are near or at the limit (`near_limit`, `at_limit`). Every paid plan opens
+  every section except the Outbound add-on, so read the numbers, not section locks
 
-If a scoped key hides `connections_status` or `account_entitlements`, fall back to `list_departments`
-and say your read is coarser because the key is scoped.
+If a scoped key hides `connections_status`, fall back to `list_departments` and say your read is
+coarser because the key is scoped. Every profile has `account_usage_get`.
 
 ★ **Stop there.** Do NOT go on to list campaigns, contacts, tickets and posts "to get a picture".
 That is the survey habit the orient skill forbids: it costs a fortune, fills the context, and tells
@@ -45,14 +46,15 @@ you nothing you cannot get by asking the person what they care about.
 **3. Offer five to eight situations, not a tool list.**
 
 Each one is: a plain-language situation, what it would tell them, and the sentence to say. Order by
-what their connections suggest is most alive. Drop anything their connections or entitlements do not
-support — a silent omission is better than a suggestion that 404s.
+what their connections suggest is most alive. Drop anything their connections or plan do not
+support — a silent omission is better than a suggestion that 404s. A level at its limit
+(`at_limit`) gets one line instead: what waits, and the next plan with its number.
 
 Draw from these shapes, and adapt the wording to the account:
 
 | Situation | What it answers | Chain behind it |
 |---|---|---|
-| Morning check | "what state is my account in?" | `get_account_info` → `account_entitlements` → `account_audit_health` → `connections_status` |
+| Morning check | "what state is my account in?" | `get_account_info` → `account_usage_get` → `account_audit_health` → `connections_status` |
 | Paid ads review | "are the ads healthy, any wasted spend?" | `ppc_connection_list` → `ppc_digest` → `campaign_list` → `conversion_tracking_status` → `search_terms` |
 | Are leads recording? | "is conversion tracking actually working?" | `seo_ga4_key_events_list` → `seo_gtm_status` → `analytics_channel_scorecard` → `voice_call_tracking_diagnose` |
 | SEO movement | "are rankings moving, is GSC flowing?" | `seo_connections_list` → `rankings_list` → `gsc_search_analytics` → `local_search_performance` |

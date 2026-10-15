@@ -236,6 +236,10 @@ const KNOWN_NON_TOOLS = new Map([
   // technical-seo-blind-spots.md: "no writer for the `seo_site_audits` table" - the
   // dashboard audit table the Olympus audit rail reads and nothing writes.
   ['seo_site_audits', 'table'],
+  // The 402 code a metered research call answers when the plan has no research
+  // or this month's research lookups are used up (builder seo/research/reserve,
+  // limit_kind plan_limit; agent plan and usage, 2026-10-14). An error code.
+  ['seo_research_limit', 'error'],
   // seo_connection_test is NOT here on purpose: orient's integrations.md names
   // it as "does not exist" (true today) but it is contracted in SEO batch S3,
   // so it lives in PENDING_TOOLS, and that prose flips when S3 lands.

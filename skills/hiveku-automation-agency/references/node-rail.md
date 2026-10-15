@@ -1620,15 +1620,18 @@ Building on this rail is not free. It creates:
 
 And it spends:
 
-- **Run quota.** A real run checks the account's workflow-run limit and increments the counter.
-  The default included allowance is 100 runs per month. Over that, if the account's overage
-  switch is on (it defaults to on), extra runs keep working and bill in arrears at $0.01 each.
-  If it is off, the run is refused at the limit. Dry runs are free: the quota is not debited.
-- **The client's active-automation allowance.** The plan cap counts ENABLED workflows. It is
-  enforced on the dashboard's own create and enable route, not on the Olympus route, so your
-  MCP calls will never be refused by it. The failure lands on the **client**: the next
-  automation they try to create or enable in the UI is the one that gets blocked, by an
-  ad-hoc workflow you left switched on.
+- **Run quota.** A real run checks the account's monthly automation runs and counts one. The
+  plan's number: Free 25, Starter 500, Standard 2,500, Premium 10,000 a month
+  (`account_usage_get`, `automation_runs`). Past it, an account that pays for its plan keeps
+  running, and each run beyond is billed on its next invoice at the level's `rate` ($0.01 a run
+  today); Free, and an account that does not pay for its plan (a signup trial, a lapsed one), is
+  refused until the 1st, and the refused run is recorded as stopped. Dry runs are free: the
+  count is not touched.
+- **The client's active-automation allowance.** The plan's number counts workflows switched on
+  (`active_automations`). Past it, `workflow_enable` answers 402 `plan_limit_reached`
+  (limit_kind plan_limit) and the workflow stays off; the dashboard's switch waits the same way.
+  An ad-hoc workflow you leave switched on holds one of the client's slots, so the next
+  automation they try to switch on is the one that waits.
 
 ### 7.3 The hygiene rules
 

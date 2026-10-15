@@ -31,7 +31,8 @@ reports an error at any point.
    TRANSACTIONAL lane rather than the marketing campaign lane, so the two can legitimately disagree
    about everything except suspension, which is the one gate they share. Only Hiveku staff lift a
    suspension. Sequence sends go through the
-   same CAN-SPAM validation and the same monthly plan cap as campaigns.
+   same CAN-SPAM validation and the same monthly plan cap as campaigns: call `account_usage_get`
+   first and tell the person what the plan includes, what is used and what happens past the number.
 2. **Create:** `email_sequence_create({ name, trigger_kind, trigger_config })`. trigger_kind is
    `manual` (you enroll via the API), `tag_added`, `form_submit`, or `workflow`. It is created
    INACTIVE.
