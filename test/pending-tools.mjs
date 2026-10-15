@@ -351,7 +351,8 @@
  *     LEAD-EMAILS-1  marketing_form_notifications_get (read-only),
  *                    marketing_form_notifications_update (PATCH; merges; at
  *                    most 25 forms; held for agents until the asking
- *                    releases are out).
+ *                    releases are out). Landed in the live index on
+ *                    2026-10-15; entries deleted.
  */
 const SEO_SINCE = '2026-08-30';
 const seo = (batch) => ({ since: SEO_SINCE, batch });
@@ -449,7 +450,7 @@ export const PENDING_TOOLS = new Map([
   // deployed; index regenerated at 2274 tools in release 0.27.29; a DELETE,
   // so the read-only list did not change); entry deleted.
 
-  // LEAD-EMAILS-1 (HK-255): delete both once the regenerated index carries them.
-  ['marketing_form_notifications_get', { since: '2026-10-15', batch: 'LEAD-EMAILS-1' }],
-  ['marketing_form_notifications_update', { since: '2026-10-15', batch: 'LEAD-EMAILS-1' }],
+  // LEAD-EMAILS-1: landed in the live index on 2026-10-15 (MCP #228, 801c7eb, deployed; index
+  // regenerated at 2288 tools, and marketing_form_notifications_get joined the read-only list as a
+  // GET); entries deleted.
 ]);
