@@ -4111,14 +4111,14 @@
       "dept": "discussion",
       "method": "GET",
       "timeoutMs": null,
-      "description": "List project discussion threads with filters for status, category, priority, and search"
+      "description": "List the Discussions channels this workspace reads: its own, and the channels other workspaces have shared into it, with filters for status, category, priority, pinned and search. A channel shared into this workspace is listed with shared: true and owner { account_id, name }, the workspace it belongs to; this workspace's own channels carry shared: false. Its people read and reply in a shared channel as in their own (discussion_reply), while its name and settings stay with the owning workspace. A shared channel is in no project here and reads as not converted to a task, so a project_id filter lists none of them. Direct and group messages, staff-only and private channels are never listed. Read-only."
     },
     {
       "name": "discussion_reply",
       "dept": "discussion",
       "method": "POST",
       "timeoutMs": null,
-      "description": "Reply to a discussion thread"
+      "description": "Reply in a Discussions channel, written as the person who created this connection. Works in this workspace's own channels and in a channel another workspace has shared into this one (discussion_list marks it shared: true, with its owner): the person's role in this workspace decides (in the owning workspace, when they belong to it too), and the reply's @mentions reach this workspace's people and the channel's. A shared channel's name and settings stay with the owning workspace. Once a share stops, its channel answers 404, like a channel that does not exist. Direct and group messages, staff-only and private channels answer 404 too. A connection with no person behind it gets 403 person_required."
     },
     {
       "name": "domain_analytics_technologies_available_filters",
