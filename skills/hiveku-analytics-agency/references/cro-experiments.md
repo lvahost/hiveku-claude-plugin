@@ -197,16 +197,40 @@ got for 90 days.
   and deployed. Say so when the user is working on a branch.
 - **The second version** is either an existing page (`variant_path`) or a test copy
   (`make_copy: true` on `project_ab_test_create`): the page's code copied to the next free
-  address (/pricing -> /pricing-b) as one version, NOT deployed. The change itself goes through
-  /hiveku:code on the copy's files (never the original's), then a production deploy; the test
-  cannot start until the copy answers on the live site.
+  address (/pricing -> /pricing-b) as one version, NOT deployed. An address an older test or an
+  active redirect uses is never taken: the copy gets the next free letter (-c, -d, ...). The change
+  itself goes through /hiveku:code on the copy's files (never the original's), then a production
+  deploy; the test cannot start until the copy answers on the live site.
 - **During a test**: while a test runs or is paused, change neither page, the original or the
   second version. A change mixes two versions into one result, and nothing in the read-out shows
   it. If a page must change, end the test (or end it and start a new one) and tell the user why.
   The same holds for a route that keeps a share on the original.
-- **The goal** defaults to leads anywhere on the site (a form or a call). Narrower goals: a form
-  on the tested page, reaching a page (a thank-you page), a marked button, calls, or a defined
-  conversion. Pick the one the hypothesis predicts; the others can be added as secondary goals.
+- **Edit warnings**: a save is never refused for a test, but every file save (the dashboard, the
+  editor, the visual editor, the file tools and a version commit) that touches a page of a running
+  or paused test answers `abTestWarnings`: one plain sentence per test whose page the saved files
+  belong to. Read it as a stop: tell the user, and undo the change or end the test. A production
+  deploy that changes a tested page records `page_changed` on the test's timeline and a marker on
+  the results chart; results from either side of it mix two pages.
+- **The goal** defaults to leads anywhere on the site (a form sent or a call made). The other
+  goals: a form (anywhere on the site, or only on the tested page); reaching a page (a thank-you
+  page); a tracked event by its name (a marked button is the event `cta_click`); a goal from
+  Analytics (a conversion definition); calls; stayed at least 30 or 60 seconds on the tested page
+  (`{ "type": "engaged", "seconds": 30 | 60 }`, from the tracker's heartbeats and page exits); scrolled
+  at least 50% or 75% of the tested page (`{ "type": "scrolled", "depth": 50 | 75 }`; a page too short
+  to scroll never counts); and bought something (`{ "type": "purchase" }`, below). For engaged and
+  scrolled, conversions count visits; the rate still counts each visitor once. Pick the one the
+  hypothesis predicts as the main goal; up to five others can be added as `secondary_goals`.
+  Secondary goals never decide the verdict: read one with `project_ab_test_get`'s `goal` (a key
+  from `results.goals`). A new main goal on a running or paused test recalculates the whole result,
+  so it answers a preview first and needs the user's yes (`confirm: true`); the timeline records it
+  (goal_changed).
+- **Bought something** counts Shopify orders whose cart carries the visitor's id, placed after the
+  visitor first saw the test. Only a storefront built or rebuilt on Hiveku since purchases became a
+  goal puts that id on the cart, and only for visitors who allowed analytics; orders from an older
+  storefront, or placed without its cart, are not counted, nor are cancelled and test orders. The
+  site needs a Shopify store connected (its Ecommerce tab). With this goal the results carry a
+  `purchases` block: per version the buyers, the orders and the order totals per currency, in
+  cents.
 - **The split** defaults to 50/50, the fastest to a verdict. An uneven split (90/10) limits the
   risk of a bold change and takes longer; say how much longer.
 - **Every live change needs the user's yes.** create (a draft changes nothing live), then
@@ -220,15 +244,48 @@ got for 90 days.
   (the floors: 7 days, 100 visitors per version, 20 conversions). Visitors who have not allowed
   analytics in the site's Hiveku cookie banner are not counted, and a split test shows them the
   original (a route still sends them).
+- **Where the visitors came from**: the results also break down by device (`devices`), by traffic
+  channel (`channels`) and by ad platform (`adPlatforms`). Each visitor counts once, on the visit
+  in which they first saw the test, named the way Hiveku's Analytics and Reports name a channel;
+  visits that were not paid are one row, "Not from an ad". They answer "did Version B win for
+  Google Ads clicks?", with each row's visitors and conversions beside its rate. A row is not a
+  verdict: only the test's verdict calls a winner, and a thin row is noise.
+- **Also compared** (`results.alsoCompared`): average engaged time per visitor and revenue per
+  visitor, each version's average and its difference from the original with a 95% range. It is
+  context and never decides the verdict: the main goal does. Revenue is in one currency (the one
+  with the most revenue; others are left out with a note) and is rough below 30 buyers. A metric
+  that cannot be worked out is null with a coded reason (`alsoCompared.reasons`, such as
+  `no_store` or `no_buyers`): say the reason, never a zero.
+- **Hiveku tells the team**: every 10 minutes Hiveku tells the people who manage the site (the
+  account inbox, the bell and email) when it pauses a test, when a verdict is reached (a version
+  winning, the original winning, or no meaningful difference; once per kind) and when a health
+  check warns (the split check, or a version with no visitors). Each is told once. A notice asks
+  for a read-out, not an action: ending still waits for the user's yes.
 - **Ending**: keep the original, or send everyone to the winner, which adds a 302 redirect from
-  the original page on the Redirects page. Making the winner the page itself later is a code
-  change through /hiveku:code. Wins AND losses go to the `marketing` memory, as for any
-  experiment. A route, or a test limited to some visitors, can only end keeping the original:
-  its audience is not everyone (`audience_end`).
+  the original page on the Redirects page. Propose sending everyone to Version B when the verdict
+  is `winning` or `won`, otherwise keeping the original (the dashboard's End dialog preselects the
+  same). Wins AND losses go to the `marketing` memory, as for any experiment. A route, or a test
+  limited to some visitors, can only end keeping the original: its audience is not everyone
+  (`audience_end`).
+- **After the test: make Version B the page, or remove the copy.** On an ENDED test whose second
+  version was made as a test copy, `project_ab_test_action` takes `action: "promote"` (it ended
+  sending everyone to B: one version on Main makes the original page exactly Version B and removes
+  the copy) or `action: "remove_copy"` (it kept the original: one version on Main removes the
+  copy). Without `confirm: true` it answers a preview (the files written and removed, and the
+  redirect that will change); show it, ask, then confirm. It needs `websites.hosting` manage and
+  `websites.projects` update. The version is saved, not live: once the next production deploy that
+  carries it is live (/hiveku:deploy, with its own yes), Hiveku adds a permanent 301 from the
+  copy's address to the original, so old links and ads keep working, and after a promote removes
+  the 302. Until then a promoted test's 302 still shows Version B. Refusals come in plain words with a code: `not_ended`, `not_a_copy` (a page the
+  site already had is never overwritten or removed), `wrong_outcome` (promote after keeping the
+  original, or remove_copy after sending everyone to B), `already_done`, `already_requested`, and
+  `site_not_ready` (the site goes live from GitHub, it has more than 500 redirects, or a test that
+  is not over uses the copy's address). Pass the words on: they say what to do by hand instead.
 - **Deleting**: `project_ab_test_delete` removes a draft, or an ended test together with its
   results, for good; a running or paused test must end first. Same preview, then the user's yes,
   then `confirm: true`. The pages stay on the site, a test copy included. Record what the test
-  taught in memory BEFORE deleting an ended one: its results go with it.
+  taught in memory BEFORE deleting an ended one: its results go with it. Make Version B the page or
+  remove the copy first: a deleted test can do neither.
 
 ### Routes and tests for some visitors (where visitors came from)
 
@@ -300,7 +357,8 @@ Say these plainly, before the client asks, each with what you CAN do instead:
   site's Hiveku cookie banner are not counted (a split test shows them the original; a route
   still sends them); say so beside a test's numbers.
 - **No heatmaps or scroll maps.** No tool for this - it lives in the dashboard's behavior view,
-  not the MCP. The structural substitute is the audit's friction and cta sections, which
+  not the MCP. An A/B test's scroll goal counts visitors who passed 50% or 75% of a tested page;
+  it is not a map. The structural substitute is the audit's friction and cta sections, which
   localize above-fold and form problems without watching anyone.
 - **No session recordings.** The substitutes are `analytics_sessions` and
   `analytics_events_list` for where the step drop-off happens, and survey verbatims

@@ -95,7 +95,9 @@ address like /pricing-b) is canonical to the original while its test runs and is
 sitemap on purpose: never propose to index it, link to it, add it to the sitemap or "fix" it as
 duplicate content. The canonical is sent in the page's HTTP headers, not in its HTML, so an audit
 that reads only the HTML reports it missing. A route's page gets no canonical. The A/B redirect is
-a temporary 302 by design, not a redirect to fix. Bing
+a temporary 302 by design, not a redirect to fix. After a test, "Make Version B the page" or
+"Remove the test copy" turns the copy's address into a permanent 301 to the original once the next
+production deploy is live; that 301 is meant to stay. Bing
 moving with Google says the world changed; Bing flat while Google drops says look for a
 Google-specific cause first. The comparability gate: Search Console, Bing, the rank
 tracker, vendor estimates and GA4 share no definition of a click, a session or a position - report
