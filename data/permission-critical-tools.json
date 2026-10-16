@@ -136,7 +136,7 @@
     {
       "name": "project_ab_test_action",
       "method": "POST",
-      "why_gated": "starts, pauses, resumes or ends a page A/B test on the live site, which decides the page real visitors get; ending on a winner also adds a redirect"
+      "why_gated": "starts, pauses, resumes or ends a page A/B test on the live site, which decides the page real visitors get; ending on a winner also adds a redirect; after a test ends, promote or remove_copy saves a version on Main that changes the site's code, live after the next deploy"
     },
     {
       "name": "project_ab_test_delete",
