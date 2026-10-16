@@ -276,11 +276,13 @@ got for 90 days.
   `websites.projects` update. The version is saved, not live: once the next production deploy that
   carries it is live (/hiveku:deploy, with its own yes), Hiveku adds a permanent 301 from the
   copy's address to the original, so old links and ads keep working, and after a promote removes
-  the 302. Until then a promoted test's 302 still shows Version B. Refusals come in plain words with a code: `not_ended`, `not_a_copy` (a page the
-  site already had is never overwritten or removed), `wrong_outcome` (promote after keeping the
-  original, or remove_copy after sending everyone to B), `already_done`, `already_requested`, and
-  `site_not_ready` (the site goes live from GitHub, it has more than 500 redirects, or a test that
-  is not over uses the copy's address). Pass the words on: they say what to do by hand instead.
+  the 302. Until then a promoted test's 302 still shows Version B. Refusals come in plain words
+  (the preview's problems), and with confirm as a 409 with a code: `not_ended`, `not_a_copy` (a
+  page the site already had is never overwritten or removed), `wrong_outcome` (promote after
+  keeping the original, or remove_copy after sending everyone to B), `already_done`,
+  `already_requested`, and `site_not_ready` (the site goes live from GitHub, it has more than 500
+  redirects, or a test that is not over uses the copy's address). Pass the words on: they say what
+  to do by hand instead.
 - **Deleting**: `project_ab_test_delete` removes a draft, or an ended test together with its
   results, for good; a running or paused test must end first. Same preview, then the user's yes,
   then `confirm: true`. The pages stay on the site, a test copy included. Record what the test
