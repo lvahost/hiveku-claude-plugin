@@ -52,7 +52,8 @@ compute server-side; they are still the read surface:
   end); `marketing_channel_roi` (cost per real lead by campaign; its campaign figures moved on
   2026-09-24).
 - Page tests on the landing site: `project_ab_tests_list` (the site's page A/B tests and routes)
-  and `project_ab_test_get` (one test's verdict), both reads.
+  and `project_ab_test_get` (one test's verdict, and its results by ad platform and by traffic
+  channel), both reads.
 
 In `ppc_*` the HTTP verb is no guide to safety - only 10 of 165 tools are GET. The reads are the
 `*_get` / `*_list` / `*_report` / `*_summary` / `*_status` / `*_metrics` / `*_digest` /
@@ -81,6 +82,13 @@ Keep the ads' final URLs on the original page; the split happens on the site and
 UTM tags. A route can send one ad platform's clicks to a page of its own without changing the ad.
 Quote the test's verdict as reported. A page A/B test is not one of the ad platforms' own campaign
 experiments (`ppc_experiment_readout`): one compares two pages, the other two versions of a campaign.
+To answer "did Version B win for Google Ads clicks?", read the test's `adPlatforms` and `channels`
+rows: each visitor once, on the visit in which they first saw the test, unpaid visits as "Not from
+an ad". Give each row's visitors and conversions; a row is not a verdict, and a thin row is noise.
+When a test that sent everyone to Version B is made the page (`project_ab_test_action` action
+`promote`, the main session's step), the page the ads land on becomes Version B once the next
+production deploy is live, and a permanent 301 from the copy's address keeps old links working:
+plan no ad change for it.
 
 Worked hard-stop - "Skip the plan, just add the negatives and cut every losing budget now."
 Refuse. Every change is the main session's, applied one at a time with confirmation via

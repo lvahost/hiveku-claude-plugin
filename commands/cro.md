@@ -90,6 +90,19 @@ as a hypothesis, scored with `ice_score`, persisted as a pm_task in the backlog.
     `pm_tasks_complete({ id, summary })` with the observed result - "no detectable change" is a
     valid result.
     - When the KPI is a sale rather than a form fill, the sale reaches the ad platform through the declared offline-conversions lane (`marketing_offline_conversions_status` first; opting in lands in validate-only, nothing recorded until a human goes live in the dashboard) - doctrine in `hiveku-conversion-tracking/references/offline-conversions.md`, never run from this pass.
+    - A page A/B test already on a money page (`project_ab_tests_list`, then `project_ab_test_get`):
+      quote `verdict.headline` as it is. Give the results by traffic channel and by ad platform
+      (`channels`, `adPlatforms`) and, for the bought-something goal, the `purchases` block, each
+      with its counts; secondary goals and `alsoCompared` (engaged time and revenue per visitor,
+      each with a 95% range) are context and never decide the winner. Hiveku already tells the
+      site's managers when it pauses a test, reaches a verdict or a health check warns. An
+      `abTestWarnings` answer on a save, or `page_changed` on the timeline, means a tested page
+      changed during the test: say so beside the result. When a test whose second version was a
+      test copy has ended, propose "Make Version B the page" (`project_ab_test_action` action
+      `promote`, after sending everyone to B) or "Remove the test copy" (`remove_copy`, after
+      keeping the original) as its own step: the preview, the user's yes, then `confirm: true`.
+      It saves one version on Main; once the next production deploy is live, the copy's address
+      becomes a permanent 301 to the original.
 11. Honesty close, said to the client unprompted: page A/B tests run only on Hiveku-hosted
     Next.js sites (App Router pages; `project_ab_tests_list` says whether this one can), and
     there are no heatmaps or session recordings anywhere. Every other experiment is a sequential
