@@ -141,6 +141,12 @@ Put this in `.claude/settings.json` (per project) or `~/.claude/settings.json` (
       "mcp__plugin_hiveku_hk__project_secrets_reveal",
       "mcp__plugin_hiveku_hk__project_secrets_mark_sensitive",
       "mcp__plugin_hiveku_hk__project_secrets_replace",
+      "mcp__plugin_hiveku_hk__env_group_create",
+      "mcp__plugin_hiveku_hk__env_group_update",
+      "mcp__plugin_hiveku_hk__env_group_delete",
+      "mcp__plugin_hiveku_hk__env_group_set",
+      "mcp__plugin_hiveku_hk__env_group_link",
+      "mcp__plugin_hiveku_hk__env_group_unlink",
       "mcp__plugin_hiveku_hk__project_ab_test_create",
       "mcp__plugin_hiveku_hk__project_ab_test_update",
       "mcp__plugin_hiveku_hk__project_ab_test_action",
@@ -415,7 +421,7 @@ list above is spelled out. If you add to it, add whole names.
 again, so after a plugin update it can be missing names a newer release added. Paste the block
 again after an update. The plugin also asks on its own before the writes that change what
 department agents read, which forms a site captures (and erasing what it captured), who gets a
-site's lead emails, a site's search engine indexing, live ad campaigns, switching ads on or restarting them, switching a
+site's lead emails, a site's environment variables and the account's environment groups, a site's search engine indexing, live ad campaigns, switching ads on or restarting them, switching a
 workflow on or clearing its automatic pause (`workflow_enable`, `workflow_resume`), the budget
 guardrail, conversion uploads, a staged production deploy and GA4 conversion settings, whatever
 your settings allow, so those prompt even on a machine with an older copy.
@@ -548,7 +554,7 @@ Worth checking the prefix once on your own machine rather than trusting this fil
 `/permissions`, or let a Hiveku tool prompt you and read the name it shows.
 
 If you do want a blanket allow on the extension's prefix, the ask list has to be mirrored under
-it in full. Generate both halves rather than retyping 283 names:
+it in full. Generate both halves rather than retyping 289 names:
 
 ```bash
 node -e "const t=require('./data/permission-critical-tools.json').tools.map(x=>x.name);

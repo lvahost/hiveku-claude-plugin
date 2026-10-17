@@ -6,7 +6,7 @@
     "mcp__hiveku__"
   ],
   "plugin_version": "0.27.57",
-  "count": 283,
+  "count": 289,
   "tools": [
     {
       "name": "deploy_site",
@@ -122,6 +122,36 @@
       "name": "project_secrets_replace",
       "method": "POST",
       "why_gated": "replaces one tier's environment variables with the set given: with apply it adds, changes and removes variables in one write, synced into the running site"
+    },
+    {
+      "name": "env_group_create",
+      "method": "POST",
+      "why_gated": "creates an account environment group, a set of variables that every site linked to it receives; it holds nothing and reaches no site until variables are set and a site is linked"
+    },
+    {
+      "name": "env_group_update",
+      "method": "PATCH",
+      "why_gated": "renames an account environment group or changes its description; people and agents pick groups by name, so a rename changes which group they link and edit"
+    },
+    {
+      "name": "env_group_delete",
+      "method": "DELETE",
+      "why_gated": "deletes an account environment group and every value in it, which cannot be restored; a group still linked to a site is refused"
+    },
+    {
+      "name": "env_group_set",
+      "method": "POST",
+      "why_gated": "writes or removes variables in an account environment group; every site linked to it gets the change in its running functions at once, and a name without a tier reaches production"
+    },
+    {
+      "name": "env_group_link",
+      "method": "POST",
+      "why_gated": "links an account environment group to a site: the group's variables join the site's environment in every tier, synced into its running functions at once, and the site's own variables still win"
+    },
+    {
+      "name": "env_group_unlink",
+      "method": "DELETE",
+      "why_gated": "unlinks an account environment group from a site: the site loses the group's variables in its running functions at once, which can break code that reads them"
     },
     {
       "name": "project_ab_test_create",

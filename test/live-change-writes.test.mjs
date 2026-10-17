@@ -100,6 +100,13 @@ const LIVE_CHANGE_NAMES = [
   'project_secrets_apply_to_preview',
   'project_secrets_mark_sensitive',
   'project_secrets_replace',
+  // 0.27.58: an account's environment groups reach every linked site (builder #1517, MCP #236).
+  'env_group_create',
+  'env_group_update',
+  'env_group_delete',
+  'env_group_set',
+  'env_group_link',
+  'env_group_unlink',
 ];
 
 function folderWith(guardrails) {
