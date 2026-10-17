@@ -453,4 +453,18 @@ export const PENDING_TOOLS = new Map([
   // LEAD-EMAILS-1: landed in the live index on 2026-10-15 (MCP #228, 801c7eb, deployed; index
   // regenerated at 2288 tools, and marketing_form_notifications_get joined the read-only list as a
   // GET); entries deleted.
+
+  // ASSISTANT-TRAINING (2026-10-17): training the website assistant, MCP #239
+  // (src/tools/helpdesk-assistant-tools.ts) over builder #1569. Named by
+  // skills/hiveku-helpdesk-agency/references/assistant-knowledge.md. Delete these once the index
+  // is regenerated against the server that serves them.
+  ['helpdesk_assistant_settings_get', { since: '2026-10-17', batch: 'ASSISTANT-TRAINING' }],
+  ['helpdesk_assistant_settings_update', { since: '2026-10-17', batch: 'ASSISTANT-TRAINING' }],
+  ['helpdesk_assistant_knowledge_sources_update', { since: '2026-10-17', batch: 'ASSISTANT-TRAINING' }],
+  ['helpdesk_assistant_website_read_status', { since: '2026-10-17', batch: 'ASSISTANT-TRAINING' }],
+  ['helpdesk_assistant_website_read_start', { since: '2026-10-17', batch: 'ASSISTANT-TRAINING' }],
+  ['helpdesk_assistant_website_pages_list', { since: '2026-10-17', batch: 'ASSISTANT-TRAINING' }],
+  ['helpdesk_assistant_website_page_keep_out', { since: '2026-10-17', batch: 'ASSISTANT-TRAINING' }],
+  ['helpdesk_assistant_test', { since: '2026-10-17', batch: 'ASSISTANT-TRAINING' }],
+  ['helpdesk_assistant_unanswered_list', { since: '2026-10-17', batch: 'ASSISTANT-TRAINING' }],
 ]);

@@ -399,8 +399,9 @@ chat, and before counting chats in a sweep or report; the essentials:
   the server's `advice`. Call it before you explain a hand-off with `escalation_reason`
   `no_grounding` or `low_confidence`, before you promise an owner the assistant will answer
   something, and whenever the user asks what it knows. Tell the user plainly, quote the
-  `advice`, and never invent a tool to change a source: the switches are the owner's, in
-  Helpdesk > AI agent. A server without the tool is older and may skip a site on a Hiveku-named
+  `advice`, and never invent a tool to change a source: the training tools in the reference are
+  the only ones, for an owner or admin's own key, and a switch they cannot change stays the
+  owner's, in Helpdesk > AI agent. A server without the tool is older and may skip a site on a Hiveku-named
   address, so never promise that one is read without it; a 403 `key_creator_lacks_access` means
   an owner or admin must give the user helpdesk access under Settings > Team Members > Manage
   Roles. Full field guide,
@@ -535,7 +536,9 @@ as `memory_create({ type: 'memory', name: 'helpdesk-monthly-<yyyy-mm>' })`.
   knows or why it handed a question to the team, before promising it will answer something, and
   when hand-offs for "no answer" pile up: every source it answers from, reading
   `helpdesk_assistant_knowledge_status` (sources on, website hosts read or skipped and why,
-  unanswered questions, advice), how to tell the owner plainly, and the fallback without it.
+  unanswered questions, advice), how to tell the owner plainly, the fallback without it, and
+  training it from here (its settings, a test question, where it looks answers up, the website
+  read).
 - `references/voice-handoff.md` - load before `helpdesk_ticket_transfer_to_voice` or when
   verifying and logging call evidence: annotation-only semantics, the evidence tools' traps,
   the recording-URL danger.
