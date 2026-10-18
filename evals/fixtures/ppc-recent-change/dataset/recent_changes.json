@@ -1,0 +1,10 @@
+{
+  "changes": [
+    { "id": "1b6e0c2e-5f3a-4d7b-9a3e-0c9f7f1d2a01", "when": "2026-10-15T14:20:00.000Z", "who": "Jane Lee", "who_kind": "person", "app": "Claude Code", "what": "Brand Search daily budget 50.00 to 75.00", "where": "Google Ads > Brand Search", "campaign_id": "5550201", "state": "applied", "source": "hiveku" },
+    { "id": "1b6e0c2e-5f3a-4d7b-9a3e-0c9f7f1d2a02", "when": "2026-10-14T16:05:00.000Z", "who": "Sam Ortiz", "who_kind": "person", "app": "the dashboard", "what": "Generic - Road Bikes paused", "where": "Google Ads > Generic - Road Bikes", "campaign_id": "5550202", "state": "applied", "source": "hiveku" },
+    { "id": "1b6e0c2e-5f3a-4d7b-9a3e-0c9f7f1d2a03", "when": "2026-10-12T10:00:00.000Z", "who": "Jane Lee", "who_kind": "person", "app": "Claude Code", "what": "Brand Search daily budget 50.00 to 90.00", "where": "Google Ads > Brand Search", "campaign_id": "5550201", "state": "failed", "source": "hiveku" }
+  ],
+  "days": 7,
+  "truncated": false,
+  "outside_changes_checked": false
+}

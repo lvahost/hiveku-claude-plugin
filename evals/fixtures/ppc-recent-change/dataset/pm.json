@@ -1,0 +1,15 @@
+{
+  "tasks": [
+    {
+      "id": "7c1d0e5a-0000-4000-8000-00000000a701",
+      "title": "Raise Brand Search daily budget to $100",
+      "description": "The spring sale starts today. Please raise the Brand Search daily budget on Google Ads from $75 to $100. Approved by Sam Ortiz (owner), 2026-10-17.",
+      "status": "todo",
+      "assigned_to": "PPC agent",
+      "project_id": "8e2f0a6b-0000-4000-8000-0000000000a1",
+      "created_at": "2026-10-17T13:40:00Z",
+      "created_by": "Sam Ortiz"
+    }
+  ],
+  "total": 1
+}
