@@ -158,7 +158,7 @@ export async function createTools() {
       {
         type: 'object',
         properties: {
-          connection_id: { type: 'string', description: 'The PPC connection (ppc_connections_list).' },
+          connection_id: { type: 'string', description: 'The PPC connection (ppc_connection_list).' },
           campaign_id: { type: 'string', description: "Optional. One campaign's changes, by its platform id." },
           days: { type: 'number', description: 'Optional. 1 to 30; default 7.' },
         },
