@@ -1,0 +1,6 @@
+{
+  "connections": [
+    { "id": "4a1b8c2d-0000-4000-8000-00000000c001", "platform": "google_ads", "name": "Harbor Bikes - Google Ads", "customer_id": "123-456-7890", "status": "active", "last_synced_at": "2026-10-17T14:00:00Z" }
+  ],
+  "count": 1
+}
