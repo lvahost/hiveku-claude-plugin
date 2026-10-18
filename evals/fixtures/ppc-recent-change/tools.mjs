@@ -126,9 +126,27 @@ export async function createTools() {
       const task = pm.tasks.find((t) => t.id === id);
       return task ? { task } : { error: 'task_not_found', status: 404 };
     },
-    pm_tasks_comment({ id, task_id, content, body } = {}) {
-      return { ok: true, id: id || task_id, comment_length: String(content || body || '').length };
-    },
+    // With its real parameters (olympus-tools.ts): without them a session guesses `comment`,
+    // which the real tool ignores, and the comment saves empty.
+    pm_tasks_comment: describe(
+      ({ id, task_id, content, body } = {}) => ({
+        ok: true,
+        id: id || task_id,
+        comment_length: String(content || body || '').length,
+      }),
+      "Add a comment to a PM task. Author codename defaults to 'olympus'. Accepts both `id` and `task_id` for the task identifier (older agent docs use task_id); accepts both `content` and `body` for the comment text.",
+      {
+        type: 'object',
+        properties: {
+          id: { type: 'string', description: 'Task UUID. Alias accepted: task_id.' },
+          task_id: { type: 'string', description: 'Alias for id (some agent prompts use this name).' },
+          content: { type: 'string', description: 'Comment text. Alias accepted: body.' },
+          body: { type: 'string', description: 'Alias for content (some agent prompts use this name).' },
+          author_codename: { type: 'string' },
+        },
+        required: [],
+      },
+    ),
     pm_tasks_complete({ id } = {}) {
       return { ok: true, id, status: 'done' };
     },
