@@ -399,9 +399,10 @@ chat, and before counting chats in a sweep or report; the essentials:
   the server's `advice`. Call it before you explain a hand-off with `escalation_reason`
   `no_grounding` or `low_confidence`, before you promise an owner the assistant will answer
   something, and whenever the user asks what it knows. Tell the user plainly, quote the
-  `advice`, and never invent a tool to change a source: the training tools in the reference are
-  the only ones, for an owner or admin's own key, and a switch they cannot change stays the
-  owner's, in Helpdesk > AI agent. A server without the tool is older and may skip a site on a Hiveku-named
+  `advice`, and never invent a tool to change a source: the reference's
+  `helpdesk_assistant_knowledge_sources_update` is the only one, for an owner or admin's own key,
+  and it is held for now (403 `agent_changes_not_enabled`), so the switches stay the owner's, in
+  Helpdesk > AI agent or through the Helpdesk page's AI chat. A server without the tool is older and may skip a site on a Hiveku-named
   address, so never promise that one is read without it; a 403 `key_creator_lacks_access` means
   an owner or admin must give the user helpdesk access under Settings > Team Members > Manage
   Roles. Full field guide,
