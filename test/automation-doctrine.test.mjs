@@ -865,6 +865,8 @@ test('source cross-check: the builder source the round-3 re-check corrections de
     pm: path.join(builder, 'lib', 'workflow', 'nodeHandlers', 'pmActions.ts'),
     triggerProcessing: path.join(builder, 'lib', 'triggerProcessing.ts'),
     stranded: path.join(builder, 'app', 'api', 'olympus', 'workflows', '[workflowId]', 'stranded', 'route.ts'),
+    // The stranded route's rule moved here (the paused automations dataset shares it, builder ca5a5f2a2b).
+    pausedWork: path.join(builder, 'lib', 'workflow', 'paused-work.ts'),
     audit: path.join(builder, 'app', 'api', 'olympus', 'marketing', 'form-submissions', 'route.ts'),
     attribution: path.join(builder, 'lib', 'marketing', 'form-attribution.ts'),
     execQueue: path.join(builder, 'lib', 'queue', 'workflow-exec-queue.ts'),
@@ -880,7 +882,8 @@ test('source cross-check: the builder source the round-3 re-check corrections de
   assert.ok(src('assignee').includes("error: 'assigned_to_id must be a UUID (public_users.id)'"), 'the non-UUID refusal changed - node-rail 6.3 must change');
   assert.ok(src('pm').includes('error: `Could not assign the task: ${assignee.body.error}`'));
   assert.match(src('triggerProcessing'), /status: 'completed',\s*processed_at: new Date\(\),\s*agent_response: \{ skipped: SWITCHED_OFF_REFUSAL \}/);
-  assert.equal(src('stranded').match(/status: \{ notIn: \['pending', 'processing'\] \}/g)?.length, 2, 'the stranded filter changed - T1 must change');
+  assert.equal(src('pausedWork').match(/status: \{ notIn: \['pending', 'processing'\] \}/g)?.length, 1, 'the stranded filter changed - T1 must change');
+  assert.ok(src('stranded').includes('strandedDeliveriesWhere('), 'the stranded route no longer uses the shared rule - T1 must change');
   assert.ok(src('audit').includes("Number(sp.get('days')) || 30"));
   assert.ok(src('audit').includes('...(includeFields ? { fields: fieldsById.get(row.id) ?? null } : {})'));
   assert.match(src('attribution'), /FAILED_WORKFLOW_STATUSES = new Set\(\[\s*'error',\s*'degraded',\s*'trigger_missing',\s*'trigger_disabled',\s*'auth_failed',\s*\]\)/);
