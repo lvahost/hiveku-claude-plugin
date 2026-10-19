@@ -94,6 +94,9 @@ const LIVE_CHANGE_NAMES = [
   'ppc_google_campaign_conversion_goals_set',
   // 0.27.19: joining the merge line is the approval to merge into Your site.
   'project_vcs_queue_add',
+  // 0.27.58: the account's timezone, and what the website assistant may tell visitors.
+  'account_timezone_set',
+  'helpdesk_assistant_knowledge_sources_update',
   // 0.27.24: a site's secrets reach the running site (and production, without a tier).
   'project_secrets_set',
   'project_secrets_delete',

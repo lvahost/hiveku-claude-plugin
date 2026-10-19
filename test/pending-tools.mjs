@@ -453,4 +453,8 @@ export const PENDING_TOOLS = new Map([
   // LEAD-EMAILS-1: landed in the live index on 2026-10-15 (MCP #228, 801c7eb, deployed; index
   // regenerated at 2288 tools, and marketing_form_notifications_get joined the read-only list as a
   // GET); entries deleted.
+
+  // ASSISTANT-TRAINING: landed in the live index on 2026-10-18 (MCP #239, 5b4683a, deployed;
+  // index regenerated at 2297 tools, and the four reads joined the read-only list as GETs);
+  // entries deleted.
 ]);
