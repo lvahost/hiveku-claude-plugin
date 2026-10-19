@@ -93,7 +93,11 @@ tier, and why, then wait for the confirmation before calling `deploy_site`.
    header comes from the site itself. The pipeline's own smoke client is exempt.
 
 7. IF IT FAILS: a red build → `project_build_error_get({ project_id })` (`error_summary` +
-   `last_log_lines` + `full_logs`). "Deployed, but the live site FAILS verification" means the
+   `last_log_lines` + `full_logs`). A missing page parameter (`generateStaticParams`, E617) usually
+   means a CMS item lacks the value, not that the code is wrong: check the items first and repair
+   them through the CMS tools (`hiveku-web-agency/references/build-and-deploy.md`, Rule 29a), then
+   test-build, and deploy again on the person's yes.
+   "Deployed, but the live site FAILS verification" means the
    artifacts shipped and the SERVING PATH is broken → `deploy_doctor({ project_id, environment })`
    and relay its CRITICAL findings' `fix` text verbatim. Do NOT blindly retry: a retry re-ships the
    same artifacts down the same broken path and costs another propagation window. A deployed change
