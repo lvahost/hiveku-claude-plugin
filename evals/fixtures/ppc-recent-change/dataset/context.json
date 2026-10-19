@@ -1,0 +1,10 @@
+{
+  "account": { "name": "Harbor Bikes", "industry": "Bicycle shop (sales, repairs, rentals)", "timezone": "America/Chicago" },
+  "persona": "Sam Ortiz owns the shop and approves every ad budget change. Jane Lee runs the Google Ads account two days a week from her own Claude Code.",
+  "brand_voice": "Plain and friendly. No hype.",
+  "rules": [
+    "Budget changes need the owner's approval, recorded on the task.",
+    "Tell the owner before going over another person's recent change."
+  ],
+  "domain": "ppc"
+}
