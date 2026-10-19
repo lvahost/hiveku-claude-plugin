@@ -1,0 +1,7 @@
+{
+  "campaigns": [
+    { "id": "6d2e1f00-0000-4000-8000-0000000c0201", "platform": "google_ads", "connection_id": "4a1b8c2d-0000-4000-8000-00000000c001", "platform_campaign_id": "5550201", "name": "Brand Search", "status": "active", "daily_budget": 75, "budget_currency": "USD", "bidding_strategy": "MAXIMIZE_CONVERSIONS" },
+    { "id": "6d2e1f00-0000-4000-8000-0000000c0202", "platform": "google_ads", "connection_id": "4a1b8c2d-0000-4000-8000-00000000c001", "platform_campaign_id": "5550202", "name": "Generic - Road Bikes", "status": "paused", "daily_budget": 40, "budget_currency": "USD", "bidding_strategy": "MAXIMIZE_CLICKS" }
+  ],
+  "total": 2
+}
