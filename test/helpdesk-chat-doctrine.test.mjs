@@ -503,6 +503,11 @@ test('the sweep and ticket commands carry the chat rules in their own steps', ()
     assert.match(text, /`helpdesk_assistant_knowledge_status`/, `${name}: read the knowledge status`);
     assert.match(text, /references\/assistant-knowledge\.md/, `${name}: load the knowledge reference`);
   }
+  // The source switches have a tool: the sweep says so, and what its 403 means, pause on or off.
+  assert.match(sweep, /The switches are the owner's choice: on the "Where it finds answers" card in Helpdesk > AI agent, or from an owner's or admin's own key with `helpdesk_assistant_knowledge_sources_update`, called on its own/);
+  assert.match(sweep, /applies only with its `confirm_token` after the user's yes\)/);
+  assert.match(sweep, /A 403 `agent_changes_not_enabled` from it means Hiveku has paused these changes for AI connections: say so plainly and send the owner to that card, or to the AI chat on the Helpdesk page, which asks them on an approval card/);
+  assert.doesNotMatch(sweep, /no tool changes them/);
   // Each queue step of the sweep carries its own piece.
   const sweepRaw = read(SWEEP);
   const step2 = between(sweepRaw, '2. Breaches first:', '\n3. New and unassigned');
