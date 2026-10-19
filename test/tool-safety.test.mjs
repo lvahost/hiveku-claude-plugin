@@ -1046,6 +1046,25 @@ test('the secrets reveal asks on a direct call with no guardrails file, and thro
   assert.equal(batch?.hookSpecificOutput?.permissionDecision, 'ask');
 });
 
+// HK-246: a knowledge-base save is on no ask list, so on its own the hook says nothing and the
+// person's settings decide (a blanket allow runs it unprompted). Batched, it asks, and the reason
+// used to claim each member "would prompt on its own". It now says why the batch asks and how to
+// avoid the prompt.
+test('a batched write the hook never asks about on its own says the batch is what asks', () => {
+  const cwd = folderWith(undefined);
+  assert.equal(decideWithGuardrails({ ...payload('kb_documents_index_text', cwd), tool_input: { title: 't', text: 'x' } }), null);
+  const batch = decideForPayload({
+    tool_name: `${HIVEKU_TOOL_PREFIX}hiveku_batch`,
+    tool_input: { calls: [{ tool: 'kb_documents_index_text', args: { title: 't', text: 'x' } }, { tool: 'crm_list_contacts', args: {} }] },
+  });
+  assert.equal(batch?.hookSpecificOutput?.permissionDecision, 'ask');
+  const reason = batch.hookSpecificOutput.permissionDecisionReason;
+  assert.match(reason, /contains 1 call\(s\) that are not pre-approved reads: kb_documents_index_text\./);
+  assert.match(reason, /hides each call from your own permission settings/);
+  assert.match(reason, /Made one at a time, each call follows your settings/);
+  assert.doesNotMatch(reason, /would prompt on its own/);
+});
+
 test('every memory write on the set ASKS on a direct call with no guardrails file', () => {
   const cwd = folderWith(undefined);
   for (const name of MEMORY_WRITES_THAT_ASK) {
