@@ -338,6 +338,9 @@
  *           MCP #253). POST, on the ask list (data/permission-critical-
  *           tools.json, INSTALL.md, the Codex prompts). Release step, after
  *           the MCP deploy: regenerate the index, then delete the entry.
+ *           Landed in the live index on 2026-10-20 (MCP #253, 6ffeee4,
+ *           deployed; index regenerated at 2317 tools in release 0.27.65);
+ *           entry deleted.
  *
  *   Lead emails (2026-10-15, HK-255): who gets a website's lead emails
  *   (Website > Forms > Notifications). The contract is the builder's
@@ -486,7 +489,8 @@ export const PENDING_TOOLS = new Map([
   // EMAIL-SERVICE-1: landed in the live index on 2026-10-20 (MCP #255, d107053, deployed; index
   // regenerated at 2316 tools in release 0.27.63; email_message_get stays off the read-only list);
   // entry deleted.
-  // CI-6 (2026-10-19): check a review's branch again (builder #1650, MCP #253). Ask-gated: it
-  // spends the site's test builds. Delete once the regenerated index carries it.
-  ['project_vcs_checks_rerun', { since: '2026-10-19', batch: 'CI-6' }],
+
+  // CI-6: landed in the live index on 2026-10-20 (MCP #253, 6ffeee4, deployed; index regenerated
+  // at 2317 tools in release 0.27.65; project_vcs_checks_rerun is a POST, so it stays off the
+  // read-only list and on the ask list); entry deleted.
 ]);
