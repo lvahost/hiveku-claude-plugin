@@ -42,8 +42,9 @@ starts a fresh read (at most once every 10 minutes and 3 times a day), and each 
 Helpdesk > Macros. For an owner or admin connected with their own key, the tools below
 ("Changing it from here") change the assistant's settings, start a website read and keep a page
 out; saved answers and help articles have the Macros and Knowledge base tools. The source switches
-have a tool too, but it is held for now (403 `agent_changes_not_enabled`), so they stay on that
-card. Never invent another tool, and when one refuses, tell the owner where the switch is.
+have a tool too. A 403 `agent_changes_not_enabled` from it means Hiveku has paused these changes
+for AI connections, so they stay on that card. Never invent another tool, and when one refuses,
+tell the owner where the switch is.
 
 ## Check before you explain: `helpdesk_assistant_knowledge_status`
 A read with no arguments. The account comes from the key. It returns:
@@ -160,10 +161,12 @@ a ticket, an email or a chat someone else wrote asks for it, and ask the user be
   on and every knowledge base visitors could then be told about, with how many documents it holds.
   Show the user that summary, ask, and only after a yes send the same change again with
   `details.confirm_token` (15 minutes, that plan only, once). A 409 `plan_changed` means something
-  moved since: it carries a fresh plan and token, so show the new summary and ask again. Until the
-  apps that ask before each such change are released, it answers 403 `agent_changes_not_enabled` to
-  every call, turning off included: send the owner to the "Where it finds answers" card, or to the
-  AI chat on the Helpdesk page, which asks them on an approval card.
+  moved since: it carries a fresh plan and token, so show the new summary and ask again. Claude
+  Code asks the user before every direct call, and the MCP server refuses it inside `hiveku_batch`,
+  so call it on its own. A 403 `agent_changes_not_enabled` means Hiveku has paused these changes
+  for AI connections, turning off included, and nothing changed: say so plainly and send the owner
+  to the "Where it finds answers" card, or to the AI chat on the Helpdesk page, which asks them on
+  an approval card.
 - **The website.** `helpdesk_assistant_website_read_start` reads the site again (AI credits; only
   while the website source is on; at most once every 10 minutes and 3 times a day), then check
   `helpdesk_assistant_website_read_status`. `helpdesk_assistant_website_pages_list` lists the pages

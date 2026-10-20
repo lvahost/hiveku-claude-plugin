@@ -360,6 +360,22 @@
  *                    most 25 forms; held for agents until the asking
  *                    releases are out). Landed in the live index on
  *                    2026-10-15; entries deleted.
+ *
+ *   Email Service program (2026-10-19, notes/email-service-program-2026-10-19/
+ *   status.md): opening a sent email through MCP. The contract is the
+ *   builder's GET /api/olympus/email/logs/:id (builder #1622: the "Open sent
+ *   emails" permission, a named person, every open audited); the MCP
+ *   declaration is hiveku-mcp-api-server feature/email-message-get. The tool is
+ *   a GET whose answer can hold live sign-in, password-reset and invite links,
+ *   so it is on NEVER_AUTO_APPROVE (lib/tool-safety.mjs) and excluded from the
+ *   read-only list (SENSITIVE_READ_EXCLUSIONS in scripts/gen-readonly-tools.mjs),
+ *   which is why tool-safety.test.mjs accepts it as a PENDING name until the
+ *   index carries it. Release step, after the MCP deploy: regenerate the index
+ *   and the read-only list from the live server (the exclusion keeps it off the
+ *   read-only list), then delete this entry; tool-names.test.mjs forces the
+ *   deletion.
+ *     EMAIL-SERVICE-1  email_message_get (one sent email's content and events;
+ *                      ask every time).
  */
 const SEO_SINCE = '2026-08-30';
 const seo = (batch) => ({ since: SEO_SINCE, batch });
@@ -465,6 +481,8 @@ export const PENDING_TOOLS = new Map([
   // index regenerated at 2297 tools, and the four reads joined the read-only list as GETs);
   // entries deleted.
 
+  // EMAIL-SERVICE-1 (2026-10-19): opening a sent email. See the batch note above.
+  ['email_message_get', { since: '2026-10-19', batch: 'EMAIL-SERVICE-1' }],
   // CI-6 (2026-10-19): check a review's branch again (builder #1650, MCP #253). Ask-gated: it
   // spends the site's test builds. Delete once the regenerated index carries it.
   ['project_vcs_checks_rerun', { since: '2026-10-19', batch: 'CI-6' }],
