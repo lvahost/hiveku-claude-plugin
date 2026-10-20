@@ -135,6 +135,7 @@ Put this in `.claude/settings.json` (per project) or `~/.claude/settings.json` (
       "mcp__plugin_hiveku_hk__project_vcs_resolve",
       "mcp__plugin_hiveku_hk__project_vcs_pr_update",
       "mcp__plugin_hiveku_hk__project_vcs_queue_add",
+      "mcp__plugin_hiveku_hk__project_vcs_checks_rerun",
       "mcp__plugin_hiveku_hk__project_secrets_set",
       "mcp__plugin_hiveku_hk__project_secrets_delete",
       "mcp__plugin_hiveku_hk__project_secrets_apply_to_preview",

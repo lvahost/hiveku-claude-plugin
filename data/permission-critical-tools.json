@@ -6,7 +6,7 @@
     "mcp__hiveku__"
   ],
   "plugin_version": "0.27.60",
-  "count": 291,
+  "count": 292,
   "tools": [
     {
       "name": "deploy_site",
@@ -92,6 +92,11 @@
       "name": "project_vcs_queue_add",
       "method": "POST",
       "why_gated": "adds a review to its merge line, which then merges it into its target (into main: Your site) in the background with nobody asking again: joining the line is the approval to merge"
+    },
+    {
+      "name": "project_vcs_checks_rerun",
+      "method": "POST",
+      "why_gated": "runs a review's build and checks again, which spends the site's test builds (six per 15 minutes, shared with people and the merge line)"
     },
     {
       "name": "project_secrets_set",

@@ -332,6 +332,13 @@
  *     VERSIONS-W2  project_vcs_status (read-only), project_vcs_rollback
  *                  (dry run unless dry_run: false; apply always asks).
  *
+ *   CI checks (2026-10-19, CI checks plan step 6, notes/ci-checks-plan-2026-10-19.md):
+ *     CI-6  project_vcs_checks_rerun: sets a review's last checks aside so
+ *           Hiveku runs its branch's build and checks again (builder #1650,
+ *           MCP #253). POST, on the ask list (data/permission-critical-
+ *           tools.json, INSTALL.md, the Codex prompts). Release step, after
+ *           the MCP deploy: regenerate the index, then delete the entry.
+ *
  *   Lead emails (2026-10-15, HK-255): who gets a website's lead emails
  *   (Website > Forms > Notifications). The contract is the builder's
  *   GET|PATCH /api/olympus/marketing/form-notifications (builder #1403); the
@@ -457,4 +464,8 @@ export const PENDING_TOOLS = new Map([
   // ASSISTANT-TRAINING: landed in the live index on 2026-10-18 (MCP #239, 5b4683a, deployed;
   // index regenerated at 2297 tools, and the four reads joined the read-only list as GETs);
   // entries deleted.
+
+  // CI-6 (2026-10-19): check a review's branch again (builder #1650, MCP #253). Ask-gated: it
+  // spends the site's test builds. Delete once the regenerated index carries it.
+  ['project_vcs_checks_rerun', { since: '2026-10-19', batch: 'CI-6' }],
 ]);

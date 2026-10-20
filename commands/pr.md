@@ -72,7 +72,10 @@ before merging" on, `checks` in `project_vcs_pr_get` is the build and the site's
 check, lint, tests) that Hiveku runs on the branch once it has been still for two minutes: `state`
 `running` / `passed` / `failed`; each run's `summary` names the first failing line, and
 `project_test_build_log_get({ project_id, session_id })` has the whole log; `current: false` means
-it was for an older state of the branch (a new run starts by itself). Without `checks`, build it
+it was for an older state of the branch (a new run starts by itself). To run them again on the same
+branch (a check that did not finish, a failure that was not the code's), with the person's yes:
+`project_vcs_checks_rerun({ project_id, number })` (it asks; nothing builds in the call, and a branch
+that changed is checked again by itself). Without `checks`, build it
 yourself: `project_test_build({ project_id, use_db_state: true, branch: <source> })`, polled to
 `succeeded`. A PR that does not build does not merge. Summarize per file what changed and anything risky
 (routes moved, config, dependencies, deleted files). `/hiveku:review-pr <number>` walks a careful
