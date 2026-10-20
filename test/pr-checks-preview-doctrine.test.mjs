@@ -41,9 +41,11 @@ test('the merge line builds the merged result again, and a failure names the che
 
 test("an open PR's preview is sent for sign-off; live data is explained, never worked around unasked", () => {
   assert.match(PR, /A preview of the branch starts by itself within a few minutes: project_vcs_pr_get's preview has its url once state is live/);
-  assert.match(PR, /live_data: the site's development settings reach a database or key the live site uses, so no preview is started for a PR/);
-  assert.match(PR, /a separate Hiveku database for development \(DATABASE_URL_DEV\) and test keys fix it \(never a database outside Hiveku/);
-  assert.match(PR, /start one by hand only if the person asks knowing that/);
+  assert.match(PR, /live_data: the site's development settings hold a database or keys a preview must not get \(withheld names them, kinds says what they are\), so no preview is started for a PR/);
+  assert.match(PR, /a separate Hiveku database for development \(DATABASE_URL_DEV\) fixes database \(never a database outside Hiveku/);
+  // Test-mode keys are offered only for keys that have them; any other key only stops blocking once development holds none.
+  assert.match(PR, /test-mode keys fix live_key, and other_key keys only stop blocking once development holds none of them/);
+  assert.match(PR, /Start one by hand only if the person asks knowing that/);
   assert.match(REVIEW_PR, /when preview\.reason is live_data, ask the person first/);
   assert.match(REVIEW_PR, /tear down only a preview you started/);
   assert.match(REFERENCE, /A preview started for a PR is taken down when the PR merges or closes/);

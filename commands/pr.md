@@ -37,12 +37,13 @@ source_branch, target_branch?, title, description? })` - `target_branch` default
 the PR `number`, and what its answer's `mergeable` says (see **merge**): whether it merges cleanly
 and which other open PRs it collides with. A preview of the branch starts by itself within a few
 minutes: `project_vcs_pr_get`'s `preview` has its `url` once `state` is `live` (send it for
-sign-off), and `reason` says why none runs. `live_data`: the site's development settings reach a
-database or key the live site uses, so no preview is started for a PR (it would run the PR's code
-against live data); say so, and that a separate Hiveku database for development (`DATABASE_URL_DEV`)
-and test keys fix it (never a database outside Hiveku: saved under any database name, it becomes
-the one every deploy builds with, production included), and start one by hand only if the person
-asks knowing that. `site_cap`, `account_cap`, `idle` or
+sign-off), and `reason` says why none runs. `live_data`: the site's development settings hold a
+database or keys a preview must not get (`withheld` names them, `kinds` says what they are), so no
+preview is started for a PR (it would run the PR's code with them); say so: a separate Hiveku
+database for development (`DATABASE_URL_DEV`) fixes `database` (never a database outside Hiveku:
+saved under any database name, it becomes the one every deploy builds with, production included),
+test-mode keys fix `live_key`, and `other_key` keys only stop blocking once development holds none
+of them. Start one by hand only if the person asks knowing that. `site_cap`, `account_cap`, `idle` or
 `failed`: offer `/hiveku:preview`. When several agents work on one site, read
 `project_vcs_queue({ project_id })` before starting: it shows what is ahead in the merge line and
 what your change will collide with.

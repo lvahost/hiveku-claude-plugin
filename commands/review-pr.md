@@ -50,7 +50,7 @@ order to follow.
    `preview_screenshot({ project_id, path, branch })` reads it. Otherwise start one with
    `project_vcs_branch_preview({ project_id, branch: <source_branch> })` (`/hiveku:preview` has the
    polling rules; when `preview.reason` is `live_data`, ask the person first: that preview runs the
-   pull request's code against the live site's data), and tear down only a preview you started.
+   pull request's code with the live site's data or keys), and tear down only a preview you started.
 5. JUDGE, in this order: does it do what its title and description say; does it break anything
    (routes, links, imports, a removed file something still uses, `package.json`, `next.config.*`,
    `middleware.ts`); secrets or keys written into files; forms, analytics and tracking snippets still
