@@ -225,6 +225,12 @@ const SENSITIVE_READ_EXCLUSIONS = new Map([
     'returns an UNAUTHENTICATED, non-revocable presigned URL to a call recording. Minting the ' +
     'link is distribution: it lands in a transcript, a log or a pasted report and cannot be ' +
     'taken back (2026-08-29 voice audit).'],
+  // 2026-10-19, Email Service program. A GET whose answer is a sent email's
+  // whole content: an app's password-reset, sign-in and invite emails hold
+  // live links, and whoever reads the answer can use them.
+  ['email_message_get',
+    'returns the full content of a sent email, including live sign-in, password-reset and ' +
+    'invite links a reader could use. Reading it is distribution, not a read; ask every time.'],
 ]);
 
 // The mirror image: a POST that is a pure read. Some routes dispatch reads and
