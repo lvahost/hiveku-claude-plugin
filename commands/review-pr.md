@@ -39,12 +39,18 @@ order to follow.
    replaces sides over 1 MB. Read the whole file around each change, not only the changed lines, and
    note line numbers in `head`: a line comment points at a line of the pull request's version. A
    removed file has no `head`, so comment on it in the review's body.
-4. CHECK THAT IT WORKS. `project_test_build({ project_id, use_db_state: true, branch: <source_branch> })`,
-   then poll `project_test_build_log_get({ project_id, session_id })` until `succeeded` or `failed`.
-   A failed build is a change that must be made. When pages changed, look at them running:
-   `project_vcs_branch_preview({ project_id, branch: <source_branch> })` and
-   `preview_screenshot({ project_id, path, branch })` (`/hiveku:preview` has the polling rules), and
-   tear the preview down when done.
+4. CHECK THAT IT WORKS. On sites with "Build before merging" on, `checks` in `project_vcs_pr_get`
+   is the build and the site's checks that Hiveku runs on this branch: use it when `current` is
+   true (a failed run's `summary` names the first failing line, and
+   `project_test_build_log_get({ project_id, session_id })` has the log). Otherwise
+   `project_test_build({ project_id, use_db_state: true, branch: <source_branch> })`, then poll
+   `project_test_build_log_get({ project_id, session_id })` until `succeeded` or `failed`. A failed
+   build or check is a change that must be made. When pages changed, look at them running: when
+   `preview.state` is `live`, a preview of this branch already runs at `preview.url`, and
+   `preview_screenshot({ project_id, path, branch })` reads it. Otherwise start one with
+   `project_vcs_branch_preview({ project_id, branch: <source_branch> })` (`/hiveku:preview` has the
+   polling rules; when `preview.reason` is `live_data`, ask the person first: that preview runs the
+   pull request's code with the live site's data or keys), and tear down only a preview you started.
 5. JUDGE, in this order: does it do what its title and description say; does it break anything
    (routes, links, imports, a removed file something still uses, `package.json`, `next.config.*`,
    `middleware.ts`); secrets or keys written into files; forms, analytics and tracking snippets still

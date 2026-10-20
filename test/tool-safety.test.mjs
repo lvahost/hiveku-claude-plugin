@@ -1010,11 +1010,13 @@ const PPC_OVERRIDE_THAT_ASKS = ['ppc_recent_change_override'];
 
 // Who gets a site's lead emails (HK-255): turning them off, muting a form or rerouting its leads.
 const LEAD_EMAIL_WRITES_THAT_ASK = ['marketing_form_notifications_update'];
+/** CI checks plan step 6 (2026-10-19): running a review's checks again spends the site's test builds. */
+const CHECKS_RERUN_THAT_ASKS = ['project_vcs_checks_rerun'];
 
-test('the always-ask set is exactly the memory, form-capture and indexing writes, the secrets reveal, the A/B test writes, the mobile app writes, the PPC override and the lead-email change', () => {
+test('the always-ask set is exactly the memory, form-capture and indexing writes, the secrets reveal, the A/B test writes, the mobile app writes, the PPC override, the lead-email change and a checks rerun', () => {
   assert.deepEqual(
     [...ALWAYS_ASK_WRITES.keys()].sort(),
-    [...MEMORY_WRITES_THAT_ASK, ...FORM_CAPTURE_WRITES_THAT_ASK, ...INDEXING_WRITES_THAT_ASK, ...SECRETS_REVEAL_THAT_ASKS, ...AB_TEST_WRITES_THAT_ASK, ...MOBILE_WRITES_THAT_ASK, ...PPC_OVERRIDE_THAT_ASKS, ...LEAD_EMAIL_WRITES_THAT_ASK].sort(),
+    [...MEMORY_WRITES_THAT_ASK, ...FORM_CAPTURE_WRITES_THAT_ASK, ...INDEXING_WRITES_THAT_ASK, ...SECRETS_REVEAL_THAT_ASKS, ...AB_TEST_WRITES_THAT_ASK, ...MOBILE_WRITES_THAT_ASK, ...PPC_OVERRIDE_THAT_ASKS, ...LEAD_EMAIL_WRITES_THAT_ASK, ...CHECKS_RERUN_THAT_ASKS].sort(),
   );
 });
 
