@@ -5924,7 +5924,7 @@
       "dept": "list",
       "method": "GET",
       "timeoutMs": null,
-      "description": "List project tasks with rich filtering — by project, status, priority, assignee, type, due date, tags, and more"
+      "description": "List project tasks, newest first. Every filter given must match: project, status, type, priority, search (words in the title or description), tags, assignee, section, milestone, parent task, agent and target department. total and total_pages count only the matching tasks. The same list as pm_tasks_list. Due dates and sorting are not filters here (each task carries due_date), and labels can be neither filtered nor read in this list."
     },
     {
       "name": "marketing_agent_actions_list",
@@ -7905,7 +7905,7 @@
       "dept": "pm",
       "method": "GET",
       "timeoutMs": null,
-      "description": "List PM tasks. Filter by project_id / status / assigned_to_id / parent_task_id (for subtasks) / section_id / milestone_id."
+      "description": "List PM tasks, newest first. Every filter given must match: project_id, status, type, assigned_to_id, parent_task_id (for subtasks), section_id, milestone_id, search (words in the title or description), priority, tags, agent_codename and target_department. total and total_pages count only the matching tasks, and page returns that page of them."
     },
     {
       "name": "pm_tasks_reassign_bulk",
@@ -12665,14 +12665,14 @@
       "dept": "shopify",
       "method": "POST",
       "timeoutMs": null,
-      "description": "STEP 1 of connecting a store. Generate a Shopify authorize URL the USER opens in their own browser to approve the connection (you can't approve it for them — it's the merchant's Shopify consent screen). Prereq: the account needs a Shopify OAuth app (bring-your-own from the customer's Shopify Partners dashboard). Find one with oauth_app_list(provider='shopify'); register one with oauth_app_create(provider='shopify', products=['shopify_storefront'], client_id, client_secret) if none. Returns 412 code='no_oauth_app' if missing. intent_type: shopify_project_connect (bind to one project — pass project_id; this is the Ecommerce-tab case), shopify_account_connect (account default), or shopify_reconnect (re-auth an existing connection — pass connection_id). Returns data.setup_url (hand to user) + data.callback_url (must be in the Shopify app's Allowed redirection URLs). An app made in Shopify's Dev Dashboard needs two settings in its version: 'Embed app in Shopify admin' turned off and 'Use legacy install flow' turned on; with Shopify's defaults the store is never sent back to Hiveku. The app must have every scope requested. The default is Hiveku's nine (the dashboard's Connect always asks for all nine); pass scopes to narrow the request when the app has fewer or only read access is needed (e.g. read_products, read_orders, read_customers, read_content, read_themes, unauthenticated_read_product_listings). The app also needs one Storefront API permission (an unauthenticated_* scope; see scopes). A connection narrowed on purpose later shows a 'Reconnect <shop> to grant new Shopify permissions' suggestion, because Hiveku compares granted scopes with its nine defaults; the user can ignore it. After the user approves (the result page stays open in their tab and shows any error), poll shopify_connection_status until the store appears."
+      "description": "STEP 1 of connecting a store. Generate a Shopify authorize URL the USER opens in their own browser to approve the connection (you can't approve it for them — it's the merchant's Shopify consent screen). Prereq: the account needs a Shopify OAuth app (bring-your-own from the customer's Shopify Partners dashboard). Find one with oauth_app_list(provider='shopify'); register one with oauth_app_create(provider='shopify', products=['shopify_storefront'], client_id, client_secret) if none. Returns 412 code='no_oauth_app' if missing. intent_type: shopify_project_connect (bind to one project — pass project_id; this is the Ecommerce-tab case), shopify_account_connect (account default), or shopify_reconnect (re-auth an existing connection — pass connection_id). Returns data.setup_url (hand to user) + data.callback_url (must be in the Shopify app's Allowed redirection URLs). An app made in Shopify's Dev Dashboard needs two settings in its version: 'Embed app in Shopify admin' turned off and 'Use legacy install flow' turned on; with Shopify's defaults the store is never sent back to Hiveku. The app must have every scope requested. The default is Hiveku's nine (the dashboard's Connect always asks for all nine); pass scopes to narrow the request when the app has fewer or only read access is needed (e.g. read_products, read_orders, read_customers, read_content, read_themes, unauthenticated_read_product_listings). For a Hiveku storefront site the app also needs Shopify's Storefront API permissions (see scopes): without one the store is still saved and the store tools work, but it has no Storefront token (has_storefront_token false in shopify_connection_status), so a site cannot use it and a shopify_project_connect store is saved without being linked to the project. A connection narrowed on purpose later shows a 'Reconnect <shop> to grant new Shopify permissions' suggestion, because Hiveku compares granted scopes with its nine defaults; the user can ignore it. After the user approves (the result page stays open in their tab and shows any error), poll shopify_connection_status until the store appears."
     },
     {
       "name": "shopify_connection_status",
       "dept": "shopify",
       "method": "GET",
       "timeoutMs": null,
-      "description": "STEP 2 (poll). List the account's Shopify connections — the target after shopify_connect_start. Pass shop_domain to filter to one store; poll until a row appears with disconnected_at=null (that means the user finished approving). Returns sanitized rows only (shop_domain, shop_name, shop_id, scope, purpose, installed_at, disconnected_at, is_dev_store) — never tokens."
+      "description": "STEP 2 (poll). List the account's Shopify connections — the target after shopify_connect_start. Pass shop_domain to filter to one store; poll until a row appears with disconnected_at=null (that means the user finished approving). Returns sanitized rows only, never tokens: id, oauth_app_id, shop_domain, shop_name, shop_id, scope, purpose, installed_at, disconnected_at, last_synced_at, is_dev_store, has_stored_credentials and has_storefront_token. After a connect, check has_storefront_token: false means Shopify gave no Storefront token (the app holds no Storefront API permission), so the store tools work but a Hiveku storefront site cannot, and a project connect was saved without being linked to its site. To fix it, add the Storefront permissions to the app (see shopify_connect_start's scopes) and connect again."
     },
     {
       "name": "shopify_customer_create",
