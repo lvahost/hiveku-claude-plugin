@@ -99,15 +99,19 @@
  * or off, starts a website read or keeps a page out" stopped being true. The
  * reference now says which tools there are, for whom (an owner or admin's own
  * key), the confirmation a source or knowledge base needs (409 with
- * details.plan.summary and details.confirm_token), the hold until the asking
- * apps ship (agent_changes_not_enabled), and that no change follows a
- * stranger's words. Pinned in the block at the end.
+ * details.plan.summary and details.confirm_token), that Claude Code asks
+ * before every direct call and the MCP server refuses the change inside
+ * hiveku_batch, what a 403 agent_changes_not_enabled means (Hiveku has paused
+ * these changes for AI connections: worded to stay true whether the builder's
+ * pause is on or off), and that no change follows a stranger's words. Pinned
+ * in the block at the end.
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { LIVE_CHANGE_WRITES } from '../lib/tool-safety.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const read = (rel) => fs.readFileSync(path.join(root, rel), 'utf8');
@@ -556,7 +560,9 @@ test('the knowledge reference names every source and every field of the status',
   assert.match(sources, /It never reads account memory, CRM records, other tickets, internal or draft articles/);
   assert.match(sources, /Helpdesk > AI agent\*\*, the "Where it finds answers" card/);
   assert.match(sources, /the tools below \("Changing it from here"\) change the assistant's settings, start a website read and keep a page out; saved answers and help articles have the Macros and Knowledge base tools/);
-  assert.match(sources, /The source switches have a tool too, but it is held for now \(403 `agent_changes_not_enabled`\), so they stay on that card\. Never invent another tool, and when one refuses, tell the owner where the switch is/);
+  // What the pause answer means, never the tool's state: true whether the builder pauses these changes or not.
+  assert.match(sources, /The source switches have a tool too\. A 403 `agent_changes_not_enabled` from it means Hiveku has paused these changes for AI connections, so they stay on that card\. Never invent another tool, and when one refuses, tell the owner where the switch is/);
+  assert.doesNotMatch(sources, /held for now/);
 
   const status = section(know, '## Check before you explain: `helpdesk_assistant_knowledge_status`');
   for (const key of C7_KEYS) assert.ok(status.includes('`' + key.replace(/\[\]$/, '') ), `the status section must name ${key}`);
@@ -724,14 +730,22 @@ test('training it from here: which tools, for whom, the confirmation, the hold, 
   assert.match(train, /`instruction_override`: reword it as guidance for visitors; the owner's own lines already there do not stop it/);
   // A field the tool does not list is dropped, not refused, and the rest still change.
   assert.match(train, /A field the tool does not list never reaches Hiveku: the server drops it and names it in `_dropped_params`/);
-  // The confirmation, where the answer puts it, and the hold.
+  // The confirmation, where the answer puts it, the ask, and what the pause answer means.
   assert.match(train, /first answers 409 `confirmation_required` and changes nothing: `details\.plan\.summary` names each source it turns on and every knowledge base visitors could then be told about, with how many documents it holds/);
   assert.match(train, /A 409 `plan_changed` means something moved since: it carries a fresh plan and token/);
   assert.match(train, /only after a yes send the same change again with `details\.confirm_token`/);
-  assert.match(train, /it answers 403 `agent_changes_not_enabled` to every call, turning off included: send the owner to the "Where it finds answers" card, or to the AI chat on the Helpdesk page/);
+  // "Claude Code asks the user before every direct call" must stay true of lib/tool-safety.mjs
+  // (test/live-change-writes.test.mjs pins that every name in that set asks).
+  assert.match(train, /Claude Code asks the user before every direct call, and the MCP server refuses it inside `hiveku_batch`, so call it on its own/);
+  assert.ok(LIVE_CHANGE_WRITES.has('helpdesk_assistant_knowledge_sources_update'), 'the source change must stay on LIVE_CHANGE_WRITES');
+  // A possible answer, never the tool's state: true whether the builder pauses these changes or not.
+  assert.match(train, /A 403 `agent_changes_not_enabled` means Hiveku has paused these changes for AI connections, turning off included, and nothing changed: say so plainly and send the owner to the "Where it finds answers" card, or to the AI chat on the Helpdesk page, which asks them on an approval card/);
+  assert.doesNotMatch(train, /are released|held for now/);
   // The website read: credits, only while the source is on, the page's limits.
   assert.match(train, /AI credits; only while the website source is on; at most once every 10 minutes and 3 times a day/);
   // The hub points here for training.
   assert.match(section(skill + '\n## ', '## Reference files'), /training it from here/);
-  assert.match(skillChatsOf(), /the reference's `helpdesk_assistant_knowledge_sources_update` is the only one, for an owner or admin's own key, and it is held for now \(403 `agent_changes_not_enabled`\)/);
+  assert.match(skillChatsOf(), /the reference's `helpdesk_assistant_knowledge_sources_update` is the only one, for an owner or admin's own key\. Turning a source on with it first answers 409 `confirmation_required` with a plan, and applies only with that plan's `confirm_token`, sent after the user's yes\./);
+  assert.match(skillChatsOf(), /A 403 `agent_changes_not_enabled` from it means Hiveku has paused these changes for AI connections: say so plainly, and send the owner to Helpdesk > AI agent > "Where it finds answers", or to the AI chat on the Helpdesk page, which asks them on an approval card/);
+  assert.doesNotMatch(skillChatsOf(), /held for now/);
 });
