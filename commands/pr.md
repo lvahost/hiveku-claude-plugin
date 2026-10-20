@@ -35,7 +35,13 @@ server-side, but tell the user the PR will include the working tree as it stands
 change (an empty compare means nothing to review). Then `project_vcs_pr_create({ project_id,
 source_branch, target_branch?, title, description? })` - `target_branch` defaults to `main`. Report
 the PR `number`, and what its answer's `mergeable` says (see **merge**): whether it merges cleanly
-and which other open PRs it collides with. Offer a branch preview for sign-off (`/hiveku:preview`). When several agents work on one site, read
+and which other open PRs it collides with. A preview of the branch starts by itself within a few
+minutes: `project_vcs_pr_get`'s `preview` has its `url` once `state` is `live` (send it for
+sign-off), and `reason` says why none runs. `live_data`: the site's development settings reach a
+database or key the live site uses, so no preview is started for a PR (it would run the PR's code
+against live data); say so, and that a development database such as `DATABASE_URL_DEV` fixes it,
+and start one by hand only if the person asks knowing that. `site_cap`, `account_cap`, `idle` or
+`failed`: offer `/hiveku:preview`. When several agents work on one site, read
 `project_vcs_queue({ project_id })` before starting: it shows what is ahead in the merge line and
 what your change will collide with.
 
@@ -61,9 +67,14 @@ you are asked to review with `project_vcs_diff_file({ project_id, from: <pr.targ
 <pr.source_branch>, path })` - `base` is the file on the target, `head` the file on the source, a
 side is null where the path does not exist, `status` is `added` / `removed` / `modified` / `same`,
 and sides over 1 MB come back with `tooLarge` instead of content. Uncommitted working-tree edits on
-either branch ARE in the diff. For a real review also build the source branch
-(`project_test_build({ project_id, use_db_state: true, branch: <source> })`, polled to `succeeded`)
-- a PR that does not build does not merge. Summarize per file what changed and anything risky
+either branch ARE in the diff. For a real review the branch must build. On sites with "Build
+before merging" on, `checks` in `project_vcs_pr_get` is the build and the site's checks (type
+check, lint, tests) that Hiveku runs on the branch once it has been still for two minutes: `state`
+`running` / `passed` / `failed`; each run's `summary` names the first failing line, and
+`project_test_build_log_get({ project_id, session_id })` has the whole log; `current: false` means
+it was for an older state of the branch (a new run starts by itself). Without `checks`, build it
+yourself: `project_test_build({ project_id, use_db_state: true, branch: <source> })`, polled to
+`succeeded`. A PR that does not build does not merge. Summarize per file what changed and anything risky
 (routes moved, config, dependencies, deleted files). `/hiveku:review-pr <number>` walks a careful
 review from reading to posting it.
 
@@ -137,7 +148,9 @@ itself, after #10 and #11." Then `project_vcs_queue_add({ project_id, number, pr
 `conflicts_with_ahead`: a PR ahead it collides with, so it will be sent back after that one merges;
 then settle it with **resolve** and add it again. Before it merges, the line checks that it still
 merges cleanly, that it adds no secret keys to code (a key found sends it back: move the value to the
-site's secrets), and, with the "Require an approval" rule on, that a person approved its current
+site's secrets), with "Build before merging" on that the merged result builds and passes the site's
+checks (a failure sends it back naming the check and its first failing line: fix it on the branch,
+then add it again), and, with the "Require an approval" rule on, that a person approved its current
 changes; it waits for that approval without holding up the PRs behind it (`entry.waiting` says what
 it waits for). Refusals change nothing: 409 `merge_conflicts` (resolve first), `already_queued`,
 `pull_request_is_draft`, `queue_full`, `dependency_not_open`; 400 `dependency_cycle`; `urgent`
