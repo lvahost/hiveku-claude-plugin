@@ -368,7 +368,9 @@
  *   read-only list), then delete this entry; tool-names.test.mjs forces the
  *   deletion.
  *     EMAIL-SERVICE-1  email_message_get (one sent email's content and events;
- *                      ask every time).
+ *                      ask every time). Landed in the live index on 2026-10-20
+ *                      (MCP #255, d107053, deployed; index regenerated at 2316
+ *                      tools in release 0.27.63); entry deleted.
  */
 const SEO_SINCE = '2026-08-30';
 const seo = (batch) => ({ since: SEO_SINCE, batch });
@@ -474,6 +476,7 @@ export const PENDING_TOOLS = new Map([
   // index regenerated at 2297 tools, and the four reads joined the read-only list as GETs);
   // entries deleted.
 
-  // EMAIL-SERVICE-1 (2026-10-19): opening a sent email. See the batch note above.
-  ['email_message_get', { since: '2026-10-19', batch: 'EMAIL-SERVICE-1' }],
+  // EMAIL-SERVICE-1: landed in the live index on 2026-10-20 (MCP #255, d107053, deployed; index
+  // regenerated at 2316 tools in release 0.27.63; email_message_get stays off the read-only list);
+  // entry deleted.
 ]);
