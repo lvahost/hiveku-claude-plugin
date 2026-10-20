@@ -545,6 +545,10 @@ const CODEX_ONLY_PROMPTS = new Map([
     'asks here only when it would make a rule, skill, shortcut or specialist that names no agent ' +
     '(lib/memory-tool-rules.mjs reads the arguments), and Codex asks by the called name only, so ' +
     'Codex prompts on every memory_create (Codex plugin 0.3.0, memory surfaces audit G7)'],
+  ['email_message_get',
+    'is a GET that answers with a sent email\'s whole content, live sign-in and reset links included. ' +
+    'This plugin asks for it through NEVER_AUTO_APPROVE (lib/tool-safety.mjs), where risky reads are ' +
+    'gated, so the ask list (writes only) cannot carry it, and Codex needs a prompt of its own (Codex 0.3.25)'],
 ]);
 
 test('every Codex-only prompt names a real tool that is not on the ask list', () => {
