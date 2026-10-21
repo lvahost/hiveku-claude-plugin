@@ -60,7 +60,7 @@ import { HIVEKU_APP_URL, HIVEKU_MCP_URL, CLIENT_ID, PLUGIN_VERSION, keyPreview, 
 import { PLAN_LIMIT_LINE } from '../lib/shim.mjs';
 import { runPostToolUseHook } from '../lib/vcs-ledger.mjs';
 import { runStopHook } from '../lib/stop-version.mjs';
-import { collectReports, formatReports } from '../lib/feedback-reports.mjs';
+import { collectReports, filterReports, formatReports, parseClosedSinceDay, pickAccounts } from '../lib/feedback-reports.mjs';
 import {
   REVEAL_TOOL,
   EnvPullError,
@@ -105,6 +105,9 @@ const HELP = `hiveku ${PLUGIN_VERSION} — Hiveku for Claude Code
                         on the link it prints; it waits up to 10 minutes for them
   fleet                 read-only portfolio sweep across every connected account
   reports [--json]      read-only list of every connected account's Agent Feedback reports
+          [--account <id|name>] [--filer <person|assistant|department_agent|name>]
+          [--closed-since <YYYY-MM-DD>]
+                        who filed each one, and when and how it closed
   hook <session-start|cwd-changed|pre-tool-use|post-tool-use|stop|prompt-submit|probe-remote>
   update [--json]               Refresh the marketplace and install the plugin update through
                                 Claude's command-line tool (the desktop app's own copy included)
@@ -117,7 +120,7 @@ your OS keychain. They are never written into a project.`;
 function parseFlags(argv) {
   const flags = {};
   const positional = [];
-  const valued = new Set(['account', 'dir', 'app-url', 'root', 'code', 'tier', 'approval-token']);
+  const valued = new Set(['account', 'dir', 'app-url', 'root', 'code', 'tier', 'approval-token', 'filer', 'closed-since']);
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a.startsWith('--')) {
@@ -773,11 +776,22 @@ async function cmdFleet(flags) {
 /**
  * `hiveku reports` - every connected account's Agent Feedback reports, each
  * read with that account's own key (lib/feedback-reports.mjs). Read-only.
+ * --account reads only the accounts it names; --filer and --closed-since
+ * narrow what was read.
  */
 async function cmdReports(flags) {
   const creds = await readCredentials(resolveDataDir());
   if (!Object.keys(creds.accounts || {}).length) fail('No accounts connected. Run /hiveku:connect first.');
-  const rows = await collectReports(creds.accounts, (opts) => new Upstream(opts));
+  if ('account' in flags && typeof flags.account !== 'string') fail('--account takes an account id or part of its name.');
+  if ('filer' in flags && typeof flags.filer !== 'string') fail('--filer takes person, assistant, department_agent or part of a name.');
+  let closedSinceMs = null;
+  if ('closed-since' in flags) {
+    closedSinceMs = parseClosedSinceDay(flags['closed-since']);
+    if (closedSinceMs === null) fail('--closed-since takes a day like 2026-10-01.');
+  }
+  const accounts = 'account' in flags ? pickAccounts(creds.accounts, flags.account) : creds.accounts;
+  if (!Object.keys(accounts).length) fail(`No connected account matches --account ${flags.account}.`);
+  const rows = filterReports(await collectReports(accounts, (opts) => new Upstream(opts)), { filer: flags.filer, closedSinceMs });
   if (flags.json) {
     process.stdout.write(JSON.stringify({ accounts: rows }, null, 2) + '\n');
     return;
