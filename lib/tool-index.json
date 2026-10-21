@@ -4188,7 +4188,7 @@
       "dept": "email",
       "method": "GET",
       "timeoutMs": null,
-      "description": "One email API key by id (from email_api_key_list): name, environment, permissions, the sender domains and IPs it may use, its throttle, active or paused, when it was last used and how often. Never the key itself, which is shown once, at creation. delivers_email says whether its sends are delivered (production) or recorded as simulated (test, staging, development); smtp says whether smtp.hiveku.com takes it as a password: accepted, refused, or uncertain for a key minted through Olympus (use a dashboard hk_live_ key for SMTP). email_logs_list with api_key_id lists what it sent."
+      "description": "One email API key by id (from email_api_key_list): name, environment, permissions, the sender domains and IPs it may use, its throttle, active or paused, when it was last used and how often. Never the key itself, which is shown once, at creation. delivers_email says whether its sends are delivered (production) or recorded as simulated (test, staging, development); smtp says what smtp.hiveku.com does with it as the SMTP password (user apikey): accepted (an active production key, from the dashboard or minted here), simulated (an active key of any other environment: taken, recorded as simulated, nothing delivered) or refused (a paused key). email_logs_list with api_key_id lists what it sent."
     },
     {
       "name": "email_api_key_list",
