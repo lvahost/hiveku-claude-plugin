@@ -17,12 +17,13 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { appendLedger, readLedger } from '../lib/vcs-ledger.mjs';
+import { appendLedger, readLedger, classifyHookPayload } from '../lib/vcs-ledger.mjs';
 import {
   runStopHook,
   blockReason,
   unversionedNotice,
   readStatusAnswer,
+  readBranchesAnswer,
   confirmPairs,
   upstreamStatusCaller,
   versionReminderOptedOut,
@@ -160,6 +161,116 @@ test('at most three projects are confirmed; the rest trust the ledger', async ()
   // The three confirmed clean are dropped; the two unasked remain, by name.
   for (const id of ids.slice(0, 3)) assert.ok(!out.reason.includes(id), `${id} was confirmed clean`);
   for (const id of ids.slice(3, 5)) assert.ok(out.reason.includes(id), `${id} is still unversioned`);
+});
+
+/* ── many branches of one project (HK-335) ───────────────────────────────── */
+
+const BRANCHES = Array.from({ length: 20 }, (_, i) => `feat/${i}-mirror`);
+
+/** A branches caller that answers from a table and records which projects it was asked about. */
+function branchesFrom(states, askedProjects = []) {
+  return async (projectId) => {
+    askedProjects.push(projectId);
+    if (states instanceof Error) throw states;
+    return states;
+  };
+}
+
+test('many pending branches of one project: one project_vcs_branches call settles them all (HK-335)', async () => {
+  const w = world();
+  for (const b of BRANCHES) write(w, P, b);
+  const asked = [];
+  const askedProjects = [];
+  const states = new Map(BRANCHES.map((b) => [b, 'clean']));
+  const out = await run(w, {}, { callStatus: statusFrom({ '*': 'dirty' }, asked), callBranches: branchesFrom(states, askedProjects) });
+  assert.equal(out, '', 'every branch was saved as a version, so the turn is not blocked');
+  assert.deepEqual(askedProjects, [P], 'one call for the whole project');
+  assert.deepEqual(asked, [], 'no per-branch status calls');
+  // Recorded as versioned: the next Stop reads the ledger alone.
+  assert.equal(await run(w, {}, { callStatus: statusFrom({ '*': 'dirty' }, asked), callBranches: branchesFrom(null, askedProjects) }), '');
+  assert.deepEqual(askedProjects, [P]);
+});
+
+test('the branches answer clears the clean branches and blocks on the dirty ones, by name', async () => {
+  const w = world();
+  for (const b of BRANCHES) write(w, P, b);
+  const states = new Map(BRANCHES.map((b) => [b, b === 'feat/3-mirror' || b === 'feat/7-mirror' ? 'dirty' : 'clean']));
+  const out = JSON.parse(await run(w, {}, { callBranches: branchesFrom(states) }));
+  assert.equal(out.decision, 'block');
+  assert.match(out.reason, /feat\/3-mirror/);
+  assert.match(out.reason, /feat\/7-mirror/);
+  assert.doesNotMatch(out.reason, /more/, 'only the two dirty branches remain');
+});
+
+test('a branch the answer does not list, or a failed or hung branches call, trusts the ledger', async () => {
+  const partial = world();
+  for (const b of BRANCHES) write(partial, P, b);
+  const half = new Map(BRANCHES.slice(0, 10).map((b) => [b, 'clean']));
+  const out = JSON.parse(await run(partial, {}, { callBranches: branchesFrom(half) }));
+  assert.equal(out.decision, 'block');
+  assert.match(out.reason, /and 7 more/, 'the ten unlisted branches stay pending');
+
+  const failed = world();
+  for (const b of BRANCHES) write(failed, P, b);
+  assert.equal(JSON.parse(await run(failed, {}, { callBranches: branchesFrom(new Error('fetch failed')) })).decision, 'block');
+
+  const hung = world();
+  for (const b of BRANCHES) write(hung, P, b);
+  const started = Date.now();
+  const outHung = await run(hung, {}, { callBranches: () => new Promise(() => {}), budgetMs: 150 });
+  assert.equal(JSON.parse(outHung).decision, 'block');
+  assert.ok(Date.now() - started < 5_000, 'the budget bounds the wait');
+});
+
+test('Your site and a lone pending branch still ask project_vcs_status; the branches list is not asked', async () => {
+  const w = world();
+  write(w, P, 'main');
+  write(w, P, 'feature/pricing');
+  const asked = [];
+  const askedProjects = [];
+  const out = await run(w, {}, { callStatus: statusFrom({ '*': 'clean' }, asked), callBranches: branchesFrom(new Map(), askedProjects) });
+  assert.equal(out, '');
+  assert.deepEqual(asked.sort(), [`${P}:feature/pricing`, `${P}:main`]);
+  assert.deepEqual(askedProjects, []);
+});
+
+test('end to end: a hiveku_batch answer too big to read, then the Stop settles every branch in one call (HK-335)', async () => {
+  const w = world();
+  // Claude Code swapped the batch's large answer for a note, so the members
+  // are assumed to have written and their saves are not credited.
+  const calls = BRANCHES.flatMap((b) => [
+    { tool: 'project_vcs_branch_create', args: { project_id: P, branch: b } },
+    { tool: 'project_import_finalize', args: { project_id: P, branch: b, key: 'imports/x.tar.gz' } },
+    { tool: 'project_vcs_commit', args: { project_id: P, branch: b } },
+  ]);
+  const lines = classifyHookPayload({
+    hook_event_name: 'PostToolUse',
+    tool_name: 'mcp__plugin_hiveku_hk__hiveku_batch',
+    tool_input: { calls },
+    tool_response: 'Output too large (812KB). Full output saved to a file.',
+  });
+  assert.equal(lines.length, BRANCHES.length, 'one assumed write per branch');
+  appendLedger('s', lines, { tmpDir: w.tmpDir });
+  const askedProjects = [];
+  const out = await run(w, {}, { callBranches: branchesFrom(new Map(BRANCHES.map((b) => [b, 'clean'])), askedProjects) });
+  assert.equal(out, '');
+  assert.deepEqual(askedProjects, [P]);
+});
+
+test('readBranchesAnswer: each branch by its uncommitted flag; an unreadable answer is null', () => {
+  const answer = (body, extra = {}) => ({ result: { content: [{ type: 'text', text: JSON.stringify(body) }], ...extra } });
+  const states = readBranchesAnswer(answer({ data: [
+    { branch_name: 'main', uncommitted: false },
+    { branch_name: 'feat/a', uncommitted: true },
+    { branch_name: 'feat/b', uncommitted: false },
+    { branch_name: 'feat/c' },
+    { uncommitted: true },
+  ] }));
+  assert.deepEqual([...states.entries()], [['main', 'clean'], ['feat/a', 'dirty'], ['feat/b', 'clean']]);
+  assert.equal(readBranchesAnswer(answer({ data: [] }, { isError: true })), null);
+  assert.equal(readBranchesAnswer({ result: { content: [{ type: 'text', text: 'not json' }] } }), null);
+  assert.equal(readBranchesAnswer(answer({ error: 'nope' })), null);
+  assert.equal(readBranchesAnswer({ error: { message: 'x' } }), null);
 });
 
 test('several projects: one reason names up to three and counts the rest, near 700 characters', () => {
