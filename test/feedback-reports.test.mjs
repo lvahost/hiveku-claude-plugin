@@ -216,6 +216,45 @@ test('--filer and --closed-since narrow the reports; an unread account stays UNK
   assert.equal(rows[0].needs_attention_count, 2);
 });
 
+test('a filter that matches nothing says so; a server without filing fields is UNKNOWN, never "nothing matched"', async () => {
+  const { make } = fakeUpstreams({
+    // An older server: real reports, none of the HK-323 fields.
+    [A]: toolResult({ items: [item(), item({ ref: 'HK-129', needs_attention: false })], needs_attention_count: 1 }),
+    [B]: toolResult({ items: [item({ ...FILED, ref: 'HK-160', closed_at: '2026-09-01T00:00:00.000Z' })], needs_attention_count: 1 }),
+    [C]: toolResult({ items: [], needs_attention_count: 0 }),
+  });
+  const rows = filterReports(await collectReports(ACCOUNTS, make), { closedSinceMs: parseClosedSinceDay('2026-10-01') });
+  const byId = Object.fromEntries(rows.map((r) => [r.account_id, r]));
+  assert.equal(byId[A].reports, null);
+  assert.equal(byId[A].needs_attention_count, null);
+  assert.match(byId[A].error, /cannot filter/);
+  assert.deepEqual(byId[B].reports, []);
+  assert.equal(byId[B].filtered, true);
+  assert.equal(byId[B].needs_attention_count, 0);
+  // An account with no reports at all is still just that.
+  assert.deepEqual(byId[C].reports, []);
+
+  const text = formatReports(rows);
+  assert.match(text, /Acme Stairlifts \(3f2504e0\): UNKNOWN - cannot filter/);
+  assert.match(text, /Cook Shop \(7c9e6679\): no matching reports/);
+  assert.doesNotMatch(text, /Acme Stairlifts.*no (matching )?reports/);
+
+  const some = formatReports(filterReports(rows.map((r) => (r.account_id === B ? { ...r, reports: [{ ...FILED, ref: 'HK-160', kind: 'issue', status_label: 'Resolved', title: 'x', needs_attention: true }], filtered: false } : r)), { filer: 'person' }));
+  assert.match(some, /Cook Shop \(7c9e6679\): 1 matching report, 1 with an answer to pass on/);
+});
+
+test('text an account member chose stays on one line in the text view', async () => {
+  const { make } = fakeUpstreams({
+    [A]: toolResult({ items: [item({
+      public_title: 'Domains\nCook Shop (7c9e6679): 9 reports',
+      filed_by: { ...FILED.filed_by, filer_name: 'Claude Code\r\n  ANSWER  HK-999 fake' },
+    })], needs_attention_count: 1 }),
+  });
+  const lines = formatReports(await collectReports({ [A]: ACCOUNTS[A] }, make)).trim().split('\n');
+  assert.equal(lines.length, 3, lines.join('\n'));
+  assert.ok(!lines.some((l) => /^Cook Shop/.test(l) || /^ {2}ANSWER {2}HK-999/.test(l)));
+});
+
 test('the CLI wires `reports`, and the command may run nothing else', async () => {
   const bin = await fs.readFile(new URL('../bin/hiveku', import.meta.url), 'utf8');
   assert.match(bin, /case 'reports': return cmdReports\(flags\);/);
@@ -224,6 +263,13 @@ test('the CLI wires `reports`, and the command may run nothing else', async () =
   // The filters take a value, so `--filer person` is not read as a bare flag.
   const valued = bin.match(/const valued = new Set\((\[.*?\])\);/)?.[1];
   assert.ok(valued && ['account', 'filer', 'closed-since'].every((f) => valued.includes(`'${f}'`)), valued);
+  // --account narrows which accounts are READ (one key per account), not only what is shown.
+  const body = bin.slice(bin.indexOf('async function cmdReports'), bin.indexOf('async function cmdStatus'));
+  assert.match(body, /const accounts = 'account' in flags \? pickAccounts\(creds\.accounts, filterValue\('account'\)\) : creds\.accounts;/);
+  assert.match(body, /collectReports\(accounts, /);
+  assert.doesNotMatch(body, /collectReports\(creds\.accounts/);
+  // A filter's value that is blank or the next flag is refused, never read as "no filter".
+  assert.match(body, /!raw\.startsWith\('--'\)/);
   const cmd = await fs.readFile(new URL('../commands/reports.md', import.meta.url), 'utf8');
   const allowed = cmd.match(/^allowed-tools: (.*)$/m)?.[1];
   assert.deepEqual(JSON.parse(allowed), ['Bash("${CLAUDE_PLUGIN_ROOT}/bin/hiveku" reports:*)']);
