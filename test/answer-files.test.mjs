@@ -46,10 +46,11 @@ import { runShim } from '../lib/shim.mjs';
 import { writeBinding } from '../lib/binding.mjs';
 import { runSetup } from '../lib/setup.mjs';
 import {
-  BATCH_FILE_RESULT_BYTES,
+  BATCH_FILE_PAYLOAD_BUDGET,
   BATCH_OUTPUT_PROPERTY,
   MAX_STDOUT_LINE_BYTES,
   batchForwardMessage,
+  fileModeCap,
   guardedLine,
   isBatchFileCall,
   pagingFor,
@@ -74,7 +75,7 @@ const MIB = 1024 * 1024;
 const ACCOUNT = '3f2504e0-4f89-11d3-9a0c-0305e82c3301';
 const PROJECT = '6d676101-0000-4000-8000-00000000000a';
 const PFX = 'mcp__plugin_hiveku_hk__';
-const STAMP_RE = /\d{8}T\d{9}Z(-\d+)?/;
+const STAMP_RE = /\d{8}T\d{9}Z(-\d+)?-[0-9a-f]{6}/;
 
 /* ── harness ─────────────────────────────────────────────────────────────── */
 
@@ -573,7 +574,7 @@ const BATCH_CALLS = [
   { label: 'failed', tool: 'project_get', args: { project_id: '6d676101-0000-4000-8000-0000000000ff' } },
 ];
 
-test('output "file": output is taken out, the cap defaults to 32768, the file holds the answer, the counts are right', async () => {
+test('output "file": output is taken out, the cap is sized to the batch, the file holds the answer, the counts are right', async () => {
   const session = await boundFolder();
   const text = JSON.stringify(batchEnvelope());
   const up = fakeUpstream({ 'tools/call': () => ({ content: [{ type: 'text', text }] }) });
@@ -583,8 +584,9 @@ test('output "file": output is taken out, the cap defaults to 32768, the file ho
     const [forwarded] = up.toolCalls();
     assert.equal(forwarded.params.name, 'hiveku_batch');
     assert.equal(forwarded.id, 20);
-    assert.deepEqual(forwarded.params.arguments, { calls: BATCH_CALLS, max_bytes_per_result: BATCH_FILE_RESULT_BYTES });
-    assert.equal(BATCH_FILE_RESULT_BYTES, 32_768);
+    // Five calls share the batch's payload budget: 20,000 each, never the 32,768 that let the batch drop results.
+    assert.deepEqual(forwarded.params.arguments, { calls: BATCH_CALLS, max_bytes_per_result: 20_000 });
+    assert.equal(fileModeCap(BATCH_CALLS), 20_000);
 
     assert.equal(answer.msg.result.isError, undefined);
     const body = bodyOf(answer);
@@ -594,7 +596,11 @@ test('output "file": output is taken out, the cap defaults to 32768, the file ho
     assert.equal(body.count, 5);
     assert.equal(body.ok_count, 4);
     assert.equal(body.failed_count, 1);
-    assert.deepEqual(body.trimmed, ['cut', 'own-cap', 'dropped']);
+    assert.deepEqual(body.trimmed, ['cut', 'own-cap']);
+    // A dropped member already ran: it is listed apart, with its ok and status, and never as one to send again.
+    assert.deepEqual(body.dropped, [{ label: 'dropped', ok: true, status: 200 }]);
+    assert.match(body.note, /each one already ran/);
+    assert.match(body.note, /never send a dropped write again/);
     assert.equal('results' in body, false, 'no result comes back into the chat');
     assert.equal('incomplete' in body, false);
     assert.ok(Buffer.byteLength(answer.raw) < 4096, 'the chat gets a few hundred bytes');
@@ -856,10 +862,42 @@ test('tools/list shows output on hiveku_batch; other tools and a server-declared
   const declared = { ...batch, inputSchema: { ...batch.inputSchema, properties: { ...batch.inputSchema.properties, output: { type: 'string', description: 'server text' } } } };
   assert.deepEqual(withBatchOutputOption([declared]), [declared]);
   const words = BATCH_OUTPUT_PROPERTY.description;
-  for (const needed of ['hiveku-data/batches/<batch_id>.json', 'saved_to', 'trimmed', '32768', 'max_bytes_per_result']) {
+  for (const needed of ['hiveku-data/batches/<batch_id>.json', 'saved_to', 'trimmed', 'dropped', 'already ran', 'never send a write again', '32768', 'max_bytes_per_result']) {
     assert.ok(words.includes(needed), `the option text names ${needed}`);
   }
   assert.deepEqual(BATCH_OUTPUT_PROPERTY.enum, ['inline', 'file']);
+});
+
+test('the file-mode cap fits the whole batch in its size budget, and never drops below inline', () => {
+  const calls = (n) => Array.from({ length: n }, (_, i) => ({ label: `c${i}`, tool: 'project_get', args: {} }));
+  for (const [n, cap] of [[1, 32_768], [3, 32_768], [4, 25_000], [5, 20_000], [25, 4_000], [60, 2_048]]) {
+    assert.equal(fileModeCap(calls(n)), cap, `${n} calls`);
+  }
+  assert.equal(fileModeCap([]), 32_768);
+  assert.equal(fileModeCap(undefined), 32_768);
+  // Up to the batch's 25 calls, the members' results together stay inside the payload budget.
+  for (let n = 1; n <= 25; n++) assert.ok(n * fileModeCap(calls(n)) <= BATCH_FILE_PAYLOAD_BUDGET, `${n} calls`);
+  // A batch with no dropped member says nothing about dropping.
+  assert.equal(BATCH_FILE_PAYLOAD_BUDGET, 100_000);
+});
+
+test('output "file": a cancel that arrives while the folder is checked stops the call before anything is sent', async () => {
+  const session = await boundFolder();
+  const up = fakeUpstream({ 'tools/call': () => ({ content: [{ type: 'text', text: JSON.stringify(batchEnvelope()) }] }) });
+  const shim = startShim(session);
+  try {
+    // Both lines arrive together: the cancel is handled while the call waits on the folder check.
+    shim.send(callMsg(30, 'hiveku_batch', { calls: BATCH_CALLS, output: 'file' }));
+    shim.send({ jsonrpc: '2.0', method: 'notifications/cancelled', params: { requestId: 30, reason: 'test' } });
+    const answer = await shim.answer(30);
+    assert.equal(up.toolCalls().length, 0, 'nothing was forwarded');
+    assert.match(answer.msg.error.message, /Nothing was sent, so nothing ran/);
+    assert.equal(answer.msg.error.data.dispatched, false);
+  } finally {
+    await shim.close();
+    up.restore();
+    await session.cleanup();
+  }
 });
 
 test('no emojis or em dashes in the words this change puts in front of an agent', () => {
