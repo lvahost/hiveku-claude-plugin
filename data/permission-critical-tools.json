@@ -5,8 +5,8 @@
     "mcp__plugin_hiveku_hk__",
     "mcp__hiveku__"
   ],
-  "plugin_version": "0.27.72",
-  "count": 293,
+  "plugin_version": "0.27.73",
+  "count": 295,
   "tools": [
     {
       "name": "deploy_site",
@@ -1062,6 +1062,16 @@
       "name": "workflow_resume",
       "method": "POST",
       "why_gated": "clears an automatic pause on a workflow, so its triggers run it for real again; Hiveku paused it because its runs kept failing or it looped, and whatever it sends reaches real customers"
+    },
+    {
+      "name": "workflow_env_set",
+      "method": "POST",
+      "why_gated": "creates or changes a workflow variable, and switched-on workflows use the new value from their next run with nobody watching. It can store a secret, or link one of a site's own environment variables, whose value a workflow's HTTP request step then sends to that site in a header"
+    },
+    {
+      "name": "workflow_env_delete",
+      "method": "DELETE",
+      "why_gated": "removes a workflow variable, and switched-on workflows that still read it get nothing in its place from their next run, with nobody watching, so the steps that use it can stop working"
     },
     {
       "name": "workflow_trigger_update",
