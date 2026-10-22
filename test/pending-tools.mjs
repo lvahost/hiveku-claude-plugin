@@ -496,7 +496,7 @@ export const PENDING_TOOLS = new Map([
 
   // FIREWALL-2 (2026-10-22): a site's trusted networks. site_firewall_trust_range trusts one of a
   // site's own address ranges at the edge firewall, so the per-address limit skips it on that site.
-  // It asks from this release on (the ask list and the hook), before the MCP server ships it, so no
-  // install runs it unasked in between. A POST, so it stays off the read-only list.
-  ['site_firewall_trust_range', { since: '2026-10-22', batch: 'FIREWALL-2' }],
+  // It asked from release 0.27.71 on, ahead of the server. Landed in the live index on 2026-10-22
+  // (index regenerated at 2322 tools in release 0.27.72; a POST, so it stays off the read-only list
+  // and on the ask list); entry deleted.
 ]);
