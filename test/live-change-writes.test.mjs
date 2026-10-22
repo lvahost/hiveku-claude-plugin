@@ -29,6 +29,7 @@ import {
   isReadOnlyTool,
 } from '../lib/tool-safety.mjs';
 import { probeIsStale, updateCheckPath } from '../lib/update-check.mjs';
+import { PENDING_TOOLS } from './pending-tools.mjs';
 
 /** Every name 0.26.30 and 0.26.36 put on the hook, which is every name on the map. */
 const LIVE_CHANGE_NAMES = [
@@ -110,6 +111,8 @@ const LIVE_CHANGE_NAMES = [
   'env_group_set',
   'env_group_link',
   'env_group_unlink',
+  // 2026-10-22: a site's trusted networks skip the per-address limit on that site.
+  'site_firewall_trust_range',
 ];
 
 function folderWith(guardrails) {
@@ -176,8 +179,12 @@ test('every live-change name is a real, non-GET tool with a reason worth reading
       .tools.map((t) => [t.name, t.method]),
   );
   for (const [name, why] of LIVE_CHANGE_WRITES) {
-    assert.ok(index.has(name), `${name} is not in the tool index; a typo gates nothing`);
-    assert.ok(index.get(name) && index.get(name) !== 'GET', `${name} is a ${index.get(name)}; gate a read elsewhere`);
+    // A contracted tool (test/pending-tools.mjs) asks before the server ships it, so no install runs it
+    // unasked in between; once it lands in the index, tool-names.test.mjs forces its PENDING entry out
+    // and the method is checked here.
+    const pending = PENDING_TOOLS.has(name) && !index.has(name);
+    assert.ok(index.has(name) || pending, `${name} is not in the tool index; a typo gates nothing`);
+    if (!pending) assert.ok(index.get(name) && index.get(name) !== 'GET', `${name} is a ${index.get(name)}; gate a read elsewhere`);
     assert.ok(why.length > 40, `${name} must say why it asks`);
     assert.ok(!/[.]$/.test(why), `${name}: the prompt adds its own full stop`);
   }

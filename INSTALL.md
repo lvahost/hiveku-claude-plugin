@@ -161,6 +161,7 @@ Put this in `.claude/settings.json` (per project) or `~/.claude/settings.json` (
       "mcp__plugin_hiveku_hk__checkpoint_delete",
       "mcp__plugin_hiveku_hk__site_delete",
       "mcp__plugin_hiveku_hk__site_firewall_allow",
+      "mcp__plugin_hiveku_hk__site_firewall_trust_range",
       "mcp__plugin_hiveku_hk__site_firewall_remove",
       "mcp__plugin_hiveku_hk__project_indexing_set",
       "mcp__plugin_hiveku_hk__account_timezone_set",
