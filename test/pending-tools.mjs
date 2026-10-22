@@ -493,4 +493,10 @@ export const PENDING_TOOLS = new Map([
   // CI-6: landed in the live index on 2026-10-20 (MCP #253, 6ffeee4, deployed; index regenerated
   // at 2317 tools in release 0.27.65; project_vcs_checks_rerun is a POST, so it stays off the
   // read-only list and on the ask list); entry deleted.
+
+  // FIREWALL-2 (2026-10-22): a site's trusted networks. site_firewall_trust_range trusts one of a
+  // site's own address ranges at the edge firewall, so the per-address limit skips it on that site.
+  // It asks from this release on (the ask list and the hook), before the MCP server ships it, so no
+  // install runs it unasked in between. A POST, so it stays off the read-only list.
+  ['site_firewall_trust_range', { since: '2026-10-22', batch: 'FIREWALL-2' }],
 ]);
