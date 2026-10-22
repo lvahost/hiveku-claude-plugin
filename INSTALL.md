@@ -329,6 +329,8 @@ Put this in `.claude/settings.json` (per project) or `~/.claude/settings.json` (
       "mcp__plugin_hiveku_hk__workflow_run",
       "mcp__plugin_hiveku_hk__workflow_enable",
       "mcp__plugin_hiveku_hk__workflow_resume",
+      "mcp__plugin_hiveku_hk__workflow_env_set",
+      "mcp__plugin_hiveku_hk__workflow_env_delete",
       "mcp__plugin_hiveku_hk__workflow_trigger_update",
       "mcp__plugin_hiveku_hk__workflow_delete",
       "mcp__plugin_hiveku_hk__workflow_delete_schedule",
@@ -426,8 +428,9 @@ again, so after a plugin update it can be missing names a newer release added. P
 again after an update. The plugin also asks on its own before the writes that change what
 department agents read, which forms a site captures (and erasing what it captured), who gets a
 site's lead emails, a site's environment variables and the account's environment groups, a site's search engine indexing, live ad campaigns, switching ads on or restarting them, switching a
-workflow on or clearing its automatic pause (`workflow_enable`, `workflow_resume`), the budget
-guardrail, conversion uploads, a staged production deploy, GA4 conversion settings, the account's
+workflow on or clearing its automatic pause (`workflow_enable`, `workflow_resume`), setting or
+removing a workflow variable (`workflow_env_set`, `workflow_env_delete`), the budget guardrail,
+conversion uploads, a staged production deploy, GA4 conversion settings, the account's
 timezone and what the website assistant may tell visitors, whatever
 your settings allow, so those prompt even on a machine with an older copy.
 
