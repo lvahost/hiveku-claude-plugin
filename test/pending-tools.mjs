@@ -381,6 +381,20 @@
  *                      ask every time). Landed in the live index on 2026-10-20
  *                      (MCP #255, d107053, deployed; index regenerated at 2316
  *                      tools in release 0.27.63); entry deleted.
+ *
+ *   Domain move (2026-10-22): moving a domain that is live on another host to
+ *   a Hiveku site with no HTTPS gap. The contract is
+ *   /api/olympus/builder/projects/:projectId/domains/move (GET status, POST
+ *   start, DELETE stop); the MCP server declared the three tools ahead of the
+ *   index. Spelled in
+ *   skills/hiveku-web-agency/references/domains-dns-redirects.md.
+ *   Release step, after the MCP deploy: regenerate the index and the read-only
+ *   list (the status is a GET and joins it), then delete the three entries;
+ *   tool-names.test.mjs forces the deletion.
+ *     DOMAIN-MOVE-1  project_domain_move_start, project_domain_move_status
+ *                    (read-only), project_domain_move_stop. Landed in the live
+ *                    index on 2026-10-22 (index regenerated at 2329 tools in
+ *                    release 0.27.74); entries deleted.
  */
 const SEO_SINCE = '2026-08-30';
 const seo = (batch) => ({ since: SEO_SINCE, batch });
@@ -499,4 +513,9 @@ export const PENDING_TOOLS = new Map([
   // It asked from release 0.27.71 on, ahead of the server. Landed in the live index on 2026-10-22
   // (index regenerated at 2322 tools in release 0.27.72; a POST, so it stays off the read-only list
   // and on the ask list); entry deleted.
+
+  // DOMAIN-MOVE-1 (2026-10-22): the no-gap move of a live domain. Landed in the live index on
+  // 2026-10-22 (index regenerated at 2329 tools in release 0.27.74; project_domain_move_status joined
+  // the read-only list as a GET). Start and stop change no visitor's site (stop is refused once a
+  // domain points at Hiveku), so neither is on the ask list; entries deleted.
 ]);
