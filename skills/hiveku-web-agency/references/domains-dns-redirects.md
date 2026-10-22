@@ -13,7 +13,7 @@ Connecting a custom domain and preserving link equity is core agency work.
 1b. A domain that is LIVE on another host right now (it serves the client's current site
    somewhere else): do NOT use `project_domains_add`. With it the certificate can only be
    issued once the domain points at Hiveku, so visitors get certificate errors for a few
-   minutes during the switch. Use the no-gap move instead (Availability below):
+   minutes during the switch. Use the no-gap move instead (its tools are below):
    - Start it with the domain as the client knows it (www.example.com also moves
      example.com). Nothing changes for visitors. It is refused with a code when nothing is
      live on the domain (then use `project_domains_add`), when it already points at Hiveku,
@@ -50,7 +50,7 @@ Connecting a custom domain and preserving link equity is core agency work.
      asks the move for a new certificate, and `project_domains_remove` on either domain
      stops the whole move.
 
-   **Availability** (the no-gap move; incoming with the next MCP release):
+   **The no-gap move's tools:**
 
    | Tool | What it does |
    | --- | --- |
