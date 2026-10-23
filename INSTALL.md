@@ -243,6 +243,7 @@ Put this in `.claude/settings.json` (per project) or `~/.claude/settings.json` (
       "mcp__plugin_hiveku_hk__crm_sequence_enroll_bulk",
       "mcp__plugin_hiveku_hk__email_sequence_enroll",
       "mcp__plugin_hiveku_hk__email_sequence_activate",
+      "mcp__plugin_hiveku_hk__marketing_activate",
       "mcp__plugin_hiveku_hk__voice_sms_send",
       "mcp__plugin_hiveku_hk__voice_sms_send_to_contact",
       "mcp__plugin_hiveku_hk__voice_sms_thread_reply",
@@ -429,7 +430,8 @@ again after an update. The plugin also asks on its own before the writes that ch
 department agents read, which forms a site captures (and erasing what it captured), who gets a
 site's lead emails, a site's environment variables and the account's environment groups, a site's search engine indexing, live ad campaigns, switching ads on or restarting them, switching a
 workflow on or clearing its automatic pause (`workflow_enable`, `workflow_resume`), setting or
-removing a workflow variable (`workflow_env_set`, `workflow_env_delete`), the budget guardrail,
+removing a workflow variable (`workflow_env_set`, `workflow_env_delete`), switching email
+marketing on (`marketing_activate`), the budget guardrail,
 conversion uploads, a staged production deploy, GA4 conversion settings, the account's
 timezone and what the website assistant may tell visitors, whatever
 your settings allow, so those prompt even on a machine with an older copy.

@@ -74,6 +74,8 @@ const LIVE_CHANGE_NAMES = [
   // 0.27.73: a workflow's variables, which switched-on workflows read from their next run.
   'workflow_env_set',
   'workflow_env_delete',
+  // 0.27.76: switching email marketing on, which switched-on workflows' email steps and held drips wait on.
+  'marketing_activate',
   // Conversions and audiences sent to the platforms.
   'ppc_conversion_adjustments_run',
   'ppc_conversion_adjustments_set',
@@ -326,6 +328,7 @@ test('NEGATIVE CONTROL: the matching reads stay pre-approved and the exempt writ
     'ppc_experiment_readout',
     'ppc_google_ads_text_get',
     'workflow_env_list',
+    'marketing_setup_status',
   ]) {
     assert.equal(LIVE_CHANGE_WRITES.has(read), false, `${read} is a read`);
     assert.equal(decision(decideWithGuardrails(payload(read, cwd))), 'allow', `${read} must stay pre-approved`);
