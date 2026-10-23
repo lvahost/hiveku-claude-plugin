@@ -395,6 +395,29 @@
  *                    (read-only), project_domain_move_stop. Landed in the live
  *                    index on 2026-10-22 (index regenerated at 2329 tools in
  *                    release 0.27.74); entries deleted.
+ *
+ *   Therapy Cloud asks (2026-10-23, Agent Feedback HK-588 and HK-600, MCP
+ *   branch fix/b10-therapy-cloud-mcp, builder fix/b10-therapy-cloud-builder):
+ *   a one-to-one CRM email from the account's own verified sending domain,
+ *   with no mailbox, and recording a contact's marketing opt-in on the
+ *   business's word. Both writes are on the ask list
+ *   (data/permission-critical-tools.json, INSTALL.md and the Codex prompts),
+ *   which is why that file's test accepts them as PENDING names until the
+ *   index carries them:
+ *     crm_contact_email_send_from_domain sends a real email with no draft or
+ *     recall, like crm_contact_email_send beside it on the list;
+ *     crm_contact_optin_set attests consent for a contact already in the CRM,
+ *     which from 2026-10-27 is what lets marketing email reach them, like
+ *     marketing_activate's attestation.
+ *   ★ Merge order: the MCP server's permission-critical-tools.test.ts reads
+ *   this file and fails any listed name its registry does not serve, so this
+ *   merges only after (or with) the MCP branch, and the MCP branch only with
+ *   this release (review of the lane: a live tool with no ask entry runs
+ *   unprompted). Release step, after the MCP deploy: regenerate the index and
+ *   the read-only list from the live server (crm_contact_optin_get is a GET and
+ *   joins it; email_domain_set_sender_name is a POST outside the ask list),
+ *   then delete both entries; tool-names.test.mjs forces the deletion.
+ *     TC-B10  crm_contact_email_send_from_domain, crm_contact_optin_set.
  */
 const SEO_SINCE = '2026-08-30';
 const seo = (batch) => ({ since: SEO_SINCE, batch });
@@ -518,4 +541,8 @@ export const PENDING_TOOLS = new Map([
   // 2026-10-22 (index regenerated at 2329 tools in release 0.27.74; project_domain_move_status joined
   // the read-only list as a GET). Start and stop change no visitor's site (stop is refused once a
   // domain points at Hiveku), so neither is on the ask list; entries deleted.
+
+  // TC-B10 (2026-10-23): the two Therapy Cloud writes on the ask list. See the batch note above.
+  ['crm_contact_email_send_from_domain', { since: '2026-10-23', batch: 'TC-B10' }],
+  ['crm_contact_optin_set', { since: '2026-10-23', batch: 'TC-B10' }],
 ]);
