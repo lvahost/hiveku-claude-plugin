@@ -6,7 +6,7 @@
     "mcp__hiveku__"
   ],
   "plugin_version": "0.27.79",
-  "count": 296,
+  "count": 298,
   "tools": [
     {
       "name": "deploy_site",
@@ -614,6 +614,11 @@
       "why_gated": "sends a real email from the connected inbox, no draft or recall"
     },
     {
+      "name": "crm_contact_email_send_from_domain",
+      "method": "POST",
+      "why_gated": "sends a real email from the business's own verified domain, no draft or recall, in a name the person chooses"
+    },
+    {
       "name": "crm_enroll_sequence",
       "method": "POST",
       "why_gated": "enrolling into an active sequence queues real email"
@@ -637,6 +642,11 @@
       "name": "marketing_activate",
       "method": "POST",
       "why_gated": "switches email marketing on, or runs its setup again. Where it was off or not set up, switched-on workflows' Email Marketing: Send Email steps, which sent nothing until now, email real contacts from their next run with nobody watching, and drip emails held while it was off go out within minutes. attest_consent: true records a consent confirmation in the name of the person who created this connection"
+    },
+    {
+      "name": "crm_contact_optin_set",
+      "method": "POST",
+      "why_gated": "records, on the business's word, that a contact agreed to marketing email, so from 2026-10-27 campaigns, marketing sequences and workflow marketing emails reach them"
     },
     {
       "name": "voice_sms_send",
