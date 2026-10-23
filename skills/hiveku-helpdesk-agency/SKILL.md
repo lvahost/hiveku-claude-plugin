@@ -340,7 +340,9 @@ replies" and no support inbox is connected:
 3. A newly connected inbox starts empty: only mail that arrives after it is connected becomes
    tickets, and the automatic acknowledgement goes only to mail less than a day old. Tell the owner,
    so nobody waits for old mail to appear.
-4. New mail and replies arrive within about 10 minutes. Check with a test email.
+4. New mail and replies arrive within about 10 minutes. Check with a test email. For about a minute,
+   offer instant replies: `email_inbox_setup_guide({ platform, section: 'instant_replies' })` (Outlook
+   is one switch; Gmail needs a Pub/Sub topic in the Gmail app's project, run with the person's gcloud).
 5. An inbox already connected for the CRM needs no new sign-in: the person switches on "Monitor for
    Helpdesk" in its Sync settings (Helpdesk > Connections).
 
