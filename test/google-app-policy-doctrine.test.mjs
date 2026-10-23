@@ -159,3 +159,55 @@ test("every 'unverified app' screen is tied to Google Ads", () => {
   }
   assert.deepEqual(loose, []);
 });
+
+/*
+ * The internal Gmail app, the one Google Cloud project a customer may own, is
+ * set up with email_inbox_setup_guide (2026-10-23): the session runs most of it
+ * with the person's own gcloud (Outlook: az), the person fills in the two Google
+ * pages no command can do, and no text dead-ends at "the owner registers an app;
+ * say that and stop" any more.
+ */
+const MAILBOX_SURFACES = [
+  'skills/hiveku-orient/references/integrations.md',
+  'skills/hiveku-communications/SKILL.md',
+  'skills/hiveku-communications/references/inbox.md',
+  'skills/hiveku-helpdesk-agency/SKILL.md',
+  'commands/connect-integration.md',
+  'commands/integrations.md',
+];
+
+const DEAD_ENDS = [
+  /say that and stop/i,
+  /say exactly that, then stop/i,
+  /no tool can do it for them/i,
+  /console access you do not have/i,
+  /do not offer to do it for them/i,
+];
+
+test('every mailbox surface sends a Gmail or Outlook setup to email_inbox_setup_guide', () => {
+  for (const rel of MAILBOX_SURFACES) {
+    assert.ok(flat(read(rel)).includes('email_inbox_setup_guide'), `${rel} never names email_inbox_setup_guide`);
+  }
+});
+
+test('no command, skill or agent dead-ends a Gmail or Outlook setup', () => {
+  const hits = PROSE.flatMap((rel) => DEAD_ENDS.filter((re) => re.test(flat(read(rel)))).map((re) => `${rel}: ${re}`));
+  assert.deepEqual(hits, []);
+  for (const old of ['the account OWNER must register an OAuth Client - say that and stop', 'All of it needs console access you do not have.']) {
+    assert.ok(DEAD_ENDS.some((re) => re.test(old)), `positive control missed: ${old}`);
+  }
+});
+
+test('the orient reference teaches the gcloud path inside its limits', () => {
+  const orient = flat(read('skills/hiveku-orient/references/integrations.md'));
+  for (const phrase of [
+    '! gcloud auth login',
+    'the two Google pages',
+    'That internal Gmail app is the only Google Cloud project an account may own',
+    'never send anyone into a Google Cloud project for Google Ads, Analytics, Tag Manager, Search Console, Business Profile or Calendar',
+    'A help desk inbox starts empty',
+  ]) {
+    assert.ok(orient.includes(phrase), `orient lost: ${phrase}`);
+  }
+});
+

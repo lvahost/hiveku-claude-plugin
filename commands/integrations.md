@@ -183,9 +183,10 @@ Consent opens a browser and belongs to the user, so:
   first: a connector that is `ready` with `client.would_use: 'hiveku'` needs NO OAuth app from the
   account, so do not send anyone to the Google Cloud Console for it.
 
-Google Cloud Console work belongs to one case only: the account's own Gmail app (`oauth_app_create`
-walks the user through their internal Gmail project - the Gmail API, the consent screen, the
-redirect URI - and no tool can do it for them). Never list Cloud Console steps (a project, an API,
+Google Cloud work belongs to one case only: the account's own internal Gmail app.
+`email_inbox_setup_guide({ platform: 'gmail', mailbox })` walks it one step at a time: you run most of
+it with the person's `gcloud` (the project, the Gmail API), and the person fills in the two Google pages
+it links (the consent screen and the Web client). Never list Cloud Console steps (a project, an API,
 consent-screen scopes, a redirect URI) for Google Ads, Analytics, Tag Manager, Search Console,
 Business Profile or Calendar: they run on Hiveku's app, and a connection still on the account's own
 app moves onto it (`oauth_app_id: 'platform'`).
@@ -198,11 +199,11 @@ app moves onto it (`oauth_app_id: 'platform'`).
   (google, meta, linkedin, microsoft, tiktok) while `ppc_connection_create`'s `platform` takes the
   long forms (google_ads, meta_ads, microsoft_ads, tiktok_ads, linkedin_ads, chatgpt_ads, vibe_ctv,
   amazon_ads). Passing a create-style slug to the filter returns nothing.
-- **Two different email tools.** `crm_list_email_connections` lists connected Gmail and Outlook
-  INBOXES. `email_connections_list` lists email-MARKETING platforms (SES, Resend, SendGrid) and takes
-  no arguments at all. `email_connect_start`'s own description points at the second one for
-  confirming a Gmail connect; that is wrong. Confirm a Gmail or Outlook connect with
-  `crm_list_email_connections` or the `email` group of `connections_status`.
+- **Two email connection readers.** Both list the connected Gmail and Outlook inboxes, whatever
+  `email_connections_list`'s own description says about marketing platforms. `email_connections_list`
+  is the one that carries `connection_status`, `last_error` and `consumers` (crm / helpdesk), so
+  confirm a Gmail or Outlook connect with it (or the `email` group of `connections_status`);
+  `crm_list_email_connections` has only id, owner, address, platform and is_active.
 - **The oauth_app tool schemas understate the server.** The `provider` enum on `oauth_app_list` and
   `oauth_app_create` lists google, microsoft and meta; the server also accepts shopify, linkedin, x
   and tiktok. For those four, call `oauth_app_list` with NO `provider` filter and read the rows, and
