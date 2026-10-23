@@ -5,8 +5,8 @@
     "mcp__plugin_hiveku_hk__",
     "mcp__hiveku__"
   ],
-  "plugin_version": "0.27.79",
-  "count": 298,
+  "plugin_version": "0.27.80",
+  "count": 299,
   "tools": [
     {
       "name": "deploy_site",
@@ -1042,6 +1042,11 @@
       "name": "seo_topic_cluster_delete",
       "method": "DELETE",
       "why_gated": "deletes a persisted topic cluster, no undo"
+    },
+    {
+      "name": "seo_aeo_brand_profile_delete",
+      "method": "DELETE",
+      "why_gated": "removes a brand from AI visibility and stops its weekly checks (past scores kept), no undo"
     },
     {
       "name": "seo_backlink_tracker_delete",
