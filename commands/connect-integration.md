@@ -5,7 +5,9 @@ argument-hint: "<connector> [reconnect] - e.g. 'ga4', 'gsc reconnect', 'google a
 Connect or re-authenticate an integration on the account this directory is bound to: $ARGUMENTS
 
 The whole job is: one link, handed over properly, then one status check. Nobody should have to open
-the Hiveku dashboard, register a Google Cloud project, or paste a 2 KB Google URL out of a chat.
+the Hiveku dashboard, register a Google Cloud project, or paste a 2 KB Google URL out of a chat. The
+one exception is a Gmail or Outlook mailbox on an account with no mail app yet: then the app comes
+first, and `email_inbox_setup_guide` walks it with the person's gcloud or az (step 1).
 
 Confirm the account with `get_account_info` first so the link is minted for the right tenant.
 
@@ -43,7 +45,10 @@ Decide the mode from the catalog, not from the request wording:
   no platform app on this environment. Read `client.how_to_get_ready` aloud and stop; do not invent a
   workaround. For a Google connector other than Gmail that means Hiveku's app is not configured on
   this environment: report it to Hiveku support, never register an own Google app for it. Gmail and
-  Outlook are always bring-your-own-client.
+  Outlook are always bring-your-own-client, and there `ready: false` only means the account has no
+  mail app yet: call `email_inbox_setup_guide({ platform: 'gmail' | 'outlook', mailbox })` and follow
+  its next_step (most of it runs with the person's gcloud or az), then mint the link with the new
+  app's `oauth_app_id`.
 - `linkable` is false -> that provider is dashboard-only for now. Give the account-scoped path
   `https://app.hiveku.com/<accountId>/dashboard/<dashboard_path>` and stop.
 

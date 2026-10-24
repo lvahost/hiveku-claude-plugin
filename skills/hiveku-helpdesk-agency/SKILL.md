@@ -324,6 +324,26 @@ The structure that routes work is itself a deliverable you maintain.
 - The signal to act: if Play 1 keeps correcting the same misroute by hand, that is an
   automation or queue-membership gap, not a triage task. Fix the system, not the symptom.
 
+## Play 7 - Connect the support inbox (Gmail or Outlook)
+
+When the help desk has no inbox, a customer's email "never showed up", or "the helpdesk isn't seeing
+replies" and no support inbox is connected:
+
+1. `email_inbox_setup_guide({ platform: 'gmail' | 'outlook', for: 'helpdesk', mailbox: 'support@...' })`,
+   then do its `next_step`; call it again after each step that changes something. Gmail needs the
+   account's own INTERNAL Google app (a personal @gmail.com cannot have one: offer a Google Workspace
+   mailbox or Outlook). You run most of the setup on the person's computer with their `gcloud`
+   (Outlook: `az`), and they fill in the two Google pages the guide links.
+2. Connect a dedicated support mailbox, a Google Workspace or Microsoft 365 user that can sign in:
+   every new email to it becomes a ticket, so never a busy personal or sales inbox. A Google Group
+   cannot connect.
+3. A newly connected inbox starts empty: only mail that arrives after it is connected becomes
+   tickets, and the automatic acknowledgement goes only to mail less than a day old. Tell the owner,
+   so nobody waits for old mail to appear.
+4. New mail and replies arrive within about 10 minutes. Check with a test email.
+5. An inbox already connected for the CRM needs no new sign-in: the person switches on "Monitor for
+   Helpdesk" in its Sync settings (Helpdesk > Connections).
+
 ## Website chats (the website assistant's conversations)
 Every conversation on the account's website chat is a helpdesk ticket with `channel: 'chat'`,
 so the ticket tools list, read and answer it. Many of them are still being answered by the
