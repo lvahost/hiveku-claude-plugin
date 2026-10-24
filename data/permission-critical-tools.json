@@ -5,8 +5,8 @@
     "mcp__plugin_hiveku_hk__",
     "mcp__hiveku__"
   ],
-  "plugin_version": "0.27.81",
-  "count": 299,
+  "plugin_version": "0.27.82",
+  "count": 301,
   "tools": [
     {
       "name": "deploy_site",
@@ -82,6 +82,11 @@
       "name": "project_vcs_resolve",
       "method": "POST",
       "why_gated": "settles merge conflicts on a branch by writing the chosen side, or the final text, of each conflicting file there and saving a version; that text replaces Your site's version when the review merges"
+    },
+    {
+      "name": "project_vcs_branch_in_step",
+      "method": "POST",
+      "why_gated": "records where a branch and Your site last matched, which changes what every later review into Your site counts as new"
     },
     {
       "name": "project_vcs_pr_update",
@@ -297,6 +302,11 @@
       "name": "email_campaign_test_send",
       "method": "POST",
       "why_gated": "sends real mail to up to 5 addresses on the account's production SES lane"
+    },
+    {
+      "name": "workflow_email_step_test_send",
+      "method": "POST",
+      "why_gated": "sends real mail now on the account's own marketing domain lane, the same as email_campaign_test_send"
     },
     {
       "name": "crm_envelope_send",
