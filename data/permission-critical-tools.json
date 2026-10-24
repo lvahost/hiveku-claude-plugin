@@ -5,8 +5,8 @@
     "mcp__plugin_hiveku_hk__",
     "mcp__hiveku__"
   ],
-  "plugin_version": "0.27.79",
-  "count": 296,
+  "plugin_version": "0.27.84",
+  "count": 302,
   "tools": [
     {
       "name": "deploy_site",
@@ -17,6 +17,11 @@
       "name": "deploy_run",
       "method": "POST",
       "why_gated": "runs a deploy"
+    },
+    {
+      "name": "deploy_serve_version",
+      "method": "POST",
+      "why_gated": "switches an environment to one of its earlier deployments: visitors get it within about a minute (a dry run is the default; the plugin's hook asks only on a start)"
     },
     {
       "name": "project_files_bulk_save",
@@ -82,6 +87,11 @@
       "name": "project_vcs_resolve",
       "method": "POST",
       "why_gated": "settles merge conflicts on a branch by writing the chosen side, or the final text, of each conflicting file there and saving a version; that text replaces Your site's version when the review merges"
+    },
+    {
+      "name": "project_vcs_branch_in_step",
+      "method": "POST",
+      "why_gated": "records where a branch and Your site last matched, which changes what every later review into Your site counts as new"
     },
     {
       "name": "project_vcs_pr_update",
@@ -297,6 +307,11 @@
       "name": "email_campaign_test_send",
       "method": "POST",
       "why_gated": "sends real mail to up to 5 addresses on the account's production SES lane"
+    },
+    {
+      "name": "workflow_email_step_test_send",
+      "method": "POST",
+      "why_gated": "sends real mail now on the account's own marketing domain lane, the same as email_campaign_test_send"
     },
     {
       "name": "crm_envelope_send",
@@ -614,6 +629,11 @@
       "why_gated": "sends a real email from the connected inbox, no draft or recall"
     },
     {
+      "name": "crm_contact_email_send_from_domain",
+      "method": "POST",
+      "why_gated": "sends a real email from the business's own verified domain, no draft or recall, in a name the person chooses"
+    },
+    {
       "name": "crm_enroll_sequence",
       "method": "POST",
       "why_gated": "enrolling into an active sequence queues real email"
@@ -637,6 +657,11 @@
       "name": "marketing_activate",
       "method": "POST",
       "why_gated": "switches email marketing on, or runs its setup again. Where it was off or not set up, switched-on workflows' Email Marketing: Send Email steps, which sent nothing until now, email real contacts from their next run with nobody watching, and drip emails held while it was off go out within minutes. attest_consent: true records a consent confirmation in the name of the person who created this connection"
+    },
+    {
+      "name": "crm_contact_optin_set",
+      "method": "POST",
+      "why_gated": "records, on the business's word, that a contact agreed to marketing email, so from 2026-10-27 campaigns, marketing sequences and workflow marketing emails reach them"
     },
     {
       "name": "voice_sms_send",
@@ -1032,6 +1057,11 @@
       "name": "seo_topic_cluster_delete",
       "method": "DELETE",
       "why_gated": "deletes a persisted topic cluster, no undo"
+    },
+    {
+      "name": "seo_aeo_brand_profile_delete",
+      "method": "DELETE",
+      "why_gated": "removes a brand from AI visibility and stops its weekly checks (past scores kept), no undo"
     },
     {
       "name": "seo_backlink_tracker_delete",

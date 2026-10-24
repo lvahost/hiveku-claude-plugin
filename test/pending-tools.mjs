@@ -518,4 +518,9 @@ export const PENDING_TOOLS = new Map([
   // 2026-10-22 (index regenerated at 2329 tools in release 0.27.74; project_domain_move_status joined
   // the read-only list as a GET). Start and stop change no visitor's site (stop is refused once a
   // domain points at Hiveku), so neither is on the ask list; entries deleted.
+  // 2026-10-23 (index regenerated at 2342 tools in release 0.27.80): crm_contact_email_send_from_domain
+  // and crm_contact_optin_set (Therapy Cloud, HK-588 and HK-600) are served and on the ask list; entries deleted.
+
+  // 2026-10-24 (index regenerated at 2346 tools, with the inbox setup release): deploy_serve_version
+  // (HK-618) is served, on the ask list and on the hook; entry deleted.
 ]);

@@ -111,6 +111,9 @@ tier, and why, then wait for the confirmation before calling `deploy_site`.
    never changes a deployed tier by itself. On a tier bound to a branch, roll that branch back
    (`project_vcs_rollback` with `branch`) and re-deploy the tier. Only when the database must come
    back too, restore a checkpoint (`/hiveku:restore`). Do not hot-patch production under pressure.
+   When what matters is what visitors see right now, `deploy_serve_version` is faster: it serves one
+   of the tier's recent successful deployments again in about a minute, with no build (its dry run,
+   the person's yes, then the start; see `/hiveku:rollback`).
 
 Afterwards, log what shipped and the deployment id with `memory_create` or on the `pm_tasks_complete`
 note, so the monthly report writes itself.

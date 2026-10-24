@@ -64,6 +64,17 @@ const SERVER_SRC = path.resolve(PLUGIN_ROOT, '..', 'hiveku-mcp-api-server', 'src
 const NAME_LINE = /^[ \t]*(?:name:\s*'([a-z0-9_]+)'|"name":\s*"([a-z0-9_]+)"),[ \t]*$/gm;
 
 /**
+ * A third form: `name: SOME_CONSTANT,` alone on its line, where the same file
+ * declares `export const SOME_CONSTANT = 'tool_name'`
+ * (deploy-serve-version-tools.ts, 2026-10-23). Without it that tool was paired
+ * with no method: method null failed the ask-list's method check
+ * (permission-critical.test.mjs) and read as an unmapped tool
+ * (tool-safety.test.mjs) the moment it landed in the index.
+ */
+const NAME_CONST_LINE = /^[ \t]*name:\s*([A-Z][A-Z0-9_]*),[ \t]*$/gm;
+const TOOL_NAME_CONST = /^[ \t]*(?:export[ \t]+)?const[ \t]+([A-Z][A-Z0-9_]*)[ \t]*=[ \t]*'([a-z0-9_]+)'/gm;
+
+/**
  * Descriptions are single- or double-quoted and often concatenated across many
  * lines with `+`. Capture the whole run so a truncated description does not
  * silently make a tool unfindable by its own keywords.
@@ -175,13 +186,19 @@ function collectLive(dir) {
 }
 
 function extract(source) {
-  const names = [...source.matchAll(NAME_LINE)];
+  const consts = new Map([...source.matchAll(TOOL_NAME_CONST)].map((m) => [m[1], m[2]]));
+  const names = [
+    ...[...source.matchAll(NAME_LINE)].map((m) => ({ index: m.index, end: m.index + m[0].length, name: m[1] ?? m[2] })),
+    ...[...source.matchAll(NAME_CONST_LINE)]
+      .filter((m) => consts.has(m[1]))
+      .map((m) => ({ index: m.index, end: m.index + m[0].length, name: consts.get(m[1]) })),
+  ].sort((a, b) => a.index - b.index);
   const out = [];
   for (let i = 0; i < names.length; i++) {
     const m = names[i];
     // Everything between this tool's name and the next one. No fixed window:
     // a character budget silently drops tools whose object is longer than it.
-    const from = m.index + m[0].length;
+    const from = m.end;
     const to = i + 1 < names.length ? names[i + 1].index : source.length;
     const body = source.slice(from, to);
     const desc = body.match(DESC);
@@ -192,7 +209,7 @@ function extract(source) {
     const timeout = mappingAt === -1 ? null : body.slice(mappingAt).match(TIMEOUT_MS);
     const timeoutMs = timeout ? Number(timeout[1].replace(/_/g, '')) : null;
     out.push({
-      name: m[1] ?? m[2],
+      name: m.name,
       description: desc ? unquote(desc[1]) : '',
       method: method ? method[1] : null,
       timeoutMs: Number.isFinite(timeoutMs) && timeoutMs > 0 ? timeoutMs : null,
