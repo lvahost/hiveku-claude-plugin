@@ -1983,35 +1983,35 @@
       "dept": "crm",
       "method": "POST",
       "timeoutMs": null,
-      "description": "Create a calendar event. attendees is a list of email addresses; conference=true adds a Google Meet / Microsoft Teams link."
+      "description": "Create a calendar event. attendees is a list of email addresses; conference=true adds a Google Meet / Microsoft Teams link. It goes on the caller's own calendar, else the one shared with the team's AI and automations; connection_id names another the caller may use (with several shared and none of their own, a refusal lists them in shared_connections)."
     },
     {
       "name": "crm_calendar_delete",
       "dept": "crm",
       "method": "DELETE",
       "timeoutMs": null,
-      "description": "Delete a calendar event."
+      "description": "Delete a calendar event. Pass the calendar.connection_id of the crm_calendar_list or crm_calendar_get answer the event came from as connection_id, so the event is deleted from that calendar."
     },
     {
       "name": "crm_calendar_get",
       "dept": "crm",
       "method": "GET",
       "timeoutMs": null,
-      "description": "Fetch one calendar event with full detail (attendees, conference link)."
+      "description": "Fetch one calendar event with full detail (attendees, conference link). For an event from crm_calendar_list, pass that answer's calendar.connection_id as connection_id, so the event is read on the calendar it is on."
     },
     {
       "name": "crm_calendar_list",
       "dept": "crm",
       "method": "GET",
       "timeoutMs": null,
-      "description": "List upcoming/past calendar events (Google Calendar / Microsoft Graph via the account's connected OAuth). Optional time window + search."
+      "description": "List upcoming/past calendar events (Google Calendar / Microsoft Graph via the account's connected OAuth). Optional time window + search. Which calendar: the caller's own (the API key's creator, or the person a Hiveku assistant is helping), else the one shared with the team's AI and automations. With several shared and none of their own it refuses (409) and lists them in shared_connections: ask which, then pass its connection_id. The answer's calendar says which calendar was read (connection_id, address): pass that connection_id to crm_calendar_get, crm_calendar_update and crm_calendar_delete for its events."
     },
     {
       "name": "crm_calendar_update",
       "dept": "crm",
       "method": "PATCH",
       "timeoutMs": null,
-      "description": "Update a calendar event (only the fields you pass are changed)."
+      "description": "Update a calendar event (only the fields you pass are changed). Pass the calendar.connection_id of the crm_calendar_list or crm_calendar_get answer the event came from as connection_id, so the change is made on that calendar."
     },
     {
       "name": "crm_calls_list",
@@ -2032,7 +2032,7 @@
       "dept": "crm",
       "method": "POST",
       "timeoutMs": null,
-      "description": "Send a REAL 1:1 email to a contact from the account's connected Gmail/Outlook inbox. The recipient is ALWAYS the contact's email on file — there is no arbitrary `to`; cc/bcc add recipients alongside it. Show the operator the exact subject and body and get an explicit yes BEFORE calling — there is no draft state, no recall, and no idempotency key. With no connection_id it falls back to the account's default SENDABLE mailbox (the default is per platform, so a default-Calendar row can never be picked); a read-only-scope or calendar connection 400s cleanly with the reason. Thread a reply with reply_to_message_id + thread_id from crm_thread_for_contact / crm_contact_emails_list. The send self-logs to the contact timeline as an email activity unless log_activity=false — do NOT also write crm_create_activity for the same send. Refusals send nothing: 409 recipient_suppressed when the contact or a cc/bcc address is on the email suppression list or marked Do Not Contact (`suppressed` names them; for the contact it is final: tell the operator, do not retry; a suppressed cc/bcc can be removed and the send retried), 429 send_limit_exceeded when a mailbox or account send limit is reached (retry after retry_after_seconds; more than 5 recipients in one message needs fewer recipients instead). Sent once: a provider error is reported, never re-sent."
+      "description": "Send a REAL 1:1 email to a contact from the account's connected Gmail/Outlook inbox. The recipient is ALWAYS the contact's email on file — there is no arbitrary `to`; cc/bcc add recipients alongside it. Show the operator the exact subject and body and get an explicit yes BEFORE calling — there is no draft state, no recall, and no idempotency key. Which inbox: with no connection_id, the caller's own (the API key's creator, or the person a Hiveku assistant is helping), else the one shared with the team's AI and automations; with several shared it refuses (409) and lists them in shared_inboxes and shared_connections: ask which, then pass its connection_id. A teammate's inbox needs crm.email_send_as manage. A mailbox_* refusal says in its message what to connect or share: tell the operator, never pick another inbox yourself. Thread a reply with reply_to_message_id + thread_id from crm_thread_for_contact / crm_contact_emails_list. The send self-logs to the contact timeline as an email activity unless log_activity=false — do NOT also write crm_create_activity for the same send. Refusals send nothing: 409 recipient_suppressed when the contact or a cc/bcc address is on the email suppression list or marked Do Not Contact (`suppressed` names them; for the contact it is final: tell the operator, do not retry; a suppressed cc/bcc can be removed and the send retried), 429 send_limit_exceeded when a mailbox or account send limit is reached (retry after retry_after_seconds; more than 5 recipients in one message needs fewer recipients instead). Sent once: a provider error is reported, never re-sent."
     },
     {
       "name": "crm_contact_email_send_from_domain",
