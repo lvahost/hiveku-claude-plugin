@@ -6,7 +6,7 @@
     "mcp__hiveku__"
   ],
   "plugin_version": "0.27.83",
-  "count": 301,
+  "count": 302,
   "tools": [
     {
       "name": "deploy_site",
@@ -17,6 +17,11 @@
       "name": "deploy_run",
       "method": "POST",
       "why_gated": "runs a deploy"
+    },
+    {
+      "name": "deploy_serve_version",
+      "method": "POST",
+      "why_gated": "switches an environment to one of its earlier deployments: visitors get it within about a minute (a dry run is the default; the plugin's hook asks only on a start)"
     },
     {
       "name": "project_files_bulk_save",

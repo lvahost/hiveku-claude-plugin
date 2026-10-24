@@ -520,4 +520,11 @@ export const PENDING_TOOLS = new Map([
   // domain points at Hiveku), so neither is on the ask list; entries deleted.
   // 2026-10-23 (index regenerated at 2342 tools in release 0.27.80): crm_contact_email_send_from_domain
   // and crm_contact_optin_set (Therapy Cloud, HK-588 and HK-600) are served and on the ask list; entries deleted.
+
+  // SERVE-VERSION-1 (2026-10-23, HK-618, Therapy Cloud): deploy_serve_version serves one of an environment's
+  // recent successful deployments again in about a minute, with no build. On the ask list and on the hook
+  // (lib/vcs-tool-rules.mjs: a dry run is pre-approved, a start always asks) in the same release that the
+  // MCP server starts serving it, so no install runs a start unprompted. Delete once the regenerated index
+  // carries it.
+  ['deploy_serve_version', { since: '2026-10-23', batch: 'SERVE-VERSION-1' }],
 ]);
