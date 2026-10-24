@@ -5,8 +5,8 @@
     "mcp__plugin_hiveku_hk__",
     "mcp__hiveku__"
   ],
-  "plugin_version": "0.27.86",
-  "count": 302,
+  "plugin_version": "0.27.87",
+  "count": 304,
   "tools": [
     {
       "name": "deploy_site",
@@ -247,6 +247,16 @@
       "name": "project_indexing_set",
       "method": "PATCH",
       "why_gated": "turns a site's search engine indexing on or off (Site > Hosting > Production): off tells Google and every other search engine to drop the live site from their results on every production address, custom domain included, and getting listed again can take weeks; on lets them list a site the owner may be keeping out of search on purpose"
+    },
+    {
+      "name": "project_concurrency_set",
+      "method": "POST",
+      "why_gated": "changes how many copies of a live site's server may run at once (Site > Hosting > Server capacity): a limit below its busy moments turns visitors' requests into error pages, and removing a limit lets a burst open more database connections than the site's database allows"
+    },
+    {
+      "name": "project_page_cache_set",
+      "method": "POST",
+      "why_gated": "switches page caching for a live site's Production (Site > Hosting > Page caching): on, the edge keeps the pages the site marks as shareable and hands them to visitors without reaching the server; off, every view reaches the server again"
     },
     {
       "name": "account_timezone_set",

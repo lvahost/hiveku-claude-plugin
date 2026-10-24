@@ -166,6 +166,8 @@ Put this in `.claude/settings.json` (per project) or `~/.claude/settings.json` (
       "mcp__plugin_hiveku_hk__site_firewall_trust_range",
       "mcp__plugin_hiveku_hk__site_firewall_remove",
       "mcp__plugin_hiveku_hk__project_indexing_set",
+      "mcp__plugin_hiveku_hk__project_concurrency_set",
+      "mcp__plugin_hiveku_hk__project_page_cache_set",
       "mcp__plugin_hiveku_hk__account_timezone_set",
       "mcp__plugin_hiveku_hk__account_memory_append",
       "mcp__plugin_hiveku_hk__memory_update",
@@ -434,7 +436,7 @@ list above is spelled out. If you add to it, add whole names.
 again, so after a plugin update it can be missing names a newer release added. Paste the block
 again after an update. The plugin also asks on its own before the writes that change what
 department agents read, which forms a site captures (and erasing what it captured), who gets a
-site's lead emails, a site's environment variables and the account's environment groups, a site's search engine indexing, live ad campaigns, switching ads on or restarting them, switching a
+site's lead emails, a site's environment variables and the account's environment groups, a site's search engine indexing, a site's server capacity and page caching, live ad campaigns, switching ads on or restarting them, switching a
 workflow on or clearing its automatic pause (`workflow_enable`, `workflow_resume`), setting or
 removing a workflow variable (`workflow_env_set`, `workflow_env_delete`), switching email
 marketing on (`marketing_activate`), the budget guardrail,
