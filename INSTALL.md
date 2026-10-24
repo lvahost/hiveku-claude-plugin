@@ -120,6 +120,7 @@ Put this in `.claude/settings.json` (per project) or `~/.claude/settings.json` (
     "ask": [
       "mcp__plugin_hiveku_hk__deploy_site",
       "mcp__plugin_hiveku_hk__deploy_run",
+      "mcp__plugin_hiveku_hk__deploy_serve_version",
       "mcp__plugin_hiveku_hk__project_files_bulk_save",
       "mcp__plugin_hiveku_hk__project_vcs_commit",
       "mcp__plugin_hiveku_hk__project_vcs_merge",

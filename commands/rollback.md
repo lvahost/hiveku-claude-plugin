@@ -18,6 +18,17 @@ follows, but visitors see the new state only after a separate publish (`/hiveku:
 needs its own yes. It does not touch the database, CMS entries, secrets, or the shared images in
 the media library; for the database use `/hiveku:restore` (a checkpoint with `restore_database`).
 
+**When a release misbehaves and visitors need the version from before it now.** This command is
+the slow way back for that: it changes Your site, and visitors see it only after a publish of about
+7 minutes. `deploy_serve_version` serves one of that environment's recent successful deployments
+again in about a minute, with no build, and leaves Your site, its versions, the site's settings and
+its database as they are. Run its dry run first (the default), tell the person which version it
+would serve and the date it went live, and start it only after their yes (`dry_run: false` with the
+dry run's `serving_check`); Hiveku asks the person before every start. Say "serve the version from
+<date> again". Afterwards ask them to try the pages that matter most, since the earlier code runs
+with today's settings and database. Use this command instead when they want Your site's files as
+they were, or the version is older than the deployments that environment keeps.
+
 1. FIND the version. `project_vcs_history({ project_id: <the project_id>, branch: "main", limit: 20 })`
    (or the branch name). Show one line per version: its name, when, `source` in plain words (the AI
    assistant, a person in the editor, this assistant, a publish, a rollback, automatic save), and

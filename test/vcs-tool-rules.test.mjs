@@ -101,13 +101,15 @@ test('the version prompts speak plain language: "version", never commit/HEAD/rev
     ['project_vcs_rollback', { project_id: PROJECT }],
     ['project_vcs_rollback', { project_id: PROJECT, dry_run: false }],
     ['project_vcs_resolve', { project_id: PROJECT, branch: 'feature/x', files: [{ path: 'a', choice: 'parent' }] }],
+    ['deploy_serve_version', { project_id: PROJECT, environment: 'production' }],
+    ['deploy_serve_version', { project_id: PROJECT, environment: 'production', dry_run: false, serving_check: 'c' }],
   ];
   for (const [tool, input] of inputs) {
     const { reason } = argGatedWriteDecision(tool, input);
     assert.match(reason, /version/i, `${tool}: the reason must say "version"`);
     assert.doesNotMatch(reason, /\bcommit|HEAD|revert|\bmain\b/i, `${tool}: "${reason}"`);
   }
-  assert.deepEqual([...ARG_GATED_WRITES.keys()].sort(), ['project_vcs_commit', 'project_vcs_resolve', 'project_vcs_rollback']);
+  assert.deepEqual([...ARG_GATED_WRITES.keys()].sort(), ['deploy_serve_version', 'project_vcs_commit', 'project_vcs_resolve', 'project_vcs_rollback']);
   assert.equal(argGatedWriteDecision('project_file_save', {}), null, 'other tools get no version rule');
 });
 
@@ -183,4 +185,42 @@ test('NEGATIVE CONTROL: the version rules never make a version tool auto-approva
   assert.equal(isAutoApprovable('project_vcs_commit', {}), false);
   assert.equal(isAutoApprovable('project_vcs_rollback', {}), false);
   assert.equal(isReadOnlyTool('project_vcs_commit'), false);
+});
+
+test('switching an environment to an earlier version: a dry run is pre-approved, a start always asks (HK-618)', () => {
+  const cwd = folderWith(undefined);
+  for (const input of [
+    { project_id: PROJECT, environment: 'production' },
+    { project_id: PROJECT, environment: 'production', dry_run: true },
+    // Only the literal boolean false starts one: the MCP mapping sends true when it is left out.
+    { project_id: PROJECT, environment: 'production', dry_run: 'false' },
+    {},
+  ]) {
+    const r = decideWithGuardrails(vcs('deploy_serve_version', input, cwd));
+    assert.equal(decision(r), 'allow', `dry run ${JSON.stringify(input)} must be allowed`);
+    assert.match(r.hookSpecificOutput.permissionDecisionReason, /Nothing changes for visitors/);
+  }
+  for (const [environment, name] of [['production', 'Production'], ['staging', 'Staging'], ['development', 'Development'], [undefined, 'the environment']]) {
+    const start = decideWithGuardrails(vcs('deploy_serve_version', {
+      project_id: PROJECT,
+      environment,
+      deployment_id: 'olympus-production-1792760235629-ecuf8q',
+      dry_run: false,
+      serving_check: '0123456789abcdef',
+    }, cwd));
+    assert.equal(decision(start), 'ask', `a start on ${name} must ask`);
+    const reason = start.hookSpecificOutput.permissionDecisionReason;
+    assert.match(reason, new RegExp(`This switches ${name} to an earlier version for real: visitors get it within about a minute`));
+    assert.match(reason, /always asks/);
+    // Words for the person: never rolled back, put back or old build.
+    assert.doesNotMatch(reason, /roll(ed)? back|put back|old build|instant/i);
+  }
+  // A start is never pre-approved, not even inside a batch.
+  const batched = decideWithGuardrails(batch([
+    { tool: 'deploy_serve_version', args: { project_id: PROJECT, environment: 'production', dry_run: false, serving_check: 'c' } },
+  ], cwd));
+  assert.equal(decision(batched), 'ask');
+  // A dry run in a batch is judged as it is alone.
+  const dryBatch = decideWithGuardrails(batch([{ tool: 'deploy_serve_version', args: { project_id: PROJECT, environment: 'production' } }], cwd));
+  assert.equal(decision(dryBatch), 'allow');
 });
