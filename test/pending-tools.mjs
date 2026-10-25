@@ -395,6 +395,22 @@
  *                    (read-only), project_domain_move_stop. Landed in the live
  *                    index on 2026-10-22 (index regenerated at 2329 tools in
  *                    release 0.27.74); entries deleted.
+ *
+ *   Email Service setup writes (2026-10-25, notes/email-service-program-2026-10-19/
+ *   write-tools-plan.md): the four the builder holds for agents (403
+ *   agent_changes_not_enabled) until the apps that ask first are out. The
+ *   contracts are the builder's POST /api/olympus/email/send,
+ *   POST /api/olympus/email/domains/:id/send-instructions,
+ *   POST /api/olympus/builder/projects/:projectId/email-connection and
+ *   POST /api/olympus/email/suppressions/import; the MCP declarations are
+ *   hiveku-mcp-api-server feature/email-project-connect-tools. All four are
+ *   POSTs on the ask list and on ALWAYS_ASK_WRITES (lib/tool-safety.mjs), asking
+ *   from this release on, ahead of the server, so no install runs one unasked
+ *   once the hold lifts. Release step, after the MCP deploy: regenerate the
+ *   index (none joins the read-only list), then delete these entries;
+ *   tool-names.test.mjs forces the deletion.
+ *     EMAIL-SERVICE-2  email_send, email_domain_send_instructions,
+ *                      email_project_connect, email_suppression_import.
  */
 const SEO_SINCE = '2026-08-30';
 const seo = (batch) => ({ since: SEO_SINCE, batch });
@@ -523,4 +539,12 @@ export const PENDING_TOOLS = new Map([
 
   // 2026-10-24 (index regenerated at 2346 tools, with the inbox setup release): deploy_serve_version
   // (HK-618) is served, on the ask list and on the hook; entry deleted.
+
+  // EMAIL-SERVICE-2 (2026-10-25): the Email Service setup writes the builder holds for agents. They ask
+  // from this release on (the ask list and the hook), before the MCP server ships them. See the batch
+  // note above.
+  ['email_send', { since: '2026-10-25', batch: 'EMAIL-SERVICE-2' }],
+  ['email_domain_send_instructions', { since: '2026-10-25', batch: 'EMAIL-SERVICE-2' }],
+  ['email_project_connect', { since: '2026-10-25', batch: 'EMAIL-SERVICE-2' }],
+  ['email_suppression_import', { since: '2026-10-25', batch: 'EMAIL-SERVICE-2' }],
 ]);

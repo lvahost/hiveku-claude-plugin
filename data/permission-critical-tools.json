@@ -5,8 +5,8 @@
     "mcp__plugin_hiveku_hk__",
     "mcp__hiveku__"
   ],
-  "plugin_version": "0.27.95",
-  "count": 304,
+  "plugin_version": "0.27.96",
+  "count": 308,
   "tools": [
     {
       "name": "deploy_site",
@@ -322,6 +322,26 @@
       "name": "workflow_email_step_test_send",
       "method": "POST",
       "why_gated": "sends real mail now on the account's own marketing domain lane, the same as email_campaign_test_send"
+    },
+    {
+      "name": "email_send",
+      "method": "POST",
+      "why_gated": "sends a real email through the account's Email Service as one of its API keys; with a production key it is delivered, and it cannot be taken back"
+    },
+    {
+      "name": "email_domain_send_instructions",
+      "method": "POST",
+      "why_gated": "emails a sending domain's DNS records to the person named, often someone outside the account, from Hiveku's platform address"
+    },
+    {
+      "name": "email_project_connect",
+      "method": "POST",
+      "why_gated": "makes a website's email keys and writes them, with its email settings, into the site's variables, which changes how the live site sends its email"
+    },
+    {
+      "name": "email_suppression_import",
+      "method": "POST",
+      "why_gated": "adds up to 5,000 addresses to the account's suppression list at once; imported bounces and complaints can never be removed, and nothing is emailed to them again"
     },
     {
       "name": "crm_envelope_send",

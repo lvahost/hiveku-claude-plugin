@@ -1012,12 +1012,29 @@ const PPC_OVERRIDE_THAT_ASKS = ['ppc_recent_change_override'];
 const LEAD_EMAIL_WRITES_THAT_ASK = ['marketing_form_notifications_update'];
 /** CI checks plan step 6 (2026-10-19): running a review's checks again spends the site's test builds. */
 const CHECKS_RERUN_THAT_ASKS = ['project_vcs_checks_rerun'];
+/** The Email Service setup writes (2026-10-25): two send email, one rewires a live site's email, one adds suppression rows for good. */
+const EMAIL_SERVICE_WRITES_THAT_ASK = ['email_send', 'email_domain_send_instructions', 'email_project_connect', 'email_suppression_import'];
 
-test('the always-ask set is exactly the memory, form-capture and indexing writes, the secrets reveal, the A/B test writes, the mobile app writes, the PPC override, the lead-email change and a checks rerun', () => {
+test('the always-ask set is exactly the memory, form-capture and indexing writes, the secrets reveal, the A/B test writes, the mobile app writes, the PPC override, the lead-email change, a checks rerun and the Email Service setup writes', () => {
   assert.deepEqual(
     [...ALWAYS_ASK_WRITES.keys()].sort(),
-    [...MEMORY_WRITES_THAT_ASK, ...FORM_CAPTURE_WRITES_THAT_ASK, ...INDEXING_WRITES_THAT_ASK, ...SECRETS_REVEAL_THAT_ASKS, ...AB_TEST_WRITES_THAT_ASK, ...MOBILE_WRITES_THAT_ASK, ...PPC_OVERRIDE_THAT_ASKS, ...LEAD_EMAIL_WRITES_THAT_ASK, ...CHECKS_RERUN_THAT_ASKS].sort(),
+    [...MEMORY_WRITES_THAT_ASK, ...FORM_CAPTURE_WRITES_THAT_ASK, ...INDEXING_WRITES_THAT_ASK, ...SECRETS_REVEAL_THAT_ASKS, ...AB_TEST_WRITES_THAT_ASK, ...MOBILE_WRITES_THAT_ASK, ...PPC_OVERRIDE_THAT_ASKS, ...LEAD_EMAIL_WRITES_THAT_ASK, ...CHECKS_RERUN_THAT_ASKS, ...EMAIL_SERVICE_WRITES_THAT_ASK].sort(),
   );
+});
+
+test('the Email Service setup writes ask on a direct call with no guardrails file, and through a batch', () => {
+  const cwd = folderWith(undefined);
+  for (const name of EMAIL_SERVICE_WRITES_THAT_ASK) {
+    const direct = decideWithGuardrails({ ...payload(name, cwd), tool_input: {} });
+    assert.equal(direct?.hookSpecificOutput?.permissionDecision, 'ask', name);
+    assert.match(direct.hookSpecificOutput.permissionDecisionReason, new RegExp(`^${name} `), name);
+    const batch = decideForPayload({ tool_name: `${HIVEKU_TOOL_PREFIX}hiveku_batch`, tool_input: { calls: [{ tool: name, args: {} }] } });
+    assert.equal(batch?.hookSpecificOutput?.permissionDecision, 'ask', `${name} in a batch`);
+    assert.equal(isAutoApprovable(name, {}), false, name);
+    assert.equal(isReadOnlyTool(name), false, `${name} must not be on the generated read list`);
+  }
+  assert.match(ALWAYS_ASK_WRITES.get('email_send'), /cannot be taken back/);
+  assert.match(ALWAYS_ASK_WRITES.get('email_suppression_import'), /can never be removed/);
 });
 
 test('the lead-email change asks on a direct call with no guardrails file, and through a batch; its read stays pre-approved', () => {
