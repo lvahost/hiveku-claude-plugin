@@ -744,21 +744,31 @@ This is a different problem from the one above: your Hiveku key is fine, but the
 own OAuth grant with Google has expired or been revoked. Claude can drive most of the repair.
 Just ask it to reconnect the integration, and it will:
 
-1. Read `connections_status` and `integration_list` to see which ones are actually broken,
-   rather than guessing from a symptom.
-2. Call `integration_oauth_initiate`, which returns a `setup_url` for you to open plus a
-   `setup_token` for polling.
-3. Poll `integration_oauth_check` while you approve in the browser.
-4. Finish with `integration_test`, which performs a real token refresh. That matters: it proves
-   the new grant works instead of assuming it did because a page said "connected".
+1. Read `connections_status` and `integration_connectors_list` to see which ones are actually
+   broken, and the id of each, rather than guessing from a symptom.
+2. Call `integration_connect_link_create` with the broken connection's id
+   (`target_connection_id`), which returns a Hiveku link for you to open when you are ready.
+   Google Ads, Search Console, Business Profile and Analytics run on Hiveku's own Google app,
+   so there is no Google Cloud project of your own to set up. A connection still on your own
+   Google app moves onto Hiveku's app with this reconnect; Claude tells you what changes before
+   it sends that link.
+3. Poll `integration_connect_link_status` while you approve in the browser.
+4. Finish with the connection's own test (`ppc_connection_test` for Google Ads,
+   `seo_connection_test` for Search Console, Business Profile and Analytics), which performs a
+   real token refresh. That matters: it proves the new grant works instead of assuming it did
+   because a page said "connected".
 
 You still click through Google's consent screen yourself, which is the point; nothing can
 approve access on your behalf. Everything either side of that, Claude handles.
 
-Email and Shopify have their own starters (`email_connect_start`, `shopify_connect_start`), and
-ad platforms can be added with `ppc_connection_create`. Social connections (Meta, TikTok,
-LinkedIn) are still done in the Hiveku web app, because their consent flows hand back a picker
-of every page the login administers and someone has to choose which ones belong to that
+A Gmail or Outlook inbox starts with `email_inbox_setup_guide`. When the account has no Google
+or Microsoft app of its own for mail yet (Gmail needs Google Workspace), the guide walks Claude
+through setting one up, mostly with Google's command line (`gcloud`) or Microsoft's (`az`), and
+then connects the mailbox with a link you open. Shopify keeps its own starter
+(`shopify_connect_start`), and ad platforms other than Google Ads can be added with
+`ppc_connection_create` (Google Ads connects with a link, as above). Social connections (Meta,
+TikTok, LinkedIn) are still done in the Hiveku web app, because their consent flows hand back a
+picker of every page the login administers and someone has to choose which ones belong to that
 workspace.
 
 **"I also run the Hiveku VS Code extension."**
