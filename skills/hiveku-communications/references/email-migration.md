@@ -68,7 +68,8 @@ The Resend lane serves `POST /emails`, `POST /emails/batch` (no attachments) and
 The SMTP lane is `smtp.hiveku.com`:
 - ports 465 (TLS) or 587 and 2587 (STARTTLS);
 - user `apikey`, password the key;
-- `allowed_ips` on a key does not apply over SMTP.
+- a key's `allowed_ips` is stored but not checked yet, over SMTP or the API: never tell the person it limits where
+  the key works from.
 
 ## 3. The sending domain
 
