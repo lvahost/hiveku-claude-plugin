@@ -6,6 +6,9 @@ import path from 'node:path';
 import { planProvision, provisionSettings } from '../lib/provision.mjs';
 
 const tmpHome = () => fs.mkdtempSync(path.join(os.tmpdir(), 'hk-prov-'));
+// settingsPath() prefers CLAUDE_CONFIG_DIR over homeDir. A session that sets it (a Claude
+// profile app does) would point these tests at its REAL settings.json, and could rewrite it.
+delete process.env.CLAUDE_CONFIG_DIR;
 
 test('a fresh settings file gets all three prerequisites', () => {
   const { next, changes } = planProvision({});
