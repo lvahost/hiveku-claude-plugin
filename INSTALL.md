@@ -733,8 +733,10 @@ hiveku accounts add <key>
 **"Tools are missing in a folder."**
 First: a SHORT tool list is normal since 0.8.0. A bound folder deliberately advertises only a
 core set plus `hiveku_find_tools` - everything else is found by searching, and a found tool is
-added to the callable list on the spot. So "the tool I want is not listed" means search for
-it, not that anything is broken. If even the core tools and `hiveku_find_tools` are absent,
+added to the callable list on the spot. Looking a tool up with `hiveku_tool_schema` adds it the
+same way, and its answer says for each tool whether Claude can call it directly or how else to
+call it. So "the tool I want is not listed" means search for it, not that anything is broken.
+If even the core tools and `hiveku_find_tools` are absent,
 THEN the folder is not bound: run `/hiveku:bind` there, or `/hiveku:status` to see what Claude
 thinks is going on. A folder with no binding is meant to be inert, so the plugin
 stays out of the way in projects that have nothing to do with Hiveku.
