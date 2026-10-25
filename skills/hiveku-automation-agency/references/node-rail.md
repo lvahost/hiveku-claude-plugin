@@ -1339,7 +1339,11 @@ label filters), `gmailNewEmailTrigger`, `outlookNewEmailTrigger`.
 
 **Email marketing**: `emailMarketingSendCampaign` (fires a draft or scheduled campaign;
 triggers audience materialization and dispatch via the marketing cron),
-`emailMarketingAddToSequence` (idempotent, re-enrollment is a no-op),
+`emailMarketingAddToSequence` (idempotent, re-enrollment is a no-op; it enrolls through the
+Enroll contacts box's checks, and when it enrolls nobody, because the sequence is switched off or
+the contact cannot get marketing email, it completes with `newlyEnrolled: false`, a
+`skippedReason` of `sequence_off`, `no_opt_in`, `cold_list` or `cannot_be_emailed`, and a
+warning on the run, and the workflow goes on),
 `emailMarketingRemoveFromSequence`, `audienceAddMember` (idempotent). Triggers:
 `emailMarketingContactSubscribedTrigger`, `emailMarketingLinkClickedTrigger` (filter by
 campaign or URL fragment), `emailMarketingCampaignFinishedTrigger` (the anchor for post-send

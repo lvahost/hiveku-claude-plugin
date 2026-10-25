@@ -2109,7 +2109,7 @@
       "dept": "crm",
       "method": "POST",
       "timeoutMs": null,
-      "description": "Idempotent single-contact write keyed on lowercase(email). If a contact with that email exists in the account it's updated (only the fields you pass — existing values are preserved); otherwise it's created with lead_source='upsert'. Use for incremental re-imports + agent flows where you can't tell in advance whether the email is new. Supports inline custom_fields + auto_create_fields like the bulk tools. owner_id must be someone on this account's team (crm_list_users); one who is not is ignored and listed in owner_ids_ignored. A new contact with no owner named starts with no owner. Returns { action: 'created' | 'updated', id, company_id, custom_fields, owner_ids_ignored }. Past the plan's number this answers 402 plan_limit_reached (limit_kind plan_limit): nothing is done; account_usage_get has the numbers."
+      "description": "Idempotent single-contact write keyed on lowercase(email). If a contact with that email exists in the account it's updated (only the fields you pass — existing values are preserved); otherwise it's created with lead_source='upsert'. Use for incremental re-imports + agent flows where you can't tell in advance whether the email is new. Supports inline custom_fields + auto_create_fields like the bulk tools. owner_id must be someone on this account's team (crm_list_users); one who is not is ignored and listed in owner_ids_ignored. A new contact with no owner named starts with no owner, and an update changes the owner only to a named one on the team. Returns { action: 'created' | 'updated', id, email, company_id, custom_fields, owner_ids_ignored }. Past the plan's number this answers 402 plan_limit_reached (limit_kind plan_limit): nothing is done; account_usage_get has the numbers."
     },
     {
       "name": "crm_contacts_bulk_create",
@@ -4580,14 +4580,14 @@
       "dept": "email",
       "method": "POST",
       "timeoutMs": null,
-      "description": "Activate a sequence (enrollments start firing)."
+      "description": "Activate a sequence (enrollments start firing). A sequence that is off is switched on only when the sender's checks pass, the same ones the dashboard's Activate runs: email marketing on and not paused for the account, a verified sending domain for its emails, at least one step, and every email step with a subject line, a message (not the starting line \"Write your message here.\"), an unsubscribe link and the account's mailing address. Otherwise it answers 400 with code sequence_cannot_send, `lines` (one per problem, naming the step, for example \"Email 2: It has no subject line yet.\") and `problems` ({ step_id, step_name, message }), and nothing changes: fix each (an email step with email_sequence_update_step) and call it again. On success the answer has `notes` beside `data` (worth a look, never blocking). A sequence that is already on is answered as before, with no check."
     },
     {
       "name": "email_sequence_add_step",
       "dept": "email",
       "method": "POST",
       "timeoutMs": null,
-      "description": "Add a step. kind: 'send_email' | 'wait' | 'branch_on_engagement' | 'tag_action'. delay_seconds is the wait before this step fires (0 = immediate). step_order is auto-assigned to max+1."
+      "description": "Add a step. kind: 'send_email' | 'send_sms' | 'wait' | 'branch_on_engagement' | 'tag_action'; any other is a 400. delay_seconds is the wait before this step fires (0 = immediate), whole seconds up to 31536000 (365 days). step_order is auto-assigned to max+1. A tag_action step takes tag_action_json { action: 'add' | 'remove', tag_name }. A send_email step answers with `check` beside `data`: the sender's own check on it ({ problems, notes }), as the dashboard's step editor shows it. The step is saved either way. While the sequence is off, email_sequence_activate refuses until it is fixed; on a live sequence nothing refuses it, and the sender holds that email for everyone who reaches it. An email added with no body is saved with none (no starting text), and its check says it has no message: write it in inline_text (or inline_html, or pass template_id), and end the plain text with 'Unsubscribe: {{unsubscribe_link}}' and the mailing address line '{{tenant.company_name}} · {{tenant.address}} · {{tenant.city}}, {{tenant.state}} {{tenant.zip}}' (an HTML version needs a link to {{unsubscribe_link}} and that line too). Other kinds answer `check: null`."
     },
     {
       "name": "email_sequence_archive",
@@ -4657,14 +4657,14 @@
       "dept": "email",
       "method": "PATCH",
       "timeoutMs": null,
-      "description": "Update a sequence definition."
+      "description": "Update a sequence definition: name (trimmed and required; a name another sequence of the account has is a 409 whose `existing` names it), description (text or null), trigger_kind ('manual' | 'tag_added' | 'form_submit' | 'workflow', as on create; it only records how people are meant to join) and trigger_config (an object). Anything else is a 400 and nothing changes. It does not switch the sequence on or off: use email_sequence_activate and email_sequence_pause."
     },
     {
       "name": "email_sequence_update_step",
       "dept": "email",
       "method": "POST",
       "timeoutMs": null,
-      "description": "Update a sequence step."
+      "description": "Update a sequence step; fields left out are kept. delay_seconds: whole seconds up to 31536000 (365 days). kind: 'send_email' | 'send_sms' | 'wait' | 'branch_on_engagement' | 'tag_action'; changing it clears next_step_if_true_id and next_step_if_false_id unless they are given in the same call. Only a branch_on_engagement (check) step takes next_step_if_true_id (if they opened or clicked) and next_step_if_false_id (if not): each must be a later step of the same sequence, or null to end the sequence there. step_order: a whole number from 1 to 1000000; one another step holds is a 409, and a move that would put a check after a step it sends people to, or a step before a check that sends people to it, is a 400, because a check sends people only to a later step. tag_action_json { action: 'add' | 'remove', tag_name } for a tag_action step. A refusal changes nothing. A send_email step answers with `check` beside `data`, the sender's check on it ({ problems, notes }), as the dashboard's step save does; other kinds answer `check: null`."
     },
     {
       "name": "email_service_status",
