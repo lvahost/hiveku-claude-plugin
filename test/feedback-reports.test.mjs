@@ -60,7 +60,8 @@ test('each account is read once, with its own key, through the read tool only', 
   const rows = await collectReports(ACCOUNTS, make);
   assert.deepEqual(calls.map((c) => [c.accountId, c.key]), [[A, 'olp_key_for_a'], [B, 'olp_key_for_b'], [C, 'olp_key_for_c']]);
   assert.ok(calls.every((c) => c.method === 'tools/call' && c.name === REPORTS_TOOL), 'only hiveku_feedback_status is ever called');
-  assert.deepEqual(calls[0].args, { limit: 50 });
+  // full: true, so a server that sends short rows by default (HK-693) still sends every field read here.
+  assert.deepEqual(calls[0].args, { limit: 50, full: true });
 
   const byId = Object.fromEntries(rows.map((r) => [r.account_id, r]));
   assert.equal(byId[A].needs_attention_count, 1);
@@ -75,6 +76,18 @@ test('each account is read once, with its own key, through the read tool only', 
   assert.deepEqual(byId[C].reports, []);
   // The key never reaches the output.
   assert.ok(!JSON.stringify(rows).includes('olp_key_for'));
+});
+
+test('an answer sent once as resolution_note (HK-693) is read as the answer', async () => {
+  const { make } = fakeUpstreams({
+    [A]: toolResult({ items: [item({ resolution_note: 'Fixed: the domain tools work again.' })], needs_attention_count: 1 }),
+    [B]: toolResult({ items: [item({ ref: 'HK-131', answer_text: 'Old copy.', resolution_note: 'New copy.' })], needs_attention_count: 1 }),
+  });
+  const rows = await collectReports({ [A]: ACCOUNTS[A], [B]: ACCOUNTS[B] }, make);
+  const byId = Object.fromEntries(rows.map((r) => [r.account_id, r]));
+  assert.equal(byId[A].reports[0].answer_text, 'Fixed: the domain tools work again.');
+  // An older server's answer_text still wins when both are there.
+  assert.equal(byId[B].reports[0].answer_text, 'Old copy.');
 });
 
 test('a failed read is UNKNOWN for that account and does not stop the others', async () => {
