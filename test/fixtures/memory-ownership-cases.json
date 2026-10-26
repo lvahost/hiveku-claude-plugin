@@ -7,8 +7,8 @@
     "Owner of a typed row: (a) the column when it is set and is not 'marketing', taken as written even when it names no department ('graphic_design', 'mini'); (b) when the column is empty or 'marketing' and the marker's word is in marketing_family, that topic; (c) column 'marketing' otherwise: 'marketing' (the Marketing parent); (d) no column: the marker when it names any canonical department, else the front matter's department when it names one, else the shape of the domain (none for a typed row): no owner (null, shared with every agent).",
     "(b) is the only change from the column-first rule: it moves a row only between 'marketing' and one of its topics. The front matter never beats a 'marketing' column, and neither does a marker naming a department outside the family.",
     "Every other row is decided as before: 'account' and 'account-suggestions' (trimmed, any case) are owned by 'account'; an '_identity:x' row by its slug when x is a canonical department, else by its front matter's department (not checked against the list), and never by a marker or its column (the write owner falls back to the column); anything else by the column, else the marker or front matter naming a canonical department, else the domain's own name when that is a department.",
-    "Front matter: skip ONE leading marker line (ASCII whitespace around it, [A-Za-z0-9_]+ word, then LF), then the text must open with '---\\n'. A byte-order mark, a CR LF or anything else before it declares nothing (as in identity-pick-cases.json). A 'department:' line elsewhere in the prose is not a declaration.",
-    "canonical departments: marketing_family plus sales, helpdesk, production, accounting, comms, coder, orchestrator (follower_departments). 'analytics' is a Marketing topic; 'graphic_design' is no department.",
+    "Front matter: skip ONE leading marker line (ASCII whitespace around it, [A-Za-z0-9_]+ word, then LF), then the text must open with '---\\n' (three dashes and LF). A byte-order mark or anything else before it declares nothing, and so does an opening line that ends in CR LF ('---\\r\\n'). Read the text as stored: never strip a byte-order mark or turn CR LF into LF first (identity-pick-cases.json pins both the same way). A 'department:' line elsewhere in the prose is not a declaration.",
+    "canonical departments: marketing_family plus outbound, sales, helpdesk, production, accounting, comms, coder, orchestrator (follower_departments). 'analytics' is a Marketing topic; 'outbound' is not (its own department since 2026-10-26, like Sales); 'graphic_design' is no department.",
     "departments / visible / writable / foreign: rowVisibleToAny(row, departments) is true when the owner is null, false when it is 'account', else whether the owner is in departments (trimmed, lower-cased). rowWritableByAny is the same over write_owner. foreign is foreignWriteIntent(row.domain, row.content, departments): the first department the caller's domain and text could land the row in that departments do not cover, or null ('account' for account memory; for an identity its slug, else its front matter; else the domain shape and the in-text declaration (marker, else front matter, canonical only), both)."
   ],
   "follow_rule": [
@@ -27,7 +27,6 @@
     "seo",
     "social",
     "ppc",
-    "outbound",
     "branding",
     "customer_avatar",
     "customer_journey",
@@ -207,7 +206,6 @@
         "seo",
         "social",
         "ppc",
-        "outbound",
         "branding",
         "customer_avatar",
         "customer_journey",
@@ -445,7 +443,6 @@
           "email",
           "knowledge_base",
           "marketing",
-          "outbound",
           "ppc",
           "seo",
           "social",
@@ -469,7 +466,6 @@
         "seo",
         "social",
         "ppc",
-        "outbound",
         "branding",
         "customer_avatar",
         "customer_journey",
@@ -497,7 +493,6 @@
           "email",
           "knowledge_base",
           "marketing",
-          "outbound",
           "ppc",
           "seo",
           "social",
@@ -535,7 +530,6 @@
           "email",
           "knowledge_base",
           "marketing",
-          "outbound",
           "ppc",
           "seo",
           "social",
@@ -573,7 +567,6 @@
           "email",
           "knowledge_base",
           "marketing",
-          "outbound",
           "ppc",
           "seo",
           "social",
@@ -611,7 +604,6 @@
           "email",
           "knowledge_base",
           "marketing",
-          "outbound",
           "ppc",
           "seo",
           "social",
@@ -649,7 +641,6 @@
           "email",
           "knowledge_base",
           "marketing",
-          "outbound",
           "ppc",
           "seo",
           "social",
@@ -777,7 +768,6 @@
           "email",
           "knowledge_base",
           "marketing",
-          "outbound",
           "ppc",
           "seo",
           "social",
@@ -889,6 +879,50 @@
       },
       "departments": [
         "sales"
+      ],
+      "expect": {
+        "owner": null,
+        "write_owner": null,
+        "visible": true,
+        "writable": true,
+        "foreign": null,
+        "followers": [
+          "accounting",
+          "analytics",
+          "before_after_grid",
+          "branding",
+          "coder",
+          "comms",
+          "content",
+          "customer_avatar",
+          "customer_journey",
+          "email",
+          "helpdesk",
+          "knowledge_base",
+          "marketing",
+          "orchestrator",
+          "outbound",
+          "ppc",
+          "production",
+          "sales",
+          "seo",
+          "social",
+          "website_design",
+          "workflow"
+        ],
+        "on_calls": false
+      }
+    },
+    {
+      "name": "CR LF line endings on the front matter hide it: shared with every agent",
+      "row": {
+        "domain": "_skill:crlf-front-matter",
+        "department": null,
+        "project_id": null,
+        "content": "---\r\nname: Pipeline review\r\ndepartment: sales\r\n---\r\nStep 1."
+      },
+      "departments": [
+        "helpdesk"
       ],
       "expect": {
         "owner": null,
@@ -1039,7 +1073,6 @@
           "email",
           "knowledge_base",
           "marketing",
-          "outbound",
           "ppc",
           "seo",
           "social",
@@ -1130,7 +1163,6 @@
         "seo",
         "social",
         "ppc",
-        "outbound",
         "branding",
         "customer_avatar",
         "customer_journey",
@@ -1582,6 +1614,110 @@
       "expect": {
         "owner": "coder",
         "write_owner": "coder",
+        "visible": true,
+        "writable": true,
+        "foreign": null,
+        "followers": null,
+        "on_calls": false
+      }
+    },
+    {
+      "name": "column marketing and the Outbound marker: the Marketing parent (c). Outbound is its own department since 2026-10-26, so its marker no longer beats the column, and Outbound does not follow the row",
+      "row": {
+        "domain": "_rule:outbound-compliance",
+        "department": "marketing",
+        "project_id": null,
+        "content": "<!-- department: outbound -->\nNever email a contact who opted out."
+      },
+      "departments": [
+        "outbound"
+      ],
+      "expect": {
+        "owner": "marketing",
+        "write_owner": "marketing",
+        "visible": false,
+        "writable": false,
+        "foreign": null,
+        "followers": [
+          "analytics",
+          "before_after_grid",
+          "branding",
+          "coder",
+          "content",
+          "customer_avatar",
+          "customer_journey",
+          "email",
+          "knowledge_base",
+          "marketing",
+          "ppc",
+          "seo",
+          "social",
+          "website_design",
+          "workflow"
+        ],
+        "on_calls": false
+      }
+    },
+    {
+      "name": "column outbound and the Outbound marker (the Outbound starter rows, moved to their own column on 2026-10-26): Outbound (a), followed by Outbound alone",
+      "row": {
+        "domain": "_skill:cold-email-sequence-builder",
+        "department": "outbound",
+        "project_id": null,
+        "content": "<!-- department: outbound -->\nStep 1. Read the ideal customer profile."
+      },
+      "departments": [
+        "outbound"
+      ],
+      "expect": {
+        "owner": "outbound",
+        "write_owner": "outbound",
+        "visible": true,
+        "writable": true,
+        "foreign": null,
+        "followers": [
+          "outbound"
+        ],
+        "on_calls": false
+      }
+    },
+    {
+      "name": "an empty column and the Outbound marker: Outbound (d), a department of its own",
+      "row": {
+        "domain": "_rule:reply-within-a-day",
+        "department": null,
+        "project_id": null,
+        "content": "<!-- department: outbound -->\nAnswer every reply within a day."
+      },
+      "departments": [
+        "marketing"
+      ],
+      "expect": {
+        "owner": "outbound",
+        "write_owner": "outbound",
+        "visible": false,
+        "writable": false,
+        "foreign": "outbound",
+        "followers": [
+          "outbound"
+        ],
+        "on_calls": false
+      }
+    },
+    {
+      "name": "the outbound note, no column: Outbound by its domain (outbound stays a department after leaving the Marketing family)",
+      "row": {
+        "domain": "outbound",
+        "department": null,
+        "project_id": null,
+        "content": "Ideal customer: dental clinics in Texas."
+      },
+      "departments": [
+        "outbound"
+      ],
+      "expect": {
+        "owner": "outbound",
+        "write_owner": "outbound",
         "visible": true,
         "writable": true,
         "foreign": null,

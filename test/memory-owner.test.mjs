@@ -42,11 +42,11 @@ const FIXTURE = JSON.parse(
 );
 
 test('the department lists are the builder\'s, with analytics as a Marketing topic (decision 6)', () => {
-  assert.deepEqual([...TEAM_AGENTS].sort(), ['accounting', 'coder', 'comms', 'helpdesk', 'marketing', 'orchestrator', 'production', 'sales']);
+  assert.deepEqual([...TEAM_AGENTS].sort(), ['accounting', 'coder', 'comms', 'helpdesk', 'marketing', 'orchestrator', 'outbound', 'production', 'sales']);
   // hiveku_builder memory-types.ts MARKETING_FAMILY_DEPARTMENTS, less the lead, plus analytics.
   assert.deepEqual([...MARKETING_TOPICS].sort(), [
     'analytics', 'before_after_grid', 'branding', 'content', 'customer_avatar', 'customer_journey',
-    'email', 'knowledge_base', 'outbound', 'ppc', 'seo', 'social', 'website_design', 'workflow',
+    'email', 'knowledge_base', 'ppc', 'seo', 'social', 'website_design', 'workflow',
   ]);
   assert.equal(DEPARTMENTS.length, 22);
   // Not departments: the words the older docs warned about.
