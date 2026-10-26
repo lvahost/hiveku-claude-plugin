@@ -292,7 +292,8 @@ really a content or list-quality problem.
 
 ### API keys and webhooks
 
-`email_api_key_create`, `_list`, `_get`, `_update` (rename, pause or resume, permissions, throttle) and
+`email_api_key_create`, `_list`, `_get`, `_update` (rename, pause or resume, permissions; the sending rate
+follows the plan) and
 `_delete` (revokes it for good) for the transactional send API. **Never echo a key value into a report,
 a log or a commit.** Moving an app's email here from Resend, Mailgun or its own SMTP:
 `references/email-migration.md` (`/hiveku:email-migrate`).

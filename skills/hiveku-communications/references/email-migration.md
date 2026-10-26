@@ -83,10 +83,11 @@ The SMTP lane is `smtp.hiveku.com`:
    - **Bounce domain:** `bounces.<domain>` gets its own MX and TXT. They are new names, so nothing clashes.
    - **DMARC:** keep the existing record.
 3. If someone else runs the DNS, `email_domain_send_instructions({ id, to })` emails them the records. It asks
-   first. Until Hiveku turns it on, the person uses Send instructions under Settings > Email Service >
-   Domains.
-4. `email_domain_check_dns({ id })` until every record is valid. It flags a second SPF record and more than
-   10 lookups. Then run `email_domain_verify({ id })`.
+   first. Until Hiveku turns it on, the person opens the domain under Settings > Email Service > Domains and
+   clicks **Send to Developer**.
+4. `email_domain_check_dns({ id })` until every record is valid, then `email_domain_verify({ id })`. The check
+   reads whether the SPF record carries Hiveku's include; it does not count DNS lookups. So look at `found`
+   yourself: exactly one record at the name starts `v=spf1`, and the merged record stays under 10 lookups.
 5. A domain that should carry only the app's mail: `email_domain_set_purpose({ id, purpose: 'transactional' })`.
    Marketing sends then pick another domain.
 
@@ -95,7 +96,9 @@ The SMTP lane is `smtp.hiveku.com`:
 Export the old provider's bounces, complaints and unsubscribes. Resend, Mailgun, SendGrid and Postmark all
 export them from their dashboards.
 
-Run `email_suppression_import({ addresses, dry_run: true })`, show the person the counts, then import.
+Run `email_suppression_import({ addresses, dry_run: true })`, show the person the counts, then import. While
+Hiveku holds the tool, the dry run answers 403 `agent_changes_not_enabled` too: go straight to the by-hand way
+below.
 - `addresses` takes plain addresses, or `{ email, type, reason }` to keep each one's type.
 - Imported bounces and complaints can never be removed again, so import only what the old provider marked
   that way.
@@ -104,7 +107,8 @@ Run `email_suppression_import({ addresses, dry_run: true })`, show the person th
 ## 5. Connect the site
 
 1. `email_project_connect({ project_id, lane, domain, from, dry_run: true })` shows what would be written,
-   removed, made and replaced. Show it to the person.
+   removed, made and replaced. Show it to the person. While Hiveku holds the tool, the dry run answers 403
+   `agent_changes_not_enabled` too: go straight to step 5.
 2. Run it again without `dry_run` once they say yes. It writes the test key under the variable's plain name
    (live preview, development and staging simulate every send) and the production key under its `_PROD`
    name (production delivers).
@@ -114,8 +118,8 @@ Run `email_suppression_import({ addresses, dry_run: true })`, show the person th
    - Laravel: `{ host: "MAIL_HOST", port: "MAIL_PORT", user: "MAIL_USERNAME", key: "MAIL_PASSWORD", from: "MAIL_FROM_ADDRESS" }`;
    - Django: `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`.
 5. Until Hiveku turns the tool on (403 `agent_changes_not_enabled`), the person does it by hand:
-   - creates a test key and a production key under Settings > Email Service > API keys, each allowed only the
-     sending domain;
+   - creates a test key and a production key under Settings > API Keys (Create API Key, then Test or
+     Production). The dashboard cannot limit a key to one domain;
    - adds them under the site's environment variables: the test key under the plain name, the production key
      as `<NAME>_PROD`.
 6. A Mailgun app on the SMTP lane also needs its client swapped. A minimal nodemailer send:
