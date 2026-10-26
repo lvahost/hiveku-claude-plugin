@@ -540,11 +540,7 @@ export const PENDING_TOOLS = new Map([
   // 2026-10-24 (index regenerated at 2346 tools, with the inbox setup release): deploy_serve_version
   // (HK-618) is served, on the ask list and on the hook; entry deleted.
 
-  // EMAIL-SERVICE-2 (2026-10-25): the Email Service setup writes the builder holds for agents. They ask
-  // from this release on (the ask list and the hook), before the MCP server ships them. See the batch
-  // note above.
-  ['email_send', { since: '2026-10-25', batch: 'EMAIL-SERVICE-2' }],
-  ['email_domain_send_instructions', { since: '2026-10-25', batch: 'EMAIL-SERVICE-2' }],
-  ['email_project_connect', { since: '2026-10-25', batch: 'EMAIL-SERVICE-2' }],
-  ['email_suppression_import', { since: '2026-10-25', batch: 'EMAIL-SERVICE-2' }],
+  // 2026-10-26 (index regenerated at 2365 tools from MCP f98ce257ac, #297): EMAIL-SERVICE-2's four,
+  // email_send, email_domain_send_instructions, email_project_connect and email_suppression_import, are
+  // served and indexed (none on the read-only list); they asked from 0.27.96. Entries deleted.
 ]);
