@@ -38,6 +38,8 @@ Preconditions:
    complaints can never be removed].
 5. **Connect:** `email_project_connect({ project_id, lane, domain, from, dry_run: true })`, shown to the
    person, then for real [CONFIRM; it writes the site's variables].
+   - While Hiveku holds these tools, even the dry runs answer 403 `agent_changes_not_enabled`: use the
+     by-hand steps at the end.
    - The preview, development and staging get the test key; production gets the production key.
    - A Mailgun app on SMTP also gets its client swapped for nodemailer, on a branch with the site's checks.
 6. **Test in the live preview:**
@@ -57,7 +59,9 @@ Preconditions:
 
 Until Hiveku turns the setup tools on, four answer 403 `agent_changes_not_enabled`:
 `email_project_connect`, `email_domain_send_instructions`, `email_suppression_import` and `email_send`. Then:
-- **Keys:** the person creates them under Settings > Email Service > API keys and adds them to the site's
-  environment variables (the test key under the plain name, the production key as `<NAME>_PROD`).
-- **DNS records:** Send instructions on the domain's page emails them.
+- **Keys:** the person creates them under Settings > API Keys (Create API Key, then Test or Production; the
+  dashboard cannot limit a key to one domain) and adds them to the site's environment variables (the test
+  key under the plain name, the production key as `<NAME>_PROD`).
+- **DNS records:** the domain's page (Settings > Email Service > Domains, then the domain) emails them with
+  **Send to Developer**.
 - **Suppressions:** a few go in one at a time with `email_suppression_add`.
