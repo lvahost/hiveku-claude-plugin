@@ -121,6 +121,8 @@ const LIVE_CHANGE_NAMES = [
   // A site's server capacity and page caching (2026-10-24, MCP #288).
   'project_concurrency_set',
   'project_page_cache_set',
+  // Visitor Intelligence on a site: it identifies visitors against the monthly allowance (HK-727).
+  'analytics_visitor_intelligence_start',
 ];
 
 function folderWith(guardrails) {
