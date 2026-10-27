@@ -5,8 +5,8 @@
     "mcp__plugin_hiveku_hk__",
     "mcp__hiveku__"
   ],
-  "plugin_version": "0.27.100",
-  "count": 308,
+  "plugin_version": "0.27.101",
+  "count": 309,
   "tools": [
     {
       "name": "deploy_site",
@@ -257,6 +257,11 @@
       "name": "project_page_cache_set",
       "method": "POST",
       "why_gated": "switches page caching for a live site's Production (Site > Hosting > Page caching): on, the edge keeps the pages the site marks as shareable and hands them to visitors without reaching the server; off, every view reaches the server again"
+    },
+    {
+      "name": "analytics_visitor_intelligence_start",
+      "method": "POST",
+      "why_gated": "starts identifying the people and companies who visit a live site (Site > Analytics > Visitor Intelligence): each one it finds counts against the account's monthly allowance, and stop_on_project_ids switches it off on the other sites named"
     },
     {
       "name": "account_timezone_set",
