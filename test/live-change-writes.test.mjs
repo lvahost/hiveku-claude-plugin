@@ -123,6 +123,9 @@ const LIVE_CHANGE_NAMES = [
   'project_page_cache_set',
   // Visitor Intelligence on a site: it identifies visitors against the monthly allowance (HK-727).
   'analytics_visitor_intelligence_start',
+  // Lead lists: starting or resuming a run spends money and can feed a sending campaign (MCP #307).
+  'outbound_lead_list_run_start',
+  'outbound_lead_list_run_control',
 ];
 
 function folderWith(guardrails) {

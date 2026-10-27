@@ -5,8 +5,8 @@
     "mcp__plugin_hiveku_hk__",
     "mcp__hiveku__"
   ],
-  "plugin_version": "0.27.102",
-  "count": 309,
+  "plugin_version": "0.27.103",
+  "count": 311,
   "tools": [
     {
       "name": "deploy_site",
@@ -732,6 +732,16 @@
       "name": "outbound_reply_draft_send",
       "method": "POST",
       "why_gated": "emails a prospect - sends a saved draft as a real reply through the provider"
+    },
+    {
+      "name": "outbound_lead_list_run_start",
+      "method": "POST",
+      "why_gated": "starts a run of a lead list column (Outbound > Lead lists): it can spend money (email checks, AI calls) on every row it covers and add leads to an Outbound campaign that is sending, so they start getting its emails"
+    },
+    {
+      "name": "outbound_lead_list_run_control",
+      "method": "PATCH",
+      "why_gated": "pauses, resumes or cancels a lead list run: resuming spends again and can add leads to a campaign that is sending"
     },
     {
       "name": "voice_number_purchase",
