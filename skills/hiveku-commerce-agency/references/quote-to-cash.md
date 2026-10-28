@@ -99,15 +99,29 @@ quote through a signature envelope.
   block path, or `source_pdf_s3_key` + `fields_json` on the legacy PDF path, plus the
   `signers[]` role skeleton and `default_consent`. That is exactly the payload
   `crm_envelope_create` needs.
-- A template body is IMMUTABLE. `crm_contract_template_update` mutates only `name`,
-  `description`, and `is_archived` - to change the document body you
-  `crm_contract_template_create` a NEW template, because existing envelopes reference the
-  template id for audit. `crm_contract_template_delete` only archives; nothing is
-  hard-deleted.
+- `crm_contract_template_update` changes the body too, as the dashboard's template editor
+  does: `layout_json` (the whole block layout: read it with `crm_contract_template_get`,
+  change it, send it all back), `signers` (the roles, replaced whole), `fields` (a PDF
+  template's fields) and `default_consent`, besides `name`, `description` and `is_archived`.
+  With more than one signer role, every signature block must be tied to a role, or nothing
+  is saved. A contract already made from the template keeps its own copy, so a change
+  reaches only contracts made after it. To keep the original as it is,
+  `crm_contract_template_duplicate({ template_id, name? })` first (a separate copy named
+  "Copy of <name>" by default) and change the copy. `crm_contract_template_delete` only
+  archives; nothing is hard-deleted. Changing a template needs the role's Invoicing &
+  Estimates Edit right, and copying one its Create right.
 - No approved template on the account? Building one is the first deliverable of this
   play, and it goes to the client's counsel before it goes to a client's signature.
 
 ## Envelopes: create and send
+
+- Who hears about a contract (viewed for the first time, signed, declined, completed): the
+  teammate who sent it, else the one who made it, else the account's owners and admins, plus
+  up to 10 teammates added with `notify_user_ids` on `crm_envelope_create`, or later with
+  `crm_envelope_alerts_set({ envelope_id, notify_user_ids })` (the whole list; `[]` adds
+  nobody) while the contract is open. Only teammates whose role can open contracts are told,
+  never the client; `crm_envelope_get` answers `alerts` (who will be told). Owners and admins
+  no longer hear about every contract a teammate sends: they add themselves when they want to.
 
 - `crm_envelope_create({ title, signers, ... })` - `title` and `signers` are BOTH
   required, and `signers` is 1-10 items of `{ name, email, role?, contact_id?,

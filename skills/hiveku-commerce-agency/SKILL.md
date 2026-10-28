@@ -224,7 +224,7 @@ send a quote without an approved plan behind it.
 - Play 5 - Estimates and quotes. Cents/bps, template-first, the four immutability 409s,
   idempotent sends, the 30-day portal token, the stalled-quote chase including drafts.
   Load `references/quote-to-cash.md`.
-- Play 6 - Contracts and envelopes. Immutable template bodies, create-with-signers,
+- Play 6 - Contracts and envelopes. Template bodies (an edit reaches only new contracts; duplicate first), who is alerted, create-with-signers,
   sequential vs parallel sends, partially-signed derivation, void as the fix for a bad
   send. Same reference.
 - Play 7 - Invoicing and receivables. Convert-to-invoice side effects and its three
