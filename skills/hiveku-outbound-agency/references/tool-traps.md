@@ -20,12 +20,13 @@ Required: `campaign_id`, `email` per lead. Know the real behavior before loading
   Hiveku's rule is never to skip the block list or the unsubscribe list, and an opt-out holds for
   good (say why). `ignore_duplicate_leads_in_other_campaign` widens who receives cold email, so it
   is set only when the user asks for it by name and hears what it skips.
-- **Bulk results are COUNTS-ONLY - carry that honestly.** SmartLead returns
-  `{ uploaded, not_uploaded }` with no per-lead outcomes: WHICH leads were rejected
-  (duplicates, block list) is unknowable until the next stats sync reconciles the
-  `pending_sync` placeholder rows. Report the two counts and say the per-lead breakdown
-  arrives at the next sync - never present per-lead status as known, never guess which N were
-  rejected.
+- **Bulk results: report what the provider said, and no more.** Its answer gives no lead ids.
+  When it names the leads it skipped, they come back in `not_accepted` and get no row; report
+  them by address. When it gives counts only, every lead gets a `pending_sync` placeholder and
+  the answer says when it took fewer than were sent (`took_fewer_than_sent`, `upstream.sent`
+  and a note): report the counts, say which leads it took shows at the next campaign sync
+  (which also removes a placeholder the provider never had once it is stale), and never guess
+  which ones were rejected.
 - **Local rows are written only after SmartLead accepts; an upstream failure records
   nothing** - a batch that failed upstream left no partial state and is re-sent whole, once,
   per the retry discipline below.
