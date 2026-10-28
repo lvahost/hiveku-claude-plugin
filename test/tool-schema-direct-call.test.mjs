@@ -42,6 +42,7 @@ import path from 'node:path';
 import { PassThrough, Writable } from 'node:stream';
 import { fileURLToPath } from 'node:url';
 import { runShim } from '../lib/shim.mjs';
+import { fetchBodyText } from './request-body.mjs';
 import { bindingPathFor, writeBinding } from '../lib/binding.mjs';
 import { CORE_TOOLS, FIND_TOOL_NAME, findToolDefinition, indexModeTools } from '../lib/tool-index.mjs';
 import { ALWAYS_AVAILABLE, filterTools } from '../lib/tool-focus.mjs';
@@ -128,7 +129,7 @@ function fakeUpstream({ list = () => ({ tools: SERVED.map(servedTool) }), call =
   const seen = [];
   const realFetch = globalThis.fetch;
   globalThis.fetch = async (_url, init) => {
-    const message = JSON.parse(init.body);
+    const message = JSON.parse(fetchBodyText(init));
     seen.push(message);
     if (message.method === 'initialize') {
       return jsonResponse({

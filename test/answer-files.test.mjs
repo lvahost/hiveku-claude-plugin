@@ -43,6 +43,7 @@ import { PassThrough, Writable } from 'node:stream';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { runShim } from '../lib/shim.mjs';
+import { fetchBodyText } from './request-body.mjs';
 import { writeBinding } from '../lib/binding.mjs';
 import { runSetup } from '../lib/setup.mjs';
 import {
@@ -108,7 +109,7 @@ function fakeUpstream(handlers) {
   const seen = [];
   const realFetch = globalThis.fetch;
   globalThis.fetch = async (_url, init) => {
-    const message = JSON.parse(init.body);
+    const message = JSON.parse(fetchBodyText(init));
     seen.push(message);
     if (message.method === 'initialize') {
       return jsonResponse({

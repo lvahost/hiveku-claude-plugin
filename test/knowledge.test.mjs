@@ -7,6 +7,7 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
+import { readRequestText } from './request-body.mjs';
 import path from 'node:path';
 import os from 'node:os';
 import { promises as fs } from 'node:fs';
@@ -36,9 +37,7 @@ const upstream = {
 
 before(async () => {
   server = http.createServer((req, res) => {
-    let body = '';
-    req.on('data', (c) => (body += c));
-    req.on('end', () => {
+    readRequestText(req).then((body) => {
       const rpc = JSON.parse(body || '{}');
       const reply = (result) => {
         res.setHeader('Content-Type', 'application/json');
