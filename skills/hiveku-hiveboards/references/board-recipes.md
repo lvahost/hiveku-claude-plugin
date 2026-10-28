@@ -329,7 +329,7 @@ A palette that carries its own dark fill, so it reads on either ground, all with
 | Stage card | `#94A3B8` | `#0F172A` | `#E2E8F0` |
 | Highlighted stage | `#F59E0B` | `#1C1917` | `#FDE68A` |
 | Connector | `#64748B` | none | `#000000` (on the white pill) |
-| Frame | `#94A3B8` | `#0F172A` | ignored, see Part 10 |
+| Frame | `#94A3B8` | `#0F172A` | white when unset; `#0F172A` reads better on this tab, see Part 10 |
 
 **Where the funnel data comes from.** `crm_pipeline_stage_summary` gives per-stage open-deal
 counts and dollar totals for a pipeline (defaults to the oldest pipeline when `pipeline_id`
@@ -789,10 +789,11 @@ The top-level `color` / `fill_color` columns are stored null for a sticky either
 `font_size` is discarded for shapes, and comes back in `ignored_keys` when you send it. It applies to `text` only, where it is interchangeable with
 `element_data.fontSize`.
 
-**5. A frame's `labelColor` does nothing.** The frame title renders hardcoded white on a tab
-whose background is the frame's `color`. So a frame with `color: "#FFFFFF"` gets a white
-title on a white tab. The renderer computes a title colour from `labelColor` and then never
-uses it. Pick a mid-tone `color` for any frame whose title must be readable.
+**5. A frame's title is drawn in its `labelColor`, white when none is set, on a tab painted
+in its `color`.** Choose the two as a pair. A frame with `color: "#FFFFFF"` and no
+`labelColor` gets a white title on a white tab; a light `color` such as `#94A3B8` wants a
+dark `labelColor` such as `#0F172A`. A frame drawn in the editor stores
+`labelColor: "#374151"` (dark grey on its `#9CA3AF` tab); the scaffolds' frame titles are white.
 
 **6. `\n` in a shape or frame label does not break the line.** SVG `<text>` does not honour
 newlines: it collapses one to a space, so `"Home\n/"` reads as "Home /". That is why
