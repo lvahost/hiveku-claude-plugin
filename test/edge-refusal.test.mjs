@@ -19,15 +19,19 @@
  *      response_started false, the status and the ray id as data), nothing
  *      latches, and the NEXT call is sent and answered.
  *   2. Every other answer that is not Hiveku's own JSON-RPC error, on 401,
- *      403, 429 or 503, is an edge refusal too, and none of them latches.
+ *      403 or 429, is an edge refusal too, and none of them latches.
  *   3. Hiveku's own refusals, replayed exactly as hiveku-mcp-api-server sends
  *      them (src/middleware/mcp-auth.ts at origin/main e17b01b): the JSON 403
  *      still latches with today's words, the JSON 401 (a revoked key) still
  *      latches, and a latched bridge sends nothing more.
  *   4. Hiveku's own 429 (src/middleware/rate-limiter.ts) passes through
- *      exactly as before, and a 503 carrying Hiveku's JSON keeps the generic
- *      path with its text.
- *   5. A refusal whose body cannot be read latches nothing.
+ *      exactly as before. A 503 is never called a refusal, whatever its body:
+ *      the proxy in front of Hiveku also answers 503 when a deploy cuts a call
+ *      that was already delivered, so a 503 keeps the generic path it always
+ *      had, which says nothing about what was saved, and latches nothing.
+ *   5. A refusal whose body cannot be read latches nothing, and a refusal page
+ *      or an answer that stalls part way is given up on when the body timer
+ *      fires, instead of holding the call open.
  *   6. The shim gives the model kind edge_blocked, the status and ray_id, and
  *      the session goes on working.
  *   7. The server receives gzip: Content-Encoding gzip, Content-Type
@@ -35,7 +39,9 @@
  *      from the knowledge and data pulls; the customer's text is not
  *      readable in the bytes on the wire. The pulls do it without importing
  *      anything new, because hiveku-desktop vendors those files.
- *   8. The words: plain, no em dash, no vendor names.
+ *   8. The words: plain, no em dash, no vendor names, and nothing the bridge
+ *      cannot know: a 401/403's cause is hedged, it never says other calls
+ *      still work, and it says what to do when every call is refused.
  *
  * Run: env -u CLAUDE_CONFIG_DIR node --test test/edge-refusal.test.mjs
  */
@@ -242,7 +248,7 @@ test('an HTML 403 from the edge fails that call as edge_blocked, latches nothing
   }
 });
 
-/* ── 2. every non-Hiveku body on the four statuses is the edge's ─────────── */
+/* ── 2. every non-Hiveku body on the three statuses is the edge's ────────── */
 
 const EDGE_SHAPES = [
   { what: 'a plain-text 403 with a ray id header', reply: { status: 403, headers: { 'content-type': 'text/plain', 'cf-ray': RAY }, body: 'Forbidden' }, ray: RAY },
@@ -259,7 +265,6 @@ const EDGE_SHAPES = [
   },
   { what: 'an HTML 401', reply: { status: 401, headers: { 'content-type': 'text/html', 'cf-ray': RAY }, body: '<html><title>Unauthorized</title></html>' }, ray: RAY },
   { what: 'an HTML 429', reply: EDGE_429_PAGE, ray: RAY },
-  { what: 'an HTML 503', reply: { status: 503, headers: { 'content-type': 'text/html', 'cf-ray': RAY }, body: '<html><title>Service unavailable</title></html>' }, ray: RAY },
 ];
 
 for (const shape of EDGE_SHAPES) {
@@ -336,7 +341,7 @@ test("Hiveku's own JSON 401 (a revoked key) still latches, at the handshake as i
   }
 });
 
-/* ── 4. Hiveku's own 429 and 503 ─────────────────────────────────────────── */
+/* ── 4. Hiveku's own 429, and every 503 ──────────────────────────────────── */
 
 test("Hiveku's own 429 passes through exactly as before, and nothing latches", async () => {
   let sentBody = null;
@@ -360,22 +365,49 @@ test("Hiveku's own 429 passes through exactly as before, and nothing latches", a
   }
 });
 
-test("a 503 carrying Hiveku's own JSON keeps the generic path, with its text", async () => {
-  const body = JSON.stringify({ jsonrpc: '2.0', id: null, error: { code: -32603, message: 'stub says try later' } });
-  const stub = await startStub(refuseMarked({ status: 503, headers: { 'content-type': 'application/json' }, body }));
-  try {
-    const up = upstreamFor(stub);
-    const err = await rejection(up.forward(call('crm_contacts_list', { q: REFUSE_MARKER })));
-    assert.equal(err.kind, 'http');
-    assert.equal(err.httpStatus, 503);
-    assert.equal(err.message, `Hiveku returned HTTP 503. ${body.slice(0, 300)}`);
-    assert.equal(up.deadReason, null);
-  } finally {
-    await stub.close();
-  }
-});
+/**
+ * A 503 is not a refusal. The proxy in front of Hiveku answers 503 when a
+ * deploy stops the MCP server under a call it already delivered ("upstream
+ * connect error or disconnect/reset before headers"), so a write behind a 503
+ * may have landed. It keeps the generic path it had before HK-838, whatever
+ * its body: no edge_blocked, no dispatched false, no "nothing was saved".
+ */
+const ANY_503 = [
+  {
+    what: "carrying Hiveku's own JSON",
+    type: 'application/json',
+    body: JSON.stringify({ jsonrpc: '2.0', id: null, error: { code: -32603, message: 'stub says try later' } }),
+  },
+  { what: 'with an HTML page', type: 'text/html', body: '<html><title>Service unavailable</title></html>' },
+  {
+    what: 'the proxy sends after its connection to Hiveku was reset',
+    type: 'text/plain',
+    body: 'upstream connect error or disconnect/reset before headers. reset reason: connection termination',
+  },
+];
 
-/* ── 5. an unreadable refusal latches nothing ────────────────────────────── */
+for (const shape of ANY_503) {
+  test(`a 503 ${shape.what} keeps the generic path: not a refusal, no word on what was saved, nothing latched`, async () => {
+    const reply = { status: 503, headers: { 'content-type': shape.type, 'cf-ray': RAY }, body: shape.body };
+    const stub = await startStub(refuseMarked(reply));
+    try {
+      const up = upstreamFor(stub);
+      const err = await rejection(up.forward(call('pm_tasks_create', { title: REFUSE_MARKER })));
+      assert.equal(err.kind, 'http', err.message);
+      assert.equal(err.httpStatus, 503);
+      assert.equal(err.message, `Hiveku returned HTTP 503. ${shape.body.slice(0, 300)}`);
+      assert.equal(err.dispatched, undefined, 'a 503 can follow a delivered write, so it must not say it was never sent');
+      assert.equal(up.deadReason, null);
+      const before = stub.toolCalls().length;
+      await up.forward(call('pm_tasks_list', {}));
+      assert.equal(stub.toolCalls().length, before + 1, 'the next call is sent');
+    } finally {
+      await stub.close();
+    }
+  });
+}
+
+/* ── 5. an unreadable or stalled refusal latches nothing ─────────────────── */
 
 test('a 403 whose body is cut off before it can be read latches nothing', async () => {
   const cutOff = (res) => {
@@ -393,6 +425,73 @@ test('a 403 whose body is cut off before it can be read latches nothing', async 
     assert.equal(up.deadReason, null);
     await up.forward(call('pm_tasks_list', {}));
   } finally {
+    await stub.close();
+  }
+});
+
+/**
+ * A stub writer that sends `status` headers and the start of a body, then
+ * stalls: no more bytes and no end. Each stalled socket is kept so the test
+ * can close it whatever the bridge did.
+ */
+const stallAfter = (status, contentType, start, stalled) => (res) => {
+  res.writeHead(status, { 'content-type': contentType, 'cf-ray': RAY });
+  res.write(start);
+  stalled.add(res.socket);
+};
+
+/** `promise`, or a failure once `ms` pass. Without a body timer the read would wait minutes. */
+async function within(ms, promise) {
+  let timer;
+  const late = new Promise((_resolve, reject) => {
+    timer = setTimeout(() => reject(new Error(`the call was still waiting after ${ms}ms`)), ms);
+  });
+  try {
+    return await Promise.race([promise, late]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+const upstreamWithBodyTimer = (stub, bodyReadTimeoutMs) =>
+  new Upstream({ key: 'hvk_test_placeholder', accountId: ACCOUNT, label: 'Acme', url: stub.url, bodyReadTimeoutMs });
+
+test('a refusal page that stalls part way is given up on when the body timer fires, and latches nothing', async () => {
+  const stalled = new Set();
+  const stub = await startStub(refuseMarked(() => stallAfter(403, 'text/html', '<!DOCTYPE html><html><head><title>Blo', stalled)));
+  let pending;
+  try {
+    const up = upstreamWithBodyTimer(stub, 200);
+    pending = up.forward(call('pm_tasks_create', { title: REFUSE_MARKER }));
+    const err = await rejection(within(5_000, pending));
+    assert.equal(err.kind, 'http', err.message);
+    assert.equal(err.httpStatus, 403);
+    assert.match(err.message, /could not be read/);
+    assert.equal(up.deadReason, null);
+    const before = stub.toolCalls().length;
+    await up.forward(call('pm_tasks_list', {}));
+    assert.equal(stub.toolCalls().length, before + 1, 'the next call is sent');
+  } finally {
+    pending?.catch(() => {});
+    for (const socket of stalled) socket.destroy();
+    await stub.close();
+  }
+});
+
+test('an answer that stalls part way is given up on by the same body timer, as truncated', async () => {
+  const stalled = new Set();
+  const stub = await startStub(refuseMarked(() => stallAfter(200, 'application/json', '{"jsonrpc":"2.0","id":', stalled)));
+  let pending;
+  try {
+    const up = upstreamWithBodyTimer(stub, 200);
+    pending = up.forward(call('pm_tasks_create', { title: REFUSE_MARKER }));
+    const err = await rejection(within(5_000, pending));
+    assert.equal(err.kind, 'truncated', err.message);
+    assert.equal(err.dispatched, true);
+    assert.equal(err.response_started, true);
+  } finally {
+    pending?.catch(() => {});
+    for (const socket of stalled) socket.destroy();
     await stub.close();
   }
 });
@@ -564,25 +663,41 @@ test('the files hiveku-desktop vendors import nothing it does not vendor, so the
 /* ── 8. the words, and the two readers ───────────────────────────────────── */
 
 test('the edge refusal is said plainly: what happened, that nothing was saved, and what to try', async () => {
-  const stub = await startStub(refuseMarked((rpc) => (rpc.params.name === 'crm_contacts_list' ? EDGE_429_PAGE : BLOCK_PAGE)));
+  const NO_RAY_403 = { status: 403, headers: {}, body: '' };
+  const stub = await startStub(refuseMarked((rpc) =>
+    rpc.params.name === 'crm_contacts_list' ? EDGE_429_PAGE : rpc.params.name === 'crm_contacts_create' ? NO_RAY_403 : BLOCK_PAGE));
   try {
     const up = upstreamFor(stub);
     const blocked = await rejection(up.forward(call('pm_tasks_create', { title: REFUSE_MARKER })));
     const busy = await rejection(up.forward(call('crm_contacts_list', { q: REFUSE_MARKER })));
-    for (const err of [blocked, busy]) {
+    const noRay = await rejection(up.forward(call('crm_contacts_create', { notes: REFUSE_MARKER })));
+    for (const err of [blocked, busy, noRay]) {
       assert.match(err.message, /never reached Hiveku and nothing was saved/);
-      assert.match(err.message, /Other Hiveku calls still work/);
+      assert.match(err.message, /This connection was not cut off: the next call is sent as usual/);
+      // The bridge cannot know that: a block on where requests come from refuses every call.
+      assert.doesNotMatch(err.message, /calls still work/i);
       assert.match(err.message, /do not reconnect/);
       assert.match(err.message, /rephrase/);
       assert.match(err.message, /code and file paths/);
       assert.match(err.message, /import upload \(project_import_presign, then project_import_finalize\)/);
-      assert.match(err.message, new RegExp(`ray id ${RAY}`));
+      assert.match(err.message, /If this request keeps being refused, report it with hiveku_report_issue/);
       assert.doesNotMatch(err.message, /[—–]/, 'no em or en dash');
       assert.doesNotMatch(err.message, /cloudflare|render\b|waf|cdn/i, 'no vendor names in words a customer reads');
     }
-    assert.match(blocked.message, /refused this one request \(HTTP 403\) because of something in its text/);
+    for (const err of [blocked, busy]) assert.match(err.message, new RegExp(`hiveku_report_issue: give ray id ${RAY} and`));
+    assert.match(noRay.message, /hiveku_report_issue: give the time it happened and/);
+
+    // A 401/403 names the usual cause without claiming it, and says what to
+    // do when every call is refused (a block on where requests come from).
+    assert.match(blocked.message, /refused this one request \(HTTP 403\), most often because of something in its text\./);
+    const everyCall =
+      'If every call is refused this way, even a plain one, the block is on where the requests come from, ' +
+      'not on their text, and a report would be refused too: tell the person, and give them ';
+    assert.ok(blocked.message.includes(`${everyCall}ray id ${RAY}.`), blocked.message);
+    assert.ok(noRay.message.includes(`${everyCall}the time it happened.`), noRay.message);
     assert.match(busy.message, /turned this one request away \(HTTP 429\)\. It does that when it is busy/);
     assert.match(busy.message, /Wait a minute and try it once more/);
+    assert.doesNotMatch(busy.message, /If every call is refused/, 'the every-call advice is for a 401/403 only');
   } finally {
     await stub.close();
   }
