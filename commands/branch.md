@@ -1,6 +1,6 @@
 ---
-description: Hiveku-native branches for this project - list (with unsaved-changes markers), create, status, bind or unbind an environment, roll back to an earlier version, restore an archived branch, delete. No GitHub involved.
-argument-hint: "[list | create <name> [from <branch>] | status <branch> | bind <development|staging> <branch> | unbind <tier> | rollback <branch> <version_id> | restore <branch> | delete <branch>]"
+description: Hiveku-native branches for this project - list (with unsaved-changes markers), create, status, bind or unbind an environment, roll back to an earlier version, archive a branch whose work has shipped, restore an archived branch, delete. No GitHub involved.
+argument-hint: "[list | create <name> [from <branch>] | status <branch> | bind <development|staging> <branch> | unbind <tier> | rollback <branch> <version_id> | archive <branch> | restore <branch> | delete <branch>]"
 ---
 
 Work on one of the account's Hiveku website projects. Resolve the `project_id` first with `sites_list` (every buildable website_project with its dev/staging/prod URLs, canonical GitHub state and container status) or `project_get({ project_id })` for one, or take it from what the user names. Do NOT use `list_projects` / `get_project` here: those return pm_projects rows, a different id space, and a website UUID 404s against them.
@@ -70,6 +70,19 @@ edits first as their own version ("Saved before rollback"), so nothing is lost. 
 bound to the branch changes only on its next deploy, and a live branch preview reports what
 happened in `preview_effect`. `project_vcs_revert` is the older branch-only form: use
 `project_vcs_rollback`, which works on Your site too.
+
+**archive <branch>**: when a branch's work has shipped (for example after a direct
+`project_vcs_merge`, which archives nothing unless it lands an open review) and the person wants it
+out of the list, `project_vcs_branch_archive({ project_id: <the project_id>, branch })` archives it now,
+the same archive a merged review gets: it leaves the list, refuses writes with 409 `branch_archived`,
+and `restore` brings it back for 30 days, after which it is deleted. It answers `{ data: { branch,
+archived_at, restorable_until, already_archived } }`. Refused, with nothing changed: 400
+`main_not_allowed` (Your site), 400 `stash_branch_readonly` (`pending/*`, `stash/*`), 409 `branch_bound`
+(an environment shows it: `bind` that environment to another branch first), 409 `autofix_branch`, 409
+`open_pull_request` (merge or close its reviews in `/hiveku:pr` first), 409 `unsaved_changes` (save a
+version with `/hiveku:commit` first), 409 `ai_turn_running` (a Hiveku AI chat is working on it: try
+again when it is done), 409 `branch_busy` / `branch_changed` (retry). Prefer it to delete, which
+cannot be undone, and archive only a branch the person asked to tidy away.
 
 **restore <branch>**: an archived branch still reads (history, files, compare), but every write to it
 answers 409 `branch_archived` ("Restore it first. Nothing was changed."): saves, versions, merges
