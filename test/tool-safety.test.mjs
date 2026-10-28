@@ -1014,11 +1014,13 @@ const LEAD_EMAIL_WRITES_THAT_ASK = ['marketing_form_notifications_update'];
 const CHECKS_RERUN_THAT_ASKS = ['project_vcs_checks_rerun'];
 /** The Email Service setup writes (2026-10-25): two send email, one rewires a live site's email, one adds suppression rows for good. */
 const EMAIL_SERVICE_WRITES_THAT_ASK = ['email_send', 'email_domain_send_instructions', 'email_project_connect', 'email_suppression_import'];
+/** "Ask them to record again" (2026-10-27): an email or a text to a real customer, once per testimonial. */
+const TESTIMONIAL_RERECORD_THAT_ASKS = ['marketing_testimonial_rerecord_send'];
 
-test('the always-ask set is exactly the memory, form-capture and indexing writes, the secrets reveal, the A/B test writes, the mobile app writes, the PPC override, the lead-email change, a checks rerun and the Email Service setup writes', () => {
+test('the always-ask set is exactly the memory, form-capture and indexing writes, the secrets reveal, the A/B test writes, the mobile app writes, the PPC override, the lead-email change, a checks rerun, the Email Service setup writes and the record-again ask', () => {
   assert.deepEqual(
     [...ALWAYS_ASK_WRITES.keys()].sort(),
-    [...MEMORY_WRITES_THAT_ASK, ...FORM_CAPTURE_WRITES_THAT_ASK, ...INDEXING_WRITES_THAT_ASK, ...SECRETS_REVEAL_THAT_ASKS, ...AB_TEST_WRITES_THAT_ASK, ...MOBILE_WRITES_THAT_ASK, ...PPC_OVERRIDE_THAT_ASKS, ...LEAD_EMAIL_WRITES_THAT_ASK, ...CHECKS_RERUN_THAT_ASKS, ...EMAIL_SERVICE_WRITES_THAT_ASK].sort(),
+    [...MEMORY_WRITES_THAT_ASK, ...FORM_CAPTURE_WRITES_THAT_ASK, ...INDEXING_WRITES_THAT_ASK, ...SECRETS_REVEAL_THAT_ASKS, ...AB_TEST_WRITES_THAT_ASK, ...MOBILE_WRITES_THAT_ASK, ...PPC_OVERRIDE_THAT_ASKS, ...LEAD_EMAIL_WRITES_THAT_ASK, ...CHECKS_RERUN_THAT_ASKS, ...EMAIL_SERVICE_WRITES_THAT_ASK, ...TESTIMONIAL_RERECORD_THAT_ASKS].sort(),
   );
 });
 
@@ -1035,6 +1037,20 @@ test('the Email Service setup writes ask on a direct call with no guardrails fil
   }
   assert.match(ALWAYS_ASK_WRITES.get('email_send'), /cannot be taken back/);
   assert.match(ALWAYS_ASK_WRITES.get('email_suppression_import'), /can never be removed/);
+});
+
+test('asking a customer to record their testimonial again asks on a direct call and through a batch; its preview stays pre-approved', () => {
+  const cwd = folderWith(undefined);
+  const name = 'marketing_testimonial_rerecord_send';
+  const direct = decideWithGuardrails({ ...payload(name, cwd), tool_input: { id: 't' } });
+  assert.equal(direct?.hookSpecificOutput?.permissionDecision, 'ask');
+  assert.match(direct.hookSpecificOutput.permissionDecisionReason, new RegExp(`^${name} `));
+  assert.match(direct.hookSpecificOutput.permissionDecisionReason, /cannot be taken back/);
+  const batch = decideForPayload({ tool_name: `${HIVEKU_TOOL_PREFIX}hiveku_batch`, tool_input: { calls: [{ tool: name, args: { id: 't' } }] } });
+  assert.equal(batch?.hookSpecificOutput?.permissionDecision, 'ask');
+  assert.equal(isAutoApprovable(name, { id: 't' }), false);
+  assert.equal(isReadOnlyTool(name), false);
+  assert.equal(isReadOnlyTool('marketing_testimonial_rerecord_preview'), true);
 });
 
 test('the lead-email change asks on a direct call with no guardrails file, and through a batch; its read stays pre-approved', () => {

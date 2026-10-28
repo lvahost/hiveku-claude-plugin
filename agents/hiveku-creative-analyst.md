@@ -183,6 +183,7 @@ writes a new library row); `media_bulk_move`, `media_delete`, `media_folder_dele
 `marketing_storyboard_create`, `marketing_storyboard_update`, `marketing_storyboard_set_look`,
 `marketing_storyboard_submit_for_approval`, `marketing_storyboard_delete`,
 `marketing_video_pipeline_start`, `marketing_video_pipeline_retry_scene`,
-`marketing_video_pipeline_cancel`, `marketing_testimonial_media_replace`, `memory_create`,
+`marketing_video_pipeline_cancel`, `marketing_testimonial_media_replace`,
+`marketing_testimonial_rerecord_send`, `memory_create`,
 `memory_update`, or any other `*_create` / `*_update` / `*_delete` / `*_purge` / `*_restore` /
 `*_populate` / `*_set_logo`. Never invent a metric, a parameter, or a tool name.

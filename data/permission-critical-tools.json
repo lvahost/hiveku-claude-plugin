@@ -6,7 +6,7 @@
     "mcp__hiveku__"
   ],
   "plugin_version": "0.27.104",
-  "count": 311,
+  "count": 312,
   "tools": [
     {
       "name": "deploy_site",
@@ -1297,6 +1297,11 @@
       "name": "marketing_testimonial_media_replace",
       "method": "POST",
       "why_gated": "swaps the published video on every public surface instantly; no staging step and no undo"
+    },
+    {
+      "name": "marketing_testimonial_rerecord_send",
+      "method": "POST",
+      "why_gated": "emails or texts a real customer a link to record their testimonial again; once per testimonial, and a message that went cannot be taken back"
     },
     {
       "name": "marketing_form_upload_settings_update",

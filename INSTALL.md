@@ -376,6 +376,7 @@ Put this in `.claude/settings.json` (per project) or `~/.claude/settings.json` (
       "mcp__plugin_hiveku_hk__generate_image_set",
       "mcp__plugin_hiveku_hk__media_upscale",
       "mcp__plugin_hiveku_hk__marketing_testimonial_media_replace",
+      "mcp__plugin_hiveku_hk__marketing_testimonial_rerecord_send",
       "mcp__plugin_hiveku_hk__marketing_form_upload_settings_update",
       "mcp__plugin_hiveku_hk__marketing_form_capture_settings_update",
       "mcp__plugin_hiveku_hk__marketing_form_capture_purge",
