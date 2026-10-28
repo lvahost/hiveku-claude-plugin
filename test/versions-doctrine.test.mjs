@@ -89,7 +89,11 @@ test('restore points at rollback first; branch revert became rollback; history s
   const branch = read('commands/branch.md');
   assert.match(branch, /\*\*rollback <branch> <version_id>\*\*/);
   assert.match(branch, /project_vcs_rollback\(\{ project_id: <the project_id>, branch, commit_id \}\)/);
-  assert.doesNotMatch(branch, /main_not_allowed/);
+  // Rollback works on Your site too: its section must not say main is refused. (Archive's own
+  // main_not_allowed refusal, in its section, is right.)
+  const rollbackSection = branch.slice(branch.indexOf('**rollback <branch> <version_id>**'), branch.indexOf('**archive <branch>**'));
+  assert.ok(rollbackSection.length > 100, 'found the rollback section');
+  assert.doesNotMatch(rollbackSection, /main_not_allowed/);
   const history = read('commands/history.md');
   assert.match(history, /`source` in plain words/);
   assert.match(history, /\/hiveku:rollback/);
