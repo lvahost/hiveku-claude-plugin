@@ -6,7 +6,7 @@
     "mcp__hiveku__"
   ],
   "plugin_version": "0.27.111",
-  "count": 312,
+  "count": 314,
   "tools": [
     {
       "name": "deploy_site",
@@ -367,6 +367,16 @@
       "name": "helpdesk_assistant_knowledge_sources_update",
       "method": "PATCH",
       "why_gated": "changes what the website assistant may tell anyone who opens the chat on the business's site: turning on its Google listing, website pages or documents, or sharing a knowledge base with it, lets visitors be told what those hold"
+    },
+    {
+      "name": "helpdesk_contact_data_erase",
+      "method": "POST",
+      "why_gated": "permanently erases one person's website chats, their files, chat visits, the CRM records kept for the chats and their own meeting recordings, with no undo; Hiveku refuses it through a key until the apps that ask first are out"
+    },
+    {
+      "name": "helpdesk_chat_retention_set",
+      "method": "PUT",
+      "why_gated": "sets how long the account keeps website chats; every night, older chats are deleted for good with their messages and files; Hiveku refuses a real change through a key until the apps that ask first are out"
     },
     {
       "name": "marketing_report_send",

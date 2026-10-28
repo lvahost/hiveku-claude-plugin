@@ -231,6 +231,15 @@ const SENSITIVE_READ_EXCLUSIONS = new Map([
   ['email_message_get',
     'returns the full content of a sent email, including live sign-in, password-reset and ' +
     'invite links a reader could use. Reading it is distribution, not a read; ask every time.'],
+  // 2026-10-28, the desktop app's help desk (builder #1869, MCP #319). Two GETs
+  // whose answer is the hazard; both are on NEVER_AUTO_APPROVE (lib/tool-safety.mjs).
+  ['helpdesk_ticket_attachment_links',
+    'hands out download links that work for 15 minutes, to files customers and website ' +
+    'visitors uploaded; anyone holding one can fetch the file. Minting them is distribution, ' +
+    'not a read; ask every time.'],
+  ['helpdesk_contact_data_export',
+    'returns one person\'s whole website chat history (their messages, what they typed about ' +
+    'themselves, the pages they visited), for an access request. Ask every time.'],
 ]);
 
 // The mirror image: a POST that is a pure read. Some routes dispatch reads and
