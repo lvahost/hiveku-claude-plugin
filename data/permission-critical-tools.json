@@ -5,8 +5,8 @@
     "mcp__plugin_hiveku_hk__",
     "mcp__hiveku__"
   ],
-  "plugin_version": "0.27.112",
-  "count": 314,
+  "plugin_version": "0.27.113",
+  "count": 315,
   "tools": [
     {
       "name": "deploy_site",
@@ -377,6 +377,11 @@
       "name": "helpdesk_chat_retention_set",
       "method": "PUT",
       "why_gated": "sets how long the account keeps website chats; every night, older chats are deleted for good with their messages and files; Hiveku refuses a real change through a key until the apps that ask first are out"
+    },
+    {
+      "name": "helpdesk_social_comments_settings_update",
+      "method": "PATCH",
+      "why_gated": "turns Facebook and Instagram comments into help desk tickets for chosen Pages: replies sent from those tickets post publicly under the person's comment, and alerts and response time targets start for every comment it lets in"
     },
     {
       "name": "marketing_report_send",
