@@ -536,6 +536,12 @@ test('no INSTALL.md snippet blanket-allows a prefix the ask list does not cover'
  * This map is the only way a name may sit in the Codex map without being on the
  * ask list, and every name here must be in the Codex map. Add names ONE AT A
  * TIME, each with the reason Codex needs a prompt the ask list does not carry.
+ *
+ * A name may be contracted in test/pending-tools.mjs before the index carries
+ * it, as on the ask list, so Codex asks from the same release as this plugin,
+ * ahead of the server (HD-DESKTOP-1). tool-names.test.mjs deletes the pending
+ * entry once the regenerated index has the name, and from then on the index
+ * check below holds it.
  */
 const CODEX_ONLY_PROMPTS = new Map([
   ['hiveku_batch',
@@ -549,15 +555,23 @@ const CODEX_ONLY_PROMPTS = new Map([
     'is a GET that answers with a sent email\'s whole content, live sign-in and reset links included. ' +
     'This plugin asks for it through NEVER_AUTO_APPROVE (lib/tool-safety.mjs), where risky reads are ' +
     'gated, so the ask list (writes only) cannot carry it, and Codex needs a prompt of its own (Codex 0.3.25)'],
+  ['helpdesk_ticket_attachment_links',
+    'is a GET that hands out download links working for 15 minutes, to files customers and website ' +
+    'visitors uploaded. It is gated through NEVER_AUTO_APPROVE (lib/tool-safety.mjs), which the ask list ' +
+    '(writes only) cannot carry, so Codex needs a prompt of its own (HD-DESKTOP-1, Codex 0.3.41)'],
+  ['helpdesk_contact_data_export',
+    'is a GET that answers with one person\'s whole website chat history, for an access request. It is ' +
+    'gated through NEVER_AUTO_APPROVE (lib/tool-safety.mjs), which the ask list (writes only) cannot ' +
+    'carry, so Codex needs a prompt of its own (HD-DESKTOP-1, Codex 0.3.41)'],
 ]);
 
 test('every Codex-only prompt names a real tool that is not on the ask list', () => {
   const gated = new Set(permFile.tools.map((t) => t.name));
   const stale = [];
   for (const [name, reason] of CODEX_ONLY_PROMPTS) {
-    if (!indexMethods.has(name)) {
-      stale.push(`${name}: not in lib/tool-index.json, so a renamed tool would leave Codex ` +
-        'prompting a name nothing calls. Re-judge the new name');
+    if (!indexMethods.has(name) && !PENDING_TOOLS.has(name)) {
+      stale.push(`${name}: not in lib/tool-index.json, nor contracted in test/pending-tools.mjs, so a ` +
+        'renamed tool would leave Codex prompting a name nothing calls. Re-judge the new name');
     }
     if (gated.has(name)) {
       stale.push(`${name}: is on the ask list now, so the mirror already requires it. Delete it here`);

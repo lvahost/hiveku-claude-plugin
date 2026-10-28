@@ -190,6 +190,8 @@ Put this in `.claude/settings.json` (per project) or `~/.claude/settings.json` (
       "mcp__plugin_hiveku_hk__crm_estimate_send",
       "mcp__plugin_hiveku_hk__helpdesk_ticket_send_reply",
       "mcp__plugin_hiveku_hk__helpdesk_assistant_knowledge_sources_update",
+      "mcp__plugin_hiveku_hk__helpdesk_contact_data_erase",
+      "mcp__plugin_hiveku_hk__helpdesk_chat_retention_set",
       "mcp__plugin_hiveku_hk__marketing_report_send",
       "mcp__plugin_hiveku_hk__ppc_budget_update",
       "mcp__plugin_hiveku_hk__ppc_platform_budget_update",

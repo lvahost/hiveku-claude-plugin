@@ -1016,12 +1016,54 @@ const CHECKS_RERUN_THAT_ASKS = ['project_vcs_checks_rerun'];
 const EMAIL_SERVICE_WRITES_THAT_ASK = ['email_send', 'email_domain_send_instructions', 'email_project_connect', 'email_suppression_import'];
 /** "Ask them to record again" (2026-10-27): an email or a text to a real customer, once per testimonial. */
 const TESTIMONIAL_RERECORD_THAT_ASKS = ['marketing_testimonial_rerecord_send'];
+/** The desktop app's help desk (2026-10-28, HD-DESKTOP-1): a person's chats erased for good, and how long every chat is kept. */
+const HELPDESK_PRIVACY_WRITES_THAT_ASK = ['helpdesk_contact_data_erase', 'helpdesk_chat_retention_set'];
+/** Its two GETs whose answer is the hazard: 15-minute links to strangers' files, and a person's whole chat history. */
+const HELPDESK_HAZARD_READS = ['helpdesk_ticket_attachment_links', 'helpdesk_contact_data_export'];
 
-test('the always-ask set is exactly the memory, form-capture and indexing writes, the secrets reveal, the A/B test writes, the mobile app writes, the PPC override, the lead-email change, a checks rerun, the Email Service setup writes and the record-again ask', () => {
+test('the always-ask set is exactly the memory, form-capture and indexing writes, the secrets reveal, the A/B test writes, the mobile app writes, the PPC override, the lead-email change, a checks rerun, the Email Service setup writes, the record-again ask and the help desk privacy writes', () => {
   assert.deepEqual(
     [...ALWAYS_ASK_WRITES.keys()].sort(),
-    [...MEMORY_WRITES_THAT_ASK, ...FORM_CAPTURE_WRITES_THAT_ASK, ...INDEXING_WRITES_THAT_ASK, ...SECRETS_REVEAL_THAT_ASKS, ...AB_TEST_WRITES_THAT_ASK, ...MOBILE_WRITES_THAT_ASK, ...PPC_OVERRIDE_THAT_ASKS, ...LEAD_EMAIL_WRITES_THAT_ASK, ...CHECKS_RERUN_THAT_ASKS, ...EMAIL_SERVICE_WRITES_THAT_ASK, ...TESTIMONIAL_RERECORD_THAT_ASKS].sort(),
+    [...MEMORY_WRITES_THAT_ASK, ...FORM_CAPTURE_WRITES_THAT_ASK, ...INDEXING_WRITES_THAT_ASK, ...SECRETS_REVEAL_THAT_ASKS, ...AB_TEST_WRITES_THAT_ASK, ...MOBILE_WRITES_THAT_ASK, ...PPC_OVERRIDE_THAT_ASKS, ...LEAD_EMAIL_WRITES_THAT_ASK, ...CHECKS_RERUN_THAT_ASKS, ...EMAIL_SERVICE_WRITES_THAT_ASK, ...TESTIMONIAL_RERECORD_THAT_ASKS, ...HELPDESK_PRIVACY_WRITES_THAT_ASK].sort(),
   );
+});
+
+test('the help desk privacy writes ask on a direct call with no guardrails file, and through a batch', () => {
+  const cwd = folderWith(undefined);
+  for (const name of HELPDESK_PRIVACY_WRITES_THAT_ASK) {
+    const direct = decideWithGuardrails({ ...payload(name, cwd), tool_input: {} });
+    assert.equal(direct?.hookSpecificOutput?.permissionDecision, 'ask', name);
+    assert.match(direct.hookSpecificOutput.permissionDecisionReason, new RegExp(`^${name} `), name);
+    const batch = decideForPayload({ tool_name: `${HIVEKU_TOOL_PREFIX}hiveku_batch`, tool_input: { calls: [{ tool: name, args: {} }] } });
+    assert.equal(batch?.hookSpecificOutput?.permissionDecision, 'ask', `${name} in a batch`);
+    assert.equal(isAutoApprovable(name, {}), false, name);
+    assert.equal(isReadOnlyTool(name), false, `${name} must not be on the generated read list`);
+  }
+  assert.match(ALWAYS_ASK_WRITES.get('helpdesk_contact_data_erase'), /PERMANENTLY erases one person's website chats/);
+  assert.match(ALWAYS_ASK_WRITES.get('helpdesk_contact_data_erase'), /no undo/);
+  // The gate is by name, so the retention dry run prompts too; the reason says it only counts.
+  const dryRun = decideWithGuardrails({ ...payload('helpdesk_chat_retention_set', cwd), tool_input: { days: 90, dry_run: true } });
+  assert.equal(dryRun?.hookSpecificOutput?.permissionDecision, 'ask');
+  assert.match(ALWAYS_ASK_WRITES.get('helpdesk_chat_retention_set'), /A dry run \(dry_run: true\) only counts/);
+});
+
+test('the help desk hazard reads ask on every call and through a batch, and never ride the read-only list', () => {
+  for (const name of HELPDESK_HAZARD_READS) {
+    assert.ok(NEVER_AUTO_APPROVE.has(name), `${name} must carry the veto`);
+    assert.equal(isAutoApprovable(name, { id: 't', contact_id: 'c' }), false, name);
+    assert.equal(isReadOnlyTool(name), false, `${name} must not classify as a read; regenerate lib/readonly-tools.json if this fails`);
+    const direct = decideForPayload({ tool_name: `${HIVEKU_TOOL_PREFIX}${name}`, tool_input: {} });
+    assert.equal(direct?.hookSpecificOutput?.permissionDecision, 'ask', `${name} must ASK: silence is a yes under a blanket allow`);
+    const batch = decideForPayload({ tool_name: `${HIVEKU_TOOL_PREFIX}hiveku_batch`, tool_input: { calls: [{ tool: name, args: {} }] } });
+    assert.equal(batch?.hookSpecificOutput?.permissionDecision, 'ask', `${name} in a batch`);
+    assert.equal(ALWAYS_ASK_WRITES.has(name), false, `${name} is a read: it is gated by the veto, not the write map`);
+  }
+  // The links fit the default sentence (an unrevocable link); the export does not, so it says what it is.
+  const links = decideForPayload({ tool_name: `${HIVEKU_TOOL_PREFIX}helpdesk_ticket_attachment_links`, tool_input: { id: 't' } });
+  assert.match(links.hookSpecificOutput.permissionDecisionReason, /^helpdesk_ticket_attachment_links reads, but its RESPONSE is the hazard \(an unrevocable link/);
+  const exported = decideForPayload({ tool_name: `${HIVEKU_TOOL_PREFIX}helpdesk_contact_data_export`, tool_input: { contact_id: 'c' } });
+  assert.match(exported.hookSpecificOutput.permissionDecisionReason, /^helpdesk_contact_data_export returns one person's whole website chat history/);
+  assert.ok(!/RESPONSE is the hazard/.test(VETO_REASONS.helpdesk_contact_data_export));
 });
 
 test('the Email Service setup writes ask on a direct call with no guardrails file, and through a batch', () => {
