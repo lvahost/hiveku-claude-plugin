@@ -7,6 +7,11 @@
  * hiveboard_render, the export, the mobile app) draws such a note yellow, so the text sent
  * an agent away from boards that open fine. The rules themselves did not change: create
  * stores yellow and reports it in coercions, the patch paths refuse the colour.
+ *
+ * Two of those sentences sat outside the sticky colour passage (the Colours heading of
+ * element-reference.md, and its sticky note bullet, which names no colour), so the files
+ * are also read whole: only the malformed_elements passage may still say something takes
+ * the board down, because an element with no derivable box still does.
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -23,18 +28,32 @@ const FILES = [
   'skills/hiveku-hiveboards/references/element-reference.md',
 ];
 
+/** A file's paragraphs and list items. */
+function blocks(text) {
+  return text.split(/\n\s*\n|\n(?=\s*- )/);
+}
+
 /** The paragraph or bullet that teaches a sticky note's colour, in each file. */
 function stickyColourPassages(text) {
-  return text
-    .split(/\n\s*\n|\n(?=- )/)
-    .filter((block) => /sticky/i.test(block) && /yellow/.test(block) && /orange/.test(block));
+  return blocks(text).filter((block) => /sticky/i.test(block) && /yellow/.test(block) && /orange/.test(block));
 }
+
+/** Words that say a value takes the whole board down, or leaves it unopenable. */
+const BOARD_DOWN = /board\s+down|render\s+down|dereferenc|undefined\.bg|unopenable/i;
 
 test('no Hiveboards skill text says an unknown sticky colour takes the board down', () => {
   for (const file of FILES) {
     for (const block of stickyColourPassages(read(file))) {
-      assert.doesNotMatch(block, /render\s+down|takes?\s+the\s+(whole|entire)\s+board|dereferenc|undefined\.bg|crash/i, `${file}:\n${block}`);
+      assert.doesNotMatch(block, BOARD_DOWN, `${file}:\n${block}`);
+      assert.doesNotMatch(block, /takes?\s+the\s+(whole|entire)\s+board|crash/i, `${file}:\n${block}`);
     }
+  }
+});
+
+test('outside the malformed_elements passage, no Hiveboards skill text says anything takes the board down', () => {
+  for (const file of FILES) {
+    const saying = blocks(read(file)).filter((block) => !/malformed_elements/.test(block) && BOARD_DOWN.test(block));
+    assert.deepEqual(saying, [], `${file} says something takes the board down outside the malformed_elements passage`);
   }
 });
 
