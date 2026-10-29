@@ -430,6 +430,22 @@
  *   test/permission-critical.test.mjs) carry them too. Landed in the live
  *   index on 2026-10-29 (MCP #319 live at 03aa4a81192f; index regenerated at
  *   2415 tools, both GETs kept off the read-only list); entries deleted.
+ *
+ *   The desktop app's phone system admin pages (2026-10-29; builder #1874, MCP #324,
+ *   hiveku-mcp-api-server feature/voice-admin-desktop-tools): the six writes of its ten
+ *   tools, on the ask list from this release on, ahead of the server, so no install runs
+ *   one unasked once the MCP deploy lands. voice_site_create (POST /api/olympus/voice/sites),
+ *   voice_role_assign and voice_role_remove (POST and DELETE /api/olympus/voice/roles: a
+ *   privilege change), voice_api_key_create and voice_api_key_revoke (POST and DELETE
+ *   /api/olympus/voice/api-keys: the create answer carries the key's secret once) and
+ *   voice_desk_phone_set (PATCH /api/olympus/voice/extensions/:id/phone: a live phone
+ *   change). The Codex prompt list (hiveku-codex-plugin 0.3.44) carries them too. The four
+ *   reads (voice_sites_list, voice_roles_list, voice_api_keys_list, voice_desk_phones_get)
+ *   return no secret and join the read-only list when the index is regenerated. Release
+ *   step, after the MCP deploy: regenerate the index and the read-only list from the live
+ *   server, then delete these entries; tool-names.test.mjs forces the deletion.
+ *     VOICE-ADMIN-1  voice_site_create, voice_role_assign, voice_role_remove,
+ *                    voice_api_key_create, voice_api_key_revoke, voice_desk_phone_set.
  */
 const SEO_SINCE = '2026-08-30';
 const seo = (batch) => ({ since: SEO_SINCE, batch });
@@ -563,4 +579,12 @@ export const PENDING_TOOLS = new Map([
   // email_send, email_domain_send_instructions, email_project_connect and email_suppression_import, are
   // served and indexed (none on the read-only list); they asked from 0.27.96. Entries deleted.
 
+  // VOICE-ADMIN-1 (2026-10-29): the desktop app's phone system admin writes, asking from this
+  // release on, before the MCP server ships them. See the batch note above.
+  ['voice_site_create', { since: '2026-10-29', batch: 'VOICE-ADMIN-1' }],
+  ['voice_role_assign', { since: '2026-10-29', batch: 'VOICE-ADMIN-1' }],
+  ['voice_role_remove', { since: '2026-10-29', batch: 'VOICE-ADMIN-1' }],
+  ['voice_api_key_create', { since: '2026-10-29', batch: 'VOICE-ADMIN-1' }],
+  ['voice_api_key_revoke', { since: '2026-10-29', batch: 'VOICE-ADMIN-1' }],
+  ['voice_desk_phone_set', { since: '2026-10-29', batch: 'VOICE-ADMIN-1' }],
 ]);

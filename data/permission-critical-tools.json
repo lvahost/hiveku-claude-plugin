@@ -6,7 +6,7 @@
     "mcp__hiveku__"
   ],
   "plugin_version": "0.27.117",
-  "count": 315,
+  "count": 321,
   "tools": [
     {
       "name": "deploy_site",
@@ -1582,6 +1582,36 @@
       "name": "cms_remove_field",
       "method": "DELETE",
       "why_gated": "removes a field from a native CMS collection's schema, which cannot be renamed back (a Webflow-backed project answers 501; its fields are deleted by webflow_cms_field_delete, gated above)"
+    },
+    {
+      "name": "voice_site_create",
+      "method": "POST",
+      "why_gated": "adds a phone site and can take the primary flag from the current primary site; it links a 911 address, and nothing can edit or delete a site afterwards"
+    },
+    {
+      "name": "voice_role_assign",
+      "method": "POST",
+      "why_gated": "changes what another person may do in the phone system, up to phone admin (numbers, billing, recordings and API keys): a privilege change"
+    },
+    {
+      "name": "voice_role_remove",
+      "method": "DELETE",
+      "why_gated": "takes a person's phone role away at once; they drop to their default role"
+    },
+    {
+      "name": "voice_api_key_create",
+      "method": "POST",
+      "why_gated": "mints a phone API key whose secret appears once in the answer, and so in the chat; its scopes can place calls, buy numbers and send texts once keys are accepted"
+    },
+    {
+      "name": "voice_api_key_revoke",
+      "method": "DELETE",
+      "why_gated": "permanently revokes a phone API key; anything using it stops working"
+    },
+    {
+      "name": "voice_desk_phone_set",
+      "method": "PATCH",
+      "why_gated": "points an extension at a desk phone by its MAC address, a live phone-system change: the phone with that MAC gets the extension's line"
     }
   ]
 }
