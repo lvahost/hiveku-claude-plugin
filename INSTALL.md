@@ -296,6 +296,7 @@ Put this in `.claude/settings.json` (per project) or `~/.claude/settings.json` (
       "mcp__plugin_hiveku_hk__voice_port_order_create",
       "mcp__plugin_hiveku_hk__voice_port_order_action",
       "mcp__plugin_hiveku_hk__voice_port_order_document_upload",
+      "mcp__plugin_hiveku_hk__voice_port_order_loa_send",
       "mcp__plugin_hiveku_hk__voice_settings_update",
       "mcp__plugin_hiveku_hk__voice_number_update",
       "mcp__plugin_hiveku_hk__voice_blocked_numbers_remove",

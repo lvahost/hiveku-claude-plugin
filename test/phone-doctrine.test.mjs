@@ -200,7 +200,7 @@ test('the phone Availability tables agree with the index and the pending bridge'
   }
 });
 
-test('the two VOICE-J reads are live or pending under VOICE-J, and the INCOMING prose leaves with them', () => {
+test('the two VOICE-J reads are live or pending under VOICE-J, and the INCOMING prose leaves with the last pending row', () => {
   const index = toolIndex();
   for (const name of VOICE_J_NAMES) {
     const pending = PENDING_TOOLS.get(name);
@@ -211,27 +211,36 @@ test('the two VOICE-J reads are live or pending under VOICE-J, and the INCOMING 
     }
   }
   // The Availability rows are the only INCOMING the parser sees, but the
-  // skill also SAYS "except the two rows marked INCOMING" in prose (the
-  // SKILL.md availability rule, the Availability intros of
-  // call-tracking-dni.md and sms-operations.md). Once VOICE-J leaves
-  // pending-tools.mjs the row flip must take that prose with it, or the
-  // skill outlives the flip green. pbx-routing.md keeps the token as a
-  // matrix column name and its legend, so it is exempt.
-  const voiceJPending = [...PENDING_TOOLS.values()].some((p) => p.batch === 'VOICE-J');
-  if (!voiceJPending) {
-    const stale = [];
-    for (const rel of markdownFiles(SKILL_DIR)) {
-      if (rel.endsWith('/pbx-routing.md')) continue;
-      read(rel).split('\n').forEach((line, i) => {
-        if (line.includes('INCOMING')) stale.push(`${rel}:${i + 1}`);
-      });
-    }
-    assert.deepEqual(
-      stale,
-      [],
-      'VOICE-J has landed but the phone skill still says INCOMING outside pbx-routing.md:\n  ' + stale.join('\n  '),
-    );
+  // skill also SAYS which rows are INCOMING in prose (the SKILL.md
+  // availability rule and the Availability intro of each reference that
+  // carries one). VOICE-J's prose left with its rows in 0.26.12. A later
+  // batch brings INCOMING rows back (VOICE-CALLS-1, 2026-10-29), so the
+  // prose may say INCOMING while a voice_ name is pending, and then only in
+  // SKILL.md and in a reference that still carries an INCOMING row: a
+  // reference whose rows all flipped loses its intro with them, and once no
+  // voice_ name is pending the word leaves the skill, or the skill outlives
+  // the flip green. pbx-routing.md keeps the token as a matrix column name
+  // and its legend, so it is exempt.
+  const voicePending = [...PENDING_TOOLS.keys()].some((name) => name.startsWith('voice_'));
+  const withIncomingRows = new Set(
+    REFERENCES.flatMap(readAvailabilityRows)
+      .filter((r) => /INCOMING/.test(r.status))
+      .map((r) => r.file),
+  );
+  const stale = [];
+  for (const rel of markdownFiles(SKILL_DIR)) {
+    if (rel.endsWith('/pbx-routing.md')) continue;
+    if (voicePending && (rel === `${SKILL_DIR}/SKILL.md` || withIncomingRows.has(rel))) continue;
+    read(rel).split('\n').forEach((line, i) => {
+      if (line.includes('INCOMING')) stale.push(`${rel}:${i + 1}`);
+    });
   }
+  assert.deepEqual(
+    stale,
+    [],
+    'the phone skill says INCOMING outside pbx-routing.md where no pending voice_ row stands ' +
+      '(take the prose out with the row flip):\n  ' + stale.join('\n  '),
+  );
 });
 
 test('every voice_ tool in the index has an Availability row in the phone skill', () => {
