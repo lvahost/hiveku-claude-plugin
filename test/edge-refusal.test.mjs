@@ -54,7 +54,7 @@ import { promises as fsp, readFileSync } from 'node:fs';
 import { PassThrough, Writable } from 'node:stream';
 import { fileURLToPath } from 'node:url';
 import { gunzipSync } from 'node:zlib';
-import { Upstream, UpstreamError, edgeRayId, hivekuErrorAnswer } from '../lib/upstream.mjs';
+import { MAY_HAVE_LANDED, Upstream, UpstreamError, edgeRayId, hivekuErrorAnswer } from '../lib/upstream.mjs';
 import { runShim } from '../lib/shim.mjs';
 import { writeBinding } from '../lib/binding.mjs';
 import { pullKnowledge } from '../lib/knowledge.mjs';
@@ -395,8 +395,10 @@ for (const shape of ANY_503) {
       const err = await rejection(up.forward(call('pm_tasks_create', { title: REFUSE_MARKER })));
       assert.equal(err.kind, 'http', err.message);
       assert.equal(err.httpStatus, 503);
-      assert.equal(err.message, `Hiveku returned HTTP 503. ${shape.body.slice(0, 300)}`);
-      assert.equal(err.dispatched, undefined, 'a 503 can follow a delivered write, so it must not say it was never sent');
+      assert.equal(err.message, `Hiveku returned HTTP 503. ${shape.body.slice(0, 300)} ${MAY_HAVE_LANDED}`);
+      // A 503 can follow a delivered write, so it must never say it was not sent (HK-847): true when Hiveku
+      // itself answered, null when something in front of it did.
+      assert.equal(err.dispatched, shape.type === 'application/json' ? true : null);
       assert.equal(up.deadReason, null);
       const before = stub.toolCalls().length;
       await up.forward(call('pm_tasks_list', {}));

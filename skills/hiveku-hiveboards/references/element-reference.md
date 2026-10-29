@@ -120,9 +120,12 @@ honours `\n`. Do the same for a second line of your own.
 
 The scaffolds label through the diagram engine, which sets `labelSize: 16` and
 `labelColor: '#E2E8F0'` on a `fillColor` of `#0F172A` — light text on a dark card, readable on
-either board ground. A `frame` is the exception: its tab text is hardcoded `#FFFFFF` in the
-renderer and `labelColor` on a frame is computed and then never used, so the tab's readability
-comes from the frame's `color`, which paints the tab behind it.
+either board ground. A `frame` is different: its title sits on a tab painted in the frame's
+`color`, and the title text takes the frame's `labelColor`, white when none is set. So choose
+the two as a pair: a white title needs a dark `color` (`#64748B` or darker), and a lighter
+`color` such as `#94A3B8` needs a dark `labelColor` such as `#0F172A`. The scaffolds' frame
+titles are white; a frame drawn in the editor stores dark grey (`#374151`) on its grey
+(`#9CA3AF`) tab.
 
 ### Connections
 
