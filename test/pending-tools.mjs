@@ -441,11 +441,9 @@
  *   voice_desk_phone_set (PATCH /api/olympus/voice/extensions/:id/phone: a live phone
  *   change). The Codex prompt list (hiveku-codex-plugin 0.3.44) carries them too. The four
  *   reads (voice_sites_list, voice_roles_list, voice_api_keys_list, voice_desk_phones_get)
- *   return no secret and join the read-only list when the index is regenerated. Release
- *   step, after the MCP deploy: regenerate the index and the read-only list from the live
- *   server, then delete these entries; tool-names.test.mjs forces the deletion.
- *     VOICE-ADMIN-1  voice_site_create, voice_role_assign, voice_role_remove,
- *                    voice_api_key_create, voice_api_key_revoke, voice_desk_phone_set.
+ *   return no secret and join the read-only list. Landed in the live index on 2026-10-29
+ *   (MCP #324 live at 555a9b346c42; index regenerated at 2428 tools, the four reads on the
+ *   read-only list, the six writes off it); entries deleted.
  */
 const SEO_SINCE = '2026-08-30';
 const seo = (batch) => ({ since: SEO_SINCE, batch });
@@ -579,12 +577,8 @@ export const PENDING_TOOLS = new Map([
   // email_send, email_domain_send_instructions, email_project_connect and email_suppression_import, are
   // served and indexed (none on the read-only list); they asked from 0.27.96. Entries deleted.
 
-  // VOICE-ADMIN-1 (2026-10-29): the desktop app's phone system admin writes, asking from this
-  // release on, before the MCP server ships them. See the batch note above.
-  ['voice_site_create', { since: '2026-10-29', batch: 'VOICE-ADMIN-1' }],
-  ['voice_role_assign', { since: '2026-10-29', batch: 'VOICE-ADMIN-1' }],
-  ['voice_role_remove', { since: '2026-10-29', batch: 'VOICE-ADMIN-1' }],
-  ['voice_api_key_create', { since: '2026-10-29', batch: 'VOICE-ADMIN-1' }],
-  ['voice_api_key_revoke', { since: '2026-10-29', batch: 'VOICE-ADMIN-1' }],
-  ['voice_desk_phone_set', { since: '2026-10-29', batch: 'VOICE-ADMIN-1' }],
+  // 2026-10-29 (index regenerated at 2428 tools from MCP 555a9b346c42, #324): VOICE-ADMIN-1's six,
+  // voice_site_create, voice_role_assign, voice_role_remove, voice_api_key_create, voice_api_key_revoke
+  // and voice_desk_phone_set, are served and indexed (none on the read-only list); they asked from
+  // 0.27.118. Entries deleted.
 ]);
