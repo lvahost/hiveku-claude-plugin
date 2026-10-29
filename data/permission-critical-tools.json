@@ -5,8 +5,8 @@
     "mcp__plugin_hiveku_hk__",
     "mcp__hiveku__"
   ],
-  "plugin_version": "0.27.121",
-  "count": 321,
+  "plugin_version": "0.27.122",
+  "count": 322,
   "tools": [
     {
       "name": "deploy_site",
@@ -862,6 +862,11 @@
       "name": "voice_port_order_action",
       "method": "POST",
       "why_gated": "confirm is the legal act under the LOA; cancel/activate move real numbers"
+    },
+    {
+      "name": "voice_port_order_document_upload",
+      "method": "POST",
+      "why_gated": "sends a signed letter of authorization or a phone bill, which carry account numbers and PINs, to the carrier with a port order"
     },
     {
       "name": "voice_settings_update",
