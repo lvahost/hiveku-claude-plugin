@@ -453,8 +453,8 @@
  *   voice_sms_media_upload and voice_extension_greeting_upload, only store a file; the send
  *   and the extension save that use it are what reach people. Release step, after the MCP
  *   deploy: regenerate the index and the read-only list from the live server, then delete
- *   this entry; tool-names.test.mjs forces the deletion.
- *     VOICE-UPLOADS-1  voice_port_order_document_upload.
+ *   this entry. Landed in the live index on 2026-10-29 (MCP #327 live at 392c59977d47; index
+ *   regenerated at 2431 tools, the three uploads off the read-only list); entry deleted.
  */
 const SEO_SINCE = '2026-08-30';
 const seo = (batch) => ({ since: SEO_SINCE, batch });
@@ -593,7 +593,7 @@ export const PENDING_TOOLS = new Map([
   // and voice_desk_phone_set, are served and indexed (none on the read-only list); they asked from
   // 0.27.118. Entries deleted.
 
-  // VOICE-UPLOADS-1 (2026-10-29): the desktop app's porting document upload, asking from this
-  // release on, before the MCP server ships it. See the batch note above.
-  ['voice_port_order_document_upload', { since: '2026-10-29', batch: 'VOICE-UPLOADS-1' }],
+  // 2026-10-29 (index regenerated at 2431 tools from MCP 392c59977d47, #327): VOICE-UPLOADS-1's
+  // voice_port_order_document_upload is served and indexed (not on the read-only list); it asked
+  // from 0.27.122. Entry deleted.
 ]);
