@@ -425,15 +425,11 @@
  *   that ask first are out, on the ask list and on ALWAYS_ASK_WRITES:
  *   helpdesk_contact_data_erase (POST .../privacy/contacts/:contactId/erase)
  *   and helpdesk_chat_retention_set (PUT /api/olympus/helpdesk/privacy/
- *   retention). All four ask from this release on, ahead of the server; the
+ *   retention). All four asked from 0.27.112, ahead of the server; the
  *   Codex prompts (CODEX_ONLY_PROMPTS for the two GETs, in
- *   test/permission-critical.test.mjs) carry them too. Release step, after the
- *   MCP deploy: regenerate the index and the read-only list from the live
- *   server (the exclusions keep both GETs off the read-only list; the 19
- *   other new tools are indexed with them, their GETs as reads), then delete
- *   these entries; tool-names.test.mjs forces the deletion.
- *     HD-DESKTOP-1  helpdesk_ticket_attachment_links, helpdesk_contact_data_export,
- *                   helpdesk_contact_data_erase, helpdesk_chat_retention_set.
+ *   test/permission-critical.test.mjs) carry them too. Landed in the live
+ *   index on 2026-10-29 (MCP #319 live at 03aa4a81192f; index regenerated at
+ *   2415 tools, both GETs kept off the read-only list); entries deleted.
  */
 const SEO_SINCE = '2026-08-30';
 const seo = (batch) => ({ since: SEO_SINCE, batch });
@@ -567,11 +563,4 @@ export const PENDING_TOOLS = new Map([
   // email_send, email_domain_send_instructions, email_project_connect and email_suppression_import, are
   // served and indexed (none on the read-only list); they asked from 0.27.96. Entries deleted.
 
-  // HD-DESKTOP-1 (2026-10-28): the desktop app's help desk tools that must never run unasked. They
-  // ask from this release on (NEVER_AUTO_APPROVE for the two GETs, the ask list and the hook for the
-  // two held writes), before the MCP server ships them. See the batch note above.
-  ['helpdesk_ticket_attachment_links', { since: '2026-10-28', batch: 'HD-DESKTOP-1' }],
-  ['helpdesk_contact_data_export', { since: '2026-10-28', batch: 'HD-DESKTOP-1' }],
-  ['helpdesk_contact_data_erase', { since: '2026-10-28', batch: 'HD-DESKTOP-1' }],
-  ['helpdesk_chat_retention_set', { since: '2026-10-28', batch: 'HD-DESKTOP-1' }],
 ]);

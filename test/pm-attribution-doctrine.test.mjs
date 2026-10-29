@@ -729,7 +729,8 @@ test('source cross-check: the builder applies and refuses defaults the way the p
 
   // Recurrence occurrences and workflow createTask take the default too.
   const spawn = src('lib', 'pm', 'spawn-recurrence.ts');
-  assert.match(spawn, /if \(!assignedToId && !rec\.olympus_agent_codename\) \{\s*assignedToId = await resolvePmDefaultAssignee/, 'an occurrence with nobody on it no longer takes the default');
+  // Since HK-846 the branch also marks the occurrence as assigned by default before resolving it.
+  assert.match(spawn, /if \(!assignedToId && !rec\.olympus_agent_codename\) \{\s*(?:assignedByDefault = true;\s*)?assignedToId = await resolvePmDefaultAssignee/, 'an occurrence with nobody on it no longer takes the default');
   const workflow = src('lib', 'workflow', 'nodeHandlers', 'pmActions.ts');
   assert.match(workflow, /assignee\.assignedToId \?\?\s*\(await resolvePmDefaultAssignee\(/, 'an empty assignToId on createTask no longer takes the default');
   assert.match(workflow, /if \(!candidate\) return \{ ok: true, assignedToId: undefined \}/, 'an empty assignToId is no longer "no assignee named"');
