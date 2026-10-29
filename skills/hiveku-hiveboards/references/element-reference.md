@@ -31,7 +31,8 @@ reads the `position` column for a shape, only `element_data.start` and `.end`.
 
 ## Colours
 
-The one contract on this surface that takes a whole board down. Two separate rules.
+Two separate rules. The server refuses or replaces a value that breaks either one, and says
+which.
 
 **Every element except a sticky note and an image.** (An `image` runs no colour
 validation at all: it stores both columns null and reports `color` / `fill_color` back in
@@ -47,13 +48,13 @@ per-row `errors` array would never reach you. `lightgoldenrodyellow` is exactly 
 so every CSS name fits; `rgba(...)` with spaces usually does not.
 
 **A sticky note.** `element_data.color` is a NAME from `yellow`, `blue`, `green`, `pink`,
-`purple`, `orange` and nothing else. The renderer looks the name up in a table and
-dereferences the result, so a miss is `undefined.bg` — it throws and takes the whole board's
-render down, not just that note. On CREATE an unrecognised value is coerced to `yellow` and
-the swap is reported in `coercions`. On the PATCH paths it is REFUSED rather than mirrored,
-and the merge that already copied it into `element_data` is undone, because a 200 that leaves
-a board unopenable is worse than a refusal. The top-level `color` / `fill_color` columns are
-written null for a sticky either way.
+`purple`, `orange` and nothing else. A note shows only those six: the editor, the shared link,
+`hiveboard_render`, the export and the mobile app all draw any other value as yellow. On
+CREATE an unrecognised value is coerced to `yellow` and the swap is reported in `coercions`.
+On the PATCH paths it is REFUSED rather than mirrored, and the merge that already copied it
+into `element_data` is undone, because quietly painting an existing note a colour nobody asked
+for is worse than a refusal. The top-level `color` / `fill_color` columns are written null
+for a sticky either way.
 
 **The ground it all sits on.** `background_type` alone decides the canvas colour: `dark` paints
 `#1F2937`, and `honeycomb`, `dot` (the default), `line` and `blank` all paint `#FAFAFA`.
@@ -184,7 +185,7 @@ free-floating.
 - Colour is a NAME (`'yellow'` by default), read from `element_data.color` — or from the
   top-level `color` when `element_data.color` is absent, though the column itself is stored
   null. Anything outside the six names is coerced to yellow on create and refused on the patch
-  paths. Full rules under Colours above; it is the failure that takes the board down.
+  paths. Full rules under Colours above.
 - Size comes from `element_data.size.width` / `.height`, falling back to
   `element_data.width` / `.height`, then to 200 x 200.
 - Content accepts `content` or `text`.

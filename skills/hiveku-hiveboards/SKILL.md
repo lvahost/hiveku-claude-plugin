@@ -462,10 +462,11 @@ A board is a deliverable. Close the loop every time:
   truncation.
 - Sticky note colour is a NAME (`yellow`, `blue`, `green`, `pink`, `purple`, `orange`), read
   from `element_data.color`, not the top-level `color`. On create and bulk-create anything
-  else — a hex, most obviously — is coerced to yellow and the swap is reported in
+  else (a hex, most obviously) is coerced to yellow and the swap is reported in
   `coercions`; on the edit paths it is REFUSED instead, because painting an existing element
-  a colour nobody asked for is worse than saying no. The renderer looks the name up in a
-  table and dereferencing a miss takes the whole board's render down.
+  a colour nobody asked for is worse than saying no. A note shows only those six colours:
+  every renderer draws any other value as yellow, so a hex never reaches the board as the
+  colour you meant.
 - Treating a frame as pure decoration. Its children are computable — `hiveboard_frames`
   resolves them by majority of area, `include_children: true` moves them with it, and
   `straddler_ids` are the ones that will be left behind.

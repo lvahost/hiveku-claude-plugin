@@ -778,10 +778,10 @@ whose returned `deltas` are their own undo.
 
 **3. Sticky note colour is a NAME, not a hex.**
 `element_data.color` for a `sticky-note` must be one of `yellow`, `blue`, `green`, `pink`,
-`purple`, `orange`. The renderer looks the value up in a six-key table and dereferences the
-miss, which takes the whole board's render down — so create COERCES anything else to yellow
-and reports it in `coercions`, and the patch paths REFUSE it outright rather than mirror it.
-The top-level `color` / `fill_color` columns are stored null for a sticky either way.
+`purple`, `orange`. A note shows only those six, and every renderer draws any other value as
+yellow, so create COERCES anything else to yellow and reports it in `coercions`, and the patch
+paths REFUSE it outright rather than mirror it. The top-level `color` / `fill_color` columns
+are stored null for a sticky either way.
 
 **4. `font_size` is ignored on shapes.** For a shape, label size comes from
 `element_data.labelSize` (default 16) and label colour from `element_data.labelColor`
