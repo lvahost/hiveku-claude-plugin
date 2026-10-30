@@ -5,8 +5,8 @@
     "mcp__plugin_hiveku_hk__",
     "mcp__hiveku__"
   ],
-  "plugin_version": "0.27.134",
-  "count": 334,
+  "plugin_version": "0.27.135",
+  "count": 335,
   "tools": [
     {
       "name": "deploy_site",
@@ -1047,6 +1047,11 @@
       "name": "voice_sms_scheduled_cancel",
       "method": "DELETE",
       "why_gated": "hard-deletes a scheduled text; no canceled state exists and a key-driven cancel leaves no audit row, so there is nothing to restore or trace"
+    },
+    {
+      "name": "crm_email_scheduled_cancel",
+      "method": "DELETE",
+      "why_gated": "cancels a contact email that is waiting to send; it will not go and the cancel cannot be undone"
     },
     {
       "name": "voice_numbers_search",
