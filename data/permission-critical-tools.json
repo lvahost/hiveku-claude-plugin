@@ -5,8 +5,8 @@
     "mcp__plugin_hiveku_hk__",
     "mcp__hiveku__"
   ],
-  "plugin_version": "0.27.131",
-  "count": 326,
+  "plugin_version": "0.27.132",
+  "count": 330,
   "tools": [
     {
       "name": "deploy_site",
@@ -367,6 +367,26 @@
       "name": "crm_contract_template_update",
       "method": "PATCH",
       "why_gated": "can add outside email addresses that get each client's signed contract for every contract started or bulk sent from the template"
+    },
+    {
+      "name": "crm_envelope_create_from_template",
+      "method": "POST",
+      "why_gated": "can start a contract with outside email addresses, given or copied from its template, that get the client's signed contract"
+    },
+    {
+      "name": "crm_envelope_signer_reassign",
+      "method": "POST",
+      "why_gated": "changes who signs a sent contract and emails the new person a signing link"
+    },
+    {
+      "name": "crm_envelope_create",
+      "method": "POST",
+      "why_gated": "can start a contract with outside email addresses that get its alerts and the client's signed contract"
+    },
+    {
+      "name": "crm_envelope_update",
+      "method": "PATCH",
+      "why_gated": "can add outside email addresses that get a contract's alerts and the client's signed contract, or turn its alerts off"
     },
     {
       "name": "crm_estimate_send",

@@ -130,6 +130,12 @@ const LIVE_CHANGE_NAMES = [
   'crm_envelope_alerts_set',
   'crm_contract_template_create',
   'crm_contract_template_update',
+  // Contract starts, edits and signer changes: outside addresses get a client's signed contract,
+  // or a new signer gets a signing link (wave 73, A2).
+  'crm_envelope_create_from_template',
+  'crm_envelope_signer_reassign',
+  'crm_envelope_create',
+  'crm_envelope_update',
 ];
 
 function folderWith(guardrails) {
