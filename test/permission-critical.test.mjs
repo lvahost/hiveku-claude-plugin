@@ -563,6 +563,10 @@ const CODEX_ONLY_PROMPTS = new Map([
     'is a GET that answers with one person\'s whole website chat history, for an access request. It is ' +
     'gated through NEVER_AUTO_APPROVE (lib/tool-safety.mjs), which the ask list (writes only) cannot ' +
     'carry, so Codex needs a prompt of its own (HD-DESKTOP-1, Codex 0.3.41)'],
+  ['crm_activity_recording_link',
+    'is a GET that answers with a link playing a logged call\'s recording, a person\'s voice, for an hour. ' +
+    'It is gated through NEVER_AUTO_APPROVE (lib/tool-safety.mjs), which the ask list (writes only) cannot ' +
+    'carry, so Codex needs a prompt of its own (desktop CRM parity R28, Codex 0.3.49)'],
 ]);
 
 test('every Codex-only prompt names a real tool that is not on the ask list', () => {
