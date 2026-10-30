@@ -5,8 +5,8 @@
     "mcp__plugin_hiveku_hk__",
     "mcp__hiveku__"
   ],
-  "plugin_version": "0.27.127",
-  "count": 322,
+  "plugin_version": "0.27.128",
+  "count": 323,
   "tools": [
     {
       "name": "deploy_site",
@@ -867,6 +867,11 @@
       "name": "voice_port_order_document_upload",
       "method": "POST",
       "why_gated": "sends a signed letter of authorization or a phone bill, which carry account numbers and PINs, to the carrier with a port order"
+    },
+    {
+      "name": "voice_port_order_loa_send",
+      "method": "POST",
+      "why_gated": "emails a number transfer's letter of authorization to the address given, for an e-signature that authorizes moving the numbers, and stops any earlier signing link"
     },
     {
       "name": "voice_settings_update",
