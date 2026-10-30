@@ -240,6 +240,11 @@ const SENSITIVE_READ_EXCLUSIONS = new Map([
   ['helpdesk_contact_data_export',
     'returns one person\'s whole website chat history (their messages, what they typed about ' +
     'themselves, the pages they visited), for an access request. Ask every time.'],
+  // 2026-10-30, the desktop app's contact record (CRM parity R28). A GET whose
+  // answer is the hazard; on NEVER_AUTO_APPROVE (lib/tool-safety.mjs).
+  ['crm_activity_recording_link',
+    'hands out a link that plays a call recording for an hour; anyone holding it can listen. ' +
+    'Minting it is distribution, not a read; ask every time.'],
 ]);
 
 // The mirror image: a POST that is a pure read. Some routes dispatch reads and

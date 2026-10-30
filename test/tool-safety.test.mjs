@@ -1482,3 +1482,20 @@ test('the real hook process prints ask for the LOA send under the blanket allow'
   assert.match(out.hookSpecificOutput.permissionDecisionReason,
     /^voice_port_order_loa_send emails a number transfer's letter of authorization to the address given/);
 });
+
+// CRM-RECORD-1 (2026-10-30): the desktop app's contact record. A logged call's recording link
+// plays for an hour for whoever holds it, so it asks on every call and through a batch, and never
+// rides the read-only list, though it is a GET.
+test('the logged-call recording link asks on every call and through a batch, and is not a read', () => {
+  const name = 'crm_activity_recording_link';
+  assert.ok(NEVER_AUTO_APPROVE.has(name), `${name} must carry the veto`);
+  assert.equal(isAutoApprovable(name, { activity_id: 'a' }), false);
+  assert.equal(isReadOnlyTool(name), false, `${name} must not classify as a read; regenerate lib/readonly-tools.json if this fails`);
+  const direct = decideForPayload({ tool_name: `${HIVEKU_TOOL_PREFIX}${name}`, tool_input: { activity_id: 'a' } });
+  assert.equal(direct?.hookSpecificOutput?.permissionDecision, 'ask');
+  assert.match(direct.hookSpecificOutput.permissionDecisionReason, /^crm_activity_recording_link reads, but its RESPONSE is the hazard \(an unrevocable link/);
+  const batch = decideForPayload({ tool_name: `${HIVEKU_TOOL_PREFIX}hiveku_batch`, tool_input: { calls: [{ tool: name, args: {} }] } });
+  assert.equal(batch?.hookSpecificOutput?.permissionDecision, 'ask');
+  const generator = readFileSync(new URL('../scripts/gen-readonly-tools.mjs', import.meta.url), 'utf8');
+  assert.match(generator, /\['crm_activity_recording_link',/, 'the read-only generator must exclude it (SENSITIVE_READ_EXCLUSIONS)');
+});
