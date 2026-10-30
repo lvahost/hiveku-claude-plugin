@@ -332,6 +332,7 @@ Put this in `.claude/settings.json` (per project) or `~/.claude/settings.json` (
       "mcp__plugin_hiveku_hk__voice_sms_campaign_appeal",
       "mcp__plugin_hiveku_hk__voice_port_order_verification_codes_send",
       "mcp__plugin_hiveku_hk__voice_sms_scheduled_cancel",
+      "mcp__plugin_hiveku_hk__crm_email_scheduled_cancel",
       "mcp__plugin_hiveku_hk__voice_numbers_search",
       "mcp__plugin_hiveku_hk__seo_gbp_review_reply",
       "mcp__plugin_hiveku_hk__seo_gbp_review_reply_delete",

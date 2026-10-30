@@ -140,6 +140,8 @@ const LIVE_CHANGE_NAMES = [
   // publish (the whole site goes out at that time) (Website Builder wave B).
   'marketing_form_notifications_test',
   'cms_schedule_set',
+  // A contact email waiting to send, cancelled for good (the desktop app's contact record).
+  'crm_email_scheduled_cancel',
 ];
 
 function folderWith(guardrails) {
