@@ -95,10 +95,9 @@ const REEXEC_NOT_GATED = new Map([
     'nothing to anyone. The cost is metered spend (SERP cap, scrape, one LLM extraction), not a ' +
     'send, and the builder route runs under the Idempotency-Key the proxy injects, so a retried ' +
     'call replays the answer. Ask on a spend would stall every research sweep'],
-  ['marketing_offline_conversions_requeue',
-    're-ARMS rows so a LATER run uploads them; this call itself dispatches nothing, and it 409s ' +
-    'until a human takes the account live in the dashboard. The tool that actually sends is ' +
-    'marketing_offline_conversions_run — gate that one, not this one'],
+  // marketing_offline_conversions_requeue left this map in the Ads area's wave B (MCP #346): a key can
+  // now take the account live (marketing_offline_conversions_go_live), so the "409s until a human takes
+  // the account live" its exemption rested on no longer holds. It is on the ask list beside the run.
   ['ppc_bid_budget_simulate',
     'matches only on "SIMULATIONS REPLAY THE PAST WINDOW", which describes how Google computes a ' +
     'simulation, not an action: the tool is a read (readOnlyHint, action read), POST only to carry ' +

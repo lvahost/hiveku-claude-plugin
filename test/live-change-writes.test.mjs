@@ -86,6 +86,19 @@ const LIVE_CHANGE_NAMES = [
   'ppc_goals_set',
   'ppc_budget_target_set',
   'ppc_connection_update',
+  // The desktop app's Ads area, wave B (MCP #346): approving what the Ads AI staged, the three go-live
+  // switches, the campaign, ad group and ad edits on the platform, and the conversion-upload writes.
+  'marketing_approval_approve',
+  'marketing_offline_conversions_go_live',
+  'ppc_conversion_adjustments_go_live',
+  'ppc_meta_lead_quality_enable',
+  'ppc_campaign_update',
+  'ppc_ad_group_status_set',
+  'ppc_ad_status_set',
+  'marketing_offline_conversions_set_enabled',
+  'marketing_offline_conversions_run',
+  'marketing_offline_conversions_requeue',
+  'marketing_offline_conversions_designate',
   // A live site, and GA4 conversion settings.
   'agent_approval_approve',
   'seo_ga4_key_event_update',

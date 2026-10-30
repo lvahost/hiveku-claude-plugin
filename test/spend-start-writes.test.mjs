@@ -342,9 +342,12 @@ test('NEGATIVE CONTROL: pausing stays ungated, and the paused creates stay silen
     assert.equal(decideWithGuardrails(payload(name, cwd)), null, `${name} should get no answer from the hook`);
   }
   // The detector is not vacuous: take the exemptions away and what is left is
-  // exactly the five status tools, the three end-date edits and the Microsoft
-  // experiment update (gated since 0.26.30), so removing any of them from the
-  // gate fails the class test above.
+  // exactly the five status tools, the three end-date edits, the Microsoft
+  // experiment update (gated since 0.26.30) and ppc_meta_lead_quality_enable,
+  // so removing any of them from the gate fails the class test above. The last
+  // is caught by its name: it starts no ad spend, but it starts sending the
+  // client's CRM outcomes to Meta, which cannot be un-sent, so it is on the ask
+  // list and LIVE_CHANGE_WRITES with the rest of the Ads area's wave B (MCP #346).
   const caught = spendStartClass().filter((t) => !SPEND_START_NOT_GATED.has(t.name)).map((t) => t.name).sort();
-  assert.deepEqual(caught, [...SPEND_START_NAMES, ...END_DATE_EDITS, 'ppc_bing_experiment_update'].sort());
+  assert.deepEqual(caught, [...SPEND_START_NAMES, ...END_DATE_EDITS, 'ppc_bing_experiment_update', 'ppc_meta_lead_quality_enable'].sort());
 });
