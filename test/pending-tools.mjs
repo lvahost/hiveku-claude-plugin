@@ -478,18 +478,13 @@
  *     - voice_e911_notice_get (GET /api/olympus/voice/e911-acknowledgment) reads the 911
  *       notice's words, version and SHA-256 and whether the account accepted it, when and by
  *       whom. There is no accept route, and no tool ever records an acceptance.
- *   Each has an INCOMING row in the phone skill's Availability tables (porting.md for the
- *   two LOA tools, calls-voicemail-transcripts.md, numbers-and-e911.md); SKILL.md's
- *   availability rule and those three intros say which rows are INCOMING. Release step,
- *   after the MCP deploy: regenerate the index and the read-only list from the live server
- *   (the three GETs are expected to join it, the send stays off it and keeps asking), flip
- *   the four rows to LIVE and take the INCOMING prose out of SKILL.md and the three intros
- *   (once no voice_ name is pending, phone-doctrine.test.mjs fails while any of it stays),
- *   then delete these entries; tool-names.test.mjs forces the deletion. At that release also
- *   re-read porting.md's "The LOA signature link" section against builder #1883: a send now
- *   draws a fresh LOA when the signer's address or what the LOA says changed.
- *     VOICE-CALLS-1  voice_port_order_loa_send, voice_port_order_loa_get,
- *                    voice_calls_ringing_list, voice_e911_notice_get.
+ *   Each had an INCOMING row in the phone skill's Availability tables (porting.md for the
+ *   two LOA tools, calls-voicemail-transcripts.md, numbers-and-e911.md). Landed in the live
+ *   index on 2026-10-30 (MCP #331 live at 2ac18108fb5d; index regenerated at 2435 tools, the
+ *   three reads on the read-only list, the send off it and still asking); the four rows read
+ *   LIVE, the INCOMING prose left SKILL.md and the three intros, porting.md's "The LOA
+ *   signature link" section says what builder #1883 does (a send draws a fresh LOA when the
+ *   signer's address or what the LOA says changed), and the entries are deleted.
  */
 const SEO_SINCE = '2026-08-30';
 const seo = (batch) => ({ since: SEO_SINCE, batch });
@@ -632,10 +627,8 @@ export const PENDING_TOOLS = new Map([
   // voice_port_order_document_upload is served and indexed (not on the read-only list); it asked
   // from 0.27.122. Entry deleted.
 
-  // VOICE-CALLS-1 (2026-10-29): the desktop app's Calls wave 1, the LOA send asking from this
-  // release on, before the MCP server ships it, and three reads. See the batch note above.
-  ['voice_port_order_loa_send', { since: '2026-10-29', batch: 'VOICE-CALLS-1' }],
-  ['voice_port_order_loa_get', { since: '2026-10-29', batch: 'VOICE-CALLS-1' }],
-  ['voice_calls_ringing_list', { since: '2026-10-29', batch: 'VOICE-CALLS-1' }],
-  ['voice_e911_notice_get', { since: '2026-10-29', batch: 'VOICE-CALLS-1' }],
+  // 2026-10-30 (index regenerated at 2435 tools from MCP 2ac18108fb5d, #331): VOICE-CALLS-1's four,
+  // voice_port_order_loa_send, voice_port_order_loa_get, voice_calls_ringing_list and
+  // voice_e911_notice_get, are served and indexed (the three reads on the read-only list; the send
+  // off it, asking since 0.27.128). Entries deleted.
 ]);

@@ -126,6 +126,10 @@ const LIVE_CHANGE_NAMES = [
   // Lead lists: starting or resuming a run spends money and can feed a sending campaign (MCP #307).
   'outbound_lead_list_run_start',
   'outbound_lead_list_run_control',
+  // Contract alerts and templates: outside addresses get a client's signed contract (wave 73).
+  'crm_envelope_alerts_set',
+  'crm_contract_template_create',
+  'crm_contract_template_update',
 ];
 
 function folderWith(guardrails) {
