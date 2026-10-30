@@ -464,8 +464,11 @@
  *       authorizes moving the numbers. The body is { signer_email, signer_name? } and nothing
  *       else (no message: the email carries no words of the caller's), no answer carries the
  *       signing link, a send stops any earlier link, and it needs a person behind the key
- *       (Hiveku's own agents get person_required). It asks from this release on, ahead of the
- *       server, like voice_port_order_action.
+ *       (Hiveku's own agents get person_required). Whoever opens that email can sign the
+ *       transfer for the account, so it is on the ask list AND on ALWAYS_ASK_WRITES
+ *       (lib/tool-safety.mjs), like email_send: the hook asks on every install that updates
+ *       to this release, whatever its settings allow, ahead of the server. The ask list
+ *       alone reaches only settings pasted from this release on.
  *     - voice_port_order_loa_get (GET, same path) reads how far it got: emailed to whom and
  *       when, opened, signed, which copy the carrier holds, and the AI connections' daily
  *       limits. No link or token.

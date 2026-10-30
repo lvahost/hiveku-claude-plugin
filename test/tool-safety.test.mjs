@@ -1016,15 +1016,17 @@ const CHECKS_RERUN_THAT_ASKS = ['project_vcs_checks_rerun'];
 const EMAIL_SERVICE_WRITES_THAT_ASK = ['email_send', 'email_domain_send_instructions', 'email_project_connect', 'email_suppression_import'];
 /** "Ask them to record again" (2026-10-27): an email or a text to a real customer, once per testimonial. */
 const TESTIMONIAL_RERECORD_THAT_ASKS = ['marketing_testimonial_rerecord_send'];
+/** A number transfer's letter of authorization by email (2026-10-29, VOICE-CALLS-1): whoever opens it can sign the transfer. */
+const LOA_SEND_THAT_ASKS = ['voice_port_order_loa_send'];
 /** The desktop app's help desk (2026-10-28, HD-DESKTOP-1): a person's chats erased for good, and how long every chat is kept. */
 const HELPDESK_PRIVACY_WRITES_THAT_ASK = ['helpdesk_contact_data_erase', 'helpdesk_chat_retention_set'];
 /** Its two GETs whose answer is the hazard: 15-minute links to strangers' files, and a person's whole chat history. */
 const HELPDESK_HAZARD_READS = ['helpdesk_ticket_attachment_links', 'helpdesk_contact_data_export'];
 
-test('the always-ask set is exactly the memory, form-capture and indexing writes, the secrets reveal, the A/B test writes, the mobile app writes, the PPC override, the lead-email change, a checks rerun, the Email Service setup writes, the record-again ask and the help desk privacy writes', () => {
+test('the always-ask set is exactly the memory, form-capture and indexing writes, the secrets reveal, the A/B test writes, the mobile app writes, the PPC override, the lead-email change, a checks rerun, the Email Service setup writes, the record-again ask, the LOA email and the help desk privacy writes', () => {
   assert.deepEqual(
     [...ALWAYS_ASK_WRITES.keys()].sort(),
-    [...MEMORY_WRITES_THAT_ASK, ...FORM_CAPTURE_WRITES_THAT_ASK, ...INDEXING_WRITES_THAT_ASK, ...SECRETS_REVEAL_THAT_ASKS, ...AB_TEST_WRITES_THAT_ASK, ...MOBILE_WRITES_THAT_ASK, ...PPC_OVERRIDE_THAT_ASKS, ...LEAD_EMAIL_WRITES_THAT_ASK, ...CHECKS_RERUN_THAT_ASKS, ...EMAIL_SERVICE_WRITES_THAT_ASK, ...TESTIMONIAL_RERECORD_THAT_ASKS, ...HELPDESK_PRIVACY_WRITES_THAT_ASK].sort(),
+    [...MEMORY_WRITES_THAT_ASK, ...FORM_CAPTURE_WRITES_THAT_ASK, ...INDEXING_WRITES_THAT_ASK, ...SECRETS_REVEAL_THAT_ASKS, ...AB_TEST_WRITES_THAT_ASK, ...MOBILE_WRITES_THAT_ASK, ...PPC_OVERRIDE_THAT_ASKS, ...LEAD_EMAIL_WRITES_THAT_ASK, ...CHECKS_RERUN_THAT_ASKS, ...EMAIL_SERVICE_WRITES_THAT_ASK, ...TESTIMONIAL_RERECORD_THAT_ASKS, ...LOA_SEND_THAT_ASKS, ...HELPDESK_PRIVACY_WRITES_THAT_ASK].sort(),
   );
 });
 
@@ -1093,6 +1095,39 @@ test('asking a customer to record their testimonial again asks on a direct call 
   assert.equal(isAutoApprovable(name, { id: 't' }), false);
   assert.equal(isReadOnlyTool(name), false);
   assert.equal(isReadOnlyTool('marketing_testimonial_rerecord_preview'), true);
+});
+
+// The LOA send was on the ask list only in the first cut of VOICE-CALLS-1, so an install with
+// INSTALL.md's blanket allow and an older ask list ran it unasked (PR #213 review). The hook's ask
+// is the rail that reaches those installs; the real hook process is pinned at the end of this file.
+test('emailing a transfer\'s letter of authorization asks on a direct call whatever it names, and through a batch; a reads-only folder denies it', () => {
+  const cwd = folderWith(undefined);
+  const name = 'voice_port_order_loa_send';
+  for (const args of [
+    { port_order_id: 'p', signer_email: 'signer@example.com' },
+    { port_order_id: 'p', signer_email: 'signer@example.com', signer_name: 'Jane Doe' },
+    {},
+  ]) {
+    const direct = decideWithGuardrails({ ...payload(name, cwd), tool_input: args });
+    assert.equal(decision(direct), 'ask', `${JSON.stringify(args)} must ask; silence resolves to the blanket allow`);
+    const why = direct.hookSpecificOutput.permissionDecisionReason;
+    assert.match(why, new RegExp(`^${name} emails a number transfer's letter of authorization to the address given`));
+    assert.match(why, /Whoever opens that email can sign the transfer for the account/);
+    assert.match(why, /stops any earlier signing link/);
+    assert.match(why, /even when your settings allow all Hiveku tools/);
+  }
+  const mixed = decideWithGuardrails(batch([
+    { tool: 'voice_port_orders_list', args: {} },
+    { tool: name, args: { port_order_id: 'p', signer_email: 'signer@example.com' } },
+  ], cwd));
+  assert.equal(decision(mixed), 'ask');
+  assert.match(mixed.hookSpecificOutput.permissionDecisionReason, new RegExp(`not pre-approved reads: ${name}\\.`));
+  const readsOnly = folderWith({ version: 1, mode: 'reads-only' });
+  assert.equal(decision(decideWithGuardrails(payload(name, readsOnly))), 'deny');
+  assert.equal(isAutoApprovable(name, { port_order_id: 'p', signer_email: 'signer@example.com' }), false);
+  assert.equal(isReadOnlyTool(name), false);
+  // Its progress read is not on the set: a look at how far the signing got must not prompt.
+  assert.equal(ALWAYS_ASK_WRITES.has('voice_port_order_loa_get'), false);
 });
 
 test('the lead-email change asks on a direct call with no guardrails file, and through a batch; its read stays pre-approved', () => {
@@ -1416,4 +1451,34 @@ test('NEGATIVE CONTROL: project_indexing_get is not on the set and never prompts
   const r = decideWithGuardrails({ ...payload('project_indexing_get', cwd), tool_input: { project_id: 'p' } });
   assert.notEqual(decision(r), 'ask', 'the indexing read must not prompt on every call');
   assert.notEqual(decision(r), 'deny');
+});
+
+// ── The LOA send, through the real hook process (PR #213 review, 2026-10-29) ─
+//
+// The review ran `bin/hiveku hook pre-tool-use` for voice_port_order_loa_send
+// with only the ask-list entry in place and got no output, so INSTALL.md's
+// blanket allow ran it on every install whose settings predate that entry.
+// These pin the premise (the blanket allow covers the name, and a PreToolUse
+// matcher reaches it) and the answer the real process prints now.
+const LOA_SEND_TOOL = `${HIVEKU_TOOL_PREFIX}voice_port_order_loa_send`;
+
+test('the real hook process prints ask for the LOA send under the blanket allow', () => {
+  const { allow, ask } = installPermissions();
+  assert.ok(allow.some((rule) => ruleMatches(rule, LOA_SEND_TOOL)),
+    `no INSTALL.md allow rule matches ${LOA_SEND_TOOL}; the premise of this test changed`);
+  assert.ok(ask.includes(LOA_SEND_TOOL), `INSTALL.md's ask block must name ${LOA_SEND_TOOL} as well`);
+  const hooks = JSON.parse(readFileSync(new URL('../hooks/hooks.json', import.meta.url), 'utf8'));
+  const matchers = hooks.hooks.PreToolUse.map((h) => h.matcher);
+  assert.ok(matchers.some((m) => new RegExp(`^(?:${m})$`).test(LOA_SEND_TOOL)),
+    `no PreToolUse matcher in hooks/hooks.json reaches ${LOA_SEND_TOOL}`);
+  const cwd = folderWith(undefined);
+  const run = runPreToolUseHook(LOA_SEND_TOOL, { port_order_id: 'p', signer_email: 'signer@example.com' }, cwd);
+  assert.equal(run.status, 0, run.stderr);
+  assert.notEqual(run.stdout, '',
+    'the hook printed nothing, so the blanket allow would email the letter of authorization unasked');
+  const out = JSON.parse(run.stdout);
+  assert.equal(out.hookSpecificOutput.hookEventName, 'PreToolUse');
+  assert.equal(out.hookSpecificOutput.permissionDecision, 'ask');
+  assert.match(out.hookSpecificOutput.permissionDecisionReason,
+    /^voice_port_order_loa_send emails a number transfer's letter of authorization to the address given/);
 });

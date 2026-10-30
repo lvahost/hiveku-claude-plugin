@@ -460,7 +460,8 @@ workflow on or clearing its automatic pause (`workflow_enable`, `workflow_resume
 removing a workflow variable (`workflow_env_set`, `workflow_env_delete`), switching email
 marketing on (`marketing_activate`), the budget guardrail,
 conversion uploads, a staged production deploy, GA4 conversion settings, the account's
-timezone and what the website assistant may tell visitors, whatever
+timezone, what the website assistant may tell visitors, and emailing a number transfer's letter
+of authorization for signing (`voice_port_order_loa_send`), whatever
 your settings allow, so those prompt even on a machine with an older copy.
 
 Switching ads on or restarting them covers every enable, a bulk status edit, a LinkedIn
