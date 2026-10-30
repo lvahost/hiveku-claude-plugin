@@ -632,11 +632,7 @@ export const PENDING_TOOLS = new Map([
   // voice_e911_notice_get, are served and indexed (the three reads on the read-only list; the send
   // off it, asking since 0.27.128). Entries deleted.
 
-  // CRM-RECORD-1 (2026-10-30, the desktop app's contact record, CRM parity R28; builder and MCP
-  // branches fix/crm-record-b1-contact): crm_activity_recording_link (GET
-  // /api/olympus/crm/activities/:activityId/recording) hands out an hour-long link to a logged
-  // call's recording. On NEVER_AUTO_APPROVE (lib/tool-safety.mjs) and SENSITIVE_READ_EXCLUSIONS
-  // (scripts/gen-readonly-tools.mjs) ahead of the server; delete this entry once the regenerated
-  // index carries it (off the read-only list).
-  ['crm_activity_recording_link', { since: '2026-10-30', batch: 'CRM-RECORD-1' }],
+  // 2026-10-30 (index regenerated at 2474 tools from MCP 2c376519acf8, #345): CRM-RECORD-1's
+  // crm_activity_recording_link is served and indexed, off the read-only list (NEVER_AUTO_APPROVE
+  // and SENSITIVE_READ_EXCLUSIONS keep it asking). Entry deleted.
 ]);

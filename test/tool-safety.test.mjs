@@ -1020,13 +1020,15 @@ const TESTIMONIAL_RERECORD_THAT_ASKS = ['marketing_testimonial_rerecord_send'];
 const LOA_SEND_THAT_ASKS = ['voice_port_order_loa_send'];
 /** The desktop app's help desk (2026-10-28, HD-DESKTOP-1): a person's chats erased for good, and how long every chat is kept. */
 const HELPDESK_PRIVACY_WRITES_THAT_ASK = ['helpdesk_contact_data_erase', 'helpdesk_chat_retention_set'];
+/** A site's lead inbox delete and the move to another workspace (2026-10-30, Website Builder wave B): leads and their files erased for good, and a site leaving this workspace. */
+const SITE_WRITES_THAT_ASK = ['marketing_form_inbox_delete', 'site_transfer'];
 /** Its two GETs whose answer is the hazard: 15-minute links to strangers' files, and a person's whole chat history. */
 const HELPDESK_HAZARD_READS = ['helpdesk_ticket_attachment_links', 'helpdesk_contact_data_export'];
 
-test('the always-ask set is exactly the memory, form-capture and indexing writes, the secrets reveal, the A/B test writes, the mobile app writes, the PPC override, the lead-email change, a checks rerun, the Email Service setup writes, the record-again ask, the LOA email and the help desk privacy writes', () => {
+test('the always-ask set is exactly the memory, form-capture and indexing writes, the secrets reveal, the A/B test writes, the mobile app writes, the PPC override, the lead-email change, a checks rerun, the Email Service setup writes, the record-again ask, the LOA email, the help desk privacy writes and the site inbox delete and move', () => {
   assert.deepEqual(
     [...ALWAYS_ASK_WRITES.keys()].sort(),
-    [...MEMORY_WRITES_THAT_ASK, ...FORM_CAPTURE_WRITES_THAT_ASK, ...INDEXING_WRITES_THAT_ASK, ...SECRETS_REVEAL_THAT_ASKS, ...AB_TEST_WRITES_THAT_ASK, ...MOBILE_WRITES_THAT_ASK, ...PPC_OVERRIDE_THAT_ASKS, ...LEAD_EMAIL_WRITES_THAT_ASK, ...CHECKS_RERUN_THAT_ASKS, ...EMAIL_SERVICE_WRITES_THAT_ASK, ...TESTIMONIAL_RERECORD_THAT_ASKS, ...LOA_SEND_THAT_ASKS, ...HELPDESK_PRIVACY_WRITES_THAT_ASK].sort(),
+    [...MEMORY_WRITES_THAT_ASK, ...FORM_CAPTURE_WRITES_THAT_ASK, ...INDEXING_WRITES_THAT_ASK, ...SECRETS_REVEAL_THAT_ASKS, ...AB_TEST_WRITES_THAT_ASK, ...MOBILE_WRITES_THAT_ASK, ...PPC_OVERRIDE_THAT_ASKS, ...LEAD_EMAIL_WRITES_THAT_ASK, ...CHECKS_RERUN_THAT_ASKS, ...EMAIL_SERVICE_WRITES_THAT_ASK, ...TESTIMONIAL_RERECORD_THAT_ASKS, ...LOA_SEND_THAT_ASKS, ...HELPDESK_PRIVACY_WRITES_THAT_ASK, ...SITE_WRITES_THAT_ASK].sort(),
   );
 });
 
