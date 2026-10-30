@@ -136,6 +136,10 @@ const LIVE_CHANGE_NAMES = [
   'crm_envelope_signer_reassign',
   'crm_envelope_create',
   'crm_envelope_update',
+  // A site's test lead email (a real email to its lead addresses) and a content entry's scheduled
+  // publish (the whole site goes out at that time) (Website Builder wave B).
+  'marketing_form_notifications_test',
+  'cms_schedule_set',
 ];
 
 function folderWith(guardrails) {

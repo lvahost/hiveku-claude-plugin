@@ -5,13 +5,18 @@
     "mcp__plugin_hiveku_hk__",
     "mcp__hiveku__"
   ],
-  "plugin_version": "0.27.133",
-  "count": 330,
+  "plugin_version": "0.27.134",
+  "count": 334,
   "tools": [
     {
       "name": "deploy_site",
       "method": "POST",
       "why_gated": "publishes a site to a real domain"
+    },
+    {
+      "name": "cms_schedule_set",
+      "method": "POST",
+      "why_gated": "schedules a content entry to publish at a set time, when Hiveku publishes the whole site"
     },
     {
       "name": "deploy_run",
@@ -227,6 +232,11 @@
       "name": "site_delete",
       "method": "DELETE",
       "why_gated": "destroys a site"
+    },
+    {
+      "name": "site_transfer",
+      "method": "POST",
+      "why_gated": "moves a website, with its leads, pages and content, to another workspace, where this workspace's people no longer reach it"
     },
     {
       "name": "site_firewall_allow",
@@ -1379,9 +1389,19 @@
       "why_gated": "permanently erases captured form submissions, their files and CRM notes, and the contacts that exist only because of them; there is no undo (a dry run is the default, and executing needs the confirm token from one)"
     },
     {
+      "name": "marketing_form_inbox_delete",
+      "method": "POST",
+      "why_gated": "PERMANENTLY deletes the form leads it names, with the files their visitors uploaded; a CRM contact made from one stays"
+    },
+    {
       "name": "marketing_form_notifications_update",
       "method": "PATCH",
       "why_gated": "changes who gets a site's lead emails (Website > Forms > Notifications): \"Don't email anyone\" or a muted form stops the lead email, Slack post, phone alert and visitor's automatic reply from the next lead, and a changed or emptied list sends leads to other people (an empty list goes to the billing email, else every member)"
+    },
+    {
+      "name": "marketing_form_notifications_test",
+      "method": "POST",
+      "why_gated": "sends a real test lead email to the site's lead email addresses"
     },
     {
       "name": "social_publish_post",
