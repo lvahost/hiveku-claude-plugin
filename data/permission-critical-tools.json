@@ -6,7 +6,7 @@
     "mcp__hiveku__"
   ],
   "plugin_version": "0.27.136",
-  "count": 335,
+  "count": 347,
   "tools": [
     {
       "name": "deploy_site",
@@ -692,6 +692,66 @@
       "name": "agent_approval_approve",
       "method": "POST",
       "why_gated": "executes a staged coder-agent action for real: deploy_project deploys code to the client's live production site and github_commit pushes to their repository; the approval is meant to be a person's yes"
+    },
+    {
+      "name": "marketing_approval_approve",
+      "method": "POST",
+      "why_gated": "runs what the Ads AI staged on the client's ad platforms"
+    },
+    {
+      "name": "marketing_offline_conversions_go_live",
+      "method": "POST",
+      "why_gated": "takes the conversion uploads out of validate-only; conversions reach the ad platforms for real and cannot be un-sent"
+    },
+    {
+      "name": "ppc_conversion_adjustments_go_live",
+      "method": "POST",
+      "why_gated": "takes conversion corrections out of validate-only; retractions change the platforms' conversion counts for real"
+    },
+    {
+      "name": "ppc_meta_lead_quality_enable",
+      "method": "POST",
+      "why_gated": "starts sending the client's CRM outcomes to Meta, which cannot be un-sent"
+    },
+    {
+      "name": "ppc_campaign_update",
+      "method": "PATCH",
+      "why_gated": "changes a live campaign's status, name or budget on the ad platform (spends)"
+    },
+    {
+      "name": "ppc_ad_group_status_set",
+      "method": "PATCH",
+      "why_gated": "pauses or enables an ad group on the ad platform"
+    },
+    {
+      "name": "ppc_ad_status_set",
+      "method": "PATCH",
+      "why_gated": "pauses or enables an ad on the ad platform"
+    },
+    {
+      "name": "marketing_offline_conversions_set_enabled",
+      "method": "POST",
+      "why_gated": "arms or disarms a source that uploads conversions to an ad platform"
+    },
+    {
+      "name": "marketing_offline_conversions_run",
+      "method": "POST",
+      "why_gated": "records conversions on the ad platforms once the lane is live"
+    },
+    {
+      "name": "marketing_offline_conversions_requeue",
+      "method": "POST",
+      "why_gated": "queues the parked backlog for real upload"
+    },
+    {
+      "name": "marketing_offline_conversions_designate",
+      "method": "POST",
+      "why_gated": "points a source at an ad platform's conversion action (it can arm it)"
+    },
+    {
+      "name": "ppc_connection_delete",
+      "method": "DELETE",
+      "why_gated": "deletes Hiveku's copy of an ad account's campaigns, numbers, history and uploads"
     },
     {
       "name": "seo_ga4_key_event_update",
