@@ -485,6 +485,27 @@
  *   LIVE, the INCOMING prose left SKILL.md and the three intros, porting.md's "The LOA
  *   signature link" section says what builder #1883 does (a send draws a fresh LOA when the
  *   signer's address or what the LOA says changed), and the entries are deleted.
+ *
+ *   Confirm on your phone (2026-10-31, dialer wave 2; builder #1908 merged as 56693085ea, MCP
+ *   #359 hiveku-mcp-api-server feature/person-confirm-tools): the desktop app's 911 page asks
+ *   the person's own Hiveku phone app to accept the 911 notice. Four tools over the builder's
+ *   /api/olympus/person-confirm routes, none of which confirms anything: a request is approved
+ *   only on the person's phone, which signs the server's words after Face ID, a fingerprint or
+ *   the passcode, on a phone route no key reaches.
+ *     - confirm_on_phone_start (POST .../requests) pushes the request to the person's phone and
+ *       answers a 2-digit code they type there. It is the person's to start, so it is on the ask
+ *       list AND on ALWAYS_ASK_WRITES (lib/tool-safety.mjs), like the LOA send: the hook asks on
+ *       every install that updates to this release, ahead of the server.
+ *     - confirm_on_phone_cancel (POST .../requests/:id/cancel) ends a waiting request the
+ *       person may be confirming on their phone, so it asks the same way.
+ *     - confirm_on_phone_get (GET .../requests/:id) reads how it stands; only status approved
+ *       means accepted. confirm_phones_list (GET .../phones) reads the person's phones.
+ *   No skill names them yet: the phone skill's 911 words change once the phone app release is
+ *   live in both stores. Release step, after the MCP deploy: regenerate the index and the
+ *   read-only list from the live server (the two GETs are expected to join it, the two POSTs
+ *   stay off it and keep asking), then delete these entries; tool-names.test.mjs forces it.
+ *     CONFIRM-PHONE-1  confirm_on_phone_start, confirm_on_phone_cancel, confirm_on_phone_get,
+ *                      confirm_phones_list.
  */
 const SEO_SINCE = '2026-08-30';
 const seo = (batch) => ({ since: SEO_SINCE, batch });
@@ -635,4 +656,11 @@ export const PENDING_TOOLS = new Map([
   // 2026-10-30 (index regenerated at 2474 tools from MCP 2c376519acf8, #345): CRM-RECORD-1's
   // crm_activity_recording_link is served and indexed, off the read-only list (NEVER_AUTO_APPROVE
   // and SENSITIVE_READ_EXCLUSIONS keep it asking). Entry deleted.
+
+  // CONFIRM-PHONE-1 (2026-10-31): Confirm on your phone, the start and the cancel asking from this
+  // release on, before the MCP server ships them, and two reads. See the batch note above.
+  ['confirm_on_phone_start', { since: '2026-10-31', batch: 'CONFIRM-PHONE-1' }],
+  ['confirm_on_phone_cancel', { since: '2026-10-31', batch: 'CONFIRM-PHONE-1' }],
+  ['confirm_on_phone_get', { since: '2026-10-31', batch: 'CONFIRM-PHONE-1' }],
+  ['confirm_phones_list', { since: '2026-10-31', batch: 'CONFIRM-PHONE-1' }],
 ]);

@@ -14,9 +14,12 @@ branch (edits through the file tools with `branch`, see `/hiveku:commit`), then
 `project_vcs_branch_preview({ project_id: <the project_id>, branch })`. That spins the branch's
 WORKING TREE (uncommitted edits included) up at its own URL in its own isolated app - the project's
 main preview is untouched and the branch tree never enters the project's files. It returns
-`{ previewUrl, status, previewSessionId }`. On `status: "starting"` do NOT call it again (that spawns
-a second app) - poll `project_vcs_branch_preview_status({ project_id, session_id })`, usually another
-30-90s. While it runs, `project_files_bulk_save({ project_id, files, branch })` syncs it (read
+`{ previewUrl, status, previewSessionId, filesSynced }` within 40 seconds, while the preview goes on
+being made. On `status: "starting"` poll `project_vcs_branch_preview_status({ project_id, session_id })`
+every 10 to 15 seconds, usually 1 to 3 minutes in all; calling `project_vcs_branch_preview` again for the
+branch hands back the same preview. With no `previewSessionId`, list in a minute with
+`project_vcs_branch_preview_status({ project_id })` (no `session_id`): a preview not listed did not
+start, so start it again. While it runs, `project_files_bulk_save({ project_id, files, branch })` syncs it (read
 `preview_effect`); a single `project_file_save({ branch })` does not report whether it reached the
 session - batch through bulk save, or re-run the branch preview. Look at it with the same tools as
 the main preview plus `branch`: `preview_screenshot({ project_id: <the project_id>, path, branch })`
