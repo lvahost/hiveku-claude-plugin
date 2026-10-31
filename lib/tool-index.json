@@ -17572,7 +17572,7 @@
       "dept": "webflow",
       "method": "POST",
       "timeoutMs": null,
-      "description": "Publishes the bound site. Defaults to every custom domain, or the webflow.io subdomain when there are none; pass customDomains (ids or urls) or publishToWebflowSubdomain to narrow it. Webflow allows one publish per minute per site; a second inside that window answers 429 publish_cooldown with retry_after_seconds. Ask before running: Publishes the site to its live domains, including any custom code, Google tags and redirects staged since the last publish."
+      "description": "Publishes the bound site. Defaults to every custom domain, or the webflow.io subdomain when there are none; pass customDomains (ids or urls) or publishToWebflowSubdomain to narrow it. Webflow allows one publish per minute per site; a second inside that window answers 429 publish_cooldown with retry_after_seconds. Publishing the whole site needs Websites > Deployments: Manage (403 deploy_not_allowed otherwise, and nothing is published); webflow_cms_item_publish puts chosen items live with only the edit right (Websites > Projects: Edit). Ask before running: Publishes the site to its live domains, including any custom code, Google tags and redirects staged since the last publish."
     },
     {
       "name": "webflow_sku_create",
