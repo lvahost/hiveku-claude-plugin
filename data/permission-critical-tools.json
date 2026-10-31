@@ -5,8 +5,8 @@
     "mcp__plugin_hiveku_hk__",
     "mcp__hiveku__"
   ],
-  "plugin_version": "0.27.138",
-  "count": 362,
+  "plugin_version": "0.27.139",
+  "count": 364,
   "tools": [
     {
       "name": "deploy_site",
@@ -977,6 +977,16 @@
       "name": "voice_port_order_loa_send",
       "method": "POST",
       "why_gated": "emails a number transfer's letter of authorization to the address given, for an e-signature that authorizes moving the numbers, and stops any earlier signing link"
+    },
+    {
+      "name": "confirm_on_phone_start",
+      "method": "POST",
+      "why_gated": "pushes a request to the person's own Hiveku phone app to accept the 911 notice; nothing is accepted until they confirm on their phone, but it is theirs to start"
+    },
+    {
+      "name": "confirm_on_phone_cancel",
+      "method": "POST",
+      "why_gated": "cancels a Confirm on your phone request the person may be confirming on their phone right now"
     },
     {
       "name": "voice_settings_update",

@@ -1018,6 +1018,8 @@ const EMAIL_SERVICE_WRITES_THAT_ASK = ['email_send', 'email_domain_send_instruct
 const TESTIMONIAL_RERECORD_THAT_ASKS = ['marketing_testimonial_rerecord_send'];
 /** A number transfer's letter of authorization by email (2026-10-29, VOICE-CALLS-1): whoever opens it can sign the transfer. */
 const LOA_SEND_THAT_ASKS = ['voice_port_order_loa_send'];
+/** Confirm on your phone (2026-10-31, CONFIRM-PHONE-1): a request pushed to the person's own phone to accept the 911 notice, and its cancel. */
+const CONFIRM_ON_PHONE_THAT_ASKS = ['confirm_on_phone_start', 'confirm_on_phone_cancel'];
 /** The desktop app's help desk (2026-10-28, HD-DESKTOP-1): a person's chats erased for good, and how long every chat is kept. */
 const HELPDESK_PRIVACY_WRITES_THAT_ASK = ['helpdesk_contact_data_erase', 'helpdesk_chat_retention_set'];
 /** A site's lead inbox delete and the move to another workspace (2026-10-30, Website Builder wave B): leads and their files erased for good, and a site leaving this workspace. */
@@ -1037,10 +1039,10 @@ const SEO_WRITES_THAT_ASK = [
 /** Its two GETs whose answer is the hazard: 15-minute links to strangers' files, and a person's whole chat history. */
 const HELPDESK_HAZARD_READS = ['helpdesk_ticket_attachment_links', 'helpdesk_contact_data_export'];
 
-test('the always-ask set is exactly the memory, form-capture and indexing writes, the secrets reveal, the A/B test writes, the mobile app writes, the PPC override, the lead-email change, a checks rerun, the Email Service setup writes, the record-again ask, the LOA email, the help desk privacy writes, the site inbox delete and move, the ad account connection delete, and the SEO page\'s erases and overwrites', () => {
+test('the always-ask set is exactly the memory, form-capture and indexing writes, the secrets reveal, the A/B test writes, the mobile app writes, the PPC override, the lead-email change, a checks rerun, the Email Service setup writes, the record-again ask, the LOA email, the Confirm on your phone start and cancel, the help desk privacy writes, the site inbox delete and move, the ad account connection delete, and the SEO page\'s erases and overwrites', () => {
   assert.deepEqual(
     [...ALWAYS_ASK_WRITES.keys()].sort(),
-    [...MEMORY_WRITES_THAT_ASK, ...FORM_CAPTURE_WRITES_THAT_ASK, ...INDEXING_WRITES_THAT_ASK, ...SECRETS_REVEAL_THAT_ASKS, ...AB_TEST_WRITES_THAT_ASK, ...MOBILE_WRITES_THAT_ASK, ...PPC_OVERRIDE_THAT_ASKS, ...LEAD_EMAIL_WRITES_THAT_ASK, ...CHECKS_RERUN_THAT_ASKS, ...EMAIL_SERVICE_WRITES_THAT_ASK, ...TESTIMONIAL_RERECORD_THAT_ASKS, ...LOA_SEND_THAT_ASKS, ...HELPDESK_PRIVACY_WRITES_THAT_ASK, ...SITE_WRITES_THAT_ASK, ...PPC_CONNECTION_DELETE_THAT_ASKS, ...SEO_WRITES_THAT_ASK].sort(),
+    [...MEMORY_WRITES_THAT_ASK, ...FORM_CAPTURE_WRITES_THAT_ASK, ...INDEXING_WRITES_THAT_ASK, ...SECRETS_REVEAL_THAT_ASKS, ...AB_TEST_WRITES_THAT_ASK, ...MOBILE_WRITES_THAT_ASK, ...PPC_OVERRIDE_THAT_ASKS, ...LEAD_EMAIL_WRITES_THAT_ASK, ...CHECKS_RERUN_THAT_ASKS, ...EMAIL_SERVICE_WRITES_THAT_ASK, ...TESTIMONIAL_RERECORD_THAT_ASKS, ...LOA_SEND_THAT_ASKS, ...CONFIRM_ON_PHONE_THAT_ASKS, ...HELPDESK_PRIVACY_WRITES_THAT_ASK, ...SITE_WRITES_THAT_ASK, ...PPC_CONNECTION_DELETE_THAT_ASKS, ...SEO_WRITES_THAT_ASK].sort(),
   );
 });
 
@@ -1549,4 +1551,58 @@ test('the logged-call recording link asks on every call and through a batch, and
   assert.equal(batch?.hookSpecificOutput?.permissionDecision, 'ask');
   const generator = readFileSync(new URL('../scripts/gen-readonly-tools.mjs', import.meta.url), 'utf8');
   assert.match(generator, /\['crm_activity_recording_link',/, 'the read-only generator must exclude it (SENSITIVE_READ_EXCLUSIONS)');
+});
+
+// ── Confirm on your phone (CONFIRM-PHONE-1, 2026-10-31) ──────────────────────
+//
+// The start pushes the person's own phone and the cancel ends a request they may be confirming,
+// so both ask on every direct call and through a batch, whatever the settings allow, and a
+// reads-only folder denies them. Their two reads never prompt. The real hook process prints ask
+// for the start under INSTALL.md's blanket allow, as it does for the LOA send.
+test('the Confirm on your phone start and cancel ask on a direct call whatever they name, and through a batch; a reads-only folder denies them; the reads stay off the set', () => {
+  const cwd = folderWith(undefined);
+  const reasons = {
+    confirm_on_phone_start: /^confirm_on_phone_start sends a request to your Hiveku phone app to accept the 911 notice\. Nothing is accepted until you read it and confirm on your phone/,
+    confirm_on_phone_cancel: /^confirm_on_phone_cancel cancels a Confirm on your phone request that may be open on your phone right now\. It accepts nothing/,
+  };
+  for (const name of CONFIRM_ON_PHONE_THAT_ASKS) {
+    for (const args of [{ action: 'e911_notice.accept' }, { request_id: 'r' }, {}]) {
+      const direct = decideWithGuardrails({ ...payload(name, cwd), tool_input: args });
+      assert.equal(decision(direct), 'ask', `${name} ${JSON.stringify(args)} must ask; silence resolves to the blanket allow`);
+      const why = direct.hookSpecificOutput.permissionDecisionReason;
+      assert.match(why, reasons[name]);
+      assert.match(why, /even when your settings allow all Hiveku tools/);
+    }
+    const mixed = decideWithGuardrails(batch([
+      { tool: 'voice_e911_notice_get', args: {} },
+      { tool: name, args: { action: 'e911_notice.accept', request_id: 'r' } },
+    ], cwd));
+    assert.equal(decision(mixed), 'ask');
+    assert.match(mixed.hookSpecificOutput.permissionDecisionReason, new RegExp(`not pre-approved reads: ${name}\\.`));
+    const readsOnly = folderWith({ version: 1, mode: 'reads-only' });
+    assert.equal(decision(decideWithGuardrails(payload(name, readsOnly))), 'deny');
+    assert.equal(isAutoApprovable(name, { action: 'e911_notice.accept' }), false);
+    assert.equal(isReadOnlyTool(name), false);
+  }
+  for (const read of ['confirm_on_phone_get', 'confirm_phones_list']) {
+    assert.equal(ALWAYS_ASK_WRITES.has(read), false, `${read} must not prompt on every poll`);
+  }
+});
+
+const CONFIRM_START_TOOL = `${HIVEKU_TOOL_PREFIX}confirm_on_phone_start`;
+
+test('the real hook process prints ask for the Confirm on your phone start under the blanket allow', () => {
+  const { allow, ask } = installPermissions();
+  assert.ok(allow.some((rule) => ruleMatches(rule, CONFIRM_START_TOOL)),
+    `no INSTALL.md allow rule matches ${CONFIRM_START_TOOL}; the premise of this test changed`);
+  for (const name of CONFIRM_ON_PHONE_THAT_ASKS) {
+    assert.ok(ask.includes(`${HIVEKU_TOOL_PREFIX}${name}`), `INSTALL.md's ask block must name ${name} as well`);
+  }
+  const cwd = folderWith(undefined);
+  const run = runPreToolUseHook(CONFIRM_START_TOOL, { action: 'e911_notice.accept' }, cwd);
+  assert.equal(run.status, 0, run.stderr);
+  assert.notEqual(run.stdout, '', 'the hook printed nothing, so the blanket allow would push the person\'s phone unasked');
+  const out = JSON.parse(run.stdout);
+  assert.equal(out.hookSpecificOutput.permissionDecision, 'ask');
+  assert.match(out.hookSpecificOutput.permissionDecisionReason, /^confirm_on_phone_start sends a request to your Hiveku phone app/);
 });
