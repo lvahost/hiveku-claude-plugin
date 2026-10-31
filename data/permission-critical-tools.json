@@ -5,8 +5,8 @@
     "mcp__plugin_hiveku_hk__",
     "mcp__hiveku__"
   ],
-  "plugin_version": "0.27.144",
-  "count": 365,
+  "plugin_version": "0.27.145",
+  "count": 367,
   "tools": [
     {
       "name": "deploy_site",
@@ -1357,6 +1357,16 @@
       "name": "workflow_run",
       "method": "POST",
       "why_gated": "runs a workflow FOR REAL - fires its emails, SMS, CRM writes and external calls. workflow_test is the dry run"
+    },
+    {
+      "name": "workflow_node_run",
+      "method": "POST",
+      "why_gated": "runs one workflow step FOR REAL (the steps before it are simulated): an email, text, record change or outside call in that step happens to real customers. workflow_test is the dry run"
+    },
+    {
+      "name": "workflow_pending_action_decide",
+      "method": "POST",
+      "why_gated": "approves or rejects an action an AI step staged for a person: approving sends the email or reply, or makes the change, for real at once; rejecting throws the staged action away. The decision is meant to be a person's"
     },
     {
       "name": "workflow_enable",

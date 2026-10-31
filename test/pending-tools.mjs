@@ -506,6 +506,11 @@
  *   still asking); entries deleted.
  *     CONFIRM-PHONE-1  confirm_on_phone_start, confirm_on_phone_cancel, confirm_on_phone_get,
  *                      confirm_phones_list.
+ *
+ *   Automations desktop program (2026-10-31, the desktop app's workflow editor and Pending AI actions;
+ *   MCP feature/automations-desktop-tools, not yet served): the two ask-first writes ask before the MCP
+ *   release serves them, so a binding in toolMode 'all' never meets them unasked.
+ *     AUTOMATIONS-DESKTOP-1  workflow_node_run, workflow_pending_action_decide.
  */
 const SEO_SINCE = '2026-08-30';
 const seo = (batch) => ({ since: SEO_SINCE, batch });
@@ -661,4 +666,10 @@ export const PENDING_TOOLS = new Map([
   // 7e07d5f48c77): CONFIRM-PHONE-1's four, confirm_on_phone_start, confirm_on_phone_cancel,
   // confirm_on_phone_get and confirm_phones_list, are served and indexed (the two reads on the
   // read-only list; the start and the cancel off it, asking since 0.27.139). Entries deleted.
+
+  // AUTOMATIONS-DESKTOP-1 (2026-10-31): workflow_node_run runs one workflow step for real (the steps
+  // before it simulated); workflow_pending_action_decide approves or rejects an AI step's staged
+  // action. Both on the ask list and the hook from 0.27.145, before the MCP release serves them.
+  ['workflow_node_run', { since: '2026-10-31', batch: 'AUTOMATIONS-DESKTOP-1' }],
+  ['workflow_pending_action_decide', { since: '2026-10-31', batch: 'AUTOMATIONS-DESKTOP-1' }],
 ]);
