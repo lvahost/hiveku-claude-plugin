@@ -155,6 +155,19 @@ const LIVE_CHANGE_NAMES = [
   'cms_schedule_set',
   // A contact email waiting to send, cancelled for good (the desktop app's contact record).
   'crm_email_scheduled_cancel',
+  // The desktop app's SEO page, wave B (MCP #353): a task's change published to the live site, the
+  // Business Profile post writes, the rank tracker's check now, bulk add and AI platforms for every
+  // keyword, and the website report writes that spend research or make, change or delete a public page.
+  'seo_task_deploy',
+  'seo_gbp_post_create',
+  'seo_gbp_post_update',
+  'seo_gbp_post_delete',
+  'seo_rankings_refresh',
+  'seo_rankings_bulk_add',
+  'seo_rankings_ai_backfill',
+  'seo_website_report_create',
+  'seo_website_report_delete',
+  'seo_website_report_sections_set',
 ];
 
 function folderWith(guardrails) {

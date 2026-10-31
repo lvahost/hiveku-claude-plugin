@@ -1026,14 +1026,61 @@ const HELPDESK_PRIVACY_WRITES_THAT_ASK = ['helpdesk_contact_data_erase', 'helpde
 const SITE_WRITES_THAT_ASK = ['marketing_form_inbox_delete', 'site_transfer'];
 /** Deleting an ad account connection (2026-10-30, the desktop app's Ads area, wave B): Hiveku's copy of its campaigns, numbers, history and uploads erased for good. */
 const PPC_CONNECTION_DELETE_THAT_ASKS = ['ppc_connection_delete'];
+/** The desktop app's SEO page, wave B (2026-10-30, MCP #353): erases and overwrites of Hiveku's own copy (rank history, an audit, the working sheet, a saved report, a connection's saved history). */
+const SEO_WRITES_THAT_ASK = [
+  'seo_rankings_keyword_delete',
+  'seo_audit_delete',
+  'seo_sheet_rows_delete',
+  'seo_sheet_tab_delete',
+  'seo_report_clear',
+  'seo_deliverable_save_from_workspace',
+  'seo_connection_delete',
+];
 /** Its two GETs whose answer is the hazard: 15-minute links to strangers' files, and a person's whole chat history. */
 const HELPDESK_HAZARD_READS = ['helpdesk_ticket_attachment_links', 'helpdesk_contact_data_export'];
 
-test('the always-ask set is exactly the memory, form-capture and indexing writes, the secrets reveal, the A/B test writes, the mobile app writes, the PPC override, the lead-email change, a checks rerun, the Email Service setup writes, the record-again ask, the LOA email, the Confirm on your phone start and cancel, the help desk privacy writes, the site inbox delete and move, and the ad account connection delete', () => {
+test('the always-ask set is exactly the memory, form-capture and indexing writes, the secrets reveal, the A/B test writes, the mobile app writes, the PPC override, the lead-email change, a checks rerun, the Email Service setup writes, the record-again ask, the LOA email, the Confirm on your phone start and cancel, the help desk privacy writes, the site inbox delete and move, the ad account connection delete, and the SEO page\'s erases and overwrites', () => {
   assert.deepEqual(
     [...ALWAYS_ASK_WRITES.keys()].sort(),
-    [...MEMORY_WRITES_THAT_ASK, ...FORM_CAPTURE_WRITES_THAT_ASK, ...INDEXING_WRITES_THAT_ASK, ...SECRETS_REVEAL_THAT_ASKS, ...AB_TEST_WRITES_THAT_ASK, ...MOBILE_WRITES_THAT_ASK, ...PPC_OVERRIDE_THAT_ASKS, ...LEAD_EMAIL_WRITES_THAT_ASK, ...CHECKS_RERUN_THAT_ASKS, ...EMAIL_SERVICE_WRITES_THAT_ASK, ...TESTIMONIAL_RERECORD_THAT_ASKS, ...LOA_SEND_THAT_ASKS, ...CONFIRM_ON_PHONE_THAT_ASKS, ...HELPDESK_PRIVACY_WRITES_THAT_ASK, ...SITE_WRITES_THAT_ASK, ...PPC_CONNECTION_DELETE_THAT_ASKS].sort(),
+    [...MEMORY_WRITES_THAT_ASK, ...FORM_CAPTURE_WRITES_THAT_ASK, ...INDEXING_WRITES_THAT_ASK, ...SECRETS_REVEAL_THAT_ASKS, ...AB_TEST_WRITES_THAT_ASK, ...MOBILE_WRITES_THAT_ASK, ...PPC_OVERRIDE_THAT_ASKS, ...LEAD_EMAIL_WRITES_THAT_ASK, ...CHECKS_RERUN_THAT_ASKS, ...EMAIL_SERVICE_WRITES_THAT_ASK, ...TESTIMONIAL_RERECORD_THAT_ASKS, ...LOA_SEND_THAT_ASKS, ...CONFIRM_ON_PHONE_THAT_ASKS, ...HELPDESK_PRIVACY_WRITES_THAT_ASK, ...SITE_WRITES_THAT_ASK, ...PPC_CONNECTION_DELETE_THAT_ASKS, ...SEO_WRITES_THAT_ASK].sort(),
   );
+});
+
+test('the SEO page\'s erases and overwrites ask on a direct call and through a batch; the writes left alone stay silent and the reads stay pre-approved', () => {
+  const cwd = folderWith(undefined);
+  for (const name of SEO_WRITES_THAT_ASK) {
+    const direct = decideWithGuardrails({ ...payload(name, cwd), tool_input: {} });
+    assert.equal(direct?.hookSpecificOutput?.permissionDecision, 'ask', name);
+    assert.match(direct.hookSpecificOutput.permissionDecisionReason, new RegExp(`^${name} `), name);
+    const batch = decideForPayload({ tool_name: `${HIVEKU_TOOL_PREFIX}hiveku_batch`, tool_input: { calls: [{ tool: name, args: {} }] } });
+    assert.equal(batch?.hookSpecificOutput?.permissionDecision, 'ask', `${name} in a batch`);
+    assert.equal(isAutoApprovable(name, {}), false, name);
+    assert.equal(isReadOnlyTool(name), false, `${name} must not be on the generated read list`);
+  }
+  assert.match(ALWAYS_ASK_WRITES.get('seo_connection_delete'), /PERMANENTLY deletes all its saved history/);
+  assert.match(ALWAYS_ASK_WRITES.get('seo_connection_delete'), /Nothing at Google is deleted/);
+  // Left without an ask in the same wave (MCP #353), and pinned so a change is a decision: the hook
+  // has no opinion on them, so each follows the person's own settings. The tab create is among them:
+  // the SEO commands write a new dated tab on every run, which an ask on every call would stall.
+  for (const write of [
+    'seo_sheet_create_tab',
+    'seo_connection_update',
+    'seo_website_report_cancel',
+    'seo_sheet_cell_edit',
+    'seo_sheet_column_add',
+    'seo_sheet_column_rename',
+    'seo_rankings_keyword_frequency_set',
+    'seo_task_from_issue',
+    'seo_deliverable_duplicate',
+    'seo_gbp_add_location',
+    'seo_connection_applicability_set',
+    'seo_not_applicable_sources_set',
+  ]) {
+    assert.equal(decideWithGuardrails({ ...payload(write, cwd), tool_input: {} }), null, `${write} should get no answer from the hook`);
+  }
+  for (const read of ['seo_sheet_get', 'seo_website_reports_list', 'seo_rankings_alerts', 'seo_research_usage', 'seo_performance_get']) {
+    assert.equal(decision(decideWithGuardrails({ ...payload(read, cwd), tool_input: {} })), 'allow', `${read} must stay pre-approved`);
+  }
 });
 
 test('the help desk privacy writes ask on a direct call with no guardrails file, and through a batch', () => {
