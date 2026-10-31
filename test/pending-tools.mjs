@@ -511,6 +511,19 @@
  *   MCP feature/automations-desktop-tools, not yet served): the two ask-first writes ask before the MCP
  *   release serves them, so a binding in toolMode 'all' never meets them unasked.
  *     AUTOMATIONS-DESKTOP-1  workflow_node_run, workflow_pending_action_decide.
+ *
+ *   Memory desktop program (2026-10-31, the desktop app's Memory page; MCP
+ *   feature/memory-desktop-tools, not yet served): the page's writes ask before the MCP release serves
+ *   them, on the ask list and on ALWAYS_ASK_WRITES (lib/tool-safety.mjs), so a binding in toolMode
+ *   'all' never meets them unasked. Their reads and the knowledge base upload and scrape are not here:
+ *   nothing in the plugin names them.
+ *     MEMORY-DESKTOP-1  account_memory_save, account_memory_restore, account_memory_suggest,
+ *                       account_memory_suggestion_keep, account_memory_suggestions_remove,
+ *                       account_memory_suggestions_restore, agent_memory_save, agent_memory_remove,
+ *                       agent_memory_create, agent_memory_restore, chief_of_staff_memory_save,
+ *                       chief_of_staff_memory_remove, website_memory_file_save,
+ *                       website_memory_file_restore, agent_profile_save, agent_switch_set,
+ *                       voice_pronunciations_save, marketplace_template_install.
  */
 const SEO_SINCE = '2026-08-30';
 const seo = (batch) => ({ since: SEO_SINCE, batch });
@@ -672,4 +685,27 @@ export const PENDING_TOOLS = new Map([
   // action. Both on the ask list and the hook from 0.27.145, before the MCP release serves them.
   ['workflow_node_run', { since: '2026-10-31', batch: 'AUTOMATIONS-DESKTOP-1' }],
   ['workflow_pending_action_decide', { since: '2026-10-31', batch: 'AUTOMATIONS-DESKTOP-1' }],
+
+  // MEMORY-DESKTOP-1 (2026-10-31): the desktop app's Memory page writes. About your business and its
+  // suggestions, an agent's rules, skills and notes, the chief of staff's, a website's memory files, an
+  // agent's profile and switch, Voice and pronunciation, and a Marketplace install. All on the ask list
+  // and on ALWAYS_ASK_WRITES, before the MCP release serves them.
+  ['account_memory_save', { since: '2026-10-31', batch: 'MEMORY-DESKTOP-1' }],
+  ['account_memory_restore', { since: '2026-10-31', batch: 'MEMORY-DESKTOP-1' }],
+  ['account_memory_suggest', { since: '2026-10-31', batch: 'MEMORY-DESKTOP-1' }],
+  ['account_memory_suggestion_keep', { since: '2026-10-31', batch: 'MEMORY-DESKTOP-1' }],
+  ['account_memory_suggestions_remove', { since: '2026-10-31', batch: 'MEMORY-DESKTOP-1' }],
+  ['account_memory_suggestions_restore', { since: '2026-10-31', batch: 'MEMORY-DESKTOP-1' }],
+  ['agent_memory_save', { since: '2026-10-31', batch: 'MEMORY-DESKTOP-1' }],
+  ['agent_memory_remove', { since: '2026-10-31', batch: 'MEMORY-DESKTOP-1' }],
+  ['agent_memory_create', { since: '2026-10-31', batch: 'MEMORY-DESKTOP-1' }],
+  ['agent_memory_restore', { since: '2026-10-31', batch: 'MEMORY-DESKTOP-1' }],
+  ['chief_of_staff_memory_save', { since: '2026-10-31', batch: 'MEMORY-DESKTOP-1' }],
+  ['chief_of_staff_memory_remove', { since: '2026-10-31', batch: 'MEMORY-DESKTOP-1' }],
+  ['website_memory_file_save', { since: '2026-10-31', batch: 'MEMORY-DESKTOP-1' }],
+  ['website_memory_file_restore', { since: '2026-10-31', batch: 'MEMORY-DESKTOP-1' }],
+  ['agent_profile_save', { since: '2026-10-31', batch: 'MEMORY-DESKTOP-1' }],
+  ['agent_switch_set', { since: '2026-10-31', batch: 'MEMORY-DESKTOP-1' }],
+  ['voice_pronunciations_save', { since: '2026-10-31', batch: 'MEMORY-DESKTOP-1' }],
+  ['marketplace_template_install', { since: '2026-10-31', batch: 'MEMORY-DESKTOP-1' }],
 ]);
