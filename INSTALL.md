@@ -389,7 +389,6 @@ Put this in `.claude/settings.json` (per project) or `~/.claude/settings.json` (
       "mcp__plugin_hiveku_hk__seo_website_report_sections_set",
       "mcp__plugin_hiveku_hk__seo_sheet_rows_delete",
       "mcp__plugin_hiveku_hk__seo_sheet_tab_delete",
-      "mcp__plugin_hiveku_hk__seo_sheet_create_tab",
       "mcp__plugin_hiveku_hk__seo_deliverable_save_from_workspace",
       "mcp__plugin_hiveku_hk__workflow_run",
       "mcp__plugin_hiveku_hk__workflow_enable",

@@ -1030,7 +1030,6 @@ const SEO_WRITES_THAT_ASK = [
   'seo_audit_delete',
   'seo_sheet_rows_delete',
   'seo_sheet_tab_delete',
-  'seo_sheet_create_tab',
   'seo_report_clear',
   'seo_deliverable_save_from_workspace',
   'seo_connection_delete',
@@ -1058,10 +1057,11 @@ test('the SEO page\'s erases and overwrites ask on a direct call and through a b
   }
   assert.match(ALWAYS_ASK_WRITES.get('seo_connection_delete'), /PERMANENTLY deletes all its saved history/);
   assert.match(ALWAYS_ASK_WRITES.get('seo_connection_delete'), /Nothing at Google is deleted/);
-  assert.match(ALWAYS_ASK_WRITES.get('seo_sheet_create_tab'), /A tab with the same name is replaced whole/);
   // Left without an ask in the same wave (MCP #353), and pinned so a change is a decision: the hook
-  // has no opinion on them, so each follows the person's own settings.
+  // has no opinion on them, so each follows the person's own settings. The tab create is among them:
+  // the SEO commands write a new dated tab on every run, which an ask on every call would stall.
   for (const write of [
+    'seo_sheet_create_tab',
     'seo_connection_update',
     'seo_website_report_cancel',
     'seo_sheet_cell_edit',

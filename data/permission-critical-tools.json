@@ -6,7 +6,7 @@
     "mcp__hiveku__"
   ],
   "plugin_version": "0.27.138",
-  "count": 363,
+  "count": 362,
   "tools": [
     {
       "name": "deploy_site",
@@ -1332,11 +1332,6 @@
       "name": "seo_sheet_tab_delete",
       "method": "POST",
       "why_gated": "deletes a whole tab of the SEO working sheet with its rows, no undo"
-    },
-    {
-      "name": "seo_sheet_create_tab",
-      "method": "POST",
-      "why_gated": "a tab with the same name is replaced whole, and its old rows are gone from the SEO working sheet everyone on the account sees"
     },
     {
       "name": "seo_deliverable_save_from_workspace",
