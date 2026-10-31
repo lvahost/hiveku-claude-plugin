@@ -6,7 +6,7 @@
     "mcp__hiveku__"
   ],
   "plugin_version": "0.27.137",
-  "count": 347,
+  "count": 363,
   "tools": [
     {
       "name": "deploy_site",
@@ -1146,7 +1146,7 @@
     {
       "name": "seo_report_clear",
       "method": "POST",
-      "why_gated": "wipes every Report Preview section in the account's single workspace"
+      "why_gated": "removes every section of the SEO report beside the working sheet, no undo"
     },
     {
       "name": "seo_deliverable_delete",
@@ -1161,7 +1161,7 @@
     {
       "name": "seo_connection_delete",
       "method": "DELETE",
-      "why_gated": "deactivates a data source so downstream reads stop finding it"
+      "why_gated": "removes the connection and deletes all its saved history for good (search numbers, Business Profile numbers, reviews, posts, sitemaps, page checks); nothing at Google is deleted"
     },
     {
       "name": "seo_gbp_services_update",
@@ -1262,6 +1262,86 @@
       "name": "seo_page_schema_delete",
       "method": "DELETE",
       "why_gated": "removes a page's stored JSON-LD"
+    },
+    {
+      "name": "seo_task_deploy",
+      "method": "POST",
+      "why_gated": "publishes an SEO task's change to the client's live site and records the person who owns this key as its approver"
+    },
+    {
+      "name": "seo_gbp_post_create",
+      "method": "POST",
+      "why_gated": "publishes a public post on the client's live Google Business Profile; the two-step confirm is filled in by the model"
+    },
+    {
+      "name": "seo_gbp_post_update",
+      "method": "POST",
+      "why_gated": "changes a public post on the client's live Google Business Profile; the two-step confirm is filled in by the model"
+    },
+    {
+      "name": "seo_gbp_post_delete",
+      "method": "POST",
+      "why_gated": "deletes a post from the client's live Google Business Profile for good, no undo; the two-step confirm is filled in by the model"
+    },
+    {
+      "name": "seo_rankings_refresh",
+      "method": "POST",
+      "why_gated": "runs rank checks now, using the plan's on-demand checks for the day"
+    },
+    {
+      "name": "seo_rankings_bulk_add",
+      "method": "POST",
+      "why_gated": "starts tracking keywords; each keyword past the plan's included count is billed $1.50 a month"
+    },
+    {
+      "name": "seo_rankings_ai_backfill",
+      "method": "POST",
+      "why_gated": "adds the AI search platforms to every tracked keyword of the account, each checked from the next run"
+    },
+    {
+      "name": "seo_rankings_keyword_delete",
+      "method": "DELETE",
+      "why_gated": "stops tracking a keyword on every platform and deletes its rank history for good, no undo"
+    },
+    {
+      "name": "seo_audit_delete",
+      "method": "DELETE",
+      "why_gated": "deletes a site audit and its results, no undo"
+    },
+    {
+      "name": "seo_website_report_create",
+      "method": "POST",
+      "why_gated": "spends this month's research checks and makes a public report page that anyone with its link can open"
+    },
+    {
+      "name": "seo_website_report_delete",
+      "method": "DELETE",
+      "why_gated": "deletes a website report, no undo; its public link stops working for everyone it was shared with"
+    },
+    {
+      "name": "seo_website_report_sections_set",
+      "method": "PUT",
+      "why_gated": "changes what a website report's shared page shows; the client sees the change at once"
+    },
+    {
+      "name": "seo_sheet_rows_delete",
+      "method": "POST",
+      "why_gated": "deletes rows from the SEO working sheet everyone on the account sees, no undo"
+    },
+    {
+      "name": "seo_sheet_tab_delete",
+      "method": "POST",
+      "why_gated": "deletes a whole tab of the SEO working sheet with its rows, no undo"
+    },
+    {
+      "name": "seo_sheet_create_tab",
+      "method": "POST",
+      "why_gated": "a tab with the same name is replaced whole, and its old rows are gone from the SEO working sheet everyone on the account sees"
+    },
+    {
+      "name": "seo_deliverable_save_from_workspace",
+      "method": "POST",
+      "why_gated": "with deliverable_id, replaces the sheet and sections a saved report holds; what it held before cannot be brought back"
     },
     {
       "name": "workflow_run",
