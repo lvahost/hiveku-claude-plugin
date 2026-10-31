@@ -134,7 +134,7 @@ export async function createTools() {
         id: id || task_id,
         comment_length: String(content || body || '').length,
       }),
-      "Add a comment to a PM task. Author codename defaults to 'olympus'. Accepts both `id` and `task_id` for the task identifier (older agent docs use task_id); accepts both `content` and `body` for the comment text.",
+      "Add a comment to a PM task. A comment made with a person's own key (the account key the desktop app and its agents use, or another AI connection the person made) is signed with that person's name, as in the app, and author_codename is then not stored (the answer's warnings say so). Hiveku's own agents and keys with no person are signed with author_codename, default 'olympus'. Accepts both `id` and `task_id` for the task identifier (older agent docs use task_id); accepts both `content` and `body` for the comment text.",
       {
         type: 'object',
         properties: {

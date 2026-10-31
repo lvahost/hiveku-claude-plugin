@@ -5,8 +5,8 @@
     "mcp__plugin_hiveku_hk__",
     "mcp__hiveku__"
   ],
-  "plugin_version": "0.27.141",
-  "count": 364,
+  "plugin_version": "0.27.142",
+  "count": 365,
   "tools": [
     {
       "name": "deploy_site",
@@ -27,6 +27,11 @@
       "name": "deploy_serve_version",
       "method": "POST",
       "why_gated": "switches an environment to one of its earlier deployments: visitors get it within about a minute (a dry run is the default; the plugin's hook asks only on a start)"
+    },
+    {
+      "name": "deploy_build_cancel",
+      "method": "POST",
+      "why_gated": "stops a site's waiting and running builds (every build of the site unless build_type names one): the site keeps serving what it served before, so a change someone just published does not go live until it is deployed again"
     },
     {
       "name": "project_files_bulk_save",
@@ -1546,7 +1551,7 @@
     {
       "name": "marketing_form_notifications_update",
       "method": "PATCH",
-      "why_gated": "changes who gets a site's lead emails (Website > Forms > Notifications): \"Don't email anyone\" or a muted form stops the lead email, Slack post, phone alert and visitor's automatic reply from the next lead, and a changed or emptied list sends leads to other people (an empty list goes to the billing email, else every member)"
+      "why_gated": "changes who gets a site's lead emails (Website > Forms > Notifications): \"Don't email anyone\" or a muted form stops the lead email, Slack post, phone alert and visitor's automatic reply from the next lead, and a changed or emptied list sends leads to other people (an empty list goes to the billing email, else every member); a Slack address posts every new lead to that Slack channel, and the automatic reply emails each visitor who fills in a form, with their replies going to the address it names"
     },
     {
       "name": "marketing_form_notifications_test",
