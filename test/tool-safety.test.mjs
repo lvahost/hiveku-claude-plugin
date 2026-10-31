@@ -1189,6 +1189,13 @@ test('the lead-email change asks on a direct call with no guardrails file, and t
   assert.equal(direct?.hookSpecificOutput?.permissionDecision, 'ask');
   assert.match(direct.hookSpecificOutput.permissionDecisionReason, /^marketing_form_notifications_update /);
   assert.match(direct.hookSpecificOutput.permissionDecisionReason, /who gets this site's lead emails/);
+  // Wave S1 (MCP #364) gave the tool the panel's other settings. A Slack address and the visitor's
+  // automatic reply send lead data somewhere new, so the prompt names both, and a call that sets only
+  // one of them asks as well.
+  const slack = decideWithGuardrails({ ...payload('marketing_form_notifications_update', cwd), tool_input: { project_id: 'p', slack_webhook: 'https://hooks.slack.com/services/T/B/x' } });
+  assert.equal(slack?.hookSpecificOutput?.permissionDecision, 'ask');
+  assert.match(slack.hookSpecificOutput.permissionDecisionReason, /A Slack address posts every new lead to that Slack channel/);
+  assert.match(slack.hookSpecificOutput.permissionDecisionReason, /the automatic reply emails each visitor who fills in a form, with their replies going to the address it names/);
   const batch = decideForPayload({ tool_name: `${HIVEKU_TOOL_PREFIX}hiveku_batch`, tool_input: { calls: [{ tool: 'marketing_form_notifications_update', args: {} }] } });
   assert.equal(batch?.hookSpecificOutput?.permissionDecision, 'ask');
   assert.notEqual(decision(decideWithGuardrails({ ...payload('marketing_form_notifications_get', cwd), tool_input: { project_id: 'p' } })), 'ask');
@@ -1605,4 +1612,80 @@ test('the real hook process prints ask for the Confirm on your phone start under
   const out = JSON.parse(run.stdout);
   assert.equal(out.hookSpecificOutput.permissionDecision, 'ask');
   assert.match(out.hookSpecificOutput.permissionDecisionReason, /^confirm_on_phone_start sends a request to your Hiveku phone app/);
+});
+
+// ── The desktop app's site pages, wave S1 (2026-10-31, MCP #364) ─────────────
+//
+// deploy_build_cancel stops a site's waiting and running builds, so a change someone published does
+// not go live: it asks on every direct call and through a batch, whatever the settings allow, and a
+// reads-only folder denies it. The wave's other two writes are left on the default on purpose, like
+// their neighbours (the card picture like sites_capture_stale_previews, the missing-page choice like
+// a saved redirect, which goes live only with project_redirects_deploy), and its ten reads stay
+// pre-approved. The real hook process prints ask for the cancel under INSTALL.md's blanket allow.
+const S1_WRITES_LEFT_ALONE = ['site_thumbnail_capture', 'project_missing_page_set'];
+const S1_READS = [
+  'analytics_tracking_code_get',
+  'analytics_report',
+  'analytics_visitor_get',
+  'deploy_build_queue_get',
+  'deploy_build_log_get',
+  'sites_framework_risk',
+  'account_bandwidth_get',
+  'project_monitoring_get',
+  'seo_robots_status',
+  'project_missing_page_get',
+];
+
+test('the site build cancel asks on a direct call whatever it names, and through a batch; a reads-only folder denies it; the wave\'s other two writes stay silent and its reads stay pre-approved', () => {
+  const cwd = folderWith(undefined);
+  const name = 'deploy_build_cancel';
+  for (const args of [{ project_id: 'p' }, { project_id: 'p', build_type: 'production' }, { project_id: 'p', build_type: 'dev-preview' }, {}]) {
+    const direct = decideWithGuardrails({ ...payload(name, cwd), tool_input: args });
+    assert.equal(decision(direct), 'ask', `${name} ${JSON.stringify(args)} must ask; silence resolves to the blanket allow`);
+    const why = direct.hookSpecificOutput.permissionDecisionReason;
+    assert.match(why, /^deploy_build_cancel stops this site's waiting and running builds: every build of the site unless build_type names one\./);
+    assert.match(why, /a change someone just published does not go live until it is deployed again/);
+    assert.match(why, /even when your settings allow all Hiveku tools/);
+  }
+  const mixed = decideWithGuardrails(batch([
+    { tool: 'deploy_build_queue_get', args: { project_id: 'p' } },
+    { tool: name, args: { project_id: 'p' } },
+  ], cwd));
+  assert.equal(decision(mixed), 'ask');
+  assert.match(mixed.hookSpecificOutput.permissionDecisionReason, new RegExp(`not pre-approved reads: ${name}\\.`));
+  const readsOnly = folderWith({ version: 1, mode: 'reads-only' });
+  assert.equal(decision(decideWithGuardrails(payload(name, readsOnly))), 'deny');
+  assert.equal(isAutoApprovable(name, { project_id: 'p' }), false);
+  assert.equal(isReadOnlyTool(name), false);
+  assert.equal(ALWAYS_ASK_WRITES.has(name), false, 'it is on LIVE_CHANGE_WRITES; a name belongs on one map');
+  // Left without an ask in the same wave, and pinned so a change is a decision: the hook has no
+  // opinion on them, so each follows the person's own settings.
+  for (const write of S1_WRITES_LEFT_ALONE) {
+    const args = { project_id: 'p', mode: 'static', custom_404_path: '/404.html' };
+    assert.equal(decideWithGuardrails({ ...payload(write, cwd), tool_input: args }), null, `${write} should get no answer from the hook`);
+    assert.equal(isReadOnlyTool(write), false, `${write} is a write, never a pre-approved read`);
+    assert.equal(decision(decideWithGuardrails(payload(write, readsOnly))), 'deny', `${write} under reads-only`);
+  }
+  for (const read of S1_READS) {
+    assert.equal(decision(decideWithGuardrails({ ...payload(read, cwd), tool_input: { project_id: 'p' } })), 'allow', `${read} must stay pre-approved`);
+  }
+});
+
+const BUILD_CANCEL_TOOL = `${HIVEKU_TOOL_PREFIX}deploy_build_cancel`;
+
+test('the real hook process prints ask for the site build cancel under the blanket allow', () => {
+  const { allow, ask } = installPermissions();
+  assert.ok(allow.some((rule) => ruleMatches(rule, BUILD_CANCEL_TOOL)),
+    `no INSTALL.md allow rule matches ${BUILD_CANCEL_TOOL}; the premise of this test changed`);
+  assert.ok(ask.includes(BUILD_CANCEL_TOOL), 'INSTALL.md\'s ask block must name deploy_build_cancel as well');
+  for (const name of S1_WRITES_LEFT_ALONE) {
+    assert.equal(ask.includes(`${HIVEKU_TOOL_PREFIX}${name}`), false, `${name} is left on the default, so no ask rule names it`);
+  }
+  const cwd = folderWith(undefined);
+  const run = runPreToolUseHook(BUILD_CANCEL_TOOL, { project_id: 'p', build_type: 'production' }, cwd);
+  assert.equal(run.status, 0, run.stderr);
+  assert.notEqual(run.stdout, '', 'the hook printed nothing, so the blanket allow would stop the site\'s builds unasked');
+  const out = JSON.parse(run.stdout);
+  assert.equal(out.hookSpecificOutput.permissionDecision, 'ask');
+  assert.match(out.hookSpecificOutput.permissionDecisionReason, /^deploy_build_cancel stops this site's waiting and running builds/);
 });

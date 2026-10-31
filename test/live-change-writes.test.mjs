@@ -168,6 +168,9 @@ const LIVE_CHANGE_NAMES = [
   'seo_website_report_create',
   'seo_website_report_delete',
   'seo_website_report_sections_set',
+  // The desktop app's site pages, wave S1 (MCP #364): stopping a site's builds, so a change someone
+  // published does not go live.
+  'deploy_build_cancel',
 ];
 
 function folderWith(guardrails) {

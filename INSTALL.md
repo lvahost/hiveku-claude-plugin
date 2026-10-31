@@ -122,6 +122,7 @@ Put this in `.claude/settings.json` (per project) or `~/.claude/settings.json` (
       "mcp__plugin_hiveku_hk__cms_schedule_set",
       "mcp__plugin_hiveku_hk__deploy_run",
       "mcp__plugin_hiveku_hk__deploy_serve_version",
+      "mcp__plugin_hiveku_hk__deploy_build_cancel",
       "mcp__plugin_hiveku_hk__project_files_bulk_save",
       "mcp__plugin_hiveku_hk__project_vcs_commit",
       "mcp__plugin_hiveku_hk__project_vcs_merge",
@@ -502,8 +503,9 @@ removing a workflow variable (`workflow_env_set`, `workflow_env_delete`), switch
 marketing on (`marketing_activate`), the budget guardrail,
 conversion uploads, a staged production deploy, GA4 conversion settings, the account's
 timezone, what the website assistant may tell visitors, emailing a number transfer's letter
-of authorization for signing (`voice_port_order_loa_send`), and asking your phone to accept the
-911 notice or cancelling that request (`confirm_on_phone_start`, `confirm_on_phone_cancel`), whatever
+of authorization for signing (`voice_port_order_loa_send`), asking your phone to accept the
+911 notice or cancelling that request (`confirm_on_phone_start`, `confirm_on_phone_cancel`), and
+stopping a site's builds (`deploy_build_cancel`), whatever
 your settings allow, so those prompt even on a machine with an older copy.
 
 Switching ads on or restarting them covers every enable, a bulk status edit, a LinkedIn
