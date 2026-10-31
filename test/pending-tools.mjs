@@ -501,9 +501,9 @@
  *     - confirm_on_phone_get (GET .../requests/:id) reads how it stands; only status approved
  *       means accepted. confirm_phones_list (GET .../phones) reads the person's phones.
  *   No skill names them yet: the phone skill's 911 words change once the phone app release is
- *   live in both stores. Release step, after the MCP deploy: regenerate the index and the
- *   read-only list from the live server (the two GETs are expected to join it, the two POSTs
- *   stay off it and keep asking), then delete these entries; tool-names.test.mjs forces it.
+ *   live in both stores. Landed in the live index on 2026-10-31 (MCP #359 live at 7e07d5f48c77;
+ *   index regenerated at 2583 tools, the two GETs on the read-only list, the two POSTs off it and
+ *   still asking); entries deleted.
  *     CONFIRM-PHONE-1  confirm_on_phone_start, confirm_on_phone_cancel, confirm_on_phone_get,
  *                      confirm_phones_list.
  */
@@ -657,10 +657,8 @@ export const PENDING_TOOLS = new Map([
   // crm_activity_recording_link is served and indexed, off the read-only list (NEVER_AUTO_APPROVE
   // and SENSITIVE_READ_EXCLUSIONS keep it asking). Entry deleted.
 
-  // CONFIRM-PHONE-1 (2026-10-31): Confirm on your phone, the start and the cancel asking from this
-  // release on, before the MCP server ships them, and two reads. See the batch note above.
-  ['confirm_on_phone_start', { since: '2026-10-31', batch: 'CONFIRM-PHONE-1' }],
-  ['confirm_on_phone_cancel', { since: '2026-10-31', batch: 'CONFIRM-PHONE-1' }],
-  ['confirm_on_phone_get', { since: '2026-10-31', batch: 'CONFIRM-PHONE-1' }],
-  ['confirm_phones_list', { since: '2026-10-31', batch: 'CONFIRM-PHONE-1' }],
+  // 2026-10-31 (index regenerated at 2583 tools from MCP 7c0e396a850e; #359 live at
+  // 7e07d5f48c77): CONFIRM-PHONE-1's four, confirm_on_phone_start, confirm_on_phone_cancel,
+  // confirm_on_phone_get and confirm_phones_list, are served and indexed (the two reads on the
+  // read-only list; the start and the cancel off it, asking since 0.27.139). Entries deleted.
 ]);
