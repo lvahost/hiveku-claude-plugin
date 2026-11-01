@@ -287,6 +287,7 @@ Put this in `.claude/settings.json` (per project) or `~/.claude/settings.json` (
       "mcp__plugin_hiveku_hk__marketing_webinar_invite",
       "mcp__plugin_hiveku_hk__marketing_webinar_cancel",
       "mcp__plugin_hiveku_hk__marketing_webinar_delete",
+      "mcp__plugin_hiveku_hk__marketing_webinar_update",
       "mcp__plugin_hiveku_hk__meet_recording_delete",
       "mcp__plugin_hiveku_hk__discussion_recording_delete",
       "mcp__plugin_hiveku_hk__discussion_channel_share",
