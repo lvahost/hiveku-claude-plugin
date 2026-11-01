@@ -1065,12 +1065,41 @@ const MEMORY_PAGE_WRITES_THAT_ASK = [
   'voice_pronunciations_save',
   'marketplace_template_install',
 ];
+/**
+ * The desktop app's Mission Control person actions (2026-11-01, MISSION-CONTROL-DESKTOP-1, MCP #370): a person's claim
+ * (or take-over with force), the release of their own claim, and their own decision on a card.
+ */
+const MISSION_CONTROL_WRITES_THAT_ASK = ['mc_task_claim', 'mc_task_release', 'mc_task_answer'];
 
-test('the always-ask set is exactly the memory, form-capture and indexing writes, the secrets reveal, the A/B test writes, the mobile app writes, the PPC override, the lead-email change, a checks rerun, the Email Service setup writes, the record-again ask, the LOA email, the Confirm on your phone start and cancel, the help desk privacy writes, the site inbox delete and move, the ad account connection delete, the SEO page\'s erases and overwrites, and the Memory page\'s writes', () => {
+test('the always-ask set is exactly the memory, form-capture and indexing writes, the secrets reveal, the A/B test writes, the mobile app writes, the PPC override, the lead-email change, a checks rerun, the Email Service setup writes, the record-again ask, the LOA email, the Confirm on your phone start and cancel, the help desk privacy writes, the site inbox delete and move, the ad account connection delete, the SEO page\'s erases and overwrites, the Memory page\'s writes, and a person\'s Mission Control claim, release and decision', () => {
   assert.deepEqual(
     [...ALWAYS_ASK_WRITES.keys()].sort(),
-    [...MEMORY_WRITES_THAT_ASK, ...FORM_CAPTURE_WRITES_THAT_ASK, ...INDEXING_WRITES_THAT_ASK, ...SECRETS_REVEAL_THAT_ASKS, ...AB_TEST_WRITES_THAT_ASK, ...MOBILE_WRITES_THAT_ASK, ...PPC_OVERRIDE_THAT_ASKS, ...LEAD_EMAIL_WRITES_THAT_ASK, ...CHECKS_RERUN_THAT_ASKS, ...EMAIL_SERVICE_WRITES_THAT_ASK, ...TESTIMONIAL_RERECORD_THAT_ASKS, ...LOA_SEND_THAT_ASKS, ...CONFIRM_ON_PHONE_THAT_ASKS, ...HELPDESK_PRIVACY_WRITES_THAT_ASK, ...SITE_WRITES_THAT_ASK, ...PPC_CONNECTION_DELETE_THAT_ASKS, ...SEO_WRITES_THAT_ASK, ...MEMORY_PAGE_WRITES_THAT_ASK].sort(),
+    [...MEMORY_WRITES_THAT_ASK, ...FORM_CAPTURE_WRITES_THAT_ASK, ...INDEXING_WRITES_THAT_ASK, ...SECRETS_REVEAL_THAT_ASKS, ...AB_TEST_WRITES_THAT_ASK, ...MOBILE_WRITES_THAT_ASK, ...PPC_OVERRIDE_THAT_ASKS, ...LEAD_EMAIL_WRITES_THAT_ASK, ...CHECKS_RERUN_THAT_ASKS, ...EMAIL_SERVICE_WRITES_THAT_ASK, ...TESTIMONIAL_RERECORD_THAT_ASKS, ...LOA_SEND_THAT_ASKS, ...CONFIRM_ON_PHONE_THAT_ASKS, ...HELPDESK_PRIVACY_WRITES_THAT_ASK, ...SITE_WRITES_THAT_ASK, ...PPC_CONNECTION_DELETE_THAT_ASKS, ...SEO_WRITES_THAT_ASK, ...MEMORY_PAGE_WRITES_THAT_ASK, ...MISSION_CONTROL_WRITES_THAT_ASK].sort(),
   );
+});
+
+test('a person\'s Mission Control claim, release and decision ask on a direct call and through a batch, a reads-only folder denies them, and the card reads are not on the set', () => {
+  const cwd = folderWith(undefined);
+  const readsOnly = folderWith({ version: 1, mode: 'reads-only' });
+  for (const name of MISSION_CONTROL_WRITES_THAT_ASK) {
+    const direct = decideWithGuardrails({ ...payload(name, cwd), tool_input: { id: 'x' } });
+    assert.equal(direct?.hookSpecificOutput?.permissionDecision, 'ask', name);
+    assert.match(direct.hookSpecificOutput.permissionDecisionReason, new RegExp(`^${name} `), name);
+    const batch = decideForPayload({ tool_name: `${HIVEKU_TOOL_PREFIX}hiveku_batch`, tool_input: { calls: [{ tool: name, args: { id: 'x' } }] } });
+    assert.equal(batch?.hookSpecificOutput?.permissionDecision, 'ask', `${name} in a batch`);
+    assert.equal(isAutoApprovable(name, {}), false, name);
+    assert.equal(isReadOnlyTool(name), false, `${name} must not be on the generated read list`);
+    assert.equal(decision(decideWithGuardrails(payload(name, readsOnly))), 'deny', `${name} under reads-only`);
+    assert.doesNotMatch(ALWAYS_ASK_WRITES.get(name), /[\u2013\u2014]/, `${name}: no dashes in a reason the person reads`);
+  }
+  // A take-over with force asks like a plain claim, and its reason says what force does.
+  const force = decideWithGuardrails({ ...payload('mc_task_claim', cwd), tool_input: { id: 'x', force: true } });
+  assert.equal(force?.hookSpecificOutput?.permissionDecision, 'ask');
+  assert.match(ALWAYS_ASK_WRITES.get('mc_task_claim'), /takes the card over from the teammate who holds it/);
+  assert.match(ALWAYS_ASK_WRITES.get('mc_task_answer'), /recorded as the person who decided/);
+  for (const name of ['mc_task_get', 'mc_decision_check', 'mc_tasks_list', 'mc_decisions_pending', 'pm_project_activity_list']) {
+    assert.equal(ALWAYS_ASK_WRITES.has(name), false, `${name} must not ask on every call`);
+  }
 });
 
 test('the Memory page\'s writes ask on a direct call and through a batch, a reads-only folder denies them, and their reads and the knowledge base writes are not on the set', () => {
