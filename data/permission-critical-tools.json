@@ -5,8 +5,8 @@
     "mcp__plugin_hiveku_hk__",
     "mcp__hiveku__"
   ],
-  "plugin_version": "0.27.156",
-  "count": 405,
+  "plugin_version": "0.27.157",
+  "count": 406,
   "tools": [
     {
       "name": "deploy_site",
@@ -822,6 +822,11 @@
       "name": "marketing_webinar_delete",
       "method": "DELETE",
       "why_gated": "deletes a webinar with its registrations, and its landing page stops working; there is no undo"
+    },
+    {
+      "name": "marketing_webinar_update",
+      "method": "PATCH",
+      "why_gated": "changes a webinar made in Marketing; moving its time emails every registrant, and the whole audience once its invites went out"
     },
     {
       "name": "meet_recording_delete",
