@@ -301,6 +301,7 @@ Put this in `.claude/settings.json` (per project) or `~/.claude/settings.json` (
       "mcp__plugin_hiveku_hk__crm_contact_email_send_from_domain",
       "mcp__plugin_hiveku_hk__crm_enroll_sequence",
       "mcp__plugin_hiveku_hk__crm_sequence_enroll_bulk",
+      "mcp__plugin_hiveku_hk__crm_sequence_enroll_audience",
       "mcp__plugin_hiveku_hk__email_sequence_enroll",
       "mcp__plugin_hiveku_hk__email_sequence_activate",
       "mcp__plugin_hiveku_hk__marketing_activate",
