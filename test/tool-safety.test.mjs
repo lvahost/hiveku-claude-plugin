@@ -105,8 +105,9 @@ test('the generated list is present and plausible', () => {
   // everything -- degraded but safe. This catches that silently shipping.
   assert.ok(readOnlyCount() > 400, `only ${readOnlyCount()} read-only tools loaded`);
   // 902 of the 2,137 declared tools at 0.27.12 (the ceiling was 900 from 0.7.0, when the
-  // catalogue was about 1,500). Room to grow, not room for a list that swallowed the writes.
-  assert.ok(readOnlyCount() < 1100, `${readOnlyCount()} is too many to be GET-only`);
+  // catalogue was about 1,500); 1,104 of 2,636 at 0.27.148, the same share, after the Automations
+  // desktop reads (MCP #375). Room to grow, not room for a list that swallowed the writes.
+  assert.ok(readOnlyCount() < 1300, `${readOnlyCount()} is too many to be GET-only`);
 });
 
 test('outward-facing actions are never auto-approved', () => {

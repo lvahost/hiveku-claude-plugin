@@ -76,7 +76,10 @@ test('the ranking fixes from the A/B review hold', () => {
   // paragraph (687 -> 1233 chars) that mentions all three words far apart and
   // briefly took this pin. The proximity rule in score() (tightest window
   // holding every term) keeps sites_list, which names the field verbatim, first.
-  assert.equal(names('development environment url', 1)[0], 'sites_list');
+  // 2026-11-01: database_status's live text (MCP #378) now spells out what each environment reads,
+  // DATABASE_URL_DEV for development, so it takes the literal words first; sites_list, which names the
+  // development URL field, stays right behind it.
+  assert.ok(names('development environment url', 2).includes('sites_list'));
   assert.equal(names('page speed', 1)[0], 'seo_core_web_vitals');
   assert.ok(names('voicemail transcription', 5).includes('voice_call_transcript_get'));
   // 2026-10-03: seo_audit_start's live text now names the site crawl's broken-links action, and the
