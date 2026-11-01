@@ -6,7 +6,7 @@
     "mcp__hiveku__"
   ],
   "plugin_version": "0.27.152",
-  "count": 397,
+  "count": 405,
   "tools": [
     {
       "name": "deploy_site",
@@ -807,6 +807,46 @@
       "name": "mc_task_answer",
       "method": "POST",
       "why_gated": "records a person's own decision on a Mission Control card and marks it done: they are recorded as the decider, and an agent waiting on the card acts on the choice"
+    },
+    {
+      "name": "marketing_webinar_invite",
+      "method": "PATCH",
+      "why_gated": "emails a scheduled webinar's whole audience its invites, once, over the account's marketing email; invites that went out cannot be taken back"
+    },
+    {
+      "name": "marketing_webinar_cancel",
+      "method": "PATCH",
+      "why_gated": "cancels a webinar for good, closing its room if it is live, and emails every registrant and an audience already invited; there is no undo"
+    },
+    {
+      "name": "marketing_webinar_delete",
+      "method": "DELETE",
+      "why_gated": "deletes a webinar with its registrations, and its landing page stops working; there is no undo"
+    },
+    {
+      "name": "meet_recording_delete",
+      "method": "DELETE",
+      "why_gated": "deletes a meeting's recording, every part with its transcript and the AI meeting notes made from it; there is no undo. Hiveku takes it from the Hiveku app's own key alone, so from an assistant it is refused anyway"
+    },
+    {
+      "name": "discussion_recording_delete",
+      "method": "DELETE",
+      "why_gated": "deletes a call's recording in Discussions, every part with its transcript and the AI meeting notes made from it; there is no undo. Hiveku takes it from the Hiveku app's own key alone, so from an assistant it is refused anyway"
+    },
+    {
+      "name": "discussion_channel_share",
+      "method": "POST",
+      "why_gated": "shares a Discussions channel into another workspace at once, with nothing to accept: that workspace's people can then read and post in it, and ask their own agents in it"
+    },
+    {
+      "name": "discussion_channel_unshare",
+      "method": "DELETE",
+      "why_gated": "stops sharing a Discussions channel with a workspace at once, and that workspace's people lose the channel"
+    },
+    {
+      "name": "discussion_delete",
+      "method": "DELETE",
+      "why_gated": "deletes a Discussions channel for everyone, with its whole history (every message, reply, reaction and file card), and workspaces it is shared with lose it too; there is no undo"
     },
     {
       "name": "marketing_offline_conversions_go_live",
