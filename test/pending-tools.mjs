@@ -683,10 +683,9 @@ export const PENDING_TOOLS = new Map([
   // outbound_lead_grid_* writes are served and indexed (off the read-only list; asking since 0.27.150). Entries
   // deleted.
 
-  // EMAIL-FOLLOWUPS-1 (2026-11-01): enrolling a marketing audience in a sales sequence, MCP
-  // feature/email-audit-followups-tools (builder #1944), not yet served. Asking from 0.27.151; delete this once the
-  // index regenerated after that release carries it.
-  ['crm_sequence_enroll_audience', { since: '2026-11-01', batch: 'EMAIL-FOLLOWUPS-1' }],
+  // 2026-11-01 (index regenerated at 2740 tools from MCP 8ee50079f950, #382): EMAIL-FOLLOWUPS-1's
+  // crm_sequence_enroll_audience is served and indexed (off the read-only list; asking since 0.27.151). Entry
+  // deleted.
 
   // 2026-11-01 (index regenerated at 2716 tools from MCP b7eda48c39e2, #370): MISSION-CONTROL-DESKTOP-1's
   // mc_task_claim, mc_task_release and mc_task_answer are served and indexed (off the read-only list; on the ask
