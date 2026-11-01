@@ -512,6 +512,13 @@
  *   release serves them, so a binding in toolMode 'all' never meets them unasked.
  *     AUTOMATIONS-DESKTOP-1  workflow_node_run, workflow_pending_action_decide. Landed 2026-11-01 (MCP #375);
  *                            entries deleted.
+ *
+ *   Mission Control desktop program (2026-11-01, the desktop app's Mission Control cards; MCP #370): a
+ *   person's claim, release and decision, on the ask list and on ALWAYS_ASK_WRITES (lib/tool-safety.mjs), so a
+ *   binding in toolMode 'all' never meets them unasked. The read that came with them,
+ *   pm_project_activity_list, was never here: nothing in the plugin names it.
+ *     MISSION-CONTROL-DESKTOP-1  mc_task_claim, mc_task_release, mc_task_answer. Landed 2026-11-01 (MCP #370,
+ *                                live at b7eda48c39e2); entries deleted.
  */
 const SEO_SINCE = '2026-08-30';
 const seo = (batch) => ({ since: SEO_SINCE, batch });
@@ -687,4 +694,8 @@ export const PENDING_TOOLS = new Map([
   // feature/email-audit-followups-tools (builder #1944), not yet served. Asking from 0.27.151; delete this once the
   // index regenerated after that release carries it.
   ['crm_sequence_enroll_audience', { since: '2026-11-01', batch: 'EMAIL-FOLLOWUPS-1' }],
+
+  // 2026-11-01 (index regenerated at 2716 tools from MCP b7eda48c39e2, #370): MISSION-CONTROL-DESKTOP-1's
+  // mc_task_claim, mc_task_release and mc_task_answer are served and indexed (off the read-only list; on the ask
+  // list and ALWAYS_ASK_WRITES). Entries deleted.
 ]);

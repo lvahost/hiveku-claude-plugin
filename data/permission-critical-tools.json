@@ -5,8 +5,8 @@
     "mcp__plugin_hiveku_hk__",
     "mcp__hiveku__"
   ],
-  "plugin_version": "0.27.151",
-  "count": 394,
+  "plugin_version": "0.27.152",
+  "count": 397,
   "tools": [
     {
       "name": "deploy_site",
@@ -792,6 +792,21 @@
       "name": "marketing_approval_approve",
       "method": "POST",
       "why_gated": "runs what the Ads AI staged on the client's ad platforms"
+    },
+    {
+      "name": "mc_task_claim",
+      "method": "POST",
+      "why_gated": "claims a Mission Control card for the person whose key makes the call; with force it takes the card over from the teammate who holds it (recorded on the card as claim_taken_over), which is that person's choice to make"
+    },
+    {
+      "name": "mc_task_release",
+      "method": "DELETE",
+      "why_gated": "lets go of the caller's own claim on a Mission Control card, so anyone on the team can pick it up and decide it"
+    },
+    {
+      "name": "mc_task_answer",
+      "method": "POST",
+      "why_gated": "records a person's own decision on a Mission Control card and marks it done: they are recorded as the decider, and an agent waiting on the card acts on the choice"
     },
     {
       "name": "marketing_offline_conversions_go_live",
