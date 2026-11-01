@@ -1852,3 +1852,103 @@ test('the real hook process prints ask for the site build cancel under the blank
   assert.equal(out.hookSpecificOutput.permissionDecision, 'ask');
   assert.match(out.hookSpecificOutput.permissionDecisionReason, /^deploy_build_cancel stops this site's waiting and running builds/);
 });
+
+// ── The desktop app's Versions, Branches and Backups pages, wave S2a (2026-11-01, MCP #384) ───
+//
+// project_backup_create (New Backup) copies the site's files, media and database into a backup kept
+// until someone deletes it, so it asks on every direct call and through a batch, whatever the
+// settings allow, and a reads-only folder denies it. project_backup_download_link changes nothing,
+// but its link hands a whole backup out to anyone holding it for 15 minutes, so it asks through
+// NEVER_AUTO_APPROVE, with its own reason, and stays off the ask list as
+// marketing_form_attachment_download_url does. The wave's two restores are pinned in
+// test/vcs-tool-rules.test.mjs, and its nine reads stay pre-approved.
+const S2A_READS = [
+  'project_vcs_overview',
+  'project_vcs_version_get',
+  'project_vcs_pr_file',
+  'project_vcs_version_files',
+  'project_checkpoint_diff',
+  'project_checkpoint_diff_previous',
+  'project_checkpoint_files',
+  'project_backups_list',
+  'project_backup_operations',
+];
+
+test('a new backup asks on a direct call whatever it names, and through a batch; a reads-only folder denies it; the wave\'s reads stay pre-approved', () => {
+  const cwd = folderWith(undefined);
+  const name = 'project_backup_create';
+  for (const args of [{ project_id: 'p' }, { project_id: 'p', source_branch: 'main', description: 'Before the redesign' }, {}]) {
+    const direct = decideWithGuardrails({ ...payload(name, cwd), tool_input: args });
+    assert.equal(decision(direct), 'ask', `${name} ${JSON.stringify(args)} must ask; silence resolves to the blanket allow`);
+    const why = direct.hookSpecificOutput.permissionDecisionReason;
+    assert.match(why, /^project_backup_create makes a new backup of this site now: a full copy of its files, images and uploads and, when it has one, its database, kept until someone deletes it\./);
+    assert.match(why, /The site and its visitors see no change/);
+    assert.match(why, /even when your settings allow all Hiveku tools/);
+  }
+  const mixed = decideWithGuardrails(batch([
+    { tool: 'project_backups_list', args: { project_id: 'p' } },
+    { tool: name, args: { project_id: 'p' } },
+  ], cwd));
+  assert.equal(decision(mixed), 'ask');
+  assert.match(mixed.hookSpecificOutput.permissionDecisionReason, new RegExp(`not pre-approved reads: ${name}\\.`));
+  const readsOnly = folderWith({ version: 1, mode: 'reads-only' });
+  assert.equal(decision(decideWithGuardrails(payload(name, readsOnly))), 'deny');
+  assert.equal(isAutoApprovable(name, { project_id: 'p' }), false);
+  assert.equal(isReadOnlyTool(name), false);
+  assert.equal(ALWAYS_ASK_WRITES.has(name), false, 'it is on LIVE_CHANGE_WRITES; a name belongs on one map');
+  for (const read of S2A_READS) {
+    assert.equal(isReadOnlyTool(read), true, `${read} must be on the read-only list`);
+    assert.equal(decision(decideWithGuardrails({ ...payload(read, cwd), tool_input: { project_id: 'p' } })), 'allow', `${read} must stay pre-approved`);
+  }
+});
+
+test('a backup download link asks on a direct call and through a batch, with a reason that says what the link hands out', () => {
+  const cwd = folderWith(undefined);
+  const name = 'project_backup_download_link';
+  assert.ok(NEVER_AUTO_APPROVE.has(name));
+  assert.ok(VETO_REASONS[name], 'the default sentence says too little about a whole backup');
+  for (const args of [{ project_id: 'p', checkpoint_hash: 'abcdef012345' }, { project_id: 'p', checkpoint_hash: 'abcdef012345', part: 'database' }, {}]) {
+    const direct = decideWithGuardrails({ ...payload(name, cwd), tool_input: args });
+    assert.equal(decision(direct), 'ask', `${name} ${JSON.stringify(args)} must ask; silence resolves to the blanket allow`);
+    const why = direct.hookSpecificOutput.permissionDecisionReason;
+    assert.match(why, /^project_backup_download_link makes a link to download a whole backup of this site, its database copy included when it has one: /);
+    assert.match(why, /anyone holding the link can fetch it up to 20 times in the next 15 minutes, and it cannot be cancelled sooner/);
+    assert.match(why, /It changes nothing on the site, but it hands the site's files and data out\./);
+    assert.match(why, /a blanket allow would run it unattended/);
+  }
+  const mixed = decideWithGuardrails(batch([
+    { tool: 'project_backups_list', args: { project_id: 'p' } },
+    { tool: name, args: { project_id: 'p', checkpoint_hash: 'abcdef012345' } },
+  ], cwd));
+  assert.equal(decision(mixed), 'ask');
+  assert.match(mixed.hookSpecificOutput.permissionDecisionReason, new RegExp(`not pre-approved reads: ${name}\\.`));
+  assert.equal(isAutoApprovable(name, {}), false);
+  assert.equal(isReadOnlyTool(name), false);
+  assert.equal(ALWAYS_ASK_WRITES.has(name), false, 'it asks through NEVER_AUTO_APPROVE, not an always-ask map');
+});
+
+const BACKUP_CREATE_TOOL = `${HIVEKU_TOOL_PREFIX}project_backup_create`;
+const BACKUP_LINK_TOOL = `${HIVEKU_TOOL_PREFIX}project_backup_download_link`;
+
+test('the real hook process prints ask for a new backup and a backup download link under the blanket allow', () => {
+  const { allow, ask } = installPermissions();
+  for (const tool of [BACKUP_CREATE_TOOL, BACKUP_LINK_TOOL]) {
+    assert.ok(allow.some((rule) => ruleMatches(rule, tool)),
+      `no INSTALL.md allow rule matches ${tool}; the premise of this test changed`);
+  }
+  assert.ok(ask.includes(BACKUP_CREATE_TOOL), 'INSTALL.md\'s ask block must name project_backup_create as well');
+  assert.equal(ask.includes(BACKUP_LINK_TOOL), false,
+    'the download link asks from the hook, like marketing_form_attachment_download_url, not from the ask list');
+  const cwd = folderWith(undefined);
+  for (const [tool, input, lead] of [
+    [BACKUP_CREATE_TOOL, { project_id: 'p' }, /^project_backup_create makes a new backup of this site now/],
+    [BACKUP_LINK_TOOL, { project_id: 'p', checkpoint_hash: 'abcdef012345', part: 'database' }, /^project_backup_download_link makes a link to download a whole backup/],
+  ]) {
+    const run = runPreToolUseHook(tool, input, cwd);
+    assert.equal(run.status, 0, run.stderr);
+    assert.notEqual(run.stdout, '', `the hook printed nothing, so the blanket allow would run ${tool} unasked`);
+    const out = JSON.parse(run.stdout);
+    assert.equal(out.hookSpecificOutput.permissionDecision, 'ask');
+    assert.match(out.hookSpecificOutput.permissionDecisionReason, lead);
+  }
+});

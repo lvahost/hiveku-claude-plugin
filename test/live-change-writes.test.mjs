@@ -185,6 +185,9 @@ const LIVE_CHANGE_NAMES = [
   // The desktop app's site pages, wave S1 (MCP #364): stopping a site's builds, so a change someone
   // published does not go live.
   'deploy_build_cancel',
+  // The desktop app's Backups page, wave S2a (MCP #384): New Backup, a full copy of the site's files,
+  // media and database, made only when the person says so.
+  'project_backup_create',
 ];
 
 function folderWith(guardrails) {
