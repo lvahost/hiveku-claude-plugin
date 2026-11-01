@@ -159,6 +159,16 @@ const LIVE_CHANGE_NAMES = [
   // step's staged action approved or rejected.
   'workflow_node_run',
   'workflow_pending_action_decide',
+  // The desktop app's workflow grid (wave G): list and row deletes, row release, the AI formula writer, imports
+  // and auto-run.
+  'outbound_lead_grid_delete',
+  'outbound_lead_grid_rows_delete',
+  'outbound_lead_grid_rows_hold',
+  'outbound_lead_grid_formula_write',
+  'outbound_lead_grid_import_start',
+  'outbound_lead_grid_import_auto_run',
+  'outbound_lead_grid_auto_run_enable',
+  'outbound_lead_grid_auto_run_control',
   // The desktop app's SEO page, wave B (MCP #353): a task's change published to the live site, the
   // Business Profile post writes, the rank tracker's check now, bulk add and AI platforms for every
   // keyword, and the website report writes that spend research or make, change or delete a public page.
