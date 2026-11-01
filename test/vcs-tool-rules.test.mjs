@@ -103,13 +103,25 @@ test('the version prompts speak plain language: "version", never commit/HEAD/rev
     ['project_vcs_resolve', { project_id: PROJECT, branch: 'feature/x', files: [{ path: 'a', choice: 'parent' }] }],
     ['deploy_serve_version', { project_id: PROJECT, environment: 'production' }],
     ['deploy_serve_version', { project_id: PROJECT, environment: 'production', dry_run: false, serving_check: 'c' }],
+    ['project_vcs_restore_files', { project_id: PROJECT, commit_id: PROJECT, paths: ['src/app/page.tsx'] }],
+    ['project_vcs_restore_files', { project_id: PROJECT, commit_id: PROJECT, paths: ['src/app/page.tsx'], dry_run: false, expected_head_commit_id: PROJECT }],
+    ['project_vcs_restore_files', { project_id: PROJECT, commit_id: PROJECT, branch: 'main', paths: ['a', 'b'], dry_run: false }],
+    ['history_restore_to_time', { project_id: PROJECT, as_of: '2026-10-31T12:00:00Z' }],
+    ['history_restore_to_time', { project_id: PROJECT, as_of: '2026-10-31T12:00:00Z', mode: 'exact' }],
   ];
   for (const [tool, input] of inputs) {
     const { reason } = argGatedWriteDecision(tool, input);
     assert.match(reason, /version/i, `${tool}: the reason must say "version"`);
     assert.doesNotMatch(reason, /\bcommit|HEAD|revert|\bmain\b/i, `${tool}: "${reason}"`);
   }
-  assert.deepEqual([...ARG_GATED_WRITES.keys()].sort(), ['deploy_serve_version', 'project_vcs_commit', 'project_vcs_resolve', 'project_vcs_rollback']);
+  assert.deepEqual([...ARG_GATED_WRITES.keys()].sort(), [
+    'deploy_serve_version',
+    'history_restore_to_time',
+    'project_vcs_commit',
+    'project_vcs_resolve',
+    'project_vcs_restore_files',
+    'project_vcs_rollback',
+  ]);
   assert.equal(argGatedWriteDecision('project_file_save', {}), null, 'other tools get no version rule');
 });
 
@@ -223,4 +235,95 @@ test('switching an environment to an earlier version: a dry run is pre-approved,
   // A dry run in a batch is judged as it is alone.
   const dryBatch = decideWithGuardrails(batch([{ tool: 'deploy_serve_version', args: { project_id: PROJECT, environment: 'production' } }], cwd));
   assert.equal(decision(dryBatch), 'allow');
+});
+
+// ── The desktop app's Versions page, wave S2a (2026-11-01, MCP #384) ─────────
+//
+// project_vcs_restore_files is judged like a rollback: the route applies only on the literal boolean
+// false (DryRunSchema: value !== false), so every other call is a dry run and is pre-approved, and an
+// apply always asks, naming where and how many files. history_restore_to_time asks on every call, in
+// both modes; with mode exact the prompt says the files added since are removed too.
+
+test('bringing chosen files back: a dry run is pre-approved, an apply always asks and names where and how many', () => {
+  const cwd = folderWith(undefined);
+  for (const input of [
+    { project_id: PROJECT, commit_id: PROJECT, paths: ['src/app/page.tsx'] },
+    { project_id: PROJECT, commit_id: PROJECT, paths: ['src/app/page.tsx'], dry_run: true },
+    // Only the literal boolean false applies; the route reads anything else as a dry run.
+    { project_id: PROJECT, commit_id: PROJECT, paths: ['src/app/page.tsx'], dry_run: 'false' },
+    { project_id: PROJECT, commit_id: PROJECT, paths: ['src/app/page.tsx'], dry_run: 0 },
+    {},
+  ]) {
+    const r = decideWithGuardrails(vcs('project_vcs_restore_files', input, cwd));
+    assert.equal(decision(r), 'allow', `dry run ${JSON.stringify(input)} must be allowed`);
+    assert.match(r.hookSpecificOutput.permissionDecisionReason, /Nothing is written/);
+  }
+  const one = decideWithGuardrails(vcs('project_vcs_restore_files', {
+    project_id: PROJECT, commit_id: PROJECT, paths: ['src/app/page.tsx'], dry_run: false, expected_head_commit_id: PROJECT,
+  }, cwd));
+  assert.equal(decision(one), 'ask');
+  const why = one.hookSpecificOutput.permissionDecisionReason;
+  assert.match(why, /^This brings back 1 file on Your site as they were in an earlier version, for real: /);
+  assert.match(why, /a file that version had comes back, and one it did not have is removed/);
+  assert.match(why, /the live website only changes with a separate publish/);
+  assert.match(why, /always asks/);
+  const onBranch = decideWithGuardrails(vcs('project_vcs_restore_files', {
+    project_id: PROJECT, commit_id: PROJECT, branch: 'feature/pricing', paths: ['a', 'b', 'c'], dry_run: false,
+  }, cwd));
+  assert.equal(decision(onBranch), 'ask');
+  assert.match(onBranch.hookSpecificOutput.permissionDecisionReason, /^This brings back 3 files on the branch "feature\/pricing"/);
+  // Your site by its own name, and a call that names no files still asks.
+  const named = decideWithGuardrails(vcs('project_vcs_restore_files', { project_id: PROJECT, branch: 'main', dry_run: false }, cwd));
+  assert.equal(decision(named), 'ask');
+  assert.match(named.hookSpecificOutput.permissionDecisionReason, /^This brings back the files it names on Your site/);
+  // In a batch: a dry run is judged as it is alone, an apply makes the batch ask.
+  const quiet = decideWithGuardrails(batch([
+    { tool: 'project_vcs_version_get', args: { project_id: PROJECT, commit_id: PROJECT, against: 'current' } },
+    { tool: 'project_vcs_restore_files', args: { project_id: PROJECT, commit_id: PROJECT, paths: ['a'] } },
+  ], cwd));
+  assert.equal(decision(quiet), 'allow');
+  const loud = decideWithGuardrails(batch([
+    { tool: 'project_vcs_restore_files', args: { project_id: PROJECT, commit_id: PROJECT, paths: ['a'], dry_run: false } },
+  ], cwd));
+  assert.equal(decision(loud), 'ask');
+  assert.match(loud.hookSpecificOutput.permissionDecisionReason, /project_vcs_restore_files/);
+  // A reads-only folder denies the apply, and the tool is never a pre-approved read.
+  const readsOnly = folderWith({ version: 1, mode: 'reads-only' });
+  assert.equal(decision(decideWithGuardrails(vcs('project_vcs_restore_files', { project_id: PROJECT, paths: ['a'], dry_run: false }, readsOnly))), 'deny');
+  assert.equal(isAutoApprovable('project_vcs_restore_files', {}), false);
+  assert.equal(isReadOnlyTool('project_vcs_restore_files'), false);
+});
+
+test('a restore to a time asks on every call, and says so when it would match that moment exactly', () => {
+  const cwd = folderWith(undefined);
+  for (const input of [
+    { project_id: PROJECT, as_of: '2026-10-31T12:00:00Z' },
+    { project_id: PROJECT, as_of: '2026-10-31T12:00:00Z', mode: 'additive' },
+    {},
+    'garbage',
+  ]) {
+    const r = decideWithGuardrails(vcs('history_restore_to_time', input, cwd));
+    assert.equal(decision(r), 'ask', `${JSON.stringify(input)} must ask`);
+    const why = r.hookSpecificOutput.permissionDecisionReason;
+    assert.match(why, /^This puts the site's files back as they were at an earlier moment; files added since stay\./);
+    assert.match(why, /always asks before a restore/);
+    assert.doesNotMatch(why, /exactly/);
+  }
+  for (const mode of ['exact', ' Exact ']) {
+    const r = decideWithGuardrails(vcs('history_restore_to_time', { project_id: PROJECT, as_of: '2026-10-31T12:00:00Z', mode }, cwd));
+    assert.equal(decision(r), 'ask');
+    const why = r.hookSpecificOutput.permissionDecisionReason;
+    assert.match(why, /matches that moment exactly: every file added since is removed too/);
+    assert.match(why, /A safety copy of the site is saved first as the way back/);
+    assert.match(why, /only from the Hiveku app's own key/);
+  }
+  // Never pre-approved, not even inside a batch.
+  const batched = decideWithGuardrails(batch([
+    { tool: 'history_restore_to_time', args: { project_id: PROJECT, as_of: '2026-10-31T12:00:00Z' } },
+  ], cwd));
+  assert.equal(decision(batched), 'ask');
+  assert.match(batched.hookSpecificOutput.permissionDecisionReason, /history_restore_to_time/);
+  const readsOnly = folderWith({ version: 1, mode: 'reads-only' });
+  assert.equal(decision(decideWithGuardrails(vcs('history_restore_to_time', { project_id: PROJECT, mode: 'exact' }, readsOnly))), 'deny');
+  assert.equal(isAutoApprovable('history_restore_to_time', {}), false);
 });

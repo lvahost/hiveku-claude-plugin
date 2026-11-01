@@ -5,8 +5,8 @@
     "mcp__plugin_hiveku_hk__",
     "mcp__hiveku__"
   ],
-  "plugin_version": "0.27.157",
-  "count": 406,
+  "plugin_version": "0.27.158",
+  "count": 408,
   "tools": [
     {
       "name": "deploy_site",
@@ -92,6 +92,11 @@
       "name": "project_vcs_rollback",
       "method": "POST",
       "why_gated": "moves Your site or a branch back to an earlier version (saved as a new version; no deployed tier changes)"
+    },
+    {
+      "name": "project_vcs_restore_files",
+      "method": "POST",
+      "why_gated": "brings chosen files on Your site or a branch back as they were in an earlier version, and removes those that version did not have, saved as a new version (a dry run is the default; the plugin's hook asks only on an apply)"
     },
     {
       "name": "project_vcs_resolve",
@@ -226,7 +231,12 @@
     {
       "name": "history_restore_to_time",
       "method": "POST",
-      "why_gated": "overwrites the project's files with their state at an earlier time"
+      "why_gated": "overwrites the project's files with their state at an earlier time; mode exact also removes every file added since (taken from the Hiveku app's own key only)"
+    },
+    {
+      "name": "project_backup_create",
+      "method": "POST",
+      "why_gated": "makes a new backup of a site: a full copy of its files, images and uploads and, when it has one, its database, kept until someone deletes it (the site does not change)"
     },
     {
       "name": "checkpoint_delete",

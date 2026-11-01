@@ -566,6 +566,11 @@ const CODEX_ONLY_PROMPTS = new Map([
     'is a GET that answers with a link playing a logged call\'s recording, a person\'s voice, for an hour. ' +
     'It is gated through NEVER_AUTO_APPROVE (lib/tool-safety.mjs), which the ask list (writes only) cannot ' +
     'carry, so Codex needs a prompt of its own (desktop CRM parity R28, Codex 0.3.49)'],
+  ['project_backup_download_link',
+    'is a POST that changes nothing but answers with a link anyone can use to download a whole backup of a ' +
+    'site, its database copy included, up to 20 times in 15 minutes. It is gated through NEVER_AUTO_APPROVE ' +
+    '(lib/tool-safety.mjs) beside marketing_form_attachment_download_url, not on the ask list, so Codex ' +
+    'needs a prompt of its own (desktop wave S2a, Codex 0.3.63)'],
 ]);
 
 test('every Codex-only prompt names a real tool that is not on the ask list', () => {

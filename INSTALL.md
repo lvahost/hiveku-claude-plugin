@@ -135,6 +135,7 @@ Put this in `.claude/settings.json` (per project) or `~/.claude/settings.json` (
       "mcp__plugin_hiveku_hk__project_vcs_branch_preview_teardown",
       "mcp__plugin_hiveku_hk__project_vcs_revert",
       "mcp__plugin_hiveku_hk__project_vcs_rollback",
+      "mcp__plugin_hiveku_hk__project_vcs_restore_files",
       "mcp__plugin_hiveku_hk__project_vcs_resolve",
       "mcp__plugin_hiveku_hk__project_vcs_branch_in_step",
       "mcp__plugin_hiveku_hk__project_vcs_pr_update",
@@ -162,6 +163,7 @@ Put this in `.claude/settings.json` (per project) or `~/.claude/settings.json` (
       "mcp__plugin_hiveku_hk__project_checkpoint_restore",
       "mcp__plugin_hiveku_hk__checkpoint_restore",
       "mcp__plugin_hiveku_hk__history_restore_to_time",
+      "mcp__plugin_hiveku_hk__project_backup_create",
       "mcp__plugin_hiveku_hk__checkpoint_delete",
       "mcp__plugin_hiveku_hk__site_delete",
       "mcp__plugin_hiveku_hk__site_transfer",
@@ -545,8 +547,9 @@ marketing on (`marketing_activate`), the budget guardrail,
 conversion uploads, a staged production deploy, GA4 conversion settings, the account's
 timezone, what the website assistant may tell visitors, emailing a number transfer's letter
 of authorization for signing (`voice_port_order_loa_send`), asking your phone to accept the
-911 notice or cancelling that request (`confirm_on_phone_start`, `confirm_on_phone_cancel`), and
-stopping a site's builds (`deploy_build_cancel`), whatever
+911 notice or cancelling that request (`confirm_on_phone_start`, `confirm_on_phone_cancel`),
+stopping a site's builds (`deploy_build_cancel`), and making a backup of a site
+(`project_backup_create`), whatever
 your settings allow, so those prompt even on a machine with an older copy.
 
 Switching ads on or restarting them covers every enable, a bulk status edit, a LinkedIn
@@ -648,6 +651,14 @@ Settling merge conflicts (`project_vcs_resolve`) always asks too, from the hook 
 it writes the version of each conflicting file you chose onto the branch and saves a version there,
 which is what Your site gets when the pull request merges, and its prompt says how many files keep
 the branch's version, take the other side's, or get new text.
+
+Bringing chosen files back as they were in an earlier version (`project_vcs_restore_files`) is
+judged like a rollback: a dry run is pre-approved, and one that is actually applied always asks,
+naming Your site or the branch and how many files it brings back or removes. A restore to an
+earlier moment (`history_restore_to_time`) asks on every call, and when it would match that moment
+exactly (mode `exact`, which also removes the files added since) its prompt says so. A link to
+download a whole backup (`project_backup_download_link`) asks too: it changes nothing, but anyone
+holding the link can fetch the backup, its database copy included, for 15 minutes.
 
 ### If you also run the VS Code extension
 
