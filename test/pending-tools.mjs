@@ -682,4 +682,9 @@ export const PENDING_TOOLS = new Map([
   ['outbound_lead_grid_import_auto_run', { since: '2026-11-01', batch: 'LEAD-GRID-DESKTOP-1' }],
   ['outbound_lead_grid_auto_run_enable', { since: '2026-11-01', batch: 'LEAD-GRID-DESKTOP-1' }],
   ['outbound_lead_grid_auto_run_control', { since: '2026-11-01', batch: 'LEAD-GRID-DESKTOP-1' }],
+
+  // EMAIL-FOLLOWUPS-1 (2026-11-01): enrolling a marketing audience in a sales sequence, MCP
+  // feature/email-audit-followups-tools (builder #1944), not yet served. Asking from 0.27.151; delete this once the
+  // index regenerated after that release carries it.
+  ['crm_sequence_enroll_audience', { since: '2026-11-01', batch: 'EMAIL-FOLLOWUPS-1' }],
 ]);

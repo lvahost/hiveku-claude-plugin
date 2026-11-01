@@ -5,8 +5,8 @@
     "mcp__plugin_hiveku_hk__",
     "mcp__hiveku__"
   ],
-  "plugin_version": "0.27.150",
-  "count": 393,
+  "plugin_version": "0.27.151",
+  "count": 394,
   "tools": [
     {
       "name": "deploy_site",
@@ -892,6 +892,11 @@
       "name": "crm_sequence_enroll_bulk",
       "method": "POST",
       "why_gated": "bulk-enrolls into an active sequence - real email at batch scale"
+    },
+    {
+      "name": "crm_sequence_enroll_audience",
+      "method": "POST",
+      "why_gated": "enrolls a whole marketing audience into an active sales sequence - real email at batch scale (Hiveku holds website visitors and more than 1,000 people for a person)"
     },
     {
       "name": "email_sequence_enroll",
