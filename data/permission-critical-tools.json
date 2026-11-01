@@ -5,8 +5,8 @@
     "mcp__plugin_hiveku_hk__",
     "mcp__hiveku__"
   ],
-  "plugin_version": "0.27.149",
-  "count": 385,
+  "plugin_version": "0.27.150",
+  "count": 393,
   "tools": [
     {
       "name": "deploy_site",
@@ -957,6 +957,46 @@
       "name": "outbound_lead_list_run_control",
       "method": "PATCH",
       "why_gated": "pauses, resumes or cancels a lead list run: resuming spends again and can add leads to a campaign that is sending"
+    },
+    {
+      "name": "outbound_lead_grid_delete",
+      "method": "DELETE",
+      "why_gated": "deletes a whole lead list with every row and column in it; it cannot be undone"
+    },
+    {
+      "name": "outbound_lead_grid_rows_delete",
+      "method": "POST",
+      "why_gated": "deletes rows from a lead list, or every row matching a filter; undo cannot bring them back"
+    },
+    {
+      "name": "outbound_lead_grid_rows_hold",
+      "method": "POST",
+      "why_gated": "holds or releases lead list rows: released rows are new to the list's auto-run again, which can spend on them and add them to a sending campaign"
+    },
+    {
+      "name": "outbound_lead_grid_formula_write",
+      "method": "POST",
+      "why_gated": "asks Hiveku's AI to write a formula column, which spends the account's AI allowance"
+    },
+    {
+      "name": "outbound_lead_grid_import_start",
+      "method": "POST",
+      "why_gated": "imports a CSV file's rows into a lead list, up to the list's limit, from a file a person uploaded"
+    },
+    {
+      "name": "outbound_lead_grid_import_auto_run",
+      "method": "PATCH",
+      "why_gated": "lets an imported file's rows run through the list's auto-run, which spends money on each row; only a person in the Hiveku app may"
+    },
+    {
+      "name": "outbound_lead_grid_auto_run_enable",
+      "method": "PUT",
+      "why_gated": "turns a column's auto-run on or changes its monthly limit: it then spends money on new rows every month with nobody watching; only a person in the Hiveku app may"
+    },
+    {
+      "name": "outbound_lead_grid_auto_run_control",
+      "method": "PATCH",
+      "why_gated": "pauses, resumes, continues or turns off a column's auto-run: resuming or continuing spends again; only a person in the Hiveku app may resume or continue"
     },
     {
       "name": "voice_number_purchase",

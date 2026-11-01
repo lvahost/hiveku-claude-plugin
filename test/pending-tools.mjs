@@ -671,4 +671,15 @@ export const PENDING_TOOLS = new Map([
   // 2026-11-01 (index regenerated at 2711 tools from MCP 00896fb887d5, #375): AUTOMATIONS-DESKTOP-1's
   // workflow_node_run and workflow_pending_action_decide are served and indexed (off the read-only list;
   // asking since 0.27.145). Entries deleted.
+
+  // LEAD-GRID-DESKTOP-1 (2026-11-01): the desktop app's workflow grid, MCP feature/lead-grid-desktop-tools, not yet
+  // served. Asking from 0.27.150; delete these once the index regenerated after that release carries them.
+  ['outbound_lead_grid_delete', { since: '2026-11-01', batch: 'LEAD-GRID-DESKTOP-1' }],
+  ['outbound_lead_grid_rows_delete', { since: '2026-11-01', batch: 'LEAD-GRID-DESKTOP-1' }],
+  ['outbound_lead_grid_rows_hold', { since: '2026-11-01', batch: 'LEAD-GRID-DESKTOP-1' }],
+  ['outbound_lead_grid_formula_write', { since: '2026-11-01', batch: 'LEAD-GRID-DESKTOP-1' }],
+  ['outbound_lead_grid_import_start', { since: '2026-11-01', batch: 'LEAD-GRID-DESKTOP-1' }],
+  ['outbound_lead_grid_import_auto_run', { since: '2026-11-01', batch: 'LEAD-GRID-DESKTOP-1' }],
+  ['outbound_lead_grid_auto_run_enable', { since: '2026-11-01', batch: 'LEAD-GRID-DESKTOP-1' }],
+  ['outbound_lead_grid_auto_run_control', { since: '2026-11-01', batch: 'LEAD-GRID-DESKTOP-1' }],
 ]);
