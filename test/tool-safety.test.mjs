@@ -1070,12 +1070,60 @@ const MEMORY_PAGE_WRITES_THAT_ASK = [
  * (or take-over with force), the release of their own claim, and their own decision on a card.
  */
 const MISSION_CONTROL_WRITES_THAT_ASK = ['mc_task_claim', 'mc_task_release', 'mc_task_answer'];
+/**
+ * Hiveku Meet and Discussions (2026-11-01, MCP #374, #367, #349 and #227, all served), in three groups: the webinar
+ * invites, cancel and delete (Hiveku Meet decision 2); the meeting and call recording deletes (the Hiveku app's own key
+ * alone on the server, kept here as a second guard); and a channel's share, unshare and delete (the Discussions plan).
+ */
+const MEET_DISCUSSIONS_WRITES_THAT_ASK = [
+  'marketing_webinar_invite',
+  'marketing_webinar_cancel',
+  'marketing_webinar_delete',
+  'meet_recording_delete',
+  'discussion_recording_delete',
+  'discussion_channel_share',
+  'discussion_channel_unshare',
+  'discussion_delete',
+];
 
-test('the always-ask set is exactly the memory, form-capture and indexing writes, the secrets reveal, the A/B test writes, the mobile app writes, the PPC override, the lead-email change, a checks rerun, the Email Service setup writes, the record-again ask, the LOA email, the Confirm on your phone start and cancel, the help desk privacy writes, the site inbox delete and move, the ad account connection delete, the SEO page\'s erases and overwrites, the Memory page\'s writes, and a person\'s Mission Control claim, release and decision', () => {
+test('the always-ask set is exactly the memory, form-capture and indexing writes, the secrets reveal, the A/B test writes, the mobile app writes, the PPC override, the lead-email change, a checks rerun, the Email Service setup writes, the record-again ask, the LOA email, the Confirm on your phone start and cancel, the help desk privacy writes, the site inbox delete and move, the ad account connection delete, the SEO page\'s erases and overwrites, the Memory page\'s writes, a person\'s Mission Control claim, release and decision, and the Meet and Discussions sends, shares and deletes', () => {
   assert.deepEqual(
     [...ALWAYS_ASK_WRITES.keys()].sort(),
-    [...MEMORY_WRITES_THAT_ASK, ...FORM_CAPTURE_WRITES_THAT_ASK, ...INDEXING_WRITES_THAT_ASK, ...SECRETS_REVEAL_THAT_ASKS, ...AB_TEST_WRITES_THAT_ASK, ...MOBILE_WRITES_THAT_ASK, ...PPC_OVERRIDE_THAT_ASKS, ...LEAD_EMAIL_WRITES_THAT_ASK, ...CHECKS_RERUN_THAT_ASKS, ...EMAIL_SERVICE_WRITES_THAT_ASK, ...TESTIMONIAL_RERECORD_THAT_ASKS, ...LOA_SEND_THAT_ASKS, ...CONFIRM_ON_PHONE_THAT_ASKS, ...HELPDESK_PRIVACY_WRITES_THAT_ASK, ...SITE_WRITES_THAT_ASK, ...PPC_CONNECTION_DELETE_THAT_ASKS, ...SEO_WRITES_THAT_ASK, ...MEMORY_PAGE_WRITES_THAT_ASK, ...MISSION_CONTROL_WRITES_THAT_ASK].sort(),
+    [...MEMORY_WRITES_THAT_ASK, ...FORM_CAPTURE_WRITES_THAT_ASK, ...INDEXING_WRITES_THAT_ASK, ...SECRETS_REVEAL_THAT_ASKS, ...AB_TEST_WRITES_THAT_ASK, ...MOBILE_WRITES_THAT_ASK, ...PPC_OVERRIDE_THAT_ASKS, ...LEAD_EMAIL_WRITES_THAT_ASK, ...CHECKS_RERUN_THAT_ASKS, ...EMAIL_SERVICE_WRITES_THAT_ASK, ...TESTIMONIAL_RERECORD_THAT_ASKS, ...LOA_SEND_THAT_ASKS, ...CONFIRM_ON_PHONE_THAT_ASKS, ...HELPDESK_PRIVACY_WRITES_THAT_ASK, ...SITE_WRITES_THAT_ASK, ...PPC_CONNECTION_DELETE_THAT_ASKS, ...SEO_WRITES_THAT_ASK, ...MEMORY_PAGE_WRITES_THAT_ASK, ...MISSION_CONTROL_WRITES_THAT_ASK, ...MEET_DISCUSSIONS_WRITES_THAT_ASK].sort(),
   );
+});
+
+test('the Meet and Discussions sends, shares and deletes ask on a direct call and through a batch, a reads-only folder denies them, and their reads and the webinar create and edit are not on the set', () => {
+  const cwd = folderWith(undefined);
+  const readsOnly = folderWith({ version: 1, mode: 'reads-only' });
+  for (const name of MEET_DISCUSSIONS_WRITES_THAT_ASK) {
+    const direct = decideWithGuardrails({ ...payload(name, cwd), tool_input: { webinar_id: 'x', room_id: 'x', thread_id: 'x' } });
+    assert.equal(direct?.hookSpecificOutput?.permissionDecision, 'ask', name);
+    assert.match(direct.hookSpecificOutput.permissionDecisionReason, new RegExp(`^${name} `), name);
+    const batch = decideForPayload({ tool_name: `${HIVEKU_TOOL_PREFIX}hiveku_batch`, tool_input: { calls: [{ tool: name, args: { thread_id: 'x' } }] } });
+    assert.equal(batch?.hookSpecificOutput?.permissionDecision, 'ask', `${name} in a batch`);
+    assert.equal(isAutoApprovable(name, {}), false, name);
+    assert.equal(isReadOnlyTool(name), false, `${name} must not be on the generated read list`);
+    assert.equal(decision(decideWithGuardrails(payload(name, readsOnly))), 'deny', `${name} under reads-only`);
+    assert.doesNotMatch(ALWAYS_ASK_WRITES.get(name), /[\u2013\u2014]/, `${name}: no dashes in a reason the person reads`);
+  }
+  // What each group's reason has to tell the person.
+  assert.match(ALWAYS_ASK_WRITES.get('marketing_webinar_invite'), /whole audience/);
+  assert.match(ALWAYS_ASK_WRITES.get('marketing_webinar_invite'), /cannot be taken back/);
+  assert.match(ALWAYS_ASK_WRITES.get('marketing_webinar_cancel'), /emails every registrant/);
+  for (const name of ['marketing_webinar_cancel', 'marketing_webinar_delete', 'meet_recording_delete', 'discussion_recording_delete', 'discussion_delete']) {
+    assert.match(ALWAYS_ASK_WRITES.get(name), /there is no undo/, name);
+  }
+  for (const name of ['meet_recording_delete', 'discussion_recording_delete']) {
+    assert.match(ALWAYS_ASK_WRITES.get(name), /Hiveku app's own key alone, so from an assistant it is refused anyway/, name);
+  }
+  assert.match(ALWAYS_ASK_WRITES.get('discussion_channel_share'), /at once, with nothing to accept/);
+  assert.match(ALWAYS_ASK_WRITES.get('discussion_channel_unshare'), /lose the channel/);
+  assert.match(ALWAYS_ASK_WRITES.get('discussion_delete'), /for everyone, with its whole history/);
+  // Decision 2: agents may list, create and edit Marketing webinars. The reads beside these writes stay unasked too.
+  for (const name of ['marketing_webinars_list', 'marketing_webinar_get', 'marketing_webinar_attendees', 'marketing_webinar_create', 'marketing_webinar_update', 'meet_recording_get', 'discussion_recordings_list', 'discussion_recording_get', 'discussion_channel_sharing_get', 'discussion_leave']) {
+    assert.equal(ALWAYS_ASK_WRITES.has(name), false, `${name} must not ask on every call`);
+  }
 });
 
 test('a person\'s Mission Control claim, release and decision ask on a direct call and through a batch, a reads-only folder denies them, and the card reads are not on the set', () => {
