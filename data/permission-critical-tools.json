@@ -5,8 +5,8 @@
     "mcp__plugin_hiveku_hk__",
     "mcp__hiveku__"
   ],
-  "plugin_version": "0.27.146",
-  "count": 367,
+  "plugin_version": "0.27.147",
+  "count": 385,
   "tools": [
     {
       "name": "deploy_site",
@@ -307,6 +307,96 @@
       "name": "memory_bulk_create",
       "method": "POST",
       "why_gated": "writes up to 100 memory entries in one call: a bad batch fills department memory with entries every agent reads"
+    },
+    {
+      "name": "account_memory_save",
+      "method": "PUT",
+      "why_gated": "replaces the whole of About your business, the one document every agent reads: anything left out is gone from what every agent reads from their next conversation (history keeps the old text). Hiveku takes it from the Hiveku app's own key only"
+    },
+    {
+      "name": "account_memory_restore",
+      "method": "POST",
+      "why_gated": "puts an older version of About your business back over the current one: every agent reads the older text from their next conversation (the text it replaces stays in history). Hiveku takes it from the Hiveku app's own key only"
+    },
+    {
+      "name": "account_memory_suggest",
+      "method": "POST",
+      "why_gated": "files a line for About your business: it waits until an owner or admin keeps or removes it, and once kept every agent reads it. Hiveku takes it from the Hiveku app's own key only"
+    },
+    {
+      "name": "account_memory_suggestion_keep",
+      "method": "POST",
+      "why_gated": "adds a suggested line to About your business, which every agent reads from their next conversation. Hiveku takes it from the Hiveku app's own key only"
+    },
+    {
+      "name": "account_memory_suggestions_remove",
+      "method": "DELETE",
+      "why_gated": "removes suggested lines for About your business without keeping them. Hiveku takes it from the Hiveku app's own key only"
+    },
+    {
+      "name": "account_memory_suggestions_restore",
+      "method": "POST",
+      "why_gated": "puts removed suggestions for About your business back, to wait for an owner or admin again. Hiveku takes it from the Hiveku app's own key only"
+    },
+    {
+      "name": "agent_memory_save",
+      "method": "PUT",
+      "why_gated": "replaces the whole text of one of an agent's rules, skills or notes: the agent follows the new text from its next conversation (history keeps the old version)"
+    },
+    {
+      "name": "agent_memory_remove",
+      "method": "DELETE",
+      "why_gated": "deletes one of an agent's rules, skills or notes: the agent stops following it straight away (it can be put back from Recently deleted in its history)"
+    },
+    {
+      "name": "agent_memory_create",
+      "method": "POST",
+      "why_gated": "adds a rule, skill, shortcut or specialist to an agent, which the agent follows from its next conversation"
+    },
+    {
+      "name": "agent_memory_restore",
+      "method": "POST",
+      "why_gated": "puts an older version of one of an agent's rules, skills or notes back over the current one: the agent follows the older text from its next conversation"
+    },
+    {
+      "name": "chief_of_staff_memory_save",
+      "method": "PUT",
+      "why_gated": "replaces the whole text of one of the chief of staff's rules or notes, or adds a new one, which the chief of staff follows from the next conversation (history keeps the old version)"
+    },
+    {
+      "name": "chief_of_staff_memory_remove",
+      "method": "DELETE",
+      "why_gated": "deletes one of the chief of staff's rules or notes: the chief of staff stops following it straight away (a copy is kept under Recently deleted)"
+    },
+    {
+      "name": "website_memory_file_save",
+      "method": "PUT",
+      "why_gated": "replaces the whole text of one of a website's memory files (CLAUDE.md and the rest), which the website agent follows from its next turn (history keeps the old version)"
+    },
+    {
+      "name": "website_memory_file_restore",
+      "method": "POST",
+      "why_gated": "puts an older version of a website's memory file back as the current one: the website agent follows the older text from its next turn"
+    },
+    {
+      "name": "agent_profile_save",
+      "method": "PUT",
+      "why_gated": "changes an agent's profile: its name, picture, role, tone and instructions, which shape every conversation it has from the next one"
+    },
+    {
+      "name": "agent_switch_set",
+      "method": "POST",
+      "why_gated": "switches an agent on or off: switched off, it stops working for the account (Support hands its website chats to the team); switched on, it adds its starter rules and skills. Hiveku takes it from the Hiveku app's own key only"
+    },
+    {
+      "name": "voice_pronunciations_save",
+      "method": "PUT",
+      "why_gated": "changes how the phone agents say names and words on every call, and how fast they speak: the list sent replaces the whole list"
+    },
+    {
+      "name": "marketplace_template_install",
+      "method": "POST",
+      "why_gated": "writes a Marketplace pack of rules and skills into an agent's memory (a website pack into one website's, or every website's), which the agent follows from its next conversation"
     },
     {
       "name": "content_publish_to_site",
