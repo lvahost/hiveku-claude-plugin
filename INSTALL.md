@@ -434,6 +434,9 @@ Put this in `.claude/settings.json` (per project) or `~/.claude/settings.json` (
       "mcp__plugin_hiveku_hk__seo_sheet_rows_delete",
       "mcp__plugin_hiveku_hk__seo_sheet_tab_delete",
       "mcp__plugin_hiveku_hk__seo_deliverable_save_from_workspace",
+      "mcp__plugin_hiveku_hk__seo_plan_phrase_set",
+      "mcp__plugin_hiveku_hk__seo_plan_suggest_phrases",
+      "mcp__plugin_hiveku_hk__seo_plan_suggest_links",
       "mcp__plugin_hiveku_hk__workflow_run",
       "mcp__plugin_hiveku_hk__workflow_node_run",
       "mcp__plugin_hiveku_hk__workflow_pending_action_decide",
@@ -548,8 +551,10 @@ conversion uploads, a staged production deploy, GA4 conversion settings, the acc
 timezone, what the website assistant may tell visitors, emailing a number transfer's letter
 of authorization for signing (`voice_port_order_loa_send`), asking your phone to accept the
 911 notice or cancelling that request (`confirm_on_phone_start`, `confirm_on_phone_cancel`),
-stopping a site's builds (`deploy_build_cancel`), and making a backup of a site
-(`project_backup_create`), whatever
+stopping a site's builds (`deploy_build_cancel`), making a backup of a site
+(`project_backup_create`), and on Content's SEO plan saving a post's search phrase, which can
+start billed rank checks (`seo_plan_phrase_set`), and the suggestions that spend AI credit
+(`seo_plan_suggest_phrases`, `seo_plan_suggest_links`), whatever
 your settings allow, so those prompt even on a machine with an older copy.
 
 Switching ads on or restarting them covers every enable, a bulk status edit, a LinkedIn

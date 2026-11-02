@@ -65,8 +65,10 @@ server-side; still the read surface). Nothing outside this list:
   `seo_new_lost_backlinks` (the MANUAL link tracker, not DataForSEO new/lost),
   `seo_competitors_list` (alias `seo_list_competitors`), `seo_competitor_changes`.
 - Local: `seo_local_search_performance`, `seo_local_top_queries`, `seo_local_top_pages`,
-  `seo_local_rank_changes`, `seo_local_rank_history`, `seo_local_compare_periods` - account-scoped,
-  free, and the last two HALVE the window you pass (180 for a 90-vs-90). `seo_gbp_overview`,
+  `seo_local_rank_changes`, `seo_local_rank_history`, `seo_local_compare_periods` - account-scoped
+  and free. `seo_local_rank_changes` and `seo_local_compare_periods` split the window you pass into two
+  sides that are not the same length (180 gives the 91 dates through today against the 90 before):
+  compare totals only when both sides have the same `data_points`. `seo_gbp_overview`,
   `seo_gbp_listing`, `seo_gbp_insights`, `seo_gbp_reviews` (cached; a snapshot over 26h old is
   stale, not fact) and `seo_citations_get` (the stored audit; a `missing_major` entry with
   `basis: 'no_signal'` is UNVERIFIED, never "not listed").

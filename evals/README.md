@@ -301,13 +301,17 @@ differs only in formatting. The other location was never audited (`audit:
 null`), and the only remedy, `seo_citations_audit`, spends a DataForSEO search
 with no confirm step, so it is filed as a task and never run. `seo_gbp_media`
 on the stale location returns Google's per-minute quota failure on its FIRST
-call only. `seo_local_compare_periods` halves the days it is passed (90 gives
-45 vs 45, 180 gives 90 vs 90) and exposes the honest window in a fixture-only
-`window` block. `checks.mjs` gates the run: no paid audit and none of the
+call only. `seo_local_compare_periods` splits the days it is passed into two
+sides that are not the same length, as the route does (180 gives the 91 dates
+through today against the 90 before, 90 gives 46 against 45), with each side's
+`data_points` and the route's `window` and `freshness` blocks; Search Console's
+last 3 days are not in yet, so the current side has fewer days with data.
+`checks.mjs` gates the run: no paid audit and none of the
 seven GBP writes, `seo_gbp_attributes` / `seo_gbp_services` at most once per
 connection, `seo_gbp_media` at most twice on the quota connection and once
-elsewhere, the listing snapshot read at all, the 90-vs-90 read honest (days
->= 180 or the halved window stated), both connection ids named in the report,
+elsewhere, the listing snapshot read at all, the compare read honest (both
+sides' day counts stated, and no percent change in clicks or impressions
+while their `data_points` differ), both connection ids named in the report,
 one `pm_tasks_create` per reported category, and sidecar/report agreement. No
 `sample-run/` golden yet - producing one needs a model-in-the-loop run
 (follow-up); the deterministic invariants and the hook's failure cases run
