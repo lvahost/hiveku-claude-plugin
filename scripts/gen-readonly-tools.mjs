@@ -245,6 +245,18 @@ const SENSITIVE_READ_EXCLUSIONS = new Map([
   ['crm_activity_recording_link',
     'hands out a link that plays a call recording for an hour; anyone holding it can listen. ' +
     'Minting it is distribution, not a read; ask every time.'],
+  // 2026-11-02, the desktop app's Projects (MCP pm-desktop-tools.ts). A GET whose
+  // answer is the hazard; on NEVER_AUTO_APPROVE (lib/tool-safety.mjs).
+  ['pm_task_attachment_download_url',
+    'hands out a link that opens a file attached to a task, with no key, for 15 minutes and a ' +
+    'few downloads; anyone holding it can open the file. Minting it is distribution, not a read; ' +
+    'ask every time.'],
+  // 2026-11-02. A true read (what deleting a project would take with it), but its
+  // name holds "delete", which the write-verb gate (WRITE_VERBS in lib/tool-safety.mjs)
+  // never auto-approves. Kept off this list so the two gates agree; it asks.
+  ['pm_project_delete_impact',
+    'reads what deleting a project would take with it, but its name holds "delete", which the ' +
+    'write-verb gate never auto-approves; it asks.'],
 ]);
 
 // The mirror image: a POST that is a pure read. Some routes dispatch reads and
