@@ -1027,6 +1027,8 @@ const HELPDESK_PRIVACY_WRITES_THAT_ASK = ['helpdesk_contact_data_erase', 'helpde
 const SITE_WRITES_THAT_ASK = ['marketing_form_inbox_delete', 'site_transfer'];
 /** Deleting an ad account connection (2026-10-30, the desktop app's Ads area, wave B): Hiveku's copy of its campaigns, numbers, history and uploads erased for good. */
 const PPC_CONNECTION_DELETE_THAT_ASKS = ['ppc_connection_delete'];
+/** An email webhook's delete (2026-11-02, HK-1083): with permanent: true it erases the webhook and its delivery history for good. */
+const EMAIL_WEBHOOK_DELETE_THAT_ASKS = ['email_webhook_delete'];
 /** The desktop app's SEO page, wave B (2026-10-30, MCP #353): erases and overwrites of Hiveku's own copy (rank history, an audit, the working sheet, a saved report, a connection's saved history). */
 const SEO_WRITES_THAT_ASK = [
   'seo_rankings_keyword_delete',
@@ -1091,10 +1093,10 @@ const MEET_DISCUSSIONS_WRITES_THAT_ASK = [
  */
 const WEBINAR_EDIT_THAT_ASKS = ['marketing_webinar_update'];
 
-test('the always-ask set is exactly the memory, form-capture and indexing writes, the secrets reveal, the A/B test writes, the mobile app writes, the PPC override, the lead-email change, a checks rerun, the Email Service setup writes, the record-again ask, the LOA email, the Confirm on your phone start and cancel, the help desk privacy writes, the site inbox delete and move, the ad account connection delete, the SEO page\'s erases and overwrites, the Memory page\'s writes, a person\'s Mission Control claim, release and decision, the Meet and Discussions sends, shares and deletes, and a webinar\'s edit', () => {
+test('the always-ask set is exactly the memory, form-capture and indexing writes, the secrets reveal, the A/B test writes, the mobile app writes, the PPC override, the lead-email change, a checks rerun, the Email Service setup writes, the record-again ask, the LOA email, the Confirm on your phone start and cancel, the help desk privacy writes, the site inbox delete and move, the ad account connection delete, an email webhook\'s delete, the SEO page\'s erases and overwrites, the Memory page\'s writes, a person\'s Mission Control claim, release and decision, the Meet and Discussions sends, shares and deletes, and a webinar\'s edit', () => {
   assert.deepEqual(
     [...ALWAYS_ASK_WRITES.keys()].sort(),
-    [...MEMORY_WRITES_THAT_ASK, ...FORM_CAPTURE_WRITES_THAT_ASK, ...INDEXING_WRITES_THAT_ASK, ...SECRETS_REVEAL_THAT_ASKS, ...AB_TEST_WRITES_THAT_ASK, ...MOBILE_WRITES_THAT_ASK, ...PPC_OVERRIDE_THAT_ASKS, ...LEAD_EMAIL_WRITES_THAT_ASK, ...CHECKS_RERUN_THAT_ASKS, ...EMAIL_SERVICE_WRITES_THAT_ASK, ...TESTIMONIAL_RERECORD_THAT_ASKS, ...LOA_SEND_THAT_ASKS, ...CONFIRM_ON_PHONE_THAT_ASKS, ...HELPDESK_PRIVACY_WRITES_THAT_ASK, ...SITE_WRITES_THAT_ASK, ...PPC_CONNECTION_DELETE_THAT_ASKS, ...SEO_WRITES_THAT_ASK, ...MEMORY_PAGE_WRITES_THAT_ASK, ...MISSION_CONTROL_WRITES_THAT_ASK, ...MEET_DISCUSSIONS_WRITES_THAT_ASK, ...WEBINAR_EDIT_THAT_ASKS].sort(),
+    [...MEMORY_WRITES_THAT_ASK, ...FORM_CAPTURE_WRITES_THAT_ASK, ...INDEXING_WRITES_THAT_ASK, ...SECRETS_REVEAL_THAT_ASKS, ...AB_TEST_WRITES_THAT_ASK, ...MOBILE_WRITES_THAT_ASK, ...PPC_OVERRIDE_THAT_ASKS, ...LEAD_EMAIL_WRITES_THAT_ASK, ...CHECKS_RERUN_THAT_ASKS, ...EMAIL_SERVICE_WRITES_THAT_ASK, ...TESTIMONIAL_RERECORD_THAT_ASKS, ...LOA_SEND_THAT_ASKS, ...CONFIRM_ON_PHONE_THAT_ASKS, ...HELPDESK_PRIVACY_WRITES_THAT_ASK, ...SITE_WRITES_THAT_ASK, ...PPC_CONNECTION_DELETE_THAT_ASKS, ...EMAIL_WEBHOOK_DELETE_THAT_ASKS, ...SEO_WRITES_THAT_ASK, ...MEMORY_PAGE_WRITES_THAT_ASK, ...MISSION_CONTROL_WRITES_THAT_ASK, ...MEET_DISCUSSIONS_WRITES_THAT_ASK, ...WEBINAR_EDIT_THAT_ASKS].sort(),
   );
 });
 
@@ -1297,6 +1299,31 @@ test('the Email Service setup writes ask on a direct call with no guardrails fil
   }
   assert.match(ALWAYS_ASK_WRITES.get('email_send'), /cannot be taken back/);
   assert.match(ALWAYS_ASK_WRITES.get('email_suppression_import'), /can never be removed/);
+});
+
+// email_webhook_delete deletes a webhook and its delivery history for good with permanent: true (HK-1083
+// review, 2026-11-02). One name carries the switch-off too, and an ask cannot read the argument, so every
+// call asks, whatever the settings allow; the reads stay pre-approved.
+test('an email webhook\'s delete asks on a direct call in either mode and through a batch; a reads-only folder denies it; the reads stay pre-approved', () => {
+  const cwd = folderWith(undefined);
+  const readsOnly = folderWith({ version: 1, mode: 'reads-only' });
+  const name = 'email_webhook_delete';
+  for (const args of [{ webhook_id: 'w' }, { webhook_id: 'w', permanent: true }, { webhook_id: 'w', permanent: false }]) {
+    const direct = decideWithGuardrails({ ...payload(name, cwd), tool_input: args });
+    assert.equal(direct?.hookSpecificOutput?.permissionDecision, 'ask', JSON.stringify(args));
+    assert.match(direct.hookSpecificOutput.permissionDecisionReason, new RegExp(`^${name} `));
+    assert.match(direct.hookSpecificOutput.permissionDecisionReason, /PERMANENTLY deletes it with its delivery history, with no undo/);
+    const batch = decideForPayload({ tool_name: `${HIVEKU_TOOL_PREFIX}hiveku_batch`, tool_input: { calls: [{ tool: name, args }] } });
+    assert.equal(batch?.hookSpecificOutput?.permissionDecision, 'ask', `${JSON.stringify(args)} in a batch`);
+    assert.equal(isAutoApprovable(name, args), false);
+  }
+  assert.equal(isReadOnlyTool(name), false);
+  assert.equal(decision(decideWithGuardrails(payload(name, readsOnly))), 'deny');
+  assert.doesNotMatch(ALWAYS_ASK_WRITES.get(name), /[\u2013\u2014]/);
+  for (const read of ['email_webhook_list', 'email_webhook_get']) {
+    assert.equal(ALWAYS_ASK_WRITES.has(read), false, read);
+    assert.equal(decision(decideWithGuardrails(payload(read, cwd))), 'allow', `${read} must stay pre-approved`);
+  }
 });
 
 test('asking a customer to record their testimonial again asks on a direct call and through a batch; its preview stays pre-approved', () => {
