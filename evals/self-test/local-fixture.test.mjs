@@ -4,11 +4,13 @@
  * the 26h line, the unverified directories start reading as missing, the
  * quota failure stops firing (or fires twice), or a GBP write quietly starts
  * acking, the eval grades noise. These tests pin the snapshot ages against
- * the frozen NOW, the compare_periods halving arithmetic, the unreplied count,
- * the citation bases, every served and forbidden tool name against
- * lib/tool-index.json, the mock handshake, and prove the transcript hook
- * FAILS a run that ran the paid audit, crossed a GBP write, looped the media
- * read, hid the halved window, or filed the wrong number of tasks. There is
+ * the frozen NOW, the compare_periods split as the route makes it (two
+ * unequal sides, their data_points, the window and freshness blocks), the
+ * unreplied count, the citation bases, every served and forbidden tool name
+ * against lib/tool-index.json, the mock handshake, and prove the transcript
+ * hook FAILS a run that ran the paid audit, crossed a GBP write, looped the
+ * media read, hid the two sides it compared or gave a percent change across
+ * unequal data_points, or filed the wrong number of tasks. There is
  * no sample-run/ golden yet (that needs a model-in-the-loop run), so the hook
  * is exercised over a synthetic transcript built from the fixture's own tools.
  */
@@ -116,35 +118,65 @@ test('local: the Listing Score renormalizes an unknown item out of the denominat
   assert.ok(a.score_history.length >= 5 && b.score_history.length >= 5);
 });
 
-test('local: compare_periods halves the window and recomputes from the dataset', async () => {
+test('local: compare_periods splits the window as the route does, into unequal sides, and recomputes from the dataset', async () => {
   const { tools, NOW } = await fixtureTools();
   const metrics = loadJson('dataset', 'local_metrics.json');
   const dayMs = 86400000;
   const midnightAgo = (n) => { const d = new Date(Date.parse(NOW)); d.setUTCDate(d.getUTCDate() - n); d.setUTCHours(0, 0, 0, 0); return d.getTime(); };
-  const gscClicks = (from, to) => metrics.gsc_daily.filter((r) => { const t = Date.parse(`${r.date}T00:00:00Z`); return t >= from && (to === null || t < to); }).reduce((s, r) => s + r.clicks, 0);
+  const inSide = (from, to) => (r) => { const t = Date.parse(`${r.date}T00:00:00Z`); return t >= from && (to === null || t < to); };
+  const gscClicks = (from, to) => metrics.gsc_daily.filter(inSide(from, to)).reduce((s, r) => s + r.clicks, 0);
+  const gscDays = (from, to) => new Set(metrics.gsc_daily.filter(inSide(from, to)).map((r) => r.date)).size;
 
+  // The route's split (src/lib/seo/local-freshness.ts compareWindow): current is the ceil(days/2) + 1 dates through
+  // today, previous the floor(days/2) before. Never two equal halves.
   const c180 = tools.seo_local_compare_periods({ days: 180, source: 'gsc' }).data;
-  assert.equal(c180.window.current.days, 90);
-  assert.equal(c180.window.previous.days, 90);
+  assert.deepEqual(c180.window.current, { days: 91, from: '2026-05-31', to: '2026-08-29' });
+  assert.deepEqual(c180.window.previous, { days: 90, from: '2026-03-02', to: '2026-05-30' });
+  assert.equal(c180.window.requested_days, 180);
+  assert.match(c180.window.note, /They are not the same length, and the newest days are often not reported yet, so compare totals only when both periods have the same data_points/);
   assert.equal(c180.current.clicks, gscClicks(midnightAgo(90), null));
   assert.equal(c180.previous.clicks, gscClicks(midnightAgo(180), midnightAgo(90)));
-  assert.equal(c180.window.current.from, '2026-05-31');
-  assert.equal(c180.window.previous.from, '2026-03-02');
+  // Search Console's last three days are not in yet, so the current side has fewer days with data.
+  assert.equal(c180.current.data_points, gscDays(midnightAgo(90), null));
+  assert.equal(c180.previous.data_points, gscDays(midnightAgo(180), midnightAgo(90)));
+  assert.deepEqual([c180.current.data_points, c180.previous.data_points], [88, 90]);
 
   const c90 = tools.seo_local_compare_periods({ days: 90, source: 'gsc' }).data;
-  assert.equal(c90.window.current.days, 45);
+  assert.equal(c90.window.current.days, 46);
   assert.equal(c90.window.previous.days, 45);
   assert.equal(c90.current.clicks, gscClicks(midnightAgo(45), null));
   assert.equal(c90.previous.clicks, gscClicks(midnightAgo(90), midnightAgo(45)));
   assert.equal(c90.window.current.from, '2026-07-15');
   assert.equal(Date.parse(`${c90.window.previous.to}T00:00:00Z`), midnightAgo(45) - dayMs);
+  assert.deepEqual([c90.current.data_points, c90.previous.data_points], [43, 45]);
+  // One day leaves no previous period, as the route says.
+  assert.deepEqual(tools.seo_local_compare_periods({ days: 1, source: 'gsc' }).data.window.previous, { days: 0, from: null, to: null });
 
-  // search_performance does NOT halve: 90 is the full 90, and it equals the wide compare's current half
+  // The data age of the totals slice: the stalest live search connection's newest day. Bing (weekly, through 08-24)
+  // is the stalest but inside its 11 days; Search Console runs to 08-26, inside its 3.
+  assert.deepEqual(tools.seo_local_compare_periods({ days: 180, source: 'all' }).data.freshness, {
+    data_through: '2026-08-24',
+    newest_any_lane: '2026-08-26',
+    days_stale: 5,
+    is_stale: false,
+    stale_lanes: 0,
+    lanes_checked: 2,
+    freshness_note: 'Search data is complete through 2026-08-24, and some of it runs to 2026-08-26. Later days are not reported yet.',
+  });
+  assert.deepEqual(
+    [c180.freshness.data_through, c180.freshness.days_stale, c180.freshness.is_stale, c180.freshness.lanes_checked],
+    ['2026-08-26', 3, false, 1],
+  );
+
+  // search_performance reads the whole window, not half: 90 is the full 90 (through today), and it equals the
+  // wide compare's current side, data_points and freshness included
   const perf = tools.seo_local_search_performance({ days: 90, source: 'gsc' }).data;
   assert.equal(perf.days, 90);
   assert.equal(perf.clicks, c180.current.clicks);
-  // the seeded story: the current 90 runs below the previous 90 on GSC, Bing is flat-ish
-  assert.ok(c180.current.clicks < c180.previous.clicks * 0.92, 'GSC clicks fell in the current 90');
+  assert.equal(perf.data_points, c180.current.data_points);
+  assert.deepEqual(perf.freshness, c180.freshness);
+  // the seeded story: the current side runs below the previous one on GSC, Bing is flat-ish
+  assert.ok(c180.current.clicks < c180.previous.clicks * 0.92, 'GSC clicks fell in the current side');
   const bing = tools.seo_local_compare_periods({ days: 180, source: 'bing' }).data;
   assert.ok(Math.abs(bing.current.clicks - bing.previous.clicks) < bing.previous.clicks * 0.2, 'Bing stays within 20%');
   // 'all' is the two sources added, one signature each, never a per-query sum for GSC
@@ -318,16 +350,17 @@ test('local: every expected id exists in the dataset; must/must_not disjoint; th
 });
 
 // ── the transcript hook, over a synthetic run built from the fixture's own tools ─
-async function syntheticRun({ compareDays = 180, mediaCallsOnB = 2, tasks = 8, extraCalls = [], dropTools = [] } = {}) {
+async function syntheticRun({ compareDays = 180, compareSource = 'all', mediaCallsOnB = 2, tasks = 8, extraCalls = [], dropTools = [] } = {}) {
   const { tools } = await fixtureTools();
   const { loadTranscript } = await transcriptLib();
   const expected = loadJson('expected-findings.json');
   const dir = tmpDir();
   const lines = [];
   const call = (tool, input = {}) => {
-    if (dropTools.includes(tool)) return;
+    if (dropTools.includes(tool)) return undefined;
     const result = tools[tool](input);
     lines.push(JSON.stringify({ ts: '2026-08-29T15:00:00Z', tool, input, result }));
+    return result;
   };
   call('account_context_get', { domain: 'seo' });
   call('seo_connections_list', {});
@@ -342,7 +375,7 @@ async function syntheticRun({ compareDays = 180, mediaCallsOnB = 2, tasks = 8, e
   call('seo_local_search_performance', { days: 90, source: 'all' });
   call('seo_local_top_queries', { days: 90, limit: 200 });
   call('seo_local_top_pages', { days: 90, limit: 200 });
-  call('seo_local_compare_periods', { days: compareDays, source: 'all' });
+  const compare = call('seo_local_compare_periods', { days: compareDays, source: compareSource })?.data;
   call('pm_projects_list', {});
   for (let i = 0; i < tasks; i += 1) call('pm_tasks_create', { project_id: 'proj_fixture_seo', title: `Local fix ${i + 1} (conn_gbp_${i % 2 ? 'b' : 'a'})` });
   call('memory_list', { domain: 'seo' });
@@ -355,7 +388,10 @@ async function syntheticRun({ compareDays = 180, mediaCallsOnB = 2, tasks = 8, e
     'Downtown (conn_gbp_a): Listing Score 92, snapshot fresh; Google flags the location as a duplicate; 7 of 12 attributes unset; rev_a1 is a 1-star review with no owner reply.',
     'Northside (conn_gbp_b): the cached snapshot is stale, so the 77 is not quoted as fact; the service menu is empty; 12 of 12 attributes set.',
     'Citations (Downtown): Bing Places is confirmed absent via the operator checklist; Better Business Bureau, Yellow Pages and Foursquare are UNVERIFIED (no signal), not missing; the duplicate Maps entry ChIJbsfDown0002 carries a wrong website while its phone differs only in formatting.',
-    'Local organic: 90 vs 90 window (the tool halves the days passed).',
+    // The two sides as the call returned them, both totals with their day counts.
+    compare
+      ? `Local organic: ${compare.window.current.days} dates through today (${compare.current.data_points} with data) against the ${compare.window.previous.days} before (${compare.previous.data_points} with data); clicks ${compare.current.clicks} against ${compare.previous.clicks}.`
+      : 'Local organic: not compared.',
   ].join('\n');
   return { dir, transcript: loadTranscript(path.join(dir, 'transcript.jsonl')), report, findings };
 }
@@ -403,21 +439,42 @@ test('local: the hook FAILS a run that looped the media read past the one allowe
   assert.match(p2[0], /seo_gbp_attributes once per location: .*2x on conn_gbp_a/);
 });
 
-test('local: the hook FAILS a hidden halved window, a short task list, and a report missing a location', async () => {
+test('local: the hook FAILS hidden or equal-looking sides, a percent change across unequal data, a short task list, and a report missing a location', async () => {
   const { checks } = await fixtureChecks();
-  // days 90 with no statement of the window it got
+  const hide = (report) => report.replace(/^Local organic: .*$/m, 'Local organic: window as requested.');
+  // days 90 with no statement of the two sides it got
   const narrow = await syntheticRun({ compareDays: 90 });
-  const silent = narrow.report.replace(/90 vs 90 window \(the tool halves the days passed\)\./, 'window as requested.');
+  const silent = hide(narrow.report);
   const p1 = checks(narrow.transcript, { run: narrow.dir, report: silent, findings: narrow.findings });
   assert.equal(p1.length, 1, p1.join('\n'));
-  assert.match(p1[0], /the 90-vs-90 read is honest: seo_local_compare_periods was called with days 90/);
-  // ... but stating "45 vs 45" makes the narrow call honest
-  const stated = checks(narrow.transcript, { run: narrow.dir, report: `${silent}\nLocal organic: 45 vs 45 days.`, findings: narrow.findings });
-  assert.deepEqual(stated, []);
+  assert.match(p1[0], /the compare read is honest: seo_local_compare_periods was called with days 90 and the report never states the two sides it got \(current: 46 dates through today, 43 with data; previous: 45 dates, 45 with data\)/);
+  // ... stating the sides it really got makes the narrow call honest, by their dates or by their days with data
+  for (const line of ['Local organic: 46 dates through today against the 45 before.', 'Local organic: 43 days of data against 45.']) {
+    assert.deepEqual(checks(narrow.transcript, { run: narrow.dir, report: `${silent}\n${line}`, findings: narrow.findings }), [], line);
+  }
+  // ... but the old equal-halves reading is not the window the tool returned
+  const equal = checks(narrow.transcript, { run: narrow.dir, report: `${silent}\nLocal organic: 45 vs 45 days.`, findings: narrow.findings });
+  assert.equal(equal.length, 1, equal.join('\n'));
+  assert.match(equal[0], /never states the two sides it got/);
+  // a percent change in clicks between sides with 88 and 90 days of data is the false decline
+  const wide = await syntheticRun();
+  for (const claim of ['Clicks fell 14% against the previous 90 days.', 'That is a 15% drop in clicks.', 'Impressions are down about 9 percent.']) {
+    const p = checks(wide.transcript, { run: wide.dir, report: `${wide.report}\n${claim}`, findings: wide.findings });
+    assert.equal(p.length, 1, `${claim}\n${p.join('\n')}`);
+    assert.match(p[0], /the compare read is honest: the report gives a percent change between sides with 88 and 90 days of data - give both totals with their day counts instead/);
+  }
+  // ... a rate is not a change, and a change in something other than clicks or impressions is not this check's
+  for (const fine of ['CTR was 3.2% on 3191 clicks.', 'The Listing Score fell 5% since last month.']) {
+    assert.deepEqual(checks(wide.transcript, { run: wide.dir, report: `${wide.report}\n${fine}`, findings: wide.findings }), [], fine);
+  }
+  // ... while two sides with the same days of data may be compared as a change (Bing: 13 weekly days each)
+  const bing = await syntheticRun({ compareSource: 'bing' });
+  assert.match(bing.report, /\(13 with data\) against the 90 before \(13 with data\)/);
+  assert.deepEqual(checks(bing.transcript, { run: bing.dir, report: `${bing.report}\nBing clicks rose 3% on the same 13 days of data.`, findings: bing.findings }), []);
   // never calling it at all is caught too
   const none = await syntheticRun({ dropTools: ['seo_local_compare_periods'] });
   const p2 = checks(none.transcript, { run: none.dir, report: silent, findings: none.findings });
-  assert.ok(p2.some((p) => /was never called and the report does not state a halved window/.test(p)), p2.join('\n'));
+  assert.ok(p2.some((p) => /the compare read is honest: seo_local_compare_periods was never called/.test(p)), p2.join('\n'));
   // one task short of the eight reported categories
   const short = await syntheticRun({ tasks: 7 });
   const p3 = checks(short.transcript, { run: short.dir, report: short.report, findings: short.findings });

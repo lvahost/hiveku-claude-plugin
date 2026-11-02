@@ -1952,3 +1952,86 @@ test('the real hook process prints ask for a new backup and a backup download li
     assert.match(out.hookSpecificOutput.permissionDecisionReason, lead);
   }
 });
+
+// ── Content's SEO plan and the Listings page, SEO wave F (2026-11-01, MCP feature/seo-wave-f-tools) ───
+//
+// seo_plan_phrase_set saves a post's search phrase, and on a published post live on the site's own domain
+// that starts Google rank checks billed past the plan's included count; seo_plan_suggest_phrases and
+// seo_plan_suggest_links spend the account's AI credit. All three ask on every direct call and through a
+// batch, whatever the settings allow, and a reads-only folder denies them. They ask ahead of the server
+// (SEO-PLAN-DESKTOP-1 in test/pending-tools.mjs), because the MCP's build fails until both lists here name
+// them. The wave's other writes are left on the default on purpose and pinned, so a change is a decision:
+// the plan's buyer pages (Hiveku's own list for the plan), a sentence added to a post (saved, not
+// published), and the Listings page's refresh (a free Google read), directory marks (Hiveku's record only)
+// and tasks. None of the nine is on NEVER_AUTO_APPROVE, so the plan read (a GET) is pre-approved once the
+// tool index carries it.
+import { LIVE_CHANGE_WRITES as WAVE_F_LIVE_CHANGE } from '../lib/tool-safety.mjs';
+
+const SEO_PLAN_ASKS = {
+  seo_plan_phrase_set: /^seo_plan_phrase_set saves the search phrase a post is written for\. On a published post live on the site's own domain it starts Google rank checks for the phrase, and each keyword past the plan's included count is billed \$1\.50 a month\./,
+  seo_plan_suggest_phrases: /^seo_plan_suggest_phrases asks the content department to suggest a search phrase for each post that has none, up to 25 posts, which spends the account's AI credit/,
+  seo_plan_suggest_links: /^seo_plan_suggest_links asks the content department to draft a sentence linking a buyer page for each live post that has none, up to 10 posts, which spends the account's AI credit/,
+};
+const WAVE_F_WRITES_LEFT_ALONE = [
+  'seo_plan_buyer_pages_set',
+  'seo_plan_add_link',
+  'seo_listings_refresh',
+  'seo_listings_checklist_set',
+  'seo_listings_task_create',
+];
+
+test('the SEO plan\'s phrase and two suggestions ask on a direct call whatever they name, and through a batch; a reads-only folder denies them; the wave\'s other writes stay silent', () => {
+  const cwd = folderWith(undefined);
+  const readsOnly = folderWith({ version: 1, mode: 'reads-only' });
+  for (const [name, lead] of Object.entries(SEO_PLAN_ASKS)) {
+    for (const args of [{ project_id: 'p' }, { project_id: 'p', content_id: 'c', phrase: 'kitchen remodel cost' }, { project_id: 'p', phrase: null }, {}]) {
+      const direct = decideWithGuardrails({ ...payload(name, cwd), tool_input: args });
+      assert.equal(decision(direct), 'ask', `${name} ${JSON.stringify(args)} must ask; silence resolves to the blanket allow`);
+      const why = direct.hookSpecificOutput.permissionDecisionReason;
+      assert.match(why, lead);
+      assert.match(why, /even when your settings allow all Hiveku tools/);
+      assert.doesNotMatch(why, /[–—]/, `${name}: no dashes in a reason the person reads`);
+    }
+    const mixed = decideWithGuardrails(batch([
+      { tool: 'seo_plan_get', args: { project_id: 'p' } },
+      { tool: name, args: { project_id: 'p' } },
+    ], cwd));
+    assert.equal(decision(mixed), 'ask');
+    assert.match(mixed.hookSpecificOutput.permissionDecisionReason, new RegExp(`${name}`));
+    assert.equal(decision(decideWithGuardrails(payload(name, readsOnly))), 'deny', `${name} under reads-only`);
+    assert.equal(isAutoApprovable(name, { project_id: 'p' }), false);
+    assert.equal(isReadOnlyTool(name), false);
+    assert.ok(WAVE_F_LIVE_CHANGE.has(name), `${name} is on LIVE_CHANGE_WRITES`);
+    assert.equal(ALWAYS_ASK_WRITES.has(name), false, 'it is on LIVE_CHANGE_WRITES; a name belongs on one map');
+  }
+  // Left without an ask in the same wave, and pinned so a change is a decision: the hook has no opinion on
+  // them, so each follows the person's own settings, and a reads-only folder still denies them.
+  for (const write of WAVE_F_WRITES_LEFT_ALONE) {
+    const args = { project_id: 'p', connection_id: 'c', confirm: ['/pricing'], sentence: 'x', item_key: 'hours' };
+    assert.equal(decideWithGuardrails({ ...payload(write, cwd), tool_input: args }), null, `${write} should get no answer from the hook`);
+    assert.equal(WAVE_F_LIVE_CHANGE.has(write) || ALWAYS_ASK_WRITES.has(write) || NEVER_AUTO_APPROVE.has(write), false, `${write} is on no ask map`);
+    assert.equal(isReadOnlyTool(write), false, `${write} is a write, never a pre-approved read`);
+    assert.equal(decision(decideWithGuardrails(payload(write, readsOnly))), 'deny', `${write} under reads-only`);
+  }
+  // The plan read is on no ask map, so the index regeneration makes it a pre-approved read.
+  assert.equal(WAVE_F_LIVE_CHANGE.has('seo_plan_get') || ALWAYS_ASK_WRITES.has('seo_plan_get') || NEVER_AUTO_APPROVE.has('seo_plan_get'), false);
+});
+
+test('the real hook process prints ask for the SEO plan\'s phrase and two suggestions under the blanket allow', () => {
+  const { allow, ask } = installPermissions();
+  const cwd = folderWith(undefined);
+  for (const [name, lead] of Object.entries(SEO_PLAN_ASKS)) {
+    const full = `${HIVEKU_TOOL_PREFIX}${name}`;
+    assert.ok(allow.some((rule) => ruleMatches(rule, full)), `no INSTALL.md allow rule matches ${full}; the premise of this test changed`);
+    assert.ok(ask.includes(full), `INSTALL.md's ask block must name ${name} as well`);
+    const run = runPreToolUseHook(full, { project_id: 'p', content_id: 'c', phrase: 'kitchen remodel cost' }, cwd);
+    assert.equal(run.status, 0, run.stderr);
+    assert.notEqual(run.stdout, '', `the hook printed nothing, so the blanket allow would run ${name} unasked`);
+    const out = JSON.parse(run.stdout);
+    assert.equal(out.hookSpecificOutput.permissionDecision, 'ask');
+    assert.match(out.hookSpecificOutput.permissionDecisionReason, lead);
+  }
+  for (const write of WAVE_F_WRITES_LEFT_ALONE) {
+    assert.equal(ask.includes(`${HIVEKU_TOOL_PREFIX}${write}`), false, `${write} is left on the default, so no ask rule names it`);
+  }
+});

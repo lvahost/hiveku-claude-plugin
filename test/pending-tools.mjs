@@ -519,6 +519,15 @@
  *   pm_project_activity_list, was never here: nothing in the plugin names it.
  *     MISSION-CONTROL-DESKTOP-1  mc_task_claim, mc_task_release, mc_task_answer. Landed 2026-11-01 (MCP #370,
  *                                live at b7eda48c39e2); entries deleted.
+ *
+ *   Content's SEO plan for the desktop app (2026-11-01, SEO wave F; builder feature/seo-wave-f, MCP
+ *   feature/seo-wave-f-tools, not yet served): the three ask-first tools of the plan's six ask before the MCP
+ *   release serves them (the MCP's ask-first-tools-in-plugin.test.ts fails its build until they do), on the ask
+ *   list and on LIVE_CHANGE_WRITES (lib/tool-safety.mjs). The plan read, the buyer pages, the added sentence and the
+ *   Listings page's three writes come with them and ask nothing; nothing in the plugin names them yet, so they are
+ *   not here. Release step, after the MCP deploy: regenerate the index and the read-only list from the live server
+ *   (seo_plan_get joins it as a GET), then delete these entries.
+ *     SEO-PLAN-DESKTOP-1  seo_plan_phrase_set, seo_plan_suggest_phrases, seo_plan_suggest_links.
  */
 const SEO_SINCE = '2026-08-30';
 const seo = (batch) => ({ since: SEO_SINCE, batch });
@@ -690,4 +699,9 @@ export const PENDING_TOOLS = new Map([
   // 2026-11-01 (index regenerated at 2716 tools from MCP b7eda48c39e2, #370): MISSION-CONTROL-DESKTOP-1's
   // mc_task_claim, mc_task_release and mc_task_answer are served and indexed (off the read-only list; on the ask
   // list and ALWAYS_ASK_WRITES). Entries deleted.
+
+  // SEO-PLAN-DESKTOP-1 (2026-11-01): Content's SEO plan's three ask-first tools, asking ahead of the MCP release.
+  ['seo_plan_phrase_set', { since: '2026-11-01', batch: 'SEO-PLAN-DESKTOP-1' }],
+  ['seo_plan_suggest_phrases', { since: '2026-11-01', batch: 'SEO-PLAN-DESKTOP-1' }],
+  ['seo_plan_suggest_links', { since: '2026-11-01', batch: 'SEO-PLAN-DESKTOP-1' }],
 ]);

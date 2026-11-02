@@ -23,11 +23,15 @@
  *   - seo_local_* mirror src/app/api/olympus/seo/local/route.ts: account-scoped
  *     (no connection filter), one dimension signature per figure (GSC date-only
  *     rollup for daily totals, Bing per-date SUM over its query slice because
- *     Bing writes no rollup), impression-weighted position, and compare_periods
- *     HALVES the window (current = the latest ceil(days/2) days, previous = the
- *     ceil(days/2) before). The `window` block on compare_periods is a
- *     FIXTURE-ONLY addition (the real route returns days/source/current/previous
- *     only) so the honest window is traceable in a report.
+ *     Bing writes no rollup), impression-weighted position and data_points (the
+ *     days with rows) beside each total. compare_periods splits the window at
+ *     ceil(days/2) days ago into two sides that are NOT the same length, and its
+ *     `window` block says so exactly as the route's compareWindow
+ *     (src/lib/seo/local-freshness.ts) does: current runs from that day through
+ *     today (ceil(days/2) + 1 dates, the newest not reported yet), previous is the
+ *     floor(days/2) days before. search_performance and compare_periods carry
+ *     the route's `freshness` for the totals slice (the stalest live search
+ *     connection's newest day; Search Console is stale past 3 days, Bing past 11).
  * Every write refuses - seo_citations_audit (spends a DataForSEO search, no
  * confirm step of its own) and all seven seo_gbp_* writes (each publishes
  * publicly on the live listing behind a two-step confirm) - and the refusal is
@@ -164,11 +168,96 @@ export async function createTools() {
       impressions,
       ctr: impressions > 0 ? clicks / impressions : 0,
       position: impressions > 0 ? posImp / impressions : 0,
+      // COUNT(DISTINCT date): the days in the window that have any row.
+      data_points: new Set(rows.map((r) => r.date)).size,
     };
   };
   const windowTotals = (source, from, to) => totalsOf(dailyTotals(source, from, to));
   const normSource = (s) => String(s ?? 'all').toLowerCase();
   const normDays = (d) => Math.max(1, Math.min(365, num(d, 30)));
+
+  // ── The two periods, exactly src/lib/seo/local-freshness.ts compareWindow ──
+  const DAY_MS = 86400000;
+  const compareWindow = (d) => {
+    const half = Math.ceil(d / 2);
+    const today = daysAgo(0).getTime();
+    const split = today - half * DAY_MS;
+    const current = { days: half + 1, from: isoDay(new Date(split)), to: isoDay(new Date(today)) };
+    const previousDays = d - half;
+    const previous =
+      previousDays > 0
+        ? { days: previousDays, from: isoDay(new Date(today - d * DAY_MS)), to: isoDay(new Date(split - DAY_MS)) }
+        : { days: 0, from: null, to: null };
+    if (previousDays <= 0) {
+      return {
+        requested_days: d,
+        current,
+        previous,
+        note: `${d} day leaves no previous period: the current one is ${current.from} to ${current.to}. Ask for at least 2 days to compare.`,
+      };
+    }
+    return {
+      requested_days: d,
+      current,
+      previous,
+      note:
+        `The ${d} days asked for are split at ${current.from}: the current period is ${current.from} to ${current.to} ` +
+        `(${current.days} days, today included) and the previous period is ${previous.from} to ${previous.to} (${previous.days} days).` +
+        ' They are not the same length, and the newest days are often not reported yet, so compare totals only when both periods have the same data_points (days with data).',
+    };
+  };
+
+  // ── Data age of the totals slice, exactly local-freshness.ts searchMetricsFreshness ──
+  // One lane per live search connection (its newest day in the slice), judged by its platform's sync lag
+  // (connection-health.ts staleDaysFor: Search Console 3 days, Bing 11). The stalest lane wins.
+  const SEARCH_LANES = [
+    { source: 'gsc', platform: 'google_search_console', rows: metrics.gsc_daily, limitDays: 3 },
+    { source: 'bing', platform: 'bing_webmaster', rows: metrics.bing_query, limitDays: 11 },
+  ];
+  const ageInDays = (day) => Math.max(0, Math.round((daysAgo(0).getTime() - Date.parse(`${day}T00:00:00Z`)) / DAY_MS));
+  const daysWord = (n) => (n === 1 ? '1 day' : `${n} days`);
+  const totalsFreshness = (source) => {
+    const lanes = SEARCH_LANES.filter((lane) => source === lane.source || (source !== 'gsc' && source !== 'bing'))
+      .filter((lane) => connections.some((c) => c.platform === lane.platform && c.is_active))
+      .map((lane) => ({ newest: lane.rows.map((r) => r.date).sort().at(-1), limitDays: lane.limitDays }))
+      .filter((lane) => lane.newest);
+    if (lanes.length === 0) {
+      return {
+        data_through: null,
+        newest_any_lane: null,
+        days_stale: null,
+        is_stale: true,
+        stale_lanes: 0,
+        lanes_checked: 0,
+        freshness_note: 'No saved search data was found for this account, so these numbers are not measured yet.',
+      };
+    }
+    const sorted = lanes.map((lane) => lane.newest).sort();
+    const through = sorted[0];
+    const newest = sorted[sorted.length - 1];
+    const stale = lanes.filter((lane) => ageInDays(lane.newest) > lane.limitDays).length;
+    const days = ageInDays(through);
+    const split = through !== newest;
+    let note;
+    if (stale > 0 && split) {
+      note = `Search data is complete only through ${through} (${daysWord(days)} ago): ${stale} of ${lanes.length} connections are behind, though some data runs to ${newest}. Treat the days after ${through} as partial: a drop there is missing data, not a real decline.`;
+    } else if (stale > 0) {
+      note = `The newest search data is from ${through} (${daysWord(days)} ago), so these numbers are as of that day, not today: the data may have stopped coming in.`;
+    } else {
+      note = split
+        ? `Search data is complete through ${through}, and some of it runs to ${newest}. Later days are not reported yet.`
+        : `Search data is current through ${through}. Later days are not reported yet.`;
+    }
+    return {
+      data_through: through,
+      newest_any_lane: newest,
+      days_stale: days,
+      is_stale: stale > 0,
+      stale_lanes: stale,
+      lanes_checked: lanes.length,
+      freshness_note: note,
+    };
+  };
 
   return {
     // ── Orientation ─────────────────────────────────────────────────────────
@@ -318,7 +407,18 @@ export async function createTools() {
       const d = normDays(days);
       const s = normSource(source);
       const t = windowTotals(s, daysAgo(d), null);
-      return { data: { days: d, source: s, clicks: t.clicks, impressions: t.impressions, avg_ctr: t.ctr, avg_position: t.position } };
+      return {
+        data: {
+          days: d,
+          source: s,
+          clicks: t.clicks,
+          impressions: t.impressions,
+          avg_ctr: t.ctr,
+          avg_position: t.position,
+          data_points: t.data_points,
+          freshness: totalsFreshness(s),
+        },
+      };
     },
     seo_local_top_queries({ days, limit, source } = {}) {
       return topBy('query', days, limit, source);
@@ -334,18 +434,15 @@ export async function createTools() {
       const midpoint = daysAgo(half);
       const cur = windowTotals(s, midpoint, null);
       const prev = windowTotals(s, since, midpoint);
+      const side = (t) => ({ clicks: t.clicks, impressions: t.impressions, avg_ctr: t.ctr, avg_position: t.position, data_points: t.data_points });
       return {
         data: {
           days: d,
           source: s,
-          current: { clicks: cur.clicks, impressions: cur.impressions, avg_ctr: cur.ctr, avg_position: cur.position },
-          previous: { clicks: prev.clicks, impressions: prev.impressions, avg_ctr: prev.ctr, avg_position: prev.position },
-          window: {
-            requested_days: d,
-            current: { days: half, from: isoDay(midpoint), to: NOW.slice(0, 10) },
-            previous: { days: half, from: isoDay(since), to: isoDay(new Date(midpoint.getTime() - 86400000)) },
-            note: 'compare_periods halves the days you pass: current is the latest ceil(days/2) days, previous is the ceil(days/2) days before that.',
-          },
+          current: side(cur),
+          previous: side(prev),
+          window: compareWindow(d),
+          freshness: totalsFreshness(s),
         },
       };
     },
