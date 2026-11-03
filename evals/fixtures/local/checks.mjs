@@ -14,8 +14,13 @@
  *     where one retry is allowed (two calls), never a loop;
  *   - seo_gbp_listing was read at all (the free snapshot is where the score,
  *     duplicate status and freshness live);
- *   - the 90-vs-90 read is honest: seo_local_compare_periods was called with
- *     days >= 180, OR the report states the halved window it actually got;
+ *   - the compare read is honest: seo_local_compare_periods was called, and
+ *     the report states the two sides it got, by the day counts the call
+ *     returned (calendar days in data.window, or days with data in
+ *     data_points), because the sides are never the same length: current runs
+ *     through today, whose newest days are not reported yet. When the two
+ *     data_points differ, no sentence about clicks or impressions gives a
+ *     percent change (both totals with their day counts instead);
  *   - the report names BOTH connection ids - per-location reporting, never an
  *     average across showrooms;
  *   - one pm_tasks_create per finding category the sidecar reports, no more,
@@ -81,8 +86,29 @@ export const FORBIDDEN_WRITES = [
   'seo_gbp_media_delete',
 ];
 
-/** "90 vs 90", "45 vs 45", "halved", "halves", "halving" - the honest window. */
-export const HALVED_WINDOW_RE = /\bhalv(?:ed|es|ing)\b|\b(45|90)\s*(?:-|vs\.?|versus|against|v\.?)\s*\1\b/i;
+/**
+ * A percent CHANGE ("fell 14%", "down about 3.5 percent", "a 12% drop", "a drop
+ * of 14%"), not a rate on its own ("CTR 3.2%").
+ */
+const PERCENT = String.raw`\d+(?:\.\d+)?\s*(?:%|percent\b|per cent\b)`;
+const HEDGE = String.raw`(?:by\s+)?(?:about\s+|around\s+|roughly\s+|nearly\s+|almost\s+|some\s+|over\s+|under\s+)?`;
+export const PERCENT_CHANGE_RE = new RegExp(
+  String.raw`\b(?:fell|falls?|dropped|drops?|down|declined|declines?|decreased|decreases?|slipped|slid|rose|rises?|up|grew|grows?|gained|gains?|increased|increases?|jumped)\s+${HEDGE}${PERCENT}` +
+    String.raw`|${PERCENT}\s+(?:fall|drop|decline|decrease|dip|increase|rise|gain|growth|jump|lower|higher|down|up|fewer|more|less)\b` +
+    String.raw`|\b(?:fall|drop|decline|decrease|dip|increase|rise|gain|growth|jump) of\s+${HEDGE}${PERCENT}`,
+  'i',
+);
+
+/** The report's sentences about search traffic: the ones a percent change across unequal sides would mislead in. */
+const trafficSentences = (report) =>
+  report.split(/(?<=[.!?])\s+|\n+/).filter((sentence) => /\b(?:clicks?|impressions?)\b/i.test(sentence));
+
+/** Both counts named on one line, either order ("91 dates ... the 90 before", "88 and 90 days with data"). */
+function namesBoth(report, a, b) {
+  if (!Number.isInteger(a) || !Number.isInteger(b)) return false;
+  const gap = String.raw`[^\n]{0,160}?`;
+  return new RegExp(String.raw`\b${a}\b${gap}\b${b}\b|\b${b}\b${gap}\b${a}\b`).test(report);
+}
 
 const asArray = (v) => (Array.isArray(v) ? v : []);
 
@@ -139,13 +165,29 @@ export function checks(transcript, outputs = {}) {
     if (countCalls(transcript, LISTING_TOOL) === 0) fail(`${LISTING_TOOL}: expected at least 1 call, got 0`);
   });
 
-  run('the 90-vs-90 read is honest', () => {
+  run('the compare read is honest', () => {
     const calls = callsTo(transcript, COMPARE_TOOL);
-    const wide = calls.some((record) => Number(argsOf(record).days) >= 180);
-    if (wide) return;
-    if (HALVED_WINDOW_RE.test(report)) return;
-    if (calls.length === 0) fail(`${COMPARE_TOOL} was never called and the report does not state a halved window`);
-    fail(`${COMPARE_TOOL} was called with days ${calls.map((r) => argsOf(r).days ?? 'unset').join(', ')} (the tool halves it) and the report never states the window it actually got`);
+    if (calls.length === 0) fail(`${COMPARE_TOOL} was never called, so the report has no period comparison to stand on`);
+    // The widest call is the one a report compares on (the route's default is 30 days).
+    const daysOf = (record) => Number(argsOf(record).days ?? 30);
+    const widest = calls.reduce((a, b) => (daysOf(b) > daysOf(a) ? b : a));
+    const data = widest?.result?.data ?? {};
+    const current = { dates: data.window?.current?.days, points: data.current?.data_points };
+    const previous = { dates: data.window?.previous?.days, points: data.previous?.data_points };
+    if (!namesBoth(report, current.dates, previous.dates) && !namesBoth(report, current.points, previous.points)) {
+      fail(
+        `${COMPARE_TOOL} was called with days ${argsOf(widest).days ?? 'unset'} and the report never states the two sides it got ` +
+          `(current: ${current.dates} dates through today, ${current.points} with data; previous: ${previous.dates} dates, ${previous.points} with data) - they are not the same length`,
+      );
+    }
+    if (current.points !== previous.points) {
+      const changed = trafficSentences(report).find((sentence) => PERCENT_CHANGE_RE.test(sentence));
+      if (changed) {
+        fail(
+          `the report gives a percent change between sides with ${current.points} and ${previous.points} days of data - give both totals with their day counts instead: "${changed.trim().slice(0, 140)}"`,
+        );
+      }
+    }
   });
 
   // ── Report: per-location ────────────────────────────────────────────────
@@ -225,7 +267,7 @@ if (isMain) {
     console.log(JSON.stringify({ ok: problems.length === 0, problems }, null, 2));
   } else {
     for (const p of problems) console.log(`  x   ${p}`);
-    console.log(problems.length === 0 ? 'PASS: no paid audit, no GBP write, live reads once per location, per-location report, one task per category' : `FAIL: ${problems.length} local check(s)`);
+    console.log(problems.length === 0 ? 'PASS: no paid audit, no GBP write, live reads once per location, an honest period comparison, per-location report, one task per category' : `FAIL: ${problems.length} local check(s)`);
   }
   process.exit(problems.length === 0 ? 0 : 1);
 }

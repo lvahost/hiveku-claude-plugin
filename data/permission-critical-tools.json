@@ -5,8 +5,8 @@
     "mcp__plugin_hiveku_hk__",
     "mcp__hiveku__"
   ],
-  "plugin_version": "0.27.159",
-  "count": 409,
+  "plugin_version": "0.27.161",
+  "count": 412,
   "tools": [
     {
       "name": "deploy_site",
@@ -1562,6 +1562,21 @@
       "name": "seo_deliverable_save_from_workspace",
       "method": "POST",
       "why_gated": "with deliverable_id, replaces the sheet and sections a saved report holds; what it held before cannot be brought back"
+    },
+    {
+      "name": "seo_plan_phrase_set",
+      "method": "POST",
+      "why_gated": "saves a post's search phrase on Content's SEO plan; on a published post live on the site's own domain it starts Google rank checks, and each keyword past the plan's included count is billed $1.50 a month"
+    },
+    {
+      "name": "seo_plan_suggest_phrases",
+      "method": "POST",
+      "why_gated": "asks the content department to suggest search phrases for up to 25 posts, which spends the account's AI credit (priced once it has run)"
+    },
+    {
+      "name": "seo_plan_suggest_links",
+      "method": "POST",
+      "why_gated": "asks the content department to draft a sentence linking a buyer page for up to 10 posts, which spends the account's AI credit (priced once it has run)"
     },
     {
       "name": "workflow_run",

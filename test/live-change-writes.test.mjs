@@ -188,6 +188,11 @@ const LIVE_CHANGE_NAMES = [
   // The desktop app's Backups page, wave S2a (MCP #384): New Backup, a full copy of the site's files,
   // media and database, made only when the person says so.
   'project_backup_create',
+  // Content's SEO plan, SEO wave F (MCP feature/seo-wave-f-tools, pending): a post's search phrase, which can
+  // start billed rank checks, and the two suggestions that spend AI credit.
+  'seo_plan_phrase_set',
+  'seo_plan_suggest_phrases',
+  'seo_plan_suggest_links',
 ];
 
 function folderWith(guardrails) {

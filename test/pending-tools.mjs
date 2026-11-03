@@ -519,6 +519,11 @@
  *   pm_project_activity_list, was never here: nothing in the plugin names it.
  *     MISSION-CONTROL-DESKTOP-1  mc_task_claim, mc_task_release, mc_task_answer. Landed 2026-11-01 (MCP #370,
  *                                live at b7eda48c39e2); entries deleted.
+ *
+ *   Content's SEO plan for the desktop app (2026-11-01, SEO wave F): the three ask-first tools of the plan's six
+ *   asked before the MCP release served them, on the ask list and on LIVE_CHANGE_WRITES (lib/tool-safety.mjs).
+ *     SEO-PLAN-DESKTOP-1  seo_plan_phrase_set, seo_plan_suggest_phrases, seo_plan_suggest_links. Landed 2026-11-02
+ *                         (MCP #394, live at f0d75a2); indexed with the other six wave F tools; entries deleted.
  */
 const SEO_SINCE = '2026-08-30';
 const seo = (batch) => ({ since: SEO_SINCE, batch });
@@ -690,4 +695,7 @@ export const PENDING_TOOLS = new Map([
   // 2026-11-01 (index regenerated at 2716 tools from MCP b7eda48c39e2, #370): MISSION-CONTROL-DESKTOP-1's
   // mc_task_claim, mc_task_release and mc_task_answer are served and indexed (off the read-only list; on the ask
   // list and ALWAYS_ASK_WRITES). Entries deleted.
+
+  // seo_plan_phrase_set, seo_plan_suggest_phrases and seo_plan_suggest_links are served and indexed (MCP #394; on the
+  // ask list and LIVE_CHANGE_WRITES). Entries deleted.
 ]);
