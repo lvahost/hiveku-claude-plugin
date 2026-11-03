@@ -745,7 +745,15 @@ test('source cross-check: pm_project_team reads the project team the prose descr
   const src = fs.readFileSync(route, 'utf8');
   assert.ok(src.includes('pmTeamAccountIds(project.id, project.account_id)'), 'the roster is no longer the project team (primary + active co-owners)');
   assert.ok(src.includes('revealOtherCompanyEmails: false'), 'the other company\'s emails are no longer hidden');
-  assert.ok(src.includes('where: { id, account_id: auth.accountId }'), 'the project is no longer scoped to the key\'s account');
+  // Since builder 67e8ead9c6 (2026-11-01, Projects wave 2) the route also answers for a project another workspace
+  // shares with the key's: the key's own account first, then the shared project's owner (withSharedFallback). Either
+  // shape passes; a project outside both is still a 404.
+  const ownAccountOnly = src.includes('where: { id, account_id: auth.accountId }');
+  const ownThenShared = src.includes('return withSharedFallback({')
+    && src.includes('accountId: auth.accountId,')
+    && src.includes('shared: () => sharedProjectScope(auth.accountId, id),')
+    && src.includes('where: { id, account_id: scope.dataAccountId }');
+  assert.ok(ownAccountOnly || ownThenShared, 'the project is no longer scoped to the key\'s account or a project shared with it');
   for (const key of ['default_assignee_id:', 'shared:', 'teams:', 'members:']) {
     assert.ok(src.includes(key), `the response no longer carries ${key.slice(0, -1)}`);
   }

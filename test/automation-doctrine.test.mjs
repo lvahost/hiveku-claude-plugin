@@ -890,5 +890,7 @@ test('source cross-check: the builder source the round-3 re-check corrections de
   assert.match(src('execQueue'), /if \(wf\.is_paused\) \{[\s\S]*?stampFormOutcome\('trigger_disabled'\);\s*return;/);
   assert.ok(src('deadLetters').includes('workflowName: maskWorkflowText(item.workflowName)'));
   assert.ok(src('deadLetters').includes('workflowName: maskWorkflowText(w.workflowName)'));
-  assert.ok(src('inboxList').includes('data: rows.map(maskInboxItemText)'));
+  // Since builder 7a69225255 (2026-10-31) each row also carries its dedup_key; the masked row is spread first, so
+  // every title and body still goes out masked. Either shape passes.
+  assert.match(src('inboxList'), /data: rows\.map\((?:maskInboxItemText\)|\(row\) => \(\{ \.\.\.maskInboxItemText\(row\), dedup_key: inboxDedupKey\(row\.metadata\) \}\)\))/, 'the API-key inbox no longer masks every row');
 });
