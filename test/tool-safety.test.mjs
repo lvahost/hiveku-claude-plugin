@@ -1254,6 +1254,41 @@ test('a person\'s Projects leave and comment delete ask on a direct call and thr
   assert.equal(gated.has(link), false, `${link} is a GET, which the ask list never carries`);
   const generator = readFileSync(new URL('../scripts/gen-readonly-tools.mjs', import.meta.url), 'utf8');
   assert.match(generator, /\['pm_task_attachment_download_url',/, 'the read-only generator must exclude it (SENSITIVE_READ_EXCLUSIONS)');
+  // The delete's preview is a read whose name holds "delete": nothing pre-approves it (WRITE_VERBS, and the generator
+  // keeps it off the read list), so it goes to the person's settings, and a reads-only folder runs it as the read it
+  // is instead of refusing it as a write.
+  const impact = 'pm_project_delete_impact';
+  assert.equal(isReadOnlyTool(impact), false, `${impact} must stay off the pre-approved reads`);
+  assert.equal(isAutoApprovable(impact, { project_id: 'p' }), false, impact);
+  assert.ok(isNonMutatingTool(impact), `${impact} writes nothing`);
+  assert.equal(decideWithGuardrails({ ...payload(impact, cwd), tool_input: { project_id: 'p' } }), null, `${impact} goes to the person's settings`);
+  assert.equal(decideWithGuardrails({ ...payload(impact, readsOnly), tool_input: { project_id: 'p' } }), null, `a reads-only folder must not refuse ${impact} as a write`);
+  assert.equal(gated.has(impact), false, `${impact} is a GET, which the ask list never carries`);
+  assert.match(generator, /\['pm_project_delete_impact',/, 'the read-only generator must exclude it (SENSITIVE_READ_EXCLUSIONS)');
+  // A reads-only folder still refuses the delete itself.
+  assert.equal(decision(decideWithGuardrails(payload('pm_projects_delete', readsOnly))), 'deny');
+});
+
+import { LIVE_CHANGE_WRITES, READS_NAMED_LIKE_WRITES } from '../lib/tool-safety.mjs';
+
+// Reads named like writes (2026-11-03): each is a GET in the index whose name WRITE_VERBS refuses, which the generator
+// keeps off the read list, and which nothing else gates. A name that stops being a GET, or loses its write word, does
+// not belong on the set.
+test('every read named like a write is a GET the generator excludes, is never pre-approved, and runs under a reads-only ceiling', () => {
+  const idx = JSON.parse(readFileSync(new URL('../lib/tool-index.json', import.meta.url), 'utf8'));
+  const methods = new Map(idx.tools.map((t) => [t.name, t.method]));
+  const generator = readFileSync(new URL('../scripts/gen-readonly-tools.mjs', import.meta.url), 'utf8');
+  const readsOnly = folderWith({ version: 1, mode: 'reads-only' });
+  assert.ok(READS_NAMED_LIKE_WRITES.size > 0, 'the set is read, never a vacuous pass');
+  for (const name of READS_NAMED_LIKE_WRITES) {
+    assert.equal(methods.get(name), 'GET', `${name} must be a GET in the tool index`);
+    assert.match(name, /(^|_)(delete|destroy|purge|wipe|revoke|refund|uninstall|truncate|drop)(_|$)/, `${name} holds no write word, so it belongs on the read list instead`);
+    assert.ok(generator.includes(`['${name}',`), `${name} must be in SENSITIVE_READ_EXCLUSIONS`);
+    assert.equal(isReadOnlyTool(name), false, name);
+    assert.equal(NEVER_AUTO_APPROVE.has(name), false, `${name}: a response hazard belongs on NEVER_AUTO_APPROVE, not here`);
+    assert.equal(ALWAYS_ASK_WRITES.has(name) || LIVE_CHANGE_WRITES.has(name), false, `${name} is a read`);
+    assert.notEqual(decision(decideWithGuardrails(payload(name, readsOnly))), 'deny', `${name} under reads-only`);
+  }
 });
 
 test('the Memory page\'s writes ask on a direct call and through a batch, a reads-only folder denies them, and their reads and the knowledge base writes are not on the set', () => {
