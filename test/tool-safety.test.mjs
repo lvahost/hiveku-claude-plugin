@@ -1304,7 +1304,7 @@ test('the Email Service setup writes ask on a direct call with no guardrails fil
 // email_webhook_delete deletes a webhook and its delivery history for good with permanent: true (HK-1083
 // review, 2026-11-02). One name carries the switch-off too, and an ask cannot read the argument, so every
 // call asks, whatever the settings allow; the reads stay pre-approved.
-test('an email webhook\'s delete asks on a direct call in either mode and through a batch; a reads-only folder denies it; the reads stay pre-approved', () => {
+test('an email webhook\'s delete asks on a direct call in either mode and through a batch; a reads-only folder denies it; it is on the ask list; the reads stay pre-approved', () => {
   const cwd = folderWith(undefined);
   const readsOnly = folderWith({ version: 1, mode: 'reads-only' });
   const name = 'email_webhook_delete';
@@ -1324,6 +1324,14 @@ test('an email webhook\'s delete asks on a direct call in either mode and throug
     assert.equal(ALWAYS_ASK_WRITES.has(read), false, read);
     assert.equal(decision(decideWithGuardrails(payload(read, cwd))), 'allow', `${read} must stay pre-approved`);
   }
+  // The settings rail beside the hook: a machine set up from INSTALL.md asks on the name even where the hook does
+  // not run, and the Codex prompts mirror the same list (test/permission-critical.test.mjs checks that only when the
+  // Codex checkout sits beside this one, and checks the hook's LIVE_CHANGE_WRITES alone against the list).
+  const perm = JSON.parse(readFileSync(new URL('../data/permission-critical-tools.json', import.meta.url), 'utf8'));
+  const gated = new Map(perm.tools.map((t) => [t.name, t.method]));
+  assert.equal(gated.get(name), 'DELETE', `${name} must be on data/permission-critical-tools.json as a DELETE`);
+  assert.ok(installPermissions().ask.includes(`${HIVEKU_TOOL_PREFIX}${name}`), `INSTALL.md's ask block must name ${name}`);
+  for (const read of ['email_webhook_list', 'email_webhook_get']) assert.equal(gated.has(read), false, `${read} is a read`);
 });
 
 test('asking a customer to record their testimonial again asks on a direct call and through a batch; its preview stays pre-approved', () => {
