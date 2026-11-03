@@ -466,7 +466,7 @@
     {
       "name": "email_webhook_delete",
       "method": "DELETE",
-      "why_gated": "switches an email webhook off, and with permanent: true deletes it for good with its delivery history, which cannot be brought back"
+      "why_gated": "switches an email webhook off, and email_webhook_update can turn it back on; once Hiveku supports permanent: true, a call with it deletes the webhook for good with its delivery history, which cannot be brought back"
     },
     {
       "name": "crm_envelope_send",

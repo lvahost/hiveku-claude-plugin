@@ -1027,7 +1027,7 @@ const HELPDESK_PRIVACY_WRITES_THAT_ASK = ['helpdesk_contact_data_erase', 'helpde
 const SITE_WRITES_THAT_ASK = ['marketing_form_inbox_delete', 'site_transfer'];
 /** Deleting an ad account connection (2026-10-30, the desktop app's Ads area, wave B): Hiveku's copy of its campaigns, numbers, history and uploads erased for good. */
 const PPC_CONNECTION_DELETE_THAT_ASKS = ['ppc_connection_delete'];
-/** An email webhook's delete (2026-11-02, HK-1083): with permanent: true it erases the webhook and its delivery history for good. */
+/** An email webhook's delete (2026-11-02, HK-1083): HK-1083's permanent: true (not yet served) will erase the webhook and its delivery history for good. */
 const EMAIL_WEBHOOK_DELETE_THAT_ASKS = ['email_webhook_delete'];
 /** The desktop app's SEO page, wave B (2026-10-30, MCP #353): erases and overwrites of Hiveku's own copy (rank history, an audit, the working sheet, a saved report, a connection's saved history). */
 const SEO_WRITES_THAT_ASK = [
@@ -1371,9 +1371,11 @@ test('the Email Service setup writes ask on a direct call with no guardrails fil
   assert.match(ALWAYS_ASK_WRITES.get('email_suppression_import'), /can never be removed/);
 });
 
-// email_webhook_delete deletes a webhook and its delivery history for good with permanent: true (HK-1083
-// review, 2026-11-02). One name carries the switch-off too, and an ask cannot read the argument, so every
-// call asks, whatever the settings allow; the reads stay pre-approved.
+// email_webhook_delete will delete a webhook and its delivery history for good with permanent: true (HK-1083
+// review, 2026-11-02). That mode is not yet served: the live tool takes only webhook_id and switches the webhook
+// off, so the reason says the mode is still to come. The ask ships first on purpose. One name will carry both
+// modes, and an ask cannot read the argument, so every call asks, whatever the settings allow; the reads stay
+// pre-approved.
 test('an email webhook\'s delete asks on a direct call in either mode and through a batch; a reads-only folder denies it; it is on the ask list; the reads stay pre-approved', () => {
   const cwd = folderWith(undefined);
   const readsOnly = folderWith({ version: 1, mode: 'reads-only' });
@@ -1382,7 +1384,9 @@ test('an email webhook\'s delete asks on a direct call in either mode and throug
     const direct = decideWithGuardrails({ ...payload(name, cwd), tool_input: args });
     assert.equal(direct?.hookSpecificOutput?.permissionDecision, 'ask', JSON.stringify(args));
     assert.match(direct.hookSpecificOutput.permissionDecisionReason, new RegExp(`^${name} `));
-    assert.match(direct.hookSpecificOutput.permissionDecisionReason, /PERMANENTLY deletes it with its delivery history, with no undo/);
+    assert.match(direct.hookSpecificOutput.permissionDecisionReason, /^email_webhook_delete switches an email webhook off: it stops getting events and stays listed, and email_webhook_update can turn it back on\. /);
+    // The permanent mode is named as still to come, not as served (HK-1083's builder and MCP change adds it).
+    assert.match(direct.hookSpecificOutput.permissionDecisionReason, /Once Hiveku supports permanent: true, a call with it PERMANENTLY deletes the webhook with its delivery history, with no undo/);
     const batch = decideForPayload({ tool_name: `${HIVEKU_TOOL_PREFIX}hiveku_batch`, tool_input: { calls: [{ tool: name, args }] } });
     assert.equal(batch?.hookSpecificOutput?.permissionDecision, 'ask', `${JSON.stringify(args)} in a batch`);
     assert.equal(isAutoApprovable(name, args), false);
