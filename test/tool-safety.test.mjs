@@ -1073,6 +1073,12 @@ const MEMORY_PAGE_WRITES_THAT_ASK = [
  */
 const MISSION_CONTROL_WRITES_THAT_ASK = ['mc_task_claim', 'mc_task_release', 'mc_task_answer'];
 /**
+ * The desktop app's Projects, wave 2 (2026-11-02, MCP #387 and #391): a person taking their workspace out of a project
+ * another workspace shares, and a person deleting their own comment on a task. Both act as the person whose key makes
+ * the call, and neither can be undone from here.
+ */
+const PROJECTS_PERSON_WRITES_THAT_ASK = ['pm_project_leave', 'pm_task_comment_delete'];
+/**
  * Hiveku Meet and Discussions (2026-11-01, MCP #374, #367, #349 and #227, all served), in three groups: the webinar
  * invites, cancel and delete (Hiveku Meet decision 2); the meeting and call recording deletes (the Hiveku app's own key
  * alone on the server, kept here as a second guard); and a channel's share, unshare and delete (the Discussions plan).
@@ -1093,10 +1099,10 @@ const MEET_DISCUSSIONS_WRITES_THAT_ASK = [
  */
 const WEBINAR_EDIT_THAT_ASKS = ['marketing_webinar_update'];
 
-test('the always-ask set is exactly the memory, form-capture and indexing writes, the secrets reveal, the A/B test writes, the mobile app writes, the PPC override, the lead-email change, a checks rerun, the Email Service setup writes, the record-again ask, the LOA email, the Confirm on your phone start and cancel, the help desk privacy writes, the site inbox delete and move, the ad account connection delete, an email webhook\'s delete, the SEO page\'s erases and overwrites, the Memory page\'s writes, a person\'s Mission Control claim, release and decision, the Meet and Discussions sends, shares and deletes, and a webinar\'s edit', () => {
+test('the always-ask set is exactly the memory, form-capture and indexing writes, the secrets reveal, the A/B test writes, the mobile app writes, the PPC override, the lead-email change, a checks rerun, the Email Service setup writes, the record-again ask, the LOA email, the Confirm on your phone start and cancel, the help desk privacy writes, the site inbox delete and move, the ad account connection delete, an email webhook\'s delete, the SEO page\'s erases and overwrites, the Memory page\'s writes, a person\'s Mission Control claim, release and decision, a person\'s Projects leave and comment delete, the Meet and Discussions sends, shares and deletes, and a webinar\'s edit', () => {
   assert.deepEqual(
     [...ALWAYS_ASK_WRITES.keys()].sort(),
-    [...MEMORY_WRITES_THAT_ASK, ...FORM_CAPTURE_WRITES_THAT_ASK, ...INDEXING_WRITES_THAT_ASK, ...SECRETS_REVEAL_THAT_ASKS, ...AB_TEST_WRITES_THAT_ASK, ...MOBILE_WRITES_THAT_ASK, ...PPC_OVERRIDE_THAT_ASKS, ...LEAD_EMAIL_WRITES_THAT_ASK, ...CHECKS_RERUN_THAT_ASKS, ...EMAIL_SERVICE_WRITES_THAT_ASK, ...TESTIMONIAL_RERECORD_THAT_ASKS, ...LOA_SEND_THAT_ASKS, ...CONFIRM_ON_PHONE_THAT_ASKS, ...HELPDESK_PRIVACY_WRITES_THAT_ASK, ...SITE_WRITES_THAT_ASK, ...PPC_CONNECTION_DELETE_THAT_ASKS, ...EMAIL_WEBHOOK_DELETE_THAT_ASKS, ...SEO_WRITES_THAT_ASK, ...MEMORY_PAGE_WRITES_THAT_ASK, ...MISSION_CONTROL_WRITES_THAT_ASK, ...MEET_DISCUSSIONS_WRITES_THAT_ASK, ...WEBINAR_EDIT_THAT_ASKS].sort(),
+    [...MEMORY_WRITES_THAT_ASK, ...FORM_CAPTURE_WRITES_THAT_ASK, ...INDEXING_WRITES_THAT_ASK, ...SECRETS_REVEAL_THAT_ASKS, ...AB_TEST_WRITES_THAT_ASK, ...MOBILE_WRITES_THAT_ASK, ...PPC_OVERRIDE_THAT_ASKS, ...LEAD_EMAIL_WRITES_THAT_ASK, ...CHECKS_RERUN_THAT_ASKS, ...EMAIL_SERVICE_WRITES_THAT_ASK, ...TESTIMONIAL_RERECORD_THAT_ASKS, ...LOA_SEND_THAT_ASKS, ...CONFIRM_ON_PHONE_THAT_ASKS, ...HELPDESK_PRIVACY_WRITES_THAT_ASK, ...SITE_WRITES_THAT_ASK, ...PPC_CONNECTION_DELETE_THAT_ASKS, ...EMAIL_WEBHOOK_DELETE_THAT_ASKS, ...SEO_WRITES_THAT_ASK, ...MEMORY_PAGE_WRITES_THAT_ASK, ...MISSION_CONTROL_WRITES_THAT_ASK, ...PROJECTS_PERSON_WRITES_THAT_ASK, ...MEET_DISCUSSIONS_WRITES_THAT_ASK, ...WEBINAR_EDIT_THAT_ASKS].sort(),
   );
 });
 
@@ -1184,6 +1190,70 @@ test('a person\'s Mission Control claim, release and decision ask on a direct ca
   for (const name of ['mc_task_get', 'mc_decision_check', 'mc_tasks_list', 'mc_decisions_pending', 'pm_project_activity_list']) {
     assert.equal(ALWAYS_ASK_WRITES.has(name), false, `${name} must not ask on every call`);
   }
+});
+
+// Projects wave 2 (2026-11-02, MCP #387 and #391). A person's leave and own-comment delete ask on every direct call
+// whatever the settings allow, as a person's Mission Control acts do. All nine wave 2 writes are on the ask list (and
+// so INSTALL.md); the other seven are on it only. The reads stay pre-approved, and the attachment link stays off the
+// read list: its declaration carries readOnlyHint, so SENSITIVE_READ_EXCLUSIONS is what keeps it off.
+test('a person\'s Projects leave and comment delete ask on a direct call and through a batch, a reads-only folder denies them; all nine wave 2 writes are on the ask list; the reads stay pre-approved and the attachment link is not a read', () => {
+  const cwd = folderWith(undefined);
+  const readsOnly = folderWith({ version: 1, mode: 'reads-only' });
+  const args = { project_id: 'p', id: 't', comment_id: 'c' };
+  for (const name of PROJECTS_PERSON_WRITES_THAT_ASK) {
+    const direct = decideWithGuardrails({ ...payload(name, cwd), tool_input: args });
+    assert.equal(direct?.hookSpecificOutput?.permissionDecision, 'ask', name);
+    assert.match(direct.hookSpecificOutput.permissionDecisionReason, new RegExp(`^${name} `), name);
+    const batch = decideForPayload({ tool_name: `${HIVEKU_TOOL_PREFIX}hiveku_batch`, tool_input: { calls: [{ tool: name, args }] } });
+    assert.equal(batch?.hookSpecificOutput?.permissionDecision, 'ask', `${name} in a batch`);
+    assert.equal(isAutoApprovable(name, args), false, name);
+    assert.equal(isReadOnlyTool(name), false, `${name} must not be on the generated read list`);
+    assert.equal(decision(decideWithGuardrails(payload(name, readsOnly))), 'deny', `${name} under reads-only`);
+    assert.doesNotMatch(ALWAYS_ASK_WRITES.get(name), /[\u2013\u2014]/, `${name}: no dashes in a reason the person reads`);
+  }
+  // What each reason has to tell the person.
+  assert.match(ALWAYS_ASK_WRITES.get('pm_project_leave'), /^takes this workspace out of a project another workspace shares with it, at once/);
+  assert.match(ALWAYS_ASK_WRITES.get('pm_project_leave'), /only the owner can share it again/);
+  assert.match(ALWAYS_ASK_WRITES.get('pm_task_comment_delete'), /for everyone and for good; there is no undo/);
+  // The settings rail: every wave 2 write is on data/permission-critical-tools.json with its method and in INSTALL.md's
+  // ask block; only the two above are on the hook.
+  const perm = JSON.parse(readFileSync(new URL('../data/permission-critical-tools.json', import.meta.url), 'utf8'));
+  const gated = new Map(perm.tools.map((t) => [t.name, t]));
+  const ask = installPermissions().ask;
+  const WAVE2_WRITES = {
+    pm_project_leave: 'DELETE',
+    pm_task_comment_delete: 'DELETE',
+    pm_task_comment_react: 'POST',
+    pm_project_slack_test: 'POST',
+    pm_project_github_sync_run: 'POST',
+    pm_project_billing_update: 'PUT',
+    pm_project_billing_import: 'POST',
+    pm_project_integrations_update: 'PATCH',
+    pm_project_automation_create: 'POST',
+  };
+  for (const [name, method] of Object.entries(WAVE2_WRITES)) {
+    assert.equal(gated.get(name)?.method, method, `${name} must be on data/permission-critical-tools.json as a ${method}`);
+    assert.doesNotMatch(gated.get(name).why_gated, /[\u2013\u2014]/, `${name}: no dashes in a reason the person reads`);
+    assert.ok(ask.includes(`${HIVEKU_TOOL_PREFIX}${name}`), `INSTALL.md's ask block must name ${name}`);
+    assert.equal(isReadOnlyTool(name), false, `${name} is a write`);
+    if (!PROJECTS_PERSON_WRITES_THAT_ASK.includes(name)) {
+      assert.equal(ALWAYS_ASK_WRITES.has(name), false, `${name} is on the ask list only`);
+    }
+  }
+  // The wave 2 reads never prompt.
+  for (const read of ['pm_project_settings_get', 'pm_project_time_logs_export', 'pm_project_assignable', 'pm_my_tasks', 'pm_task_linked_content_list', 'pm_project_automations_list', 'pm_project_integrations_get', 'pm_project_github_sync_get', 'pm_project_billing_get']) {
+    assert.equal(gated.has(read), false, `${read} is a read`);
+    assert.equal(ALWAYS_ASK_WRITES.has(read), false, `${read} must not ask on every call`);
+    assert.equal(decision(decideWithGuardrails(payload(read, cwd))), 'allow', `${read} must stay pre-approved`);
+  }
+  // The attachment link is a GET whose answer opens the file with no key for 15 minutes: never a read.
+  const link = 'pm_task_attachment_download_url';
+  assert.ok(NEVER_AUTO_APPROVE.has(link), `${link} must carry the veto`);
+  assert.equal(isReadOnlyTool(link), false, `${link} must not classify as a read; regenerate lib/readonly-tools.json if this fails`);
+  assert.equal(decision(decideWithGuardrails({ ...payload(link, cwd), tool_input: { task_id: 't', attachment_id: 'a' } })), 'ask');
+  assert.equal(gated.has(link), false, `${link} is a GET, which the ask list never carries`);
+  const generator = readFileSync(new URL('../scripts/gen-readonly-tools.mjs', import.meta.url), 'utf8');
+  assert.match(generator, /\['pm_task_attachment_download_url',/, 'the read-only generator must exclude it (SENSITIVE_READ_EXCLUSIONS)');
 });
 
 test('the Memory page\'s writes ask on a direct call and through a batch, a reads-only folder denies them, and their reads and the knowledge base writes are not on the set', () => {

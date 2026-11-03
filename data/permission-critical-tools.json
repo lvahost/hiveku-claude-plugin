@@ -6,7 +6,7 @@
     "mcp__hiveku__"
   ],
   "plugin_version": "0.27.161",
-  "count": 412,
+  "count": 421,
   "tools": [
     {
       "name": "deploy_site",
@@ -867,6 +867,51 @@
       "name": "discussion_delete",
       "method": "DELETE",
       "why_gated": "deletes a Discussions channel for everyone, with its whole history (every message, reply, reaction and file card), and workspaces it is shared with lose it too; there is no undo"
+    },
+    {
+      "name": "pm_project_leave",
+      "method": "DELETE",
+      "why_gated": "takes this workspace out of a project another workspace shares with it, at once: its people lose the project and are unassigned from its tasks, and only the owner can share it again. Hiveku takes it from a person's own key only"
+    },
+    {
+      "name": "pm_task_comment_delete",
+      "method": "DELETE",
+      "why_gated": "deletes one of the person's own comments on a task, for everyone and for good; there is no undo. Hiveku takes it from a person's own key only"
+    },
+    {
+      "name": "pm_task_comment_react",
+      "method": "POST",
+      "why_gated": "adds or takes off the person's own reaction on a teammate's task comment, shown under their name. Hiveku takes it from a person's own key only"
+    },
+    {
+      "name": "pm_project_slack_test",
+      "method": "POST",
+      "why_gated": "posts a test message into a real Slack channel, through the webhook it is given or the one the project has saved"
+    },
+    {
+      "name": "pm_project_github_sync_run",
+      "method": "POST",
+      "why_gated": "turns a project's GitHub issues sync on or off, or runs it: turning it on and each push create and update issues in the site's GitHub repository from the project's tasks"
+    },
+    {
+      "name": "pm_project_billing_update",
+      "method": "PUT",
+      "why_gated": "changes who a project's hours are billed to and its hourly rate; from then on every hour logged on its tasks also goes onto Commerce > Usage, ready to invoice"
+    },
+    {
+      "name": "pm_project_billing_import",
+      "method": "POST",
+      "why_gated": "brings the hours already logged on a project onto Commerce > Usage, ready to invoice its billing client"
+    },
+    {
+      "name": "pm_project_integrations_update",
+      "method": "PATCH",
+      "why_gated": "changes where a project posts its task updates (its Slack webhook and its Discussions channel) and which updates it posts"
+    },
+    {
+      "name": "pm_project_automation_create",
+      "method": "POST",
+      "why_gated": "makes a new workflow for a project from a recipe; it is created switched off, and nothing runs until someone switches it on"
     },
     {
       "name": "marketing_offline_conversions_go_live",
