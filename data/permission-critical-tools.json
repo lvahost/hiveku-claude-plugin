@@ -6,7 +6,7 @@
     "mcp__hiveku__"
   ],
   "plugin_version": "0.27.162",
-  "count": 421,
+  "count": 425,
   "tools": [
     {
       "name": "deploy_site",
@@ -912,6 +912,26 @@
       "name": "pm_project_automation_create",
       "method": "POST",
       "why_gated": "makes a new workflow for a project from a recipe; it is created switched off, and nothing runs until someone switches it on"
+    },
+    {
+      "name": "pm_project_share",
+      "method": "POST",
+      "why_gated": "shares a project with another workspace at once, with nothing to accept: that workspace's people can open the whole project and be assigned its tasks. Hiveku takes it from a person's own key only"
+    },
+    {
+      "name": "pm_project_unshare",
+      "method": "DELETE",
+      "why_gated": "stops sharing a project with a workspace at once: that workspace's people lose the project and are unassigned from its tasks, unless they are also on a team that still has it. Hiveku takes it from a person's own key only"
+    },
+    {
+      "name": "pm_projects_delete",
+      "method": "DELETE",
+      "why_gated": "permanently deletes an archived project with its tasks, milestones, sections, comments, files and logged hours; there is no undo. Hiveku takes it from a person's own key only"
+    },
+    {
+      "name": "pm_tasks_delete",
+      "method": "DELETE",
+      "why_gated": "permanently deletes a task with its comments, logged hours, attachments and dependencies; there is no undo"
     },
     {
       "name": "marketing_offline_conversions_go_live",
