@@ -208,6 +208,7 @@ Put this in `.claude/settings.json` (per project) or `~/.claude/settings.json` (
       "mcp__plugin_hiveku_hk__email_domain_send_instructions",
       "mcp__plugin_hiveku_hk__email_project_connect",
       "mcp__plugin_hiveku_hk__email_suppression_import",
+      "mcp__plugin_hiveku_hk__email_webhook_delete",
       "mcp__plugin_hiveku_hk__email_campaign_resend_non_openers",
       "mcp__plugin_hiveku_hk__crm_envelope_send",
       "mcp__plugin_hiveku_hk__crm_envelope_alerts_set",

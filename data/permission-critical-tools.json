@@ -6,7 +6,7 @@
     "mcp__hiveku__"
   ],
   "plugin_version": "0.27.159",
-  "count": 408,
+  "count": 409,
   "tools": [
     {
       "name": "deploy_site",
@@ -462,6 +462,11 @@
       "name": "email_suppression_import",
       "method": "POST",
       "why_gated": "adds up to 5,000 addresses to the account's suppression list at once; imported bounces and complaints can never be removed, and nothing is emailed to them again"
+    },
+    {
+      "name": "email_webhook_delete",
+      "method": "DELETE",
+      "why_gated": "switches an email webhook off, and with permanent: true deletes it for good with its delivery history, which cannot be brought back"
     },
     {
       "name": "crm_envelope_send",
