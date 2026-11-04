@@ -1004,7 +1004,12 @@ const AB_TEST_WRITES_THAT_ASK = ['project_ab_test_create', 'project_ab_test_upda
 
 // Mobile (Expo) app settings: the SDK upgrade rewrites the app in one go, a store ID becomes
 // permanent once a build is uploaded, and the Apple account decides who publishes the app.
-const MOBILE_WRITES_THAT_ASK = ['mobile_app_sdk_upgrade', 'mobile_app_identity_set', 'mobile_app_apple_account_set'];
+const MOBILE_WRITES_THAT_ASK = [
+  'mobile_app_sdk_upgrade',
+  'mobile_app_identity_set',
+  'mobile_app_apple_account_set',
+  'mobile_app_expo_project_choose',
+];
 
 // The PPC change ledger's override: a person's yes to going over someone else's recent change.
 const PPC_OVERRIDE_THAT_ASKS = ['ppc_recent_change_override'];
