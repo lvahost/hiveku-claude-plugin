@@ -193,6 +193,12 @@ const LIVE_CHANGE_NAMES = [
   'seo_plan_phrase_set',
   'seo_plan_suggest_phrases',
   'seo_plan_suggest_links',
+  // Customer journeys for the desktop app (MCP feature/marketing-identity-tools, pending): the two billed AI fills,
+  // the key-stage videos and a projection shown on the public page.
+  'customer_journey_create_from_template',
+  'customer_journey_repopulate',
+  'customer_journey_videos_generate',
+  'customer_journey_simulation_publish',
 ];
 
 function folderWith(guardrails) {
