@@ -524,6 +524,10 @@
  *   asked before the MCP release served them, on the ask list and on LIVE_CHANGE_WRITES (lib/tool-safety.mjs).
  *     SEO-PLAN-DESKTOP-1  seo_plan_phrase_set, seo_plan_suggest_phrases, seo_plan_suggest_links. Landed 2026-11-02
  *                         (MCP #394, live at f0d75a2); indexed with the other six wave F tools; entries deleted.
+ *
+ *   Hiveku Meet's calendar for the desktop app (2026-11-03, the Schedule dialog and Bookings): the two sends ask
+ *   before the MCP release serves them, on the ask list and on ALWAYS_ASK_WRITES (lib/tool-safety.mjs).
+ *     MEET-CALENDAR-DESKTOP-1  crm_contact_booking_link_send, calendar_booking_create.
  */
 const SEO_SINCE = '2026-08-30';
 const seo = (batch) => ({ since: SEO_SINCE, batch });
@@ -698,4 +702,8 @@ export const PENDING_TOOLS = new Map([
 
   // seo_plan_phrase_set, seo_plan_suggest_phrases and seo_plan_suggest_links are served and indexed (MCP #394; on the
   // ask list and LIVE_CHANGE_WRITES). Entries deleted.
+
+  // MEET-CALENDAR-DESKTOP-1 (2026-11-03): the booking link send and Book a time ask before the MCP release serves them.
+  ['crm_contact_booking_link_send', { since: '2026-11-03', batch: 'MEET-CALENDAR-DESKTOP-1' }],
+  ['calendar_booking_create', { since: '2026-11-03', batch: 'MEET-CALENDAR-DESKTOP-1' }],
 ]);
