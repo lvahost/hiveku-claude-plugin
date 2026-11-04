@@ -5,8 +5,8 @@
     "mcp__plugin_hiveku_hk__",
     "mcp__hiveku__"
   ],
-  "plugin_version": "0.27.166",
-  "count": 431,
+  "plugin_version": "0.27.168",
+  "count": 441,
   "tools": [
     {
       "name": "deploy_site",
@@ -1819,6 +1819,36 @@
       "why_gated": "hard-deletes a soft-deleted brand guide; no undo"
     },
     {
+      "name": "brand_guide_voiceovers_set",
+      "method": "PUT",
+      "why_gated": "decides the voice every new video speaks in, for everyone on the account: it replaces the brand guide's whole narrator list, and an empty list clears every narrator"
+    },
+    {
+      "name": "customer_journey_create_from_template",
+      "method": "POST",
+      "why_gated": "makes a new customer journey from a template or a description of the business and starts a billed AI run that fills its stages, pictures and assets (pictures from the month's allowance, plus AI credits)"
+    },
+    {
+      "name": "customer_journey_repopulate",
+      "method": "POST",
+      "why_gated": "starts a billed AI run that fills what a customer journey still lacks (pictures from the month's allowance, plus AI credits); each journey gets a limited number of tries"
+    },
+    {
+      "name": "customer_journey_videos_generate",
+      "method": "POST",
+      "why_gated": "renders a video for each of a journey's key stages; each render is a billed clip from the month's allowance"
+    },
+    {
+      "name": "customer_journey_iteration_publish",
+      "method": "POST",
+      "why_gated": "publishes a version of a customer journey: it saves a snapshot and starts a new measurement window that the journey's results are compared against; a publish cannot be undone"
+    },
+    {
+      "name": "customer_journey_simulation_publish",
+      "method": "PATCH",
+      "why_gated": "shows a simulator projection on the journey's public page, where anyone with the journey's public link reads it"
+    },
+    {
       "name": "marketing_storyboard_delete",
       "method": "DELETE",
       "why_gated": "irreversibly destroys a priced storyboard; the deletable states are exactly the ones a human has not approved yet"
@@ -2162,6 +2192,26 @@
       "name": "voice_desk_phone_set",
       "method": "PATCH",
       "why_gated": "points an extension at a desk phone by its MAC address, a live phone-system change: the phone with that MAC gets the extension's line"
+    },
+    {
+      "name": "marketing_referral_invite",
+      "method": "POST",
+      "why_gated": "texts or emails each chosen customer their own referral link; invites that went out cannot be taken back"
+    },
+    {
+      "name": "marketing_referral_status_set",
+      "method": "PATCH",
+      "why_gated": "activates or pauses a referral campaign; a pause stops every referral link it handed out until it is active again"
+    },
+    {
+      "name": "marketing_referral_archive",
+      "method": "DELETE",
+      "why_gated": "archives a referral campaign: every link it handed out stops working for good; there is no undo"
+    },
+    {
+      "name": "marketing_referral_update",
+      "method": "PATCH",
+      "why_gated": "changes a referral campaign's name, rewards or invite messages; the friend's reward changes at once on the page every friend opens from a link"
     }
   ]
 }
