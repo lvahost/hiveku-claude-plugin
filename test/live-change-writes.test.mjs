@@ -114,6 +114,9 @@ const LIVE_CHANGE_NAMES = [
   // 0.27.19: joining the merge line is the approval to merge into Your site.
   'project_vcs_queue_add',
   // 0.27.58: the account's timezone, and what the website assistant may tell visitors.
+  'account_settings_update',
+  'account_settings_logo_set',
+  'account_settings_logo_remove',
   'account_timezone_set',
   'helpdesk_assistant_knowledge_sources_update',
   // 0.27.24: a site's secrets reach the running site (and production, without a tier).
