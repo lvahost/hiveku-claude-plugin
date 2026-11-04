@@ -6,7 +6,7 @@
     "mcp__hiveku__"
   ],
   "plugin_version": "0.27.164",
-  "count": 425,
+  "count": 427,
   "tools": [
     {
       "name": "deploy_site",
@@ -932,6 +932,16 @@
       "name": "pm_tasks_delete",
       "method": "DELETE",
       "why_gated": "permanently deletes a task with its comments, logged hours, attachments and dependencies; there is no undo"
+    },
+    {
+      "name": "crm_contact_booking_link_send",
+      "method": "POST",
+      "why_gated": "emails or texts a contact a booking link from a connected inbox or the account's number, signed with the person's name; a sent email or text cannot be taken back"
+    },
+    {
+      "name": "calendar_booking_create",
+      "method": "POST",
+      "why_gated": "books a contact into a meeting: Hiveku emails them the confirmation with the meeting link, and the host's calendar sends its own invite. Hiveku takes it from the Hiveku app's own key alone, so from an assistant it is refused anyway"
     },
     {
       "name": "marketing_offline_conversions_go_live",

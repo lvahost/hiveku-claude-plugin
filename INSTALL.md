@@ -309,6 +309,8 @@ Put this in `.claude/settings.json` (per project) or `~/.claude/settings.json` (
       "mcp__plugin_hiveku_hk__pm_project_unshare",
       "mcp__plugin_hiveku_hk__pm_projects_delete",
       "mcp__plugin_hiveku_hk__pm_tasks_delete",
+      "mcp__plugin_hiveku_hk__crm_contact_booking_link_send",
+      "mcp__plugin_hiveku_hk__calendar_booking_create",
       "mcp__plugin_hiveku_hk__marketing_offline_conversions_go_live",
       "mcp__plugin_hiveku_hk__ppc_conversion_adjustments_go_live",
       "mcp__plugin_hiveku_hk__ppc_meta_lead_quality_enable",
