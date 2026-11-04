@@ -1079,11 +1079,27 @@ const MISSION_CONTROL_WRITES_THAT_ASK = ['mc_task_claim', 'mc_task_release', 'mc
  */
 const PROJECTS_PERSON_WRITES_THAT_ASK = ['pm_project_leave', 'pm_task_comment_delete'];
 /**
+ * The other seven Projects wave 2 writes (2026-11-04, the 0.27.163 review): a reaction on a task comment, a project's
+ * Slack test post, its GitHub issues sync, its billing client and rate, the import of its logged hours, where it posts
+ * its updates, and a workflow made from a recipe. 0.27.163 had them on the ask list only, which an install whose
+ * settings predate its INSTALL.md block never got, while the Codex prompts and the VS Code ask rules ask on every call.
+ */
+const PROJECTS_WAVE_2_OTHER_WRITES_THAT_ASK = [
+  'pm_task_comment_react',
+  'pm_project_slack_test',
+  'pm_project_github_sync_run',
+  'pm_project_billing_update',
+  'pm_project_billing_import',
+  'pm_project_integrations_update',
+  'pm_project_automation_create',
+];
+/**
  * A project's share, unshare and delete (2026-11-03, the Projects wave 2 review; MCP #113 and builder #1193): a share
  * or an unshare acts at once for another workspace's people, like a Discussions channel's, and the delete takes an
- * archived project and everything in it for good, like discussion_delete.
+ * archived project and everything in it for good, like discussion_delete. A task's delete joined them on 2026-11-04
+ * (the 0.27.163 review): it takes one task and everything in it for good, and 0.27.163 had it on the ask list only.
  */
-const PROJECTS_SHARE_AND_DELETE_THAT_ASK = ['pm_project_share', 'pm_project_unshare', 'pm_projects_delete'];
+const PROJECTS_SHARE_AND_DELETE_THAT_ASK = ['pm_project_share', 'pm_project_unshare', 'pm_projects_delete', 'pm_tasks_delete'];
 /**
  * Hiveku Meet and Discussions (2026-11-01, MCP #374, #367, #349 and #227, all served), in three groups: the webinar
  * invites, cancel and delete (Hiveku Meet decision 2); the meeting and call recording deletes (the Hiveku app's own key
@@ -1105,10 +1121,10 @@ const MEET_DISCUSSIONS_WRITES_THAT_ASK = [
  */
 const WEBINAR_EDIT_THAT_ASKS = ['marketing_webinar_update'];
 
-test('the always-ask set is exactly the memory, form-capture and indexing writes, the secrets reveal, the A/B test writes, the mobile app writes, the PPC override, the lead-email change, a checks rerun, the Email Service setup writes, the record-again ask, the LOA email, the Confirm on your phone start and cancel, the help desk privacy writes, the site inbox delete and move, the ad account connection delete, an email webhook\'s delete, the SEO page\'s erases and overwrites, the Memory page\'s writes, a person\'s Mission Control claim, release and decision, a person\'s Projects leave and comment delete, a project\'s share, unshare and delete, the Meet and Discussions sends, shares and deletes, and a webinar\'s edit', () => {
+test('the always-ask set is exactly the memory, form-capture and indexing writes, the secrets reveal, the A/B test writes, the mobile app writes, the PPC override, the lead-email change, a checks rerun, the Email Service setup writes, the record-again ask, the LOA email, the Confirm on your phone start and cancel, the help desk privacy writes, the site inbox delete and move, the ad account connection delete, an email webhook\'s delete, the SEO page\'s erases and overwrites, the Memory page\'s writes, a person\'s Mission Control claim, release and decision, a person\'s Projects leave and comment delete, the other Projects wave 2 writes, a project\'s share, unshare and delete and a task\'s delete, the Meet and Discussions sends, shares and deletes, and a webinar\'s edit', () => {
   assert.deepEqual(
     [...ALWAYS_ASK_WRITES.keys()].sort(),
-    [...MEMORY_WRITES_THAT_ASK, ...FORM_CAPTURE_WRITES_THAT_ASK, ...INDEXING_WRITES_THAT_ASK, ...SECRETS_REVEAL_THAT_ASKS, ...AB_TEST_WRITES_THAT_ASK, ...MOBILE_WRITES_THAT_ASK, ...PPC_OVERRIDE_THAT_ASKS, ...LEAD_EMAIL_WRITES_THAT_ASK, ...CHECKS_RERUN_THAT_ASKS, ...EMAIL_SERVICE_WRITES_THAT_ASK, ...TESTIMONIAL_RERECORD_THAT_ASKS, ...LOA_SEND_THAT_ASKS, ...CONFIRM_ON_PHONE_THAT_ASKS, ...HELPDESK_PRIVACY_WRITES_THAT_ASK, ...SITE_WRITES_THAT_ASK, ...PPC_CONNECTION_DELETE_THAT_ASKS, ...EMAIL_WEBHOOK_DELETE_THAT_ASKS, ...SEO_WRITES_THAT_ASK, ...MEMORY_PAGE_WRITES_THAT_ASK, ...MISSION_CONTROL_WRITES_THAT_ASK, ...PROJECTS_PERSON_WRITES_THAT_ASK, ...PROJECTS_SHARE_AND_DELETE_THAT_ASK, ...MEET_DISCUSSIONS_WRITES_THAT_ASK, ...WEBINAR_EDIT_THAT_ASKS].sort(),
+    [...MEMORY_WRITES_THAT_ASK, ...FORM_CAPTURE_WRITES_THAT_ASK, ...INDEXING_WRITES_THAT_ASK, ...SECRETS_REVEAL_THAT_ASKS, ...AB_TEST_WRITES_THAT_ASK, ...MOBILE_WRITES_THAT_ASK, ...PPC_OVERRIDE_THAT_ASKS, ...LEAD_EMAIL_WRITES_THAT_ASK, ...CHECKS_RERUN_THAT_ASKS, ...EMAIL_SERVICE_WRITES_THAT_ASK, ...TESTIMONIAL_RERECORD_THAT_ASKS, ...LOA_SEND_THAT_ASKS, ...CONFIRM_ON_PHONE_THAT_ASKS, ...HELPDESK_PRIVACY_WRITES_THAT_ASK, ...SITE_WRITES_THAT_ASK, ...PPC_CONNECTION_DELETE_THAT_ASKS, ...EMAIL_WEBHOOK_DELETE_THAT_ASKS, ...SEO_WRITES_THAT_ASK, ...MEMORY_PAGE_WRITES_THAT_ASK, ...MISSION_CONTROL_WRITES_THAT_ASK, ...PROJECTS_PERSON_WRITES_THAT_ASK, ...PROJECTS_WAVE_2_OTHER_WRITES_THAT_ASK, ...PROJECTS_SHARE_AND_DELETE_THAT_ASK, ...MEET_DISCUSSIONS_WRITES_THAT_ASK, ...WEBINAR_EDIT_THAT_ASKS].sort(),
   );
 });
 
@@ -1198,15 +1214,16 @@ test('a person\'s Mission Control claim, release and decision ask on a direct ca
   }
 });
 
-// Projects wave 2 (2026-11-02, MCP #387 and #391). A person's leave and own-comment delete ask on every direct call
-// whatever the settings allow, as a person's Mission Control acts do. All nine wave 2 writes are on the ask list (and
-// so INSTALL.md); the other seven are on it only. The reads stay pre-approved, and the attachment link stays off the
-// read list: its declaration carries readOnlyHint, so SENSITIVE_READ_EXCLUSIONS is what keeps it off.
-test('a person\'s Projects leave and comment delete ask on a direct call and through a batch, a reads-only folder denies them; all nine wave 2 writes are on the ask list; the reads stay pre-approved and the attachment link is not a read', () => {
+// Projects wave 2 (2026-11-02, MCP #387 and #391). All nine wave 2 writes ask on every direct call whatever the
+// settings allow: a person's leave and own-comment delete as a person's Mission Control acts do, and from 2026-11-04
+// (the 0.27.163 review) the other seven too, which 0.27.163 had on the ask list only. All nine are on the ask list
+// (and so INSTALL.md) as well. The reads stay pre-approved, and the attachment link stays off the read list: its
+// declaration carries readOnlyHint, so SENSITIVE_READ_EXCLUSIONS is what keeps it off.
+test('all nine Projects wave 2 writes ask on a direct call and through a batch, a reads-only folder denies them, and they are on the ask list; the reads stay pre-approved and the attachment link is not a read', () => {
   const cwd = folderWith(undefined);
   const readsOnly = folderWith({ version: 1, mode: 'reads-only' });
   const args = { project_id: 'p', id: 't', comment_id: 'c' };
-  for (const name of PROJECTS_PERSON_WRITES_THAT_ASK) {
+  for (const name of [...PROJECTS_PERSON_WRITES_THAT_ASK, ...PROJECTS_WAVE_2_OTHER_WRITES_THAT_ASK]) {
     const direct = decideWithGuardrails({ ...payload(name, cwd), tool_input: args });
     assert.equal(direct?.hookSpecificOutput?.permissionDecision, 'ask', name);
     assert.match(direct.hookSpecificOutput.permissionDecisionReason, new RegExp(`^${name} `), name);
@@ -1221,8 +1238,16 @@ test('a person\'s Projects leave and comment delete ask on a direct call and thr
   assert.match(ALWAYS_ASK_WRITES.get('pm_project_leave'), /^takes this workspace out of a project another workspace shares with it, at once/);
   assert.match(ALWAYS_ASK_WRITES.get('pm_project_leave'), /only the owner can share it again/);
   assert.match(ALWAYS_ASK_WRITES.get('pm_task_comment_delete'), /for everyone and for good; there is no undo/);
+  assert.match(ALWAYS_ASK_WRITES.get('pm_task_comment_react'), /^adds your reaction to a comment on a task, or takes it off when you already reacted with that emoji/);
+  assert.match(ALWAYS_ASK_WRITES.get('pm_project_slack_test'), /^posts a test message into a real Slack channel/);
+  assert.match(ALWAYS_ASK_WRITES.get('pm_project_github_sync_run'), /create and update issues in the site's GitHub repository/);
+  assert.match(ALWAYS_ASK_WRITES.get('pm_project_billing_update'), /^changes who a project's hours are billed to and its hourly rate/);
+  assert.match(ALWAYS_ASK_WRITES.get('pm_project_billing_update'), /Commerce > Usage, ready to invoice/);
+  assert.match(ALWAYS_ASK_WRITES.get('pm_project_billing_import'), /onto Commerce > Usage, ready to invoice its billing client/);
+  assert.match(ALWAYS_ASK_WRITES.get('pm_project_integrations_update'), /^changes where a project posts its task updates/);
+  assert.match(ALWAYS_ASK_WRITES.get('pm_project_automation_create'), /it is created switched off, and nothing runs until someone switches it on/);
   // The settings rail: every wave 2 write is on data/permission-critical-tools.json with its method and in INSTALL.md's
-  // ask block; only the two above are on the hook.
+  // ask block, as well as on the hook.
   const perm = JSON.parse(readFileSync(new URL('../data/permission-critical-tools.json', import.meta.url), 'utf8'));
   const gated = new Map(perm.tools.map((t) => [t.name, t]));
   const ask = installPermissions().ask;
@@ -1242,9 +1267,7 @@ test('a person\'s Projects leave and comment delete ask on a direct call and thr
     assert.doesNotMatch(gated.get(name).why_gated, /[\u2013\u2014]/, `${name}: no dashes in a reason the person reads`);
     assert.ok(ask.includes(`${HIVEKU_TOOL_PREFIX}${name}`), `INSTALL.md's ask block must name ${name}`);
     assert.equal(isReadOnlyTool(name), false, `${name} is a write`);
-    if (!PROJECTS_PERSON_WRITES_THAT_ASK.includes(name)) {
-      assert.equal(ALWAYS_ASK_WRITES.has(name), false, `${name} is on the ask list only`);
-    }
+    assert.ok(ALWAYS_ASK_WRITES.has(name), `${name} must be on the hook, not on the ask list only`);
   }
   // The wave 2 reads never prompt.
   for (const read of ['pm_project_settings_get', 'pm_project_time_logs_export', 'pm_project_assignable', 'pm_my_tasks', 'pm_task_linked_content_list', 'pm_project_automations_list', 'pm_project_integrations_get', 'pm_project_github_sync_get', 'pm_project_billing_get']) {
@@ -1298,9 +1321,10 @@ test('every read named like a write is a GET the generator excludes, is never pr
 });
 
 // A project's share, unshare and delete (2026-11-03, the Projects wave 2 review). The three ask on every direct call
-// whatever the settings allow, as their Discussions twins and pm_project_leave do; a task's delete is on the ask list
-// (and so INSTALL.md) only, like cms_delete_entry. The sharing read stays pre-approved.
-test('a project\'s share, unshare and delete ask on a direct call and through a batch, a reads-only folder denies them; they and a task delete are on the ask list; the sharing read stays pre-approved', () => {
+// whatever the settings allow, as their Discussions twins and pm_project_leave do, and from 2026-11-04 (the 0.27.163
+// review) so does a task's delete, which 0.27.163 had on the ask list only. All four are on the ask list (and so
+// INSTALL.md) as well. The sharing read stays pre-approved.
+test('a project\'s share, unshare and delete and a task\'s delete ask on a direct call and through a batch, a reads-only folder denies them, and they are on the ask list; the sharing read stays pre-approved', () => {
   const cwd = folderWith(undefined);
   const readsOnly = folderWith({ version: 1, mode: 'reads-only' });
   const args = { project_id: 'p', account_id: 'a', id: 'p' };
@@ -1320,6 +1344,7 @@ test('a project\'s share, unshare and delete ask on a direct call and through a 
   assert.match(ALWAYS_ASK_WRITES.get('pm_project_unshare'), /lose the project and are unassigned from its tasks/);
   assert.match(ALWAYS_ASK_WRITES.get('pm_projects_delete'), /^PERMANENTLY deletes an archived project/);
   assert.match(ALWAYS_ASK_WRITES.get('pm_projects_delete'), /logged hours; there is no undo/);
+  assert.match(ALWAYS_ASK_WRITES.get('pm_tasks_delete'), /^PERMANENTLY deletes a task with its comments, logged hours, attachments and dependencies; there is no undo/);
   // The settings rail: each is on data/permission-critical-tools.json with its method and in INSTALL.md's ask block.
   const perm = JSON.parse(readFileSync(new URL('../data/permission-critical-tools.json', import.meta.url), 'utf8'));
   const gated = new Map(perm.tools.map((t) => [t.name, t]));
@@ -1331,9 +1356,8 @@ test('a project\'s share, unshare and delete ask on a direct call and through a 
     assert.ok(ask.includes(`${HIVEKU_TOOL_PREFIX}${name}`), `INSTALL.md's ask block must name ${name}`);
     assert.equal(isReadOnlyTool(name), false, `${name} is a write`);
   }
-  // A task's delete goes to the person's settings, which the ask list fills; the hook does not ask on every call.
-  assert.equal(ALWAYS_ASK_WRITES.has('pm_tasks_delete'), false, 'pm_tasks_delete is on the ask list only');
-  assert.equal(decideWithGuardrails({ ...payload('pm_tasks_delete', cwd), tool_input: { id: 't' } }), null);
+  // A task's delete by its number asks too: the hook reads the name, not how the task is named.
+  assert.equal(decision(decideWithGuardrails({ ...payload('pm_tasks_delete', cwd), tool_input: { id: '42' } })), 'ask');
   // The sharing read never prompts.
   assert.equal(gated.has('pm_project_sharing_get'), false, 'pm_project_sharing_get is a read');
   assert.equal(ALWAYS_ASK_WRITES.has('pm_project_sharing_get'), false);
@@ -2226,5 +2250,42 @@ test('the real hook process prints ask for the SEO plan\'s phrase and two sugges
   }
   for (const write of WAVE_F_WRITES_LEFT_ALONE) {
     assert.equal(ask.includes(`${HIVEKU_TOOL_PREFIX}${write}`), false, `${write} is left on the default, so no ask rule names it`);
+  }
+});
+
+// ── The other Projects wave 2 writes and a task's delete, through the real hook process (2026-11-04) ──
+//
+// 0.27.163 put these eight on the ask list only, so `bin/hiveku hook pre-tool-use` printed nothing for them and
+// INSTALL.md's blanket allow ran them on every install whose settings predate that block (the 0.27.163 review).
+// These pin the premise, as the LOA send's test above does, and the answer the real process prints now.
+const PROJECTS_ASKS_FROM_THE_HOOK = {
+  pm_task_comment_react: /^pm_task_comment_react adds your reaction to a comment on a task/,
+  pm_project_slack_test: /^pm_project_slack_test posts a test message into a real Slack channel/,
+  pm_project_github_sync_run: /^pm_project_github_sync_run turns a project's GitHub issues sync on or off, or runs it/,
+  pm_project_billing_update: /^pm_project_billing_update changes who a project's hours are billed to and its hourly rate/,
+  pm_project_billing_import: /^pm_project_billing_import brings the hours already logged on a project onto Commerce > Usage/,
+  pm_project_integrations_update: /^pm_project_integrations_update changes where a project posts its task updates/,
+  pm_project_automation_create: /^pm_project_automation_create makes a new workflow for a project from a recipe/,
+  pm_tasks_delete: /^pm_tasks_delete PERMANENTLY deletes a task with its comments/,
+};
+
+test('the real hook process prints ask for the other Projects wave 2 writes and a task\'s delete under the blanket allow', () => {
+  assert.deepEqual(Object.keys(PROJECTS_ASKS_FROM_THE_HOOK).sort(), [...PROJECTS_WAVE_2_OTHER_WRITES_THAT_ASK, 'pm_tasks_delete'].sort());
+  const { allow, ask } = installPermissions();
+  const hooks = JSON.parse(readFileSync(new URL('../hooks/hooks.json', import.meta.url), 'utf8'));
+  const matchers = hooks.hooks.PreToolUse.map((h) => h.matcher);
+  const cwd = folderWith(undefined);
+  for (const [name, lead] of Object.entries(PROJECTS_ASKS_FROM_THE_HOOK)) {
+    const full = `${HIVEKU_TOOL_PREFIX}${name}`;
+    assert.ok(allow.some((rule) => ruleMatches(rule, full)), `no INSTALL.md allow rule matches ${full}; the premise of this test changed`);
+    assert.ok(ask.includes(full), `INSTALL.md's ask block must name ${name} as well`);
+    assert.ok(matchers.some((m) => new RegExp(`^(?:${m})$`).test(full)), `no PreToolUse matcher in hooks/hooks.json reaches ${full}`);
+    const run = runPreToolUseHook(full, { project_id: 'p', id: 't', comment_id: 'c' }, cwd);
+    assert.equal(run.status, 0, run.stderr);
+    assert.notEqual(run.stdout, '', `the hook printed nothing, so the blanket allow would run ${name} unasked`);
+    const out = JSON.parse(run.stdout);
+    assert.equal(out.hookSpecificOutput.hookEventName, 'PreToolUse');
+    assert.equal(out.hookSpecificOutput.permissionDecision, 'ask');
+    assert.match(out.hookSpecificOutput.permissionDecisionReason, lead);
   }
 });
