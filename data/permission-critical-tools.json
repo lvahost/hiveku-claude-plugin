@@ -6,7 +6,7 @@
     "mcp__hiveku__"
   ],
   "plugin_version": "0.27.166",
-  "count": 428,
+  "count": 431,
   "tools": [
     {
       "name": "deploy_site",
@@ -292,6 +292,21 @@
       "name": "analytics_visitor_intelligence_start",
       "method": "POST",
       "why_gated": "starts identifying the people and companies who visit a live site (Site > Analytics > Visitor Intelligence): each one it finds counts against the account's monthly allowance, and stop_on_project_ids switches it off on the other sites named"
+    },
+    {
+      "name": "account_settings_update",
+      "method": "PATCH",
+      "why_gated": "changes shared account identity or timezone for everyone, affecting scheduling"
+    },
+    {
+      "name": "account_settings_logo_set",
+      "method": "POST",
+      "why_gated": "replaces the shared account logo for everyone"
+    },
+    {
+      "name": "account_settings_logo_remove",
+      "method": "DELETE",
+      "why_gated": "removes the shared account logo for everyone"
     },
     {
       "name": "account_timezone_set",
