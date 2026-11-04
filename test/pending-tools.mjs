@@ -535,6 +535,11 @@
  *     MARKETING-IDENTITY-DESKTOP-1  customer_journey_create_from_template, customer_journey_repopulate,
  *                                   customer_journey_videos_generate, customer_journey_simulation_publish,
  *                                   brand_guide_voiceovers_set, customer_journey_iteration_publish.
+ *
+ *   Marketing > Referrals for the desktop app (2026-11-04): the four writes of the nine referral tools that ask,
+ *   on the ask list and on ALWAYS_ASK_WRITES (lib/tool-safety.mjs), before the MCP release serves them.
+ *     REFERRALS-DESKTOP-1  marketing_referral_invite, marketing_referral_status_set, marketing_referral_archive,
+ *                          marketing_referral_update.
  */
 const SEO_SINCE = '2026-08-30';
 const seo = (batch) => ({ since: SEO_SINCE, batch });
@@ -726,4 +731,10 @@ export const PENDING_TOOLS = new Map([
   ['customer_journey_simulation_publish', { since: '2026-11-04', batch: 'MARKETING-IDENTITY-DESKTOP-1' }],
   ['brand_guide_voiceovers_set', { since: '2026-11-04', batch: 'MARKETING-IDENTITY-DESKTOP-1' }],
   ['customer_journey_iteration_publish', { since: '2026-11-04', batch: 'MARKETING-IDENTITY-DESKTOP-1' }],
+
+  // REFERRALS-DESKTOP-1 (2026-11-04): Marketing > Referrals' four writes that ask, before the MCP release serves them.
+  ['marketing_referral_invite', { since: '2026-11-04', batch: 'REFERRALS-DESKTOP-1' }],
+  ['marketing_referral_status_set', { since: '2026-11-04', batch: 'REFERRALS-DESKTOP-1' }],
+  ['marketing_referral_archive', { since: '2026-11-04', batch: 'REFERRALS-DESKTOP-1' }],
+  ['marketing_referral_update', { since: '2026-11-04', batch: 'REFERRALS-DESKTOP-1' }],
 ]);
