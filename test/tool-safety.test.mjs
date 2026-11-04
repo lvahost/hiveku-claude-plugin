@@ -1105,8 +1105,13 @@ const MEET_DISCUSSIONS_WRITES_THAT_ASK = [
  */
 const WEBINAR_EDIT_THAT_ASKS = ['marketing_webinar_update'];
 /**
+ * Hiveku Meet's calendar sends (2026-11-03): a booking link emailed or texted to a contact, and a meeting booked for a
+ * contact (the Hiveku app's own key alone; it asks anyway as a second guard).
+ */
+const MEET_CALENDAR_SENDS_THAT_ASK = ['crm_contact_booking_link_send', 'calendar_booking_create'];
+/**
  * Marketing > Referrals (2026-11-04): sending invites texts or emails customers, a pause stops every link a campaign
- * handed out, an archive stops them for good, and an edit changes what every friend reads at once.
+ * handed out, an archive stops them for good, and an edit changes the friend's reward on the page every friend opens.
  */
 const REFERRAL_WRITES_THAT_ASK = [
   'marketing_referral_invite',
@@ -1115,10 +1120,10 @@ const REFERRAL_WRITES_THAT_ASK = [
   'marketing_referral_update',
 ];
 
-test('the always-ask set is exactly the memory, form-capture and indexing writes, the secrets reveal, the A/B test writes, the mobile app writes, the PPC override, the lead-email change, a checks rerun, the Email Service setup writes, the record-again ask, the LOA email, the Confirm on your phone start and cancel, the help desk privacy writes, the site inbox delete and move, the ad account connection delete, an email webhook\'s delete, the SEO page\'s erases and overwrites, the Memory page\'s writes, a person\'s Mission Control claim, release and decision, a person\'s Projects leave and comment delete, a project\'s share, unshare and delete, the Meet and Discussions sends, shares and deletes, a webinar\'s edit, and the Referrals sends, pauses, archives and edits', () => {
+test('the always-ask set is exactly the memory, form-capture and indexing writes, the secrets reveal, the A/B test writes, the mobile app writes, the PPC override, the lead-email change, a checks rerun, the Email Service setup writes, the record-again ask, the LOA email, the Confirm on your phone start and cancel, the help desk privacy writes, the site inbox delete and move, the ad account connection delete, an email webhook\'s delete, the SEO page\'s erases and overwrites, the Memory page\'s writes, a person\'s Mission Control claim, release and decision, a person\'s Projects leave and comment delete, a project\'s share, unshare and delete, the Meet and Discussions sends, shares and deletes, a webinar\'s edit, and the Meet calendar sends, and the Referrals sends, pauses, archives and edits', () => {
   assert.deepEqual(
     [...ALWAYS_ASK_WRITES.keys()].sort(),
-    [...MEMORY_WRITES_THAT_ASK, ...FORM_CAPTURE_WRITES_THAT_ASK, ...INDEXING_WRITES_THAT_ASK, ...SECRETS_REVEAL_THAT_ASKS, ...AB_TEST_WRITES_THAT_ASK, ...MOBILE_WRITES_THAT_ASK, ...PPC_OVERRIDE_THAT_ASKS, ...LEAD_EMAIL_WRITES_THAT_ASK, ...CHECKS_RERUN_THAT_ASKS, ...EMAIL_SERVICE_WRITES_THAT_ASK, ...TESTIMONIAL_RERECORD_THAT_ASKS, ...LOA_SEND_THAT_ASKS, ...CONFIRM_ON_PHONE_THAT_ASKS, ...HELPDESK_PRIVACY_WRITES_THAT_ASK, ...SITE_WRITES_THAT_ASK, ...PPC_CONNECTION_DELETE_THAT_ASKS, ...EMAIL_WEBHOOK_DELETE_THAT_ASKS, ...SEO_WRITES_THAT_ASK, ...MEMORY_PAGE_WRITES_THAT_ASK, ...MISSION_CONTROL_WRITES_THAT_ASK, ...PROJECTS_PERSON_WRITES_THAT_ASK, ...PROJECTS_SHARE_AND_DELETE_THAT_ASK, ...MEET_DISCUSSIONS_WRITES_THAT_ASK, ...WEBINAR_EDIT_THAT_ASKS, ...REFERRAL_WRITES_THAT_ASK].sort(),
+    [...MEMORY_WRITES_THAT_ASK, ...FORM_CAPTURE_WRITES_THAT_ASK, ...INDEXING_WRITES_THAT_ASK, ...SECRETS_REVEAL_THAT_ASKS, ...AB_TEST_WRITES_THAT_ASK, ...MOBILE_WRITES_THAT_ASK, ...PPC_OVERRIDE_THAT_ASKS, ...LEAD_EMAIL_WRITES_THAT_ASK, ...CHECKS_RERUN_THAT_ASKS, ...EMAIL_SERVICE_WRITES_THAT_ASK, ...TESTIMONIAL_RERECORD_THAT_ASKS, ...LOA_SEND_THAT_ASKS, ...CONFIRM_ON_PHONE_THAT_ASKS, ...HELPDESK_PRIVACY_WRITES_THAT_ASK, ...SITE_WRITES_THAT_ASK, ...PPC_CONNECTION_DELETE_THAT_ASKS, ...EMAIL_WEBHOOK_DELETE_THAT_ASKS, ...SEO_WRITES_THAT_ASK, ...MEMORY_PAGE_WRITES_THAT_ASK, ...MISSION_CONTROL_WRITES_THAT_ASK, ...PROJECTS_PERSON_WRITES_THAT_ASK, ...PROJECTS_SHARE_AND_DELETE_THAT_ASK, ...MEET_DISCUSSIONS_WRITES_THAT_ASK, ...WEBINAR_EDIT_THAT_ASKS, ...MEET_CALENDAR_SENDS_THAT_ASK, ...REFERRAL_WRITES_THAT_ASK].sort(),
   );
 });
 
@@ -1140,8 +1145,33 @@ test('the Referrals sends, pauses, archives and edits ask on a direct call and t
   assert.match(ALWAYS_ASK_WRITES.get('marketing_referral_invite'), /texts or emails/);
   assert.match(ALWAYS_ASK_WRITES.get('marketing_referral_status_set'), /a pause stops every referral link/);
   assert.match(ALWAYS_ASK_WRITES.get('marketing_referral_archive'), /there is no undo/);
-  assert.match(ALWAYS_ASK_WRITES.get('marketing_referral_update'), /every friend/);
+  assert.match(ALWAYS_ASK_WRITES.get('marketing_referral_update'), /the friend's reward changes at once/);
   for (const name of ['marketing_referral_create', 'marketing_referral_links_create', 'marketing_referral_lead_status_set', 'marketing_referrals_list', 'marketing_referral_get']) {
+    assert.equal(ALWAYS_ASK_WRITES.has(name), false, `${name} must not ask on every call`);
+  }
+});
+
+test('the Meet calendar sends ask on every direct call and through a batch, a reads-only folder denies them, and the calendar reads are not on the set', () => {
+  const cwd = folderWith(undefined);
+  const readsOnly = folderWith({ version: 1, mode: 'reads-only' });
+  for (const name of MEET_CALENDAR_SENDS_THAT_ASK) {
+    const direct = decideWithGuardrails({ ...payload(name, cwd), tool_input: { contact_id: 'x', meeting_type_id: 'x' } });
+    assert.equal(direct?.hookSpecificOutput?.permissionDecision, 'ask', name);
+    assert.match(direct.hookSpecificOutput.permissionDecisionReason, new RegExp(`^${name} `), name);
+    const batch = decideForPayload({ tool_name: `${HIVEKU_TOOL_PREFIX}hiveku_batch`, tool_input: { calls: [{ tool: name, args: { contact_id: 'x' } }] } });
+    assert.equal(batch?.hookSpecificOutput?.permissionDecision, 'ask', `${name} in a batch`);
+    assert.equal(isAutoApprovable(name, {}), false, name);
+    assert.equal(isReadOnlyTool(name), false, `${name} must not be on the generated read list`);
+    assert.equal(decision(decideWithGuardrails(payload(name, readsOnly))), 'deny', `${name} under reads-only`);
+    assert.doesNotMatch(ALWAYS_ASK_WRITES.get(name), /[–—]/, `${name}: no dashes in a reason the person reads`);
+  }
+  // What each reason has to tell the person: who gets what, and that it cannot be taken back.
+  assert.match(ALWAYS_ASK_WRITES.get('crm_contact_booking_link_send'), /^emails or texts a contact a booking link /);
+  assert.match(ALWAYS_ASK_WRITES.get('crm_contact_booking_link_send'), /cannot be taken back/);
+  assert.match(ALWAYS_ASK_WRITES.get('calendar_booking_create'), /Hiveku emails them the confirmation with the meeting link/);
+  assert.match(ALWAYS_ASK_WRITES.get('calendar_booking_create'), /Hiveku app's own key alone, so from an assistant it is refused anyway/);
+  // The reads that came with them stay unasked.
+  for (const name of ['calendar_bookings_list', 'calendar_booking_get', 'calendar_meeting_types_list', 'crm_inbox_replies_list', 'crm_inbox_reply_thread_get']) {
     assert.equal(ALWAYS_ASK_WRITES.has(name), false, `${name} must not ask on every call`);
   }
 });
