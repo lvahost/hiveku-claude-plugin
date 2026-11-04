@@ -6,7 +6,7 @@
     "mcp__hiveku__"
   ],
   "plugin_version": "0.27.163",
-  "count": 425,
+  "count": 429,
   "tools": [
     {
       "name": "deploy_site",
@@ -2132,6 +2132,26 @@
       "name": "voice_desk_phone_set",
       "method": "PATCH",
       "why_gated": "points an extension at a desk phone by its MAC address, a live phone-system change: the phone with that MAC gets the extension's line"
+    },
+    {
+      "name": "marketing_referral_invite",
+      "method": "POST",
+      "why_gated": "texts or emails each chosen customer their own referral link, in the business's name; invites that went out cannot be taken back"
+    },
+    {
+      "name": "marketing_referral_status_set",
+      "method": "PATCH",
+      "why_gated": "activates or pauses a referral campaign; a pause stops every referral link it handed out until it is active again"
+    },
+    {
+      "name": "marketing_referral_archive",
+      "method": "DELETE",
+      "why_gated": "archives a referral campaign: every link it handed out stops working for good; there is no undo"
+    },
+    {
+      "name": "marketing_referral_update",
+      "method": "PATCH",
+      "why_gated": "changes a referral campaign's name, rewards or invite messages; the rewards change at once on the page of every friend who opens a link"
     }
   ]
 }
