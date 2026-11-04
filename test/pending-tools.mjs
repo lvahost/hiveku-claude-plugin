@@ -527,7 +527,8 @@
  *
  *   Hiveku Meet's calendar for the desktop app (2026-11-03, the Schedule dialog and Bookings): the two sends ask
  *   before the MCP release serves them, on the ask list and on ALWAYS_ASK_WRITES (lib/tool-safety.mjs).
- *     MEET-CALENDAR-DESKTOP-1  crm_contact_booking_link_send, calendar_booking_create.
+ *     MEET-CALENDAR-DESKTOP-1  crm_contact_booking_link_send, calendar_booking_create. Landed 2026-11-04 (MCP #401,
+ *                              live at 0a5bdb36d179); entries deleted.
  *
  *   Brand guides and customer journeys for the desktop app (2026-11-04; builder #1978): the six writes that ask
  *   before the MCP release serves them, four on LIVE_CHANGE_WRITES and two on ALWAYS_ASK_WRITES (lib/tool-safety.mjs).
@@ -539,6 +540,10 @@ const SEO_SINCE = '2026-08-30';
 const seo = (batch) => ({ since: SEO_SINCE, batch });
 
 export const PENDING_TOOLS = new Map([
+  // SITES-S3B (2026-11-04): mobile_app_expo_project_choose records which Expo project a mobile app builds into
+  // (MC3 of the desktop's website parity). On the ask list and ALWAYS_ASK_WRITES from this release, before
+  // the MCP release serves it (its description says ASK THE PERSON FIRST, which the MCP's guard holds to this).
+  ['mobile_app_expo_project_choose', { since: '2026-11-04', batch: 'SITES-S3B' }],
   // S1
 
   // S2
@@ -709,9 +714,9 @@ export const PENDING_TOOLS = new Map([
   // seo_plan_phrase_set, seo_plan_suggest_phrases and seo_plan_suggest_links are served and indexed (MCP #394; on the
   // ask list and LIVE_CHANGE_WRITES). Entries deleted.
 
-  // MEET-CALENDAR-DESKTOP-1 (2026-11-03): the booking link send and Book a time ask before the MCP release serves them.
-  ['crm_contact_booking_link_send', { since: '2026-11-03', batch: 'MEET-CALENDAR-DESKTOP-1' }],
-  ['calendar_booking_create', { since: '2026-11-03', batch: 'MEET-CALENDAR-DESKTOP-1' }],
+  // 2026-11-04 (index regenerated at 2795 tools from MCP 0a5bdb36d179, #401): MEET-CALENDAR-DESKTOP-1's
+  // crm_contact_booking_link_send and calendar_booking_create are served and indexed (off the read-only list; on the
+  // ask list and ALWAYS_ASK_WRITES). Entries deleted.
 
   // MARKETING-IDENTITY-DESKTOP-1 (2026-11-04): the brand guide and customer journey writes that ask before the MCP
   // release serves them.
