@@ -528,6 +528,12 @@
  *   Hiveku Meet's calendar for the desktop app (2026-11-03, the Schedule dialog and Bookings): the two sends ask
  *   before the MCP release serves them, on the ask list and on ALWAYS_ASK_WRITES (lib/tool-safety.mjs).
  *     MEET-CALENDAR-DESKTOP-1  crm_contact_booking_link_send, calendar_booking_create.
+ *
+ *   Brand guides and customer journeys for the desktop app (2026-11-04; builder #1978): the six writes that ask
+ *   before the MCP release serves them, four on LIVE_CHANGE_WRITES and two on ALWAYS_ASK_WRITES (lib/tool-safety.mjs).
+ *     MARKETING-IDENTITY-DESKTOP-1  customer_journey_create_from_template, customer_journey_repopulate,
+ *                                   customer_journey_videos_generate, customer_journey_simulation_publish,
+ *                                   brand_guide_voiceovers_set, customer_journey_iteration_publish.
  */
 const SEO_SINCE = '2026-08-30';
 const seo = (batch) => ({ since: SEO_SINCE, batch });
@@ -706,4 +712,13 @@ export const PENDING_TOOLS = new Map([
   // MEET-CALENDAR-DESKTOP-1 (2026-11-03): the booking link send and Book a time ask before the MCP release serves them.
   ['crm_contact_booking_link_send', { since: '2026-11-03', batch: 'MEET-CALENDAR-DESKTOP-1' }],
   ['calendar_booking_create', { since: '2026-11-03', batch: 'MEET-CALENDAR-DESKTOP-1' }],
+
+  // MARKETING-IDENTITY-DESKTOP-1 (2026-11-04): the brand guide and customer journey writes that ask before the MCP
+  // release serves them.
+  ['customer_journey_create_from_template', { since: '2026-11-04', batch: 'MARKETING-IDENTITY-DESKTOP-1' }],
+  ['customer_journey_repopulate', { since: '2026-11-04', batch: 'MARKETING-IDENTITY-DESKTOP-1' }],
+  ['customer_journey_videos_generate', { since: '2026-11-04', batch: 'MARKETING-IDENTITY-DESKTOP-1' }],
+  ['customer_journey_simulation_publish', { since: '2026-11-04', batch: 'MARKETING-IDENTITY-DESKTOP-1' }],
+  ['brand_guide_voiceovers_set', { since: '2026-11-04', batch: 'MARKETING-IDENTITY-DESKTOP-1' }],
+  ['customer_journey_iteration_publish', { since: '2026-11-04', batch: 'MARKETING-IDENTITY-DESKTOP-1' }],
 ]);
