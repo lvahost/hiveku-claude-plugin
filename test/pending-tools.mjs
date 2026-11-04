@@ -539,6 +539,10 @@ const SEO_SINCE = '2026-08-30';
 const seo = (batch) => ({ since: SEO_SINCE, batch });
 
 export const PENDING_TOOLS = new Map([
+  // SITES-S3B (2026-11-04): mobile_app_expo_project_choose records which Expo project a mobile app builds into
+  // (MC3 of the desktop's website parity). On the ask list and ALWAYS_ASK_WRITES from this release, before
+  // the MCP release serves it (its description says ASK THE PERSON FIRST, which the MCP's guard holds to this).
+  ['mobile_app_expo_project_choose', { since: '2026-11-04', batch: 'SITES-S3B' }],
   // S1
 
   // S2
