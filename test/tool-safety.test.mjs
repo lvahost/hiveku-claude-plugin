@@ -1027,6 +1027,8 @@ const HELPDESK_PRIVACY_WRITES_THAT_ASK = ['helpdesk_contact_data_erase', 'helpde
 const SITE_WRITES_THAT_ASK = ['marketing_form_inbox_delete', 'site_transfer'];
 /** Deleting an ad account connection (2026-10-30, the desktop app's Ads area, wave B): Hiveku's copy of its campaigns, numbers, history and uploads erased for good. */
 const PPC_CONNECTION_DELETE_THAT_ASKS = ['ppc_connection_delete'];
+/** An email webhook's delete (2026-11-02, HK-1083): HK-1083's permanent: true (not yet served) will erase the webhook and its delivery history for good. */
+const EMAIL_WEBHOOK_DELETE_THAT_ASKS = ['email_webhook_delete'];
 /** The desktop app's SEO page, wave B (2026-10-30, MCP #353): erases and overwrites of Hiveku's own copy (rank history, an audit, the working sheet, a saved report, a connection's saved history). */
 const SEO_WRITES_THAT_ASK = [
   'seo_rankings_keyword_delete',
@@ -1071,6 +1073,18 @@ const MEMORY_PAGE_WRITES_THAT_ASK = [
  */
 const MISSION_CONTROL_WRITES_THAT_ASK = ['mc_task_claim', 'mc_task_release', 'mc_task_answer'];
 /**
+ * The desktop app's Projects, wave 2 (2026-11-02, MCP #387 and #391): a person taking their workspace out of a project
+ * another workspace shares, and a person deleting their own comment on a task. Both act as the person whose key makes
+ * the call, and neither can be undone from here.
+ */
+const PROJECTS_PERSON_WRITES_THAT_ASK = ['pm_project_leave', 'pm_task_comment_delete'];
+/**
+ * A project's share, unshare and delete (2026-11-03, the Projects wave 2 review; MCP #113 and builder #1193): a share
+ * or an unshare acts at once for another workspace's people, like a Discussions channel's, and the delete takes an
+ * archived project and everything in it for good, like discussion_delete.
+ */
+const PROJECTS_SHARE_AND_DELETE_THAT_ASK = ['pm_project_share', 'pm_project_unshare', 'pm_projects_delete'];
+/**
  * Hiveku Meet and Discussions (2026-11-01, MCP #374, #367, #349 and #227, all served), in three groups: the webinar
  * invites, cancel and delete (Hiveku Meet decision 2); the meeting and call recording deletes (the Hiveku app's own key
  * alone on the server, kept here as a second guard); and a channel's share, unshare and delete (the Discussions plan).
@@ -1091,10 +1105,10 @@ const MEET_DISCUSSIONS_WRITES_THAT_ASK = [
  */
 const WEBINAR_EDIT_THAT_ASKS = ['marketing_webinar_update'];
 
-test('the always-ask set is exactly the memory, form-capture and indexing writes, the secrets reveal, the A/B test writes, the mobile app writes, the PPC override, the lead-email change, a checks rerun, the Email Service setup writes, the record-again ask, the LOA email, the Confirm on your phone start and cancel, the help desk privacy writes, the site inbox delete and move, the ad account connection delete, the SEO page\'s erases and overwrites, the Memory page\'s writes, a person\'s Mission Control claim, release and decision, the Meet and Discussions sends, shares and deletes, and a webinar\'s edit', () => {
+test('the always-ask set is exactly the memory, form-capture and indexing writes, the secrets reveal, the A/B test writes, the mobile app writes, the PPC override, the lead-email change, a checks rerun, the Email Service setup writes, the record-again ask, the LOA email, the Confirm on your phone start and cancel, the help desk privacy writes, the site inbox delete and move, the ad account connection delete, an email webhook\'s delete, the SEO page\'s erases and overwrites, the Memory page\'s writes, a person\'s Mission Control claim, release and decision, a person\'s Projects leave and comment delete, a project\'s share, unshare and delete, the Meet and Discussions sends, shares and deletes, and a webinar\'s edit', () => {
   assert.deepEqual(
     [...ALWAYS_ASK_WRITES.keys()].sort(),
-    [...MEMORY_WRITES_THAT_ASK, ...FORM_CAPTURE_WRITES_THAT_ASK, ...INDEXING_WRITES_THAT_ASK, ...SECRETS_REVEAL_THAT_ASKS, ...AB_TEST_WRITES_THAT_ASK, ...MOBILE_WRITES_THAT_ASK, ...PPC_OVERRIDE_THAT_ASKS, ...LEAD_EMAIL_WRITES_THAT_ASK, ...CHECKS_RERUN_THAT_ASKS, ...EMAIL_SERVICE_WRITES_THAT_ASK, ...TESTIMONIAL_RERECORD_THAT_ASKS, ...LOA_SEND_THAT_ASKS, ...CONFIRM_ON_PHONE_THAT_ASKS, ...HELPDESK_PRIVACY_WRITES_THAT_ASK, ...SITE_WRITES_THAT_ASK, ...PPC_CONNECTION_DELETE_THAT_ASKS, ...SEO_WRITES_THAT_ASK, ...MEMORY_PAGE_WRITES_THAT_ASK, ...MISSION_CONTROL_WRITES_THAT_ASK, ...MEET_DISCUSSIONS_WRITES_THAT_ASK, ...WEBINAR_EDIT_THAT_ASKS].sort(),
+    [...MEMORY_WRITES_THAT_ASK, ...FORM_CAPTURE_WRITES_THAT_ASK, ...INDEXING_WRITES_THAT_ASK, ...SECRETS_REVEAL_THAT_ASKS, ...AB_TEST_WRITES_THAT_ASK, ...MOBILE_WRITES_THAT_ASK, ...PPC_OVERRIDE_THAT_ASKS, ...LEAD_EMAIL_WRITES_THAT_ASK, ...CHECKS_RERUN_THAT_ASKS, ...EMAIL_SERVICE_WRITES_THAT_ASK, ...TESTIMONIAL_RERECORD_THAT_ASKS, ...LOA_SEND_THAT_ASKS, ...CONFIRM_ON_PHONE_THAT_ASKS, ...HELPDESK_PRIVACY_WRITES_THAT_ASK, ...SITE_WRITES_THAT_ASK, ...PPC_CONNECTION_DELETE_THAT_ASKS, ...EMAIL_WEBHOOK_DELETE_THAT_ASKS, ...SEO_WRITES_THAT_ASK, ...MEMORY_PAGE_WRITES_THAT_ASK, ...MISSION_CONTROL_WRITES_THAT_ASK, ...PROJECTS_PERSON_WRITES_THAT_ASK, ...PROJECTS_SHARE_AND_DELETE_THAT_ASK, ...MEET_DISCUSSIONS_WRITES_THAT_ASK, ...WEBINAR_EDIT_THAT_ASKS].sort(),
   );
 });
 
@@ -1182,6 +1196,148 @@ test('a person\'s Mission Control claim, release and decision ask on a direct ca
   for (const name of ['mc_task_get', 'mc_decision_check', 'mc_tasks_list', 'mc_decisions_pending', 'pm_project_activity_list']) {
     assert.equal(ALWAYS_ASK_WRITES.has(name), false, `${name} must not ask on every call`);
   }
+});
+
+// Projects wave 2 (2026-11-02, MCP #387 and #391). A person's leave and own-comment delete ask on every direct call
+// whatever the settings allow, as a person's Mission Control acts do. All nine wave 2 writes are on the ask list (and
+// so INSTALL.md); the other seven are on it only. The reads stay pre-approved, and the attachment link stays off the
+// read list: its declaration carries readOnlyHint, so SENSITIVE_READ_EXCLUSIONS is what keeps it off.
+test('a person\'s Projects leave and comment delete ask on a direct call and through a batch, a reads-only folder denies them; all nine wave 2 writes are on the ask list; the reads stay pre-approved and the attachment link is not a read', () => {
+  const cwd = folderWith(undefined);
+  const readsOnly = folderWith({ version: 1, mode: 'reads-only' });
+  const args = { project_id: 'p', id: 't', comment_id: 'c' };
+  for (const name of PROJECTS_PERSON_WRITES_THAT_ASK) {
+    const direct = decideWithGuardrails({ ...payload(name, cwd), tool_input: args });
+    assert.equal(direct?.hookSpecificOutput?.permissionDecision, 'ask', name);
+    assert.match(direct.hookSpecificOutput.permissionDecisionReason, new RegExp(`^${name} `), name);
+    const batch = decideForPayload({ tool_name: `${HIVEKU_TOOL_PREFIX}hiveku_batch`, tool_input: { calls: [{ tool: name, args }] } });
+    assert.equal(batch?.hookSpecificOutput?.permissionDecision, 'ask', `${name} in a batch`);
+    assert.equal(isAutoApprovable(name, args), false, name);
+    assert.equal(isReadOnlyTool(name), false, `${name} must not be on the generated read list`);
+    assert.equal(decision(decideWithGuardrails(payload(name, readsOnly))), 'deny', `${name} under reads-only`);
+    assert.doesNotMatch(ALWAYS_ASK_WRITES.get(name), /[\u2013\u2014]/, `${name}: no dashes in a reason the person reads`);
+  }
+  // What each reason has to tell the person.
+  assert.match(ALWAYS_ASK_WRITES.get('pm_project_leave'), /^takes this workspace out of a project another workspace shares with it, at once/);
+  assert.match(ALWAYS_ASK_WRITES.get('pm_project_leave'), /only the owner can share it again/);
+  assert.match(ALWAYS_ASK_WRITES.get('pm_task_comment_delete'), /for everyone and for good; there is no undo/);
+  // The settings rail: every wave 2 write is on data/permission-critical-tools.json with its method and in INSTALL.md's
+  // ask block; only the two above are on the hook.
+  const perm = JSON.parse(readFileSync(new URL('../data/permission-critical-tools.json', import.meta.url), 'utf8'));
+  const gated = new Map(perm.tools.map((t) => [t.name, t]));
+  const ask = installPermissions().ask;
+  const WAVE2_WRITES = {
+    pm_project_leave: 'DELETE',
+    pm_task_comment_delete: 'DELETE',
+    pm_task_comment_react: 'POST',
+    pm_project_slack_test: 'POST',
+    pm_project_github_sync_run: 'POST',
+    pm_project_billing_update: 'PUT',
+    pm_project_billing_import: 'POST',
+    pm_project_integrations_update: 'PATCH',
+    pm_project_automation_create: 'POST',
+  };
+  for (const [name, method] of Object.entries(WAVE2_WRITES)) {
+    assert.equal(gated.get(name)?.method, method, `${name} must be on data/permission-critical-tools.json as a ${method}`);
+    assert.doesNotMatch(gated.get(name).why_gated, /[\u2013\u2014]/, `${name}: no dashes in a reason the person reads`);
+    assert.ok(ask.includes(`${HIVEKU_TOOL_PREFIX}${name}`), `INSTALL.md's ask block must name ${name}`);
+    assert.equal(isReadOnlyTool(name), false, `${name} is a write`);
+    if (!PROJECTS_PERSON_WRITES_THAT_ASK.includes(name)) {
+      assert.equal(ALWAYS_ASK_WRITES.has(name), false, `${name} is on the ask list only`);
+    }
+  }
+  // The wave 2 reads never prompt.
+  for (const read of ['pm_project_settings_get', 'pm_project_time_logs_export', 'pm_project_assignable', 'pm_my_tasks', 'pm_task_linked_content_list', 'pm_project_automations_list', 'pm_project_integrations_get', 'pm_project_github_sync_get', 'pm_project_billing_get']) {
+    assert.equal(gated.has(read), false, `${read} is a read`);
+    assert.equal(ALWAYS_ASK_WRITES.has(read), false, `${read} must not ask on every call`);
+    assert.equal(decision(decideWithGuardrails(payload(read, cwd))), 'allow', `${read} must stay pre-approved`);
+  }
+  // The attachment link is a GET whose answer opens the file with no key for 15 minutes: never a read.
+  const link = 'pm_task_attachment_download_url';
+  assert.ok(NEVER_AUTO_APPROVE.has(link), `${link} must carry the veto`);
+  assert.equal(isReadOnlyTool(link), false, `${link} must not classify as a read; regenerate lib/readonly-tools.json if this fails`);
+  assert.equal(decision(decideWithGuardrails({ ...payload(link, cwd), tool_input: { task_id: 't', attachment_id: 'a' } })), 'ask');
+  assert.equal(gated.has(link), false, `${link} is a GET, which the ask list never carries`);
+  const generator = readFileSync(new URL('../scripts/gen-readonly-tools.mjs', import.meta.url), 'utf8');
+  assert.match(generator, /\['pm_task_attachment_download_url',/, 'the read-only generator must exclude it (SENSITIVE_READ_EXCLUSIONS)');
+  // The delete's preview is a read whose name holds "delete": nothing pre-approves it (WRITE_VERBS, and the generator
+  // keeps it off the read list), so it goes to the person's settings, and a reads-only folder runs it as the read it
+  // is instead of refusing it as a write.
+  const impact = 'pm_project_delete_impact';
+  assert.equal(isReadOnlyTool(impact), false, `${impact} must stay off the pre-approved reads`);
+  assert.equal(isAutoApprovable(impact, { project_id: 'p' }), false, impact);
+  assert.ok(isNonMutatingTool(impact), `${impact} writes nothing`);
+  assert.equal(decideWithGuardrails({ ...payload(impact, cwd), tool_input: { project_id: 'p' } }), null, `${impact} goes to the person's settings`);
+  assert.equal(decideWithGuardrails({ ...payload(impact, readsOnly), tool_input: { project_id: 'p' } }), null, `a reads-only folder must not refuse ${impact} as a write`);
+  assert.equal(gated.has(impact), false, `${impact} is a GET, which the ask list never carries`);
+  assert.match(generator, /\['pm_project_delete_impact',/, 'the read-only generator must exclude it (SENSITIVE_READ_EXCLUSIONS)');
+  // A reads-only folder still refuses the delete itself.
+  assert.equal(decision(decideWithGuardrails(payload('pm_projects_delete', readsOnly))), 'deny');
+});
+
+import { LIVE_CHANGE_WRITES, READS_NAMED_LIKE_WRITES } from '../lib/tool-safety.mjs';
+
+// Reads named like writes (2026-11-03): each is a GET in the index whose name WRITE_VERBS refuses, which the generator
+// keeps off the read list, and which nothing else gates. A name that stops being a GET, or loses its write word, does
+// not belong on the set.
+test('every read named like a write is a GET the generator excludes, is never pre-approved, and runs under a reads-only ceiling', () => {
+  const idx = JSON.parse(readFileSync(new URL('../lib/tool-index.json', import.meta.url), 'utf8'));
+  const methods = new Map(idx.tools.map((t) => [t.name, t.method]));
+  const generator = readFileSync(new URL('../scripts/gen-readonly-tools.mjs', import.meta.url), 'utf8');
+  const readsOnly = folderWith({ version: 1, mode: 'reads-only' });
+  assert.ok(READS_NAMED_LIKE_WRITES.size > 0, 'the set is read, never a vacuous pass');
+  for (const name of READS_NAMED_LIKE_WRITES) {
+    assert.equal(methods.get(name), 'GET', `${name} must be a GET in the tool index`);
+    assert.match(name, /(^|_)(delete|destroy|purge|wipe|revoke|refund|uninstall|truncate|drop)(_|$)/, `${name} holds no write word, so it belongs on the read list instead`);
+    assert.ok(generator.includes(`['${name}',`), `${name} must be in SENSITIVE_READ_EXCLUSIONS`);
+    assert.equal(isReadOnlyTool(name), false, name);
+    assert.equal(NEVER_AUTO_APPROVE.has(name), false, `${name}: a response hazard belongs on NEVER_AUTO_APPROVE, not here`);
+    assert.equal(ALWAYS_ASK_WRITES.has(name) || LIVE_CHANGE_WRITES.has(name), false, `${name} is a read`);
+    assert.notEqual(decision(decideWithGuardrails(payload(name, readsOnly))), 'deny', `${name} under reads-only`);
+  }
+});
+
+// A project's share, unshare and delete (2026-11-03, the Projects wave 2 review). The three ask on every direct call
+// whatever the settings allow, as their Discussions twins and pm_project_leave do; a task's delete is on the ask list
+// (and so INSTALL.md) only, like cms_delete_entry. The sharing read stays pre-approved.
+test('a project\'s share, unshare and delete ask on a direct call and through a batch, a reads-only folder denies them; they and a task delete are on the ask list; the sharing read stays pre-approved', () => {
+  const cwd = folderWith(undefined);
+  const readsOnly = folderWith({ version: 1, mode: 'reads-only' });
+  const args = { project_id: 'p', account_id: 'a', id: 'p' };
+  for (const name of PROJECTS_SHARE_AND_DELETE_THAT_ASK) {
+    const direct = decideWithGuardrails({ ...payload(name, cwd), tool_input: args });
+    assert.equal(direct?.hookSpecificOutput?.permissionDecision, 'ask', name);
+    assert.match(direct.hookSpecificOutput.permissionDecisionReason, new RegExp(`^${name} `), name);
+    const batch = decideForPayload({ tool_name: `${HIVEKU_TOOL_PREFIX}hiveku_batch`, tool_input: { calls: [{ tool: name, args }] } });
+    assert.equal(batch?.hookSpecificOutput?.permissionDecision, 'ask', `${name} in a batch`);
+    assert.equal(isAutoApprovable(name, args), false, name);
+    assert.equal(isReadOnlyTool(name), false, `${name} must not be on the generated read list`);
+    assert.equal(decision(decideWithGuardrails(payload(name, readsOnly))), 'deny', `${name} under reads-only`);
+    assert.doesNotMatch(ALWAYS_ASK_WRITES.get(name), /[\u2013\u2014]/, `${name}: no dashes in a reason the person reads`);
+  }
+  // What each reason has to tell the person.
+  assert.match(ALWAYS_ASK_WRITES.get('pm_project_share'), /^shares a project with another workspace at once, with nothing to accept/);
+  assert.match(ALWAYS_ASK_WRITES.get('pm_project_unshare'), /lose the project and are unassigned from its tasks/);
+  assert.match(ALWAYS_ASK_WRITES.get('pm_projects_delete'), /^PERMANENTLY deletes an archived project/);
+  assert.match(ALWAYS_ASK_WRITES.get('pm_projects_delete'), /logged hours; there is no undo/);
+  // The settings rail: each is on data/permission-critical-tools.json with its method and in INSTALL.md's ask block.
+  const perm = JSON.parse(readFileSync(new URL('../data/permission-critical-tools.json', import.meta.url), 'utf8'));
+  const gated = new Map(perm.tools.map((t) => [t.name, t]));
+  const ask = installPermissions().ask;
+  const ON_THE_ASK_LIST = { pm_project_share: 'POST', pm_project_unshare: 'DELETE', pm_projects_delete: 'DELETE', pm_tasks_delete: 'DELETE' };
+  for (const [name, method] of Object.entries(ON_THE_ASK_LIST)) {
+    assert.equal(gated.get(name)?.method, method, `${name} must be on data/permission-critical-tools.json as a ${method}`);
+    assert.doesNotMatch(gated.get(name).why_gated, /[\u2013\u2014]/, `${name}: no dashes in a reason the person reads`);
+    assert.ok(ask.includes(`${HIVEKU_TOOL_PREFIX}${name}`), `INSTALL.md's ask block must name ${name}`);
+    assert.equal(isReadOnlyTool(name), false, `${name} is a write`);
+  }
+  // A task's delete goes to the person's settings, which the ask list fills; the hook does not ask on every call.
+  assert.equal(ALWAYS_ASK_WRITES.has('pm_tasks_delete'), false, 'pm_tasks_delete is on the ask list only');
+  assert.equal(decideWithGuardrails({ ...payload('pm_tasks_delete', cwd), tool_input: { id: 't' } }), null);
+  // The sharing read never prompts.
+  assert.equal(gated.has('pm_project_sharing_get'), false, 'pm_project_sharing_get is a read');
+  assert.equal(ALWAYS_ASK_WRITES.has('pm_project_sharing_get'), false);
+  assert.equal(decision(decideWithGuardrails(payload('pm_project_sharing_get', cwd))), 'allow', 'pm_project_sharing_get must stay pre-approved');
 });
 
 test('the Memory page\'s writes ask on a direct call and through a batch, a reads-only folder denies them, and their reads and the knowledge base writes are not on the set', () => {
@@ -1297,6 +1453,43 @@ test('the Email Service setup writes ask on a direct call with no guardrails fil
   }
   assert.match(ALWAYS_ASK_WRITES.get('email_send'), /cannot be taken back/);
   assert.match(ALWAYS_ASK_WRITES.get('email_suppression_import'), /can never be removed/);
+});
+
+// email_webhook_delete will delete a webhook and its delivery history for good with permanent: true (HK-1083
+// review, 2026-11-02). That mode is not yet served: the live tool takes only webhook_id and switches the webhook
+// off, so the reason says the mode is still to come. The ask ships first on purpose. One name will carry both
+// modes, and an ask cannot read the argument, so every call asks, whatever the settings allow; the reads stay
+// pre-approved.
+test('an email webhook\'s delete asks on a direct call in either mode and through a batch; a reads-only folder denies it; it is on the ask list; the reads stay pre-approved', () => {
+  const cwd = folderWith(undefined);
+  const readsOnly = folderWith({ version: 1, mode: 'reads-only' });
+  const name = 'email_webhook_delete';
+  for (const args of [{ webhook_id: 'w' }, { webhook_id: 'w', permanent: true }, { webhook_id: 'w', permanent: false }]) {
+    const direct = decideWithGuardrails({ ...payload(name, cwd), tool_input: args });
+    assert.equal(direct?.hookSpecificOutput?.permissionDecision, 'ask', JSON.stringify(args));
+    assert.match(direct.hookSpecificOutput.permissionDecisionReason, new RegExp(`^${name} `));
+    assert.match(direct.hookSpecificOutput.permissionDecisionReason, /^email_webhook_delete switches an email webhook off: it stops getting events and stays listed, and email_webhook_update can turn it back on\. /);
+    // The permanent mode is named as still to come, not as served (HK-1083's builder and MCP change adds it).
+    assert.match(direct.hookSpecificOutput.permissionDecisionReason, /Once Hiveku supports permanent: true, a call with it PERMANENTLY deletes the webhook with its delivery history, with no undo/);
+    const batch = decideForPayload({ tool_name: `${HIVEKU_TOOL_PREFIX}hiveku_batch`, tool_input: { calls: [{ tool: name, args }] } });
+    assert.equal(batch?.hookSpecificOutput?.permissionDecision, 'ask', `${JSON.stringify(args)} in a batch`);
+    assert.equal(isAutoApprovable(name, args), false);
+  }
+  assert.equal(isReadOnlyTool(name), false);
+  assert.equal(decision(decideWithGuardrails(payload(name, readsOnly))), 'deny');
+  assert.doesNotMatch(ALWAYS_ASK_WRITES.get(name), /[\u2013\u2014]/);
+  for (const read of ['email_webhook_list', 'email_webhook_get']) {
+    assert.equal(ALWAYS_ASK_WRITES.has(read), false, read);
+    assert.equal(decision(decideWithGuardrails(payload(read, cwd))), 'allow', `${read} must stay pre-approved`);
+  }
+  // The settings rail beside the hook: a machine set up from INSTALL.md asks on the name even where the hook does
+  // not run, and the Codex prompts mirror the same list (test/permission-critical.test.mjs checks that only when the
+  // Codex checkout sits beside this one, and checks the hook's LIVE_CHANGE_WRITES alone against the list).
+  const perm = JSON.parse(readFileSync(new URL('../data/permission-critical-tools.json', import.meta.url), 'utf8'));
+  const gated = new Map(perm.tools.map((t) => [t.name, t.method]));
+  assert.equal(gated.get(name), 'DELETE', `${name} must be on data/permission-critical-tools.json as a DELETE`);
+  assert.ok(installPermissions().ask.includes(`${HIVEKU_TOOL_PREFIX}${name}`), `INSTALL.md's ask block must name ${name}`);
+  for (const read of ['email_webhook_list', 'email_webhook_get']) assert.equal(gated.has(read), false, `${read} is a read`);
 });
 
 test('asking a customer to record their testimonial again asks on a direct call and through a batch; its preview stays pre-approved', () => {

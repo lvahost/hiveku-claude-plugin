@@ -187,6 +187,16 @@ function collect() {
 // key, not this list. webflow_token_introspect and webflow_token_authorized_by
 // return granted scopes and the authorizing user, never the token itself, so
 // they are ordinary reads. Decided with the design of the p8 round (Lane F).
+//
+// 2026-11-03, the Projects wave 2 review: NO entry for pm_project_settings_get,
+// although its route can write once. When a project still holds the app's
+// first-version status pipeline, the read swaps in today's default statuses and
+// saves that one settings key (builder src/lib/pm/pm-desktop-reads-settings.ts).
+// The web's own settings GET (src/app/api/pm/projects/[projectId]/settings)
+// makes the same swap whenever a project's board or Settings opens, and keeps
+// it out of the project's history: it is the app upgrading its own first
+// defaults, not a change anyone makes. So it stays a pre-approved read
+// (test/tool-safety.test.mjs pins it). Re-read both routes before changing this.
 const SENSITIVE_READ_EXCLUSIONS = new Map([
   ['project_secrets_list',
     'returns { secrets: { KEY: value } } - PLAINTEXT env values for everything not ' +
@@ -253,7 +263,8 @@ const SENSITIVE_READ_EXCLUSIONS = new Map([
     'ask every time.'],
   // 2026-11-02. A true read (what deleting a project would take with it), but its
   // name holds "delete", which the write-verb gate (WRITE_VERBS in lib/tool-safety.mjs)
-  // never auto-approves. Kept off this list so the two gates agree; it asks.
+  // never auto-approves. Kept off this list so the two gates agree; it asks. A
+  // reads-only folder still runs it as a read (READS_NAMED_LIKE_WRITES, 2026-11-03).
   ['pm_project_delete_impact',
     'reads what deleting a project would take with it, but its name holds "delete", which the ' +
     'write-verb gate never auto-approves; it asks.'],

@@ -5,8 +5,8 @@
     "mcp__plugin_hiveku_hk__",
     "mcp__hiveku__"
   ],
-  "plugin_version": "0.27.162",
-  "count": 411,
+  "plugin_version": "0.27.163",
+  "count": 425,
   "tools": [
     {
       "name": "deploy_site",
@@ -464,6 +464,11 @@
       "why_gated": "adds up to 5,000 addresses to the account's suppression list at once; imported bounces and complaints can never be removed, and nothing is emailed to them again"
     },
     {
+      "name": "email_webhook_delete",
+      "method": "DELETE",
+      "why_gated": "switches an email webhook off, and email_webhook_update can turn it back on; once Hiveku supports permanent: true, a call with it deletes the webhook for good with its delivery history, which cannot be brought back"
+    },
+    {
       "name": "crm_envelope_send",
       "method": "POST",
       "why_gated": "sends a signature request"
@@ -862,6 +867,71 @@
       "name": "discussion_delete",
       "method": "DELETE",
       "why_gated": "deletes a Discussions channel for everyone, with its whole history (every message, reply, reaction and file card), and workspaces it is shared with lose it too; there is no undo"
+    },
+    {
+      "name": "pm_project_leave",
+      "method": "DELETE",
+      "why_gated": "takes this workspace out of a project another workspace shares with it, at once: its people lose the project and are unassigned from its tasks, and only the owner can share it again. Hiveku takes it from a person's own key only"
+    },
+    {
+      "name": "pm_task_comment_delete",
+      "method": "DELETE",
+      "why_gated": "deletes one of the person's own comments on a task, for everyone and for good; there is no undo. Hiveku takes it from a person's own key only"
+    },
+    {
+      "name": "pm_task_comment_react",
+      "method": "POST",
+      "why_gated": "adds or takes off the person's own reaction on a teammate's task comment, shown under their name. Hiveku takes it from a person's own key only"
+    },
+    {
+      "name": "pm_project_slack_test",
+      "method": "POST",
+      "why_gated": "posts a test message into a real Slack channel, through the webhook it is given or the one the project has saved"
+    },
+    {
+      "name": "pm_project_github_sync_run",
+      "method": "POST",
+      "why_gated": "turns a project's GitHub issues sync on or off, or runs it: turning it on and each push create and update issues in the site's GitHub repository from the project's tasks"
+    },
+    {
+      "name": "pm_project_billing_update",
+      "method": "PUT",
+      "why_gated": "changes who a project's hours are billed to and its hourly rate; from then on every hour logged on its tasks also goes onto Commerce > Usage, ready to invoice"
+    },
+    {
+      "name": "pm_project_billing_import",
+      "method": "POST",
+      "why_gated": "brings the hours already logged on a project onto Commerce > Usage, ready to invoice its billing client"
+    },
+    {
+      "name": "pm_project_integrations_update",
+      "method": "PATCH",
+      "why_gated": "changes where a project posts its task updates (its Slack webhook and its Discussions channel) and which updates it posts"
+    },
+    {
+      "name": "pm_project_automation_create",
+      "method": "POST",
+      "why_gated": "makes a new workflow for a project from a recipe; it is created switched off, and nothing runs until someone switches it on"
+    },
+    {
+      "name": "pm_project_share",
+      "method": "POST",
+      "why_gated": "shares a project with another workspace at once, with nothing to accept: that workspace's people can open the whole project and be assigned its tasks. Hiveku takes it from a person's own key only"
+    },
+    {
+      "name": "pm_project_unshare",
+      "method": "DELETE",
+      "why_gated": "stops sharing a project with a workspace at once: that workspace's people lose the project and are unassigned from its tasks, unless they are also on a team that still has it. Hiveku takes it from a person's own key only"
+    },
+    {
+      "name": "pm_projects_delete",
+      "method": "DELETE",
+      "why_gated": "permanently deletes an archived project with its tasks, milestones, sections, comments, files and logged hours; there is no undo. Hiveku takes it from a person's own key only"
+    },
+    {
+      "name": "pm_tasks_delete",
+      "method": "DELETE",
+      "why_gated": "permanently deletes a task with its comments, logged hours, attachments and dependencies; there is no undo"
     },
     {
       "name": "marketing_offline_conversions_go_live",
