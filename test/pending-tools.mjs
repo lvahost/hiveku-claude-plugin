@@ -534,7 +534,8 @@
  *   before the MCP release serves them, four on LIVE_CHANGE_WRITES and two on ALWAYS_ASK_WRITES (lib/tool-safety.mjs).
  *     MARKETING-IDENTITY-DESKTOP-1  customer_journey_create_from_template, customer_journey_repopulate,
  *                                   customer_journey_videos_generate,
- *                                   brand_guide_voiceovers_set, customer_journey_iteration_publish.
+ *                                   brand_guide_voiceovers_set, customer_journey_iteration_publish. Landed
+ *                                   2026-11-05 (MCP #402, live at 2863093d291a); entries deleted.
  *
  *   Marketing > Referrals for the desktop app (2026-11-04): the four writes of the nine referral tools that ask,
  *   on the ask list and on ALWAYS_ASK_WRITES (lib/tool-safety.mjs), before the MCP release serves them.
@@ -729,13 +730,8 @@ export const PENDING_TOOLS = new Map([
   // crm_contact_booking_link_send and calendar_booking_create are served and indexed (off the read-only list; on the
   // ask list and ALWAYS_ASK_WRITES). Entries deleted.
 
-  // MARKETING-IDENTITY-DESKTOP-1 (2026-11-04): the brand guide and customer journey writes that ask before the MCP
-  // release serves them.
-  ['customer_journey_create_from_template', { since: '2026-11-04', batch: 'MARKETING-IDENTITY-DESKTOP-1' }],
-  ['customer_journey_repopulate', { since: '2026-11-04', batch: 'MARKETING-IDENTITY-DESKTOP-1' }],
-  ['customer_journey_videos_generate', { since: '2026-11-04', batch: 'MARKETING-IDENTITY-DESKTOP-1' }],
-  ['brand_guide_voiceovers_set', { since: '2026-11-04', batch: 'MARKETING-IDENTITY-DESKTOP-1' }],
-  ['customer_journey_iteration_publish', { since: '2026-11-04', batch: 'MARKETING-IDENTITY-DESKTOP-1' }],
+  // 2026-11-05 (index regenerated at 3011 tools from MCP 2863093d291a, #402): MARKETING-IDENTITY-DESKTOP-1's writes
+  // are served and indexed (off the read-only list; on the ask list). Entries deleted.
 
   // 2026-11-04 (index regenerated at 2811 tools from MCP 941fc4832c1f, #403): REFERRALS-DESKTOP-1's
   // marketing_referral_invite, marketing_referral_status_set, marketing_referral_archive and marketing_referral_update
