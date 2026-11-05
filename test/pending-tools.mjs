@@ -546,6 +546,7 @@
  *   app's Restore does. A contact may have been deleted on purpose, so it is on the ask list AND on ALWAYS_ASK_WRITES
  *   (lib/tool-safety.mjs): the hook asks on every install that updates to this release, ahead of the server.
  *     CONTACTS-RESTORE-1  crm_contacts_restore. Landed 2026-11-05 (MCP #412, live at fadab2d1a616); entry deleted.
+ *     ACCOUNT-SETTINGS    account_settings_update, _logo_set and _logo_remove. Landed 2026-11-05 (MCP #407, live at bb4a9e5c414d); entries deleted.
  */
 const SEO_SINCE = '2026-08-30';
 const seo = (batch) => ({ since: SEO_SINCE, batch });
@@ -553,9 +554,6 @@ const seo = (batch) => ({ since: SEO_SINCE, batch });
 export const PENDING_TOOLS = new Map([
   // SITES-S2B (2026-11-05): the desktop's Publish and hosting writes. On the ask list and LIVE_CHANGE_WRITES from this
   // release, before the MCP release serves them (each says ASK THE PERSON FIRST, which the MCP's guard holds to this).
-  ['account_settings_update', { since: '2026-11-04', batch: 'ACCOUNT-SETTINGS' }],
-  ['account_settings_logo_set', { since: '2026-11-04', batch: 'ACCOUNT-SETTINGS' }],
-  ['account_settings_logo_remove', { since: '2026-11-04', batch: 'ACCOUNT-SETTINGS' }],
 
   // S1
 
