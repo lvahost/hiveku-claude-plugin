@@ -539,7 +539,8 @@
  *   Marketing > Referrals for the desktop app (2026-11-04): the four writes of the nine referral tools that ask,
  *   on the ask list and on ALWAYS_ASK_WRITES (lib/tool-safety.mjs), before the MCP release serves them.
  *     REFERRALS-DESKTOP-1  marketing_referral_invite, marketing_referral_status_set, marketing_referral_archive,
- *                          marketing_referral_update.
+ *                          marketing_referral_update. Landed 2026-11-04 (MCP #403, live at 941fc4832c1f); entries
+ *                          deleted.
  *
  *   Bringing deleted contacts back (2026-11-04): crm_contacts_restore (POST /api/olympus/crm/contacts/restore), as the
  *   app's Restore does. A contact may have been deleted on purpose, so it is on the ask list AND on ALWAYS_ASK_WRITES
@@ -550,6 +551,12 @@ const SEO_SINCE = '2026-08-30';
 const seo = (batch) => ({ since: SEO_SINCE, batch });
 
 export const PENDING_TOOLS = new Map([
+  // SITES-S2B (2026-11-05): the desktop's Publish and hosting writes. On the ask list and LIVE_CHANGE_WRITES from this
+  // release, before the MCP release serves them (each says ASK THE PERSON FIRST, which the MCP's guard holds to this).
+  ['project_publish_state_set', { since: '2026-11-05', batch: 'SITES-S2B' }],
+  ['project_hosting_lane_set', { since: '2026-11-05', batch: 'SITES-S2B' }],
+  ['project_hosting_lane_move', { since: '2026-11-05', batch: 'SITES-S2B' }],
+  ['deploy_restore_files', { since: '2026-11-05', batch: 'SITES-S2B' }],
   ['account_settings_update', { since: '2026-11-04', batch: 'ACCOUNT-SETTINGS' }],
   ['account_settings_logo_set', { since: '2026-11-04', batch: 'ACCOUNT-SETTINGS' }],
   ['account_settings_logo_remove', { since: '2026-11-04', batch: 'ACCOUNT-SETTINGS' }],
@@ -741,11 +748,9 @@ export const PENDING_TOOLS = new Map([
   ['brand_guide_voiceovers_set', { since: '2026-11-04', batch: 'MARKETING-IDENTITY-DESKTOP-1' }],
   ['customer_journey_iteration_publish', { since: '2026-11-04', batch: 'MARKETING-IDENTITY-DESKTOP-1' }],
 
-  // REFERRALS-DESKTOP-1 (2026-11-04): Marketing > Referrals' four writes that ask, before the MCP release serves them.
-  ['marketing_referral_invite', { since: '2026-11-04', batch: 'REFERRALS-DESKTOP-1' }],
-  ['marketing_referral_status_set', { since: '2026-11-04', batch: 'REFERRALS-DESKTOP-1' }],
-  ['marketing_referral_archive', { since: '2026-11-04', batch: 'REFERRALS-DESKTOP-1' }],
-  ['marketing_referral_update', { since: '2026-11-04', batch: 'REFERRALS-DESKTOP-1' }],
+  // 2026-11-04 (index regenerated at 2811 tools from MCP 941fc4832c1f, #403): REFERRALS-DESKTOP-1's
+  // marketing_referral_invite, marketing_referral_status_set, marketing_referral_archive and marketing_referral_update
+  // are served and indexed (off the read-only list; on the ask list and ALWAYS_ASK_WRITES). Entries deleted.
 
   // CONTACTS-RESTORE-1 (2026-11-04): bringing deleted contacts back, asking from this release on, before the MCP
   // server ships it. See the batch note above.
