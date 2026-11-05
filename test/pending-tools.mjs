@@ -533,7 +533,7 @@
  *   Brand guides and customer journeys for the desktop app (2026-11-04; builder #1978): the six writes that ask
  *   before the MCP release serves them, four on LIVE_CHANGE_WRITES and two on ALWAYS_ASK_WRITES (lib/tool-safety.mjs).
  *     MARKETING-IDENTITY-DESKTOP-1  customer_journey_create_from_template, customer_journey_repopulate,
- *                                   customer_journey_videos_generate, customer_journey_simulation_publish,
+ *                                   customer_journey_videos_generate,
  *                                   brand_guide_voiceovers_set, customer_journey_iteration_publish.
  *
  *   Marketing > Referrals for the desktop app (2026-11-04): the four writes of the nine referral tools that ask,
@@ -734,7 +734,6 @@ export const PENDING_TOOLS = new Map([
   ['customer_journey_create_from_template', { since: '2026-11-04', batch: 'MARKETING-IDENTITY-DESKTOP-1' }],
   ['customer_journey_repopulate', { since: '2026-11-04', batch: 'MARKETING-IDENTITY-DESKTOP-1' }],
   ['customer_journey_videos_generate', { since: '2026-11-04', batch: 'MARKETING-IDENTITY-DESKTOP-1' }],
-  ['customer_journey_simulation_publish', { since: '2026-11-04', batch: 'MARKETING-IDENTITY-DESKTOP-1' }],
   ['brand_guide_voiceovers_set', { since: '2026-11-04', batch: 'MARKETING-IDENTITY-DESKTOP-1' }],
   ['customer_journey_iteration_publish', { since: '2026-11-04', batch: 'MARKETING-IDENTITY-DESKTOP-1' }],
 

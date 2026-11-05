@@ -51,7 +51,11 @@ const SERVER_SRC = path.resolve(PLUGIN_ROOT, '..', 'hiveku-mcp-api-server', 'src
 
 /**
  * A tool declaration is `name: '...',` alone on its line, OR its JSON-style
- * twin `"name": "...",` alone on its line. Nothing else is.
+ * twin `"name": "...",` alone on its line, OR either with its description
+ * following on the same line. Nothing else is. That third form came with
+ * roi-desktop-tools.ts (2026-11-05): four customer_journey_simulation_* tools
+ * came out with method null, which failed the ask-list's method check and every
+ * plugin release after them.
  *
  * ★ The second form is not optional. 55 tools in src/tools (the seo_gtm_*,
  * seo_ga4_*, seo_gbp_media*, seo_gbp_services*, seo_citations_*, seo_cro_audit,
@@ -61,7 +65,7 @@ const SERVER_SRC = path.resolve(PLUGIN_ROOT, '..', 'hiveku-mcp-api-server', 'src
  * from this parse), and 39 seo_* writes showed method null in the catalogue,
  * which kept them out of the ask-list gate and off the read-only list.
  */
-const NAME_LINE = /^[ \t]*(?:name:\s*'([a-z0-9_]+)'|"name":\s*"([a-z0-9_]+)"),[ \t]*$/gm;
+const NAME_LINE = /^[ \t]*(?:name:\s*'([a-z0-9_]+)'|"name":\s*"([a-z0-9_]+)"),[ \t]*(?:$|(?="?description"?:))/gm;
 
 /**
  * A third form: `name: SOME_CONSTANT,` alone on its line, where the same file
