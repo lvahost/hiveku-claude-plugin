@@ -79,7 +79,10 @@ test('the ranking fixes from the A/B review hold', () => {
   // 2026-11-01: database_status's live text (MCP #378) now spells out what each environment reads,
   // DATABASE_URL_DEV for development, so it takes the literal words first; sites_list, which names the
   // development URL field, stays right behind it.
-  assert.ok(names('development environment url', 2).includes('sites_list'));
+  // 2026-11-05: supabase_storage_object_signed_url's live text (HK-1096, MCP #409) now says it works on the
+  // development environment's storage, and its name holds url, so it matches all three words. sites_list stays
+  // in the top three.
+  assert.ok(names('development environment url', 3).includes('sites_list'));
   assert.equal(names('page speed', 1)[0], 'seo_core_web_vitals');
   assert.ok(names('voicemail transcription', 5).includes('voice_call_transcript_get'));
   // 2026-10-03: seo_audit_start's live text now names the site crawl's broken-links action, and the
