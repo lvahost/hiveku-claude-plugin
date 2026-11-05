@@ -553,10 +553,6 @@ const seo = (batch) => ({ since: SEO_SINCE, batch });
 export const PENDING_TOOLS = new Map([
   // SITES-S2B (2026-11-05): the desktop's Publish and hosting writes. On the ask list and LIVE_CHANGE_WRITES from this
   // release, before the MCP release serves them (each says ASK THE PERSON FIRST, which the MCP's guard holds to this).
-  ['project_publish_state_set', { since: '2026-11-05', batch: 'SITES-S2B' }],
-  ['project_hosting_lane_set', { since: '2026-11-05', batch: 'SITES-S2B' }],
-  ['project_hosting_lane_move', { since: '2026-11-05', batch: 'SITES-S2B' }],
-  ['deploy_restore_files', { since: '2026-11-05', batch: 'SITES-S2B' }],
   ['account_settings_update', { since: '2026-11-04', batch: 'ACCOUNT-SETTINGS' }],
   ['account_settings_logo_set', { since: '2026-11-04', batch: 'ACCOUNT-SETTINGS' }],
   ['account_settings_logo_remove', { since: '2026-11-04', batch: 'ACCOUNT-SETTINGS' }],
