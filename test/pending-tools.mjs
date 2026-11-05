@@ -561,10 +561,6 @@ export const PENDING_TOOLS = new Map([
   ['account_settings_logo_set', { since: '2026-11-04', batch: 'ACCOUNT-SETTINGS' }],
   ['account_settings_logo_remove', { since: '2026-11-04', batch: 'ACCOUNT-SETTINGS' }],
 
-  // SITES-S3B (2026-11-04): mobile_app_expo_project_choose records which Expo project a mobile app builds into
-  // (MC3 of the desktop's website parity). On the ask list and ALWAYS_ASK_WRITES from this release, before
-  // the MCP release serves it (its description says ASK THE PERSON FIRST, which the MCP's guard holds to this).
-  ['mobile_app_expo_project_choose', { since: '2026-11-04', batch: 'SITES-S3B' }],
   // S1
 
   // S2
@@ -755,4 +751,7 @@ export const PENDING_TOOLS = new Map([
   // CONTACTS-RESTORE-1 (2026-11-04): bringing deleted contacts back, asking from this release on, before the MCP
   // server ships it. See the batch note above.
   ['crm_contacts_restore', { since: '2026-11-04', batch: 'CONTACTS-RESTORE-1' }],
+  // 2026-11-05 (index regenerated at 2819 tools from MCP cf172ac918b9, #409): SITES-S3B's
+  // mobile_app_expo_project_choose is served and indexed (off the read-only list; on the ask list and
+  // ALWAYS_ASK_WRITES). Entry deleted.
 ]);
