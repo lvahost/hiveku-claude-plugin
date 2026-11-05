@@ -545,7 +545,7 @@
  *   Bringing deleted contacts back (2026-11-04): crm_contacts_restore (POST /api/olympus/crm/contacts/restore), as the
  *   app's Restore does. A contact may have been deleted on purpose, so it is on the ask list AND on ALWAYS_ASK_WRITES
  *   (lib/tool-safety.mjs): the hook asks on every install that updates to this release, ahead of the server.
- *     CONTACTS-RESTORE-1  crm_contacts_restore.
+ *     CONTACTS-RESTORE-1  crm_contacts_restore. Landed 2026-11-05 (MCP #412, live at fadab2d1a616); entry deleted.
  */
 const SEO_SINCE = '2026-08-30';
 const seo = (batch) => ({ since: SEO_SINCE, batch });
@@ -748,9 +748,9 @@ export const PENDING_TOOLS = new Map([
   // marketing_referral_invite, marketing_referral_status_set, marketing_referral_archive and marketing_referral_update
   // are served and indexed (off the read-only list; on the ask list and ALWAYS_ASK_WRITES). Entries deleted.
 
-  // CONTACTS-RESTORE-1 (2026-11-04): bringing deleted contacts back, asking from this release on, before the MCP
-  // server ships it. See the batch note above.
-  ['crm_contacts_restore', { since: '2026-11-04', batch: 'CONTACTS-RESTORE-1' }],
+  // 2026-11-05 (index regenerated at 2865 tools from MCP fadab2d1a616, #412): CONTACTS-RESTORE-1's crm_contacts_restore
+  // is served and indexed (off the read-only list; on the ask list and ALWAYS_ASK_WRITES). Entry deleted.
+
   // 2026-11-05 (index regenerated at 2819 tools from MCP cf172ac918b9, #409): SITES-S3B's
   // mobile_app_expo_project_choose is served and indexed (off the read-only list; on the ask list and
   // ALWAYS_ASK_WRITES). Entry deleted.
