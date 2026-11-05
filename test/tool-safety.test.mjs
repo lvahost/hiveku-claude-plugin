@@ -1026,6 +1026,9 @@ const TESTIMONIAL_RERECORD_THAT_ASKS = ['marketing_testimonial_rerecord_send'];
 const LOA_SEND_THAT_ASKS = ['voice_port_order_loa_send'];
 /** Confirm on your phone (2026-10-31, CONFIRM-PHONE-1): a request pushed to the person's own phone to accept the 911 notice, and its cancel. */
 const CONFIRM_ON_PHONE_THAT_ASKS = ['confirm_on_phone_start', 'confirm_on_phone_cancel'];
+
+/** Bringing deleted contacts back (2026-11-04, CONTACTS-RESTORE-1): a contact may have been deleted on purpose. */
+const CONTACT_RESTORE_THAT_ASKS = ['crm_contacts_restore'];
 /** The desktop app's help desk (2026-10-28, HD-DESKTOP-1): a person's chats erased for good, and how long every chat is kept. */
 const HELPDESK_PRIVACY_WRITES_THAT_ASK = ['helpdesk_contact_data_erase', 'helpdesk_chat_retention_set'];
 /** A site's lead inbox delete and the move to another workspace (2026-10-30, Website Builder wave B): leads and their files erased for good, and a site leaving this workspace. */
@@ -1150,7 +1153,7 @@ const MARKETING_IDENTITY_WRITES_THAT_ASK = ['brand_guide_voiceovers_set', 'custo
 test('the always-ask set is exactly the memory, form-capture and indexing writes, the secrets reveal, the A/B test writes, the mobile app writes, the PPC override, the lead-email change, a checks rerun, the Email Service setup writes, the record-again ask, the LOA email, the Confirm on your phone start and cancel, the help desk privacy writes, the site inbox delete and move, the ad account connection delete, an email webhook\'s delete, the SEO page\'s erases and overwrites, the Memory page\'s writes, a person\'s Mission Control claim, release and decision, a person\'s Projects leave and comment delete, the other Projects wave 2 writes, a project\'s share, unshare and delete and a task\'s delete, the Meet and Discussions sends, shares and deletes, a webinar\'s edit, the Meet calendar sends, and the brand guide narrators and a journey\'s published version, and the Referrals sends, pauses, archives and edits', () => {
   assert.deepEqual(
     [...ALWAYS_ASK_WRITES.keys()].sort(),
-    [...MEMORY_WRITES_THAT_ASK, ...FORM_CAPTURE_WRITES_THAT_ASK, ...INDEXING_WRITES_THAT_ASK, ...SECRETS_REVEAL_THAT_ASKS, ...AB_TEST_WRITES_THAT_ASK, ...MOBILE_WRITES_THAT_ASK, ...PPC_OVERRIDE_THAT_ASKS, ...LEAD_EMAIL_WRITES_THAT_ASK, ...CHECKS_RERUN_THAT_ASKS, ...EMAIL_SERVICE_WRITES_THAT_ASK, ...TESTIMONIAL_RERECORD_THAT_ASKS, ...LOA_SEND_THAT_ASKS, ...CONFIRM_ON_PHONE_THAT_ASKS, ...HELPDESK_PRIVACY_WRITES_THAT_ASK, ...SITE_WRITES_THAT_ASK, ...PPC_CONNECTION_DELETE_THAT_ASKS, ...EMAIL_WEBHOOK_DELETE_THAT_ASKS, ...SEO_WRITES_THAT_ASK, ...MEMORY_PAGE_WRITES_THAT_ASK, ...MISSION_CONTROL_WRITES_THAT_ASK, ...PROJECTS_PERSON_WRITES_THAT_ASK, ...PROJECTS_WAVE_2_OTHER_WRITES_THAT_ASK, ...PROJECTS_SHARE_AND_DELETE_THAT_ASK, ...MEET_DISCUSSIONS_WRITES_THAT_ASK, ...WEBINAR_EDIT_THAT_ASKS, ...MEET_CALENDAR_SENDS_THAT_ASK, ...MARKETING_IDENTITY_WRITES_THAT_ASK, ...REFERRAL_WRITES_THAT_ASK].sort(),
+    [...MEMORY_WRITES_THAT_ASK, ...FORM_CAPTURE_WRITES_THAT_ASK, ...INDEXING_WRITES_THAT_ASK, ...SECRETS_REVEAL_THAT_ASKS, ...AB_TEST_WRITES_THAT_ASK, ...MOBILE_WRITES_THAT_ASK, ...PPC_OVERRIDE_THAT_ASKS, ...LEAD_EMAIL_WRITES_THAT_ASK, ...CHECKS_RERUN_THAT_ASKS, ...EMAIL_SERVICE_WRITES_THAT_ASK, ...TESTIMONIAL_RERECORD_THAT_ASKS, ...LOA_SEND_THAT_ASKS, ...CONFIRM_ON_PHONE_THAT_ASKS, ...CONTACT_RESTORE_THAT_ASKS, ...HELPDESK_PRIVACY_WRITES_THAT_ASK, ...SITE_WRITES_THAT_ASK, ...PPC_CONNECTION_DELETE_THAT_ASKS, ...EMAIL_WEBHOOK_DELETE_THAT_ASKS, ...SEO_WRITES_THAT_ASK, ...MEMORY_PAGE_WRITES_THAT_ASK, ...MISSION_CONTROL_WRITES_THAT_ASK, ...PROJECTS_PERSON_WRITES_THAT_ASK, ...PROJECTS_WAVE_2_OTHER_WRITES_THAT_ASK, ...PROJECTS_SHARE_AND_DELETE_THAT_ASK, ...MEET_DISCUSSIONS_WRITES_THAT_ASK, ...WEBINAR_EDIT_THAT_ASKS, ...MEET_CALENDAR_SENDS_THAT_ASK, ...MARKETING_IDENTITY_WRITES_THAT_ASK, ...REFERRAL_WRITES_THAT_ASK].sort(),
   );
 });
 
@@ -2037,6 +2040,28 @@ test('the logged-call recording link asks on every call and through a batch, and
   assert.equal(batch?.hookSpecificOutput?.permissionDecision, 'ask');
   const generator = readFileSync(new URL('../scripts/gen-readonly-tools.mjs', import.meta.url), 'utf8');
   assert.match(generator, /\['crm_activity_recording_link',/, 'the read-only generator must exclude it (SENSITIVE_READ_EXCLUSIONS)');
+});
+
+// ── Bringing deleted contacts back (CONTACTS-RESTORE-1, 2026-11-04) ──────────
+//
+// A contact may have been deleted on purpose, so a restore asks on every direct call and through a batch, whatever the
+// settings allow, and a reads-only folder denies it.
+test('a contact restore asks on a direct call whatever it names, and through a batch; a reads-only folder denies it', () => {
+  const cwd = folderWith(undefined);
+  const direct = decideWithGuardrails({ ...payload('crm_contacts_restore', cwd), tool_input: { ids: ['c-1'] } });
+  assert.equal(decision(direct), 'ask', 'silence resolves to the blanket allow');
+  const why = direct.hookSpecificOutput.permissionDecisionReason;
+  assert.match(why, /^crm_contacts_restore brings deleted contacts back into your lists\. A contact may have been deleted on purpose/);
+  assert.match(why, /even when your settings allow all Hiveku tools/);
+  const mixed = decideWithGuardrails(batch([
+    { tool: 'crm_list_contacts', args: {} },
+    { tool: 'crm_contacts_restore', args: { ids: ['c-1'] } },
+  ], cwd));
+  assert.equal(decision(mixed), 'ask');
+  const readsOnly = folderWith({ version: 1, mode: 'reads-only' });
+  assert.equal(decision(decideWithGuardrails(payload('crm_contacts_restore', readsOnly))), 'deny');
+  assert.equal(isAutoApprovable('crm_contacts_restore', { ids: ['c-1'] }), false);
+  assert.equal(isReadOnlyTool('crm_contacts_restore'), false);
 });
 
 // ── Confirm on your phone (CONFIRM-PHONE-1, 2026-10-31) ──────────────────────

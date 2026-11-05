@@ -5,8 +5,8 @@
     "mcp__plugin_hiveku_hk__",
     "mcp__hiveku__"
   ],
-  "plugin_version": "0.27.171",
-  "count": 445,
+  "plugin_version": "0.27.172",
+  "count": 446,
   "tools": [
     {
       "name": "deploy_site",
@@ -1317,6 +1317,11 @@
       "name": "confirm_on_phone_cancel",
       "method": "POST",
       "why_gated": "cancels a Confirm on your phone request the person may be confirming on their phone right now"
+    },
+    {
+      "name": "crm_contacts_restore",
+      "method": "POST",
+      "why_gated": "brings deleted contacts back; a contact may have been deleted on purpose, so each restore is the person's choice"
     },
     {
       "name": "voice_settings_update",
