@@ -6,7 +6,7 @@
     "mcp__hiveku__"
   ],
   "plugin_version": "0.27.183",
-  "count": 513,
+  "count": 515,
   "tools": [
     {
       "name": "deploy_site",
@@ -1167,6 +1167,16 @@
       "name": "outbound_reply_draft_send",
       "method": "POST",
       "why_gated": "emails a prospect - sends a saved draft as a real reply through the provider"
+    },
+    {
+      "name": "outbound_leads_bulk_create",
+      "method": "POST",
+      "why_gated": "adds up to 100 leads to a cold email campaign; in a campaign that is sending, they start getting its emails"
+    },
+    {
+      "name": "outbound_create_lead",
+      "method": "POST",
+      "why_gated": "adds a lead to a cold email campaign; in a campaign that is sending, they start getting its emails"
     },
     {
       "name": "outbound_lead_list_run_start",

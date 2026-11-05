@@ -360,6 +360,8 @@ Put this in `.claude/settings.json` (per project) or `~/.claude/settings.json` (
       "mcp__plugin_hiveku_hk__outbound_campaign_status_set",
       "mcp__plugin_hiveku_hk__outbound_campaign_sequences_save",
       "mcp__plugin_hiveku_hk__outbound_reply_draft_send",
+      "mcp__plugin_hiveku_hk__outbound_leads_bulk_create",
+      "mcp__plugin_hiveku_hk__outbound_create_lead",
       "mcp__plugin_hiveku_hk__outbound_lead_list_run_start",
       "mcp__plugin_hiveku_hk__outbound_lead_list_run_control",
       "mcp__plugin_hiveku_hk__outbound_lead_grid_delete",
@@ -654,6 +656,7 @@ timezone, what the website assistant may tell visitors, emailing a number transf
 of authorization for signing (`voice_port_order_loa_send`), asking your phone to accept the
 911 notice or cancelling that request (`confirm_on_phone_start`, `confirm_on_phone_cancel`),
 bringing deleted contacts back (`crm_contacts_restore`),
+adding leads to a cold email campaign (`outbound_leads_bulk_create`, `outbound_create_lead`),
 stopping a site's builds (`deploy_build_cancel`), making a backup of a site
 (`project_backup_create`), and on Content's SEO plan saving a post's search phrase, which can
 start billed rank checks (`seo_plan_phrase_set`), and the suggestions that spend AI credit

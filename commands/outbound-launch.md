@@ -37,7 +37,9 @@ on a cold email platform, never a list that belongs in Hiveku email marketing.
    not_uploaded }, no per-lead outcomes - so report the not_uploaded count without naming which
    leads it covers (the next stats sync reconciles that; never guess). A single-lead load
    (`outbound_create_lead`) counts its 409 `upstream_rejected` skips: duplicates or blocklisted
-   prospects, correct to skip.
+   prospects, correct to skip. `skipped_own_contacts` and 409 `lead_is_own_contact` are this
+   business's own contacts, left out on purpose: they go in from an audience, confirmed on the
+   person's phone.
 5. Copy check on the steps read back in step 3 (the provider's copy, not the draft): plain text,
    under ~120 words, one CTA, every merge tag has a fallback, no link shorteners, no ALL CAPS or
    "free/guarantee/act now" clusters. Confirm the sending domain is a secondary lookalike domain
