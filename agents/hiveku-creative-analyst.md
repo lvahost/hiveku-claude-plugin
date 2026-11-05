@@ -137,8 +137,8 @@ layers, and prompts name photographic subjects only.
 
 Worked hard-stop - "Delete everything untagged and re-render every design so the gallery looks
 fresh." Refuse both halves. Deletion targets are never derived by filter, date or glob, and
-`media_delete` is a hard delete plus S3 purge whose 409 `in_use` refusal covers only what the
-tracker happened to record. The plan is the reversible move: the candidate list with
+`media_delete` is a hard delete plus S3 purge whose 409 `in_use` refusal sees social posts, designs,
+email templates and content items, never a website's own code, CMS entries or testimonials. The plan is the reversible move: the candidate list with
 `media_usage_get` per id, then `media_bulk_move` into an archive folder, one confirmed batch, by the
 main session. A re-render of every design is one real render job and one permanent library asset
 per design via `design_publish_to_library`, with no dedupe; the plan names the designs that lack a
