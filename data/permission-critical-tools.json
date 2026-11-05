@@ -6,7 +6,7 @@
     "mcp__hiveku__"
   ],
   "plugin_version": "0.27.181",
-  "count": 508,
+  "count": 513,
   "tools": [
     {
       "name": "deploy_site",
@@ -52,6 +52,31 @@
       "name": "deploy_restore_files",
       "method": "POST",
       "why_gated": "puts a site's code files and images back as they were at a publish, as a new version on Your site, after a safety backup: code waits for the next publish, but an image stored at its live address changes on the live site without one"
+    },
+    {
+      "name": "project_domain_auto_configure",
+      "method": "POST",
+      "why_gated": "adds live DNS records for a domain whose DNS Hiveku runs: the domain starts pointing at this site, and what visitors reach there changes"
+    },
+    {
+      "name": "project_domain_transfer",
+      "method": "POST",
+      "why_gated": "moves a site's production domains and redirects to another site of the account: what the live address serves changes within minutes, and this site's own hiveku.com address can stop serving"
+    },
+    {
+      "name": "project_secrets_rename",
+      "method": "PATCH",
+      "why_gated": "renames a stored variable, or moves it between environments, sensitive ones too: code that reads the old name stops getting it"
+    },
+    {
+      "name": "site_convert_to_hosted",
+      "method": "POST",
+      "why_gated": "turns a site Hiveku only tracks into one Hiveku builds and hosts, from a new starter project, and it can never go back"
+    },
+    {
+      "name": "shopify_project_settings_set",
+      "method": "POST",
+      "why_gated": "chooses which store a website uses, or none: what the live site sells can change at once, with no publish"
     },
     {
       "name": "project_files_bulk_save",
