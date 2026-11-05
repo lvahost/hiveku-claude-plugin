@@ -5,7 +5,7 @@
     "mcp__plugin_hiveku_hk__",
     "mcp__hiveku__"
   ],
-  "plugin_version": "0.27.178",
+  "plugin_version": "0.27.179",
   "count": 508,
   "tools": [
     {
@@ -2271,7 +2271,7 @@
     {
       "name": "dashboards_page_restore",
       "method": "POST",
-      "why_gated": "brings a deleted dashboard back"
+      "why_gated": "brings a deleted dashboard back for everyone it was shared with"
     },
     {
       "name": "dashboards_page_sharing_set",
@@ -2351,7 +2351,7 @@
     {
       "name": "workspaces_page_view_grants_set",
       "method": "PUT",
-      "why_gated": "sets who a saved view is shared with"
+      "why_gated": "sets who a saved view is shared with, which decides who sees it"
     },
     {
       "name": "workspaces_page_pm_project_update",
@@ -2401,7 +2401,7 @@
     {
       "name": "workspaces_page_mc_task_release",
       "method": "DELETE",
-      "why_gated": "lets a claimed Mission Control card go"
+      "why_gated": "lets a claimed Mission Control card go, back to the team"
     },
     {
       "name": "workspaces_page_mc_task_comment",
@@ -2436,7 +2436,7 @@
     {
       "name": "workspaces_page_custom_field_grants_set",
       "method": "PUT",
-      "why_gated": "sets who a custom field is shared with"
+      "why_gated": "sets who a custom field is shared with, which decides who sees it"
     },
     {
       "name": "workspaces_page_dashboard_create",
@@ -2451,7 +2451,7 @@
     {
       "name": "workspaces_page_dashboard_update",
       "method": "PATCH",
-      "why_gated": "changes a Workspaces dashboard"
+      "why_gated": "changes a Workspaces dashboard, which whoever it is shared with then sees"
     },
     {
       "name": "workspaces_page_dashboard_delete",
@@ -2486,7 +2486,7 @@
     {
       "name": "dashboards_page_data_table_create",
       "method": "POST",
-      "why_gated": "makes a new table in Your data"
+      "why_gated": "makes a new table in Your data, which dashboards and forms can then use"
     },
     {
       "name": "dashboards_page_data_table_update",
@@ -2501,7 +2501,7 @@
     {
       "name": "dashboards_page_data_table_restore",
       "method": "POST",
-      "why_gated": "brings an archived Your data table back"
+      "why_gated": "brings an archived Your data table back for the dashboards and forms that read it"
     },
     {
       "name": "dashboards_page_data_row_update",
@@ -2511,12 +2511,12 @@
     {
       "name": "dashboards_page_data_rows_delete",
       "method": "POST",
-      "why_gated": "deletes rows from a Your data table"
+      "why_gated": "deletes rows from a Your data table, which the dashboards reading it then lose"
     },
     {
       "name": "dashboards_page_data_rows_restore",
       "method": "POST",
-      "why_gated": "brings deleted rows back into a Your data table"
+      "why_gated": "brings deleted rows back into a Your data table, and into the dashboards reading it"
     },
     {
       "name": "dashboards_page_data_column_change",
@@ -2531,7 +2531,7 @@
     {
       "name": "dashboards_page_data_tally_add_remove",
       "method": "POST",
-      "why_gated": "takes an add off a tally's count"
+      "why_gated": "takes an add off a tally's count, which everyone who reads it then sees"
     },
     {
       "name": "dashboards_page_data_tally_settings_save",
@@ -2541,7 +2541,7 @@
     {
       "name": "dashboards_page_data_tally_start_from_zero",
       "method": "POST",
-      "why_gated": "starts a tally's count again from zero"
+      "why_gated": "starts a tally's count again from zero for everyone who reads it"
     },
     {
       "name": "dashboards_page_data_workflow_writer_stop",
