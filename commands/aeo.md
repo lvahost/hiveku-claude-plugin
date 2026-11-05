@@ -36,7 +36,10 @@ the two scoreboards, citation tiering, the answer-block format rules, the brand-
    weekly cron skips the account, itself a finding) and `seo_aeo_brand_audit_history({ history: 12 })`
    for the free trend (`overall_avg`, per-provider `provider_scores`, `competitors_mentioned`,
    `inaccuracies`). A profile write is a FULL REPLACE: read, echo the merged object, then
-   `seo_aeo_brand_profile_upsert` [CONFIRM - and never bundle it with an audit run]. A fresh
+   `seo_aeo_brand_profile_upsert` [CONFIRM - and never bundle it with an audit run]. `known_facts`
+   and `weekly` stay when left out; a `known_facts` list you send replaces the saved one. An
+   inaccuracy that is actually true goes into `known_facts` once the owner confirms it, not into a
+   ticket. A fresh
    `seo_aeo_brand_audit({})` [SPENDS - class H, the shared per-UTC-day budget; a refusal is not a zero]
    only when the history is stale relative to something you shipped.
 8. Displacement: from `seo_aeo_audit_get`, tally `ai_overview_references` across the gap keywords;

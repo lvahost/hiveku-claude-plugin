@@ -533,8 +533,9 @@
  *   Brand guides and customer journeys for the desktop app (2026-11-04; builder #1978): the six writes that ask
  *   before the MCP release serves them, four on LIVE_CHANGE_WRITES and two on ALWAYS_ASK_WRITES (lib/tool-safety.mjs).
  *     MARKETING-IDENTITY-DESKTOP-1  customer_journey_create_from_template, customer_journey_repopulate,
- *                                   customer_journey_videos_generate, customer_journey_simulation_publish,
- *                                   brand_guide_voiceovers_set, customer_journey_iteration_publish.
+ *                                   customer_journey_videos_generate,
+ *                                   brand_guide_voiceovers_set, customer_journey_iteration_publish. Landed
+ *                                   2026-11-05 (MCP #402, live at 2863093d291a); entries deleted.
  *
  *   Marketing > Referrals for the desktop app (2026-11-04): the four writes of the nine referral tools that ask,
  *   on the ask list and on ALWAYS_ASK_WRITES (lib/tool-safety.mjs), before the MCP release serves them.
@@ -729,14 +730,8 @@ export const PENDING_TOOLS = new Map([
   // crm_contact_booking_link_send and calendar_booking_create are served and indexed (off the read-only list; on the
   // ask list and ALWAYS_ASK_WRITES). Entries deleted.
 
-  // MARKETING-IDENTITY-DESKTOP-1 (2026-11-04): the brand guide and customer journey writes that ask before the MCP
-  // release serves them.
-  ['customer_journey_create_from_template', { since: '2026-11-04', batch: 'MARKETING-IDENTITY-DESKTOP-1' }],
-  ['customer_journey_repopulate', { since: '2026-11-04', batch: 'MARKETING-IDENTITY-DESKTOP-1' }],
-  ['customer_journey_videos_generate', { since: '2026-11-04', batch: 'MARKETING-IDENTITY-DESKTOP-1' }],
-  ['customer_journey_simulation_publish', { since: '2026-11-04', batch: 'MARKETING-IDENTITY-DESKTOP-1' }],
-  ['brand_guide_voiceovers_set', { since: '2026-11-04', batch: 'MARKETING-IDENTITY-DESKTOP-1' }],
-  ['customer_journey_iteration_publish', { since: '2026-11-04', batch: 'MARKETING-IDENTITY-DESKTOP-1' }],
+  // 2026-11-05 (index regenerated at 3011 tools from MCP 2863093d291a, #402): MARKETING-IDENTITY-DESKTOP-1's writes
+  // are served and indexed (off the read-only list; on the ask list). Entries deleted.
 
   // 2026-11-04 (index regenerated at 2811 tools from MCP 941fc4832c1f, #403): REFERRALS-DESKTOP-1's
   // marketing_referral_invite, marketing_referral_status_set, marketing_referral_archive and marketing_referral_update
@@ -748,4 +743,11 @@ export const PENDING_TOOLS = new Map([
   // 2026-11-05 (index regenerated at 2819 tools from MCP cf172ac918b9, #409): SITES-S3B's
   // mobile_app_expo_project_choose is served and indexed (off the read-only list; on the ask list and
   // ALWAYS_ASK_WRITES). Entry deleted.
+  // SITES-S3C-S3D (2026-11-05): the desktop's Domains, settings and store writes. On the ask list and LIVE_CHANGE_WRITES
+  // from this release, before the MCP releases serve them (each says ASK THE PERSON FIRST, which the MCP's guard holds to this).
+  ['project_domain_auto_configure', { since: '2026-11-05', batch: 'SITES-S3C-S3D' }],
+  ['project_domain_transfer', { since: '2026-11-05', batch: 'SITES-S3C-S3D' }],
+  ['project_secrets_rename', { since: '2026-11-05', batch: 'SITES-S3C-S3D' }],
+  ['site_convert_to_hosted', { since: '2026-11-05', batch: 'SITES-S3C-S3D' }],
+  ['shopify_project_settings_set', { since: '2026-11-05', batch: 'SITES-S3C-S3D' }],
 ]);
