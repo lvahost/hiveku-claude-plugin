@@ -386,6 +386,7 @@ Put this in `.claude/settings.json` (per project) or `~/.claude/settings.json` (
       "mcp__plugin_hiveku_hk__voice_port_order_loa_send",
       "mcp__plugin_hiveku_hk__confirm_on_phone_start",
       "mcp__plugin_hiveku_hk__confirm_on_phone_cancel",
+      "mcp__plugin_hiveku_hk__crm_contacts_restore",
       "mcp__plugin_hiveku_hk__voice_settings_update",
       "mcp__plugin_hiveku_hk__voice_number_update",
       "mcp__plugin_hiveku_hk__voice_blocked_numbers_remove",
@@ -581,6 +582,7 @@ conversion uploads, a staged production deploy, GA4 conversion settings, the acc
 timezone, what the website assistant may tell visitors, emailing a number transfer's letter
 of authorization for signing (`voice_port_order_loa_send`), asking your phone to accept the
 911 notice or cancelling that request (`confirm_on_phone_start`, `confirm_on_phone_cancel`),
+bringing deleted contacts back (`crm_contacts_restore`),
 stopping a site's builds (`deploy_build_cancel`), making a backup of a site
 (`project_backup_create`), and on Content's SEO plan saving a post's search phrase, which can
 start billed rank checks (`seo_plan_phrase_set`), and the suggestions that spend AI credit

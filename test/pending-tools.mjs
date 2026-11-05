@@ -540,6 +540,11 @@
  *   on the ask list and on ALWAYS_ASK_WRITES (lib/tool-safety.mjs), before the MCP release serves them.
  *     REFERRALS-DESKTOP-1  marketing_referral_invite, marketing_referral_status_set, marketing_referral_archive,
  *                          marketing_referral_update.
+ *
+ *   Bringing deleted contacts back (2026-11-04): crm_contacts_restore (POST /api/olympus/crm/contacts/restore), as the
+ *   app's Restore does. A contact may have been deleted on purpose, so it is on the ask list AND on ALWAYS_ASK_WRITES
+ *   (lib/tool-safety.mjs): the hook asks on every install that updates to this release, ahead of the server.
+ *     CONTACTS-RESTORE-1  crm_contacts_restore.
  */
 const SEO_SINCE = '2026-08-30';
 const seo = (batch) => ({ since: SEO_SINCE, batch });
@@ -741,4 +746,8 @@ export const PENDING_TOOLS = new Map([
   ['marketing_referral_status_set', { since: '2026-11-04', batch: 'REFERRALS-DESKTOP-1' }],
   ['marketing_referral_archive', { since: '2026-11-04', batch: 'REFERRALS-DESKTOP-1' }],
   ['marketing_referral_update', { since: '2026-11-04', batch: 'REFERRALS-DESKTOP-1' }],
+
+  // CONTACTS-RESTORE-1 (2026-11-04): bringing deleted contacts back, asking from this release on, before the MCP
+  // server ships it. See the batch note above.
+  ['crm_contacts_restore', { since: '2026-11-04', batch: 'CONTACTS-RESTORE-1' }],
 ]);
