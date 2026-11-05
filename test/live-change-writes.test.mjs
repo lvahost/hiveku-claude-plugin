@@ -193,6 +193,12 @@ const LIVE_CHANGE_NAMES = [
   'project_hosting_lane_set',
   'project_hosting_lane_move',
   'deploy_restore_files',
+  // The desktop app's Domains, settings and store pages, waves S3c and S3d (MCP branches, pending).
+  'project_domain_auto_configure',
+  'project_domain_transfer',
+  'project_secrets_rename',
+  'site_convert_to_hosted',
+  'shopify_project_settings_set',
   // The desktop app's Backups page, wave S2a (MCP #384): New Backup, a full copy of the site's files,
   // media and database, made only when the person says so.
   'project_backup_create',
