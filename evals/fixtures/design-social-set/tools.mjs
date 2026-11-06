@@ -196,7 +196,8 @@ export async function createTools() {
       elementCount: elements.length,
       summary: summaryParts.join('. '),
       featuredImageUrl: d.featuredImageUrl ?? null,
-      canvasAnimation: (canvas && canvas._animation) || null,
+      // As the route reads it: `animation`, else the `_animation` an old row may still hold.
+      canvasAnimation: (canvas && (canvas.animation || canvas._animation)) || null,
       dashboardUrl: dashboardUrl(d.id),
     }));
   };
