@@ -5,8 +5,8 @@
     "mcp__plugin_hiveku_hk__",
     "mcp__hiveku__"
   ],
-  "plugin_version": "0.27.186",
-  "count": 516,
+  "plugin_version": "0.27.187",
+  "count": 519,
   "tools": [
     {
       "name": "deploy_site",
@@ -2277,6 +2277,21 @@
       "name": "marketing_referral_update",
       "method": "PATCH",
       "why_gated": "changes a referral campaign's name, rewards or invite messages; the friend's reward changes at once on the page every friend opens from a link"
+    },
+    {
+      "name": "analytics_conversion_create",
+      "method": "POST",
+      "why_gated": "adds a first-party conversion definition to the account, which changes future conversion counting; a timeout may have saved it, so read conversions before retrying"
+    },
+    {
+      "name": "analytics_conversion_delete",
+      "method": "DELETE",
+      "why_gated": "deletes a first-party conversion definition from the account, which changes future conversion reporting"
+    },
+    {
+      "name": "analytics_tracking_settings_update",
+      "method": "PATCH",
+      "why_gated": "changes a website's Analytics tracking, token, UTM capture, session recording or sitemap mode (taken from a person's own Hiveku app key alone): session recording can capture personal on-screen data, and rotating the tracking token requires updating the external tag or republishing a hosted site"
     },
     {
       "name": "dashboards_page_create",

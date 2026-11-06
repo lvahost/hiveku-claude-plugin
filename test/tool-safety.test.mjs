@@ -1220,11 +1220,36 @@ const DASHBOARD_PAGE_WRITES_THAT_ASK = [
   'dashboards_page_data_workflow_writer_stop',
 ];
 
+const ANALYTICS_DESKTOP_WRITES_THAT_ASK = [
+  'analytics_conversion_create',
+  'analytics_conversion_delete',
+  'analytics_tracking_settings_update',
+];
+
 test('the always-ask set is exactly the memory, form-capture and indexing writes, the secrets reveal, the A/B test writes, the mobile app writes, the PPC override, the lead-email change, a checks rerun, the Email Service setup writes, the record-again ask, the LOA email, the Confirm on your phone start and cancel, the help desk privacy writes, the site inbox delete and move, the ad account connection delete, an email webhook\'s delete, the SEO page\'s erases and overwrites, the Memory page\'s writes, a person\'s Mission Control claim, release and decision, a person\'s Projects leave and comment delete, the other Projects wave 2 writes, a project\'s share, unshare and delete and a task\'s delete, the Meet and Discussions sends, shares and deletes, a webinar\'s edit, the Meet calendar sends, and the brand guide narrators and a journey\'s published version, and the Referrals sends, pauses, archives and edits', () => {
   assert.deepEqual(
     [...ALWAYS_ASK_WRITES.keys()].sort(),
-    [...MEMORY_WRITES_THAT_ASK, ...FORM_CAPTURE_WRITES_THAT_ASK, ...INDEXING_WRITES_THAT_ASK, ...SECRETS_REVEAL_THAT_ASKS, ...AB_TEST_WRITES_THAT_ASK, ...MOBILE_WRITES_THAT_ASK, ...PPC_OVERRIDE_THAT_ASKS, ...LEAD_EMAIL_WRITES_THAT_ASK, ...CHECKS_RERUN_THAT_ASKS, ...EMAIL_SERVICE_WRITES_THAT_ASK, ...TESTIMONIAL_RERECORD_THAT_ASKS, ...LOA_SEND_THAT_ASKS, ...CONFIRM_ON_PHONE_THAT_ASKS, ...CONTACT_RESTORE_THAT_ASKS, ...HELPDESK_PRIVACY_WRITES_THAT_ASK, ...SITE_WRITES_THAT_ASK, ...PPC_CONNECTION_DELETE_THAT_ASKS, ...EMAIL_WEBHOOK_DELETE_THAT_ASKS, ...SEO_WRITES_THAT_ASK, ...MEMORY_PAGE_WRITES_THAT_ASK, ...MISSION_CONTROL_WRITES_THAT_ASK, ...PROJECTS_PERSON_WRITES_THAT_ASK, ...PROJECTS_WAVE_2_OTHER_WRITES_THAT_ASK, ...PROJECTS_SHARE_AND_DELETE_THAT_ASK, ...MEET_DISCUSSIONS_WRITES_THAT_ASK, ...WEBINAR_EDIT_THAT_ASKS, ...MEET_CALENDAR_SENDS_THAT_ASK, ...MARKETING_IDENTITY_WRITES_THAT_ASK, ...REFERRAL_WRITES_THAT_ASK, ...DASHBOARD_PAGE_WRITES_THAT_ASK].sort(),
+    [...MEMORY_WRITES_THAT_ASK, ...FORM_CAPTURE_WRITES_THAT_ASK, ...INDEXING_WRITES_THAT_ASK, ...SECRETS_REVEAL_THAT_ASKS, ...AB_TEST_WRITES_THAT_ASK, ...MOBILE_WRITES_THAT_ASK, ...PPC_OVERRIDE_THAT_ASKS, ...LEAD_EMAIL_WRITES_THAT_ASK, ...CHECKS_RERUN_THAT_ASKS, ...EMAIL_SERVICE_WRITES_THAT_ASK, ...TESTIMONIAL_RERECORD_THAT_ASKS, ...LOA_SEND_THAT_ASKS, ...CONFIRM_ON_PHONE_THAT_ASKS, ...CONTACT_RESTORE_THAT_ASKS, ...HELPDESK_PRIVACY_WRITES_THAT_ASK, ...SITE_WRITES_THAT_ASK, ...PPC_CONNECTION_DELETE_THAT_ASKS, ...EMAIL_WEBHOOK_DELETE_THAT_ASKS, ...SEO_WRITES_THAT_ASK, ...MEMORY_PAGE_WRITES_THAT_ASK, ...MISSION_CONTROL_WRITES_THAT_ASK, ...PROJECTS_PERSON_WRITES_THAT_ASK, ...PROJECTS_WAVE_2_OTHER_WRITES_THAT_ASK, ...PROJECTS_SHARE_AND_DELETE_THAT_ASK, ...MEET_DISCUSSIONS_WRITES_THAT_ASK, ...WEBINAR_EDIT_THAT_ASKS, ...MEET_CALENDAR_SENDS_THAT_ASK, ...MARKETING_IDENTITY_WRITES_THAT_ASK, ...REFERRAL_WRITES_THAT_ASK, ...DASHBOARD_PAGE_WRITES_THAT_ASK, ...ANALYTICS_DESKTOP_WRITES_THAT_ASK].sort(),
   );
+});
+
+test('the Marketing Analytics conversion and tracking writes ask on a direct call and through a batch, a reads-only folder denies them, and the reads are not on the set', () => {
+  const cwd = folderWith(undefined);
+  const readsOnly = folderWith({ version: 1, mode: 'reads-only' });
+  for (const name of ANALYTICS_DESKTOP_WRITES_THAT_ASK) {
+    const direct = decideWithGuardrails({ ...payload(name, cwd), tool_input: {} });
+    assert.equal(direct?.hookSpecificOutput?.permissionDecision, 'ask', name);
+    assert.match(direct.hookSpecificOutput.permissionDecisionReason, new RegExp(`^${name} `), name);
+    const batch = decideForPayload({ tool_name: `${HIVEKU_TOOL_PREFIX}hiveku_batch`, tool_input: { calls: [{ tool: name, args: {} }] }, cwd });
+    assert.equal(batch?.hookSpecificOutput?.permissionDecision, 'ask', `${name} in a batch`);
+    assert.equal(isAutoApprovable(name, {}), false, name);
+    assert.equal(isReadOnlyTool(name), false, `${name} must not be on the generated read list`);
+    assert.equal(decision(decideWithGuardrails(payload(name, readsOnly))), 'deny', `${name} under reads-only`);
+    assert.doesNotMatch(ALWAYS_ASK_WRITES.get(name), /[\u2013\u2014]/, `${name}: no dashes in a reason the person reads`);
+  }
+  for (const read of ['analytics_hub_get', 'analytics_tracking_settings_get']) {
+    assert.equal(ALWAYS_ASK_WRITES.has(read), false, read);
+  }
 });
 
 test('the account home, agency dashboard and Your data writes ask on a direct call and through a batch, and a reads-only folder denies them', () => {
