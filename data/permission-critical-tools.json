@@ -5,8 +5,8 @@
     "mcp__plugin_hiveku_hk__",
     "mcp__hiveku__"
   ],
-  "plugin_version": "0.27.194",
-  "count": 519,
+  "plugin_version": "0.27.195",
+  "count": 561,
   "tools": [
     {
       "name": "deploy_site",
@@ -337,6 +337,16 @@
       "name": "project_page_cache_set",
       "method": "POST",
       "why_gated": "switches page caching for a live site's Production (Site > Hosting > Page caching): on, the edge keeps the pages the site marks as shareable and hands them to visitors without reaching the server; off, every view reaches the server again"
+    },
+    {
+      "name": "project_cache_clear",
+      "method": "POST",
+      "why_gated": "clears what the CDN keeps for one deployed environment of a site: it costs money past the free allowance, spends the limit of 6 clears an hour per environment and 40 a day per account, and the next visitors to each path go to the site itself until the CDN holds its copies again"
+    },
+    {
+      "name": "project_cdn_invalidate",
+      "method": "POST",
+      "why_gated": "the same clear as project_cache_clear under its older name, on the same limits and at the same cost"
     },
     {
       "name": "analytics_visitor_intelligence_start",
@@ -2602,6 +2612,206 @@
       "name": "dashboards_page_data_workflow_writer_stop",
       "method": "DELETE",
       "why_gated": "stops a workflow from writing to a Your data table"
+    },
+    {
+      "name": "account_profile_update",
+      "method": "PATCH",
+      "why_gated": "changes the signed-in person's own profile details in Settings > Profile"
+    },
+    {
+      "name": "account_profile_avatar_set",
+      "method": "POST",
+      "why_gated": "replaces the signed-in person's profile picture, shown to the whole team"
+    },
+    {
+      "name": "account_profile_avatar_remove",
+      "method": "DELETE",
+      "why_gated": "removes the signed-in person's profile picture"
+    },
+    {
+      "name": "account_notifications_update",
+      "method": "PATCH",
+      "why_gated": "changes which alerts and emails the signed-in person gets"
+    },
+    {
+      "name": "account_notifications_test_send",
+      "method": "POST",
+      "why_gated": "sends a test alert to the signed-in person"
+    },
+    {
+      "name": "account_team_invite_send",
+      "method": "POST",
+      "why_gated": "emails an invitation to join the account and, once accepted, gives that person a role on it"
+    },
+    {
+      "name": "account_team_invitation_resend",
+      "method": "POST",
+      "why_gated": "emails a pending invitation again and extends how long it can be accepted"
+    },
+    {
+      "name": "account_team_invitation_cancel",
+      "method": "DELETE",
+      "why_gated": "cancels and deletes a pending team invitation"
+    },
+    {
+      "name": "account_team_member_role_update",
+      "method": "PATCH",
+      "why_gated": "changes what a teammate may see and do across the account"
+    },
+    {
+      "name": "account_team_member_remove",
+      "method": "DELETE",
+      "why_gated": "removes a teammate from the account, ending their access"
+    },
+    {
+      "name": "account_team_ownership_transfer",
+      "method": "POST",
+      "why_gated": "hands ownership of the whole account to another teammate; the owner cannot take it back alone"
+    },
+    {
+      "name": "account_team_computer_revoke",
+      "method": "POST",
+      "why_gated": "signs a team computer out and ends its access to the account"
+    },
+    {
+      "name": "account_role_create",
+      "method": "POST",
+      "why_gated": "creates a custom role that grants module permissions"
+    },
+    {
+      "name": "account_role_update",
+      "method": "PATCH",
+      "why_gated": "changes what every teammate holding a custom role may do"
+    },
+    {
+      "name": "account_role_delete",
+      "method": "DELETE",
+      "why_gated": "deletes a custom role, and the teammates who held it lose what it granted"
+    },
+    {
+      "name": "account_team_activity_settings_update",
+      "method": "PATCH",
+      "why_gated": "changes how the team's activity is tracked and scored"
+    },
+    {
+      "name": "account_team_activity_test_email_send",
+      "method": "POST",
+      "why_gated": "sends a preview of the weekly team activity email"
+    },
+    {
+      "name": "account_team_activity_data_delete",
+      "method": "DELETE",
+      "why_gated": "deletes the account's collected team activity history; it cannot be brought back"
+    },
+    {
+      "name": "account_domain_register",
+      "method": "POST",
+      "why_gated": "buys a domain name for the account: it costs money and a registration cannot be undone"
+    },
+    {
+      "name": "account_domain_transfer",
+      "method": "POST",
+      "why_gated": "starts moving a domain into the account, which costs money and changes where it is managed"
+    },
+    {
+      "name": "account_domain_dns_record_create",
+      "method": "POST",
+      "why_gated": "adds or changes a live DNS record; a wrong record can take a site or its email down"
+    },
+    {
+      "name": "account_domain_dns_record_delete",
+      "method": "DELETE",
+      "why_gated": "deletes a live DNS record; a site or its email can stop working"
+    },
+    {
+      "name": "account_security_password_update",
+      "method": "POST",
+      "why_gated": "changes the signed-in person's password for signing in to the account"
+    },
+    {
+      "name": "account_security_2fa_update",
+      "method": "PUT",
+      "why_gated": "turns two-factor sign-in on or off for the signed-in person"
+    },
+    {
+      "name": "account_security_computer_revoke",
+      "method": "DELETE",
+      "why_gated": "signs one of the signed-in person's computers out"
+    },
+    {
+      "name": "account_security_session_revoke",
+      "method": "DELETE",
+      "why_gated": "ends one of the signed-in person's sign-in sessions"
+    },
+    {
+      "name": "account_export_start",
+      "method": "POST",
+      "why_gated": "starts an archive of the account's data, which anyone holding the download can read"
+    },
+    {
+      "name": "account_billing_plan_update",
+      "method": "POST",
+      "why_gated": "changes the account's paid plan, billing interval or add-ons, which changes what the account is charged"
+    },
+    {
+      "name": "account_billing_credits_update",
+      "method": "PUT",
+      "why_gated": "changes what happens when AI credits run out, including automatic paid top-ups"
+    },
+    {
+      "name": "account_billing_credits_purchase",
+      "method": "POST",
+      "why_gated": "charges the account's card for an AI credit top-up"
+    },
+    {
+      "name": "account_billing_subscription_cancel",
+      "method": "POST",
+      "why_gated": "cancels the account's subscription at the end of the period"
+    },
+    {
+      "name": "account_mcp_key_create",
+      "method": "POST",
+      "why_gated": "creates a new API key that can act on the account"
+    },
+    {
+      "name": "account_mcp_key_revoke",
+      "method": "DELETE",
+      "why_gated": "revokes an API key, cutting off every app and assistant that uses it"
+    },
+    {
+      "name": "account_byok_set",
+      "method": "POST",
+      "why_gated": "saves or switches the AI provider key the account's AI runs on and pays with"
+    },
+    {
+      "name": "account_byok_delete",
+      "method": "DELETE",
+      "why_gated": "removes an AI provider key the account's AI may depend on"
+    },
+    {
+      "name": "account_app_stores_apple_connect",
+      "method": "POST",
+      "why_gated": "connects an Apple App Store Connect key the business publishes its apps with"
+    },
+    {
+      "name": "account_app_stores_apple_share_update",
+      "method": "PATCH",
+      "why_gated": "changes which client accounts may use the connected Apple key"
+    },
+    {
+      "name": "account_app_stores_apple_disconnect",
+      "method": "DELETE",
+      "why_gated": "disconnects and removes the Apple App Store Connect connection"
+    },
+    {
+      "name": "account_app_stores_expo_connect",
+      "method": "POST",
+      "why_gated": "connects the Expo account the business builds its apps with"
+    },
+    {
+      "name": "account_app_stores_expo_disconnect",
+      "method": "DELETE",
+      "why_gated": "disconnects the Expo account the business builds its apps with"
     }
   ]
 }

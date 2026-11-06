@@ -553,6 +553,11 @@ const SEO_SINCE = '2026-08-30';
 const seo = (batch) => ({ since: SEO_SINCE, batch });
 
 export const PENDING_TOOLS = new Map([
+  // HK-1166 (2026-11-06): project_cache_clear clears what the CDN keeps for one deployed environment. On the ask list and
+  // LIVE_CHANGE_WRITES from this release, before the MCP release serves it (it says ASK THE PERSON FIRST, which the MCP's
+  // guard holds to this). project_cdn_invalidate, the same clear, is already in the tool index. Delete this entry when the
+  // regenerated index carries project_cache_clear.
+  ['project_cache_clear', { since: '2026-11-06', batch: 'HK-1166' }],
   // SITES-S2B (2026-11-05): the desktop's Publish and hosting writes. On the ask list and LIVE_CHANGE_WRITES from this
   // release, before the MCP release serves them (each says ASK THE PERSON FIRST, which the MCP's guard holds to this).
 
