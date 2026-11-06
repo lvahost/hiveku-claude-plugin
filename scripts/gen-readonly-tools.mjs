@@ -53,7 +53,7 @@ const SERVER_SRC = path.resolve(PLUGIN_ROOT, '..', 'hiveku-mcp-api-server', 'src
  * and the miss was invisible because the dist path, which reads real objects,
  * covered for it whenever the server happened to be built.
  */
-const TOKEN = /(?:^[ \t]*"?name"?:\s*['"]([a-z0-9_]+)['"],[ \t]*$)|(?:"?method"?:\s*['"]([A-Z]+)['"])|(?:"?readOnlyHint"?:\s*(true))/gm;
+const TOKEN = /(?:^[ \t]*"?name"?:\s*['"]([a-z0-9_]+)['"],[ \t]*(?:$|(?="?(?:description|readOnlyHint)"?:)))|(?:"?method"?:\s*['"]([A-Z]+)['"])|(?:"?readOnlyHint"?:\s*(true))/gm;
 
 function extract(source) {
   // Every tool name, every HTTP method and every readOnlyHint, in document order.

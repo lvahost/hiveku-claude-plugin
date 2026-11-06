@@ -65,7 +65,7 @@ const SERVER_SRC = path.resolve(PLUGIN_ROOT, '..', 'hiveku-mcp-api-server', 'src
  * from this parse), and 39 seo_* writes showed method null in the catalogue,
  * which kept them out of the ask-list gate and off the read-only list.
  */
-const NAME_LINE = /^[ \t]*(?:name:\s*'([a-z0-9_]+)'|"name":\s*"([a-z0-9_]+)"),[ \t]*(?:$|(?="?description"?:))/gm;
+const NAME_LINE = /^[ \t]*(?:name:\s*'([a-z0-9_]+)'|"name":\s*"([a-z0-9_]+)"),[ \t]*(?:$|(?="?(?:description|readOnlyHint)"?:))/gm;
 
 /**
  * A third form: `name: SOME_CONSTANT,` alone on its line, where the same file
