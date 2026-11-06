@@ -45,14 +45,14 @@ Triage THIS project's **$ARGUMENTS** environment (default development). This pro
    the timeline of what shipped when.
 
 4. **Failed build** → `project_build_error_get({ project_id: <the project_id> })` for the extracted
-   real error of the last failed DEPLOY build. Full tier build log: `deploy_status({ project_id:
-   <the project_id>, environment: "$ARGUMENTS" })` → take `.most_recent.deployment_id` →
-   `deploy_get({ project_id: <the project_id>, deployment_id })` → `build_logs` (`project_logs_get`
-   with `source: "build"` also lists recent build sessions with full output). If the filtered query
-   returns no rows, retry WITHOUT `environment` - legacy deployments store other tokens (e.g.
-   "cloudfront") and the filter misses them. If what failed was a TEST build you started, its oracle
-   is `project_test_build_log_get({ project_id, session_id })` - `project_build_error_get` returns the
-   last failed real DEPLOY, which can be days old and from a different change set.
+   real error and log of the last failed DEPLOY build. Any other build's log: `project_logs_get({
+   project_id: <the project_id>, source: "build", since: "all", environment: "$ARGUMENTS" })` lists
+   that tier's newest builds of any age → take a `build_id` → `project_build_error_get({ project_id:
+   <the project_id>, session_id: <that build_id> })`. Leave `environment` out for every tier. An empty
+   `deploy_get` `build_logs` means nothing: most publishes never fill it. If what failed was a TEST
+   build you started, its oracle is `project_test_build_log_get({ project_id, session_id })` -
+   `project_build_error_get` with no `session_id` returns the last failed real DEPLOY, which can be
+   days old and from a different change set.
 
 5. **Live Preview (Fly)** - runtime only, no build phase:
  - Server side: `project_log_errors({ project_id: <the project_id>, environment: "preview" })` for
