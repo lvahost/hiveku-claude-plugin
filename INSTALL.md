@@ -180,6 +180,7 @@ Put this in `.claude/settings.json` (per project) or `~/.claude/settings.json` (
       "mcp__plugin_hiveku_hk__site_firewall_allow",
       "mcp__plugin_hiveku_hk__site_firewall_trust_range",
       "mcp__plugin_hiveku_hk__site_firewall_remove",
+      "mcp__plugin_hiveku_hk__site_firewall_private_set",
       "mcp__plugin_hiveku_hk__project_indexing_set",
       "mcp__plugin_hiveku_hk__project_concurrency_set",
       "mcp__plugin_hiveku_hk__project_page_cache_set",

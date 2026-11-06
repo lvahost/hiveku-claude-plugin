@@ -134,6 +134,7 @@ const LIVE_CHANGE_NAMES = [
   'env_group_unlink',
   // 2026-10-22: a site's trusted networks skip the per-address limit on that site.
   'site_firewall_trust_range',
+  'site_firewall_private_set',
   // A site's server capacity and page caching (2026-10-24, MCP #288).
   'project_concurrency_set',
   'project_page_cache_set',
