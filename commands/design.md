@@ -76,7 +76,8 @@ MOTION addendum - the animation vocabulary the renderer actually reads:
   slide-up, slide-down, slide-left, slide-right, wipe-up, wipe-down, blur-in, rotate-in.
 - `easing`: cubic-out, quart-out, expo-out, back-out, ease-in-out, elastic. `loop` is a SEPARATE
   field (pulse, wiggle, rotate-slow, breathe, float, shimmer) - a loop value in `enter` produces no
-  entry animation at all. Root: `_animation: { duration_ms, fps, loop }`.
+  entry animation at all. Root: `animation: { duration_ms, fps, loop }` (an old design may hold it as
+  `_animation`, which is still read and moves to `animation` when the design is saved).
 - Unknown keys are ignored in silence: a wrong field name renders the design completely static
   while every tool reports success. The old `{ preset, delay_ms, duration_ms }` shape is dead - the
   renderer never read it; flag it where found, never copy it forward.

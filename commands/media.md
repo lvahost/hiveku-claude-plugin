@@ -156,7 +156,8 @@ VIDEO - three separate lanes. Pick the lane before you spend anything.
    generation cost. Prefer it for text-heavy promos.
 
 Shape by destination: 9:16 → Stories/Reels/TikTok/Shorts; 16:9 → YouTube/X/LinkedIn/site heroes.
-Duration ceilings at post time: Shorts 60s, Reels 90s, X 140s.
+Ceilings at post time: Shorts 3 minutes, Reels 15 minutes and 300 MB (over 3 minutes a reel is not
+shown to new people), X 140s.
 
 DESIGN (Creative Studio) - zero marginal cost, the highest-volume creative lane (promo cards, quote
 graphics, carousels, ad variations):
@@ -182,7 +183,7 @@ graphics, carousels, ad variations):
   slide-left, slide-right, wipe-up, wipe-down, blur-in, rotate-in. `easing`: cubic-out, quart-out,
   expo-out, back-out, ease-in-out, elastic. `loop` is a SEPARATE field (pulse, wiggle, rotate-slow,
   breathe, float, shimmer) - putting a loop value in `enter` produces no entry animation at all.
-  Canvas-level timing is `_animation: { duration_ms, fps, loop }` on the root. The renderer reads
+  Canvas-level timing is `animation: { duration_ms, fps, loop }` on the root. The renderer reads
   these keys literally and an unknown key is ignored in silence, so a wrong name renders the design
   completely static while every tool reports success. The old `{ preset, delay_ms, duration_ms }`
   shape is exactly that kind of wrong - dead, never read by the renderer; flag it wherever you find
