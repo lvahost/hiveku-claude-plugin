@@ -2686,7 +2686,7 @@
     {
       "name": "account_role_delete",
       "method": "DELETE",
-      "why_gated": "deletes a custom role"
+      "why_gated": "deletes a custom role, and the teammates who held it lose what it granted"
     },
     {
       "name": "account_team_activity_settings_update",
@@ -2726,7 +2726,7 @@
     {
       "name": "account_security_password_update",
       "method": "POST",
-      "why_gated": "changes the signed-in person's password"
+      "why_gated": "changes the signed-in person's password for signing in to the account"
     },
     {
       "name": "account_security_2fa_update",
@@ -2811,7 +2811,7 @@
     {
       "name": "account_app_stores_expo_disconnect",
       "method": "DELETE",
-      "why_gated": "disconnects the Expo account"
+      "why_gated": "disconnects the Expo account the business builds its apps with"
     }
   ]
 }
