@@ -745,8 +745,8 @@ export const PENDING_TOOLS = new Map([
   // ALWAYS_ASK_WRITES). Entry deleted.
   // SITES-S3C-S3D (2026-11-05): the desktop's Domains, settings and store writes. On the ask list and LIVE_CHANGE_WRITES
   // from this release, before the MCP releases serve them (each says ASK THE PERSON FIRST, which the MCP's guard holds to this).
-  ['project_domain_auto_configure', { since: '2026-11-05', batch: 'SITES-S3C-S3D' }],
-  ['project_domain_transfer', { since: '2026-11-05', batch: 'SITES-S3C-S3D' }],
+  // 2026-11-06 (index regenerated from MCP b73edbb58b0d, S3c live): project_domain_auto_configure and
+  // project_domain_transfer are served and indexed. Entries deleted; S3d's three wait for its MCP release.
   ['project_secrets_rename', { since: '2026-11-05', batch: 'SITES-S3C-S3D' }],
   ['site_convert_to_hosted', { since: '2026-11-05', batch: 'SITES-S3C-S3D' }],
   ['shopify_project_settings_set', { since: '2026-11-05', batch: 'SITES-S3C-S3D' }],

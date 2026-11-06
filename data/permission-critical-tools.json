@@ -5,7 +5,7 @@
     "mcp__plugin_hiveku_hk__",
     "mcp__hiveku__"
   ],
-  "plugin_version": "0.27.189",
+  "plugin_version": "0.27.190",
   "count": 519,
   "tools": [
     {
@@ -76,7 +76,7 @@
     {
       "name": "shopify_project_settings_set",
       "method": "POST",
-      "why_gated": "chooses which store a website uses, or none: what the live site sells can change at once, with no publish"
+      "why_gated": "saves which store Hiveku's own tools use for a website, or none: the live site does not change, but a running A/B test's purchase goal follows it at once"
     },
     {
       "name": "project_files_bulk_save",
