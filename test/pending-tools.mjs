@@ -752,4 +752,9 @@ export const PENDING_TOOLS = new Map([
   ['shopify_project_settings_set', { since: '2026-11-05', batch: 'SITES-S3C-S3D' }],
   // 2026-11-06 (index regenerated at 3058 tools from MCP 67388eb5069f): HK-695's site_firewall_private_set is served and
   // indexed (off the read-only list; on the ask list and LIVE_CHANGE_WRITES). Entry deleted.
+  // ANALYTICS-DESKTOP-1 (2026-11-05): Marketing Analytics desktop conversion and tracking writes. On the ask list and
+  // ALWAYS_ASK_WRITES before the MCP server serves them; deleted by the index regeneration that carries them.
+  ['analytics_conversion_create', { since: '2026-11-05', batch: 'ANALYTICS-DESKTOP-1' }],
+  ['analytics_conversion_delete', { since: '2026-11-05', batch: 'ANALYTICS-DESKTOP-1' }],
+  ['analytics_tracking_settings_update', { since: '2026-11-05', batch: 'ANALYTICS-DESKTOP-1' }],
 ]);
