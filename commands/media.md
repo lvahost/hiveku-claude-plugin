@@ -227,10 +227,12 @@ KEEP THE LIBRARY USABLE:
   every later search depend on it. It changes metadata only, never the underlying file: the physical
   columns are refused with a 400 `immutable_field`, and a different-sized or re-encoded file is a
   `media_transform` row, not an edit.
-- ALWAYS `media_usage_get({ asset_id })` before `media_delete`. `usage[]` lists the social posts,
-  designs, email templates and content items that would break. It cannot see a website's own code,
-  CMS entries or testimonials, so an empty list does not mean unused. `media_delete` is a HARD delete
-  plus S3 purge; it refuses with 409 in_use, and `force: true` orphans live content. Never pass force
+- ALWAYS `media_usage_get({ asset_id })` before `media_delete`. Read `total` and `usage[]`, not
+  `usage_count` (published social posts only): they list the designs, video boards, email, posts
+  waiting to go out, content items, workflows and the other places that would break. It cannot see a
+  website's own code, CMS entries or testimonials, so an empty list does not mean unused, and a 503
+  `usage_check_failed` is a failed read, not an empty list. `media_delete` is a HARD delete plus S3
+  purge; it refuses with 409 in_use while it knows of a use, and `force: true` orphans live content. Never pass force
   without an explicit user yes.
 - Bulk import: `media_library_register_external_url_batch({ assets: [...] })`, up to 100 per call,
   per-row `errors[]` so one bad URL does not fail the batch.

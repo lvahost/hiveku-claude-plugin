@@ -54,14 +54,17 @@ Investigate with exactly these tools (GET unless marked). Nothing outside this l
   source_type, ai_generated, search, page, limit) - page the whole library, limit caps at 100, and
   bucket in your own pass: UNNAMED is no `title` or a title equal to the filename, with no
   `alt_text`; UNFILED is no folder; UNUSED takes `media_usage_get({ asset_id })` per candidate,
-  which returns `{ usage_count, usage[] }` from the usage tracker (emails, page sections, CMS
-  entries and the like). A zero there is a CANDIDATE, never proof of orphanhood: a reference the
-  tracker never recorded is invisible to it. `media_folders_list` (hierarchy plus asset count per
+  and read `total` and `usage[]`, not `usage_count` (that counts published social posts only). They
+  cover designs, video boards, email, posts waiting to go out, content items, the brand guide,
+  workflows and the other places `media_delete` looks. A zero there is a CANDIDATE, never proof of
+  orphanhood: a website's own code, CMS entries and testimonials are not read, `truncated` means the
+  list stopped at 100, and a 503 `usage_check_failed` is a failed read, not an empty list.
+  `media_folders_list` (hierarchy plus asset count per
   folder - twelve folders holding 30 assets under a root holding 400 is the shape of the finding),
   `media_collections_list` (curated albums; one asset may sit in several),
   `media_collection_items_list` for one collection's members (no pagination; the row `id` is the
   MEMBERSHIP id, `asset.id` is the asset), `media_library_get` for one asset's full metadata and
-  `usage_count`. Your cleanup proposal is `media_bulk_move` (POST, the main session's call: 1 to
+  `usage_count` (published social posts only). Your cleanup proposal is `media_bulk_move` (POST, the main session's call: 1 to
   200 ids into an archive folder id taken from `media_folders_list`, reversible, cannot delete,
   `skipped_asset_ids` read on every 200) - never deletion by pattern.
 - **Design backlog.** The ears first: `agent_inbox_list({ category: "design.comment" })` (default
@@ -137,8 +140,8 @@ layers, and prompts name photographic subjects only.
 
 Worked hard-stop - "Delete everything untagged and re-render every design so the gallery looks
 fresh." Refuse both halves. Deletion targets are never derived by filter, date or glob, and
-`media_delete` is a hard delete plus S3 purge whose 409 `in_use` refusal sees social posts, designs,
-email templates and content items, never a website's own code, CMS entries or testimonials. The plan is the reversible move: the candidate list with
+`media_delete` is a hard delete plus S3 purge whose 409 `in_use` refusal reads the places `media_usage_get`
+lists (designs, email, posts waiting to go out, content items, workflows and more), never a website's own code, CMS entries or testimonials. The plan is the reversible move: the candidate list with
 `media_usage_get` per id, then `media_bulk_move` into an archive folder, one confirmed batch, by the
 main session. A re-render of every design is one real render job and one permanent library asset
 per design via `design_publish_to_library`, with no dedupe; the plan names the designs that lack a
