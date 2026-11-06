@@ -557,6 +557,11 @@ const SEO_SINCE = '2026-08-30';
 const seo = (batch) => ({ since: SEO_SINCE, batch });
 
 export const PENDING_TOOLS = new Map([
+  // HK-1203 (2026-11-06): the public link switches for journeys, grids and ICPs (MCP fix/b119-identity). On the ask list and
+  // LIVE_CHANGE_WRITES from this release, before the MCP release serves them. Delete these when the index carries them.
+  ['customer_journey_public_link_set', { since: '2026-11-06', batch: 'HK-1203' }],
+  ['before_after_grid_public_link_set', { since: '2026-11-06', batch: 'HK-1203' }],
+  ['customer_avatar_public_link_set', { since: '2026-11-06', batch: 'HK-1203' }],
   // SITES-S2B (2026-11-05): the desktop's Publish and hosting writes. On the ask list and LIVE_CHANGE_WRITES from this
   // release, before the MCP release serves them (each says ASK THE PERSON FIRST, which the MCP's guard holds to this).
 

@@ -158,6 +158,9 @@ const LIVE_CHANGE_NAMES = [
   'account_app_stores_apple_disconnect',
   'account_app_stores_expo_connect',
   'account_app_stores_expo_disconnect',
+  'customer_journey_public_link_set',
+  'before_after_grid_public_link_set',
+  'customer_avatar_public_link_set',
   'account_timezone_set',
   'helpdesk_assistant_knowledge_sources_update',
   // 0.27.24: a site's secrets reach the running site (and production, without a tier).

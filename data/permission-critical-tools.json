@@ -5,8 +5,8 @@
     "mcp__plugin_hiveku_hk__",
     "mcp__hiveku__"
   ],
-  "plugin_version": "0.27.199",
-  "count": 561,
+  "plugin_version": "0.27.200",
+  "count": 564,
   "tools": [
     {
       "name": "deploy_site",
@@ -2812,6 +2812,21 @@
       "name": "account_app_stores_expo_disconnect",
       "method": "DELETE",
       "why_gated": "disconnects the Expo account the business builds its apps with"
+    },
+    {
+      "name": "customer_journey_public_link_set",
+      "method": "PUT",
+      "why_gated": "switches a customer journey's public share page and data link on or off for anyone who has the address"
+    },
+    {
+      "name": "before_after_grid_public_link_set",
+      "method": "PUT",
+      "why_gated": "switches a before and after grid's public data link on or off for anyone who has the address"
+    },
+    {
+      "name": "customer_avatar_public_link_set",
+      "method": "PUT",
+      "why_gated": "switches an ICP's public data link on or off for anyone who has the address"
     }
   ]
 }
