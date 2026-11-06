@@ -184,6 +184,8 @@ Put this in `.claude/settings.json` (per project) or `~/.claude/settings.json` (
       "mcp__plugin_hiveku_hk__project_indexing_set",
       "mcp__plugin_hiveku_hk__project_concurrency_set",
       "mcp__plugin_hiveku_hk__project_page_cache_set",
+      "mcp__plugin_hiveku_hk__project_cache_clear",
+      "mcp__plugin_hiveku_hk__project_cdn_invalidate",
       "mcp__plugin_hiveku_hk__analytics_visitor_intelligence_start",
       "mcp__plugin_hiveku_hk__account_settings_update",
       "mcp__plugin_hiveku_hk__account_settings_logo_set",

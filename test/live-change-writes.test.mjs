@@ -138,6 +138,10 @@ const LIVE_CHANGE_NAMES = [
   // A site's server capacity and page caching (2026-10-24, MCP #288).
   'project_concurrency_set',
   'project_page_cache_set',
+  // A site's cache clear (HK-1166): project_cache_clear is contracted in PENDING_TOOLS, project_cdn_invalidate is the
+  // same clear under its older name.
+  'project_cache_clear',
+  'project_cdn_invalidate',
   // Visitor Intelligence on a site: it identifies visitors against the monthly allowance (HK-727).
   'analytics_visitor_intelligence_start',
   // Lead lists: starting or resuming a run spends money and can feed a sending campaign (MCP #307).

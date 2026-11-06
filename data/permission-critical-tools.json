@@ -6,7 +6,7 @@
     "mcp__hiveku__"
   ],
   "plugin_version": "0.27.193",
-  "count": 519,
+  "count": 521,
   "tools": [
     {
       "name": "deploy_site",
@@ -337,6 +337,16 @@
       "name": "project_page_cache_set",
       "method": "POST",
       "why_gated": "switches page caching for a live site's Production (Site > Hosting > Page caching): on, the edge keeps the pages the site marks as shareable and hands them to visitors without reaching the server; off, every view reaches the server again"
+    },
+    {
+      "name": "project_cache_clear",
+      "method": "POST",
+      "why_gated": "clears what the CDN keeps for one deployed environment of a site: it costs money past the free allowance, spends the limit of 6 clears an hour per environment and 40 a day per account, and the next visitors to each path go to the site itself until the CDN holds its copies again"
+    },
+    {
+      "name": "project_cdn_invalidate",
+      "method": "POST",
+      "why_gated": "the same clear as project_cache_clear under its older name, on the same limits and at the same cost"
     },
     {
       "name": "analytics_visitor_intelligence_start",
