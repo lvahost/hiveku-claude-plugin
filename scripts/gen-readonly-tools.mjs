@@ -268,6 +268,12 @@ const SENSITIVE_READ_EXCLUSIONS = new Map([
   ['pm_project_delete_impact',
     'reads what deleting a project would take with it, but its name holds "delete", which the ' +
     'write-verb gate never auto-approves; it asks.'],
+  // 2026-11-06 (HK-1297; MCP #441). A GET with readOnlyHint whose answer is the hazard; on
+  // NEVER_AUTO_APPROVE (lib/tool-safety.mjs). Read its route before removing it.
+  ['voice_sip_credentials_get',
+    'returns the calling person\'s phone line password (SIP username, password, realm and wsUri); ' +
+    'whoever reads it can register as that extension and place calls. Reading a credential ' +
+    'silently is not a read-only act; ask every time.'],
 ]);
 
 // The mirror image: a POST that is a pure read. Some routes dispatch reads and
