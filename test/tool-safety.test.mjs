@@ -2546,3 +2546,26 @@ test('the real hook process prints ask for the other Projects wave 2 writes and 
     assert.match(out.hookSpecificOutput.permissionDecisionReason, lead);
   }
 });
+
+// HK-1297 (2026-11-06; MCP #441). A GET with readOnlyHint whose answer is the calling person's phone line password: the
+// generator would have pre-approved it, and under the blanket allow INSTALL.md hands out a silent hook runs it unasked.
+test('a phone line password read asks on a direct call and through a batch, and never rides the read-only list', () => {
+  const cwd = folderWith(undefined);
+  const name = 'voice_sip_credentials_get';
+  assert.ok(NEVER_AUTO_APPROVE.has(name), `${name} must carry the veto`);
+  assert.ok(VETO_REASONS[name], 'a password that places calls needs its own reason');
+  for (const args of [{}, { kind: 'softphone_desktop' }, { kind: 'softphone_mobile', install_id: 'i' }]) {
+    const direct = decideWithGuardrails({ ...payload(name, cwd), tool_input: args });
+    assert.equal(decision(direct), 'ask', `${name} ${JSON.stringify(args)} must ask; silence resolves to the blanket allow`);
+    assert.match(direct.hookSpecificOutput.permissionDecisionReason, /returns your phone line's password: anyone who reads it can sign in as your extension/);
+  }
+  const mixed = decideWithGuardrails(batch([
+    { tool: 'voice_extensions_list', args: {} },
+    { tool: name, args: { kind: 'softphone_desktop' } },
+  ], cwd));
+  assert.equal(decision(mixed), 'ask');
+  assert.equal(isAutoApprovable(name, {}), false);
+  assert.equal(isReadOnlyTool(name), false, `${name} must not classify as a read; regenerate lib/readonly-tools.json if this fails`);
+  const generator = readFileSync(new URL('../scripts/gen-readonly-tools.mjs', import.meta.url), 'utf8');
+  assert.match(generator, /\['voice_sip_credentials_get',/, 'the read-only generator must exclude it (SENSITIVE_READ_EXCLUSIONS)');
+});

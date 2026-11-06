@@ -571,6 +571,11 @@ const CODEX_ONLY_PROMPTS = new Map([
     'site, its database copy included, up to 20 times in 15 minutes. It is gated through NEVER_AUTO_APPROVE ' +
     '(lib/tool-safety.mjs) beside marketing_form_attachment_download_url, not on the ask list, so Codex ' +
     'needs a prompt of its own (desktop wave S2a, Codex 0.3.63)'],
+  ['voice_sip_credentials_get',
+    'is a GET that answers with the calling person\'s phone line password, which lets whoever reads it ' +
+    'sign in as their extension and place calls. It is gated through NEVER_AUTO_APPROVE ' +
+    '(lib/tool-safety.mjs), which the ask list (writes only) cannot carry, so Codex needs a prompt of ' +
+    'its own (HK-1297, Codex 0.3.79)'],
 ]);
 
 test('every Codex-only prompt names a real tool that is not on the ask list', () => {
