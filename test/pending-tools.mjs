@@ -750,7 +750,6 @@ export const PENDING_TOOLS = new Map([
   ['project_secrets_rename', { since: '2026-11-05', batch: 'SITES-S3C-S3D' }],
   ['site_convert_to_hosted', { since: '2026-11-05', batch: 'SITES-S3C-S3D' }],
   ['shopify_project_settings_set', { since: '2026-11-05', batch: 'SITES-S3C-S3D' }],
-  // HK-695 (2026-11-06): private mode for one environment. Live on the MCP server since #426; on the ask list and
-  // LIVE_CHANGE_WRITES now, so it asks from the next release. Deleted by the regen that indexes it.
-  ['site_firewall_private_set', { since: '2026-11-06', batch: 'HK-695' }],
+  // 2026-11-06 (index regenerated at 3058 tools from MCP 67388eb5069f): HK-695's site_firewall_private_set is served and
+  // indexed (off the read-only list; on the ask list and LIVE_CHANGE_WRITES). Entry deleted.
 ]);

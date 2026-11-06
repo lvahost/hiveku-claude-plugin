@@ -337,8 +337,22 @@ for (const n of READ_ONLY_POST_OVERRIDES.keys()) {
 // after reading the handler — and it still cannot rescue a tool listed in
 // SENSITIVE_READ_EXCLUSIONS, because "reads only" and "safe to auto-approve"
 // are different questions.
+// A tool the server keeps for the Hiveku app is in the build but not in the catalogue this plugin's keys are served, so
+// it cannot be called from here, and check-drift reads a name the server does not serve as stale. lib/tool-index.json is
+// that live catalogue. With no index nothing is dropped: this generator feeds a permission hook and must degrade.
+function servedNames() {
+  try {
+    const tools = JSON.parse(fs.readFileSync(path.join(PLUGIN_ROOT, 'lib', 'tool-index.json'), 'utf8')).tools;
+    return Array.isArray(tools) && tools.length > 0 ? new Set(tools.map((t) => t.name)) : null;
+  } catch {
+    return null;
+  }
+}
+const served = servedNames();
+
 const readOnly = [...byName.entries()]
   .filter(([n, e]) =>
+    (!served || served.has(n)) &&
     !SENSITIVE_READ_EXCLUSIONS.has(n) &&
     (e.method === 'GET' || e.readOnlyHint === true || READ_ONLY_POST_OVERRIDES.has(n)))
   .map(([n]) => n).sort();
