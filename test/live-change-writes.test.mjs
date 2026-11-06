@@ -141,6 +141,8 @@ const LIVE_CHANGE_NAMES = [
   // Visitor Intelligence on a site: it identifies visitors against the monthly allowance (HK-727).
   'analytics_visitor_intelligence_start',
   // Lead lists: starting or resuming a run spends money and can feed a sending campaign (MCP #307).
+  'outbound_leads_bulk_create',
+  'outbound_create_lead',
   'outbound_lead_list_run_start',
   'outbound_lead_list_run_control',
   // Contract alerts and templates: outside addresses get a client's signed contract (wave 73).

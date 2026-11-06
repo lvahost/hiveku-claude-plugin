@@ -1029,6 +1029,9 @@ const CONFIRM_ON_PHONE_THAT_ASKS = ['confirm_on_phone_start', 'confirm_on_phone_
 
 /** Bringing deleted contacts back (2026-11-04, CONTACTS-RESTORE-1): a contact may have been deleted on purpose. */
 const CONTACT_RESTORE_THAT_ASKS = ['crm_contacts_restore'];
+
+/** Adding leads to a cold campaign (2026-11-05): in a campaign that is sending, they start getting its emails. */
+const COLD_LEAD_ADDS_THAT_ASK = ['outbound_leads_bulk_create', 'outbound_create_lead'];
 /** The desktop app's help desk (2026-10-28, HD-DESKTOP-1): a person's chats erased for good, and how long every chat is kept. */
 const HELPDESK_PRIVACY_WRITES_THAT_ASK = ['helpdesk_contact_data_erase', 'helpdesk_chat_retention_set'];
 /** A site's lead inbox delete and the move to another workspace (2026-10-30, Website Builder wave B): leads and their files erased for good, and a site leaving this workspace. */
@@ -2124,6 +2127,28 @@ test('the logged-call recording link asks on every call and through a batch, and
   const generator = readFileSync(new URL('../scripts/gen-readonly-tools.mjs', import.meta.url), 'utf8');
   assert.match(generator, /\['crm_activity_recording_link',/, 'the read-only generator must exclude it (SENSITIVE_READ_EXCLUSIONS)');
 });
+
+// ── Adding leads to a cold campaign (2026-11-05) ─────────────────────────────
+//
+// In a campaign that is sending they start getting its emails, so each add asks on a direct call and through a batch,
+// whatever the settings allow, and a reads-only folder denies it. A lead list's run already asks.
+for (const tool of COLD_LEAD_ADDS_THAT_ASK) {
+  test(`${tool} asks on a direct call and through a batch; a reads-only folder denies it`, () => {
+    const cwd = folderWith(undefined);
+    const direct = decideWithGuardrails({ ...payload(tool, cwd), tool_input: { campaign_id: 'c-1' } });
+    assert.equal(decision(direct), 'ask', 'silence resolves to the blanket allow');
+    assert.match(direct.hookSpecificOutput.permissionDecisionReason, /cold email campaign\. In a campaign that is sending/);
+    const mixed = decideWithGuardrails(batch([
+      { tool: 'crm_list_contacts', args: {} },
+      { tool, args: { campaign_id: 'c-1' } },
+    ], cwd));
+    assert.equal(decision(mixed), 'ask');
+    const readsOnly = folderWith({ version: 1, mode: 'reads-only' });
+    assert.equal(decision(decideWithGuardrails(payload(tool, readsOnly))), 'deny');
+    assert.equal(isAutoApprovable(tool, { campaign_id: 'c-1' }), false);
+    assert.equal(isReadOnlyTool(tool), false);
+  });
+}
 
 // ── Bringing deleted contacts back (CONTACTS-RESTORE-1, 2026-11-04) ──────────
 //

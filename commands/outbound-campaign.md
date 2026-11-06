@@ -72,7 +72,9 @@ has a documented failure mode.
    `outbound_leads_bulk_create({ campaign_id, leads })` in batches of ≤100 (the batch cap; 400
    above it), checkpointing after each batch. Returns COUNTS ONLY - `{ uploaded, not_uploaded }` -
    so report not_uploaded without naming leads (the next sync reconciles); `pending_sync` rows with
-   `pending-*` external_ids are a HEALTHY fresh-load state, not a failure.
+   `pending-*` external_ids are a HEALTHY fresh-load state, not a failure. `skipped_own_contacts`
+   names this business's own contacts, left out on purpose: say so, and that they go in from an
+   audience, confirmed on the person's phone.
 6. Hand to `/hiveku:outbound-launch` for the go/no-go gate (health blockers, suppression re-sweep,
    the upstream-steps read, copy check, named approval of list and copy, then the confirmed START).
    This command starts nothing: the campaign is not live until the launch gate's operator-approved
