@@ -6,7 +6,7 @@
     "mcp__hiveku__"
   ],
   "plugin_version": "0.27.203",
-  "count": 573,
+  "count": 585,
   "tools": [
     {
       "name": "deploy_site",
@@ -2577,6 +2577,66 @@
       "name": "workspaces_page_dashboard_version_restore",
       "method": "POST",
       "why_gated": "puts a Workspaces dashboard back to a saved version"
+    },
+    {
+      "name": "workspace_dashboard_create",
+      "method": "POST",
+      "why_gated": "makes an agency dashboard of the person's own, which appears on their Workspaces"
+    },
+    {
+      "name": "workspace_dashboard_update",
+      "method": "PATCH",
+      "why_gated": "changes an agency dashboard's name, description or whole layout"
+    },
+    {
+      "name": "workspace_dashboard_widget_create",
+      "method": "POST",
+      "why_gated": "adds widgets to an agency dashboard, which the person sees on their Workspaces"
+    },
+    {
+      "name": "workspace_dashboard_widget_update",
+      "method": "PATCH",
+      "why_gated": "changes a widget on an agency dashboard, which the person sees on their Workspaces"
+    },
+    {
+      "name": "workspace_dashboard_widget_delete",
+      "method": "DELETE",
+      "why_gated": "takes a widget off an agency dashboard; a saved version can bring it back"
+    },
+    {
+      "name": "workspace_dashboard_layout_update",
+      "method": "PATCH",
+      "why_gated": "moves the widgets around on a page of an agency dashboard"
+    },
+    {
+      "name": "workspace_dashboard_page_create",
+      "method": "POST",
+      "why_gated": "adds a page to an agency dashboard, as a new tab on their Workspaces"
+    },
+    {
+      "name": "workspace_dashboard_page_update",
+      "method": "PATCH",
+      "why_gated": "renames or moves a page of an agency dashboard on their Workspaces"
+    },
+    {
+      "name": "workspace_dashboard_page_delete",
+      "method": "DELETE",
+      "why_gated": "deletes a page of an agency dashboard and every widget on it"
+    },
+    {
+      "name": "workspace_dashboard_restore",
+      "method": "POST",
+      "why_gated": "brings a deleted agency dashboard back onto the person's Workspaces"
+    },
+    {
+      "name": "workspace_dashboard_delete",
+      "method": "DELETE",
+      "why_gated": "deletes an agency dashboard; it can be brought back for 30 days"
+    },
+    {
+      "name": "workspace_dashboard_version_restore",
+      "method": "POST",
+      "why_gated": "puts an agency dashboard back to a saved version"
     },
     {
       "name": "workspaces_page_partner_account_create",
