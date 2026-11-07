@@ -579,7 +579,7 @@ const CODEX_ONLY_PROMPTS = new Map([
   ['project_review_frame_url',
     'answers an address that holds the site\'s saved reviewer login. It is gated through NEVER_AUTO_APPROVE ' +
     '(lib/tool-safety.mjs), which the ask list (writes only) cannot carry, so Codex needs a prompt of its own ' +
-    '(wave S3f, Codex 0.3.83)'],
+    '(wave S3f, Codex 0.3.84)'],
 ]);
 
 test('every Codex-only prompt names a real tool that is not on the ask list', () => {

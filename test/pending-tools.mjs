@@ -768,13 +768,8 @@ export const PENDING_TOOLS = new Map([
   // 2026-11-07 (index regenerated at 3191 tools from MCP 588cfb829371, #453): HK-1146's ppc_meta_url_tags_set and
   // HK-1137's calendar_meeting_type_create and calendar_meeting_type_update are served and indexed. Entries deleted.
 
-  // SITES-S3E (2026-11-07): the desktop app's Webflow settings and workspace ask before the MCP release serves them.
-  ['webflow_connection_token_add', { since: '2026-11-07', batch: 'SITES-S3E' }],
-  ['webflow_project_site_bind', { since: '2026-11-07', batch: 'SITES-S3E' }],
-  ['webflow_connection_disconnect', { since: '2026-11-07', batch: 'SITES-S3E' }],
-  ['webflow_webhooks_reregister', { since: '2026-11-07', batch: 'SITES-S3E' }],
-  ['webflow_form_routing_set', { since: '2026-11-07', batch: 'SITES-S3E' }],
-  ['webflow_form_submissions_backfill', { since: '2026-11-07', batch: 'SITES-S3E' }],
+  // 2026-11-07 (index regenerated at 3223 tools from MCP 75e9a57f41c5, #454, S3e live): the six Webflow settings writes
+  // are served and indexed. Entries deleted; the SITES-S3E batch has landed.
 
   // SITES-S3I (2026-11-07): the desktop app's cookie banner and trackers ask before the MCP release serves them.
   ['project_cookie_banner_set', { since: '2026-11-07', batch: 'SITES-S3I' }],
