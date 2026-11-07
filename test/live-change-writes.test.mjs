@@ -47,6 +47,7 @@ const LIVE_CHANGE_NAMES = [
   'ppc_google_ads_text_replace',
   'ppc_bing_rsa_text_update', // 0.27.8: Microsoft's twin of ppc_google_ad_text_update (HK-86)
   'ppc_meta_ad_text_update', // 0.27.10: Meta's twin of ppc_google_ad_text_update
+  'ppc_meta_url_tags_set', // HK-1146: Meta's twin of ppc_bing_url_tracking_set
   'ppc_negatives_remove',
   'ppc_bing_ad_extension_update',
   'ppc_bing_ad_extension_remove',

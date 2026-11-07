@@ -763,4 +763,11 @@ export const PENDING_TOOLS = new Map([
   // 2026-11-06 (index regenerated at 3063 tools from MCP efd840b383db, #432): ANALYTICS-DESKTOP-1's
   // analytics_conversion_create, analytics_conversion_delete and analytics_tracking_settings_update are served and
   // indexed (off the read-only list; on the ask list and ALWAYS_ASK_WRITES). Entries deleted.
+
+  // HK-1146 (2026-11-04): a Meta ad's URL parameters, set in place, asks before the MCP release serves it.
+  ['ppc_meta_url_tags_set', { since: '2026-11-04', batch: 'HK-1146' }],
+
+  // HK-1137 (2026-11-07): creating and changing a booking calendar ask before the MCP release serves them.
+  ['calendar_meeting_type_create', { since: '2026-11-07', batch: 'HK-1137' }],
+  ['calendar_meeting_type_update', { since: '2026-11-07', batch: 'HK-1137' }],
 ]);

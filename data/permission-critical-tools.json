@@ -6,7 +6,7 @@
     "mcp__hiveku__"
   ],
   "plugin_version": "0.27.201",
-  "count": 564,
+  "count": 567,
   "tools": [
     {
       "name": "deploy_site",
@@ -764,6 +764,11 @@
       "why_gated": "rewrites the text customers see on a live Microsoft ad in place; the ad goes back through editorial review"
     },
     {
+      "name": "ppc_meta_url_tags_set",
+      "method": "POST",
+      "why_gated": "rewrites the URL parameters on up to 10 live Meta ads in place; each ad very likely moves to a new post, leaving its likes and comments behind, Meta reviews it again, and the new creative can put its ad set back into learning"
+    },
+    {
       "name": "ppc_meta_ad_text_update",
       "method": "POST",
       "why_gated": "rewrites the text customers see on a live Meta ad in place; Meta reviews the ad again, and the new creative can put its ad set back into learning"
@@ -1022,6 +1027,16 @@
       "name": "calendar_booking_create",
       "method": "POST",
       "why_gated": "books a contact into a meeting: Hiveku emails them the confirmation with the meeting link, and the host's calendar sends its own invite. Hiveku takes it from the Hiveku app's own key alone, so from an assistant it is refused anyway"
+    },
+    {
+      "name": "calendar_meeting_type_create",
+      "method": "POST",
+      "why_gated": "creates a booking calendar on a person's schedule, with a public link anyone can book on as soon as it is on"
+    },
+    {
+      "name": "calendar_meeting_type_update",
+      "method": "PATCH",
+      "why_gated": "changes a live booking calendar: its link, hours, hosts, or whether it takes bookings at all, and people booking on it see the change at once"
     },
     {
       "name": "marketing_offline_conversions_go_live",
