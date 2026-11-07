@@ -251,6 +251,13 @@ const LIVE_CHANGE_NAMES = [
   'project_secrets_rename',
   'site_convert_to_hosted',
   'shopify_project_settings_set',
+  // The desktop app's Webflow settings and workspace, wave S3e (MCP branch, pending).
+  'webflow_connection_token_add',
+  'webflow_project_site_bind',
+  'webflow_connection_disconnect',
+  'webflow_webhooks_reregister',
+  'webflow_form_routing_set',
+  'webflow_form_submissions_backfill',
   // The desktop app's Backups page, wave S2a (MCP #384): New Backup, a full copy of the site's files,
   // media and database, made only when the person says so.
   'project_backup_create',

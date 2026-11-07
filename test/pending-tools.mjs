@@ -771,4 +771,12 @@ export const PENDING_TOOLS = new Map([
   // HK-1137 (2026-11-07): creating and changing a booking calendar ask before the MCP release serves them.
   ['calendar_meeting_type_create', { since: '2026-11-07', batch: 'HK-1137' }],
   ['calendar_meeting_type_update', { since: '2026-11-07', batch: 'HK-1137' }],
+
+  // SITES-S3E (2026-11-07): the desktop app's Webflow settings and workspace ask before the MCP release serves them.
+  ['webflow_connection_token_add', { since: '2026-11-07', batch: 'SITES-S3E' }],
+  ['webflow_project_site_bind', { since: '2026-11-07', batch: 'SITES-S3E' }],
+  ['webflow_connection_disconnect', { since: '2026-11-07', batch: 'SITES-S3E' }],
+  ['webflow_webhooks_reregister', { since: '2026-11-07', batch: 'SITES-S3E' }],
+  ['webflow_form_routing_set', { since: '2026-11-07', batch: 'SITES-S3E' }],
+  ['webflow_form_submissions_backfill', { since: '2026-11-07', batch: 'SITES-S3E' }],
 ]);
