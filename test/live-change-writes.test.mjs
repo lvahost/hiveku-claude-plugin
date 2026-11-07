@@ -139,6 +139,7 @@ const LIVE_CHANGE_NAMES = [
   'account_team_activity_data_delete',
   'account_domain_register',
   'account_domain_transfer',
+  'account_domain_transfer_submit',
   'account_domain_dns_record_create',
   'account_domain_dns_record_delete',
   'account_security_password_update',

@@ -563,6 +563,9 @@ export const PENDING_TOOLS = new Map([
   // alone, and the index is read with an agent key, so the index never carries it. It stays named so the veto in
   // lib/tool-safety.mjs and Codex's prompt stand as second guards, and a rename still fails a test.
   ['voice_sip_credentials_get', { since: '2026-11-07', batch: 'HK-1297' }],
+  // D-DOM1 (2026-11-07): a domain is bought or sent by the Hiveku app's own key alone, so these stay here for good too.
+  ['account_domain_register', { since: '2026-11-07', batch: 'D-DOM1' }],
+  ['account_domain_transfer_submit', { since: '2026-11-07', batch: 'D-DOM1' }],
   // SITES-S2B (2026-11-05): the desktop's Publish and hosting writes. On the ask list and LIVE_CHANGE_WRITES from this
   // release, before the MCP release serves them (each says ASK THE PERSON FIRST, which the MCP's guard holds to this).
 
