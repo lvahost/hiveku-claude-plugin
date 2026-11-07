@@ -274,6 +274,11 @@ const SENSITIVE_READ_EXCLUSIONS = new Map([
     'returns the calling person\'s phone line password (SIP username, password, realm and wsUri); ' +
     'whoever reads it can register as that extension and place calls. Reading a credential ' +
     'silently is not a read-only act; ask every time.'],
+  // 2026-11-07 (wave S3f, RV18). Its answer is the hazard: an address that holds the site's saved reviewer login. On
+  // NEVER_AUTO_APPROVE (lib/tool-safety.mjs).
+  ['project_review_frame_url',
+    'returns an address that holds the site\'s saved reviewer login; a plain GET of it returns the stored values. ' +
+    'Reading a credential silently is not a read-only act; ask every time.'],
 ]);
 
 // The mirror image: a POST that is a pure read. Some routes dispatch reads and

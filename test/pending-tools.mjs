@@ -775,4 +775,21 @@ export const PENDING_TOOLS = new Map([
   ['webflow_webhooks_reregister', { since: '2026-11-07', batch: 'SITES-S3E' }],
   ['webflow_form_routing_set', { since: '2026-11-07', batch: 'SITES-S3E' }],
   ['webflow_form_submissions_backfill', { since: '2026-11-07', batch: 'SITES-S3E' }],
+
+  // SITES-S3I (2026-11-07): the desktop app's cookie banner and trackers ask before the MCP release serves them.
+  ['project_cookie_banner_set', { since: '2026-11-07', batch: 'SITES-S3I' }],
+  ['project_consent_trackers_add', { since: '2026-11-07', batch: 'SITES-S3I' }],
+  ['project_consent_trackers_update', { since: '2026-11-07', batch: 'SITES-S3I' }],
+  ['project_consent_trackers_remove', { since: '2026-11-07', batch: 'SITES-S3I' }],
+
+  // SITES-S3F (2026-11-07): the desktop app's Review page. project_review_frame_url is on NEVER_AUTO_APPROVE.
+  ['project_annotation_create', { since: '2026-11-07', batch: 'SITES-S3F' }],
+  ['project_annotation_delete', { since: '2026-11-07', batch: 'SITES-S3F' }],
+  ['project_annotation_comment_update', { since: '2026-11-07', batch: 'SITES-S3F' }],
+  ['project_annotation_comment_delete', { since: '2026-11-07', batch: 'SITES-S3F' }],
+  ['project_review_notify_set', { since: '2026-11-07', batch: 'SITES-S3F' }],
+  ['project_review_notify_test', { since: '2026-11-07', batch: 'SITES-S3F' }],
+  ['project_review_session_set', { since: '2026-11-07', batch: 'SITES-S3F' }],
+  ['project_review_session_clear', { since: '2026-11-07', batch: 'SITES-S3F' }],
+  ['project_review_frame_url', { since: '2026-11-07', batch: 'SITES-S3F' }],
 ]);

@@ -6,7 +6,7 @@
     "mcp__hiveku__"
   ],
   "plugin_version": "0.27.206",
-  "count": 585,
+  "count": 597,
   "tools": [
     {
       "name": "deploy_site",
@@ -81,7 +81,7 @@
     {
       "name": "webflow_connection_token_add",
       "method": "POST",
-      "why_gated": "saves a Webflow site token as a connection. Without a project it becomes the account's default: every project that inherits the default changes connection at once, and one pinned to a site the new token does not reach has no site until it is bound again"
+      "why_gated": "saves a Webflow site token as a connection. Without a project it becomes the account's default: a project that inherits the default with no site pinned moves to the site this token reaches, one pinned to a site the new token does not reach has no site until it is bound again, and one set to the current default directly, which every project made from one of its sites is, loses Webflow until it is bound again, even when the new token reaches its site. With a project on the Webflow CMS, the Content department and the AI write the newly bound site's collections. Form submissions from every site of a replaced default, and from a site this token takes over, stop reaching Hiveku and stay in Webflow until that site's webhooks are set up again"
     },
     {
       "name": "webflow_project_site_bind",
@@ -107,6 +107,66 @@
       "name": "webflow_form_submissions_backfill",
       "method": "POST",
       "why_gated": "copies past Webflow form submissions, with visitors' names, emails and answers, into Hiveku Forms and the CRM"
+    },
+    {
+      "name": "project_cookie_banner_set",
+      "method": "PATCH",
+      "why_gated": "changes what every visitor reads on the cookie banner from their next page load, with no deploy, Production included"
+    },
+    {
+      "name": "project_consent_trackers_add",
+      "method": "POST",
+      "why_gated": "adds a tracker that runs for visitors from their next page load, with no deploy; a custom snippet is code on the live site"
+    },
+    {
+      "name": "project_consent_trackers_update",
+      "method": "PATCH",
+      "why_gated": "changes a tracker visitors already get, from their next page load, with no deploy"
+    },
+    {
+      "name": "project_consent_trackers_remove",
+      "method": "DELETE",
+      "why_gated": "removes a tracker for good, and it stops on the live site from the next page load"
+    },
+    {
+      "name": "project_annotation_create",
+      "method": "POST",
+      "why_gated": "adds a comment to a site's review: it makes a task, tells the client's recipients and can start Auto-fix"
+    },
+    {
+      "name": "project_annotation_delete",
+      "method": "DELETE",
+      "why_gated": "deletes a review comment for good, and can take its task and that task's time logs with it"
+    },
+    {
+      "name": "project_annotation_comment_update",
+      "method": "PATCH",
+      "why_gated": "changes the words of a reply in a review comment's thread, which the client reads"
+    },
+    {
+      "name": "project_annotation_comment_delete",
+      "method": "DELETE",
+      "why_gated": "deletes a reply from a review comment's thread for good"
+    },
+    {
+      "name": "project_review_notify_set",
+      "method": "PUT",
+      "why_gated": "changes where a client's review feedback goes: an email address or a Slack channel"
+    },
+    {
+      "name": "project_review_notify_test",
+      "method": "POST",
+      "why_gated": "sends a real test message to the email address or Slack channel named"
+    },
+    {
+      "name": "project_review_session_set",
+      "method": "PUT",
+      "why_gated": "saves a login for this site's review frame: every guest of a review link gets that login and can read it"
+    },
+    {
+      "name": "project_review_session_clear",
+      "method": "DELETE",
+      "why_gated": "removes the site's saved reviewer login: reviewers lose it, and it cannot be read back"
     },
     {
       "name": "project_files_bulk_save",
