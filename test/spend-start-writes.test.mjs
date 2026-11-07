@@ -154,6 +154,9 @@ const spendStartClass = () => indexTools
  * never to quiet a failure; if you cannot write the reason, gate the tool.
  */
 const SPEND_START_NOT_GATED = new Map([
+  ['ppc_meta_url_tags_get',
+    'only reads: POST is its transport, its route lists it among the reads and refuses confirm and apply, '
+    + 'and its answer names an ad status, which is all the detector saw (HK-1146, hiveku-mcp-api-server #453)'],
   ['ppc_ad_group_create',
     'can create a Google ad group already enabled, but a new ad group has no ads, and every Google ad '
     + 'this surface creates (ppc_responsive_search_ad_create, ppc_google_pmax groups) is PAUSED, so '
