@@ -366,7 +366,8 @@ The full reference is `workflow_templating_syntax`. The parts you need to build 
   `template_values` (4.2).
 - There is no arithmetic, no string concatenation, and no conditional inside an expression.
   `{{a + b}}` and `{{ if x }}` do not work. Compose with `transformData`, branch with
-  `conditional`.
+  `conditional`. For a date, use `formatDate`: a blank `inputPath`, `add_days: -7` and
+  `outputFormat: 'iso_date'` give the date 7 days ago, read as `{{<id>.formattedDate}}`.
 - On a `manualTrigger` workflow, whatever you pass as `input_data` to `workflow_run` /
   `workflow_test` lands flat, so reference it as `{{trigger.output.<key>}}` (the same keys are
   also under `trigger.output.payload`, unless `input_data.payload` is an object, which then
