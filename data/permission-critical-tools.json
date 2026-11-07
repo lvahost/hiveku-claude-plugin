@@ -5,8 +5,8 @@
     "mcp__plugin_hiveku_hk__",
     "mcp__hiveku__"
   ],
-  "plugin_version": "0.27.208",
-  "count": 597,
+  "plugin_version": "0.27.209",
+  "count": 598,
   "tools": [
     {
       "name": "deploy_site",
@@ -2876,7 +2876,12 @@
     {
       "name": "account_domain_transfer",
       "method": "POST",
-      "why_gated": "starts moving a domain into the account, which costs money and changes where it is managed"
+      "why_gated": "saves a request to move a domain into the account; nothing is charged until a person sends it"
+    },
+    {
+      "name": "account_domain_transfer_submit",
+      "method": "POST",
+      "why_gated": "sends a saved domain transfer to the registrar: it charges a year of registration, which cannot be undone once the registry accepts it"
     },
     {
       "name": "account_domain_dns_record_create",
@@ -2916,7 +2921,7 @@
     {
       "name": "account_billing_plan_update",
       "method": "POST",
-      "why_gated": "changes the account's paid plan, billing interval or add-ons, which changes what the account is charged"
+      "why_gated": "takes a paid add-on off the account, which changes what the account is charged"
     },
     {
       "name": "account_billing_credits_update",
