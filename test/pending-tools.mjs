@@ -557,11 +557,12 @@ const SEO_SINCE = '2026-08-30';
 const seo = (batch) => ({ since: SEO_SINCE, batch });
 
 export const PENDING_TOOLS = new Map([
-  // HK-1203 (2026-11-06): the public link switches for journeys, grids and ICPs (MCP fix/b119-identity). On the ask list and
-  // LIVE_CHANGE_WRITES from this release, before the MCP release serves them. Delete these when the index carries them.
-  ['customer_journey_public_link_set', { since: '2026-11-06', batch: 'HK-1203' }],
-  ['before_after_grid_public_link_set', { since: '2026-11-06', batch: 'HK-1203' }],
-  ['customer_avatar_public_link_set', { since: '2026-11-06', batch: 'HK-1203' }],
+  // 2026-11-07 (index regenerated at 3186 tools from MCP 2fb21a6b2935, #449): HK-1203's three public link switches are
+  // served and indexed (off the read-only list; on the ask list and LIVE_CHANGE_WRITES). Entries deleted.
+  // HK-1297 (2026-11-07): voice_sip_credentials_get stays here for good. The MCP serves it to the Hiveku app's own key
+  // alone, and the index is read with an agent key, so the index never carries it. It stays named so the veto in
+  // lib/tool-safety.mjs and Codex's prompt stand as second guards, and a rename still fails a test.
+  ['voice_sip_credentials_get', { since: '2026-11-07', batch: 'HK-1297' }],
   // SITES-S2B (2026-11-05): the desktop's Publish and hosting writes. On the ask list and LIVE_CHANGE_WRITES from this
   // release, before the MCP release serves them (each says ASK THE PERSON FIRST, which the MCP's guard holds to this).
 
