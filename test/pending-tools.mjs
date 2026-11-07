@@ -775,19 +775,4 @@ export const PENDING_TOOLS = new Map([
   ['webflow_webhooks_reregister', { since: '2026-11-07', batch: 'SITES-S3E' }],
   ['webflow_form_routing_set', { since: '2026-11-07', batch: 'SITES-S3E' }],
   ['webflow_form_submissions_backfill', { since: '2026-11-07', batch: 'SITES-S3E' }],
-
-  // WORKSPACE-DASHBOARDS-AI (2026-11-07): a person's own AI key builds their agency dashboards. The writes ask before the
-  // MCP release serves them; the builder refuses each until this list has shipped. The tool index carries them next.
-  ['workspace_dashboard_create', { since: '2026-11-07', batch: 'WORKSPACE-DASHBOARDS-AI' }],
-  ['workspace_dashboard_update', { since: '2026-11-07', batch: 'WORKSPACE-DASHBOARDS-AI' }],
-  ['workspace_dashboard_widget_create', { since: '2026-11-07', batch: 'WORKSPACE-DASHBOARDS-AI' }],
-  ['workspace_dashboard_widget_update', { since: '2026-11-07', batch: 'WORKSPACE-DASHBOARDS-AI' }],
-  ['workspace_dashboard_widget_delete', { since: '2026-11-07', batch: 'WORKSPACE-DASHBOARDS-AI' }],
-  ['workspace_dashboard_layout_update', { since: '2026-11-07', batch: 'WORKSPACE-DASHBOARDS-AI' }],
-  ['workspace_dashboard_page_create', { since: '2026-11-07', batch: 'WORKSPACE-DASHBOARDS-AI' }],
-  ['workspace_dashboard_page_update', { since: '2026-11-07', batch: 'WORKSPACE-DASHBOARDS-AI' }],
-  ['workspace_dashboard_page_delete', { since: '2026-11-07', batch: 'WORKSPACE-DASHBOARDS-AI' }],
-  ['workspace_dashboard_restore', { since: '2026-11-07', batch: 'WORKSPACE-DASHBOARDS-AI' }],
-  ['workspace_dashboard_delete', { since: '2026-11-07', batch: 'WORKSPACE-DASHBOARDS-AI' }],
-  ['workspace_dashboard_version_restore', { since: '2026-11-07', batch: 'WORKSPACE-DASHBOARDS-AI' }],
 ]);
