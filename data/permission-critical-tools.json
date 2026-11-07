@@ -6,7 +6,7 @@
     "mcp__hiveku__"
   ],
   "plugin_version": "0.27.202",
-  "count": 567,
+  "count": 573,
   "tools": [
     {
       "name": "deploy_site",
@@ -77,6 +77,36 @@
       "name": "shopify_project_settings_set",
       "method": "POST",
       "why_gated": "saves which store Hiveku's own tools use for a website, or none: the live site does not change, but a running A/B test's purchase goal follows it at once"
+    },
+    {
+      "name": "webflow_connection_token_add",
+      "method": "POST",
+      "why_gated": "saves a Webflow site token as a connection. Without a project it becomes the account's default: every project that inherits the default changes connection at once, and one pinned to a site the new token does not reach has no site until it is bound again"
+    },
+    {
+      "name": "webflow_project_site_bind",
+      "method": "POST",
+      "why_gated": "changes which Webflow site a project's tools, AI and Content department act on. Turning Webflow off, or leaving no site bound, switches its content source back to Hiveku's CMS"
+    },
+    {
+      "name": "webflow_connection_disconnect",
+      "method": "POST",
+      "why_gated": "disconnects a Webflow connection for every project that uses it: Hiveku's webhooks come off Webflow, and projects on the Webflow CMS switch back to Hiveku's CMS"
+    },
+    {
+      "name": "webflow_webhooks_reregister",
+      "method": "POST",
+      "why_gated": "re-registers Hiveku's webhooks on every site of a Webflow connection, for every project that uses it"
+    },
+    {
+      "name": "webflow_form_routing_set",
+      "method": "POST",
+      "why_gated": "changes which visitors' form submissions reach Hiveku: switched off, new ones stay in Webflow until they are imported"
+    },
+    {
+      "name": "webflow_form_submissions_backfill",
+      "method": "POST",
+      "why_gated": "copies past Webflow form submissions, with visitors' names, emails and answers, into Hiveku Forms and the CRM"
     },
     {
       "name": "project_files_bulk_save",
