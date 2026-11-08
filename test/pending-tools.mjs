@@ -777,14 +777,8 @@ export const PENDING_TOOLS = new Map([
   // 2026-11-08 (index regenerated from MCP after #457, S3i live): the cookie banner and tracker writes are served and
   // indexed. Entries deleted; the SITES-S3I batch has landed.
 
-  // SITES-S3F (2026-11-07): the desktop app's Review page. project_review_frame_url is on NEVER_AUTO_APPROVE.
-  ['project_annotation_create', { since: '2026-11-07', batch: 'SITES-S3F' }],
-  ['project_annotation_delete', { since: '2026-11-07', batch: 'SITES-S3F' }],
-  ['project_annotation_comment_update', { since: '2026-11-07', batch: 'SITES-S3F' }],
-  ['project_annotation_comment_delete', { since: '2026-11-07', batch: 'SITES-S3F' }],
-  ['project_review_notify_set', { since: '2026-11-07', batch: 'SITES-S3F' }],
-  ['project_review_notify_test', { since: '2026-11-07', batch: 'SITES-S3F' }],
-  ['project_review_session_set', { since: '2026-11-07', batch: 'SITES-S3F' }],
-  ['project_review_session_clear', { since: '2026-11-07', batch: 'SITES-S3F' }],
+  // 2026-11-08 (index regenerated at 3238 tools from MCP 8335c5db6535, #461, S3f live): the Review page's writes and reads
+  // are served and indexed. Entries deleted, but for project_review_frame_url, which stays here for good: the MCP serves it to
+  // the Hiveku app's own key alone, so the index (read with an agent key) never lists it.
   ['project_review_frame_url', { since: '2026-11-07', batch: 'SITES-S3F' }],
 ]);
