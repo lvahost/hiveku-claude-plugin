@@ -1192,6 +1192,8 @@ const DASHBOARD_PAGE_WRITES_THAT_ASK = [
   'workspaces_page_mc_task_release',
   'workspaces_page_mc_task_comment',
   'workspaces_page_mc_task_transition',
+  'workspaces_page_attention_item_update',
+  'workspaces_page_attention_recheck',
   'workspaces_page_custom_field_create',
   'workspaces_page_custom_field_value_set',
   'workspaces_page_custom_field_update',
@@ -1215,6 +1217,30 @@ const DASHBOARD_PAGE_WRITES_THAT_ASK = [
   'workspace_dashboard_restore',
   'workspace_dashboard_delete',
   'workspace_dashboard_version_restore',
+  'dashboard_create',
+  'dashboard_update',
+  'dashboard_restore',
+  'dashboard_layout_update',
+  'dashboard_widget_create',
+  'dashboard_widget_update',
+  'dashboard_widget_delete',
+  'dashboard_page_create',
+  'dashboard_page_update',
+  'dashboard_page_delete',
+  'dashboard_control_create',
+  'dashboard_control_update',
+  'dashboard_control_delete',
+  'dashboard_data_source_create',
+  'dashboard_data_source_update',
+  'dashboard_data_rows_send',
+  'dashboard_data_rows_delete',
+  'dashboard_tally_add',
+  'dashboard_delete',
+  'dashboard_publish',
+  'dashboard_share',
+  'dashboard_version_restore',
+  'dashboard_data_source_delete',
+  'dashboard_data_column_change',
   'workspaces_page_partner_account_create',
   'workspaces_page_partner_branding_save',
   'workspaces_page_partner_payout_details_save',
@@ -2581,4 +2607,27 @@ test('a phone line password read asks on a direct call and through a batch, and 
   assert.equal(isReadOnlyTool(name), false, `${name} must not classify as a read; regenerate lib/readonly-tools.json if this fails`);
   const generator = readFileSync(new URL('../scripts/gen-readonly-tools.mjs', import.meta.url), 'utf8');
   assert.match(generator, /\['voice_sip_credentials_get',/, 'the read-only generator must exclude it (SENSITIVE_READ_EXCLUSIONS)');
+});
+
+// Wave S5a (2026-11-08, AN14). A GET with readOnlyHint whose answer is one site visitor's whole visit as they saw it on
+// screen: the generator would pre-approve it, and under the blanket allow INSTALL.md hands out a silent hook runs it unasked.
+test('a session recording read asks on a direct call and through a batch, and never rides the read-only list', () => {
+  const cwd = folderWith(undefined);
+  const name = 'analytics_recording_get';
+  assert.ok(NEVER_AUTO_APPROVE.has(name), `${name} must carry the veto`);
+  assert.ok(VETO_REASONS[name], 'a visitor\'s whole visit needs its own reason');
+  for (const args of [{}, { project_id: 'p', session_id: 's' }, { project_id: 'p', session_id: 's', chunk_from: 8, max_chunks: 8 }]) {
+    const direct = decideWithGuardrails({ ...payload(name, cwd), tool_input: args });
+    assert.equal(decision(direct), 'ask', `${name} ${JSON.stringify(args)} must ask; silence resolves to the blanket allow`);
+    assert.match(direct.hookSpecificOutput.permissionDecisionReason, /returns one visitor's whole visit as they saw it on screen/);
+  }
+  const mixed = decideWithGuardrails(batch([
+    { tool: 'analytics_visitors', args: { project_id: 'p' } },
+    { tool: name, args: { project_id: 'p', session_id: 's' } },
+  ], cwd));
+  assert.equal(decision(mixed), 'ask');
+  assert.equal(isAutoApprovable(name, {}), false);
+  assert.equal(isReadOnlyTool(name), false, `${name} must not classify as a read; regenerate lib/readonly-tools.json if this fails`);
+  const generator = readFileSync(new URL('../scripts/gen-readonly-tools.mjs', import.meta.url), 'utf8');
+  assert.match(generator, /\['analytics_recording_get',/, 'the read-only generator must exclude it (SENSITIVE_READ_EXCLUSIONS)');
 });

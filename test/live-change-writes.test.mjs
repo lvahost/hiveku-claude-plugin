@@ -286,6 +286,9 @@ const LIVE_CHANGE_NAMES = [
   'customer_journey_repopulate',
   'customer_journey_videos_generate',
   'customer_journey_simulation_publish',
+  // The desktop app's Analytics, wave S5a (MCP feature/s5a-analytics-forms, pending): matching visitors to the
+  // account's ideal customers, which spends AI credit.
+  'analytics_icp_matching_run',
 ];
 
 function folderWith(guardrails) {

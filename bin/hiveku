@@ -57,7 +57,7 @@ import {
   spawnDetachedMemoryProbe,
   toolResultJson,
 } from '../lib/memory-changes.mjs';
-import { HIVEKU_APP_URL, HIVEKU_MCP_URL, CLIENT_ID, PLUGIN_VERSION, keyPreview, isUuid, mapLimit } from '../lib/util.mjs';
+import { HIVEKU_APP_URL, HIVEKU_MCP_URL, CLIENT_ID, PLUGIN_VERSION, keyPreview, isUuid, mapLimit, writeFileAtomic } from '../lib/util.mjs';
 import { PLAN_LIMIT_LINE } from '../lib/shim.mjs';
 import { runPostToolUseHook } from '../lib/vcs-ledger.mjs';
 import { runStopHook } from '../lib/stop-version.mjs';

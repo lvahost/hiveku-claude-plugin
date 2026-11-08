@@ -580,6 +580,10 @@ const CODEX_ONLY_PROMPTS = new Map([
     'answers an address that holds the site\'s saved reviewer login. It is gated through NEVER_AUTO_APPROVE ' +
     '(lib/tool-safety.mjs), which the ask list (writes only) cannot carry, so Codex needs a prompt of its own ' +
     '(wave S3f, Codex 0.3.84)'],
+  ['analytics_recording_get',
+    'is a GET that answers with one site visitor\'s whole visit as they saw it on screen, a session recording\'s ' +
+    'replay. It is gated through NEVER_AUTO_APPROVE (lib/tool-safety.mjs), which the ask list (writes only) cannot ' +
+    'carry, so Codex needs a prompt of its own (wave S5a, Codex 0.3.87)'],
 ]);
 
 test('every Codex-only prompt names a real tool that is not on the ask list', () => {
