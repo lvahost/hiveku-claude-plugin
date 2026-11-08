@@ -847,7 +847,8 @@ test('source cross-check: every site birth path calls the site-birth helper, whi
   const olympusClone = src('app', 'api', 'olympus', 'builder', 'projects', '[projectId]', 'clone', 'route.ts');
   const dashboardClone = src('app', 'api', 'builder', 'projects', '[projectId]', 'clone', 'route.ts');
   const clone = src('lib', 'builder', 'project-clone.service.ts');
-  const webflow = src('app', 'api', 'builder', 'webflow', 'projects-from-site', 'route.ts');
+  // The route runs createProjectFromWebflowSite since builder #2063 (wave S3e), which the webflow-ops action shares.
+  const webflow = src('lib', 'webflow', 'project-from-site.ts');
   const githubImport = src('app', 'api', 'github', 'import', 'route.ts');
   const githubImportStream = src('app', 'api', 'github', 'import-stream', 'route.ts');
   const cardMenu = src('components', 'dashboard', 'ProjectCardMenu.tsx');
@@ -884,7 +885,8 @@ test('source cross-check: every site birth path calls the site-birth helper, whi
   }
   // Webflow makes it after the site's transaction has committed, not inside it.
   const wf = read(webflow);
-  assert.ok(wf.indexOf('createSiteBirthPmProject(') > wf.indexOf('prisma.$transaction('), 'Webflow projects-from-site makes the PM project inside (or before) the site transaction');
+  assert.ok(wf.indexOf('$transaction(') > 0, 'project-from-site.ts no longer makes the site in a transaction');
+  assert.ok(wf.indexOf('createSiteBirthPmProject(') > wf.indexOf('$transaction('), 'Webflow projects-from-site makes the PM project inside (or before) the site transaction');
   // A clone copies nothing PM-related; it gets its own fresh project.
   assert.doesNotMatch(read(clone), /\bpm_(tasks|task_sections|milestones|projects)\b/, 'the clone service now copies PM rows - the "the clone gets its own new PM - <name>" prose must change');
   for (const file of [olympusClone, dashboardClone]) {
