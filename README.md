@@ -128,7 +128,8 @@ went and what stayed.
   you bound with `/hiveku:bind`, a folder the Hiveku app or another Hiveku tool made, and every
   folder set up before this version stay where they are, and you are told where they are.
 - **Only for a key `/hiveku:connect` made here.** A key added with `hiveku accounts add` may be a
-  teammate's, so nothing is removed for it: you are told once that Hiveku no longer accepts it.
+  teammate's, so nothing is removed for it: you are told once that Hiveku no longer accepts it. A key
+  connected before this version counts once the account is connected again.
 - **Never on doubt.** A failed or slow answer, an error page, or a key that was only switched off
   or replaced removes nothing. Deleted folders go for good, not to the Trash, and links inside them
   are removed without touching what they point at.
