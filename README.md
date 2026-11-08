@@ -116,6 +116,23 @@ playbook, not a guess. They cost nothing until they load.
   account folders, stagger them — each account's key has its own rate budget (100 req/min), but
   hundreds of simultaneous pulls is a lot of load for no benefit.
 
+## When you lose access to an account
+
+When Hiveku refuses an account's key, the plugin asks app.hiveku.com why. If you were removed from
+the account's team, or the account was closed, and Hiveku says so twice, a few minutes apart, the
+plugin removes from this computer what it made for that account: the account's saved key and the
+folder `/hiveku:setup` made for it (with everything in it). Then it tells you, in plain words, what
+went and what stayed.
+
+- **Only what the plugin made.** A folder `/hiveku:setup` adopted (it already had files), a folder
+  you bound with `/hiveku:bind`, a folder the Hiveku app or another Hiveku tool made, and every
+  folder set up before this version stay where they are, and you are told where they are.
+- **Only for a key `/hiveku:connect` made here.** A key added with `hiveku accounts add` may be a
+  teammate's, so nothing is removed for it: you are told once that Hiveku no longer accepts it.
+- **Never on doubt.** A failed or slow answer, an error page, or a key that was only switched off
+  or replaced removes nothing. Deleted folders go for good, not to the Trash, and links inside them
+  are removed without touching what they point at.
+
 ## Local data instead of live calls
 
 One `/hiveku:pull` replaces dozens of MCP round-trips: datasets land in

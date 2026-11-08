@@ -35,6 +35,7 @@ if (proxy && !process.env.NODE_USE_ENV_PROXY && !process.env.HIVEKU_PROXY_REEXEC
   process.exit(r.status ?? 1);
 }
 
+import os from 'node:os';
 import { runShim } from '../lib/shim.mjs';
 import { resolveDataDir } from '../lib/credentials.mjs';
 
@@ -61,7 +62,9 @@ async function main() {
     dataDir = null;
   }
 
-  await runShim({ projectDir, dataDir: dataDir || '/nonexistent' });
+  // Offboarding O8b: the home folder is passed in here, and only here, so a
+  // removal can never reach a folder a test did not give it (lib/offboarding.mjs).
+  await runShim({ projectDir, dataDir: dataDir || '/nonexistent', offboarding: { home: os.homedir() } });
 }
 
 main().catch((err) => {
