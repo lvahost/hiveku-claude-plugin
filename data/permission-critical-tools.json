@@ -5,7 +5,7 @@
     "mcp__plugin_hiveku_hk__",
     "mcp__hiveku__"
   ],
-  "plugin_version": "0.27.212",
+  "plugin_version": "0.27.213",
   "count": 598,
   "tools": [
     {
@@ -2826,7 +2826,7 @@
     {
       "name": "account_team_member_remove",
       "method": "DELETE",
-      "why_gated": "removes a teammate from the account, ending their access"
+      "why_gated": "removes a teammate from the account, ending their access, and deletes their sign-in when it was their last account"
     },
     {
       "name": "account_team_ownership_transfer",
@@ -2901,7 +2901,7 @@
     {
       "name": "account_security_2fa_update",
       "method": "PUT",
-      "why_gated": "turns two-factor sign-in on or off for the signed-in person"
+      "why_gated": "asks to change two-step sign-in, which a connection is never allowed to do"
     },
     {
       "name": "account_security_computer_revoke",
