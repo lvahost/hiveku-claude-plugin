@@ -785,9 +785,7 @@ export const PENDING_TOOLS = new Map([
   // 2026-11-08 (index regenerated at 3247 tools from MCP cd77c644ef3e, #468, Client health round 1 live): the two Client
   // health writes are served and indexed. Entries deleted; the CLIENT-HEALTH-W1 batch has landed.
 
-  // SITES-S5A (2026-11-08): the desktop app's Analytics. analytics_icp_matching_run asks from this release (it spends AI
-  // credit), and analytics_recording_get is on NEVER_AUTO_APPROVE, before MCP feature/s5a-analytics-forms serves them.
-  // The tool index carries them once that release is live.
-  ['analytics_icp_matching_run', { since: '2026-11-08', batch: 'SITES-S5A' }],
-  ['analytics_recording_get', { since: '2026-11-08', batch: 'SITES-S5A' }],
+  // 2026-11-08 (index regenerated at 3259 tools from MCP 65c5fd6a652f, #472, S5a live): analytics_icp_matching_run (on the ask
+  // list and LIVE_CHANGE_WRITES) and analytics_recording_get (on NEVER_AUTO_APPROVE, off the read-only list) are served and
+  // indexed. Entries deleted; the SITES-S5A batch has landed.
 ]);
