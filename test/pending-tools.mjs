@@ -774,11 +774,8 @@ export const PENDING_TOOLS = new Map([
   // 2026-11-07 (index regenerated at 3223 tools from MCP 75e9a57f41c5, #454, S3e live): the six Webflow settings writes
   // are served and indexed. Entries deleted; the SITES-S3E batch has landed.
 
-  // SITES-S3I (2026-11-07): the desktop app's cookie banner and trackers ask before the MCP release serves them.
-  ['project_cookie_banner_set', { since: '2026-11-07', batch: 'SITES-S3I' }],
-  ['project_consent_trackers_add', { since: '2026-11-07', batch: 'SITES-S3I' }],
-  ['project_consent_trackers_update', { since: '2026-11-07', batch: 'SITES-S3I' }],
-  ['project_consent_trackers_remove', { since: '2026-11-07', batch: 'SITES-S3I' }],
+  // 2026-11-08 (index regenerated from MCP after #457, S3i live): the cookie banner and tracker writes are served and
+  // indexed. Entries deleted; the SITES-S3I batch has landed.
 
   // SITES-S3F (2026-11-07): the desktop app's Review page. project_review_frame_url is on NEVER_AUTO_APPROVE.
   ['project_annotation_create', { since: '2026-11-07', batch: 'SITES-S3F' }],
