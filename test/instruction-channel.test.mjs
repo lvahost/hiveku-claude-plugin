@@ -18,6 +18,7 @@
  * interpolations would be a rule the next contributor has to remember; doing it
  * in the loaders is one they cannot forget.
  */
+import './isolated.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { promises as fs } from 'node:fs';

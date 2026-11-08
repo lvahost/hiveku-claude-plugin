@@ -2,6 +2,7 @@
 // (offboarding O8b, lib/key-standing.mjs). The website's route is a local
 // server on 127.0.0.1; the watcher's sightings live in a temporary data folder;
 // the clock is the test's own. Every key and account id is made up.
+import './isolated.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile, readdir, symlink, writeFile, mkdir } from 'node:fs/promises';

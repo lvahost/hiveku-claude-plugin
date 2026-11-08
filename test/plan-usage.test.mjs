@@ -41,6 +41,7 @@
  *       the email result (channel both), never a 402 voice_not_enabled.
  * The stale-text detectors have a negative control on the old wording.
  */
+import { isolatedEnv } from './isolated.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
@@ -276,7 +277,7 @@ function sessionStartOutput(cwd, home, dataDir) {
     input: JSON.stringify({ cwd, source: 'startup' }),
     encoding: 'utf8',
     timeout: 30_000,
-    env: { HOME: home, USERPROFILE: home, PATH: process.env.PATH ?? '', HIVEKU_PLUGIN_DATA: dataDir },
+    env: isolatedEnv({ HOME: home, USERPROFILE: home, HIVEKU_PLUGIN_DATA: dataDir }),
   });
   assert.equal(run.status, 0, run.stderr);
   return run.stdout;

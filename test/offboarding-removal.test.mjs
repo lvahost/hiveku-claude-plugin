@@ -5,6 +5,7 @@
 // in, so nothing outside the temporary folder can be reached even with a check
 // broken. Folders are made by the real `hiveku setup` (lib/setup.mjs), so their
 // mark and record are the real ones. Every key and account id is made up.
+import './isolated.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';

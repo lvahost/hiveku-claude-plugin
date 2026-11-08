@@ -7,6 +7,7 @@
  * real command, in a throwaway folder with a throwaway HOME and nothing else of
  * the caller's environment.
  */
+import { isolatedEnv } from './isolated.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
@@ -31,7 +32,7 @@ async function boundFolder() {
 
 function focus(where, args) {
   // Only PATH from the caller: no CLAUDE_CONFIG_DIR, no plugin data folder, no real HOME.
-  const env = { PATH: process.env.PATH, HOME: where.home, HIVEKU_PLUGIN_DATA: path.join(where.root, 'data') };
+  const env = isolatedEnv({ HOME: where.home, HIVEKU_PLUGIN_DATA: path.join(where.root, 'data') });
   return spawnSync(process.execPath, [BIN, 'focus', ...args, '--json'], { cwd: where.folder, env, encoding: 'utf8', timeout: 20_000 });
 }
 

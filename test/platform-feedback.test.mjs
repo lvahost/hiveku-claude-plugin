@@ -13,6 +13,7 @@
  *     owns (the shim's initialize instructions and the session-start hook) as
  *     static text, with nothing server-supplied spliced in.
  */
+import './isolated.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { promises as fs } from 'node:fs';

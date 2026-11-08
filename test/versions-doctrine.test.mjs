@@ -7,6 +7,7 @@
  * that carry that, in the files a session actually loads, so a rewrite cannot
  * quietly bring back "project_commit is unnecessary" or a checkpoint-only undo.
  */
+import './isolated.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';

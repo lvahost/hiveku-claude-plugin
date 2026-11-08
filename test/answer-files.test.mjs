@@ -33,6 +33,7 @@
  *
  * Run: node --test test/answer-files.test.mjs
  */
+import { isolatedEnv } from './isolated.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -698,9 +699,7 @@ function preToolUse(toolInput, cwd) {
   try {
     fs.writeFileSync(updateCheckPath(dataDir), JSON.stringify({ checked_at: new Date().toISOString() }));
     assert.equal(probeIsStale(dataDir), false, 'the update probe would spawn; the fixture is wrong');
-    const env = { ...process.env, HIVEKU_PLUGIN_DATA: dataDir };
-    delete env.CLAUDE_PLUGIN_ROOT;
-    delete env.CLAUDE_PLUGIN_DATA;
+    const env = isolatedEnv({ HIVEKU_PLUGIN_DATA: dataDir });
     const run = spawnSync(process.execPath, [path.join(ROOT, 'bin', 'hiveku'), 'hook', 'pre-tool-use'], {
       input: JSON.stringify({ hook_event_name: 'PreToolUse', tool_name: `${PFX}hiveku_batch`, tool_input: toolInput, cwd }),
       encoding: 'utf8',
