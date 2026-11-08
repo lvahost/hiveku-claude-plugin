@@ -5,8 +5,8 @@
     "mcp__plugin_hiveku_hk__",
     "mcp__hiveku__"
   ],
-  "plugin_version": "0.27.216",
-  "count": 598,
+  "plugin_version": "0.27.217",
+  "count": 624,
   "tools": [
     {
       "name": "deploy_site",
@@ -2584,6 +2584,16 @@
       "why_gated": "moves a Mission Control card to another status"
     },
     {
+      "name": "workspaces_page_attention_item_update",
+      "method": "PATCH",
+      "why_gated": "changes who has a Client health item, or snoozes or closes it, for everyone who sees that client"
+    },
+    {
+      "name": "workspaces_page_attention_recheck",
+      "method": "POST",
+      "why_gated": "runs a live check of a client's site and records it"
+    },
+    {
       "name": "workspaces_page_custom_field_create",
       "method": "POST",
       "why_gated": "adds a custom field, which can be a column everyone in the account sees"
@@ -2697,6 +2707,126 @@
       "name": "workspace_dashboard_version_restore",
       "method": "POST",
       "why_gated": "puts an agency dashboard back to a saved version"
+    },
+    {
+      "name": "dashboard_create",
+      "method": "POST",
+      "why_gated": "makes a new dashboard in the account, a private draft of the person's own until it is shared"
+    },
+    {
+      "name": "dashboard_update",
+      "method": "PATCH",
+      "why_gated": "changes an account dashboard's name, description, filters or whole layout, for everyone it is shared with"
+    },
+    {
+      "name": "dashboard_restore",
+      "method": "POST",
+      "why_gated": "brings an archived account dashboard back, as private"
+    },
+    {
+      "name": "dashboard_layout_update",
+      "method": "PATCH",
+      "why_gated": "moves the widgets around on a page of an account dashboard, for everyone it is shared with"
+    },
+    {
+      "name": "dashboard_widget_create",
+      "method": "POST",
+      "why_gated": "adds widgets to an account dashboard, which everyone it is shared with then sees"
+    },
+    {
+      "name": "dashboard_widget_update",
+      "method": "PATCH",
+      "why_gated": "changes a widget on an account dashboard, which everyone it is shared with then sees"
+    },
+    {
+      "name": "dashboard_widget_delete",
+      "method": "DELETE",
+      "why_gated": "takes a widget off an account dashboard for everyone it is shared with; a saved version can bring it back"
+    },
+    {
+      "name": "dashboard_page_create",
+      "method": "POST",
+      "why_gated": "adds a page to an account dashboard, as a new tab everyone it is shared with sees"
+    },
+    {
+      "name": "dashboard_page_update",
+      "method": "PATCH",
+      "why_gated": "renames or moves a page of an account dashboard, for everyone it is shared with"
+    },
+    {
+      "name": "dashboard_page_delete",
+      "method": "DELETE",
+      "why_gated": "deletes a page of an account dashboard and every widget on it; a saved version can bring it back"
+    },
+    {
+      "name": "dashboard_control_create",
+      "method": "POST",
+      "why_gated": "adds a picker to an account dashboard that the widgets on every page then follow"
+    },
+    {
+      "name": "dashboard_control_update",
+      "method": "PATCH",
+      "why_gated": "changes a picker on an account dashboard, and so what its widgets show"
+    },
+    {
+      "name": "dashboard_control_delete",
+      "method": "DELETE",
+      "why_gated": "takes a picker off an account dashboard, so its widgets go back to their own settings; a saved version can bring it back"
+    },
+    {
+      "name": "dashboard_data_source_create",
+      "method": "POST",
+      "why_gated": "makes a new table in Your data, which the account's dashboards can then read"
+    },
+    {
+      "name": "dashboard_data_source_update",
+      "method": "PATCH",
+      "why_gated": "changes a Your data table's name, who sees it or its columns, for every dashboard that reads it"
+    },
+    {
+      "name": "dashboard_data_rows_send",
+      "method": "POST",
+      "why_gated": "adds or changes rows in a Your data table, which the account's dashboards then show"
+    },
+    {
+      "name": "dashboard_data_rows_delete",
+      "method": "POST",
+      "why_gated": "deletes rows from a Your data table, which the dashboards reading it then lose; the app can bring them back for 30 days"
+    },
+    {
+      "name": "dashboard_tally_add",
+      "method": "POST",
+      "why_gated": "adds to a tally's count, which everyone who reads the account's dashboards then sees"
+    },
+    {
+      "name": "dashboard_delete",
+      "method": "DELETE",
+      "why_gated": "deletes an account dashboard for everyone it is shared with; it can be brought back for 30 days"
+    },
+    {
+      "name": "dashboard_publish",
+      "method": "POST",
+      "why_gated": "makes this dashboard the shared home everyone in the account opens"
+    },
+    {
+      "name": "dashboard_share",
+      "method": "PATCH",
+      "why_gated": "shares an account dashboard with everyone in the account, or takes it back from everyone it was shared with"
+    },
+    {
+      "name": "dashboard_version_restore",
+      "method": "POST",
+      "why_gated": "puts an account dashboard back to an earlier version, for everyone it is shared with"
+    },
+    {
+      "name": "dashboard_data_source_delete",
+      "method": "DELETE",
+      "why_gated": "deletes a Your data table and its rows, so the dashboards that read it lose that data; the app can bring it back for 30 days"
+    },
+    {
+      "name": "dashboard_data_column_change",
+      "method": "POST",
+      "why_gated": "changes a Your data column's type or deletes it, rewriting that column in every row; the app can undo it for 30 days"
     },
     {
       "name": "workspaces_page_partner_account_create",

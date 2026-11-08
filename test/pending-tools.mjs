@@ -781,4 +781,9 @@ export const PENDING_TOOLS = new Map([
   // are served and indexed. Entries deleted, but for project_review_frame_url, which stays here for good: the MCP serves it to
   // the Hiveku app's own key alone, so the index (read with an agent key) never lists it.
   ['project_review_frame_url', { since: '2026-11-07', batch: 'SITES-S3F' }],
+
+  // CLIENT-HEALTH-W1 (2026-11-08): the two Client health writes ask from this release, before MCP
+  // feature/attention-tools serves them (to the Hiveku app's own key alone). The tool index carries them next.
+  ['workspaces_page_attention_item_update', { since: '2026-11-08', batch: 'CLIENT-HEALTH-W1' }],
+  ['workspaces_page_attention_recheck', { since: '2026-11-08', batch: 'CLIENT-HEALTH-W1' }],
 ]);
