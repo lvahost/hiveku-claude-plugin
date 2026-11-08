@@ -788,4 +788,12 @@ export const PENDING_TOOLS = new Map([
   // 2026-11-08 (index regenerated at 3259 tools from MCP 65c5fd6a652f, #472, S5a live): analytics_icp_matching_run (on the ask
   // list and LIVE_CHANGE_WRITES) and analytics_recording_get (on NEVER_AUTO_APPROVE, off the read-only list) are served and
   // indexed. Entries deleted; the SITES-S5A batch has landed.
+
+  // CLIENT-HEALTH-W3 (2026-11-08): the five Client health round 3 writes ask from this release, before MCP
+  // feature/attention-tools-w3 serves them (to the Hiveku app's own key alone). The tool index carries them next.
+  ['workspaces_page_attention_lines_set', { since: '2026-11-08', batch: 'CLIENT-HEALTH-W3' }],
+  ['workspaces_page_attention_fields_set', { since: '2026-11-08', batch: 'CLIENT-HEALTH-W3' }],
+  ['workspaces_page_attention_note_create', { since: '2026-11-08', batch: 'CLIENT-HEALTH-W3' }],
+  ['workspaces_page_attention_note_update', { since: '2026-11-08', batch: 'CLIENT-HEALTH-W3' }],
+  ['workspaces_page_attention_note_delete', { since: '2026-11-08', batch: 'CLIENT-HEALTH-W3' }],
 ]);

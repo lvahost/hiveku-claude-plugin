@@ -6,7 +6,7 @@
     "mcp__hiveku__"
   ],
   "plugin_version": "0.27.224",
-  "count": 627,
+  "count": 632,
   "tools": [
     {
       "name": "deploy_site",
@@ -2607,6 +2607,31 @@
       "name": "workspaces_page_attention_recheck",
       "method": "POST",
       "why_gated": "runs a live check of a client's site and records it"
+    },
+    {
+      "name": "workspaces_page_attention_lines_set",
+      "method": "PUT",
+      "why_gated": "changes when a Client health check opens a row for a client, for everyone who sees that client"
+    },
+    {
+      "name": "workspaces_page_attention_fields_set",
+      "method": "PUT",
+      "why_gated": "sets or clears who leads and backs up a client, which everyone who reaches that client sees"
+    },
+    {
+      "name": "workspaces_page_attention_note_create",
+      "method": "POST",
+      "why_gated": "adds a team note about a client, which the agency's people who reach that client see"
+    },
+    {
+      "name": "workspaces_page_attention_note_update",
+      "method": "PATCH",
+      "why_gated": "changes the words of a team note, which the agency's people who reach that client see"
+    },
+    {
+      "name": "workspaces_page_attention_note_delete",
+      "method": "DELETE",
+      "why_gated": "deletes a team note for good; it cannot be brought back"
     },
     {
       "name": "workspaces_page_custom_field_create",
