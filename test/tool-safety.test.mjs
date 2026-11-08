@@ -5,6 +5,7 @@
  * negative costs a permission prompt; a false positive lets an unattended
  * destructive call through on every machine that installs the plugin.
  */
+import { isolatedEnv } from './isolated.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -2100,9 +2101,7 @@ function runPreToolUseHook(toolName, toolInput, cwd) {
   const dataDir = mkdtempSync(join(tmpdir(), 'hk-idx-data-'));
   writeFileSync(updateCheckPath(dataDir), JSON.stringify({ checked_at: new Date().toISOString() }));
   assert.equal(probeIsStale(dataDir), false, 'the update probe would spawn; the fixture is wrong');
-  const env = { ...process.env, HIVEKU_PLUGIN_DATA: dataDir };
-  delete env.CLAUDE_PLUGIN_ROOT;
-  delete env.CLAUDE_PLUGIN_DATA;
+  const env = isolatedEnv({ HIVEKU_PLUGIN_DATA: dataDir });
   return spawnSync(
     process.execPath,
     [fileURLToPath(new URL('../bin/hiveku', import.meta.url)), 'hook', 'pre-tool-use'],

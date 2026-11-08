@@ -5,29 +5,20 @@
 //   - every folder is made under a fresh temporary folder per test, and every
 //     place the code looks is passed in (the home folder, the plugin's data
 //     folder), so a removal can only ever see temporary folders;
-//   - the keychain tools (security, secret-tool) are stubbed for this process
-//     and every process it starts, BEFORE any credential write, so a
-//     credential write can never read or create anything in the login keychain,
-//     whatever runs the tests;
+//   - the keychain tools (security, secret-tool) and the browser openers are
+//     stubbed, the keychain faked and the environment cleaned for this process
+//     and every process it starts (test/isolated.mjs), BEFORE any credential
+//     write, so a credential write can never read or create anything in the
+//     login keychain, whatever runs the tests;
 //   - every key and account id is made up, and no request leaves 127.0.0.1:
 //     fetch in this process refuses any other host, and a spawned bin/hiveku
 //     gets a proxy that is not there for every host but 127.0.0.1.
-import { chmodSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { isolatedEnv } from './isolated.mjs';
 import { chmod, lstat, mkdir, mkdtemp, readFile, readdir, readlink, rm, writeFile } from 'node:fs/promises';
 import { createHash, randomBytes } from 'node:crypto';
 import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-
-/* ── the keychain tools, stubbed first ───────────────────────────────────── */
-
-export const STUB_BIN = mkdtempSync(path.join(tmpdir(), 'hiveku-o8b-stubs-'));
-for (const name of ['security', 'secret-tool', 'open', 'xdg-open']) {
-  writeFileSync(path.join(STUB_BIN, name), '#!/bin/sh\nexit 44\n');
-  chmodSync(path.join(STUB_BIN, name), 0o755);
-}
-process.env.PATH = `${STUB_BIN}${path.delimiter}${process.env.PATH ?? ''}`;
-process.on('exit', () => rmSync(STUB_BIN, { recursive: true, force: true }));
 
 /* ── no request leaves 127.0.0.1, even with a check broken ───────────────── */
 
@@ -44,24 +35,9 @@ globalThis.fetch = (input, init) => {
   return realFetch(input, init);
 };
 
-/** For a spawned process: fetch goes through a proxy that is not there, for every host but 127.0.0.1. */
-export const NO_NETWORK_ENV = {
-  NODE_USE_ENV_PROXY: '1',
-  HTTPS_PROXY: 'http://127.0.0.1:9',
-  HTTP_PROXY: 'http://127.0.0.1:9',
-  NO_PROXY: '127.0.0.1,localhost',
-};
-
-/** The environment for a spawned bin/hiveku: stubbed tools first, a temporary home, nothing of the real Claude setup. */
+/** The environment for a spawned bin/hiveku: test/isolated.mjs's, with this world's home and data folder. */
 export function childEnv(w, extra = {}) {
-  return {
-    PATH: process.env.PATH,
-    HOME: w.home,
-    TMPDIR: tmpdir(),
-    HIVEKU_PLUGIN_DATA: w.data,
-    ...NO_NETWORK_ENV,
-    ...extra,
-  };
+  return isolatedEnv({ HOME: w.home, HIVEKU_PLUGIN_DATA: w.data, ...extra });
 }
 
 /* ── made-up accounts and keys ───────────────────────────────────────────── */

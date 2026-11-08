@@ -4,6 +4,7 @@
 // carries a connect hash (lib/credentials.mjs, bin/hiveku storeConnectPayload).
 // Temporary folders only; the exchange is a local server; the keychain tools
 // are stubbed (test/offboarding-world.mjs).
+import './isolated.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';

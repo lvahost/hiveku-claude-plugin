@@ -10,6 +10,7 @@
  * `hook stop` processes, because the dispatch and the explicit exit are part of
  * the contract too.
  */
+import { isolatedEnv } from './isolated.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -415,7 +416,7 @@ test('the real status caller answers unknown when the folder is not bound', asyn
 function hook(which, payload, env) {
   return new Promise((resolve, reject) => {
     const child = spawn(process.execPath, [path.join(root, 'bin', 'hiveku'), 'hook', which], {
-      env: { ...process.env, ...env },
+      env: isolatedEnv(env),
       stdio: ['pipe', 'pipe', 'pipe'],
     });
     let stdout = '';

@@ -5,6 +5,7 @@
 // The tool server and the website are local servers on 127.0.0.1, the folders
 // are made by the real `hiveku setup` under a temporary home, the clock is the
 // test's own, and the keychain tools are stubbed (test/offboarding-world.mjs).
+import './isolated.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';

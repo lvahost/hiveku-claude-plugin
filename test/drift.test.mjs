@@ -6,6 +6,7 @@
  * exiting 2 because nobody passed --dir, and the release script printed nothing
  * and moved on. So these tests pin the exit codes, not the prose.
  */
+import { isolatedEnv } from './isolated.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -68,7 +69,7 @@ test('a bare --dir with no value falls back rather than resolving undefined', ()
 test('no binding exits 2 (cannot verify), never 0 (clean)', () => {
   const r = spawnSync(process.execPath, [SCRIPT], {
     encoding: 'utf8',
-    env: { ...process.env, HOME: tmpHome() },
+    env: isolatedEnv({ HOME: tmpHome() }),
   });
   assert.equal(r.status, 2, 'an unverifiable run must not look like a passing one');
   assert.match(r.stderr, /no bound account folder/i);

@@ -33,6 +33,7 @@
  *
  * Run: node --test test/tool-schema-direct-call.test.mjs
  */
+import './isolated.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
