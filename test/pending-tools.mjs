@@ -786,4 +786,10 @@ export const PENDING_TOOLS = new Map([
   // feature/attention-tools serves them (to the Hiveku app's own key alone). The tool index carries them next.
   ['workspaces_page_attention_item_update', { since: '2026-11-08', batch: 'CLIENT-HEALTH-W1' }],
   ['workspaces_page_attention_recheck', { since: '2026-11-08', batch: 'CLIENT-HEALTH-W1' }],
+
+  // SITES-S5A (2026-11-08): the desktop app's Analytics. analytics_icp_matching_run asks from this release (it spends AI
+  // credit), and analytics_recording_get is on NEVER_AUTO_APPROVE, before MCP feature/s5a-analytics-forms serves them.
+  // The tool index carries them once that release is live.
+  ['analytics_icp_matching_run', { since: '2026-11-08', batch: 'SITES-S5A' }],
+  ['analytics_recording_get', { since: '2026-11-08', batch: 'SITES-S5A' }],
 ]);
