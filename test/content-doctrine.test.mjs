@@ -35,6 +35,7 @@
  * siblings used to teach. The eight names ride on PENDING_TOOLS as ELITE-A
  * until the live index regenerates after the MCP deploy.
  */
+import { isolatedEnv } from './isolated.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -234,11 +235,9 @@ test('a fabricated content_ name in a command fails tool-names.test.mjs', () => 
       path.join(tmp, 'commands', 'zz-planted.md'),
       '---\ndescription: planted\n---\nPublish with `content_fabricated_publish` when the draft passes.\n',
     );
-    // Spawned from inside `node --test`, a child inherits NODE_TEST_CONTEXT and
-    // reports to the parent runner instead of exiting non-zero on its own;
-    // strip it so the child is an ordinary run whose exit status means what it says.
-    const env = { ...process.env };
-    delete env.NODE_TEST_CONTEXT;
+    // isolatedEnv carries no NODE_TEST_CONTEXT, so this child is an ordinary run whose
+    // exit status means what it says (inherited, it would report to the parent runner).
+    const env = isolatedEnv();
     const run = spawnSync(process.execPath, ['--test', 'test/tool-names.test.mjs'], { cwd: tmp, encoding: 'utf8', env });
     const output = `${run.stdout}\n${run.stderr}`;
     assert.notEqual(run.status, 0, 'tool-names.test.mjs passed with a fabricated content_ name planted in commands/');

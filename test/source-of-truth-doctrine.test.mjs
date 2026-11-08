@@ -26,6 +26,7 @@
  *       /hiveku:pull and orient), About your business with account_memory_get
  *       (MCP #174: memory_list and memory_get leave it out).
  */
+import './isolated.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';

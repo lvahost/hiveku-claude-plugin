@@ -45,6 +45,7 @@
  *
  * Run: env -u CLAUDE_CONFIG_DIR node --test test/edge-refusal.test.mjs
  */
+import './isolated.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';

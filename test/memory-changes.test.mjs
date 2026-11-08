@@ -13,6 +13,7 @@
  *   - end to end through bin/hiveku: session-start writes the window without
  *     printing, prompt-submit prints the line once in a bound folder.
  */
+import { isolatedEnv } from './isolated.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { promises as fs } from 'node:fs';
@@ -247,8 +248,7 @@ test('toolResultJson counts a tool error as an error, never as "no changes"', ()
 /* ── end to end through bin/hiveku ─────────────────────────────────────── */
 
 function runHook(which, payload, dataDir) {
-  const env = { ...process.env, HIVEKU_PLUGIN_DATA: dataDir };
-  delete env.CLAUDE_PLUGIN_ROOT;
+  const env = isolatedEnv({ HIVEKU_PLUGIN_DATA: dataDir });
   return spawnSync(process.execPath, [BIN, 'hook', which], {
     input: JSON.stringify(payload),
     encoding: 'utf8',

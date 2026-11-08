@@ -4,6 +4,7 @@
  * damaged store degrades instead of crashing the session, and a reconnect for
  * one account never destroys the other twelve.
  */
+import { memoryKeychain } from './isolated.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { promises as fs } from 'node:fs';
@@ -17,8 +18,13 @@ import {
   credentialsPath,
   resolveDataDir,
   publicAccountList,
+  setKeychainForTests,
 } from '../lib/credentials.mjs';
 import { isSyncedLocation, writeFileSecure } from '../lib/util.mjs';
+
+// A keyring that lives only in this process: the store here is really encrypted, under a fake master key.
+const keychain = memoryKeychain();
+setKeychainForTests(keychain);
 
 const A = '3f2504e0-4f89-11d3-9a0c-0305e82c3301';
 const B = '7c9e6679-7425-40de-944b-e07fc1f90ae7';
@@ -34,6 +40,8 @@ test('round-trips accounts', async () => {
   assert.equal(creds.accounts[A].label, 'Acme Corp');
   assert.equal(creds.accounts[A].key, 'hvk_' + 'a'.repeat(64));
   assert.equal(creds.accounts[A].key_preview, 'hvk_aaaaaa');
+  assert.equal(JSON.parse(await fs.readFile(credentialsPath(dir), 'utf8')).enc, 'aes-256-gcm', 'encrypted under the fake master key');
+  assert.ok(keychain.calls.includes('get'), 'the master key came through the keychain seam');
 });
 
 test('the file is never group- or world-readable', async () => {
