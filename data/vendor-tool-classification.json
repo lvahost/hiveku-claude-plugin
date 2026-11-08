@@ -30,7 +30,7 @@
     "serp_"
   ],
   "_vendorNamespaces_note": "The DataForSEO namespaces, stated EXPLICITLY rather than derived. A test tried deriving them from the classified names by taking the first token, which turned content_analysis_* into the prefix 'content_' and swept in 40 Hiveku content_* tools - including writes like content_delete. Same overfit the classification itself exists to avoid: a rule fitted to the sample you happen to hold. These are a fact about the vendor, so they are data.",
-  "_second_vendor_note": "FIRECRAWL is a SECOND vendor, found by main-hiveku-nosync-ppc on 2026-09-08 and invisible to the namespace rule above because its tools are bare names (md, html, crawl) sharing no prefix with anything. They are served with method:null and are Firecrawl v2.1 on FIRECRAWL_API_KEY. Two things make them MORE hazardous than the DataForSEO set, not less: crawl4ai-proxy.service.ts records no usage at all (the DataForSEO proxy at least calls recordDataForSeoUsage), so this spend is invisible; and one of them is not a read.",
+  "_second_vendor_note": "FIRECRAWL is a SECOND vendor, found by main-hiveku-nosync-ppc on 2026-09-08 and invisible to the namespace rule above because its tools are bare names (md, html, crawl) sharing no prefix with anything. They are served with method:null and are Firecrawl v2.1 on FIRECRAWL_API_KEY. One thing makes them MORE hazardous than the DataForSEO set, not less: one of them is not a read. Whether their spend is recorded depends on the key. Since tool server #475 (live 2026-11-08), a call made with a customer's own key, the key this plugin connects with, goes through the website's metered web routes (web_scrape, web_actions, web_crawl): every page read is counted against the account's monthly research, the allowance SEO research and web search share, and a call past the account's limits is refused. A call with the platform's service key (Hiveku's own servers, such as the department agents) still goes straight to the vendor and records no usage at all, so that spend alone is still invisible.",
   "firecrawlMeteredReads": [
     "crawl",
     "html",
@@ -38,7 +38,7 @@
     "pdf",
     "screenshot"
   ],
-  "_firecrawlMeteredReads_note": "Reads of the public web, billed per call by Firecrawl. Same treatment as the DataForSEO metered set: not auto-approved, never swept. They are safe TODAY only because method:null also keeps them out of readonly-tools.json - an accident of the generator, not a decision. Adding a readOnlyHint to md or html (both genuinely are reads, so someone reasonably will) would put them in the sweep, which calls every tool it is given with arguments:{}.",
+  "_firecrawlMeteredReads_note": "Reads of the public web, billed per page read by Firecrawl. With a customer's own key each page read is also counted against the account's monthly research (tool server #475, see _second_vendor_note), so a call made from this plugin spends the client's own allowance. Same treatment as the DataForSEO metered set: not auto-approved, never swept. They are safe TODAY only because method:null also keeps them out of readonly-tools.json - an accident of the generator, not a decision. Adding a readOnlyHint to md or html (both genuinely are reads, so someone reasonably will) would put them in the sweep, which calls every tool it is given with arguments:{}.",
   "firecrawlNeverAutoApprove": [
     "execute_js"
   ],
