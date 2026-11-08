@@ -5,8 +5,8 @@
     "mcp__plugin_hiveku_hk__",
     "mcp__hiveku__"
   ],
-  "plugin_version": "0.27.222",
-  "count": 625,
+  "plugin_version": "0.27.223",
+  "count": 627,
   "tools": [
     {
       "name": "deploy_site",
@@ -1031,7 +1031,17 @@
     {
       "name": "discussion_channel_share",
       "method": "POST",
-      "why_gated": "shares a Discussions channel into another workspace at once, with nothing to accept: that workspace's people can then read and post in it, and ask their own agents in it"
+      "why_gated": "shares a Discussions channel straight into a workspace the person runs, after a box they tick in the Hiveku app: that workspace's people can then read and post in it, and ask their own agents in it. Hiveku takes it from the Hiveku app's own key alone, so from an assistant it is refused anyway"
+    },
+    {
+      "name": "discussion_channel_share_request",
+      "method": "POST",
+      "why_gated": "asks another workspace, or an email address, to take a Discussions channel: its owners and admins are told, or the address is emailed, in the person's name. Nothing is shared until someone there accepts"
+    },
+    {
+      "name": "discussion_channel_share_request_cancel",
+      "method": "DELETE",
+      "why_gated": "cancels a request to share a Discussions channel that is still waiting: nothing was shared and nobody is emailed, and the owners and admins it asked stop seeing it"
     },
     {
       "name": "discussion_channel_unshare",

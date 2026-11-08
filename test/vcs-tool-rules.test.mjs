@@ -116,6 +116,7 @@ test('the version prompts speak plain language: "version", never commit/HEAD/rev
   }
   assert.deepEqual([...ARG_GATED_WRITES.keys()].sort(), [
     'deploy_serve_version',
+    'discussion_update',
     'history_restore_to_time',
     'project_vcs_commit',
     'project_vcs_resolve',
@@ -123,6 +124,18 @@ test('the version prompts speak plain language: "version", never commit/HEAD/rev
     'project_vcs_rollback',
   ]);
   assert.equal(argGatedWriteDecision('project_file_save', {}), null, 'other tools get no version rule');
+});
+
+test('a channel losing its sharing or changing who may read it asks; a rename follows the settings', () => {
+  const cwd = folderWith(undefined);
+  const stop = decideWithGuardrails(vcs('discussion_update', { thread_id: PROJECT, visibility: 'account_only', stop_sharing: true }, cwd));
+  assert.equal(decision(stop), 'ask');
+  assert.match(stop.hookSpecificOutput.permissionDecisionReason, /stops sharing it at once/);
+  const who = decideWithGuardrails(vcs('discussion_update', { thread_id: PROJECT, visibility: 'public' }, cwd));
+  assert.equal(decision(who), 'ask');
+  assert.match(who.hookSpecificOutput.permissionDecisionReason, /who may read/);
+  assert.equal(argGatedWriteDecision('discussion_update', { thread_id: PROJECT, title: 'Launch' }), null);
+  assert.equal(decideWithGuardrails(vcs('discussion_update', { thread_id: PROJECT, title: 'Launch' }, cwd)), null);
 });
 
 test('a conflict resolve always asks, and the prompt counts what each file keeps', () => {
