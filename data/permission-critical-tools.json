@@ -2806,7 +2806,7 @@
     {
       "name": "dashboard_publish",
       "method": "POST",
-      "why_gated": "makes this dashboard the shared home everyone in the account opens"
+      "why_gated": "puts the layout of this dashboard on the shared home of the account, which everyone in it opens; the home before it is kept as a version"
     },
     {
       "name": "dashboard_share",
