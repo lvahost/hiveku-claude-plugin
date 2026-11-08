@@ -401,7 +401,7 @@
       "dept": "account",
       "method": "PUT",
       "timeoutMs": null,
-      "description": "Enable or disable two-factor authentication for the signed-in person in Settings > Security."
+      "description": "Changes nothing, in either direction. Two-step sign-in is turned on or off in the person's Hiveku sign-in settings in a browser, and a connection can never change it: always answers 409 two_factor_set_at_sign_in. Tell the person where the setting lives. account_security_get reads whether it is on."
     },
     {
       "name": "account_security_computer_revoke",
@@ -422,28 +422,28 @@
       "dept": "account",
       "method": "GET",
       "timeoutMs": null,
-      "description": "Read security settings and status (two-factor authentication, email verification, password status, last login) for the signed-in person in Settings > Security. Read-only."
+      "description": "Read security settings and status (two-step sign-in, email verification, password status, last login) for the signed-in person in Settings > Security. two_factor_enabled comes from the sign-in service: true, false, or null when it could not be read, which never means off. Read-only."
     },
     {
       "name": "account_security_password_update",
       "dept": "account",
       "method": "POST",
       "timeoutMs": null,
-      "description": "Update the signed-in person's account password in Settings > Security."
+      "description": "Change the signed-in person's own sign-in password in Settings > Security. Needs current_password, the password used to sign in now, and new_password of at least 8 characters. Answers 403 wrong_current_password when the current one does not match. After 5 wrong tries in 15 minutes, for this person across all their connections, it answers 429 too_many_tries with Retry-After and checks nothing until then. Answers 503 sign_in_unavailable, and changes nothing, when the password cannot be checked just now."
     },
     {
       "name": "account_security_session_revoke",
       "dept": "account",
       "method": "DELETE",
       "timeoutMs": null,
-      "description": "Revoke an active login session for the signed-in person in Settings > Security."
+      "description": "Sign out one of the signed-in person's own sessions at the sign-in service, by an id from account_security_sessions_list, in Settings > Security. Only their own: someone else's session and one that does not exist both answer 404 session_not_found and nothing is signed out. Answers 503 sign_in_unavailable when the sign-out could not be confirmed."
     },
     {
       "name": "account_security_sessions_list",
       "dept": "account",
       "method": "GET",
       "timeoutMs": null,
-      "description": "List active login sessions for the signed-in person in Settings > Security. Read-only."
+      "description": "List the signed-in person's real active sign-ins from the sign-in service for Settings > Security: id, device_name, browser, os, ip_address, location, last_active_at and is_current. A field the sign-in service does not give is null (os always is), and is_current is false on every row, since a connection is not a sign-in. Answers 503 sign_in_unavailable when the sign-in service cannot be reached, which never means there are no sessions. Read-only."
     },
     {
       "name": "account_seed_initialize",
@@ -548,7 +548,7 @@
       "dept": "account",
       "method": "DELETE",
       "timeoutMs": null,
-      "description": "Remove a team member from the current account in Settings > Team Members."
+      "description": "Remove a team member from the current account in Settings > Team Members, with the same hand-over as the website: their connections to this account are switched off, their meeting types here are switched off or passed on, their booking page goes, their Google Calendar is disconnected, and their dashboards and shared chats pass to whoever inherits them. If this is the last account they belong to, their login and profile are deleted too, which cannot be undone. Returns { success, deactivated_meeting_types, reassigned_meeting_types } and a warning when part of it did not finish and someone needs to act. Answers 500 and changes nothing when the removal itself fails."
     },
     {
       "name": "account_team_member_role_update",
