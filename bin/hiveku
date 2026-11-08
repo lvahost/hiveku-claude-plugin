@@ -47,6 +47,7 @@ import { runLoopbackConsent, exchangeCode, revokeSelf, keysToRotate, startPasteC
 import { runPullData } from '../lib/pulldata.mjs';
 import { pullKnowledge, knowledgeStatus } from '../lib/knowledge.mjs';
 import { runSetup, DEFAULT_ROOT_NAME } from '../lib/setup.mjs';
+import { takeNotices } from '../lib/offboarding.mjs';
 import { provisionSettings, planProvision, settingsPath } from '../lib/provision.mjs';
 import { Upstream } from '../lib/upstream.mjs';
 import {
@@ -154,6 +155,10 @@ function fail(message, code = 1) {
  * second copy of it would drift.
  */
 async function storeConnectPayload(dataDir, existing, payload, flags) {
+  // via 'connect': the exchange makes each key for the person signed in to the
+  // browser, so only these keys' refusals may remove an account from this
+  // computer (offboarding O8b, lib/credentials.mjs connectKeyHash). Only this
+  // path says so; `accounts add` never does.
   const incoming = payload.accounts.map((a) => ({
     account_id: a.account_id,
     key: a.api_key,
@@ -161,6 +166,7 @@ async function storeConnectPayload(dataDir, existing, payload, flags) {
     scope: a.scope || payload.scope || 'full',
     connected_as: payload.connected_as || null,
     departments: payload.departments || [],
+    via: 'connect',
   }));
 
   const rotations = keysToRotate(existing.accounts, incoming);
@@ -418,7 +424,8 @@ async function cmdSetup(flags) {
   if (!ids.length) fail('No accounts connected yet. Run /hiveku:connect first.');
 
   const root = flags.root || path.join(os.homedir(), DEFAULT_ROOT_NAME);
-  const { root: rootAbs, results } = await runSetup({ root, accounts: creds.accounts });
+  // dataDir: the folders setup makes are recorded there (offboarding O8b, lib/made-folders.mjs).
+  const { root: rootAbs, results, record_error: recordError } = await runSetup({ root, accounts: creds.accounts, dataDir });
 
   // A SaaS roster can be hundreds of accounts; print the interesting rows in
   // full and summarize the bulk (the --json output always carries everything).
@@ -442,7 +449,13 @@ async function cmdSetup(flags) {
   }
   lines.push('', 'Open any of these folders in Claude (the Code tab\'s folder picker, or cd) and the account is live.');
   lines.push('Inside one, /hiveku:pull fetches its department data and /hiveku:knowledge its memory and skills.');
-  out(flags.json, { root: rootAbs, results }, lines);
+  if (recordError) {
+    lines.push(
+      `Note: the plugin could not record which folders it made (${recordError}). They work as usual, but if you lose ` +
+        'access to one of these accounts, its folder is not removed from this computer for you.',
+    );
+  }
+  out(flags.json, { root: rootAbs, results, ...(recordError ? { record_error: recordError } : {}) }, lines);
 
   if (results.some((r) => r.status === 'error')) process.exit(1);
 }
@@ -1238,6 +1251,12 @@ async function cmdHook(positional) {
     try {
       const dd = resolveDataDir();
       if (probeIsStale(dd)) spawnDetachedProbe(process.argv[1]);
+      // Offboarding O8b: what the plugin removed (or why a key stopped), said
+      // once, here or at the next session start, wherever the person is: the
+      // account's folder may be the one that went. Local reads only.
+      for (const text of await takeNotices(dd)) {
+        process.stdout.write(`Hiveku: ${text} Tell the person this once, in plain words.\n`);
+      }
       const promptBinding = await resolveBinding(dir);
       if (!promptBinding) return;
       // The memory-changes count for this account, once per window: an
@@ -1283,6 +1302,14 @@ async function cmdHook(positional) {
   const binding = await resolveBinding(dir);
   const account = binding ? creds.accounts[binding.accountId] : null;
   const lines = [];
+
+  // Offboarding O8b: a notice the plugin kept (an account removed from this
+  // computer, or a key that stopped working) is said once, in any folder.
+  if (which !== 'cwd-changed') {
+    for (const text of await takeNotices(hookDataDir)) {
+      lines.push(`Hiveku: ${text} Tell the person this once, in plain words.`);
+    }
+  }
 
   if (which === 'cwd-changed') {
     // The MCP server pinned its account at spawn. If the user has moved into a
