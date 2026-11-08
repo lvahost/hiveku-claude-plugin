@@ -6,7 +6,7 @@
     "mcp__hiveku__"
   ],
   "plugin_version": "0.27.226",
-  "count": 627,
+  "count": 659,
   "tools": [
     {
       "name": "deploy_site",
@@ -3142,6 +3142,166 @@
       "name": "customer_avatar_public_link_set",
       "method": "PUT",
       "why_gated": "switches an ICP's public data link on or off for anyone who has the address"
+    },
+    {
+      "name": "pm_project_tasks_copy",
+      "method": "POST",
+      "why_gated": "copies every task of one project into another in one call, up to 5,000 tasks; a copy that reached Hiveku must not be sent again, and taking it back means deleting the copies"
+    },
+    {
+      "name": "pm_tasks_create_bulk",
+      "method": "POST",
+      "why_gated": "adds up to 500 tasks to projects in one call, each going to its section's or project's default assignee"
+    },
+    {
+      "name": "pm_tasks_reassign_bulk",
+      "method": "POST",
+      "why_gated": "hands many tasks to another person in one call"
+    },
+    {
+      "name": "pm_sections_delete",
+      "method": "DELETE",
+      "why_gated": "deletes a section from a project; its tasks stay but lose their section"
+    },
+    {
+      "name": "pm_milestones_delete",
+      "method": "DELETE",
+      "why_gated": "deletes a milestone from a project; its tasks stay but lose their milestone"
+    },
+    {
+      "name": "pm_milestones_close",
+      "method": "POST",
+      "why_gated": "marks a milestone complete for everyone on the project"
+    },
+    {
+      "name": "pm_task_time_log_create",
+      "method": "POST",
+      "why_gated": "logs hours on a task, which go on that person's timesheet and can be billed to the client"
+    },
+    {
+      "name": "crm_contact_merge",
+      "method": "POST",
+      "why_gated": "merges one contact into another for good: its activities, deals, tickets and enrollments move, and the merged contact is never restored"
+    },
+    {
+      "name": "crm_delete_contact",
+      "method": "DELETE",
+      "why_gated": "deletes a contact from the CRM and ends their client portal access and card-update links"
+    },
+    {
+      "name": "crm_delete_company",
+      "method": "DELETE",
+      "why_gated": "deletes a company from the CRM, so nobody on the account sees it any more"
+    },
+    {
+      "name": "crm_delete_deal",
+      "method": "DELETE",
+      "why_gated": "deletes a deal from the pipeline, so nobody on the account sees it any more"
+    },
+    {
+      "name": "crm_delete_sequence",
+      "method": "DELETE",
+      "why_gated": "deletes a sequence for good, with its steps and every contact's enrollment in it"
+    },
+    {
+      "name": "crm_delete_custom_field",
+      "method": "DELETE",
+      "why_gated": "deletes a custom field for good, with its value on every record"
+    },
+    {
+      "name": "crm_delete_tag",
+      "method": "DELETE",
+      "why_gated": "deletes a tag and takes it off every record that carries it"
+    },
+    {
+      "name": "crm_delete_email_template",
+      "method": "DELETE",
+      "why_gated": "archives an email template, so it leaves the template list"
+    },
+    {
+      "name": "crm_contacts_bulk_create",
+      "method": "POST",
+      "why_gated": "imports up to 5,000 contacts into the CRM in one call"
+    },
+    {
+      "name": "crm_companies_bulk_create",
+      "method": "POST",
+      "why_gated": "imports up to 5,000 companies into the CRM in one call"
+    },
+    {
+      "name": "crm_deals_bulk_create",
+      "method": "POST",
+      "why_gated": "imports up to 5,000 deals into the pipeline in one call"
+    },
+    {
+      "name": "crm_activities_bulk_create",
+      "method": "POST",
+      "why_gated": "imports up to 5,000 calls, emails, notes, meetings and tasks into the CRM in one call"
+    },
+    {
+      "name": "crm_unenroll_sequence",
+      "method": "DELETE",
+      "why_gated": "takes a contact out of a sequence, so its remaining emails are not sent"
+    },
+    {
+      "name": "crm_pause_sequence_enrollment",
+      "method": "POST",
+      "why_gated": "pauses a contact's sequence, holding its next emails"
+    },
+    {
+      "name": "crm_resume_sequence_enrollment",
+      "method": "POST",
+      "why_gated": "resumes a contact's paused sequence, so its next email goes out on the next run"
+    },
+    {
+      "name": "crm_email_batch_cancel",
+      "method": "POST",
+      "why_gated": "cancels every email still waiting in a scheduled batch"
+    },
+    {
+      "name": "crm_email_batch_reschedule",
+      "method": "POST",
+      "why_gated": "moves the send time of every email still waiting in a scheduled batch"
+    },
+    {
+      "name": "calendar_create_event",
+      "method": "POST",
+      "why_gated": "creates an event on the person's Google Calendar and can email an invitation to every attendee"
+    },
+    {
+      "name": "helpdesk_ticket_merge",
+      "method": "POST",
+      "why_gated": "merges one ticket into another and closes the first; the messages move and the merge is not undone"
+    },
+    {
+      "name": "helpdesk_ticket_set_status",
+      "method": "PATCH",
+      "why_gated": "changes a ticket's status, which starts the account's help desk workflows, such as those for a resolved ticket"
+    },
+    {
+      "name": "helpdesk_ticket_create",
+      "method": "POST",
+      "why_gated": "opens a new help desk ticket for a customer, and adds them to the CRM when they are not on file"
+    },
+    {
+      "name": "helpdesk_ticket_transfer_to_voice",
+      "method": "POST",
+      "why_gated": "hands a ticket to the phone system, which places the call"
+    },
+    {
+      "name": "accounting_bill_schedule_create",
+      "method": "POST",
+      "why_gated": "sets up a recurring vendor bill; the first bill can be issued at the next daily run, already open and needing no approval"
+    },
+    {
+      "name": "accounting_vendor_delete",
+      "method": "DELETE",
+      "why_gated": "retires a vendor, even one with open unpaid bills"
+    },
+    {
+      "name": "brand_guide_update",
+      "method": "PATCH",
+      "why_gated": "changes the brand guide that every agent and design follows, from their next piece of work"
     }
   ]
 }
