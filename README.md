@@ -133,6 +133,13 @@ went and what stayed.
 - **Never on doubt.** A failed or slow answer, an error page, or a key that was only switched off
   or replaced removes nothing. Deleted folders go for good, not to the Trash, and links inside them
   are removed without touching what they point at.
+- **Connecting again stops it.** Right before each folder goes, the plugin reads your saved keys
+  again. If the account has been connected again, it stops, keeps that folder and the ones not yet
+  removed, and tells you.
+- **Only on a recent answer.** A removal cut short by a closed session or a crash is finished only
+  within 30 minutes of starting. After that Hiveku's answers are too old to act on, and the key the
+  plugin would ask again with is gone, so nothing more is deleted and you are told which folders
+  stayed.
 
 ## Local data instead of live calls
 

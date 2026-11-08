@@ -28,6 +28,7 @@
  *       survives only as an identifier (department key, folder, tool name).
  * Each detector has a negative control on the old wording.
  */
+import './isolated.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';

@@ -56,6 +56,7 @@
  *
  * Each block below pins one of those on the surfaces that carry it.
  */
+import './isolated.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';

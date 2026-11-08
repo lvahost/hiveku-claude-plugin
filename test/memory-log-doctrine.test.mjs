@@ -29,6 +29,7 @@
  * where it warns that the department agent may have changed the document, and
  * no test failed when it went missing.
  */
+import './isolated.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';

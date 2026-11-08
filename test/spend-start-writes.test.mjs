@@ -49,6 +49,7 @@
  * lists disagreeing. The tests below pin that honestly: a pause-only
  * ppc_bulk_edit asks, a rename asks, and a single pause does not.
  */
+import { isolatedEnv } from './isolated.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -185,9 +186,7 @@ function runPreToolUseHook(toolName, toolInput, cwd) {
   const dataDir = mkdtempSync(join(tmpdir(), 'hk-spend-data-'));
   writeFileSync(updateCheckPath(dataDir), JSON.stringify({ checked_at: new Date().toISOString() }));
   assert.equal(probeIsStale(dataDir), false, 'the update probe would spawn; the fixture is wrong');
-  const env = { ...process.env, HIVEKU_PLUGIN_DATA: dataDir };
-  delete env.CLAUDE_PLUGIN_ROOT;
-  delete env.CLAUDE_PLUGIN_DATA;
+  const env = isolatedEnv({ HIVEKU_PLUGIN_DATA: dataDir });
   return spawnSync(
     process.execPath,
     [fileURLToPath(new URL('../bin/hiveku', import.meta.url)), 'hook', 'pre-tool-use'],

@@ -9,6 +9,7 @@
  * restore lanes' `versioning`, the production deploy's `vcs_commit_id`, and
  * hiveku_batch members judged on their own arguments and results.
  */
+import { isolatedEnv } from './isolated.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -339,7 +340,7 @@ test('parallel hook processes appending at once never lose or interleave a line'
     }`;
   const { spawn } = await import('node:child_process');
   await Promise.all(Array.from({ length: PROCS }, (_, n) => new Promise((resolve, reject) => {
-    const child = spawn(process.execPath, ['--input-type=module', '-e', script, `p${n}`], { stdio: 'ignore' });
+    const child = spawn(process.execPath, ['--input-type=module', '-e', script, `p${n}`], { stdio: 'ignore', env: isolatedEnv() });
     child.on('error', reject);
     child.on('exit', (code) => (code === 0 ? resolve() : reject(new Error(`child exited ${code}`))));
   })));

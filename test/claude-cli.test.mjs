@@ -16,6 +16,7 @@
  * The CLIs here are fake shell scripts that log their argv. No test runs a real
  * `claude`, and every test uses a throwaway HOME / config dir.
  */
+import { isolatedEnv } from './isolated.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -400,7 +401,7 @@ test('readInstalledVersion reads Claude\'s own record, newest scope first', () =
 /* ── end to end through bin/hiveku ──────────────────────────────────────── */
 
 function runBin(args, env) {
-  return spawnSync(process.execPath, [`--import=${SEAL}`, BIN, ...args], { encoding: 'utf8', env, timeout: 60_000 });
+  return spawnSync(process.execPath, [`--import=${SEAL}`, BIN, ...args], { encoding: 'utf8', env: isolatedEnv(env), timeout: 60_000 });
 }
 
 test('bin/hiveku update --json uses the session CLI when claude is not on PATH', { skip: !POSIX }, () => {
@@ -519,7 +520,7 @@ test('session start in a desktop-app chat: the release notice says it will not i
     input: JSON.stringify({ cwd: folder, source: 'startup' }),
     encoding: 'utf8',
     timeout: 30_000,
-    env: { HOME: home, PATH: '/usr/bin:/bin', HIVEKU_PLUGIN_DATA: dataDir, CLAUDE_PLUGIN_ROOT: root, ...extra },
+    env: isolatedEnv({ HOME: home, PATH: '/usr/bin:/bin', HIVEKU_PLUGIN_DATA: dataDir, CLAUDE_PLUGIN_ROOT: root, ...extra }),
   });
   const desk = hook({ DISABLE_AUTOUPDATER: '1', CLAUDE_CODE_ENTRYPOINT: 'claude-desktop' });
   assert.equal(desk.status, 0, desk.stderr);
