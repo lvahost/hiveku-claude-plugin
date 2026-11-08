@@ -557,3 +557,29 @@ test('a removal left halfway is not finished while the key store cannot be read'
   assert.deepEqual(await snapshot(s.mine), before);
   assert.equal(await exists(path.join(s.w.data, 'offboarding', 'pending', `${A}.json`)), true, 'kept, to finish once the store can be read');
 });
+
+test('the check itself refuses a binding that now names another account, and a path that only leads into the root through a link', async (t) => {
+  const s = await standardWorld(t);
+  const record = (await readMadeFolders(s.w.data)).find((r) => r.account_id === A);
+  const ctx = { accountId: A, home: s.w.home, dataDir: s.w.data, otherAccountFolders: [] };
+  const original = await readFile(path.join(s.mine, '.hiveku', 'account.json'), 'utf8');
+  await writeFile(path.join(s.mine, '.hiveku', 'account.json'), JSON.stringify({ account_id: B, bound_by: 'hiveku-claude-plugin', made_by: 'hiveku-claude-plugin' }));
+  assert.deepEqual(await checkRemovable(record, ctx), { ok: false, why: 'other_account' });
+  await writeFile(path.join(s.mine, '.hiveku', 'account.json'), original);
+  const intoRoot = path.join(s.w.outside, 'into-root');
+  await symlink(s.w.root, intoRoot);
+  const roundabout = { ...record, dir: path.join(intoRoot, 'northwind-a0a0a0a0') };
+  assert.deepEqual(await checkRemovable(roundabout, ctx), { ok: false, why: 'outside_root' });
+  assert.equal(await exists(path.join(s.mine, 'sites', 'main-site', 'index.html')), true);
+});
+
+test("a folder holding a binding below it that cannot be read stays: it may be another account's", async (t) => {
+  const s = await standardWorld(t);
+  const nested = path.join(s.mine, 'clients', 'unknown');
+  await mkdir(path.join(nested, '.hiveku'), { recursive: true });
+  await writeFile(path.join(nested, '.hiveku', 'account.json'), 'not json{');
+  const before = await snapshot(s.mine);
+  const result = await remove(s.w, s.key);
+  assert.deepEqual(result.kept.map((k) => k.why), ['holds_other_account']);
+  assert.deepEqual(await snapshot(s.mine), before);
+});

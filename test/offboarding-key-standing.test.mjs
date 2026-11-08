@@ -560,3 +560,28 @@ test('two bridges answered a moment apart: the second removal answer is never a 
   await second.settled();
   assert.deepEqual(removed, [], 'thirty seconds apart is not minutes apart');
 });
+
+test("an older session's bridge still holding the replaced key confirms nothing", async (t) => {
+  const s = await watcherWorld(t, { answers: ['removed_from_team'] });
+  s.watcher.onRefused(A, s.key);
+  await s.watcher.settled();
+  s.watcher.dispose(); // that session ends; the person reconnects, and a new key is stored
+  const stored = madeUpKey();
+  const removed = [];
+  const clock = fakeClock(s.clock.now() + 3 * 60 * 1000);
+  // A session started before the reconnect still holds the old key, and Hiveku refuses it.
+  const older = new KeyRefusalWatcher({
+    dataDir: s.w.data,
+    ask: async () => ({ kind: 'answer', standing: 'removed_from_team' }),
+    storedKey: async () => stored,
+    fromConnect: async (_id, k) => k === s.key,
+    remove: async (...args) => removed.push(args),
+    log: () => undefined,
+    now: clock.now,
+    schedule: clock.schedule,
+  });
+  t.after(() => older.dispose());
+  older.onRefused(A, s.key);
+  await older.settled();
+  assert.deepEqual(removed, [], 'the key stored now is another one: nothing is removed');
+});
