@@ -642,6 +642,7 @@ Put this in `.claude/settings.json` (per project) or `~/.claude/settings.json` (
       "mcp__plugin_hiveku_hk__analytics_conversion_create",
       "mcp__plugin_hiveku_hk__analytics_conversion_delete",
       "mcp__plugin_hiveku_hk__analytics_tracking_settings_update",
+      "mcp__plugin_hiveku_hk__analytics_icp_matching_run",
       "mcp__plugin_hiveku_hk__dashboards_page_create",
       "mcp__plugin_hiveku_hk__dashboards_page_home_set",
       "mcp__plugin_hiveku_hk__dashboards_page_shared_home_save",

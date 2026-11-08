@@ -279,6 +279,11 @@ const SENSITIVE_READ_EXCLUSIONS = new Map([
   ['project_review_frame_url',
     'returns an address that holds the site\'s saved reviewer login; a plain GET of it returns the stored values. ' +
     'Reading a credential silently is not a read-only act; ask every time.'],
+  // 2026-11-08 (wave S5a, AN14). A GET with readOnlyHint whose answer is the hazard: one site visitor's whole visit as
+  // they saw it on screen. On NEVER_AUTO_APPROVE (lib/tool-safety.mjs). Read its route before removing it.
+  ['analytics_recording_get',
+    'returns one visitor\'s whole visit as they saw it on screen (a session recording\'s replay), and the pages ' +
+    'can show their personal details. Reading it silently is not a read-only act; ask every time.'],
 ]);
 
 // The mirror image: a POST that is a pure read. Some routes dispatch reads and
