@@ -9,7 +9,8 @@ import './isolated.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
-import { chmod, lstat, mkdir, readdir, readFile, rename, symlink, writeFile, cp } from 'node:fs/promises';
+import { chmod, lstat, mkdir, readdir, readFile, realpath, rename, symlink, writeFile, cp } from 'node:fs/promises';
+import { writeFileSync } from 'node:fs';
 import path from 'node:path';
 import {
   A,
@@ -27,8 +28,11 @@ import {
 import { runSetup } from '../lib/setup.mjs';
 import { folderIdentity, readMadeFolders, recordMadeFolders } from '../lib/made-folders.mjs';
 import {
+  JOURNAL_MAX_AGE_MS,
+  accountConnectedAgain,
   checkRemovable,
   finishPendingRemovals,
+  oldRemovalNotice,
   otherAccountInside,
   removalNotice,
   removeAccountFromComputer,
@@ -36,6 +40,7 @@ import {
   takeNotices,
   tombstonePath,
 } from '../lib/offboarding.mjs';
+import { SIGHTING_TTL_MS } from '../lib/key-standing.mjs';
 
 /** The account's folder as `hiveku setup` makes it, with what pulls and downloads put in it over time. */
 async function madeFolder(w, { accountId = A, label = 'Northwind', root = w.root } = {}) {
@@ -103,6 +108,7 @@ test('the key goes before any file, and the journal names the folders before any
         order.push(`key (folder there: ${await exists(s.mine)})`);
         return 'removed';
       },
+      connectedAgain: async () => 'no',
       tombstoneDir: tombstonePath(s.w.data),
     },
   );
@@ -456,6 +462,7 @@ test('each folder is checked again right before it is deleted: a mark that chang
         await writeFile(path.join(s.mine, '.hiveku', 'account.json'), JSON.stringify({ account_id: A, bound_by: 'hiveku-desktop' }));
         return 'removed';
       },
+      connectedAgain: async () => 'no',
       tombstoneDir: tombstonePath(s.w.data),
     },
   );
@@ -535,6 +542,347 @@ test('what a crash left in the removing folder is deleted at the next start, and
   await finishPendingRemovals({ dataDir: s.w.data, home: s.w.home });
   assert.deepEqual(await readdir(tomb), []);
   assert.equal(await readFile(path.join(s.w.outside, 'pointed-at', 'keep.txt'), 'utf8'), 'x');
+});
+
+/* ── a reconnect after the key went (HK-1383) ───────────────────────────── */
+
+/** What a removal in a test passes for the steps it does not care about. */
+const quietDeps = (s) => ({
+  journal: { add: async () => {}, remove: async () => {} },
+  connectedAgain: async () => 'no',
+  tombstoneDir: tombstonePath(s.w.data),
+});
+
+/** The account's key back in the store, as a reconnect leaves it. Plain JSON, as the world's store is. */
+function reconnectInStore(w, newKey, others = {}) {
+  writeFileSync(
+    path.join(w.data, 'credentials.json'),
+    JSON.stringify({ version: 1, accounts: { [A]: { key: newKey, label: 'Northwind', key_preview: newKey.slice(0, 10), scope: 'full' }, ...others } }),
+  );
+}
+
+test('accountConnectedAgain: a different key is a reconnect, the refused key still stored is not, no record is not, an unreadable store is unknown', async (t) => {
+  const s = await standardWorld(t);
+  assert.equal(await accountConnectedAgain(s.w.data, A, s.key), 'no', 'the refused key is still stored (its removal failed): not a reconnect');
+  assert.equal(await accountConnectedAgain(s.w.data, A, madeUpKey()), 'again', 'a different key stored');
+  assert.equal(await accountConnectedAgain(s.w.data, A), 'again', 'after a crash the old key is gone, so any key is a reconnect');
+  const creds = await readCredsFile(s.w);
+  delete creds.accounts[A];
+  await writeFile(path.join(s.w.data, 'credentials.json'), JSON.stringify(creds));
+  assert.equal(await accountConnectedAgain(s.w.data, A, s.key), 'no', 'no key stored');
+  await writeFile(path.join(s.w.data, 'credentials.json'), 'this is not json{{{');
+  assert.equal(await accountConnectedAgain(s.w.data, A, s.key), 'unknown');
+});
+
+test('a reconnect that lands during the look through the folder keeps it: the removal stops and says so (the original case)', async (t) => {
+  const s = await standardWorld(t);
+  const before = await snapshot(s.mine);
+  const realMine = await realpath(s.mine);
+  const newKey = madeUpKey();
+  // White box: the delete's own look through the folder is the second time this folder is read (the plan's was the first).
+  const fsp = createRequire(import.meta.url)('fs/promises');
+  const realReaddir = fsp.readdir;
+  let looks = 0;
+  fsp.readdir = async (p, ...rest) => {
+    if (p === realMine) {
+      looks += 1;
+      if (looks === 2) reconnectInStore(s.w, newKey, { [B]: { key: s.otherKey, label: 'Acme', key_preview: s.otherKey.slice(0, 10), scope: 'full' } });
+    }
+    return realReaddir(p, ...rest);
+  };
+  t.after(() => { fsp.readdir = realReaddir; });
+  const result = await remove(s.w, s.key);
+  fsp.readdir = realReaddir;
+  assert.equal(looks, 2, 'the plan and the delete each looked through it once');
+  assert.equal(result.stopped, 'reconnected');
+  assert.equal(result.keyRemoved, true);
+  assert.deepEqual(result.removed, []);
+  assert.deepEqual(result.kept, [{ path: s.mine, why: 'connected_again' }]);
+  assert.deepEqual(await snapshot(s.mine), before, 'nothing in the folder was touched');
+  assert.equal((await readCredsFile(s.w)).accounts[A].key, newKey, 'the new key stays');
+  assert.equal(await exists(path.join(s.w.data, 'offboarding', 'pending', `${A}.json`)), false, 'the removal is over');
+  assert.deepEqual((await readMadeFolders(s.w.data)).filter((r) => r.account_id === A).map((r) => r.dir), [s.mine], 'still recorded: a later removal on fresh answers can take it');
+  assert.equal(await exists(tombstonePath(s.w.data)), false, 'nothing was moved');
+  const notices = await takeNotices(s.w.data);
+  assert.deepEqual(notices, [
+    '"Northwind" was connected again while the plugin was removing it from this computer, so the plugin stopped. ' +
+      'Nothing else of it was removed. Left in place: ~/Hiveku-Accounts/northwind-a0a0a0a0 (you connected this account again).',
+  ]);
+  assert.doesNotMatch(notices[0], /[\u2014\u2013]/);
+});
+
+test('a reconnect that lands before the look through the folder also stops it: the store is read after the look, right before the move', async (t) => {
+  const s = await standardWorld(t);
+  const before = await snapshot(s.mine);
+  const newKey = madeUpKey();
+  const records = await readMadeFolders(s.w.data);
+  const result = await runAccountRemoval(
+    { accountId: A, label: 'Northwind', reason: 'removed_from_team', home: s.w.home, dataDir: s.w.data, records, otherAccounts: [{ accountId: B, label: 'Acme' }] },
+    {
+      ...quietDeps(s),
+      // The key goes; right after, the person is added back and connects again.
+      forgetKey: async () => {
+        reconnectInStore(s.w, newKey);
+        return 'removed';
+      },
+      connectedAgain: () => accountConnectedAgain(s.w.data, A, s.key),
+    },
+  );
+  assert.equal(result.stopped, 'reconnected');
+  assert.deepEqual(result.kept, [{ path: s.mine, why: 'connected_again' }]);
+  assert.deepEqual(await snapshot(s.mine), before);
+});
+
+/** Standard world plus two more folders made for the account under other roots: three to work through. */
+async function threeFolders(t) {
+  const s = await standardWorld(t);
+  const secondRoot = path.join(s.w.home, 'Second-Root');
+  const thirdRoot = path.join(s.w.home, 'Third-Root');
+  await mkdir(secondRoot, { recursive: true });
+  await mkdir(thirdRoot, { recursive: true });
+  const second = await madeFolder(s.w, { root: secondRoot });
+  const third = await madeFolder(s.w, { root: thirdRoot });
+  return { ...s, second, third };
+}
+
+test('a reconnect between folders: the first has gone, this one and the rest stay, and the person is told both', async (t) => {
+  const s = await threeFolders(t);
+  const beforeSecond = await snapshot(s.second);
+  const beforeThird = await snapshot(s.third);
+  const records = await readMadeFolders(s.w.data);
+  // The answer after the stop would let the third go if the stop did not stop the removal.
+  const answers = ['no', 'again', 'no'];
+  const notices = [];
+  const result = await runAccountRemoval(
+    { accountId: A, label: 'Northwind', reason: 'removed_from_team', home: s.w.home, dataDir: s.w.data, records, otherAccounts: [{ accountId: B, label: 'Acme' }] },
+    {
+      ...quietDeps(s),
+      forgetKey: async () => 'removed',
+      connectedAgain: async () => answers.shift() ?? 'again',
+      beforeDone: (done) => notices.push(removalNotice(done, s.w.home)),
+    },
+  );
+  assert.equal(result.stopped, 'reconnected');
+  assert.deepEqual(result.removed, [s.mine]);
+  assert.deepEqual(result.kept, [
+    { path: s.second, why: 'connected_again' },
+    { path: s.third, why: 'connected_again' },
+  ]);
+  assert.equal(await exists(s.mine), false);
+  assert.deepEqual(await snapshot(s.second), beforeSecond);
+  assert.deepEqual(await snapshot(s.third), beforeThird, 'the stop stops the removal: no later folder goes');
+  assert.deepEqual(notices, [
+    '"Northwind" was connected again while the plugin was removing it from this computer, so the plugin stopped. ' +
+      'It had already removed its folder ~/Hiveku-Accounts/northwind-a0a0a0a0 (with everything in it). ' +
+      'Left in place: ~/Second-Root/northwind-a0a0a0a0 (you connected this account again); ~/Third-Root/northwind-a0a0a0a0 (you connected this account again).',
+  ]);
+});
+
+test('a key store that cannot be read at that moment keeps the folder and the journal, to try again', async (t) => {
+  const s = await standardWorld(t);
+  const before = await snapshot(s.mine);
+  const records = await readMadeFolders(s.w.data);
+  let journalRemoved = false;
+  const result = await runAccountRemoval(
+    { accountId: A, label: 'Northwind', reason: 'removed_from_team', home: s.w.home, dataDir: s.w.data, records, otherAccounts: [{ accountId: B, label: 'Acme' }] },
+    {
+      ...quietDeps(s),
+      forgetKey: async () => 'removed',
+      connectedAgain: async () => 'unknown',
+      journal: { add: async () => {}, remove: async () => { journalRemoved = true; } },
+    },
+  );
+  assert.equal(result.stopped, null);
+  assert.deepEqual(result.removed, []);
+  assert.deepEqual(result.kept, [{ path: s.mine, why: 'store_unreadable' }]);
+  assert.deepEqual(await snapshot(s.mine), before);
+  assert.equal(journalRemoved, false, 'the journal stays, so the next start can try again');
+});
+
+test('a re-read that throws counts as cannot tell: the folder stays', async (t) => {
+  const s = await standardWorld(t);
+  const records = await readMadeFolders(s.w.data);
+  const result = await runAccountRemoval(
+    { accountId: A, label: 'Northwind', reason: 'removed_from_team', home: s.w.home, dataDir: s.w.data, records, otherAccounts: [{ accountId: B, label: 'Acme' }] },
+    { ...quietDeps(s), forgetKey: async () => 'removed', connectedAgain: async () => { throw new Error('boom'); } },
+  );
+  assert.deepEqual(result.kept, [{ path: s.mine, why: 'store_unreadable' }]);
+  assert.equal(await exists(s.mine), true);
+});
+
+test('the refused key still stored because its removal failed is no reconnect: the folder still goes', async (t) => {
+  const s = await standardWorld(t);
+  const records = await readMadeFolders(s.w.data);
+  const result = await runAccountRemoval(
+    { accountId: A, label: 'Northwind', reason: 'removed_from_team', home: s.w.home, dataDir: s.w.data, records, otherAccounts: [{ accountId: B, label: 'Acme' }] },
+    {
+      ...quietDeps(s),
+      forgetKey: async () => { throw new Error('the write failed'); },
+      connectedAgain: () => accountConnectedAgain(s.w.data, A, s.key),
+    },
+  );
+  assert.equal(result.stopped, null);
+  assert.deepEqual(result.removed, [s.mine]);
+  assert.equal(await exists(s.mine), false);
+});
+
+test('a removal finished after a crash stops the same way when the account is connected again while it runs', async (t) => {
+  const s = await threeFolders(t);
+  const beforeSecond = await snapshot(s.second);
+  const beforeThird = await snapshot(s.third);
+  const realMine = await realpath(s.mine);
+  // The key went before the crash; the journal lists both folders.
+  const creds = await readCredsFile(s.w);
+  delete creds.accounts[A];
+  await writeFile(path.join(s.w.data, 'credentials.json'), JSON.stringify(creds));
+  const records = await readMadeFolders(s.w.data);
+  await writeJournal(s.w, records.filter((r) => r.account_id === A), new Date().toISOString());
+  const newKey = madeUpKey();
+  // White box: the reconnect lands right after the first folder is moved away.
+  const fsp = createRequire(import.meta.url)('fs/promises');
+  const realRename = fsp.rename;
+  fsp.rename = async (from, to) => {
+    const done = await realRename(from, to);
+    if (from === realMine) reconnectInStore(s.w, newKey, { [B]: { key: s.otherKey, label: 'Acme', key_preview: s.otherKey.slice(0, 10), scope: 'full' } });
+    return done;
+  };
+  t.after(() => { fsp.rename = realRename; });
+  const results = await finishPendingRemovals({ dataDir: s.w.data, home: s.w.home });
+  fsp.rename = realRename;
+  assert.equal(results.length, 1);
+  assert.equal(results[0].stopped, 'reconnected');
+  assert.deepEqual(results[0].removed, [s.mine]);
+  assert.deepEqual(results[0].kept, [
+    { path: s.second, why: 'connected_again' },
+    { path: s.third, why: 'connected_again' },
+  ]);
+  assert.deepEqual(await snapshot(s.second), beforeSecond);
+  assert.deepEqual(await snapshot(s.third), beforeThird);
+  assert.equal((await readCredsFile(s.w)).accounts[A].key, newKey);
+  assert.equal(await exists(journalPath(s.w)), false, 'the removal is over');
+  const [notice] = await takeNotices(s.w.data);
+  assert.match(notice, /^"Northwind" was connected again while the plugin was removing it from this computer, so the plugin stopped\. It had already removed its folder ~\/Hiveku-Accounts\/northwind-a0a0a0a0 \(with everything in it\)\. Left in place: ~\/Second-Root\/northwind-a0a0a0a0 \(you connected this account again\); ~\/Third-Root\/northwind-a0a0a0a0 \(you connected this account again\)\.$/);
+});
+
+/* ── a journal too old to finish (HK-1384) ──────────────────────────────── */
+
+const journalPath = (w) => path.join(w.data, 'offboarding', 'pending', `${A}.json`);
+
+/** Plants a journal for account A, as a removal cut short leaves it. */
+async function writeJournal(w, folders, at, extra = {}) {
+  await mkdir(path.dirname(journalPath(w)), { recursive: true });
+  await writeFile(journalPath(w), JSON.stringify({ v: 1, account_id: A, label: 'Northwind', reason: 'removed_from_team', folders, at, ...extra }));
+}
+
+/** The world after a removal was cut short: the key gone, the folder still there, the journal written at `at`. */
+async function leftHalfway(t, at) {
+  const s = await standardWorld(t);
+  const records = await readMadeFolders(s.w.data);
+  const creds = await readCredsFile(s.w);
+  delete creds.accounts[A];
+  await writeFile(path.join(s.w.data, 'credentials.json'), JSON.stringify(creds));
+  await writeJournal(s.w, records.filter((r) => r.account_id === A), at);
+  return s;
+}
+
+test('a journal past the limit deletes nothing more: the folder stays, the person is told once, the journal goes', async (t) => {
+  const started = Date.parse('2026-11-08T10:00:00.000Z');
+  const s = await leftHalfway(t, new Date(started).toISOString());
+  const before = await snapshot(s.mine);
+  const results = await finishPendingRemovals({ dataDir: s.w.data, home: s.w.home, now: () => started + JOURNAL_MAX_AGE_MS + 1 });
+  assert.equal(results.length, 1);
+  assert.equal(results[0].stopped, 'too_old');
+  assert.deepEqual(results[0].removed, []);
+  assert.deepEqual(results[0].kept, [{ path: s.mine, why: 'too_old' }]);
+  assert.deepEqual(await snapshot(s.mine), before, 'not one file was touched');
+  assert.equal(await exists(journalPath(s.w)), false, 'the journal is dropped: it is said once');
+  const notices = await takeNotices(s.w.data);
+  assert.deepEqual(notices, [
+    'The plugin started removing "Northwind" from this computer earlier, after Hiveku said you no longer had access to it, but it was stopped before it finished. ' +
+      'That was too long ago to go on without asking Hiveku again, and the saved key it would ask with is gone, so nothing more was removed. ' +
+      'Left in place: ~/Hiveku-Accounts/northwind-a0a0a0a0. Delete it yourself if you no longer need it. ' +
+      'If you still have access to "Northwind", run /hiveku:connect to connect it again.',
+  ]);
+  assert.doesNotMatch(notices[0], /[\u2014\u2013]|Claude|Anthropic|OpenAI|Cloudflare|Render|Supabase/);
+  // Still recorded: a later removal on fresh answers can take it, and the next start says nothing more.
+  assert.deepEqual((await readMadeFolders(s.w.data)).filter((r) => r.account_id === A).map((r) => r.dir), [s.mine]);
+  assert.deepEqual(await finishPendingRemovals({ dataDir: s.w.data, home: s.w.home, now: () => started + JOURNAL_MAX_AGE_MS + 2 }), []);
+  assert.deepEqual(await takeNotices(s.w.data), []);
+});
+
+test('the limit is the window the two sightings use: an answer from Hiveku is good for the same 30 minutes', () => {
+  assert.equal(JOURNAL_MAX_AGE_MS, SIGHTING_TTL_MS);
+  assert.equal(JOURNAL_MAX_AGE_MS, 30 * 60 * 1000);
+});
+
+test('the limit itself: a journal exactly at it is still finished, a millisecond past it is not', async (t) => {
+  const started = Date.parse('2026-11-08T10:00:00.000Z');
+  const atLimit = await leftHalfway(t, new Date(started).toISOString());
+  const results = await finishPendingRemovals({ dataDir: atLimit.w.data, home: atLimit.w.home, now: () => started + JOURNAL_MAX_AGE_MS });
+  assert.deepEqual(results[0].removed, [atLimit.mine]);
+  assert.equal(await exists(atLimit.mine), false);
+});
+
+test('a journal whose time is missing, unreadable or in the future counts as too old: nothing is deleted on a time nobody can trust', async (t) => {
+  const now = Date.parse('2026-11-08T10:00:00.000Z');
+  for (const at of ['', 'yesterday-ish', undefined, new Date(now + 60_000).toISOString()]) {
+    const s = await leftHalfway(t, at);
+    const before = await snapshot(s.mine);
+    const results = await finishPendingRemovals({ dataDir: s.w.data, home: s.w.home, now: () => now });
+    assert.equal(results[0].stopped, 'too_old', String(at));
+    assert.deepEqual(await snapshot(s.mine), before, String(at));
+  }
+});
+
+test('the case from the report: a journal left while the key store stayed locked for days is not finished when it opens', async (t) => {
+  const started = Date.parse('2026-11-05T09:00:00.000Z');
+  const s = await leftHalfway(t, new Date(started).toISOString());
+  const good = await readFile(path.join(s.w.data, 'credentials.json'), 'utf8');
+  const before = await snapshot(s.mine);
+  await writeFile(path.join(s.w.data, 'credentials.json'), 'this is not json{{{');
+  const threeDaysLater = started + 3 * 24 * 60 * 60 * 1000;
+  assert.deepEqual(await finishPendingRemovals({ dataDir: s.w.data, home: s.w.home, now: () => threeDaysLater }), []);
+  assert.equal(await exists(journalPath(s.w)), true, 'still waiting while the store cannot be read');
+  assert.deepEqual(await snapshot(s.mine), before);
+  await writeFile(path.join(s.w.data, 'credentials.json'), good);
+  const results = await finishPendingRemovals({ dataDir: s.w.data, home: s.w.home, now: () => threeDaysLater + 1000 });
+  assert.equal(results[0].stopped, 'too_old');
+  assert.deepEqual(await snapshot(s.mine), before, 'days-old answers delete nothing');
+  assert.match((await takeNotices(s.w.data))[0], /too long ago/);
+});
+
+test('an old journal with every folder already gone says only what happened, forgets the records, and nothing is thrown', async (t) => {
+  const started = Date.parse('2026-11-08T10:00:00.000Z');
+  const s = await leftHalfway(t, new Date(started).toISOString());
+  const aside = path.join(s.w.outside, 'moved-by-the-person');
+  await rename(s.mine, aside);
+  const results = await finishPendingRemovals({ dataDir: s.w.data, home: s.w.home, now: () => started + 2 * JOURNAL_MAX_AGE_MS });
+  assert.deepEqual(results[0].kept, []);
+  assert.equal(await exists(aside), true, 'a folder the person moved elsewhere is not looked for');
+  assert.deepEqual((await readMadeFolders(s.w.data)).filter((r) => r.account_id === A), [], 'the record of the folder that is gone is forgotten');
+  const [notice] = await takeNotices(s.w.data);
+  assert.equal(
+    notice,
+    'The plugin started removing "Northwind" from this computer earlier, after Hiveku said you no longer had access to it, but it was stopped before it finished. ' +
+      'That was too long ago to go on without asking Hiveku again, and the saved key it would ask with is gone, so nothing more was removed. ' +
+      'If you still have access to "Northwind", run /hiveku:connect to connect it again.',
+  );
+});
+
+test('an old journal still clears what the removing folder holds: that left the person\'s path while the answer was fresh', async (t) => {
+  const started = Date.parse('2026-11-08T10:00:00.000Z');
+  const s = await leftHalfway(t, new Date(started).toISOString());
+  const tomb = tombstonePath(s.w.data);
+  await plantContent(path.join(tomb, 'mzz-abc123'));
+  await finishPendingRemovals({ dataDir: s.w.data, home: s.w.home, now: () => started + 2 * JOURNAL_MAX_AGE_MS });
+  assert.deepEqual(await readdir(tomb), [], 'the leftover goes, whatever the age');
+  assert.equal(await exists(s.mine), true, 'the folder does not');
+});
+
+test('oldRemovalNotice names at most three folders and counts the rest', () => {
+  const notice = oldRemovalNotice({ label: 'Northwind', left: ['/home/x/a', '/home/x/b', '/home/x/c', '/home/x/d', '/home/x/e'], home: '/home/x' });
+  assert.match(notice, /Left in place: ~\/a, ~\/b and ~\/c, and 2 more\. Delete them yourself if you no longer need them\./);
+  assert.doesNotMatch(notice, /~\/d/);
 });
 
 /* ── what the person is told ────────────────────────────────────────────── */
