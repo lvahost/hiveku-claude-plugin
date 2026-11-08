@@ -557,6 +557,9 @@ const SEO_SINCE = '2026-08-30';
 const seo = (batch) => ({ since: SEO_SINCE, batch });
 
 export const PENDING_TOOLS = new Map([
+  // Discussions wave S4 (2026-11-06): on the ask lists before the tool server offers them.
+  ['discussion_channel_share_request', { since: '2026-11-08', batch: 'DISCUSSIONS-S4' }],
+  ['discussion_channel_share_request_cancel', { since: '2026-11-08', batch: 'DISCUSSIONS-S4' }],
   // 2026-11-07 (index regenerated at 3186 tools from MCP 2fb21a6b2935, #449): HK-1203's three public link switches are
   // served and indexed (off the read-only list; on the ask list and LIVE_CHANGE_WRITES). Entries deleted.
   // HK-1297 (2026-11-07): voice_sip_credentials_get stays here for good. The MCP serves it to the Hiveku app's own key
