@@ -280,3 +280,29 @@ test('the next prompt says a kept notice once; so does the next session start, i
   assert.match(start.stdout, /Hiveku: Hiveku no longer accepts the key saved for "Northwind"\./);
   assert.doesNotMatch(hook('session-start', w.outside).stdout, /no longer accepts/);
 });
+
+test('without the home folder passed in, the bridge asks nothing and removes nothing', async (t) => {
+  const w = await world(t);
+  const key = madeUpKey();
+  await writeCreds(w, { [A]: { key, label: 'Northwind', connect: true } });
+  const { results } = await runSetup({ root: w.root, accounts: { [A]: { label: 'Northwind' } }, homeDir: w.home, dataDir: w.data });
+  const mine = await plantContent(results[0].dir);
+  const before = await snapshot(mine);
+  const core = await startCore();
+  t.after(() => core.close());
+  const route = await startRoute(() => standing('removed_from_team'));
+  t.after(() => route.close());
+  const stdin = new PassThrough();
+  const answers = [];
+  const stdout = new Writable({ write(chunk, _e, done) { answers.push(String(chunk)); done(); } });
+  const finished = runShim({ projectDir: mine, dataDir: w.data, stdin, stdout, offboarding: { appUrl: route.appUrl, mcpUrl: core.url, log: () => undefined } });
+  stdin.write(`${JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name: 'get_account_info', arguments: {} } })}\n`);
+  const until = Date.now() + 10_000;
+  while (!answers.join('').includes('"id":1') && Date.now() < until) await new Promise((r) => setTimeout(r, 5));
+  await new Promise((r) => setTimeout(r, 200));
+  stdin.end();
+  await finished;
+  assert.equal(core.calls(), 1, 'the call was refused');
+  assert.equal(route.count(), 0);
+  assert.deepEqual(await snapshot(mine), before);
+});

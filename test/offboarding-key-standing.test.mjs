@@ -527,3 +527,36 @@ test('watch state is per account', async (t) => {
   assert.deepEqual((await readdir(path.join(w.data, 'offboarding', 'watch'))).sort(), [`${A}.json`]);
   assert.equal((await readWatch(w.data, B)).sighting, null);
 });
+
+test('two bridges answered a moment apart: the second removal answer is never a second sighting', async (t) => {
+  // Both asked before either kept a sighting; the second answer comes 30 seconds after the first.
+  const w = await world(t);
+  const key = madeUpKey();
+  const clock = fakeClock();
+  const removed = [];
+  let releaseSecond;
+  const secondAnswer = new Promise((resolve) => { releaseSecond = resolve; });
+  const make = (ask) => {
+    const watcher = new KeyRefusalWatcher({
+      dataDir: w.data,
+      ask,
+      storedKey: async () => key,
+      fromConnect: async () => true,
+      remove: async (...args) => removed.push(args),
+      log: () => undefined,
+      now: clock.now,
+      schedule: clock.schedule,
+    });
+    t.after(() => watcher.dispose());
+    return watcher;
+  };
+  const first = make(async () => ({ kind: 'answer', standing: 'removed_from_team' }));
+  const second = make(async () => secondAnswer);
+  second.onRefused(A, key);
+  first.onRefused(A, key);
+  await first.settled();
+  await clock.advance(30_000);
+  releaseSecond({ kind: 'answer', standing: 'removed_from_team' });
+  await second.settled();
+  assert.deepEqual(removed, [], 'thirty seconds apart is not minutes apart');
+});

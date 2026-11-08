@@ -527,3 +527,33 @@ test('at most three kept folders are named; the rest are counted', () => {
   assert.match(notice, /\/x\/n3 \(it is a link, and links are never followed\), and 2 more\.$/);
   assert.doesNotMatch(notice, /n4/);
 });
+
+test('the check itself refuses a record of another account, the root, and a folder outside the root', async (t) => {
+  const s = await standardWorld(t);
+  const records = await readMadeFolders(s.w.data);
+  const theirs = records.find((r) => r.account_id === B);
+  const ctx = { accountId: A, home: s.w.home, dataDir: s.w.data, otherAccountFolders: [] };
+  assert.deepEqual(await checkRemovable(theirs, ctx), { ok: false, why: 'not_made_here' });
+  const mineRecord = records.find((r) => r.account_id === A);
+  assert.deepEqual(await checkRemovable({ ...mineRecord, dir: s.w.root, root: s.w.root, ...(await folderIdentity(s.w.root)) }, ctx), { ok: false, why: 'is_root' });
+  const away = path.join(s.w.outside, 'northwind-a0a0a0a0');
+  await rename(s.mine, away);
+  assert.deepEqual(await checkRemovable({ ...mineRecord, dir: away, ...(await folderIdentity(away)) }, ctx), { ok: false, why: 'outside_root' });
+  assert.equal(await exists(away), true);
+  assert.equal(await exists(s.theirs), true);
+});
+
+test('a removal left halfway is not finished while the key store cannot be read', async (t) => {
+  const s = await standardWorld(t);
+  const before = await snapshot(s.mine);
+  const records = await readMadeFolders(s.w.data);
+  await mkdir(path.join(s.w.data, 'offboarding', 'pending'), { recursive: true });
+  await writeFile(
+    path.join(s.w.data, 'offboarding', 'pending', `${A}.json`),
+    JSON.stringify({ v: 1, account_id: A, label: 'Northwind', reason: 'removed_from_team', folders: records.filter((r) => r.account_id === A), at: '' }),
+  );
+  await writeFile(path.join(s.w.data, 'credentials.json'), 'this is not json{{{');
+  assert.deepEqual(await finishPendingRemovals({ dataDir: s.w.data, home: s.w.home }), []);
+  assert.deepEqual(await snapshot(s.mine), before);
+  assert.equal(await exists(path.join(s.w.data, 'offboarding', 'pending', `${A}.json`)), true, 'kept, to finish once the store can be read');
+});
