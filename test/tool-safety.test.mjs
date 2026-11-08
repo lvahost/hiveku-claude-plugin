@@ -1124,6 +1124,8 @@ const MEET_DISCUSSIONS_WRITES_THAT_ASK = [
   'meet_recording_delete',
   'discussion_recording_delete',
   'discussion_channel_share',
+  'discussion_channel_share_request',
+  'discussion_channel_share_request_cancel',
   'discussion_channel_unshare',
   'discussion_delete',
 ];
@@ -1405,7 +1407,10 @@ test('the Meet and Discussions sends, shares and deletes ask on a direct call an
   for (const name of ['meet_recording_delete', 'discussion_recording_delete']) {
     assert.match(ALWAYS_ASK_WRITES.get(name), /Hiveku app's own key alone, so from an assistant it is refused anyway/, name);
   }
-  assert.match(ALWAYS_ASK_WRITES.get('discussion_channel_share'), /at once, with nothing to accept/);
+  assert.match(ALWAYS_ASK_WRITES.get('discussion_channel_share'), /straight into a workspace the person runs/);
+  assert.match(ALWAYS_ASK_WRITES.get('discussion_channel_share'), /refused anyway/);
+  assert.match(ALWAYS_ASK_WRITES.get('discussion_channel_share_request'), /Nothing is shared until someone there accepts/);
+  assert.match(ALWAYS_ASK_WRITES.get('discussion_channel_share_request_cancel'), /still waiting/);
   assert.match(ALWAYS_ASK_WRITES.get('discussion_channel_unshare'), /lose the channel/);
   assert.match(ALWAYS_ASK_WRITES.get('discussion_delete'), /for everyone, with its whole history/);
   // Decision 2: agents may list and create Marketing webinars unasked (the edit asks since 2026-11-01, pinned below).

@@ -373,6 +373,8 @@ Put this in `.claude/settings.json` (per project) or `~/.claude/settings.json` (
       "mcp__plugin_hiveku_hk__meet_recording_delete",
       "mcp__plugin_hiveku_hk__discussion_recording_delete",
       "mcp__plugin_hiveku_hk__discussion_channel_share",
+      "mcp__plugin_hiveku_hk__discussion_channel_share_request",
+      "mcp__plugin_hiveku_hk__discussion_channel_share_request_cancel",
       "mcp__plugin_hiveku_hk__discussion_channel_unshare",
       "mcp__plugin_hiveku_hk__discussion_delete",
       "mcp__plugin_hiveku_hk__marketing_referral_invite",
