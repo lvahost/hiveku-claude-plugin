@@ -338,7 +338,7 @@ test("a folder holding the account's own folder that the Hiveku app or another H
 
 test("hiveku-sync's files in the folder or below it keep it: its key may be any account's", async (t) => {
   for (const where of [[], ['projects', 'acme-site']]) {
-    for (const file of ['manifest.json', 'projects.json']) {
+    for (const file of ['manifest.json', 'projects.json', 'made-by-hiveku-sync.json']) {
       const s = await standardWorld(t);
       await mkdir(path.join(s.mine, ...where, '.hiveku'), { recursive: true });
       await writeFile(path.join(s.mine, ...where, '.hiveku', file), JSON.stringify({ api_key_preview: 'hvk_bbbbbb' }));
@@ -348,6 +348,45 @@ test("hiveku-sync's files in the folder or below it keep it: its key may be any 
       assert.deepEqual(await snapshot(s.mine), before);
     }
   }
+});
+
+test('a folder hiveku-sync init made and nothing pulled yet keeps the folder it is in, .env and all; the notice leaves it to the person', async (t) => {
+  const s = await standardWorld(t);
+  // What `hiveku-sync init` leaves before the first pull: its mark, and the key pasted into .env. No binding, no manifest.
+  const sync = path.join(s.mine, 'sync-work');
+  await mkdir(path.join(sync, '.hiveku'), { recursive: true });
+  await writeFile(path.join(sync, '.hiveku', 'made-by-hiveku-sync.json'), JSON.stringify({ version: 1, made_by: 'hiveku-sync' }));
+  await writeFile(path.join(sync, '.env'), `OLYMPUS_API_KEY=${madeUpKey()}\n`);
+  const before = await snapshot(s.mine);
+  assert.equal(await otherAccountInside(s.mine, A), 'holds_other_tool');
+  const result = await remove(s.w, s.key);
+  assert.deepEqual(result.removed, []);
+  assert.deepEqual(result.kept.map((k) => k.why), ['holds_other_tool']);
+  assert.deepEqual(await snapshot(s.mine), before);
+  const notice = removalNotice(result, s.w.home);
+  assert.match(
+    notice,
+    /Left in place: ~\/Hiveku-Accounts\/northwind-a0a0a0a0 \(it holds files the Hiveku app or another Hiveku tool made, so the plugin leaves it alone; delete it yourself if you no longer need it\)\./,
+  );
+  assert.doesNotMatch(notice, /removes it itself/);
+});
+
+test("a folder hiveku-sync made for the account stays, and the notice does not say another tool removes it", async (t) => {
+  const w = await world(t);
+  const key = madeUpKey();
+  await writeCreds(w, { [A]: { key, label: 'Northwind', connect: true } });
+  // hiveku-sync removes nothing, so the person is told it is theirs to delete.
+  const bySync = await plantBoundFolder(path.join(w.root, 'northwind'), { boundBy: 'hiveku-sync' });
+  const before = await snapshot(bySync);
+  const result = await remove(w, key);
+  assert.deepEqual(result.kept.map((k) => k.why), ['other_tool']);
+  assert.deepEqual(await snapshot(bySync), before);
+  const notice = removalNotice(result, w.home);
+  assert.match(
+    notice,
+    /Left in place: ~\/Hiveku-Accounts\/northwind \(another Hiveku tool made it, so the plugin leaves it alone; delete it yourself if you no longer need it\)\./,
+  );
+  assert.doesNotMatch(notice, /removes it itself/);
 });
 
 test("a folder holding a site of another account stays", async (t) => {
