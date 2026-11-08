@@ -8,6 +8,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
+import { writeFile } from 'node:fs/promises';
 import { createServer } from 'node:http';
 import { PassThrough, Writable } from 'node:stream';
 import path from 'node:path';
@@ -266,6 +267,8 @@ for (const [name, coreReply] of [
 test('the next prompt says a kept notice once; so does the next session start, in any folder', async (t) => {
   const w = await world(t);
   await writeCreds(w, { [B]: { key: madeUpKey(), label: 'Acme' } });
+  // A fresh update cache, so no hook starts the detached update probe (it would write here after the test).
+  await writeFile(path.join(w.data, 'update-check.json'), JSON.stringify({ checked_at: new Date().toISOString() }));
   await addNotice(w.data, { accountId: A, kind: 'removed', text: 'You no longer have access to "Northwind": the account was closed.' });
   const hook = (which, cwd) =>
     spawnSync(process.execPath, [BIN, 'hook', which], { input: JSON.stringify({ cwd, source: 'startup' }), env: childEnv(w), encoding: 'utf8', timeout: 20_000 });

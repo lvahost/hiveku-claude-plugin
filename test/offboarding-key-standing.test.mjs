@@ -144,6 +144,19 @@ test('at most 4 KB is read: a longer body is no answer, with or without a Conten
   assert.ok(wrote < 64, `the whole body was read (${wrote} KB)`);
 });
 
+test('a body declared over 4 KB is turned away before any of it is read', async (t) => {
+  // The route says how long its body is and then sends none of it: only the declared length can tell at once.
+  const route = await startRoute(() => (res) => {
+    res.writeHead(200, { 'content-type': 'application/json', 'content-length': String(100 * 1024) });
+    res.flushHeaders();
+  });
+  t.after(() => route.close());
+  assert.deepEqual(await askKeyStanding({ appUrl: route.appUrl, key: madeUpKey(), accountId: A, timeoutMs: 2000 }), {
+    kind: 'no_answer',
+    why: 'unreadable',
+  });
+});
+
 test('nothing listening is no answer', async () => {
   const route = await startRoute(() => standing('active'));
   const appUrl = route.appUrl;
@@ -584,4 +597,9 @@ test("an older session's bridge still holding the replaced key confirms nothing"
   older.onRefused(A, s.key);
   await older.settled();
   assert.deepEqual(removed, [], 'the key stored now is another one: nothing is removed');
+});
+
+test('the tests reach nothing but 127.0.0.1 (the guard in offboarding-world.mjs)', async () => {
+  // example.invalid never resolves, so even without the guard nothing would leave this machine.
+  await assert.rejects(() => fetch('https://example.invalid/api/account/mcp-keys/standing', { method: 'POST' }), /may only reach 127\.0\.0\.1/);
 });
