@@ -2893,7 +2893,7 @@
       "dept": null,
       "method": null,
       "timeoutMs": null,
-      "description": "🕷️ CRAWL4AI: Multi-URL crawl (Firecrawl-backed)"
+      "description": "Read several pages of one site, starting at url (a full address, starting with https:// or http://) and following its links, up to limit pages. limit is at most 25, the most one answer carries, and 25 when not given. Returns each page's main content as markdown. A crawl that runs long may stop early and return the pages read so far. A copy of a page read in the last 48 hours may be returned. The cost grows with the number of pages read, so keep limit as low as the job needs."
     },
     {
       "name": "create_task",
@@ -7457,7 +7457,7 @@
       "dept": "execute",
       "method": null,
       "timeoutMs": null,
-      "description": "🕷️ CRAWL4AI: Execute JavaScript before scraping (Firecrawl-backed via actions)"
+      "description": "Open one web page in a browser, run the JavaScript you pass as script, wait 1.5 seconds, then return a screenshot of the first screen and the page's HTML. url is the page's full address, starting with https:// or http://."
     },
     {
       "name": "fetch_url",
@@ -8598,7 +8598,7 @@
       "dept": null,
       "method": null,
       "timeoutMs": null,
-      "description": "🕷️ CRAWL4AI: Extract rendered HTML (Firecrawl-backed)"
+      "description": "Read one web page and return the whole page's HTML, not only its main content, in two forms: rawHtml and html. url is the page's full address, starting with https:// or http://. A copy of the page read in the last 48 hours may be returned."
     },
     {
       "name": "ice_score",
@@ -10502,7 +10502,7 @@
       "dept": null,
       "method": null,
       "timeoutMs": null,
-      "description": "🕷️ CRAWL4AI: Generate markdown from web content (Firecrawl-backed)"
+      "description": "Read one web page and return its main content as markdown, without menus, headers and footers. url is the page's full address, starting with https:// or http://. A copy of the page read in the last 48 hours may be returned."
     },
     {
       "name": "media_ai_enhance_prompt",
@@ -11748,7 +11748,7 @@
       "dept": null,
       "method": null,
       "timeoutMs": null,
-      "description": "🕷️ CRAWL4AI: Extract text from a PDF URL (Firecrawl-backed via parsers:pdf)"
+      "description": "Read a PDF at a web address and return its text as markdown. url is the PDF's full address, starting with https:// or http://. A copy read in the last 7 days may be returned."
     },
     {
       "name": "platform_feedback_requests_list",
@@ -15934,7 +15934,7 @@
       "dept": null,
       "method": null,
       "timeoutMs": null,
-      "description": "🕷️ CRAWL4AI: Capture page screenshot (Firecrawl-backed)"
+      "description": "Take a screenshot of one web page in a 1280 by 800 window, 3 seconds after it loads. It shows the first screen; pass fullPage: true for the whole length of the page. url is the page's full address, starting with https:// or http://. A screenshot taken in the last 48 hours may be returned."
     },
     {
       "name": "seo_add_competitor",
