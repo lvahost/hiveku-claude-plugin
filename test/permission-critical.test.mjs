@@ -543,6 +543,10 @@ test('no INSTALL.md snippet blanket-allows a prefix the ask list does not cover'
  * check below holds it.
  */
 const CODEX_ONLY_PROMPTS = new Map([
+  ['discussion_update',
+    'asks here only when it changes who may read a channel or stops sharing it (lib/vcs-tool-rules.mjs ' +
+    'reads the arguments), and Codex asks by the called name only, so Codex prompts on every channel ' +
+    'edit (Codex plugin 0.3.88)'],
   ['hiveku_batch',
     'carries other tool calls and runs them on the server, and Codex asks by the called name ' +
     'only, so without this prompt every gated tool placed inside a batch runs in Codex unasked'],
