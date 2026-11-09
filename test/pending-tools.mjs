@@ -788,4 +788,14 @@ export const PENDING_TOOLS = new Map([
   // 2026-11-08 (index regenerated at 3259 tools from MCP 65c5fd6a652f, #472, S5a live): analytics_icp_matching_run (on the ask
   // list and LIVE_CHANGE_WRITES) and analytics_recording_get (on NEVER_AUTO_APPROVE, off the read-only list) are served and
   // indexed. Entries deleted; the SITES-S5A batch has landed.
+  // SOCIAL-DESKTOP (2026-11-08): the desktop app's Social Marketing writes, on the ask list and LIVE_CHANGE_WRITES from this
+  // release, before the MCP release serves them. The MCP serves them to the Hiveku app's own key alone, and the index is
+  // read with an agent key, so the index never carries them and they stay here for good, as voice_sip_credentials_get
+  // and the domain tools do. social_posts_bulk_create joined the ask list with them; the index already carries it.
+  ['social_post_publish_now', { since: '2026-11-08', batch: 'SOCIAL-DESKTOP' }],
+  ['social_post_approve', { since: '2026-11-08', batch: 'SOCIAL-DESKTOP' }],
+  ['social_posts_bulk', { since: '2026-11-08', batch: 'SOCIAL-DESKTOP' }],
+  ['social_account_disconnect', { since: '2026-11-08', batch: 'SOCIAL-DESKTOP' }],
+  ['social_accounts_activate', { since: '2026-11-08', batch: 'SOCIAL-DESKTOP' }],
+  ['social_accounts_import_gbp', { since: '2026-11-08', batch: 'SOCIAL-DESKTOP' }],
 ]);

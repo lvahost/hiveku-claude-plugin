@@ -164,6 +164,14 @@ const LIVE_CHANGE_NAMES = [
   'customer_journey_public_link_set',
   'before_after_grid_public_link_set',
   'customer_avatar_public_link_set',
+  // The desktop app's Social Marketing writes and the bulk draft create (2026-11-08).
+  'social_post_publish_now',
+  'social_post_approve',
+  'social_posts_bulk',
+  'social_account_disconnect',
+  'social_accounts_activate',
+  'social_accounts_import_gbp',
+  'social_posts_bulk_create',
   'account_timezone_set',
   'helpdesk_assistant_knowledge_sources_update',
   // 0.27.24: a site's secrets reach the running site (and production, without a tier).

@@ -5,8 +5,8 @@
     "mcp__plugin_hiveku_hk__",
     "mcp__hiveku__"
   ],
-  "plugin_version": "0.27.229",
-  "count": 659,
+  "plugin_version": "0.27.230",
+  "count": 666,
   "tools": [
     {
       "name": "deploy_site",
@@ -2167,6 +2167,41 @@
       "name": "social_post_retry",
       "method": "POST",
       "why_gated": "re-runs the publish for a failed post version; a second call publishes for real a second time on the platform"
+    },
+    {
+      "name": "social_post_publish_now",
+      "method": "POST",
+      "why_gated": "publishes a post to every platform it targets at once, even a post someone rejected, and a published post cannot be called back. Hiveku takes it from the Hiveku app's own key only"
+    },
+    {
+      "name": "social_post_approve",
+      "method": "POST",
+      "why_gated": "releases a post held for approval: with no schedule it publishes to every platform it targets at once, and with one it goes out at that time. Hiveku takes it from the Hiveku app's own key only"
+    },
+    {
+      "name": "social_posts_bulk",
+      "method": "POST",
+      "why_gated": "applies one action to many posts at once: approve can publish them to every platform they target, delete removes them, and queue or shift moves when they go out. Hiveku takes it from the Hiveku app's own key only"
+    },
+    {
+      "name": "social_account_disconnect",
+      "method": "DELETE",
+      "why_gated": "disconnects a social account and removes its post results, analytics and comments from Hiveku; there is no undo. Hiveku takes it from the Hiveku app's own key only"
+    },
+    {
+      "name": "social_accounts_activate",
+      "method": "POST",
+      "why_gated": "turns social accounts on after they are connected, so posts can go out from them and they count against the plan's allowance. Hiveku takes it from the Hiveku app's own key only"
+    },
+    {
+      "name": "social_accounts_import_gbp",
+      "method": "POST",
+      "why_gated": "brings Google Business locations in from the account's SEO connection as social accounts waiting to be turned on. Hiveku takes it from the Hiveku app's own key only"
+    },
+    {
+      "name": "social_posts_bulk_create",
+      "method": "POST",
+      "why_gated": "creates up to 25 drafts and their calendar events in one call; nothing publishes, but it is a lot to unwind by hand"
     },
     {
       "name": "webflow_project_cms_provider_set",
