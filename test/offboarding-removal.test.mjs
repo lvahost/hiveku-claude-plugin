@@ -798,9 +798,9 @@ test('a journal past the limit deletes nothing more: the folder stays, the perso
   assert.equal(await exists(journalPath(s.w)), false, 'the journal is dropped: it is said once');
   const notices = await takeNotices(s.w.data);
   assert.deepEqual(notices, [
-    'The plugin started removing "Northwind" from this computer earlier, after Hiveku said you no longer had access to it, but it was stopped before it finished. ' +
-      'That was too long ago to go on without asking Hiveku again, and the saved key it would ask with is gone, so nothing more was removed. ' +
-      'Left in place: ~/Hiveku-Accounts/northwind-a0a0a0a0. Delete it yourself if you no longer need it. ' +
+    'The plugin started removing "Northwind" from this computer earlier, after Hiveku said you no longer had access to it, and that removal had not finished when this session started. ' +
+      'It started too long ago for this session to go on without asking Hiveku again, and the saved key it would ask with is gone, so this session removed nothing. ' +
+      'Still on this computer: ~/Hiveku-Accounts/northwind-a0a0a0a0. If another session is still removing the account, it may yet delete it; if not, delete it yourself if you no longer need it. ' +
       'If you still have access to "Northwind", run /hiveku:connect to connect it again.',
   ]);
   assert.doesNotMatch(notices[0], /[\u2014\u2013]|Claude|Anthropic|OpenAI|Cloudflare|Render|Supabase/);
@@ -848,7 +848,7 @@ test('the case from the report: a journal left while the key store stayed locked
   const results = await finishPendingRemovals({ dataDir: s.w.data, home: s.w.home, now: () => threeDaysLater + 1000 });
   assert.equal(results[0].stopped, 'too_old');
   assert.deepEqual(await snapshot(s.mine), before, 'days-old answers delete nothing');
-  assert.match((await takeNotices(s.w.data))[0], /too long ago/);
+  assert.match((await takeNotices(s.w.data))[0], /too long ago for this session/);
 });
 
 test('an old journal with every folder already gone says only what happened, forgets the records, and nothing is thrown', async (t) => {
@@ -863,8 +863,9 @@ test('an old journal with every folder already gone says only what happened, for
   const [notice] = await takeNotices(s.w.data);
   assert.equal(
     notice,
-    'The plugin started removing "Northwind" from this computer earlier, after Hiveku said you no longer had access to it, but it was stopped before it finished. ' +
-      'That was too long ago to go on without asking Hiveku again, and the saved key it would ask with is gone, so nothing more was removed. ' +
+    'The plugin started removing "Northwind" from this computer earlier, after Hiveku said you no longer had access to it, and that removal had not finished when this session started. ' +
+      // HK-1417: with no folder left, nothing is said to stay or to have been kept back.
+      'None of the folders the plugin made for it are left where it made them. ' +
       'If you still have access to "Northwind", run /hiveku:connect to connect it again.',
   );
 });
@@ -881,7 +882,7 @@ test('an old journal still clears what the removing folder holds: that left the 
 
 test('oldRemovalNotice names at most three folders and counts the rest', () => {
   const notice = oldRemovalNotice({ label: 'Northwind', left: ['/home/x/a', '/home/x/b', '/home/x/c', '/home/x/d', '/home/x/e'], home: '/home/x' });
-  assert.match(notice, /Left in place: ~\/a, ~\/b and ~\/c, and 2 more\. Delete them yourself if you no longer need them\./);
+  assert.match(notice, /Still on this computer: ~\/a, ~\/b and ~\/c, and 2 more\. If another session is still removing the account, it may yet delete them; if not, delete them yourself if you no longer need them\./);
   assert.doesNotMatch(notice, /~\/d/);
 });
 
@@ -970,4 +971,18 @@ test("a folder holding a binding below it that cannot be read stays: it may be a
   const result = await remove(s.w, s.key);
   assert.deepEqual(result.kept.map((k) => k.why), ['holds_other_account']);
   assert.deepEqual(await snapshot(s.mine), before);
+});
+
+test('a folder that could not be deleted, or whose account could not be checked, says when a later start tries again (HK-1417)', () => {
+  const home = '/Users/made-up';
+  for (const why of ['failed', 'store_unreadable']) {
+    const notice = removalNotice(
+      { label: 'Northwind', reason: 'removed_from_team', removed: [], kept: [{ path: `${home}/Hiveku-Accounts/northwind`, why }], keyRemoved: true, stopped: null },
+      home,
+    );
+    // A later start finishes the removal only within JOURNAL_MAX_AGE_MS of its start, so no open-ended promise.
+    assert.equal(JOURNAL_MAX_AGE_MS, 30 * 60 * 1000);
+    assert.match(notice, /a new session started within half an hour of the removal tries again, and after that it stays for you to delete/, why);
+    assert.doesNotMatch(notice, /tries again when a new session starts/, why);
+  }
 });

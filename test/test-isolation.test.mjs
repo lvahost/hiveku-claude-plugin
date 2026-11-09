@@ -338,7 +338,8 @@ test('without the preload, a spawned process stops at the PATH stub, never the r
     import { upsertAccounts } from ${JSON.stringify(pathToFileURL(CREDENTIALS).href)};
     await upsertAccounts(${JSON.stringify(data)}, [{ account_id: ${JSON.stringify(A)}, key: 'hvk_stubbed', label: 'Acme' }]);
   `;
-  const env = isolatedEnv({ HOME: dir, NODE_OPTIONS: '' });
+  // The mark is taken off too (HK-1418), so this proves the PATH stub on its own, as it did before the mark.
+  const { HIVEKU_ISOLATED_TEST: _mark, ...env } = isolatedEnv({ HOME: dir, NODE_OPTIONS: '' });
   const run = nodeScript(script, env);
   assert.equal(run.status, 0, run.stderr);
   const store = JSON.parse(readFileSync(path.join(data, 'credentials.json'), 'utf8'));
@@ -358,4 +359,29 @@ test('the real keychain calls live in one place, reached only through the seam',
   for (const rel of ['bin/hiveku', 'bin/hiveku-mcp', ...readdirSync(path.join(ROOT, 'lib')).filter((f) => f.endsWith('.mjs') && f !== 'credentials.mjs').map((f) => path.join('lib', f))]) {
     assert.doesNotMatch(code(read(rel)), /find-generic-password|add-generic-password|secret-tool/, `${rel} must not run the keychain tools itself`);
   }
+});
+
+test('a process spawned with isolatedEnv refuses the real keychain tool by its own mark, with no runner mark (HK-1418)', async (t) => {
+  const dir = mkdtempSync(path.join(tmpdir(), 'hk-isolation-mark-'));
+  t.after(() => rmSync(dir, { recursive: true, force: true }));
+  const log = path.join(dir, 'calls.log');
+  const bin = loggingStubTool(dir, log);
+  const data = path.join(dir, 'data');
+  mkdirSync(data, { recursive: true });
+  writeFileSync(path.join(data, 'credentials.json'), JSON.stringify({ v: 1, enc: 'aes-256-gcm', iv: 'AAAAAAAAAAAAAAAA', tag: 'AAAAAAAAAAAAAAAAAAAAAA', data: 'AAAA' }));
+  const script = `
+    import { readCredentials } from ${JSON.stringify(pathToFileURL(CREDENTIALS).href)};
+    await readCredentials(${JSON.stringify(data)});
+    console.log('reached the end');
+  `;
+  const env = isolatedEnv({ HOME: dir });
+  // A nested runner must not see the runner's mark (content-doctrine.test.mjs), and the child must carry its own.
+  assert.equal(env.NODE_TEST_CONTEXT, undefined);
+  assert.equal(env.HIVEKU_ISOLATED_TEST, '1');
+  // The other layers taken away: no preload, and a PATH whose only keychain tool logs that it ran.
+  const { NODE_OPTIONS: _preload, ...withoutPreload } = env;
+  const run = nodeScript(script, { ...withoutPreload, PATH: `${bin}${path.delimiter}/usr/bin:/bin` });
+  assert.notEqual(run.status, 0, 'the run must fail');
+  assert.match(run.stderr, /a test reached the real keychain tool/);
+  assert.equal(existsSync(log), false, 'the keychain tool must not have been started');
 });
