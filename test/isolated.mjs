@@ -100,6 +100,9 @@ export function isolatedEnv(extra = {}) {
     ...NO_NETWORK_ENV,
     NODE_OPTIONS: `--import "${NO_KEYCHAIN_PRELOAD}"`,
     ...rest,
+    // The child's own mark for lib/credentials.mjs refuseUnderTests: it has no NODE_TEST_CONTEXT, which would make a
+    // nested `node --test` report to this runner (test/content-doctrine.test.mjs relies on that), HK-1418.
+    HIVEKU_ISOLATED_TEST: '1',
     PATH: `${STUB_BIN}${path.delimiter}${callerPath ?? CALLERS_PATH}`,
   };
 }
