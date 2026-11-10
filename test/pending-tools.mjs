@@ -815,11 +815,4 @@ export const PENDING_TOOLS = new Map([
   ['discussion_private_list', { since: '2026-11-10', batch: 'DISCUSSIONS-S5' }],
   ['discussion_private_messages', { since: '2026-11-10', batch: 'DISCUSSIONS-S5' }],
   ['discussion_private_search', { since: '2026-11-10', batch: 'DISCUSSIONS-S5' }],
-  // CONTENT-DESKTOP (2026-11-08): the desktop app's Content page writes. Each MCP description says ASK THE PERSON
-  // FIRST, and the MCP's build fails until this plugin names them (ask-first-tools-in-plugin.test.ts), so they are on
-  // the ask list and LIVE_CHANGE_WRITES from this release, before the MCP release serves them. The MCP serves them to
-  // a person's own key, so the index regenerated after that release carries them: delete these entries then.
-  ['content_editor_save', { since: '2026-11-08', batch: 'CONTENT-DESKTOP' }],
-  ['content_archive', { since: '2026-11-08', batch: 'CONTENT-DESKTOP' }],
-  ['content_unpublish', { since: '2026-11-08', batch: 'CONTENT-DESKTOP' }],
 ]);
