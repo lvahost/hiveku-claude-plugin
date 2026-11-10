@@ -3103,7 +3103,7 @@
       "dept": "crm",
       "method": "GET",
       "timeoutMs": null,
-      "description": "Aggregate CRM data-quality audit — the counts behind 'what is wrong with this CRM': missing emails, duplicate contacts, orphaned records and similar. Read-only; run before a cleanup so you act on numbers rather than impressions."
+      "description": "Aggregate CRM data-quality audit — the counts behind 'what is wrong with this CRM': missing emails, missing phones, duplicate contacts (email & phone), unowned records, orphaned records and similar. Read-only; run before a cleanup so you act on numbers rather than impressions. Also supports batch audit modes (mode='summary' | 'import' | 'deals' | 'leads')."
     },
     {
       "name": "crm_calendar_create",
@@ -3334,7 +3334,7 @@
       "dept": "crm",
       "method": "GET",
       "timeoutMs": null,
-      "description": "Find duplicate-candidate contacts grouped by lowercased email. Name-only matching is intentionally excluded (too many false positives). Returns groups with 2+ contacts each."
+      "description": "Find duplicate-candidate contacts grouped by lowercased email and/or normalized phone digits (match_by: \"email\" | \"phone\" | \"both\", default \"both\"). Name-only matching is intentionally excluded (too many false positives). Returns groups with 2+ contacts each."
     },
     {
       "name": "crm_contacts_gone_cold",

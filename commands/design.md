@@ -7,16 +7,23 @@ depth live in its `references/design-canvas.md`. The deliverable is an **editabl
 project** the client can keep editing in the dashboard - a flat PNG pasted into chat is a dead end.
 A reply that ends without a `dashboardUrl` has not delivered anything.
 
+Hiveku's design rules come first: `account_context_get` (step 1) returns them in `platform_rules`.
+They apply to every account and outrank its memory, so follow them in every step below.
+
 1. **Brand first.** `account_context_get({ domain: 'branding' })` - there is NO `creative` domain -
-   plus `brand_guide_get` on the active guide. On a department-scoped key `account_context_get` can
-   answer tool-not-found; that is scope, not an outage - hydrate through
+   plus `brand_guide_get` on the account's default guide (the one marked `is_default`). Colours,
+   fonts and logos come only from that guide, never from a note, an earlier design or another
+   guide; with no default guide, ask the person which guide is the brand. On a department-scoped
+   key `account_context_get` can answer tool-not-found; that is scope, not an outage - hydrate through
    `talk_to_department({ domain: 'branding' })` instead and say which path you used.
-2. **Reuse before you build.** `design_list` - an existing design to restyle beats a rebuild.
-   `design_templates_list` - the 58-template library already substituted with the account's brand
-   guide, each template carrying a ready-to-use `canvasData`; the wide formats are templates now
-   (two 1200x600 email headers under Email Header, OG 1200x630, YouTube 1280x720, LinkedIn banner
+2. **Start from a template of the same size.** `design_templates_list` - the 58-template library
+   already substituted with the account's brand guide, each template carrying a ready-to-use
+   `canvasData`. Take one whose artboard is the destination's width and height, then replace its
+   words and pictures with this business's true story. The wide formats are templates now (two
+   1200x600 email headers under Email Header, OG 1200x630, YouTube 1280x720, LinkedIn banner
    1584x396, X header 1500x500), so a headline hero starts from one of those, not a blank artboard.
-   Imagery for a layer: `media_library_list` first, a free `media_transform` to the slot size, and
+   Start from an earlier design (`design_list`) only when the person names it. Imagery for a layer:
+   `media_library_list` first, a free `media_transform` to the slot size, and
    `media_image_quota` before any `generate_image_set` (a null `remaining` is unknown, not zero).
 3. **Create.** `design_create({ title, designType, artboard: { width, height, background },
    initialCanvasData: <the template's canvasData> })`. One design per destination size - an artboard
@@ -101,10 +108,14 @@ HARD RULES:
 - Text and logos are canvas layers, never generated pixels. "Regenerate until the text is right" is
   a refusal: put the words in a textbox layer and the logo in an image layer.
 
-Finish by persisting decisions (palette calls, template choices, residual issues) to the `branding`
-memory document per the skill's `references/memory-protocol.md` - `memory_list({ domain:
-"branding" })`, merge, `memory_update({ memory_id, content, reason, expected_version })` with the WHOLE body
+Finish with memory and PM. If the person said what works or what does not, record their words,
+quoted, with the design's id and the date, in the `branding` memory document per the skill's
+`references/memory-protocol.md` - `memory_list({ domain: "branding" })`, merge,
+`memory_update({ memory_id, content, reason, expected_version })` with the WHOLE body
 (`memory_create({ type: "memory", name: "branding", content })` only on first run; 409 = exists;
 if you read that document earlier in the session, check `memory_log_list({ memory_id, since })`
-first and merge any newer change, and pass `reason`, one line on why) - and reflect the deliverable in PM: `pm_tasks_create({ project_id, title })` (the field is `title`),
-with asset ids and the dashboardUrl in the description.
+first and merge any newer change, and pass `reason`, one line on why). Never write your own
+palette, font or template choices there (the brand guide holds the brand), and never your own
+design as what works: it is a draft until the person says so. Then reflect the deliverable in PM:
+`pm_tasks_create({ project_id, title })` (the field is `title`), with asset ids, the dashboardUrl
+and any open issues in the description.
