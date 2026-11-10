@@ -10,8 +10,8 @@ Drive the redesign pipeline for THIS project$ARGUMENTS. This project's id is `<t
 1. `redesign_homepage_approve({ project_id: <the project_id> })` - FIRST, and exactly once, after the
    user confirms the homepage looks right. This is a PRECONDITION, not the finish line: until it is
    set, `redesign_start` refuses with 409 "Homepage not approved". It publishes nothing.
-2. `redesign_start({ project_id: <the project_id>, sourceUrl })` - runs Firecrawl /map on the source
-   site and returns `{ session: { id, status, total_pages }, pages: [{ id, source_url, path, slug,
+2. `redesign_start({ project_id: <the project_id>, sourceUrl })` - maps the source
+   site to discover its pages and returns `{ session: { id, status, total_pages }, pages: [{ id, source_url, path, slug,
    title, screenshot_url }] }`. Keep the session id and the page ids.
 3. `redesign_select_pages({ project_id: <the project_id>, sessionId, pageIds })` - the ids from step 2.
    It REPLACES the selection; an empty array clears it and the session drops back to
