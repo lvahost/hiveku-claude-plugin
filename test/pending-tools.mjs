@@ -562,7 +562,7 @@
  *   test/permission-critical.test.mjs. The server refuses the three reads inside hiveku_batch. Release step, after the
  *   MCP deploy: regenerate the index and the read-only list from the live server, then delete these entries.
  *     DISCUSSIONS-S5      discussion_channels_bulk_create, discussion_private_list, discussion_private_messages,
- *                         discussion_private_search.
+ *                         discussion_private_search. Landed 2026-11-10 (MCP #497, live at ac133a24fce8); entries deleted.
  */
 const SEO_SINCE = '2026-08-30';
 const seo = (batch) => ({ since: SEO_SINCE, batch });
@@ -809,10 +809,4 @@ export const PENDING_TOOLS = new Map([
   ['social_account_disconnect', { since: '2026-11-08', batch: 'SOCIAL-DESKTOP' }],
   ['social_accounts_activate', { since: '2026-11-08', batch: 'SOCIAL-DESKTOP' }],
   ['social_accounts_import_gbp', { since: '2026-11-08', batch: 'SOCIAL-DESKTOP' }],
-  // DISCUSSIONS-S5 (2026-11-10): many channels at once, and the person's own conversations, read only. They ask from
-  // this release on, before the MCP release serves them (see the batch note above). Delete once the index carries them.
-  ['discussion_channels_bulk_create', { since: '2026-11-10', batch: 'DISCUSSIONS-S5' }],
-  ['discussion_private_list', { since: '2026-11-10', batch: 'DISCUSSIONS-S5' }],
-  ['discussion_private_messages', { since: '2026-11-10', batch: 'DISCUSSIONS-S5' }],
-  ['discussion_private_search', { since: '2026-11-10', batch: 'DISCUSSIONS-S5' }],
 ]);
