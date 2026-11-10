@@ -17,8 +17,9 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { searchTools, loadIndex } from '../lib/tool-index.mjs';
+import { searchTools, loadIndex, renderResults } from '../lib/tool-index.mjs';
 import { plainWordTools, PLAIN_WORD_RULES } from '../lib/search-plain-words.mjs';
+import { isMeteredVendorRead, isReadOnlyTool } from '../lib/tool-safety.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const names = (search, query, n = 5, opts = {}) => search(query, { limit: n, ...opts }).map((t) => t.name);
@@ -154,11 +155,52 @@ test('once served: many channels and the person\'s own direct messages are found
   ]) {
     assert.deepEqual(names(search, query, expected.length), expected, query);
   }
-  // Sending one is no tool's: the private reads come first, and their words say nothing can be sent there.
+  // Sending one is no AI app's: the private reads come first, and their words say no AI app's connection sends there.
   assert.equal(names(search, 'send a DM to Ben', 1)[0], 'discussion_private_list');
   // A channel is still a channel, and the served tools keep their places.
   assert.equal(names(search, 'read a channel', 1)[0], 'discussion_messages_list');
   assert.equal(names(search, 'post in a channel', 1)[0], 'discussion_reply');
   assert.equal(names(search, 'reply in a thread', 1)[0], 'discussion_reply');
   assert.equal(names(search, 'team chat', 1)[0], 'discussion_list');
+});
+
+/* ── a read-only key's marks ───────────────────────────────────────────────────────────────────────────────────── */
+
+// What the bridge hands a read-only key's search (lib/shim.mjs readOnlySet): the plugin's own read list.
+const READ_ONLY_KEY = { has: (n) => isReadOnlyTool(n) };
+
+test('a read-only key may read the person\'s own direct messages: a GET is never marked as out of its reach', async () => {
+  const live = new Set(loadIndex().map((t) => t.name));
+  const search = await searchWithIndexCarrying(NOT_SERVED_YET.filter((t) => !live.has(t.name)));
+  // The server lets a read-only key call every GET it declares, these three included, though nothing pre-approves them.
+  const reads = search('my direct messages', { limit: 3, readOnlySet: READ_ONLY_KEY });
+  assert.deepEqual(reads.map((t) => [t.name, t.blockedByScope === true]), [
+    ['discussion_private_list', false],
+    ['discussion_private_messages', false],
+    ['discussion_private_search', false],
+  ]);
+  assert.doesNotMatch(renderResults(reads, 'my direct messages'), /NOT callable with this read-only key/);
+  // Making many channels is a POST, which the server refuses to a read-only key: still marked.
+  const bulk = search('make many channels', { limit: 1, readOnlySet: READ_ONLY_KEY });
+  assert.deepEqual(bulk.map((t) => [t.name, t.blockedByScope === true]), [['discussion_channels_bulk_create', true]]);
+  assert.match(renderResults(bulk, 'make many channels'), /discussion_channels_bulk_create {2}\[POST\] {2}\[NOT callable with this read-only key\]/);
+});
+
+test('the older reads nothing pre-approves are callable too, and a POST or a paid research read stays marked', () => {
+  const mark = (name) => {
+    const [first] = searchTools(name, { limit: 1, readOnlySet: READ_ONLY_KEY });
+    assert.equal(first?.name, name, `the search for ${name} must find it first`);
+    return first.blockedByScope === true;
+  };
+  // GETs off the read list, as a recording's link and a project's delete preview are: the server lets a read-only key
+  // call them, and the hook still asks the person before each recording read.
+  for (const name of ['voice_recording_url_get', 'analytics_recording_get', 'pm_project_delete_impact']) {
+    assert.equal(isReadOnlyTool(name), false, `${name} is off the read list; the fixture is wrong`);
+    assert.equal(mark(name), false, name);
+  }
+  // A POST the plugin will not pre-approve, and research the account pays for: the server refuses both to such a key.
+  assert.equal(mark('project_secrets_reveal'), true);
+  const paid = loadIndex().find((t) => isMeteredVendorRead(t.name) && !t.method);
+  assert.ok(paid, 'the index carries a paid research read');
+  assert.equal(mark(paid.name), true, paid.name);
 });
