@@ -219,3 +219,11 @@ test('the plugin version is identical in all three places it is declared', async
   assert.equal(entry.version, plugin.version, 'marketplace.json entry version != plugin.json');
   assert.equal(inUtil, plugin.version, 'lib/util.mjs PLUGIN_VERSION != plugin.json');
 });
+
+test('HK-1411: macOS keychain store pipes the master key to security -i via stdin instead of argv', async () => {
+  const root = new URL('../', import.meta.url);
+  const src = await fs.readFile(new URL('lib/credentials.mjs', root), 'utf8');
+  assert.match(src, /execFileAsync\(\s*'security',\s*\['-i'\],\s*\{\s*input:\s*`add-generic-password -s \$\{KEYCHAIN_SERVICE\} -a \$\{KEYCHAIN_ACCOUNT\} -w \$\{b64\} -U\\n`/);
+  assert.doesNotMatch(src, /execFileAsync\(\s*'security',\s*\[\s*'add-generic-password'/);
+  assert.match(src, /agencies with several clients on one Mac that want keys kept inside the\s*\* app and out of local files and environments should use the Hiveku desktop app/);
+});
