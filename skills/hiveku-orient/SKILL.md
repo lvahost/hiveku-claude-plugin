@@ -202,7 +202,7 @@ the memory_* tools.
   site and not a failed deploy. Say "the edge firewall refused this client", then identify and
   retry before reporting. `fetch_url` runs from Hiveku's own servers as `Hiveku-Agent/1.0` and
   is exempt; a WebFetch or a bare GET from this machine is not. `web_scrape` and the other
-  Firecrawl-backed web tools run from third-party browsers: a rendering format (a screenshot,
+  hosted-browser web tools (`web_crawl`, `web_extract`, `web_actions`) run from third-party browsers: a rendering format (a screenshot,
   `web_actions`, `waitFor`) passes the challenge, and a plain-fetch format on a Hiveku-hosted
   site can answer `scrape_failed` with `reason: 'bot_challenge'` and a 202 or 403 - switch
   format or use `fetch_url`, do not report a fetcher defect. A customer's own monitor or audit
