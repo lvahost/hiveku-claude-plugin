@@ -75,8 +75,8 @@ test('a rollback dry run is pre-approved; an apply always asks', () => {
   for (const input of [
     { project_id: PROJECT, commit_id: PROJECT },
     { project_id: PROJECT, commit_id: PROJECT, dry_run: true },
-    // Only the literal boolean false applies; the route and the proxy agree.
-    { project_id: PROJECT, commit_id: PROJECT, dry_run: 'false' },
+    // The text "true" is a dry run too; the text "false" applies (see "What reads as false" below).
+    { project_id: PROJECT, commit_id: PROJECT, dry_run: 'true' },
     {},
   ]) {
     assert.equal(decision(decideWithGuardrails(vcs('project_vcs_rollback', input, cwd))), 'allow',
@@ -108,6 +108,10 @@ test('the version prompts speak plain language: "version", never commit/HEAD/rev
     ['project_vcs_restore_files', { project_id: PROJECT, commit_id: PROJECT, branch: 'main', paths: ['a', 'b'], dry_run: false }],
     ['history_restore_to_time', { project_id: PROJECT, as_of: '2026-10-31T12:00:00Z' }],
     ['history_restore_to_time', { project_id: PROJECT, as_of: '2026-10-31T12:00:00Z', mode: 'exact' }],
+    // A call whose arguments cannot be read asks, in the same words.
+    ['project_vcs_rollback', 'garbage'],
+    ['project_vcs_restore_files', 'garbage'],
+    ['deploy_serve_version', 'garbage'],
   ];
   for (const [tool, input] of inputs) {
     const { reason } = argGatedWriteDecision(tool, input);
@@ -116,6 +120,7 @@ test('the version prompts speak plain language: "version", never commit/HEAD/rev
   }
   assert.deepEqual([...ARG_GATED_WRITES.keys()].sort(), [
     'deploy_serve_version',
+    'discussion_channels_bulk_create',
     'discussion_update',
     'history_restore_to_time',
     'project_vcs_commit',
@@ -217,8 +222,8 @@ test('switching an environment to an earlier version: a dry run is pre-approved,
   for (const input of [
     { project_id: PROJECT, environment: 'production' },
     { project_id: PROJECT, environment: 'production', dry_run: true },
-    // Only the literal boolean false starts one: the MCP mapping sends true when it is left out.
-    { project_id: PROJECT, environment: 'production', dry_run: 'false' },
+    // The MCP mapping sends true when it is left out. The text "false" starts one (see "What reads as false" below).
+    { project_id: PROJECT, environment: 'production', dry_run: 'true' },
     {},
   ]) {
     const r = decideWithGuardrails(vcs('deploy_serve_version', input, cwd));
@@ -262,9 +267,8 @@ test('bringing chosen files back: a dry run is pre-approved, an apply always ask
   for (const input of [
     { project_id: PROJECT, commit_id: PROJECT, paths: ['src/app/page.tsx'] },
     { project_id: PROJECT, commit_id: PROJECT, paths: ['src/app/page.tsx'], dry_run: true },
-    // Only the literal boolean false applies; the route reads anything else as a dry run.
-    { project_id: PROJECT, commit_id: PROJECT, paths: ['src/app/page.tsx'], dry_run: 'false' },
-    { project_id: PROJECT, commit_id: PROJECT, paths: ['src/app/page.tsx'], dry_run: 0 },
+    // The text "false", and any value that is not plainly a dry run, ask (see "What reads as false" below).
+    { project_id: PROJECT, commit_id: PROJECT, paths: ['src/app/page.tsx'], dry_run: ' true ' },
     {},
   ]) {
     const r = decideWithGuardrails(vcs('project_vcs_restore_files', input, cwd));
@@ -339,4 +343,59 @@ test('a restore to a time asks on every call, and says so when it would match th
   const readsOnly = folderWith({ version: 1, mode: 'reads-only' });
   assert.equal(decision(decideWithGuardrails(vcs('history_restore_to_time', { project_id: PROJECT, mode: 'exact' }, readsOnly))), 'deny');
   assert.equal(isAutoApprovable('history_restore_to_time', {}), false);
+});
+
+// ── What reads as false (2026-11-10) ─────────────────────────────────────────
+//
+// The MCP server reads each argument as the type its tool declares before the route sees it, so the text "false"
+// (" false" too) reaches the route as the boolean false and applies, and a hiveku_batch member's args sent as JSON
+// text are read as the object they spell. The rules used to ask only for the boolean false, so "false" was
+// pre-approved as a dry run, alone and in a batch. Now only a value that is plainly a dry run is one: anything else
+// asks, and so does a call whose arguments cannot be read.
+
+const DRY_RUN_TOOLS = [
+  ['project_vcs_rollback', { project_id: PROJECT, commit_id: PROJECT }],
+  ['project_vcs_restore_files', { project_id: PROJECT, commit_id: PROJECT, paths: ['src/app/page.tsx'] }],
+  ['deploy_serve_version', { project_id: PROJECT, environment: 'production', serving_check: 'c' }],
+];
+
+test('a dry_run the server reads as false asks, and so does any value that is not plainly a dry run', () => {
+  const cwd = folderWith(undefined);
+  for (const [tool, base] of DRY_RUN_TOOLS) {
+    for (const dryRun of [false, 'false', ' false', 'false\n', 'False', 0, 'no', {}, []]) {
+      const r = decideWithGuardrails(vcs(tool, { ...base, dry_run: dryRun }, cwd));
+      assert.equal(decision(r), 'ask', `${tool} dry_run ${JSON.stringify(dryRun)} must ask`);
+      assert.match(r.hookSpecificOutput.permissionDecisionReason, /for real/, `${tool}: the apply's own reason`);
+    }
+    for (const dryRun of [undefined, null, true, 'true', ' true ', '']) {
+      const r = decideWithGuardrails(vcs(tool, { ...base, dry_run: dryRun }, cwd));
+      assert.equal(decision(r), 'allow', `${tool} dry_run ${JSON.stringify(dryRun)} is a dry run`);
+    }
+    const unread = decideWithGuardrails(vcs(tool, 'garbage', cwd));
+    assert.equal(decision(unread), 'ask', `${tool}: arguments it cannot read`);
+    assert.match(unread.hookSpecificOutput.permissionDecisionReason, /could not be read/);
+  }
+});
+
+test('inside a batch a member\'s args are read as the server reads them, JSON text included', () => {
+  const cwd = folderWith(undefined);
+  for (const [tool, base] of DRY_RUN_TOOLS) {
+    for (const args of [
+      { ...base, dry_run: 'false' },
+      JSON.stringify({ ...base, dry_run: false }),
+      ` ${JSON.stringify({ ...base, dry_run: ' false' })} `,
+    ]) {
+      const r = decideWithGuardrails(batch([{ tool: 'account_context_get', args: {} }, { tool, args }], cwd));
+      assert.equal(decision(r), 'ask', `${tool} ${JSON.stringify(args)} must ask`);
+      assert.match(r.hookSpecificOutput.permissionDecisionReason, new RegExp(tool));
+    }
+    // A dry run sent as text is still a dry run, judged as it is alone, and so are args that carry nothing.
+    for (const args of [JSON.stringify(base), JSON.stringify({ ...base, dry_run: true }), undefined, null, '', 'null', '[]']) {
+      assert.equal(decision(decideWithGuardrails(batch([{ tool, args }], cwd))), 'allow', `${tool} ${JSON.stringify(args)}`);
+    }
+    // Args nobody can read: the rule cannot tell a dry run from the real thing, so it asks.
+    for (const args of ['garbage', '{not json', 42, ['a']]) {
+      assert.equal(decision(decideWithGuardrails(batch([{ tool, args }], cwd))), 'ask', `${tool} ${JSON.stringify(args)}`);
+    }
+  }
 });

@@ -5,8 +5,8 @@
     "mcp__plugin_hiveku_hk__",
     "mcp__hiveku__"
   ],
-  "plugin_version": "0.27.238",
-  "count": 666,
+  "plugin_version": "0.27.241",
+  "count": 671,
   "tools": [
     {
       "name": "deploy_site",
@@ -582,6 +582,31 @@
       "name": "content_publish_to_site",
       "method": "POST",
       "why_gated": "publishes content publicly"
+    },
+    {
+      "name": "content_editor_save",
+      "method": "PUT",
+      "why_gated": "saves changes to a post. A scheduled publish time it sends queues the post's page to go public on the website at that time; the save itself never publishes"
+    },
+    {
+      "name": "content_archive",
+      "method": "POST",
+      "why_gated": "archives a post and cancels its pending schedules; with remove_from_site it also takes the post's page off the live website"
+    },
+    {
+      "name": "content_unpublish",
+      "method": "POST",
+      "why_gated": "takes a post's page off the live website: its file leaves the site, its pending schedules are cancelled and the post goes back to draft"
+    },
+    {
+      "name": "content_delete",
+      "method": "DELETE",
+      "why_gated": "deletes a post with its versions and comments and cancels its pending schedules; with remove_from_site it also takes the post's page off the live website"
+    },
+    {
+      "name": "content_unpublish_from_site",
+      "method": "POST",
+      "why_gated": "rewrites a post's entry on its website as a draft, so the page comes off the live website with the site's next deploy, whoever runs it"
     },
     {
       "name": "content_schedule",

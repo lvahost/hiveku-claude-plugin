@@ -289,6 +289,13 @@ const LIVE_CHANGE_NAMES = [
   'seo_plan_phrase_set',
   'seo_plan_suggest_phrases',
   'seo_plan_suggest_links',
+  // The desktop app's Content page: saving a post, archive and unpublish (MCP feature/desktop-content-marketing,
+  // pending), and the two served writes that take a page off a live site.
+  'content_editor_save',
+  'content_archive',
+  'content_unpublish',
+  'content_delete',
+  'content_unpublish_from_site',
   // Customer journeys for the desktop app (MCP feature/marketing-identity-tools, pending): the two billed AI fills,
   // the key-stage videos and a projection shown on the public page.
   'customer_journey_create_from_template',
