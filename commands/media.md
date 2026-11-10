@@ -214,8 +214,9 @@ graphics, carousels, ad variations):
   it. Nothing dedupes and a timeout may still land the render, so call it ONCE and never retry
   blindly; `design_export_image` + `media_library_register_external_url` is the lane when you need a
   specific frame instead.
-- `design_list` / `design_get` find an existing design to restyle instead of rebuilding it. The
-  deeper canvas round-trip (comments, versions, self-review) is /hiveku:design.
+- A new design starts from a template of the same size (`design_templates_list`); `design_list` /
+  `design_get` find an earlier design to restyle only when the person names it. The deeper canvas
+  round-trip (comments, versions, self-review) is /hiveku:design.
 - The `marketing_media_*` / `marketing_design_*` twins are the same routes surfaced for a different
   key profile: prefer `media_*` / `design_*`, and reach for a twin only when a scoped key answers
   tool-not-found.

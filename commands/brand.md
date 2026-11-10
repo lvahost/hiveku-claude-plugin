@@ -65,13 +65,16 @@ downstream.
    `css_font_face`. Optional smoke check on imagery: one `generate_image` (brand-aware by default)
    and read `brand_applied` - `brand_skipped_reason: 'no_active_brand_guide'` is the activation
    problem above, reported by the generator itself.
-5. **Persist.** Palette, type pairing, logo rules, and the reasoning go to the `branding` memory
-   document per the skill's `references/memory-protocol.md` - `memory_list({ domain: "branding" })`,
-   merge, `memory_update({ memory_id, content, reason, expected_version })` with the WHOLE body (`memory_create({ type:
-   "memory", name: "branding", content })` only on first run; 409 = exists). If you read that
-   document earlier in the session, check `memory_log_list({ memory_id, since })` first and merge any
-   newer change; pass `reason`, one line on why. Follow-up work that
-   needs a human - font licensing, missing lockups, a photo shoot - lands as
+5. **Persist in the guide.** The palette, the type pairing, the logos and the logo rules live in the
+   brand guide, written in step 3 on the person's yes. Never copy them into memory: a note that names
+   colours or fonts can later disagree with the guide. Memory keeps only what the person said about
+   the brand, in their words, quoted, with the date: the `branding` memory document per the skill's
+   `references/memory-protocol.md` - `memory_list({ domain: "branding" })`, merge,
+   `memory_update({ memory_id, content, reason, expected_version })` with the WHOLE body
+   (`memory_create({ type: "memory", name: "branding", content })` only on first run; 409 = exists).
+   If you read that document earlier in the session, check `memory_log_list({ memory_id, since })`
+   first and merge any newer change; pass `reason`, one line on why. Follow-up work that needs a
+   human - font licensing, missing lockups, a photo shoot - lands as
    `pm_tasks_create({ project_id, title })` items, not a line in chat.
 
 HARD STOPS:
