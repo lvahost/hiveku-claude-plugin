@@ -552,6 +552,17 @@
  *   A site's cache clear (HK-1166, 2026-11-06): project_cache_clear clears what the CDN keeps for one deployed
  *   environment, on the ask list and LIVE_CHANGE_WRITES since 0.27.195.
  *     CACHE-CLEAR         project_cache_clear. Landed 2026-11-06 (MCP #440, live at 5db3e344414e); entry deleted.
+ *
+ *   Discussions waves S5 and S5b (2026-11-10): making many channels at once, and reading the person's own direct
+ *   messages, group messages and private channels, read only. All four ask from this release on, before the MCP
+ *   release serves them: discussion_channels_bulk_create when dry_run is false (lib/vcs-tool-rules.mjs, as
+ *   discussion_update is judged), and each private read on every call (NEVER_AUTO_APPROVE, with
+ *   SENSITIVE_READ_EXCLUSIONS keeping them off the read-only list). None is on the ask list (the reads are GETs, and an
+ *   ask rule cannot read the bulk make's dry_run), so Codex prompts on all four through CODEX_ONLY_PROMPTS in
+ *   test/permission-critical.test.mjs. The server refuses the three reads inside hiveku_batch. Release step, after the
+ *   MCP deploy: regenerate the index and the read-only list from the live server, then delete these entries.
+ *     DISCUSSIONS-S5      discussion_channels_bulk_create, discussion_private_list, discussion_private_messages,
+ *                         discussion_private_search.
  */
 const SEO_SINCE = '2026-08-30';
 const seo = (batch) => ({ since: SEO_SINCE, batch });
@@ -798,4 +809,10 @@ export const PENDING_TOOLS = new Map([
   ['social_account_disconnect', { since: '2026-11-08', batch: 'SOCIAL-DESKTOP' }],
   ['social_accounts_activate', { since: '2026-11-08', batch: 'SOCIAL-DESKTOP' }],
   ['social_accounts_import_gbp', { since: '2026-11-08', batch: 'SOCIAL-DESKTOP' }],
+  // DISCUSSIONS-S5 (2026-11-10): many channels at once, and the person's own conversations, read only. They ask from
+  // this release on, before the MCP release serves them (see the batch note above). Delete once the index carries them.
+  ['discussion_channels_bulk_create', { since: '2026-11-10', batch: 'DISCUSSIONS-S5' }],
+  ['discussion_private_list', { since: '2026-11-10', batch: 'DISCUSSIONS-S5' }],
+  ['discussion_private_messages', { since: '2026-11-10', batch: 'DISCUSSIONS-S5' }],
+  ['discussion_private_search', { since: '2026-11-10', batch: 'DISCUSSIONS-S5' }],
 ]);

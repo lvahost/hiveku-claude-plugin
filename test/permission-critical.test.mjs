@@ -588,6 +588,22 @@ const CODEX_ONLY_PROMPTS = new Map([
     'is a GET that answers with one site visitor\'s whole visit as they saw it on screen, a session recording\'s ' +
     'replay. It is gated through NEVER_AUTO_APPROVE (lib/tool-safety.mjs), which the ask list (writes only) cannot ' +
     'carry, so Codex needs a prompt of its own (wave S5a, Codex 0.3.87)'],
+  ['discussion_channels_bulk_create',
+    'asks here only when it makes the channels, with dry_run false (lib/vcs-tool-rules.mjs reads the arguments; an ' +
+    'ask rule on the list could not, and would ask on every practice run), and Codex asks by the called name only, ' +
+    'so Codex prompts on every call, the practice run included (Discussions wave S5)'],
+  ['discussion_private_list',
+    'is a GET that answers with the person\'s own direct messages, group messages and private channels, which the ' +
+    'other people in them never chose to show an AI. It is gated through NEVER_AUTO_APPROVE (lib/tool-safety.mjs), ' +
+    'which the ask list (writes only) cannot carry, so Codex needs a prompt of its own (Discussions wave S5b)'],
+  ['discussion_private_messages',
+    'is a GET that answers with the messages of one of the person\'s own direct messages, group messages or private ' +
+    'channels. It is gated through NEVER_AUTO_APPROVE (lib/tool-safety.mjs), which the ask list (writes only) cannot ' +
+    'carry, so Codex needs a prompt of its own (Discussions wave S5b)'],
+  ['discussion_private_search',
+    'is a GET that searches the words of the person\'s own direct messages, group messages and private channels. It ' +
+    'is gated through NEVER_AUTO_APPROVE (lib/tool-safety.mjs), which the ask list (writes only) cannot carry, so ' +
+    'Codex needs a prompt of its own (Discussions wave S5b)'],
 ]);
 
 test('every Codex-only prompt names a real tool that is not on the ask list', () => {

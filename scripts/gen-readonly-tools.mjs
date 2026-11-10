@@ -284,6 +284,19 @@ const SENSITIVE_READ_EXCLUSIONS = new Map([
   ['analytics_recording_get',
     'returns one visitor\'s whole visit as they saw it on screen (a session recording\'s replay), and the pages ' +
     'can show their personal details. Reading it silently is not a read-only act; ask every time.'],
+  // 2026-11-10 (Discussions wave S5b; not served yet). Three GETs, read only, whose answer is the hazard: the person's
+  // own direct messages, group messages and private channels, which the other people in them never chose to show an
+  // AI. On NEVER_AUTO_APPROVE (lib/tool-safety.mjs). Until the tool index carries them the served-names filter below
+  // drops them anyway; these entries keep them off the list from the regeneration that brings them in.
+  ['discussion_private_list',
+    'lists the person\'s own direct messages, group messages and private channels. The other people in them never ' +
+    'chose to show them to an AI; ask before every read.'],
+  ['discussion_private_messages',
+    'reads one of the person\'s own direct messages, group messages or private channels. The other people in it ' +
+    'never chose to show it to an AI; ask before every read.'],
+  ['discussion_private_search',
+    'searches the words of the person\'s own direct messages, group messages and private channels. The other people ' +
+    'in them never chose to show them to an AI; ask before every read.'],
 ]);
 
 // The mirror image: a POST that is a pure read. Some routes dispatch reads and
