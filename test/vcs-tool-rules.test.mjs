@@ -116,6 +116,7 @@ test('the version prompts speak plain language: "version", never commit/HEAD/rev
   }
   assert.deepEqual([...ARG_GATED_WRITES.keys()].sort(), [
     'deploy_serve_version',
+    'discussion_channels_bulk_create',
     'discussion_update',
     'history_restore_to_time',
     'project_vcs_commit',
