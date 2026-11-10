@@ -21,7 +21,7 @@ Sep 15-30, not Sep 8-22.
 
 - dsn_feed_sale, the feed square at 1080 x 1080: snapshot first, then a single canvas write moving the headline fill to the cream and the dates line onto the Sep 15-30 window. The thread was resolved only after that write landed, and a fresh frame was exported for the record. This design carries the feed slot of the set; no rebuild was needed.
 - dsn_anim_legacy, the story at 1080 x 1920: snapshot, then the motion rewrite. Entrances now stagger on fade-in and fade-up with a quart-out ease, the call to action lands last on pop with the one allowed pulse loop, and the root timing block is untouched. A frame was exported to confirm the structure; pixels cannot be viewed in this run, so that is a structural check, not an eyeball.
-- dsn_new_1, the Facebook link at 1200 x 630: the one genuinely new design, built from the brand-substituted link template with the walnut sconce photo in the slot. The other two formats came from revising what already existed rather than rebuilding it.
+- dsn_new_1, the Facebook link at 1200 x 630: the one genuinely new design, built from the brand-substituted link template of that size with the walnut sconce photo in the slot. The other two formats are the drafts the brief named, revised in place; no other earlier design was a starting point.
 - All three were published to the library with set_as_featured, the thumbnail path for agent-authored designs. Publishing never dedupes, so each ran exactly once per design.
 - The stray MP4 was registered from its URL, so the story-motion file now has an asset id and can be attached downstream.
 
@@ -46,4 +46,4 @@ until that click.
 ## Filed
 
 - pmt_1 in Brightside Creative Studio carries the set summary and the approval nudge.
-- Branding memory was merged forward, not replaced; the storyboard ledger keeps sb_fall_teaser open until the card is decided.
+- Branding memory was merged forward, not replaced, with one dated line: the owner's own words about the logo on the feed square, quoted with the design id. What this pass made or fixed lives in pmt_1 and in this report, not in memory, and none of it is approved until a person says so. The storyboard ledger keeps sb_fall_teaser open until the card is decided.

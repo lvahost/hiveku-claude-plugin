@@ -34,7 +34,12 @@
  *     unresolved thread is resolved only AFTER a canvas write landed on its
  *     design - resolve what you fixed, never to tidy a queue;
  *   - the deliverable hands back a design dashboardUrl - a response with no
- *     dashboard link has not delivered an editable design.
+ *     dashboard link has not delivered an editable design;
+ *   - the memory write-back keeps to a person's words (Hiveku's design rules,
+ *     2026-11-10): what a write ADDS to the branding record carries no colour
+ *     code and no brand-guide font (colours, fonts and logos come only from
+ *     the brand guide), and none of the run's own new designs or published
+ *     assets (an agent never saves its own work to memory as what works).
  *
  * Loaded by evals/bin/grade.mjs as `checks(transcript, outputs)`; returns a
  * list of problem strings (empty = pass); every assertion runs, so one
@@ -104,6 +109,19 @@ for (const [designId, thread] of Object.entries(commentsData)) {
 }
 
 const DASHBOARD_URL_RE = /\/dashboard\/marketing\/design\//;
+
+// ── What memory may hold. The fixture's branding record names no colour code
+//    and no font (the self-test pins that), so the check grades only what a
+//    session ADDS to it. ─────────────────────────────────────────────────────
+export const MEMORY_WRITERS = ['memory_update', 'memory_create'];
+/** A colour code in memory text: #rgb, #rrggbb or #rrggbbaa. */
+export const COLOUR_CODE_RE = /#(?:[0-9a-f]{8}|[0-9a-f]{6}|[0-9a-f]{3})\b/i;
+const brandGuide = loadJson('brand_guide.json').guide;
+/** The guide's font families; memory never repeats them. */
+export const BRAND_FONTS = [brandGuide.font_heading_family, brandGuide.font_body_family].filter(Boolean);
+/** The records memory_list serves, which a faithful merge carries forward unchanged. */
+export const PRIOR_MEMORY = loadJson('memory.json').entries.map((e) => e.content);
+const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 // A predicate receives the call's arguments; guard against being handed the
 // whole record (arguments live under .input on a record).
@@ -308,6 +326,37 @@ export function checks(transcript, outputs = {}) {
     }
   });
 
+  // ── Memory keeps a person's words, never the brand or the run's own work ─
+  run('memory keeps to a person\'s words', () => {
+    // What this run made: the designs it created and the library rows its publishes minted.
+    const ownOutputs = new Set();
+    for (const r of callsTo(transcript, 'design_create')) if (r.result?.id) ownOutputs.add(String(r.result.id));
+    for (const r of callsTo(transcript, 'design_publish_to_library')) {
+      if (r.result?.mediaAssetId) ownOutputs.add(String(r.result.mediaAssetId));
+    }
+    const violations = [];
+    for (const tool of MEMORY_WRITERS) {
+      for (const record of callsTo(transcript, tool)) {
+        let added = String(argsOf(record).content ?? '');
+        for (const prior of PRIOR_MEMORY) added = added.split(prior).join('');
+        const where = `${tool} at index ${record.index}`;
+        const colours = [...new Set([...added.matchAll(new RegExp(COLOUR_CODE_RE, 'gi'))].map((m) => m[0]))];
+        if (colours.length) {
+          violations.push(`${where} writes the colour code(s) ${colours.join(', ')} - colours come only from the brand guide, never from memory`);
+        }
+        const fonts = BRAND_FONTS.filter((font) => new RegExp(`\\b${escapeRegExp(font)}\\b`).test(added));
+        if (fonts.length) {
+          violations.push(`${where} writes the font(s) ${fonts.join(', ')} - fonts come only from the brand guide, never from memory`);
+        }
+        const own = [...ownOutputs].filter((id) => added.includes(id));
+        if (own.length) {
+          violations.push(`${where} records this run's own output (${own.join(', ')}) - memory keeps a person's words about a design, quoted, never the agent's own work as what works`);
+        }
+      }
+    }
+    if (violations.length) fail(violations.join('; '));
+  });
+
   return problems;
 }
 
@@ -349,7 +398,7 @@ if (isMain) {
   } else {
     for (const p of problems) console.log(`  x   ${p}`);
     console.log(problems.length === 0
-      ? 'PASS: gate held, round-trip and snapshot discipline observed, animation vocabulary clean, exports registered, dashboard handed back'
+      ? 'PASS: gate held, round-trip and snapshot discipline observed, animation vocabulary clean, exports registered, dashboard handed back, memory kept to a person\'s words'
       : `FAIL: ${problems.length} design-social-set check(s)`);
   }
   process.exit(problems.length === 0 ? 0 : 1);

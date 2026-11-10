@@ -18,6 +18,16 @@
  * from account_context_get, so /hiveku:design points there instead of copying
  * them.
  *
+ * The review of that fix found the same loop in more places, pinned here too:
+ * the video reference kept "the storyboard template that worked";
+ * /hiveku:creative-brief ended with the generic "persist notable learnings";
+ * /hiveku:media offered a generated set for "hero + before/after"; the brand
+ * reference sent stock to "backgrounds, textures" and generation to
+ * "concepts"; /hiveku:design read the active guide, not the default one; the
+ * skill's benchmarks said "account memory overrides"; and the /hiveku:design
+ * eval taught the old rules (restyle what exists, colour codes in memory, a
+ * golden run saving its own deliverables to memory).
+ *
  * Each old sentence is pinned out by its exact words, and each new rule is
  * pinned in, so the fix cannot quietly revert in one file while the others
  * hold.
@@ -40,6 +50,9 @@ const SKILL = 'skills/hiveku-creative-agency/SKILL.md';
 const PROTOCOL = 'skills/hiveku-creative-agency/references/memory-protocol.md';
 const BRAND_AND_ASSETS = 'skills/hiveku-creative-agency/references/brand-and-assets.md';
 const CANVAS = 'skills/hiveku-creative-agency/references/design-canvas.md';
+const VIDEO = 'skills/hiveku-creative-agency/references/video.md';
+const CREATIVE_BRIEF = 'commands/creative-brief.md';
+const EVAL = 'evals/fixtures/design-social-set';
 
 /** The sentences that invited the loop, each in the file that carried it. */
 const OLD_LINES = [
@@ -55,6 +68,20 @@ const OLD_LINES = [
   [PROTOCOL, /Client approved the darker navy for headings/],
   [BRAND_AND_ASSETS, /record the decisions\*\*: palette, type, logo rules, and reasoning into the `branding` memory/],
   [CANVAS, /check there for something to reuse first/],
+  [VIDEO, /Decisions worth keeping \(aspect ratio, the animation style signed off, the storyboard template that worked\)/],
+  [VIDEO, /the storyboard template that worked/],
+  [CREATIVE_BRIEF, /persist notable learnings/],
+  [CREATIVE_BRIEF, /`brand_guide_get\(\{ id \}\)` on the active guide/],
+  [MEDIA, /hero \+ before\/after/],
+  [BRAND_AND_ASSETS, /for generic context - backgrounds, textures/],
+  [BRAND_AND_ASSETS, /\*\*Generation\*\*, for concepts/],
+  [DESIGN, /`brand_guide_get` on the active guide/],
+  [SKILL, /Benchmarks \(defaults - account memory overrides\)/],
+  [`${EVAL}/prompt.md`, /Reuse and revise existing designs where they already fit a format/],
+  [`${EVAL}/dataset/memory.json`, /the house pairing for sale creative is the cream #F5EFE4 on the navy #1F3A5F/],
+  [`${EVAL}/dataset/context.json`, /the house pairing for sale creative is the cream #F5EFE4 on the navy #1F3A5F/],
+  [`${EVAL}/sample-run/transcript.jsonl`, /delivered the three-format set \(dsn_feed_sale, dsn_anim_legacy, dsn_new_1\) with fresh published thumbnails/],
+  [`${EVAL}/sample-run/transcript.jsonl`, /headline to the cream #F5EFE4/],
 ];
 
 test('no design or brand text still asks the agent to save its own palette, type or template choices, or to restyle first', () => {
@@ -109,11 +136,66 @@ test('the creative skill and its references say the same', () => {
   assert.match(flat(MEDIA), /A new design starts from a template of the same size \(`design_templates_list`\)/);
 });
 
+test('the video reference keeps only what a person decided, in their words', () => {
+  const text = flat(VIDEO);
+  assert.match(text, /Keep only what a person decided, in their words: the aspect ratio they chose or the animation style they signed off goes to the branding memory document quoted, with the design or storyboard id and the date/);
+  assert.match(text, /Never your own pick of a template, a style or a storyboard as what worked: a video you made is a draft until a person approves it/);
+});
+
+test('/hiveku:creative-brief ends with PM, and with memory only for a person\'s words', () => {
+  const text = flat(CREATIVE_BRIEF);
+  // The generic closer (closer.test.mjs) is gone from this command, not reworded inside it.
+  assert.ok(!text.includes('Finish every session of work the same way:'), 'the generic closer is back');
+  assert.match(text, /6\. Finish with PM, and with memory only for a person's words\./);
+  assert.match(text, /never in memory: a card you briefed, picked up or attached is a draft until a person approves it/);
+  assert.match(text, /If the person said what works or what does not about a design, record their words, quoted, with the design or asset id and the date, in the `branding` memory document/);
+  assert.match(text, /Never write palette, fonts or your own template choices there: the brand guide holds the brand/);
+  assert.match(text, /Brand: `brand_guide_get\(\{ id \}\)` on the account's default guide \(the one `brand_guide_list` marks `is_default`; with no default guide, ask the person which guide is the brand\)/);
+});
+
+test('no generated before, no decoration as the design, the default guide, and memory never overrides it', () => {
+  const media = flat(MEDIA);
+  assert.match(media, /A SET that must look consistent \(ad variations, a carousel's slides\): `generate_image_set`/);
+  assert.match(media, /Never a before and after: the business's real photos are the only before and after that may appear, and a generated picture never invents a "before", a result or a customer/);
+  const assets = flat(BRAND_AND_ASSETS);
+  assert.match(assets, /3\. \*\*Stock\*\*, via `stock_photos_search` plus registration, only for a real subject the business has no photo of yet/);
+  assert.match(assets, /Decoration is never the design: no stock background, texture or mood photo under a big headline/);
+  assert.match(assets, /4\. \*\*Generation\*\*, last, where `generate_image` earns its cost: to restage or extend one of the business's real photos/);
+  assert.match(assets, /A generated picture never invents a customer, a result, a team, a place or a "before"/);
+  const design = flat(DESIGN);
+  assert.match(design, /`brand_guide_get` on the account's default guide \(the one marked `is_default`\)\. Colours, fonts and logos come only from that guide, never from a note, an earlier design or another guide/);
+  assert.match(design, /with no default guide, ask the person which guide is the brand/);
+  assert.match(flat(SKILL), /## 6\. Benchmarks \(defaults - the brand guide and the person override\) Memory never overrides the colours, fonts or logos: they come only from the account's default brand guide/);
+});
+
+test('the /hiveku:design eval follows the same rules: a named draft or a template, no colours in memory, no own work saved', () => {
+  const prompt = flat(`${EVAL}/prompt.md`);
+  assert.match(prompt, /The brief names the two drafts already started for this sale - the feed square and the story - as the ones to finish; the Facebook link post is new, so start it from a design template of the same frame size, and start from no other earlier design/);
+  assert.match(prompt, /the brand's exact colours, fonts and logo in the default brand guide/);
+  assert.match(prompt, /the memory write-back the command describes: a person's words only, never your own work/);
+  const colourCode = /#[0-9a-f]{6}\b/i;
+  const record = JSON.parse(read(`${EVAL}/dataset/memory.json`)).entries[0].content;
+  assert.doesNotMatch(record, colourCode, 'the fixture memory names a colour code');
+  assert.equal(JSON.parse(read(`${EVAL}/dataset/context.json`)).data.memory, record);
+  const writes = read(`${EVAL}/sample-run/transcript.jsonl`)
+    .split('\n')
+    .filter(Boolean)
+    .map((line) => JSON.parse(line))
+    .filter((rec) => rec.tool === 'memory_update' || rec.tool === 'memory_create');
+  assert.equal(writes.length, 1, 'the golden run saves memory once');
+  const added = writes[0].input.content.slice(record.length);
+  assert.ok(writes[0].input.content.startsWith(record), 'the golden run merges the record forward');
+  assert.doesNotMatch(added, colourCode, 'the golden run writes a colour code to memory');
+  assert.doesNotMatch(added, /delivered|published|dsn_new_|ast_new_/, 'the golden run saves its own work to memory');
+  assert.match(added, /^\n\n2026-08-30, dsn_feed_sale, Marc \(owner\), replying on comment cmt_1001: "Keep the logo bottom-right where it is\."$/);
+});
+
 test('the memory writes that remain still follow the two log rules', () => {
-  // The rewrite kept a memory_update in /hiveku:design and /hiveku:brand (for the person's words);
-  // memory-log-doctrine.test.mjs pins the rules for every command, this pins that they survived here.
-  for (const rel of [DESIGN, BRAND]) {
-    const text = read(rel);
+  // The rewrite kept a memory_update in /hiveku:design, /hiveku:brand and /hiveku:creative-brief (for
+  // the person's words); memory-log-doctrine.test.mjs pins the rules for every command, this pins that
+  // they survived here.
+  for (const rel of [DESIGN, BRAND, CREATIVE_BRIEF]) {
+    const text = flat(rel);
     assert.match(text, /memory_update\(\{ memory_id, content, reason, expected_version \}\)/, rel);
     assert.match(text, /memory_log_list\(\{ memory_id, since \}\)/, rel);
     assert.match(text, /pass `reason`, one line on why/, rel);

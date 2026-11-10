@@ -1,5 +1,5 @@
 {
-  "_comment": "account_context_get({domain:'branding'}) response, in the REAL route shape: the Olympus /api/olympus/account-context route wraps the bundle under `data` and returns account / domain / identity / brand / memory / rules / avatars / instructions / has / sections_included. The sale window (Sep 15-30) and the cream-on-navy pairing are planted HERE and in memory, never in the prompt, exactly like ppc-optimize plants its target CPA.",
+  "_comment": "account_context_get({domain:'branding'}) response, in the REAL route shape: the Olympus /api/olympus/account-context route wraps the bundle under `data` and returns account / domain / identity / brand / memory / rules / avatars / instructions / has / sections_included. The sale window (Sep 15-30) is planted HERE and in memory, never in the prompt, exactly like ppc-optimize plants its target CPA. The cream-on-navy pairing lives in the brand guide (data.brand) and the identity, never in memory: colours, fonts and logos come only from the brand guide.",
   "data": {
     "account": {
       "id": "acct_fixture_creative",
@@ -28,7 +28,7 @@
       "is_default": true,
       "is_active": true
     },
-    "memory": "Creative and branding record for Brightside Fixtures. The Fall Warm-Up Sale runs Sep 15-30, in store and online. Brand guide bg_7c1f is the single source for color and type; the house pairing for sale creative is the cream #F5EFE4 on the navy #1F3A5F. Storyboard ledger, recorded at submit time because spend is tracked here: 2026-08-27 sb_fall_teaser, Fall Warm-Up teaser, six scenes, est $5.40, submitted for approval and NOT approved yet; 2026-08-19 sb_summer_recap, Summer clearance recap, five scenes, est $4.10, approved the same day, run completed, result registered as ast_509. Spend ledger: August AI clips used 3 of 20; voiceover seconds used 0. Standing practice: register every design export before attaching it anywhere, and archive designs (status 'archived') rather than expecting a delete tool - none exists.",
+    "memory": "Creative and branding record for Brightside Fixtures. The Fall Warm-Up Sale runs Sep 15-30, in store and online. Brand guide bg_7c1f is the single source for color, type and logos; this record never repeats them. Storyboard ledger, recorded at submit time because spend is tracked here: 2026-08-27 sb_fall_teaser, Fall Warm-Up teaser, six scenes, est $5.40, submitted for approval and NOT approved yet; 2026-08-19 sb_summer_recap, Summer clearance recap, five scenes, est $4.10, approved the same day, run completed, result registered as ast_509. Spend ledger: August AI clips used 3 of 20; voiceover seconds used 0. Standing practice: register every design export before attaching it anywhere, and archive designs (status 'archived') rather than expecting a delete tool - none exists.",
     "memory_updated_at": "2026-08-27T16:45:00Z",
     "rules": [
       {

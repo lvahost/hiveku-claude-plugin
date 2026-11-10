@@ -11,8 +11,10 @@ Hiveku's design rules come first: `account_context_get` (step 1) returns them in
 They apply to every account and outrank its memory, so follow them in every step below.
 
 1. **Brand first.** `account_context_get({ domain: 'branding' })` - there is NO `creative` domain -
-   plus `brand_guide_get` on the active guide. On a department-scoped key `account_context_get` can
-   answer tool-not-found; that is scope, not an outage - hydrate through
+   plus `brand_guide_get` on the account's default guide (the one marked `is_default`). Colours,
+   fonts and logos come only from that guide, never from a note, an earlier design or another
+   guide; with no default guide, ask the person which guide is the brand. On a department-scoped
+   key `account_context_get` can answer tool-not-found; that is scope, not an outage - hydrate through
    `talk_to_department({ domain: 'branding' })` instead and say which path you used.
 2. **Start from a template of the same size.** `design_templates_list` - the 58-template library
    already substituted with the account's brand guide, each template carrying a ready-to-use
