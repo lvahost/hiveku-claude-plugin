@@ -821,8 +821,4 @@ export const PENDING_TOOLS = new Map([
   // Hiveku app's own key alone and the index is read with an agent key, so it stays here for good, as the SOCIAL-DESKTOP
   // writes do.
   ['project_vcs_ai_review_set', { since: '2026-11-10', batch: 'VCS-AI-REVIEW' }],
-  // HELPDESK-AWAY (2026-11-11, HK-1504): the help desk away message, on the ask list and LIVE_CHANGE_WRITES ahead of the
-  // MCP release that serves it (the MCP's ask-first gate holds that release until this plugin names it). Delete it once
-  // the regenerated index carries it.
-  ['helpdesk_away_reply_set', { since: '2026-11-11', batch: 'HELPDESK-AWAY' }],
 ]);
