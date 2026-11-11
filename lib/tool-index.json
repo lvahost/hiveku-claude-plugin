@@ -3208,7 +3208,7 @@
       "dept": "crm",
       "method": "GET",
       "timeoutMs": null,
-      "description": "Single-call engagement snapshot for one contact: emails sent/received, opens/clicks, meetings/calls/notes/tasks, last-inbound/outbound timestamps, ratios, active-sequence list. Read-only."
+      "description": "Single-call engagement snapshot for one contact: emails sent/received, opens/clicks, meetings/calls/notes/tasks, last-inbound/outbound timestamps, ratios, active-sequence list. opens and clicks count every event; unique_opens and unique_clicks count each sent email once, and the ratios use them, so open_to_send is never above 1. Read-only."
     },
     {
       "name": "crm_contact_feed_extras",
@@ -3264,7 +3264,7 @@
       "dept": "crm",
       "method": "POST",
       "timeoutMs": null,
-      "description": "Recompute + persist a contact's lead_score from the last 30 days of engagement. Writes lead_score, lead_score_reason, lead_score_updated_at. Returns the new score (0-100), a reason summary, and the full component breakdown. Same weights as the sales DAO."
+      "description": "Recompute + persist a contact's lead_score from the last 30 days of engagement. Writes lead_score, lead_score_reason, lead_score_updated_at. Returns the new score (0-100), a reason summary, and the full component breakdown. Counts email opens, clicks and replies, meetings, sms_replies (a text from the contact: +15 each, at most 30; texts sent to them score nothing) and calls_connected (a call they were on: answered or handled by the AI, or logged by hand and marked done; +10 each, at most 30). Same weights as the sales DAO."
     },
     {
       "name": "crm_contact_sequences_list",
@@ -4328,7 +4328,7 @@
       "dept": "crm",
       "method": "GET",
       "timeoutMs": null,
-      "description": "Pipeline conversion funnel — counts and conversion rates per stage. Optional pipeline_id; omitted = all pipelines."
+      "description": "Pipeline conversion funnel — counts and conversion rates per stage. Optional pipeline_id; omitted = the account's default pipeline, named in the answer's pipeline_id."
     },
     {
       "name": "crm_report_loss_reasons",
@@ -4342,14 +4342,14 @@
       "dept": "crm",
       "method": "GET",
       "timeoutMs": null,
-      "description": "Pipeline summary — open deal counts and weighted/total $ per stage. Optional pipeline_id."
+      "description": "Pipeline summary — open deal counts and weighted/total $ per stage. Optional pipeline_id; omitted = the account's default pipeline, named in the answer's pipeline_id."
     },
     {
       "name": "crm_report_stage_transitions",
       "dept": "crm",
       "method": "GET",
       "timeoutMs": null,
-      "description": "Stage-transition events (deal movements) in a date range. Useful for spotting bottlenecks."
+      "description": "Stage-transition events (deal movements) in a date range. Useful for spotting bottlenecks. Optional pipeline_id; omitted = the account's default pipeline (every pipeline when the account has none)."
     },
     {
       "name": "crm_resume_sequence_enrollment",
@@ -4370,7 +4370,7 @@
       "dept": "crm",
       "method": "GET",
       "timeoutMs": null,
-      "description": "Step-level performance roll-up for one sequence: per-step sent / opens / open_rate / clicks / click_rate / unsubscribes / bounces. Opens and clicks are UNIQUE per enrollment per step, so one recipient refetching the tracking pixel five times is one open. Plus totals and exit-reason breakdown. Rates are not capped: `sent` counts logged send activities, and those can be deleted, so a rate above 100 means the denominator lost rows and the figure should be investigated rather than quoted. Open rate is an open-PIXEL rate — Apple Mail Privacy Protection and security scanners fetch pixels without a human reading anything, so treat it as an upper bound and lead with replies when reporting to a client."
+      "description": "Step-level performance roll-up for one sequence: per-step sent / opens / open_rate / clicks / click_rate / unsubscribes / bounces. Opens and clicks are UNIQUE per enrollment per step, so one recipient refetching the tracking pixel five times is one open. Plus totals and exit-reason breakdown. Rates are not capped: `sent` counts logged send activities (email and SMS steps), and those can be deleted, so a rate above 100 means the denominator lost rows and the figure should be investigated rather than quoted. Open rate is an open-PIXEL rate — Apple Mail Privacy Protection and security scanners fetch pixels without a human reading anything, so treat it as an upper bound and lead with replies when reporting to a client."
     },
     {
       "name": "crm_sequence_clone",
