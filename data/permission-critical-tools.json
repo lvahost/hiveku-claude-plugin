@@ -5,8 +5,8 @@
     "mcp__plugin_hiveku_hk__",
     "mcp__hiveku__"
   ],
-  "plugin_version": "0.27.252",
-  "count": 704,
+  "plugin_version": "0.27.253",
+  "count": 708,
   "tools": [
     {
       "name": "deploy_site",
@@ -1242,6 +1242,26 @@
       "name": "discussion_delete",
       "method": "DELETE",
       "why_gated": "deletes a Discussions channel for everyone, with its whole history (every message, reply, reaction and file card), and workspaces it is shared with lose it too; there is no undo"
+    },
+    {
+      "name": "discussion_import_start",
+      "method": "POST",
+      "why_gated": "begins an upload of the whole company's chat history into Hiveku: a chat history export holds the team's messages and its people's names and emails. Only an owner or admin may start one"
+    },
+    {
+      "name": "discussion_import_run",
+      "method": "POST",
+      "why_gated": "brings up to 500,000 messages from a chat history export into new channels of this workspace, which the whole team can read, every message under its own author and at its own time"
+    },
+    {
+      "name": "discussion_import_cancel",
+      "method": "POST",
+      "why_gated": "stops a chat history import: before its run the uploaded file is deleted, and during its run what came over so far stays"
+    },
+    {
+      "name": "discussion_import_undo",
+      "method": "POST",
+      "why_gated": "permanently deletes, for everyone, every channel and message a chat history import brought, with anything people posted in those channels since; there is no undo"
     },
     {
       "name": "pm_project_leave",
