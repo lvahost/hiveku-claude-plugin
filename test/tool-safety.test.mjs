@@ -1290,6 +1290,7 @@ const DEPARTMENT_APPROVALS_THAT_ASK = [
   'crm_delete_deal',
   'crm_delete_sequence',
   'crm_delete_custom_field',
+  'helpdesk_ticket_field_delete',
   'crm_delete_tag',
   'crm_delete_email_template',
   'crm_contacts_bulk_create',
