@@ -14,7 +14,8 @@
  * in order through a fresh tools instance, and - the half that matters -
  * prove the transcript hook FAILS a preset-shaped design_update, a gate
  * crossing, a blind canvas write, an unregistered MP4 export, resolve
- * indiscipline, and a report with no dashboardUrl.
+ * indiscipline, a report with no dashboardUrl, and a memory write-back that
+ * repeats a colour code or a brand font or records the run's own work.
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -40,6 +41,8 @@ const {
   LOOP_VALUES,
   DEAD_ANIMATION_KEYS,
   ANIMATION_KEYS,
+  COLOUR_CODE_RE,
+  BRAND_FONTS,
 } = await import(pathToFileURL(path.join(FIXTURE, 'checks.mjs')).href);
 const { loadTranscript } = await import(pathToFileURL(path.join(EVALS, 'lib', 'transcript.mjs')).href);
 
@@ -238,6 +241,22 @@ test('design-social-set: the ledger names both boards, exactly one is unapproved
   assert.deepEqual(pipelines.map((p) => p.pipelineId).sort(), ['sb_fall_teaser', 'sb_summer_recap']);
 });
 
+test('design-social-set: the branding record names no colour code and no font - the brand guide holds them', () => {
+  // Hiveku's design rules: colours, fonts and logos come only from the default
+  // brand guide. The record used to carry "the cream #F5EFE4 on the navy
+  // #1F3A5F", which taught a session that memory is where colours live. The
+  // memory check in checks.mjs grades what a session ADDS, so the record it
+  // starts from must be clean.
+  const memoryContent = loadJson('dataset', 'memory.json').entries[0].content;
+  assert.doesNotMatch(memoryContent, COLOUR_CODE_RE);
+  assert.deepEqual(BRAND_FONTS, ['Archivo', 'Inter'], 'the fonts come from the brand guide');
+  for (const font of BRAND_FONTS) assert.ok(!memoryContent.includes(font), `the record names the font ${font}`);
+  assert.match(memoryContent, /Brand guide bg_7c1f is the single source for color, type and logos; this record never repeats them\./);
+  // The colours stay where they belong: the guide (and the client's own comment).
+  assert.equal(loadJson('dataset', 'brand_guide.json').guide.color_background, '#F5EFE4');
+  assert.equal(loadJson('dataset', 'brand_guide.json').guide.is_default, true);
+});
+
 // ── Answer-key hygiene ──────────────────────────────────────────────────────
 test('design-social-set: every expected id exists in the dataset; must/must_not disjoint; every trap names its reason', () => {
   const designsData = loadJson('dataset', 'designs.json');
@@ -397,10 +416,9 @@ test('design-social-set: the golden transcript is an in-order replay of tools.mj
     assert.ok(line.tool in tools, line.tool);
     assert.deepEqual(tools[line.tool](structuredClone(line.input)), line.result, `${line.tool} result is not an in-order replay of tools.mjs`);
   }
-  // The dead keys occur in READS (the seed served back) and in the memory
-  // write-back PROSE describing the fix - never inside a canvas the session
-  // wrote. The animation gate in checks.mjs (exercised below) enforces the
-  // written-canvas half; this pins the golden itself.
+  // The dead keys occur only in READS (the seed served back) - never inside a
+  // canvas the session wrote. The animation gate in checks.mjs (exercised
+  // below) enforces the written-canvas half; this pins the golden itself.
   for (const line of lines) {
     if (!(line.tool in { design_update: 1, design_create: 1, design_export_image: 1, design_export_mp4: 1 })) continue;
     const payload = line.input.canvasData ?? line.input.initialCanvasData ?? line.input.canvas_json;
@@ -577,6 +595,74 @@ test('design-social-set: the hook FAILS resolve indiscipline and a report with n
   problems = checks(goldenTranscript(), { report: 'All done.', findings: goldenFindings() });
   assert.equal(problems.length, 1, problems.join('\n'));
   assert.match(problems[0], /no design dashboardUrl/);
+});
+
+// ── Memory keeps a person's words (Hiveku's design rules, 2026-11-10) ───────
+/** The golden transcript with its one memory_update carrying `content` instead. */
+function withMemoryWrite(content) {
+  const records = fs
+    .readFileSync(path.join(FIXTURE, 'sample-run', 'transcript.jsonl'), 'utf8')
+    .split('\n')
+    .filter(Boolean)
+    .map((l) => JSON.parse(l));
+  const writes = records.filter((rec) => rec.tool === 'memory_update');
+  assert.equal(writes.length, 1, 'the golden saves memory once');
+  writes[0].input.content = content;
+  const file = path.join(tmpDir(), 'transcript.jsonl');
+  fs.writeFileSync(file, `${records.map((rec) => JSON.stringify(rec)).join('\n')}\n`);
+  return loadTranscript(file);
+}
+
+test('design-social-set: the golden write-back is the record merged forward plus one quoted line from a person', () => {
+  const record = loadJson('dataset', 'memory.json').entries[0].content;
+  const writes = goldenTranscript().filter((r) => r.name === 'memory_update');
+  assert.equal(writes.length, 1);
+  const content = writes[0].input.content;
+  assert.ok(content.startsWith(`${record}\n\n`), 'the record is merged forward, not replaced');
+  assert.equal(
+    content.slice(record.length + 2),
+    '2026-08-30, dsn_feed_sale, Marc (owner), replying on comment cmt_1001: "Keep the logo bottom-right where it is."',
+  );
+  // The quote is the person's own words, from his reply on that design.
+  const thread = loadJson('dataset', 'comments.json').dsn_feed_sale.find((c) => c.id === 'cmt_1001');
+  assert.ok(thread.replies[0].commentText.includes('Keep the logo bottom-right where it is.'));
+  assert.equal(thread.replies[0].createdAt.slice(0, 10), '2026-08-30');
+});
+
+test('design-social-set: the hook FAILS a write-back that repeats colours or fonts or records the run\'s own work', () => {
+  const base = { report: goldenReport(), findings: goldenFindings() };
+  const record = loadJson('dataset', 'memory.json').entries[0].content;
+  // The golden's old write-back, word for word: the agent's own account of its pass.
+  const oldPass =
+    "2026-09-01 pass: worked comment cmt_1001 on dsn_feed_sale (headline to the cream #F5EFE4, dates corrected to Sep 15-30), rewrote dsn_anim_legacy's animation from the retired preset/delay_ms keys to the renderer schema, registered dsn_story_motion's story-motion MP4 export (was exported but unregistered), delivered the three-format set (dsn_feed_sale, dsn_anim_legacy, dsn_new_1) with fresh published thumbnails. sb_fall_teaser is still awaiting approval; no clips generated, spend unchanged at 3 of 20. PM task pmt_1.";
+  let problems = checks(withMemoryWrite(`${record}\n\n${oldPass}`), base);
+  assert.equal(problems.length, 1, problems.join('\n'));
+  assert.match(problems[0], /^memory keeps to a person's words: memory_update at index 34 /);
+  assert.match(problems[0], /writes the colour code\(s\) #F5EFE4 - colours come only from the brand guide/);
+  assert.match(problems[0], /records this run's own output \(dsn_new_1\)/);
+  // The record's old brand line: colour codes in memory fail even when carried forward.
+  const oldRecord = record.replace(
+    'Brand guide bg_7c1f is the single source for color, type and logos; this record never repeats them.',
+    'Brand guide bg_7c1f is the single source for color and type; the house pairing for sale creative is the cream #F5EFE4 on the navy #1F3A5F.',
+  );
+  assert.notEqual(oldRecord, record);
+  problems = checks(withMemoryWrite(oldRecord), base);
+  assert.equal(problems.length, 1, problems.join('\n'));
+  assert.match(problems[0], /writes the colour code\(s\) #F5EFE4, #1F3A5F/);
+  // A brand font, and a library row this run's publish minted.
+  problems = checks(withMemoryWrite(`${record}\n\nHeadlines in Archivo worked; the link card is live as ast_new_4.`), base);
+  assert.equal(problems.length, 1, problems.join('\n'));
+  assert.match(problems[0], /writes the font\(s\) Archivo - fonts come only from the brand guide/);
+  assert.match(problems[0], /records this run's own output \(ast_new_4\)/);
+  // memory_create is graded the same way.
+  const created = appendedTranscript([{
+    ts: NOW, tool: 'memory_create',
+    input: { type: 'memory', name: 'video-ledger', content: 'Sale accent #E8A13D.' },
+    result: { ok: true, memory_id: 'mem_new_video-ledger' },
+  }]);
+  problems = checks(created, base);
+  assert.equal(problems.length, 1, problems.join('\n'));
+  assert.match(problems[0], /memory_create at index 35 writes the colour code\(s\) #E8A13D/);
 });
 
 // ── findings-check over the traps ───────────────────────────────────────────

@@ -58,7 +58,7 @@ IMAGES - cheap, iterate freely, but metered:
   featured image and its alt text. `media_image_quota` first, count confirmed (`max_images` 1-8,
   default 4); a run that hits the allowance returns what it made plus a warning. Contract:
   hiveku-content-agency `references/media-and-visuals.md`.
-- A SET that must look consistent (ad variations, hero + before/after, carousel):
+- A SET that must look consistent (ad variations, a carousel's slides):
   `generate_image_set` (up to 10 prompts, one shared brand context). Top-level `use_brand` is the
   batch default (a per-prompt `use_brand` beats it either way) and top-level `target_width` /
   `target_height` frame every prompt without its own - a per-prompt pair REPLACES the top-level pair
@@ -66,7 +66,9 @@ IMAGES - cheap, iterate freely, but metered:
   `brand_applied`; per-prompt failures land in `errors[]` instead of failing the batch (the status is
   201 with any success, 502 only when all failed - read `summary` and `errors[]`, not the status).
   Load `account_context_get({ domain: 'branding' })` first and write all prompts from the same visual
-  language (there is no `creative` domain - `branding` is the visual-system one).
+  language (there is no `creative` domain - `branding` is the visual-system one). Never a before and
+  after: the business's real photos are the only before and after that may appear, and a generated
+  picture never invents a "before", a result or a customer.
 - Stock: `stock_photos_search({ query, count, orientation })` returns `{ url, thumbnail, photographer,
   source, attribution }` - it SAVES NOTHING. To land a stock photo in the Media Library, register the
   chosen url with `media_library_register_external_url({ file_url, source_type: 'pexels', title,
@@ -214,8 +216,9 @@ graphics, carousels, ad variations):
   it. Nothing dedupes and a timeout may still land the render, so call it ONCE and never retry
   blindly; `design_export_image` + `media_library_register_external_url` is the lane when you need a
   specific frame instead.
-- `design_list` / `design_get` find an existing design to restyle instead of rebuilding it. The
-  deeper canvas round-trip (comments, versions, self-review) is /hiveku:design.
+- A new design starts from a template of the same size (`design_templates_list`); `design_list` /
+  `design_get` find an earlier design to restyle only when the person names it. The deeper canvas
+  round-trip (comments, versions, self-review) is /hiveku:design.
 - The `marketing_media_*` / `marketing_design_*` twins are the same routes surfaced for a different
   key profile: prefer `media_*` / `design_*`, and reach for a twin only when a scoped key answers
   tool-not-found.

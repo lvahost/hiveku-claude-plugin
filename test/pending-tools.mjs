@@ -562,7 +562,7 @@
  *   test/permission-critical.test.mjs. The server refuses the three reads inside hiveku_batch. Release step, after the
  *   MCP deploy: regenerate the index and the read-only list from the live server, then delete these entries.
  *     DISCUSSIONS-S5      discussion_channels_bulk_create, discussion_private_list, discussion_private_messages,
- *                         discussion_private_search.
+ *                         discussion_private_search. Landed 2026-11-10 (MCP #497, live at ac133a24fce8); entries deleted.
  */
 const SEO_SINCE = '2026-08-30';
 const seo = (batch) => ({ since: SEO_SINCE, batch });
@@ -809,17 +809,8 @@ export const PENDING_TOOLS = new Map([
   ['social_account_disconnect', { since: '2026-11-08', batch: 'SOCIAL-DESKTOP' }],
   ['social_accounts_activate', { since: '2026-11-08', batch: 'SOCIAL-DESKTOP' }],
   ['social_accounts_import_gbp', { since: '2026-11-08', batch: 'SOCIAL-DESKTOP' }],
-  // DISCUSSIONS-S5 (2026-11-10): many channels at once, and the person's own conversations, read only. They ask from
-  // this release on, before the MCP release serves them (see the batch note above). Delete once the index carries them.
-  ['discussion_channels_bulk_create', { since: '2026-11-10', batch: 'DISCUSSIONS-S5' }],
-  ['discussion_private_list', { since: '2026-11-10', batch: 'DISCUSSIONS-S5' }],
-  ['discussion_private_messages', { since: '2026-11-10', batch: 'DISCUSSIONS-S5' }],
-  ['discussion_private_search', { since: '2026-11-10', batch: 'DISCUSSIONS-S5' }],
-  // CONTENT-DESKTOP (2026-11-08): the desktop app's Content page writes. Each MCP description says ASK THE PERSON
-  // FIRST, and the MCP's build fails until this plugin names them (ask-first-tools-in-plugin.test.ts), so they are on
-  // the ask list and LIVE_CHANGE_WRITES from this release, before the MCP release serves them. The MCP serves them to
-  // a person's own key, so the index regenerated after that release carries them: delete these entries then.
-  ['content_editor_save', { since: '2026-11-08', batch: 'CONTENT-DESKTOP' }],
-  ['content_archive', { since: '2026-11-08', batch: 'CONTENT-DESKTOP' }],
-  ['content_unpublish', { since: '2026-11-08', batch: 'CONTENT-DESKTOP' }],
+  // VCS-AI-REVIEW (2026-11-10): a site's AI review switch, on the ask list and LIVE_CHANGE_WRITES. The MCP serves it to the
+  // Hiveku app's own key alone and the index is read with an agent key, so it stays here for good, as the SOCIAL-DESKTOP
+  // writes do.
+  ['project_vcs_ai_review_set', { since: '2026-11-10', batch: 'VCS-AI-REVIEW' }],
 ]);

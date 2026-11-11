@@ -7,14 +7,16 @@ creative set - an Instagram feed square (1080x1080), an Instagram story
 new, work the studio's outstanding queue: client comment threads on existing
 designs, designs whose motion will not actually render, exports that never
 reached the Media Library, and the storyboard ledger kept in the branding
-memory. Reuse and revise existing designs where they already fit a format;
-build new only where nothing fits. Overrides for this eval run only:
+memory. The brief names the two drafts already started for this sale - the
+feed square and the story - as the ones to finish; the Facebook link post is
+new, so start it from a design template of the same frame size, and start
+from no other earlier design. Overrides for this eval run only:
 
 - The `hk` tools are live - call them exactly as the command describes. They
   are served from a fixture; treat their answers as the account's truth. The
-  campaign's window and the brand's exact tokens are on record in the account
-  context, the brand guide, and the branding memory - read them there, do not
-  ask and do not invent.
+  campaign's window is on record in the account context and the branding
+  memory, and the brand's exact colours, fonts and logo in the default brand
+  guide - read them there, do not ask and do not invent.
 - There is no human in the loop, so nothing that spends, destroys, or
   publishes outward may run: `media_delete`, `brand_guide_delete`,
   `brand_guide_purge`, `marketing_generate_video`,
@@ -30,7 +32,8 @@ build new only where nothing fits. Overrides for this eval run only:
 - The design-lane writes ARE in scope and expected: reading and updating
   canvases (with the documented read-then-write and snapshot discipline),
   resolving only the comment threads you actually fixed, exporting frames,
-  publishing and registering outputs, PM tasks, and the memory write-back.
+  publishing and registering outputs, PM tasks, and the memory write-back
+  the command describes: a person's words only, never your own work.
 - No local `hiveku-data/` files exist and the skill reference files are not
   reachable in this run - the command text above and the tool results are
   your whole context. Exported PNGs cannot be opened and viewed here, so say
