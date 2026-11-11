@@ -6,7 +6,7 @@
     "mcp__hiveku__"
   ],
   "plugin_version": "0.27.247",
-  "count": 671,
+  "count": 672,
   "tools": [
     {
       "name": "deploy_site",
@@ -187,6 +187,11 @@
       "name": "project_vcs_pr_merge",
       "method": "POST",
       "why_gated": "merges a pull request (atomic branch merge)"
+    },
+    {
+      "name": "project_vcs_ai_review_set",
+      "method": "PATCH",
+      "why_gated": "switches Hiveku AI's automatic review of every pull request into Your site: each review uses AI credits and runs as the person who switched it on. Hiveku takes it from the Hiveku app's own key only"
     },
     {
       "name": "github_pr_merge",

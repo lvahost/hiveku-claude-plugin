@@ -154,6 +154,7 @@ Put this in `.claude/settings.json` (per project) or `~/.claude/settings.json` (
       "mcp__plugin_hiveku_hk__project_vcs_commit",
       "mcp__plugin_hiveku_hk__project_vcs_merge",
       "mcp__plugin_hiveku_hk__project_vcs_pr_merge",
+      "mcp__plugin_hiveku_hk__project_vcs_ai_review_set",
       "mcp__plugin_hiveku_hk__github_pr_merge",
       "mcp__plugin_hiveku_hk__project_vcs_env_bind",
       "mcp__plugin_hiveku_hk__project_vcs_branch_delete",
