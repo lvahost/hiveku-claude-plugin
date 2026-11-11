@@ -1116,6 +1116,8 @@ const PROJECTS_SHARE_AND_DELETE_THAT_ASK = ['pm_project_share', 'pm_project_unsh
  * Hiveku Meet and Discussions (2026-11-01, MCP #374, #367, #349 and #227, all served), in three groups: the webinar
  * invites, cancel and delete (Hiveku Meet decision 2); the meeting and call recording deletes (the Hiveku app's own key
  * alone on the server, kept here as a second guard); and a channel's share, unshare and delete (the Discussions plan).
+ * A chat history import's start, run, cancel and undo joined them on 2026-11-11 (Discussions wave S5c): an export holds
+ * the whole company's messages, and the run and the undo write or delete channels the whole team reads.
  */
 const MEET_DISCUSSIONS_WRITES_THAT_ASK = [
   'marketing_webinar_invite',
@@ -1128,6 +1130,10 @@ const MEET_DISCUSSIONS_WRITES_THAT_ASK = [
   'discussion_channel_share_request_cancel',
   'discussion_channel_unshare',
   'discussion_delete',
+  'discussion_import_start',
+  'discussion_import_run',
+  'discussion_import_cancel',
+  'discussion_import_undo',
 ];
 /**
  * A webinar's edit (Abe, 2026-11-01): moving its time emails every registrant, and the whole audience once its invites
@@ -1454,7 +1460,7 @@ test('the Meet and Discussions sends, shares and deletes ask on a direct call an
   assert.match(ALWAYS_ASK_WRITES.get('marketing_webinar_invite'), /whole audience/);
   assert.match(ALWAYS_ASK_WRITES.get('marketing_webinar_invite'), /cannot be taken back/);
   assert.match(ALWAYS_ASK_WRITES.get('marketing_webinar_cancel'), /emails every registrant/);
-  for (const name of ['marketing_webinar_cancel', 'marketing_webinar_delete', 'meet_recording_delete', 'discussion_recording_delete', 'discussion_delete']) {
+  for (const name of ['marketing_webinar_cancel', 'marketing_webinar_delete', 'meet_recording_delete', 'discussion_recording_delete', 'discussion_delete', 'discussion_import_undo']) {
     assert.match(ALWAYS_ASK_WRITES.get(name), /there is no undo/, name);
   }
   for (const name of ['meet_recording_delete', 'discussion_recording_delete']) {
@@ -1466,9 +1472,19 @@ test('the Meet and Discussions sends, shares and deletes ask on a direct call an
   assert.match(ALWAYS_ASK_WRITES.get('discussion_channel_share_request_cancel'), /still waiting/);
   assert.match(ALWAYS_ASK_WRITES.get('discussion_channel_unshare'), /lose the channel/);
   assert.match(ALWAYS_ASK_WRITES.get('discussion_delete'), /for everyone, with its whole history/);
+  assert.match(ALWAYS_ASK_WRITES.get('discussion_import_start'), /whole company's chat history/);
+  assert.match(ALWAYS_ASK_WRITES.get('discussion_import_run'), /up to 500,000 messages/);
+  assert.match(ALWAYS_ASK_WRITES.get('discussion_import_run'), /the whole team can read/);
+  assert.match(ALWAYS_ASK_WRITES.get('discussion_import_cancel'), /before its run the uploaded file is deleted/);
+  assert.match(ALWAYS_ASK_WRITES.get('discussion_import_undo'), /^permanently deletes, for everyone, every channel and message/);
   // Decision 2: agents may list and create Marketing webinars unasked (the edit asks since 2026-11-01, pinned below).
   // The reads beside these writes stay unasked too.
   for (const name of ['marketing_webinars_list', 'marketing_webinar_get', 'marketing_webinar_attendees', 'marketing_webinar_create', 'meet_recording_get', 'discussion_recordings_list', 'discussion_recording_get', 'discussion_channel_sharing_get', 'discussion_leave']) {
+    assert.equal(ALWAYS_ASK_WRITES.has(name), false, `${name} must not ask on every call`);
+  }
+  // A chat history import's reads, the upload's finish (it starts a practice run that writes nothing) and its people
+  // matching (it changes only who a not-yet-run import writes as) do not ask either.
+  for (const name of ['discussion_import_list', 'discussion_import_status', 'discussion_import_uploaded', 'discussion_import_people_list', 'discussion_import_people_map']) {
     assert.equal(ALWAYS_ASK_WRITES.has(name), false, `${name} must not ask on every call`);
   }
 });

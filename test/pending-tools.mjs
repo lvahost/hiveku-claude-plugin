@@ -563,6 +563,14 @@
  *   MCP deploy: regenerate the index and the read-only list from the live server, then delete these entries.
  *     DISCUSSIONS-S5      discussion_channels_bulk_create, discussion_private_list, discussion_private_messages,
  *                         discussion_private_search. Landed 2026-11-10 (MCP #497, live at ac133a24fce8); entries deleted.
+ *
+ *   Discussions wave S5c (2026-11-11): bringing a team's chat history over from a chat history export. The four writes
+ *   that ask (the start, the run, the cancel and the undo) are on the ask list and on ALWAYS_ASK_WRITES
+ *   (lib/tool-safety.mjs) from this release on, before the MCP release serves them (MCP #511). The server takes them
+ *   from a key with a person behind it, so the index will carry them. Release step, after the MCP deploy: regenerate
+ *   the index and the read-only list from the live server, then delete these entries.
+ *     DISCUSSIONS-S5C     discussion_import_start, discussion_import_run, discussion_import_cancel,
+ *                         discussion_import_undo.
  */
 const SEO_SINCE = '2026-08-30';
 const seo = (batch) => ({ since: SEO_SINCE, batch });
@@ -813,4 +821,10 @@ export const PENDING_TOOLS = new Map([
   // Hiveku app's own key alone and the index is read with an agent key, so it stays here for good, as the SOCIAL-DESKTOP
   // writes do.
   ['project_vcs_ai_review_set', { since: '2026-11-10', batch: 'VCS-AI-REVIEW' }],
+  // DISCUSSIONS-S5C (2026-11-11): a chat history import's four writes that ask, on the ask list and ALWAYS_ASK_WRITES
+  // before the MCP release serves them. Delete these once the regenerated index carries them.
+  ['discussion_import_start', { since: '2026-11-11', batch: 'DISCUSSIONS-S5C' }],
+  ['discussion_import_run', { since: '2026-11-11', batch: 'DISCUSSIONS-S5C' }],
+  ['discussion_import_cancel', { since: '2026-11-11', batch: 'DISCUSSIONS-S5C' }],
+  ['discussion_import_undo', { since: '2026-11-11', batch: 'DISCUSSIONS-S5C' }],
 ]);
