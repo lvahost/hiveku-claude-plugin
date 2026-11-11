@@ -7,9 +7,15 @@
  * bucket or function, a wider row security rule, a server function run for real, a sign-in link for a user of the
  * site's app. Those are permanent deletes and access changes, which always wait for a person.
  *
- * Every database_execute and supabase_* tool the index carries must be sorted into WRITES or READS below, so a write
+ * Every database_* and supabase_* tool the index carries must be sorted into WRITES or READS below, so a write
  * added later cannot run unasked the way these did: the index regenerated for a release fails this test until the
- * new name is sorted. WRITES ask; READS stay as they were (none is pre-approved, since each is a POST).
+ * new name is sorted. WRITES ask; READS stay as they were, each named here (the supabase reads are POSTs, so none
+ * is pre-approved).
+ *
+ * The 2026-11-10 review added three: database_provision and database_repair write the connections the live site
+ * runs on (repair gives the database a new password at once), and supabase_storage_object_signed_url changes
+ * nothing but answers with a link that opens a private file for anyone, for up to 7 days, which the builder treats
+ * as minting a credential (its route leaves it out of the read set).
  *
  * Run: node --test test/database-and-supabase-writes-ask.test.mjs
  */
@@ -27,6 +33,8 @@ import {
 
 const WRITES = [
   'database_execute',
+  'database_provision',
+  'database_repair',
   'supabase_migration_apply',
   'supabase_table_row_insert',
   'supabase_table_row_update',
@@ -50,6 +58,7 @@ const WRITES = [
   'supabase_storage_object_move',
   'supabase_storage_object_copy',
   'supabase_storage_object_delete',
+  'supabase_storage_object_signed_url',
   'supabase_edge_functions_deploy',
   'supabase_edge_functions_delete',
   'supabase_edge_functions_invoke',
@@ -57,6 +66,10 @@ const WRITES = [
 ];
 
 const READS = [
+  'database_describe',
+  'database_query',
+  'database_status',
+  'database_tables',
   'supabase_auth_config_get',
   'supabase_auth_user_get',
   'supabase_auth_users_list',
@@ -67,7 +80,6 @@ const READS = [
   'supabase_policies_list',
   'supabase_storage_list',
   'supabase_storage_object_download',
-  'supabase_storage_object_signed_url',
   'supabase_storage_objects_list',
   'supabase_table_rows_list',
 ];
@@ -77,8 +89,8 @@ const critical = JSON.parse(readFileSync(new URL('../data/permission-critical-to
 const gated = new Set(critical.tools.map((t) => t.name));
 const decision = (r) => r?.hookSpecificOutput?.permissionDecision ?? null;
 
-test('every database_execute and supabase_* tool in the index is sorted into WRITES or READS', () => {
-  const inIndex = index.map((t) => t.name).filter((n) => n === 'database_execute' || n.startsWith('supabase_'));
+test('every database_* and supabase_* tool in the index is sorted into WRITES or READS', () => {
+  const inIndex = index.map((t) => t.name).filter((n) => n.startsWith('database_') || n.startsWith('supabase_'));
   const unsorted = inIndex.filter((n) => !WRITES.includes(n) && !READS.includes(n));
   assert.deepEqual(
     unsorted,
@@ -121,6 +133,9 @@ test('the prompts say what is at stake', () => {
   assert.match(why('supabase_policy_create'), /read or change rows that were private/);
   assert.match(why('supabase_auth_user_generate_link'), /opens or changes that person's account/);
   assert.match(why('supabase_edge_functions_invoke'), /for real/);
+  assert.match(why('database_provision'), /the next deploy of each runs on that database/);
+  assert.match(why('database_repair'), /the old password stops working/);
+  assert.match(why('supabase_storage_object_signed_url'), /for anyone who holds it, for up to 7 days/);
 });
 
 test('NEGATIVE CONTROL: the reads stay off the ask list and the hook', () => {

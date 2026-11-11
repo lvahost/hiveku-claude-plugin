@@ -6,7 +6,7 @@
     "mcp__hiveku__"
   ],
   "plugin_version": "0.27.240",
-  "count": 699,
+  "count": 702,
   "tools": [
     {
       "name": "deploy_site",
@@ -389,6 +389,16 @@
       "why_gated": "runs write SQL on the site's database, which is often the one the live site reads: nothing limits how many rows one statement inserts, updates or deletes, and a write cannot be undone"
     },
     {
+      "name": "database_provision",
+      "method": "POST",
+      "why_gated": "sets up the site's Hiveku database and writes its connection and sign-in variables into the environments asked for (both, the live site's included, when none is named): the next deploy of each runs on that database"
+    },
+    {
+      "name": "database_repair",
+      "method": "POST",
+      "why_gated": "gives the site's Hiveku database a new password and saves it into the site's stored connections and its running site at once: the old password stops working, so anything else that still holds it can no longer connect"
+    },
+    {
       "name": "supabase_migration_apply",
       "method": "POST",
       "why_gated": "runs a SQL migration on the site's database and records it in its history: it can change or delete any table and its rows, and nothing undoes it"
@@ -502,6 +512,11 @@
       "name": "supabase_storage_object_delete",
       "method": "POST",
       "why_gated": "permanently deletes a file from one of the site's storage buckets; there is no recycle bin"
+    },
+    {
+      "name": "supabase_storage_object_signed_url",
+      "method": "POST",
+      "why_gated": "makes a link that opens a private file in one of the site's storage buckets for anyone who holds it, for up to 7 days: it cannot be taken back before it expires"
     },
     {
       "name": "supabase_edge_functions_deploy",

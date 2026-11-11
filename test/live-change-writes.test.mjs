@@ -189,6 +189,8 @@ const LIVE_CHANGE_NAMES = [
   'env_group_unlink',
   // 2026-11-10: the site's database, and its app's sign-in, storage, row security and server functions.
   'database_execute',
+  'database_provision',
+  'database_repair',
   'supabase_migration_apply',
   'supabase_table_row_insert',
   'supabase_table_row_update',
@@ -212,6 +214,7 @@ const LIVE_CHANGE_NAMES = [
   'supabase_storage_object_move',
   'supabase_storage_object_copy',
   'supabase_storage_object_delete',
+  'supabase_storage_object_signed_url',
   'supabase_edge_functions_deploy',
   'supabase_edge_functions_delete',
   'supabase_edge_functions_invoke',
