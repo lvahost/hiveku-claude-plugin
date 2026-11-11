@@ -17,6 +17,11 @@
  * applies, so it is true before and after that release. The MCP tool texts (supabase-end-user-boundary-text.test.ts
  * there) state the same rules as the tools' behaviour.
  *
+ * Round 4 (2026-11-11), the same builder release: the sign-in schema rule also refuses SQL that reads or changes a
+ * setting that can hold a secret (an older project keeps the key that signs its sign-in tokens in one), and setting
+ * a user's app_metadata with supabase_auth_user_create or _update is owner- and admin-only. Both are named in the
+ * same two bullets, under the same "once the builder release ... is live".
+ *
  * Run: node --test test/database-reference-claims.test.mjs
  */
 import { test } from 'node:test';
@@ -66,10 +71,23 @@ test('the sign-in schema bullet holds before and after the builder release that 
     bullet,
     /Once the builder release that adds this refusal is live, such SQL answers `protected_schema_refused` and nothing in it runs, for Hiveku's assistants and for any connection an account owner or admin \(or Hiveku staff\) did not create; until then it runs as written\./,
   );
-  assert.match(bullet, /`auth\.uid\(\)`, `auth\.jwt\(\)`, `auth\.role\(\)` and `auth\.email\(\)` in a policy, and a foreign key to `auth\.users`, stay allowed\./);
+  assert.match(
+    bullet,
+    /`auth\.uid\(\)`, `auth\.jwt\(\)`, `auth\.role\(\)` and `auth\.email\(\)` in a policy, `current_setting\('request\.jwt\.claims', true\)`, and a foreign key to `auth\.users`, stay allowed\./,
+  );
   assert.match(bullet, /the owner's step in the database page's SQL editor/);
   // Never the flat claim that holds on one side of the release only.
   assert.doesNotMatch(section, /sign-in schemas?[^.]*\b(are|is) (always )?refused\b/i);
+});
+
+test('the sign-in schema bullet names the settings that can hold a secret, under the same release', () => {
+  const bullet = section.split('\n').find((line) => line.startsWith('- **Never touch the sign-in schemas**')) ?? '';
+  assert.match(
+    bullet,
+    /The same refusal covers SQL that changes the role it runs as, hides SQL in a string, adds an extension outside a short list, or reads or changes a setting that can hold a secret \(`current_setting` of anything but a `request\.` setting, `set_config` of anything but `search_path` or a `request\.` setting, `pg_settings` and the other settings catalogs, `SHOW ALL`, any mention of `jwt_secret`\): an older project keeps the key that signs its sign-in tokens in such a setting\./,
+  );
+  // The refusal is named by the bullet's own "once the builder release ... is live", never as a flat claim.
+  assert.doesNotMatch(section, /settings? (that can hold a secret )?(is|are) (always )?refused/i);
 });
 
 test('the owner- and admin-only sign-in and server-function tools are named with when that applies', () => {
@@ -82,4 +100,13 @@ test('the owner- and admin-only sign-in and server-function tools are named with
     assert.ok(bullet.includes(`\`${tool}\``), `the owner-only bullet does not name ${tool}`);
   }
   assert.match(bullet, /Hiveku's assistants and every other connection get a 403 that names the reason, and nothing changes\./);
+});
+
+test("setting a user's app_metadata is named in the same owner- and admin-only bullet, with its own reason and way forward", () => {
+  const bullet = extras.split('\n').find((line) => line.startsWith('- **Who can change sign-in and server-function settings.**')) ?? '';
+  assert.match(
+    bullet,
+    /or set a user's `app_metadata` with `supabase_auth_user_create` or `supabase_auth_user_update` \(it rides in the user's sign-in, where the site reads it to decide what they may do; `user_metadata` stays open\)/,
+  );
+  assert.match(bullet, /Tell the person an account owner or admin can do it in the dashboard, or, for `app_metadata`, in the database page's SQL editor or with their own key\./);
 });
