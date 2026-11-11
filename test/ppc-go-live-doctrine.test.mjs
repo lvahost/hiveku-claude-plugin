@@ -15,8 +15,9 @@
  * Release 0.26.36 made the plugin ask on its own before the five calls that
  * can switch ads on by status and the four that can restart or widen delivery
  * (test/spend-start-writes.test.mjs), so the ask-rule step now names only the
- * VS Code extension's tools: that extension does not run the plugin's hook,
- * and the hook ignores its mcp__hiveku__ prefix anyway.
+ * VS Code extension's tools: that extension does not run the plugin's hook
+ * (the hook judges the mcp__hiveku__ prefix too since 2026-11-10, but only
+ * where a plugin new enough to read it is installed).
  *
  * These pins keep:
  *   - the auto-mode rule, the exact owner steps (the Recently denied retry,

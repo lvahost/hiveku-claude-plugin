@@ -24,7 +24,7 @@
     ],
     "PreToolUse": [
       {
-        "matcher": "mcp__plugin_hiveku_hk__.*",
+        "matcher": "^mcp__(plugin_hiveku_hk|hiveku)__.*",
         "hooks": [
           {
             "type": "command",

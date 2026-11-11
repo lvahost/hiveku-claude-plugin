@@ -29,6 +29,7 @@ import {
   LIVE_CHANGE_WRITES,
   ALWAYS_ASK_WRITES,
   HIVEKU_TOOL_PREFIX,
+  HIVEKU_TOOL_PREFIXES,
 } from '../lib/tool-safety.mjs';
 
 const WRITES = [
@@ -111,17 +112,22 @@ test('each write is on the ask list and on the hook with a reason, never pre-app
   }
 });
 
-test('each write asks on a direct call and inside a batch, under the blanket allow', () => {
-  for (const name of WRITES) {
-    const direct = decideForPayload({ tool_name: `${HIVEKU_TOOL_PREFIX}${name}`, tool_input: { project_id: 'p' } });
-    assert.equal(decision(direct), 'ask', `${name} must ask; silence is the blanket allow`);
-    assert.match(direct.hookSpecificOutput.permissionDecisionReason, new RegExp(`^${name} `));
-    assert.ok(direct.hookSpecificOutput.permissionDecisionReason.includes(LIVE_CHANGE_WRITES.get(name)), `${name}: its own reason`);
-    const batch = decideForPayload({
-      tool_name: `${HIVEKU_TOOL_PREFIX}hiveku_batch`,
-      tool_input: { calls: [{ tool: name, args: { project_id: 'p' } }] },
-    });
-    assert.equal(decision(batch), 'ask', `${name} inside hiveku_batch must ask`);
+test('each write asks on a direct call and inside a batch, under the blanket allow, under both prefixes', () => {
+  // mcp__plugin_hiveku_hk__ is this plugin's server; mcp__hiveku__ is the same server named by a hiveku-sync or VS
+  // Code folder's own .mcp.json (lib/tool-safety.mjs FOLDER_SERVER_TOOL_PREFIX). The hook judges both alike.
+  assert.deepEqual([...HIVEKU_TOOL_PREFIXES], ['mcp__plugin_hiveku_hk__', 'mcp__hiveku__']);
+  for (const prefix of HIVEKU_TOOL_PREFIXES) {
+    for (const name of WRITES) {
+      const direct = decideForPayload({ tool_name: `${prefix}${name}`, tool_input: { project_id: 'p' } });
+      assert.equal(decision(direct), 'ask', `${prefix}${name} must ask; silence is the blanket allow`);
+      assert.match(direct.hookSpecificOutput.permissionDecisionReason, new RegExp(`^${name} `));
+      assert.ok(direct.hookSpecificOutput.permissionDecisionReason.includes(LIVE_CHANGE_WRITES.get(name)), `${name}: its own reason`);
+      const batch = decideForPayload({
+        tool_name: `${prefix}hiveku_batch`,
+        tool_input: { calls: [{ tool: name, args: { project_id: 'p' } }] },
+      });
+      assert.equal(decision(batch), 'ask', `${name} inside ${prefix}hiveku_batch must ask`);
+    }
   }
 });
 
