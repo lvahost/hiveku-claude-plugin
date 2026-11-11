@@ -11,6 +11,12 @@
  * never to count on that refusal, names the refusal by its answer and when it applies, and no longer says flatly
  * that such a statement is not refused.
  *
+ * The same holds for the builder release that holds a connection's SQL to the sign-in schema rule (2026-11-11:
+ * protected_schema_refused for auth, vault and pgsodium, unless an account owner or admin created the connection)
+ * and makes more sign-in and server-function tools owner- and admin-only: the reference names each one with when it
+ * applies, so it is true before and after that release. The MCP tool texts (supabase-end-user-boundary-text.test.ts
+ * there) state the same rules as the tools' behaviour.
+ *
  * Run: node --test test/database-reference-claims.test.mjs
  */
 import { test } from 'node:test';
@@ -24,6 +30,9 @@ const ref = readFileSync(
 const start = ref.indexOf('### What is blocked, and why');
 const end = ref.indexOf('### RLS is mandatory', start);
 const section = start >= 0 && end > start ? ref.slice(start, end) : '';
+const extrasStart = ref.indexOf('## Part 7: Supabase extras');
+const extrasEnd = ref.indexOf('## Part 8', extrasStart);
+const extras = extrasStart >= 0 && extrasEnd > extrasStart ? ref.slice(extrasStart, extrasEnd) : '';
 
 test('the database section is where this test reads it', () => {
   assert.ok(section.length > 200, 'the "What is blocked, and why" section was not found');
@@ -47,5 +56,30 @@ test('the no-WHERE bullet holds before and after the builder release that refuse
 
 test('it says plainly what is not refused', () => {
   assert.match(section, /There is no row cap/);
-  assert.match(section, /`DROP POLICY` and dropping a constraint are not refused/);
+  assert.match(section, /`DROP POLICY` and dropping a constraint are not refused \(outside the sign-in schemas, below\)\./);
+});
+
+test('the sign-in schema bullet holds before and after the builder release that refuses that SQL', () => {
+  const bullet = section.split('\n').find((line) => line.startsWith('- **Never touch the sign-in schemas**')) ?? '';
+  assert.match(bullet, /^- \*\*Never touch the sign-in schemas\*\* \(`auth`, `vault`, `pgsodium`\) with `database_execute`, `database_query` or a policy tool/);
+  assert.match(
+    bullet,
+    /Once the builder release that adds this refusal is live, such SQL answers `protected_schema_refused` and nothing in it runs, for Hiveku's assistants and for any connection an account owner or admin \(or Hiveku staff\) did not create; until then it runs as written\./,
+  );
+  assert.match(bullet, /`auth\.uid\(\)`, `auth\.jwt\(\)`, `auth\.role\(\)` and `auth\.email\(\)` in a policy, and a foreign key to `auth\.users`, stay allowed\./);
+  assert.match(bullet, /the owner's step in the database page's SQL editor/);
+  // Never the flat claim that holds on one side of the release only.
+  assert.doesNotMatch(section, /sign-in schemas?[^.]*\b(are|is) (always )?refused\b/i);
+});
+
+test('the owner- and admin-only sign-in and server-function tools are named with when that applies', () => {
+  const bullet = extras.split('\n').find((line) => line.startsWith('- **Who can change sign-in and server-function settings.**')) ?? '';
+  assert.match(bullet, /Once the builder release that adds this is live, only a connection created by an account owner or admin \(or Hiveku staff\) can run /);
+  for (const tool of [
+    'supabase_sync_redirect_urls', 'supabase_configure_smtp', 'supabase_configure_hiveku_smtp', 'supabase_configure_oauth',
+    'supabase_edge_functions_deploy', 'supabase_edge_functions_set_secrets', 'supabase_migration_apply', 'supabase_auth_config_update',
+  ]) {
+    assert.ok(bullet.includes(`\`${tool}\``), `the owner-only bullet does not name ${tool}`);
+  }
+  assert.match(bullet, /Hiveku's assistants and every other connection get a 403 that names the reason, and nothing changes\./);
 });
