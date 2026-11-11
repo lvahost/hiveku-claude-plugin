@@ -827,4 +827,8 @@ export const PENDING_TOOLS = new Map([
   ['discussion_import_run', { since: '2026-11-11', batch: 'DISCUSSIONS-S5C' }],
   ['discussion_import_cancel', { since: '2026-11-11', batch: 'DISCUSSIONS-S5C' }],
   ['discussion_import_undo', { since: '2026-11-11', batch: 'DISCUSSIONS-S5C' }],
+  // HELPDESK-AWAY (2026-11-11, HK-1504): the help desk away message, on the ask list and LIVE_CHANGE_WRITES ahead of the
+  // MCP release that serves it (the MCP's ask-first gate holds that release until this plugin names it). Delete it once
+  // the regenerated index carries it.
+  ['helpdesk_away_reply_set', { since: '2026-11-11', batch: 'HELPDESK-AWAY' }],
 ]);

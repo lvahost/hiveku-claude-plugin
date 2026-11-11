@@ -339,6 +339,7 @@ Put this in `.claude/settings.json` (per project) or `~/.claude/settings.json` (
       "mcp__plugin_hiveku_hk__helpdesk_contact_data_erase",
       "mcp__plugin_hiveku_hk__helpdesk_chat_retention_set",
       "mcp__plugin_hiveku_hk__helpdesk_social_comments_settings_update",
+      "mcp__plugin_hiveku_hk__helpdesk_away_reply_set",
       "mcp__plugin_hiveku_hk__voice_site_create",
       "mcp__plugin_hiveku_hk__voice_role_assign",
       "mcp__plugin_hiveku_hk__voice_role_remove",
