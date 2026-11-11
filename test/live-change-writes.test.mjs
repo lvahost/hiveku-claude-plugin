@@ -176,6 +176,8 @@ const LIVE_CHANGE_NAMES = [
   'social_posts_bulk_create',
   'account_timezone_set',
   'helpdesk_assistant_knowledge_sources_update',
+  // 2026-11-11 (HK-1504): the help desk away message answers every customer who emails in while its window is on.
+  'helpdesk_away_reply_set',
   // 0.27.24: a site's secrets reach the running site (and production, without a tier).
   'project_secrets_set',
   'project_secrets_delete',
