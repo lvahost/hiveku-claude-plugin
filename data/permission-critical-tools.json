@@ -6,7 +6,7 @@
     "mcp__hiveku__"
   ],
   "plugin_version": "0.27.253",
-  "count": 708,
+  "count": 709,
   "tools": [
     {
       "name": "deploy_site",
@@ -3452,6 +3452,11 @@
       "name": "crm_delete_custom_field",
       "method": "DELETE",
       "why_gated": "deletes a custom field for good, with its value on every record"
+    },
+    {
+      "name": "helpdesk_ticket_field_delete",
+      "method": "DELETE",
+      "why_gated": "removes a help desk ticket field for good, with its answer on every ticket"
     },
     {
       "name": "crm_delete_tag",

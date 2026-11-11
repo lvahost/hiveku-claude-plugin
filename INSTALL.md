@@ -449,6 +449,7 @@ Put this in `.claude/settings.json` (per project) or `~/.claude/settings.json` (
       "mcp__plugin_hiveku_hk__crm_delete_deal",
       "mcp__plugin_hiveku_hk__crm_delete_sequence",
       "mcp__plugin_hiveku_hk__crm_delete_custom_field",
+      "mcp__plugin_hiveku_hk__helpdesk_ticket_field_delete",
       "mcp__plugin_hiveku_hk__crm_delete_tag",
       "mcp__plugin_hiveku_hk__crm_delete_email_template",
       "mcp__plugin_hiveku_hk__crm_contacts_bulk_create",
