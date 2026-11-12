@@ -5,8 +5,8 @@
     "mcp__plugin_hiveku_hk__",
     "mcp__hiveku__"
   ],
-  "plugin_version": "0.27.258",
-  "count": 711,
+  "plugin_version": "0.27.259",
+  "count": 712,
   "tools": [
     {
       "name": "deploy_site",
@@ -2092,6 +2092,11 @@
       "name": "workflow_pending_action_decide",
       "method": "POST",
       "why_gated": "approves or rejects an action an AI step staged for a person: approving sends the email or reply, or makes the change, for real at once; rejecting throws the staged action away. The decision is meant to be a person's"
+    },
+    {
+      "name": "accounting_approval_decide",
+      "method": "POST",
+      "why_gated": "approves or cancels a money card the Accounting assistant staged: approving pays, sends or runs payroll for real at once. Hiveku takes it only from a person in the Hiveku app (its own key)"
     },
     {
       "name": "workflow_enable",

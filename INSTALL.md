@@ -623,6 +623,7 @@ Put this in `.claude/settings.json` (per project) or `~/.claude/settings.json` (
       "mcp__plugin_hiveku_hk__workflow_run",
       "mcp__plugin_hiveku_hk__workflow_node_run",
       "mcp__plugin_hiveku_hk__workflow_pending_action_decide",
+      "mcp__plugin_hiveku_hk__accounting_approval_decide",
       "mcp__plugin_hiveku_hk__workflow_enable",
       "mcp__plugin_hiveku_hk__workflow_resume",
       "mcp__plugin_hiveku_hk__workflow_env_set",

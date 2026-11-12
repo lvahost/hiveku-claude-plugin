@@ -263,6 +263,9 @@ const LIVE_CHANGE_NAMES = [
   // step's staged action approved or rejected.
   'workflow_node_run',
   'workflow_pending_action_decide',
+  // The desktop app's Accounting approval card: a money card the Accounting assistant staged, approved
+  // (it pays, sends or runs payroll at once) or cancelled. Hiveku takes it only from the Hiveku app's own key.
+  'accounting_approval_decide',
   // The desktop app's workflow grid (wave G): list and row deletes, row release, the AI formula writer, imports
   // and auto-run.
   'outbound_lead_grid_delete',
