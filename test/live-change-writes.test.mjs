@@ -107,6 +107,8 @@ const LIVE_CHANGE_NAMES = [
   'seo_ga4_event_create_rule_update',
   // 0.27.14: a subscription that can charge a card, and a GA4 archive.
   'accounting_subscription_create',
+  // HK-1566: changing a subscription's price, tax or billing date in place.
+  'accounting_subscription_update',
   'seo_ga4_custom_definition_archive',
   // 0.27.15: moving a Microsoft campaign between budgets, a Microsoft shared budget's amount, and
   // which conversions a Google campaign bids toward (each confirmed on the server only).
