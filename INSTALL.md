@@ -263,6 +263,7 @@ Put this in `.claude/settings.json` (per project) or `~/.claude/settings.json` (
       "mcp__plugin_hiveku_hk__account_domain_transfer_submit",
       "mcp__plugin_hiveku_hk__account_domain_dns_record_create",
       "mcp__plugin_hiveku_hk__account_domain_dns_record_delete",
+      "mcp__plugin_hiveku_hk__email_domain_auto_configure",
       "mcp__plugin_hiveku_hk__account_security_password_update",
       "mcp__plugin_hiveku_hk__account_security_2fa_update",
       "mcp__plugin_hiveku_hk__account_security_computer_revoke",

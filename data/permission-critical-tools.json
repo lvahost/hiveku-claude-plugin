@@ -6,7 +6,7 @@
     "mcp__hiveku__"
   ],
   "plugin_version": "0.27.256",
-  "count": 709,
+  "count": 710,
   "tools": [
     {
       "name": "deploy_site",
@@ -3282,6 +3282,11 @@
       "name": "account_domain_dns_record_delete",
       "method": "DELETE",
       "why_gated": "deletes a live DNS record; a site or its email can stop working"
+    },
+    {
+      "name": "email_domain_auto_configure",
+      "method": "POST",
+      "why_gated": "adds or merges the live DNS records a sending domain needs; a wrong record can stop the domain's email"
     },
     {
       "name": "account_security_password_update",
