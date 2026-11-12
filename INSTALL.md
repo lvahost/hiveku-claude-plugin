@@ -420,6 +420,7 @@ Put this in `.claude/settings.json` (per project) or `~/.claude/settings.json` (
       "mcp__plugin_hiveku_hk__discussion_import_run",
       "mcp__plugin_hiveku_hk__discussion_import_cancel",
       "mcp__plugin_hiveku_hk__discussion_import_undo",
+      "mcp__plugin_hiveku_hk__discussion_notice_route_set",
       "mcp__plugin_hiveku_hk__marketing_referral_invite",
       "mcp__plugin_hiveku_hk__marketing_referral_status_set",
       "mcp__plugin_hiveku_hk__marketing_referral_archive",
