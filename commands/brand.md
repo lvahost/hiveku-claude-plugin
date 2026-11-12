@@ -54,7 +54,7 @@ downstream.
      delete whose tombstone keeps its unique slot forever - confirm with the human first, and
      remember a live page inlining that @font-face keeps serving until redeployed.
 4. **Prove it substituted, and prove the fonts render.** `design_templates_list` - the client's
-   colors and type coming back in the 58-template library means the guide is live and every later
+   colors and type coming back in the 92-template library means the guide is live and every later
    template pull and generation is on-brand. If a generic palette comes back, fix the guide, do not
    repaint canvases. There is NO `brand_guide_set_active` tool: with multiple guides, activation is
    dashboard-side - tell the client where it lives, and never create another guide to route around

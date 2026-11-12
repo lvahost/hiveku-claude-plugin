@@ -16,7 +16,7 @@ They apply to every account and outrank its memory, so follow them in every step
    guide; with no default guide, ask the person which guide is the brand. On a department-scoped
    key `account_context_get` can answer tool-not-found; that is scope, not an outage - hydrate through
    `talk_to_department({ domain: 'branding' })` instead and say which path you used.
-2. **Start from a template of the same size.** `design_templates_list` - the 58-template library
+2. **Start from a template of the same size.** `design_templates_list` with the destination's `width` and `height` - the 92-template library
    already substituted with the account's brand guide, each template carrying a ready-to-use
    `canvasData`. Take one whose artboard is the destination's width and height, then replace its
    words and pictures with this business's true story. The wide formats are templates now (two
