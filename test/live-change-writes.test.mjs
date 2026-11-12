@@ -145,6 +145,7 @@ const LIVE_CHANGE_NAMES = [
   'account_domain_transfer_submit',
   'account_domain_dns_record_create',
   'account_domain_dns_record_delete',
+  'email_domain_auto_configure',
   'account_security_password_update',
   'account_security_2fa_update',
   'account_security_computer_revoke',
