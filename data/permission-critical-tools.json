@@ -6,7 +6,7 @@
     "mcp__hiveku__"
   ],
   "plugin_version": "0.27.267",
-  "count": 712,
+  "count": 713,
   "tools": [
     {
       "name": "deploy_site",
@@ -1262,6 +1262,11 @@
       "name": "discussion_import_undo",
       "method": "POST",
       "why_gated": "permanently deletes, for everyone, every channel and message a chat history import brought, with anything people posted in those channels since; there is no undo"
+    },
+    {
+      "name": "discussion_notice_route_set",
+      "method": "PUT",
+      "why_gated": "turns on or off the Discussions copy of a feature's alerts (help desk alerts, website form leads, site review comments or customer reviews) and picks its channel: each later alert is posted there in the person's name, and everyone who reads the channel sees it, a workspace it is shared with included"
     },
     {
       "name": "pm_project_leave",

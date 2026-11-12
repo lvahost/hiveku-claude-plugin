@@ -571,11 +571,20 @@
  *   the index and the read-only list from the live server, then delete these entries.
  *     DISCUSSIONS-S5C     discussion_import_start, discussion_import_run, discussion_import_cancel,
  *                         discussion_import_undo.
+ *
+ *   Discussions notices (2026-11-12): the copy of a feature's alerts in a Discussions channel. Its set
+ *   (discussion_notice_route_set) is on the ask list and on ALWAYS_ASK_WRITES (lib/tool-safety.mjs) from this release
+ *   on, before the MCP release serves it. The server takes it from a key with a person behind it, so the index will
+ *   carry it. Release step, after the MCP deploy: regenerate the index and the read-only list from the live server,
+ *   then delete this entry. Its read (discussion_notice_routes_list) is a GET and needs no entry.
+ *     DISCUSSIONS-NOTICES discussion_notice_route_set.
  */
 const SEO_SINCE = '2026-08-30';
 const seo = (batch) => ({ since: SEO_SINCE, batch });
 
 export const PENDING_TOOLS = new Map([
+  // Discussions notices (2026-11-12): on the ask lists before the tool server offers it.
+  ['discussion_notice_route_set', { since: '2026-11-12', batch: 'DISCUSSIONS-NOTICES' }],
   // 2026-11-07 (index regenerated at 3186 tools from MCP 2fb21a6b2935, #449): HK-1203's three public link switches are
   // served and indexed (off the read-only list; on the ask list and LIVE_CHANGE_WRITES). Entries deleted.
   // HK-1297 (2026-11-07): voice_sip_credentials_get stays here for good. The MCP serves it to the Hiveku app's own key

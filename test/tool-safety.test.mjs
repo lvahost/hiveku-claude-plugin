@@ -1134,6 +1134,7 @@ const MEET_DISCUSSIONS_WRITES_THAT_ASK = [
   'discussion_import_run',
   'discussion_import_cancel',
   'discussion_import_undo',
+  'discussion_notice_route_set',
 ];
 /**
  * A webinar's edit (Abe, 2026-11-01): moving its time emails every registrant, and the whole audience once its invites
@@ -1478,6 +1479,8 @@ test('the Meet and Discussions sends, shares and deletes ask on a direct call an
   assert.match(ALWAYS_ASK_WRITES.get('discussion_import_run'), /the whole team can read/);
   assert.match(ALWAYS_ASK_WRITES.get('discussion_import_cancel'), /before its run the uploaded file is deleted/);
   assert.match(ALWAYS_ASK_WRITES.get('discussion_import_undo'), /^permanently deletes, for everyone, every channel and message/);
+  assert.match(ALWAYS_ASK_WRITES.get('discussion_notice_route_set'), /posted there in the person's name/);
+  assert.match(ALWAYS_ASK_WRITES.get('discussion_notice_route_set'), /a workspace it is shared with included/);
   // Decision 2: agents may list and create Marketing webinars unasked (the edit asks since 2026-11-01, pinned below).
   // The reads beside these writes stay unasked too.
   for (const name of ['marketing_webinars_list', 'marketing_webinar_get', 'marketing_webinar_attendees', 'marketing_webinar_create', 'meet_recording_get', 'discussion_recordings_list', 'discussion_recording_get', 'discussion_channel_sharing_get', 'discussion_leave']) {
@@ -1488,6 +1491,8 @@ test('the Meet and Discussions sends, shares and deletes ask on a direct call an
   for (const name of ['discussion_import_list', 'discussion_import_status', 'discussion_import_uploaded', 'discussion_import_people_list', 'discussion_import_people_map']) {
     assert.equal(ALWAYS_ASK_WRITES.has(name), false, `${name} must not ask on every call`);
   }
+  // Where each notice goes is read unasked.
+  assert.equal(ALWAYS_ASK_WRITES.has('discussion_notice_routes_list'), false, 'discussion_notice_routes_list must not ask on every call');
 });
 
 test('a webinar\'s edit asks on every direct call and through a batch, a reads-only folder denies it, and the webinar create and reads are not on the set', () => {
