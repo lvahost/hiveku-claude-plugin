@@ -163,7 +163,7 @@ shown to new people), X 140s.
 
 DESIGN (Creative Studio) - zero marginal cost, the highest-volume creative lane (promo cards, quote
 graphics, carousels, ad variations):
-- `design_templates_list` - the 58-template library (14 sizes; the wide formats are templates now:
+- `design_templates_list` - the 92-template library (14 sizes, one at a time with `width` and `height`; the wide formats are templates now:
   two 1200x600 email headers, OG 1200x630, YouTube 1280x720, LinkedIn banner 1584x396, X header
   1500x500), already brand-substituted with the account's active brand guide, plus artboard presets
   grouped by category. Each template carries a ready-to-use `canvasData` payload.
