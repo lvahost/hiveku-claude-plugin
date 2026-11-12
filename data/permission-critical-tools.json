@@ -6,7 +6,7 @@
     "mcp__hiveku__"
   ],
   "plugin_version": "0.27.257",
-  "count": 710,
+  "count": 711,
   "tools": [
     {
       "name": "deploy_site",
@@ -1427,6 +1427,11 @@
       "name": "accounting_subscription_create",
       "method": "POST",
       "why_gated": "starts a customer subscription and can charge the client's saved card for the first period at once; the preview_hash it confirms with is filled in by the model, not a person"
+    },
+    {
+      "name": "accounting_subscription_update",
+      "method": "PATCH",
+      "why_gated": "changes what a customer subscription charges from its next renewal (price, quantity, tax rate or billing date); the preview_hash it confirms with is filled in by the model, not a person"
     },
     {
       "name": "crm_contact_email_send",

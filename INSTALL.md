@@ -490,6 +490,7 @@ Put this in `.claude/settings.json` (per project) or `~/.claude/settings.json` (
       "mcp__plugin_hiveku_hk__accounting_bill_record_payment",
       "mcp__plugin_hiveku_hk__accounting_invoice_record_payment",
       "mcp__plugin_hiveku_hk__accounting_subscription_create",
+      "mcp__plugin_hiveku_hk__accounting_subscription_update",
       "mcp__plugin_hiveku_hk__crm_contact_email_send",
       "mcp__plugin_hiveku_hk__crm_contact_email_send_from_domain",
       "mcp__plugin_hiveku_hk__crm_enroll_sequence",
