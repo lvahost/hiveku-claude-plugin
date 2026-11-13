@@ -6,7 +6,7 @@
     "mcp__hiveku__"
   ],
   "plugin_version": "0.27.269",
-  "count": 713,
+  "count": 714,
   "tools": [
     {
       "name": "deploy_site",
@@ -897,6 +897,11 @@
       "name": "helpdesk_away_reply_set",
       "method": "PUT",
       "why_gated": "sets the help desk away message: while its window is on, every customer who emails in gets it automatically instead of the usual confirmation, and a customer who replies gets it once per conversation; only an account owner or admin can change it"
+    },
+    {
+      "name": "email_connection_read_label",
+      "method": "PUT",
+      "why_gated": "limits what Hiveku reads of a connected Gmail inbox to one label (and can make that label in the mailbox), changes the label, or removes the limit: while a label is set, Hiveku reads only mail with it and the owner's own sent mail in those conversations, so a reply without the label stops no sequence and opens no ticket, and removing the limit lets Hiveku read the whole mailbox again; only the inbox's own person may change it, or an owner or admin for an inbox no one owns"
     },
     {
       "name": "marketing_report_send",

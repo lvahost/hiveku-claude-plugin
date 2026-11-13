@@ -181,6 +181,8 @@ const LIVE_CHANGE_NAMES = [
   'helpdesk_assistant_knowledge_sources_update',
   // 2026-11-11 (HK-1504): the help desk away message answers every customer who emails in while its window is on.
   'helpdesk_away_reply_set',
+  // 2026-11-12 (HK-1636): one Gmail label limits what Hiveku reads of an inbox; clearing it reads the whole mailbox.
+  'email_connection_read_label',
   // 0.27.24: a site's secrets reach the running site (and production, without a tier).
   'project_secrets_set',
   'project_secrets_delete',
