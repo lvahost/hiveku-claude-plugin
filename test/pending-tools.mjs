@@ -848,4 +848,9 @@ export const PENDING_TOOLS = new Map([
   // Hiveku app's own key alone and the index is read with an agent key, so it stays here for good, as the SOCIAL-DESKTOP
   // writes do.
   ['project_vcs_ai_review_set', { since: '2026-11-10', batch: 'VCS-AI-REVIEW' }],
+  // HK-1636 (2026-11-12): email_connection_read_label limits what Hiveku reads of a connected Gmail inbox to one label.
+  // On the ask list and LIVE_CHANGE_WRITES before the MCP release serves it. The server refuses it only to Hiveku's own
+  // services (accountKeyOnly), not to the account key the index is read with, so the regenerated index will carry it:
+  // delete this entry then.
+  ['email_connection_read_label', { since: '2026-11-12', batch: 'HK-1636' }],
 ]);
