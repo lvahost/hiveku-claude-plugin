@@ -659,6 +659,8 @@ Put this in `.claude/settings.json` (per project) or `~/.claude/settings.json` (
       "mcp__plugin_hiveku_hk__customer_journey_delete",
       "mcp__plugin_hiveku_hk__before_after_grid_delete",
       "mcp__plugin_hiveku_hk__customer_journey_stage_delete",
+      "mcp__plugin_hiveku_hk__before_after_grid_row_delete",
+      "mcp__plugin_hiveku_hk__design_layer_delete",
       "mcp__plugin_hiveku_hk__media_delete",
       "mcp__plugin_hiveku_hk__media_folder_delete",
       "mcp__plugin_hiveku_hk__brand_guide_delete",

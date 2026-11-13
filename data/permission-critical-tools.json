@@ -6,7 +6,7 @@
     "mcp__hiveku__"
   ],
   "plugin_version": "0.27.273",
-  "count": 725,
+  "count": 727,
   "tools": [
     {
       "name": "deploy_site",
@@ -2242,6 +2242,16 @@
       "name": "customer_journey_stage_delete",
       "method": "DELETE",
       "why_gated": "removes a stage; stage-asset rows keyed to it are filtered out on read and become unreachable"
+    },
+    {
+      "name": "before_after_grid_row_delete",
+      "method": "DELETE",
+      "why_gated": "removes one row of a before/after grid; a version of the grid is kept before the first of a run of removes, and before_after_grid_version_restore brings it back (restoring that version also undoes later changes to the grid)"
+    },
+    {
+      "name": "design_layer_delete",
+      "method": "DELETE",
+      "why_gated": "removes one layer of a design; a version of the design is kept before the first of a run of removes, and its version history brings it back"
     },
     {
       "name": "media_delete",
