@@ -850,4 +850,12 @@ export const PENDING_TOOLS = new Map([
   ['project_vcs_ai_review_set', { since: '2026-11-10', batch: 'VCS-AI-REVIEW' }],
   // 2026-11-13 (index regenerated at 3343 tools from MCP 448b6bc5af09): email_connection_read_label (HK-1636) is
   // served and indexed. Entry deleted.
+  // BUCKET-C-OUTBOUND (2026-11-13, MCP #541): the 3 outbound sends + 2 deletes registered in #541, on the ask list
+  // from this plugin release, before the #541 MCP release indexes them. Delete these once the tool-index is
+  // regenerated after #541 lands (the tool-names test will force the cleanup).
+  ['outbound_lead_resume', { since: '2026-11-13', batch: 'BUCKET-C-OUTBOUND' }],
+  ['outbound_inbox_forward', { since: '2026-11-13', batch: 'BUCKET-C-OUTBOUND' }],
+  ['outbound_lead_subsequence_push', { since: '2026-11-13', batch: 'BUCKET-C-OUTBOUND' }],
+  ['outbound_blocklist_remove', { since: '2026-11-13', batch: 'BUCKET-C-OUTBOUND' }],
+  ['outbound_campaign_email_accounts_detach', { since: '2026-11-13', batch: 'BUCKET-C-OUTBOUND' }],
 ]);
