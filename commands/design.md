@@ -45,6 +45,13 @@ They apply to every account and outrank its memory, so follow them in every step
      only inline, not a missing one; the real URL is step 6's publish with `set_as_featured`.
    - `design_version_create({ id, versionName, changeSummary })` BEFORE any structural rewrite -
      that is what the dashboard's Version History rolls back to.
+   - One layer per call while the person has the design open, so they watch it build:
+     `design_layer_add({ id, layer, at_position, page_id })` (keep the `layer_id` it returns),
+     `design_layer_update({ id, layer_id, updates })` changes only the keys you send,
+     `design_layer_move({ id, layer_id, to_position })` and `design_layer_delete({ id, layer_id })`,
+     which keeps a version before the first of a run of removes. Use the layer ids `design_state_get`
+     returns. Send the whole canvas with `design_update` only to start a design or to replace it on
+     purpose.
    - `design_update({ id, canvasData, expectedSectionsVersion })`. canvasData REPLACES the whole
      canvas; `{ pages: [{ id, name, canvasData }] }` is the multi-page shape. The CAS token comes
      from your read - `design_state_get` (and `design_get`) return `sectionsVersion` - and a later
