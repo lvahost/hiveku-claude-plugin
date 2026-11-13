@@ -578,11 +578,29 @@
  *   carry it. Release step, after the MCP deploy: regenerate the index and the read-only list from the live server,
  *   then delete this entry. Its read (discussion_notice_routes_list) is a GET and needs no entry.
  *     DISCUSSIONS-NOTICES discussion_notice_route_set.
+ *
+ *   Email waves 2 and 3 (2026-11-12): six email writes that ask. The two sends (an email series' turn on and a form's
+ *   confirm-by-email step) are on ALWAYS_ASK_WRITES, and the four live changes (a series' disconnect, a topic's create
+ *   and update, a template copied into another client's account) on LIVE_CHANGE_WRITES (lib/tool-safety.mjs), all six
+ *   on the ask list from this release on, before the MCP release serves them. The server takes them from a key with a
+ *   person behind it, so the index will carry them. Release step, after the MCP deploy: regenerate the index and the
+ *   read-only list from the live server, then delete these entries. Their reads (the topic list, the copy targets) are
+ *   GETs and need no entry.
+ *     EMAIL-W23-1         email_sequence_connection_turn_on, marketing_form_confirm_signups_set,
+ *                         email_sequence_disconnect, email_topic_create, email_topic_update,
+ *                         marketing_template_copy_to_account.
  */
 const SEO_SINCE = '2026-08-30';
 const seo = (batch) => ({ since: SEO_SINCE, batch });
 
 export const PENDING_TOOLS = new Map([
+  // Email waves 2 and 3 (2026-11-12): on the ask lists before the tool server offers them.
+  ['email_sequence_connection_turn_on', { since: '2026-11-12', batch: 'EMAIL-W23-1' }],
+  ['marketing_form_confirm_signups_set', { since: '2026-11-12', batch: 'EMAIL-W23-1' }],
+  ['email_sequence_disconnect', { since: '2026-11-12', batch: 'EMAIL-W23-1' }],
+  ['email_topic_create', { since: '2026-11-12', batch: 'EMAIL-W23-1' }],
+  ['email_topic_update', { since: '2026-11-12', batch: 'EMAIL-W23-1' }],
+  ['marketing_template_copy_to_account', { since: '2026-11-12', batch: 'EMAIL-W23-1' }],
   // Discussions notices (2026-11-12): on the ask lists before the tool server offers it.
   ['discussion_notice_route_set', { since: '2026-11-12', batch: 'DISCUSSIONS-NOTICES' }],
   // 2026-11-07 (index regenerated at 3186 tools from MCP 2fb21a6b2935, #449): HK-1203's three public link switches are
