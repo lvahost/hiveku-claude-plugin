@@ -56,6 +56,28 @@ test('the prompt tells the person both directions: what a label stops, and that 
   assert.doesNotMatch(LIVE_CHANGE_WRITES.get(NAME), /[–—]/, 'no dashes in a reason the person reads');
 });
 
+test("the orient passage names everyone Hiveku lets change the label, as Hiveku decides it", () => {
+  // Hiveku takes the label from the inbox's own person, from an owner or admin for an inbox no one owns, and keeps a
+  // label someone chose theirs while they are on the account. A passage that named the inbox's person alone sent an
+  // admin away from limiting a shared inbox no one owns.
+  const md = readFileSync(new URL('../skills/hiveku-orient/references/integrations.md', import.meta.url), 'utf8');
+  const start = md.indexOf('**Reading one label only.**');
+  assert.ok(start >= 0, 'the read label passage is in the orient integrations reference');
+  const passage = md.slice(start, md.indexOf('\n\n', start)).replace(/\s+/g, ' ');
+  for (const words of [
+    "Only the inbox's own person may set, change or remove it, whatever their role",
+    'an inbox no one owns: an owner or admin',
+    'a label someone else chose stays theirs while they are on the account',
+    '`read_label_not_yours`',
+    '`read_label_owner_or_admin_required`',
+    '`read_label_chosen_by_someone_else`',
+    'the plugin asks before it runs',
+  ]) {
+    assert.ok(passage.includes(words), `the passage says: ${words}`);
+  }
+  assert.doesNotMatch(passage, /[–—]/, 'no dashes in the passage');
+});
+
 test('NEGATIVE CONTROL: the inbox reads beside it stay pre-approved', () => {
   // An ask on a read stalls every sweep that touches it.
   for (const read of ['email_connections_list', 'gmail_list_labels', 'email_inbox_setup_guide']) {
