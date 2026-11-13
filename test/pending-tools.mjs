@@ -858,4 +858,17 @@ export const PENDING_TOOLS = new Map([
   ['outbound_lead_subsequence_push', { since: '2026-11-13', batch: 'BUCKET-C-OUTBOUND' }],
   ['outbound_blocklist_remove', { since: '2026-11-13', batch: 'BUCKET-C-OUTBOUND' }],
   ['outbound_campaign_email_accounts_detach', { since: '2026-11-13', batch: 'BUCKET-C-OUTBOUND' }],
+  // TEMP-ENV-1 (2026-11-13, MCP feature/temporary-environments): the ten temporary environment writes, on the ask list
+  // from this plugin release (the seven that always ask on LIVE_CHANGE_WRITES too), before the MCP release serves them.
+  // Delete these once the tool index is regenerated after that MCP release (the tool-names test forces the cleanup).
+  ['project_vcs_temp_env_create', { since: '2026-11-13', batch: 'TEMP-ENV-1' }],
+  ['project_vcs_temp_env_update', { since: '2026-11-13', batch: 'TEMP-ENV-1' }],
+  ['project_vcs_temp_env_extend', { since: '2026-11-13', batch: 'TEMP-ENV-1' }],
+  ['project_vcs_temp_env_revive', { since: '2026-11-13', batch: 'TEMP-ENV-1' }],
+  ['project_vcs_temp_env_try_again', { since: '2026-11-13', batch: 'TEMP-ENV-1' }],
+  ['project_vcs_temp_env_password_set', { since: '2026-11-13', batch: 'TEMP-ENV-1' }],
+  ['project_vcs_temp_env_settings_set', { since: '2026-11-13', batch: 'TEMP-ENV-1' }],
+  ['project_vcs_temp_env_delete', { since: '2026-11-13', batch: 'TEMP-ENV-1' }],
+  ['project_vcs_temp_env_request_dismiss', { since: '2026-11-13', batch: 'TEMP-ENV-1' }],
+  ['project_vcs_temp_env_open', { since: '2026-11-13', batch: 'TEMP-ENV-1' }],
 ]);

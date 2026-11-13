@@ -119,6 +119,15 @@ const LIVE_CHANGE_NAMES = [
   'project_vcs_queue_add',
   // 2026-11-10: a site's AI review switch, served to the Hiveku app's own key alone.
   'project_vcs_ai_review_set',
+  // 2026-11-13 (pending as TEMP-ENV-1): temporary environments. The four that add a charge, the passcode, the settings
+  // and the turn-off; update, request_dismiss and open are on the ask list only (test/temp-env-asks.test.mjs).
+  'project_vcs_temp_env_create',
+  'project_vcs_temp_env_extend',
+  'project_vcs_temp_env_revive',
+  'project_vcs_temp_env_try_again',
+  'project_vcs_temp_env_password_set',
+  'project_vcs_temp_env_settings_set',
+  'project_vcs_temp_env_delete',
   // 0.27.58: the account's timezone, and what the website assistant may tell visitors.
   'account_settings_update',
   'account_settings_logo_set',
