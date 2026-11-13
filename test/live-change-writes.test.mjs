@@ -356,6 +356,14 @@ const LIVE_CHANGE_NAMES = [
   'email_topic_create',
   'email_topic_update',
   'marketing_template_copy_to_account',
+  // Bucket-C outbound sends and deletes (2026-11-13, MCP #541, pending as BUCKET-C-OUTBOUND): resuming a lead,
+  // forwarding an inbox thread and pushing a lead into a subsequence send real cold email; a blocklist removal and a
+  // sending account's detach change who gets mail and from where.
+  'outbound_lead_resume',
+  'outbound_inbox_forward',
+  'outbound_lead_subsequence_push',
+  'outbound_blocklist_remove',
+  'outbound_campaign_email_accounts_detach',
 ];
 
 function folderWith(guardrails) {
