@@ -349,6 +349,13 @@ const LIVE_CHANGE_NAMES = [
   // The desktop app's Analytics, wave S5a (MCP feature/s5a-analytics-forms, pending): matching visitors to the
   // account's ideal customers, which spends AI credit.
   'analytics_icp_matching_run',
+  // Email waves 2 and 3 (2026-11-12, pending as EMAIL-W23-1): an email series' disconnect stops a live automation, a
+  // topic's create and update change the public preference page and who sends leave out, and a template copy writes
+  // into another client's account. The two sends that came with them are on ALWAYS_ASK_WRITES.
+  'email_sequence_disconnect',
+  'email_topic_create',
+  'email_topic_update',
+  'marketing_template_copy_to_account',
 ];
 
 function folderWith(guardrails) {
