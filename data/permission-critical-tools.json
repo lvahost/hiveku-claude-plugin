@@ -5,8 +5,8 @@
     "mcp__plugin_hiveku_hk__",
     "mcp__hiveku__"
   ],
-  "plugin_version": "0.27.269",
-  "count": 713,
+  "plugin_version": "0.27.270",
+  "count": 719,
   "tools": [
     {
       "name": "deploy_site",
@@ -3572,6 +3572,36 @@
       "name": "brand_guide_update",
       "method": "PATCH",
       "why_gated": "changes the brand guide that every agent and design follows, from their next piece of work"
+    },
+    {
+      "name": "email_sequence_connection_turn_on",
+      "method": "POST",
+      "why_gated": "turns on an email series connected to a form, tag or store, and the automation behind it: from then on each new person the connection adds gets the series' emails, with nobody asked again. People who joined before are not added"
+    },
+    {
+      "name": "marketing_form_confirm_signups_set",
+      "method": "PATCH",
+      "why_gated": "turns on or off a website form's confirm-by-email step: while it is on, Hiveku emails every new sign-up on that form a Confirm button, and each of those emails counts toward the monthly email allowance"
+    },
+    {
+      "name": "email_sequence_disconnect",
+      "method": "DELETE",
+      "why_gated": "stops a live automation: the email series is taken off its form, tag or store, so no new people join it from there (the automation is turned off and kept). For a cart reminder series, the checkouts kept for it are deleted"
+    },
+    {
+      "name": "email_topic_create",
+      "method": "POST",
+      "why_gated": "adds an email topic to the public page people's unsubscribe link opens, and changes who campaigns and series with that topic leave out. A topic that is on by default is also ticked for people who already picked their topics, unless they picked none"
+    },
+    {
+      "name": "email_topic_update",
+      "method": "PATCH",
+      "why_gated": "changes an email topic on the public page people's unsubscribe link opens (its name, words, order or who gets it by default), and archived: true removes the topic from that page. It changes who campaigns and series with that topic leave out"
+    },
+    {
+      "name": "marketing_template_copy_to_account",
+      "method": "POST",
+      "why_gated": "writes into another client's account: copies this marketing template there as a new template, with that client's footer. Nothing is sent, but the copy sits in their account for their team to see and use"
     }
   ]
 }
