@@ -6,7 +6,7 @@
     "mcp__hiveku__"
   ],
   "plugin_version": "0.27.273",
-  "count": 720,
+  "count": 725,
   "tools": [
     {
       "name": "deploy_site",
@@ -1522,6 +1522,31 @@
       "name": "outbound_reply_draft_send",
       "method": "POST",
       "why_gated": "emails a prospect - sends a saved draft as a real reply through the provider"
+    },
+    {
+      "name": "outbound_lead_resume",
+      "method": "POST",
+      "why_gated": "resumes a paused lead in a cold email campaign: in a campaign that is sending, the lead starts getting its emails again"
+    },
+    {
+      "name": "outbound_inbox_forward",
+      "method": "POST",
+      "why_gated": "forwards an outbound inbox email thread to an address you give, sending real mail to that person"
+    },
+    {
+      "name": "outbound_lead_subsequence_push",
+      "method": "POST",
+      "why_gated": "pushes a lead into a campaign subsequence: the lead starts getting that subsequence's emails"
+    },
+    {
+      "name": "outbound_blocklist_remove",
+      "method": "DELETE",
+      "why_gated": "removes an address or domain from the campaign blocklist, so cold emails can be sent to them again"
+    },
+    {
+      "name": "outbound_campaign_email_accounts_detach",
+      "method": "DELETE",
+      "why_gated": "detaches a sending email account from a campaign, changing which mailboxes its emails send from"
     },
     {
       "name": "outbound_leads_bulk_create",
