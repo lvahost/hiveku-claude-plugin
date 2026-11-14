@@ -7835,14 +7835,14 @@
       "dept": "email",
       "method": "GET",
       "timeoutMs": null,
-      "description": "List suppressed email addresses (bounces, complaints, manual). Filter by type / include_removed, or search for addresses that hold some text (any case), as the Suppression list tab of Settings > Email Service searches. Each row says do_not_contact: { contact_id } when the address is marked Do Not Contact on that contact, else null; such an address is lifted with crm_remove_dnc on the contact, never with email_suppression_remove."
+      "description": "List suppressed email addresses (bounces, complaints, manual). Filter by type / include_removed, or search for addresses that hold some text (any case), as the Suppression list tab of Settings > Email Service searches. Each row says do_not_contact: { contact_id } when the address is marked Do Not Contact on that contact, else null; such an address is lifted on the contact's page in the Hiveku app, or with crm_remove_dnc on the contact where this connection lists it, never with email_suppression_remove."
     },
     {
       "name": "email_suppression_remove",
       "dept": "email",
       "method": "DELETE",
       "timeoutMs": null,
-      "description": "Remove (un-suppress) an email address. Refuses on sticky suppressions: bounces and complaints that delivery recorded, and imported ones. An address marked Do Not Contact on a contact stays on the list: it answers 409 do_not_contact with that contact_id, so use crm_remove_dnc instead, which lifts the email row, CRM sequences, the contact's stage and its texts together. Ask the person first."
+      "description": "Remove (un-suppress) an email address. Refuses on sticky suppressions: bounces and complaints that delivery recorded, and imported ones. An address marked Do Not Contact on a contact stays on the list: it answers 409 do_not_contact with that contact_id. It is lifted on the contact's page in the Hiveku app, or with crm_remove_dnc where this connection lists it, which lifts the email row, CRM sequences, the contact's stage and its texts together. Ask the person first."
     },
     {
       "name": "email_template_create",
@@ -9508,7 +9508,7 @@
       "dept": "kb",
       "method": "PATCH",
       "timeoutMs": null,
-      "description": "Update a knowledge base: its name, description, what it is for (context_type), whether it is the account's default, its tags and how closely answers keep to it (fidelity_mode). Leave out what should not change. A context_type outside its list is refused with 400 and nothing is saved. 403 when the key's creator may not edit the knowledge base (Marketing > Knowledge Base: Edit)."
+      "description": "Update a knowledge base: its name, description, what it is for (context_type), whether it is the default for its type, its tags and how closely answers keep to it (fidelity_mode). Leave out what should not change. A context_type outside its list is refused with 400 and nothing is saved. 403 when the key's creator may not edit the knowledge base (Marketing > Knowledge Base: Edit)."
     },
     {
       "name": "keywords_data_dataforseo_trends_demography",
