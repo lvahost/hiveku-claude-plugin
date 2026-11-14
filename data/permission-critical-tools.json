@@ -6,7 +6,7 @@
     "mcp__hiveku__"
   ],
   "plugin_version": "0.27.278",
-  "count": 728,
+  "count": 738,
   "tools": [
     {
       "name": "deploy_site",
@@ -262,6 +262,56 @@
       "name": "project_vcs_checks_rerun",
       "method": "POST",
       "why_gated": "runs a review's build and checks again, which spends the site's test builds (six per 15 minutes, shared with people and the merge line)"
+    },
+    {
+      "name": "project_vcs_temp_env_create",
+      "method": "POST",
+      "why_gated": "shares a branch of a site on a temporary environment, its own address and Hiveku link for 1, 3 or 7 days, and adds 50 cents a day to the account's bill"
+    },
+    {
+      "name": "project_vcs_temp_env_update",
+      "method": "POST",
+      "why_gated": "rebuilds a temporary environment on its branch's newest version, saving the branch's unsaved changes as a version first (or on the same version with rebuild), so everyone it was shared with sees that version at the same address"
+    },
+    {
+      "name": "project_vcs_temp_env_extend",
+      "method": "POST",
+      "why_gated": "adds 1, 3 or 7 days to a temporary environment, and 50 cents a day to the account's bill"
+    },
+    {
+      "name": "project_vcs_temp_env_revive",
+      "method": "POST",
+      "why_gated": "brings an ended temporary environment back at the same address and Hiveku link, and adds 50 cents a day to the account's bill"
+    },
+    {
+      "name": "project_vcs_temp_env_try_again",
+      "method": "POST",
+      "why_gated": "builds a temporary environment whose first build failed again, at the same address and Hiveku link, and adds 50 cents a day to the account's bill"
+    },
+    {
+      "name": "project_vcs_temp_env_password_set",
+      "method": "POST",
+      "why_gated": "sets or clears the passcode visitors type before a temporary environment's site loads: clearing it lets anyone with its address in, and any change signs out everyone already let in"
+    },
+    {
+      "name": "project_vcs_temp_env_settings_set",
+      "method": "POST",
+      "why_gated": "changes a temporary environment's label, turns comments through its Hiveku link on or off, or makes a new Hiveku link, which stops the old link at once"
+    },
+    {
+      "name": "project_vcs_temp_env_delete",
+      "method": "DELETE",
+      "why_gated": "turns a temporary environment off for good: its Hiveku link stops at once, its servers and files are removed, and it cannot be brought back"
+    },
+    {
+      "name": "project_vcs_temp_env_request_dismiss",
+      "method": "POST",
+      "why_gated": "says not now to someone's ask to bring a temporary environment back or to share a branch again: their page says so, they are emailed if they asked to be, and they can ask again after 7 days"
+    },
+    {
+      "name": "project_vcs_temp_env_open",
+      "method": "POST",
+      "why_gated": "makes a 60-second link that opens a temporary environment straight past its passcode: whoever holds it gets in until it expires, and each one is logged"
     },
     {
       "name": "project_secrets_set",
