@@ -588,19 +588,15 @@
  *   GETs and need no entry.
  *     EMAIL-W23-1         email_sequence_connection_turn_on, marketing_form_confirm_signups_set,
  *                         email_sequence_disconnect, email_topic_create, email_topic_update,
- *                         marketing_template_copy_to_account.
+ *                         marketing_template_copy_to_account. Landed 2026-11-13 (MCP #550, live at bd36a92a8ed1; the
+ *                         0.27.275 index carries all six); entries deleted.
  */
 const SEO_SINCE = '2026-08-30';
 const seo = (batch) => ({ since: SEO_SINCE, batch });
 
 export const PENDING_TOOLS = new Map([
-  // Email waves 2 and 3 (2026-11-12): on the ask lists before the tool server offers them.
-  ['email_sequence_connection_turn_on', { since: '2026-11-12', batch: 'EMAIL-W23-1' }],
-  ['marketing_form_confirm_signups_set', { since: '2026-11-12', batch: 'EMAIL-W23-1' }],
-  ['email_sequence_disconnect', { since: '2026-11-12', batch: 'EMAIL-W23-1' }],
-  ['email_topic_create', { since: '2026-11-12', batch: 'EMAIL-W23-1' }],
-  ['email_topic_update', { since: '2026-11-12', batch: 'EMAIL-W23-1' }],
-  ['marketing_template_copy_to_account', { since: '2026-11-12', batch: 'EMAIL-W23-1' }],
+  // 2026-11-13 (index regenerated at 3373 tools for 0.27.275): the six Email waves 2 and 3 writes (EMAIL-W23-1) are
+  // served and indexed. Entries deleted; the batch has landed.
   // 2026-11-13 (index regenerated at 3343 tools from MCP 448b6bc5af09): discussion_notice_route_set
   // (DISCUSSIONS-NOTICES) is served and indexed. Entry deleted.
   // 2026-11-07 (index regenerated at 3186 tools from MCP 2fb21a6b2935, #449): HK-1203's three public link switches are
