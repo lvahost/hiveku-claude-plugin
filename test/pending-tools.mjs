@@ -840,6 +840,10 @@ export const PENDING_TOOLS = new Map([
   ['social_account_disconnect', { since: '2026-11-08', batch: 'SOCIAL-DESKTOP' }],
   ['social_accounts_activate', { since: '2026-11-08', batch: 'SOCIAL-DESKTOP' }],
   ['social_accounts_import_gbp', { since: '2026-11-08', batch: 'SOCIAL-DESKTOP' }],
+  // HK-1607 (2026-11-13): a person's Send for approval, on the ask list and LIVE_CHANGE_WRITES. The MCP serves it to the
+  // Hiveku app's own key alone and the index is read with an agent key, so it stays here for good, as the SOCIAL-DESKTOP
+  // writes do.
+  ['social_post_send_for_approval', { since: '2026-11-13', batch: 'HK-1607' }],
   // VCS-AI-REVIEW (2026-11-10): a site's AI review switch, on the ask list and LIVE_CHANGE_WRITES. The MCP serves it to the
   // Hiveku app's own key alone and the index is read with an agent key, so it stays here for good, as the SOCIAL-DESKTOP
   // writes do.

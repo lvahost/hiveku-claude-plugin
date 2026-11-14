@@ -703,6 +703,7 @@ Put this in `.claude/settings.json` (per project) or `~/.claude/settings.json` (
       "mcp__plugin_hiveku_hk__social_account_disconnect",
       "mcp__plugin_hiveku_hk__social_accounts_activate",
       "mcp__plugin_hiveku_hk__social_accounts_import_gbp",
+      "mcp__plugin_hiveku_hk__social_post_send_for_approval",
       "mcp__plugin_hiveku_hk__social_posts_bulk_create",
       "mcp__plugin_hiveku_hk__webflow_site_publish",
       "mcp__plugin_hiveku_hk__webflow_cms_item_publish",

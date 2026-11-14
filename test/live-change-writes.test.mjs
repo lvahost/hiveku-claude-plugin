@@ -176,6 +176,8 @@ const LIVE_CHANGE_NAMES = [
   'social_account_disconnect',
   'social_accounts_activate',
   'social_accounts_import_gbp',
+  // HK-1607: a person's Send for approval holds a scheduled post back from its time.
+  'social_post_send_for_approval',
   'social_posts_bulk_create',
   'account_timezone_set',
   'helpdesk_assistant_knowledge_sources_update',
