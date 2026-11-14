@@ -6,7 +6,7 @@
     "mcp__hiveku__"
   ],
   "plugin_version": "0.27.275",
-  "count": 727,
+  "count": 728,
   "tools": [
     {
       "name": "deploy_site",
@@ -2462,6 +2462,11 @@
       "name": "social_accounts_import_gbp",
       "method": "POST",
       "why_gated": "brings Google Business locations in from the account's SEO connection as social accounts waiting to be turned on. Hiveku takes it from the Hiveku app's own key only"
+    },
+    {
+      "name": "social_post_send_for_approval",
+      "method": "POST",
+      "why_gated": "holds a draft or a scheduled post for a person's approval: a scheduled post does not go out at its time until someone approves it, and approving one with no time, or one whose time has passed, publishes it at once. Hiveku takes it from the Hiveku app's own key only"
     },
     {
       "name": "social_posts_bulk_create",
