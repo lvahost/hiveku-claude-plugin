@@ -1,0 +1,2363 @@
+{
+  "about": [
+    "What Hiveku's social_post_strategy_check route answers for this dataset, recorded 2026-11-15 by running the route's own check on each body below with this dataset as the account (the ICP, the journey and its linked ICP, the grid and its ICP, the pillar, the brand guide's phrases to avoid, the public testimonials, and each network's last 20 posts that went out or will).",
+    "Each item is 'id[:platform] | status | reason'; a stage's job is jobs[stage.awareness]; platforms are the networks of target_platforms and target_accounts.",
+    "tools.mjs answers the same (the self-test holds it to this file). Record it again when the route changes."
+  ],
+  "jobs": {
+    "unaware": {
+      "step": "unaware",
+      "words": "Doesn't see the problem yet",
+      "job": "Name the problem in the reader's own words before they have named it",
+      "openings": [
+        {
+          "slug": "unanswerable-question",
+          "name": "Unanswerable question",
+          "definition": "A question the reader cannot answer and wants to."
+        },
+        {
+          "slug": "persona-callout",
+          "name": "Persona callout",
+          "definition": "Names the reader by situation, not demographic."
+        },
+        {
+          "slug": "curiosity-gap",
+          "name": "Curiosity gap",
+          "definition": "Promises a payoff and names it."
+        },
+        {
+          "slug": "in-medias-res",
+          "name": "In medias res",
+          "definition": "Drops into the middle of a story."
+        },
+        {
+          "slug": "definition-reframe",
+          "name": "Definition reframe",
+          "definition": "Redefines the thing the reader thinks they are buying."
+        }
+      ],
+      "formats": [
+        "Story",
+        "Behind the scenes",
+        "Myth and truth",
+        "Short video"
+      ],
+      "asks": [
+        "Follow",
+        "Save"
+      ],
+      "avoid": [
+        "A pitch",
+        "Prices",
+        "Book now"
+      ]
+    },
+    "problem_aware": {
+      "step": "problem_aware",
+      "words": "Feels the problem",
+      "job": "Show the problem is solvable and what waiting costs",
+      "openings": [
+        {
+          "slug": "contrarian",
+          "name": "Contrarian",
+          "definition": "Reverses a belief the reader holds."
+        },
+        {
+          "slug": "mistake",
+          "name": "Mistake",
+          "definition": "A confession, or the one error everyone makes."
+        },
+        {
+          "slug": "curiosity-gap",
+          "name": "Curiosity gap",
+          "definition": "Promises a payoff and names it."
+        },
+        {
+          "slug": "objection-first",
+          "name": "Objection first",
+          "definition": "Opens with the reader's own objection."
+        },
+        {
+          "slug": "myth-truth",
+          "name": "Myth and truth",
+          "definition": "Names a myth and replaces it."
+        }
+      ],
+      "formats": [
+        "Checklist",
+        "Teardown",
+        "Carousel",
+        "List"
+      ],
+      "asks": [
+        "Save",
+        "Comment",
+        "Get the free guide"
+      ],
+      "avoid": [
+        "Selling",
+        "Feature lists"
+      ]
+    },
+    "solution_aware": {
+      "step": "solution_aware",
+      "words": "Weighing kinds of fix",
+      "job": "Prove this approach beats the alternatives the reader is weighing",
+      "openings": [
+        {
+          "slug": "specific-number",
+          "name": "Specific number",
+          "definition": "A real figure from account data leads the line."
+        },
+        {
+          "slug": "curiosity-gap",
+          "name": "Curiosity gap",
+          "definition": "Promises a payoff and names it."
+        },
+        {
+          "slug": "hot-take",
+          "name": "Hot take",
+          "definition": "A defensible opinion stated flat."
+        },
+        {
+          "slug": "list-promise",
+          "name": "List promise",
+          "definition": "A count and a payoff."
+        }
+      ],
+      "formats": [
+        "Comparison",
+        "Data point",
+        "List",
+        "Point of view"
+      ],
+      "asks": [
+        "Compare",
+        "Read",
+        "Watch"
+      ],
+      "avoid": [
+        "\"We're the best\" with nothing behind it"
+      ]
+    },
+    "product_aware": {
+      "step": "product_aware",
+      "words": "Weighing you",
+      "job": "Remove the last objections to choosing us",
+      "openings": [
+        {
+          "slug": "specific-number",
+          "name": "Specific number",
+          "definition": "A real figure from account data leads the line."
+        },
+        {
+          "slug": "before-after",
+          "name": "Before and after",
+          "definition": "The transformation snapshot: a real before, a real after."
+        },
+        {
+          "slug": "curiosity-gap",
+          "name": "Curiosity gap",
+          "definition": "Promises a payoff and names it."
+        },
+        {
+          "slug": "objection-first",
+          "name": "Objection first",
+          "definition": "Opens with the reader's own objection."
+        },
+        {
+          "slug": "customer-quote",
+          "name": "Customer quote",
+          "definition": "The customer's own words, verbatim, with permission."
+        },
+        {
+          "slug": "proof-teaser",
+          "name": "Proof teaser",
+          "definition": "The result before the method."
+        }
+      ],
+      "formats": [
+        "Three-line case study",
+        "Real-photo before and after",
+        "Quote card",
+        "Objection answer",
+        "FAQ"
+      ],
+      "asks": [
+        "See the offer",
+        "Ask a question",
+        "Book a demo"
+      ],
+      "avoid": [
+        "Invented befores",
+        "Paraphrased quotes"
+      ]
+    },
+    "most_aware": {
+      "step": "most_aware",
+      "words": "Ready to act",
+      "job": "Make acting now the obvious move",
+      "openings": [
+        {
+          "slug": "specific-number",
+          "name": "Specific number",
+          "definition": "A real figure from account data leads the line."
+        },
+        {
+          "slug": "curiosity-gap",
+          "name": "Curiosity gap",
+          "definition": "Promises a payoff and names it."
+        },
+        {
+          "slug": "timely",
+          "name": "Timely",
+          "definition": "Tied to a date the reader is watching."
+        }
+      ],
+      "formats": [
+        "Offer with real scarcity",
+        "FAQ",
+        "Behind the scenes"
+      ],
+      "asks": [
+        "Book, buy or call, in your own button words"
+      ],
+      "avoid": [
+        "Fake urgency",
+        "More teaching"
+      ]
+    },
+    "customer": {
+      "step": "customer",
+      "words": "Already a customer",
+      "job": "Keep them, and earn the review and the referral",
+      "openings": [
+        {
+          "slug": "in-medias-res",
+          "name": "In medias res",
+          "definition": "Drops into the middle of a story."
+        },
+        {
+          "slug": "customer-quote",
+          "name": "Customer quote",
+          "definition": "The customer's own words, verbatim, with permission."
+        }
+      ],
+      "formats": [
+        "Customer story, with permission",
+        "How-to tip",
+        "Milestone"
+      ],
+      "asks": [
+        "Leave a review",
+        "Refer a friend",
+        "Share"
+      ],
+      "avoid": [
+        "Selling again straight away",
+        "Private details"
+      ]
+    }
+  },
+  "cases": {
+    "li": {
+      "body": {
+        "content": "Myth: the lacquer failed. Truth: the coat under it was never sanded. Of 312 doors through our finish room in July, the 4 that came back had skipped the 320 pass between coats on one rush order. The 41 Harlow Street doors got the pass and are 18 months in with zero call-backs. Ask your shop what happens between coats, then save this for the next finish schedule you sign.",
+        "target_platforms": [
+          "linkedin"
+        ],
+        "target_accounts": [
+          "sacc_linkedin_01"
+        ],
+        "first_comment": "The finish schedule, coat by coat, with flash times for a Texas August: https://brightsidefixtures.example/finish-schedule?utm_source=linkedin&utm_medium=social",
+        "avatar_id": "avt_marcus_01",
+        "journey_id": "cjm_trade_01",
+        "journey_stage": "Problem Aware",
+        "before_after_grid_id": "grid_harlow_01",
+        "before_after_item_id": "gi_harlow_01",
+        "pillar_id": "pil_educate"
+      },
+      "summary": {
+        "ok": 12,
+        "fix": 2,
+        "ask": 2,
+        "not_set": 0
+      },
+      "stage": {
+        "name": "Problem Aware",
+        "stage_id": "stg_trade_problem_aware",
+        "awareness": "problem_aware",
+        "awareness_source": "guess",
+        "guessed_from": "name"
+      },
+      "items": [
+        "who.icp | ok | Marcus: 3 pains and a quote in their own words.",
+        "who.networks | ok | Marcus is on LinkedIn.",
+        "where.journey | ok | Trade contractor journey.",
+        "where.stage | ask | Hiveku reads \"Problem Aware\" as feels the problem (a guess from its name): show the problem is solvable and what waiting costs. Is that right? Set its step on the journey if not.",
+        "where.journey_icp | ok | Trade contractor journey is for Marcus.",
+        "what.grid | ok | Harlow Street refit - Whitfield Renovations.",
+        "what.grid_icp | ok | Harlow Street refit - Whitfield Renovations was made for Marcus.",
+        "what.row | ok | Before: Before. After: After.",
+        "ask | fix | No next step: ask for one thing that fits feels the problem, such as save, comment and get the free guide.",
+        "ask.pillar | ok | Educate reads as Educate.",
+        "proof | ok | Every number and quote matches a source you have.",
+        "voice | ok | None of Hiveku's banned phrases or your brand guide's phrases to avoid.",
+        "network.fold:linkedin | fix | The first line runs past LinkedIn's cut at about 210 characters: readers see \"Myth: the lacquer failed. Truth: the coat under it was never sanded...\" and then \"more\".",
+        "network.link:linkedin | ok | The link is in the first comment, so the post keeps its reach on LinkedIn.",
+        "network.hashtags:linkedin | ask | No hashtags: LinkedIn reads 3 to 5. Add some?",
+        "network.repeat:linkedin | ok | The opening is new against your last 20 LinkedIn posts."
+      ],
+      "platforms": [
+        "linkedin"
+      ]
+    },
+    "fb": {
+      "body": {
+        "content": "We used to skip the sand between coats on rush jobs. Then 4 doors from one July kitchen came back with the top coat lifting at the seams, and the fix cost more than the day we saved. Every coat gets the 320 pass now, rush or not, and the 41 Harlow Street doors are 18 months in with zero call-backs. Comment with the finish failure you see most and we will answer it in the next post.",
+        "target_platforms": [
+          "facebook"
+        ],
+        "target_accounts": [
+          "sacc_facebook_01"
+        ],
+        "first_comment": "The finish schedule we follow, coat by coat: https://brightsidefixtures.example/finish-schedule?utm_source=facebook&utm_medium=social",
+        "media_asset_ids": [
+          "ma_finish_room_01"
+        ],
+        "media_alt_texts": [
+          "A finisher scuff-sanding a lacquered cabinet door with 320 grit paper in the Brightside finish room."
+        ],
+        "avatar_id": "avt_marcus_01",
+        "journey_id": "cjm_trade_01",
+        "journey_stage": "Problem Aware",
+        "before_after_grid_id": "grid_harlow_01",
+        "before_after_item_id": "gi_harlow_01",
+        "pillar_id": "pil_educate"
+      },
+      "summary": {
+        "ok": 13,
+        "fix": 1,
+        "ask": 2,
+        "not_set": 0
+      },
+      "stage": {
+        "name": "Problem Aware",
+        "stage_id": "stg_trade_problem_aware",
+        "awareness": "problem_aware",
+        "awareness_source": "guess",
+        "guessed_from": "name"
+      },
+      "items": [
+        "who.icp | ok | Marcus: 3 pains and a quote in their own words.",
+        "who.networks | ok | Marcus is on Facebook.",
+        "where.journey | ok | Trade contractor journey.",
+        "where.stage | ask | Hiveku reads \"Problem Aware\" as feels the problem (a guess from its name): show the problem is solvable and what waiting costs. Is that right? Set its step on the journey if not.",
+        "where.journey_icp | ok | Trade contractor journey is for Marcus.",
+        "what.grid | ok | Harlow Street refit - Whitfield Renovations.",
+        "what.grid_icp | ok | Harlow Street refit - Whitfield Renovations was made for Marcus.",
+        "what.row | ok | Before: Before. After: After.",
+        "ask | ok | One ask, \"comment\", fits someone who feels the problem.",
+        "ask.pillar | ok | Educate reads as Educate.",
+        "proof | ok | Every number and quote matches a source you have.",
+        "voice | ok | None of Hiveku's banned phrases or your brand guide's phrases to avoid.",
+        "network.fold:facebook | fix | The first line runs past Facebook's cut at about 125 characters: readers see \"We used to skip the sand between coats on rush jobs. Then 4 doors f...\" and then \"more\".",
+        "network.link:facebook | ok | The link is in the first comment, so the post keeps its reach on Facebook.",
+        "network.hashtags:facebook | ask | No hashtags: Facebook reads 1 to 2. Add some?",
+        "network.repeat:facebook | ok | The opening is new against your last 8 Facebook posts."
+      ],
+      "platforms": [
+        "facebook"
+      ]
+    },
+    "selfTestBody": {
+      "body": {
+        "content": "Myth: the lacquer failed. Truth: the coat under it was never sanded.",
+        "target_platforms": [
+          "linkedin"
+        ],
+        "target_accounts": [
+          "sacc_linkedin_01"
+        ],
+        "avatar_id": "avt_marcus_01",
+        "journey_id": "cjm_trade_01",
+        "journey_stage": "Problem Aware",
+        "before_after_grid_id": "grid_harlow_01",
+        "before_after_item_id": "gi_harlow_01",
+        "pillar_id": "pil_educate"
+      },
+      "summary": {
+        "ok": 13,
+        "fix": 1,
+        "ask": 2,
+        "not_set": 0
+      },
+      "stage": {
+        "name": "Problem Aware",
+        "stage_id": "stg_trade_problem_aware",
+        "awareness": "problem_aware",
+        "awareness_source": "guess",
+        "guessed_from": "name"
+      },
+      "items": [
+        "who.icp | ok | Marcus: 3 pains and a quote in their own words.",
+        "who.networks | ok | Marcus is on LinkedIn.",
+        "where.journey | ok | Trade contractor journey.",
+        "where.stage | ask | Hiveku reads \"Problem Aware\" as feels the problem (a guess from its name): show the problem is solvable and what waiting costs. Is that right? Set its step on the journey if not.",
+        "where.journey_icp | ok | Trade contractor journey is for Marcus.",
+        "what.grid | ok | Harlow Street refit - Whitfield Renovations.",
+        "what.grid_icp | ok | Harlow Street refit - Whitfield Renovations was made for Marcus.",
+        "what.row | ok | Before: Before. After: After.",
+        "ask | fix | No next step: ask for one thing that fits feels the problem, such as save, comment and get the free guide.",
+        "ask.pillar | ok | Educate reads as Educate.",
+        "proof | ok | No numbers, results or quotes to back.",
+        "voice | ok | None of Hiveku's banned phrases or your brand guide's phrases to avoid.",
+        "network.fold:linkedin | ok | All of it shows on LinkedIn before the cut.",
+        "network.link:linkedin | ok | No link.",
+        "network.hashtags:linkedin | ask | No hashtags: LinkedIn reads 3 to 5. Add some?",
+        "network.repeat:linkedin | ok | The opening is new against your last 20 LinkedIn posts."
+      ],
+      "platforms": [
+        "linkedin"
+      ]
+    },
+    "selfTestX": {
+      "body": {
+        "content": "Myth: the lacquer failed. Truth: the coat under it was never sanded.",
+        "target_platforms": [
+          "twitter"
+        ],
+        "target_accounts": [],
+        "avatar_id": "avt_marcus_01",
+        "journey_id": "cjm_trade_01",
+        "journey_stage": "Problem Aware",
+        "before_after_grid_id": "grid_harlow_01",
+        "before_after_item_id": "gi_harlow_01",
+        "pillar_id": "pil_educate"
+      },
+      "summary": {
+        "ok": 12,
+        "fix": 1,
+        "ask": 3,
+        "not_set": 0
+      },
+      "stage": {
+        "name": "Problem Aware",
+        "stage_id": "stg_trade_problem_aware",
+        "awareness": "problem_aware",
+        "awareness_source": "guess",
+        "guessed_from": "name"
+      },
+      "items": [
+        "who.icp | ok | Marcus: 3 pains and a quote in their own words.",
+        "who.networks | ask | Is Marcus on X? Their profile lists linkedin and facebook.",
+        "where.journey | ok | Trade contractor journey.",
+        "where.stage | ask | Hiveku reads \"Problem Aware\" as feels the problem (a guess from its name): show the problem is solvable and what waiting costs. Is that right? Set its step on the journey if not.",
+        "where.journey_icp | ok | Trade contractor journey is for Marcus.",
+        "what.grid | ok | Harlow Street refit - Whitfield Renovations.",
+        "what.grid_icp | ok | Harlow Street refit - Whitfield Renovations was made for Marcus.",
+        "what.row | ok | Before: Before. After: After.",
+        "ask | fix | No next step: ask for one thing that fits feels the problem, such as save, comment and get the free guide.",
+        "ask.pillar | ok | Educate reads as Educate.",
+        "proof | ok | No numbers, results or quotes to back.",
+        "voice | ok | None of Hiveku's banned phrases or your brand guide's phrases to avoid.",
+        "network.fold:twitter | ok | All of it shows on X before the cut.",
+        "network.link:twitter | ok | No link.",
+        "network.hashtags:twitter | ask | No hashtags: X reads 1 to 2. Add some?",
+        "network.repeat:twitter | ok | No recent X posts to compare the opening with."
+      ],
+      "platforms": [
+        "twitter"
+      ]
+    },
+    "selfTestTemplate": {
+      "body": {
+        "content": "Myth: the lacquer failed. Truth: the coat under it was never sanded.",
+        "target_platforms": [
+          "linkedin"
+        ],
+        "target_accounts": [
+          "sacc_linkedin_01"
+        ],
+        "avatar_id": "avt_template_01",
+        "journey_id": "cjm_trade_01",
+        "journey_stage": "Problem Aware",
+        "before_after_grid_id": "grid_harlow_01",
+        "before_after_item_id": "gi_harlow_01",
+        "pillar_id": "pil_educate"
+      },
+      "summary": {
+        "ok": 10,
+        "fix": 2,
+        "ask": 4,
+        "not_set": 0
+      },
+      "stage": {
+        "name": "Problem Aware",
+        "stage_id": "stg_trade_problem_aware",
+        "awareness": "problem_aware",
+        "awareness_source": "guess",
+        "guessed_from": "name"
+      },
+      "items": [
+        "who.icp | fix | Primary Customer still has template text (\"[Company]\" and \"your tool\"): rewrite it in your customer's words.",
+        "who.networks | ok | Primary Customer is on LinkedIn.",
+        "where.journey | ok | Trade contractor journey.",
+        "where.stage | ask | Hiveku reads \"Problem Aware\" as feels the problem (a guess from its name): show the problem is solvable and what waiting costs. Is that right? Set its step on the journey if not.",
+        "where.journey_icp | ask | Trade contractor journey is for Marcus. Is this post for Primary Customer on that journey?",
+        "what.grid | ok | Harlow Street refit - Whitfield Renovations.",
+        "what.grid_icp | ask | Harlow Street refit - Whitfield Renovations was made for Marcus. Is it right for Primary Customer?",
+        "what.row | ok | Before: Before. After: After.",
+        "ask | fix | No next step: ask for one thing that fits feels the problem, such as save, comment and get the free guide.",
+        "ask.pillar | ok | Educate reads as Educate.",
+        "proof | ok | No numbers, results or quotes to back.",
+        "voice | ok | None of Hiveku's banned phrases or your brand guide's phrases to avoid.",
+        "network.fold:linkedin | ok | All of it shows on LinkedIn before the cut.",
+        "network.link:linkedin | ok | No link.",
+        "network.hashtags:linkedin | ask | No hashtags: LinkedIn reads 3 to 5. Add some?",
+        "network.repeat:linkedin | ok | The opening is new against your last 20 LinkedIn posts."
+      ],
+      "platforms": [
+        "linkedin"
+      ]
+    },
+    "bare": {
+      "body": {
+        "content": "x",
+        "target_platforms": [
+          "linkedin"
+        ]
+      },
+      "summary": {
+        "ok": 4,
+        "fix": 0,
+        "ask": 1,
+        "not_set": 4
+      },
+      "stage": null,
+      "items": [
+        "who.icp | not_set | Pick who this post is for: one of your ICPs.",
+        "where.journey | not_set | Pick the journey this post moves people along, and its stage.",
+        "what.grid | not_set | Pick the before and after this post shows.",
+        "ask | not_set | Pick the stage to check the ask fits.",
+        "proof | ok | No numbers, results or quotes to back.",
+        "voice | ok | None of Hiveku's banned phrases or your brand guide's phrases to avoid.",
+        "network.fold:linkedin | ok | All of it shows on LinkedIn before the cut.",
+        "network.link:linkedin | ok | No link.",
+        "network.hashtags:linkedin | ask | No hashtags: LinkedIn reads 3 to 5. Add some?"
+      ],
+      "platforms": [
+        "linkedin"
+      ]
+    },
+    "rowNope": {
+      "body": {
+        "content": "Myth: the lacquer failed. Truth: the coat under it was never sanded.",
+        "target_platforms": [
+          "linkedin"
+        ],
+        "target_accounts": [
+          "sacc_linkedin_01"
+        ],
+        "avatar_id": "avt_marcus_01",
+        "journey_id": "cjm_trade_01",
+        "journey_stage": "Problem Aware",
+        "before_after_grid_id": "grid_harlow_01",
+        "before_after_item_id": "gi_nope",
+        "pillar_id": "pil_educate"
+      },
+      "summary": {
+        "ok": 12,
+        "fix": 2,
+        "ask": 2,
+        "not_set": 0
+      },
+      "stage": {
+        "name": "Problem Aware",
+        "stage_id": "stg_trade_problem_aware",
+        "awareness": "problem_aware",
+        "awareness_source": "guess",
+        "guessed_from": "name"
+      },
+      "items": [
+        "who.icp | ok | Marcus: 3 pains and a quote in their own words.",
+        "who.networks | ok | Marcus is on LinkedIn.",
+        "where.journey | ok | Trade contractor journey.",
+        "where.stage | ask | Hiveku reads \"Problem Aware\" as feels the problem (a guess from its name): show the problem is solvable and what waiting costs. Is that right? Set its step on the journey if not.",
+        "where.journey_icp | ok | Trade contractor journey is for Marcus.",
+        "what.grid | ok | Harlow Street refit - Whitfield Renovations.",
+        "what.grid_icp | ok | Harlow Street refit - Whitfield Renovations was made for Marcus.",
+        "what.row | fix | That row is not in Harlow Street refit - Whitfield Renovations: pick one of its rows.",
+        "ask | fix | No next step: ask for one thing that fits feels the problem, such as save, comment and get the free guide.",
+        "ask.pillar | ok | Educate reads as Educate.",
+        "proof | ok | No numbers, results or quotes to back.",
+        "voice | ok | None of Hiveku's banned phrases or your brand guide's phrases to avoid.",
+        "network.fold:linkedin | ok | All of it shows on LinkedIn before the cut.",
+        "network.link:linkedin | ok | No link.",
+        "network.hashtags:linkedin | ask | No hashtags: LinkedIn reads 3 to 5. Add some?",
+        "network.repeat:linkedin | ok | The opening is new against your last 20 LinkedIn posts."
+      ],
+      "platforms": [
+        "linkedin"
+      ]
+    },
+    "elevate": {
+      "body": {
+        "content": "If you want to elevate the finish, ask what happened between coats.",
+        "target_platforms": [
+          "linkedin"
+        ],
+        "target_accounts": [
+          "sacc_linkedin_01"
+        ],
+        "avatar_id": "avt_marcus_01",
+        "journey_id": "cjm_trade_01",
+        "journey_stage": "Problem Aware",
+        "before_after_grid_id": "grid_harlow_01",
+        "before_after_item_id": "gi_harlow_01",
+        "pillar_id": "pil_educate"
+      },
+      "summary": {
+        "ok": 12,
+        "fix": 2,
+        "ask": 2,
+        "not_set": 0
+      },
+      "stage": {
+        "name": "Problem Aware",
+        "stage_id": "stg_trade_problem_aware",
+        "awareness": "problem_aware",
+        "awareness_source": "guess",
+        "guessed_from": "name"
+      },
+      "items": [
+        "who.icp | ok | Marcus: 3 pains and a quote in their own words.",
+        "who.networks | ok | Marcus is on LinkedIn.",
+        "where.journey | ok | Trade contractor journey.",
+        "where.stage | ask | Hiveku reads \"Problem Aware\" as feels the problem (a guess from its name): show the problem is solvable and what waiting costs. Is that right? Set its step on the journey if not.",
+        "where.journey_icp | ok | Trade contractor journey is for Marcus.",
+        "what.grid | ok | Harlow Street refit - Whitfield Renovations.",
+        "what.grid_icp | ok | Harlow Street refit - Whitfield Renovations was made for Marcus.",
+        "what.row | ok | Before: Before. After: After.",
+        "ask | fix | No next step: ask for one thing that fits feels the problem, such as save, comment and get the free guide.",
+        "ask.pillar | ok | Educate reads as Educate.",
+        "proof | ok | No numbers, results or quotes to back.",
+        "voice | fix | Reword it: \"elevate\" reads like copy any business could post.",
+        "network.fold:linkedin | ok | All of it shows on LinkedIn before the cut.",
+        "network.link:linkedin | ok | No link.",
+        "network.hashtags:linkedin | ask | No hashtags: LinkedIn reads 3 to 5. Add some?",
+        "network.repeat:linkedin | ok | The opening is new against your last 20 LinkedIn posts."
+      ],
+      "platforms": [
+        "linkedin"
+      ]
+    },
+    "liFixed": {
+      "body": {
+        "content": "Myth: the lacquer failed. Truth: the coat under it was never sanded.\nOf 312 doors through our finish room in July, the 4 that came back had skipped the 320 pass between coats on one rush order. The 41 Harlow Street doors got the pass and are 18 months in with zero call-backs. Ask your shop what happens between coats.\nSave this for the next finish schedule you sign.",
+        "target_platforms": [
+          "linkedin"
+        ],
+        "target_accounts": [
+          "sacc_linkedin_01"
+        ],
+        "first_comment": "The finish schedule, coat by coat, with flash times for a Texas August: https://brightsidefixtures.example/finish-schedule?utm_source=linkedin&utm_medium=social",
+        "avatar_id": "avt_marcus_01",
+        "journey_id": "cjm_trade_01",
+        "journey_stage": "Problem Aware",
+        "before_after_grid_id": "grid_harlow_01",
+        "before_after_item_id": "gi_harlow_01",
+        "pillar_id": "pil_educate"
+      },
+      "summary": {
+        "ok": 14,
+        "fix": 0,
+        "ask": 2,
+        "not_set": 0
+      },
+      "stage": {
+        "name": "Problem Aware",
+        "stage_id": "stg_trade_problem_aware",
+        "awareness": "problem_aware",
+        "awareness_source": "guess",
+        "guessed_from": "name"
+      },
+      "items": [
+        "who.icp | ok | Marcus: 3 pains and a quote in their own words.",
+        "who.networks | ok | Marcus is on LinkedIn.",
+        "where.journey | ok | Trade contractor journey.",
+        "where.stage | ask | Hiveku reads \"Problem Aware\" as feels the problem (a guess from its name): show the problem is solvable and what waiting costs. Is that right? Set its step on the journey if not.",
+        "where.journey_icp | ok | Trade contractor journey is for Marcus.",
+        "what.grid | ok | Harlow Street refit - Whitfield Renovations.",
+        "what.grid_icp | ok | Harlow Street refit - Whitfield Renovations was made for Marcus.",
+        "what.row | ok | Before: Before. After: After.",
+        "ask | ok | One ask, \"save\", fits someone who feels the problem.",
+        "ask.pillar | ok | Educate reads as Educate.",
+        "proof | ok | Every number and quote matches a source you have.",
+        "voice | ok | None of Hiveku's banned phrases or your brand guide's phrases to avoid.",
+        "network.fold:linkedin | ok | The first line fits before LinkedIn's cut (about 210 characters).",
+        "network.link:linkedin | ok | The link is in the first comment, so the post keeps its reach on LinkedIn.",
+        "network.hashtags:linkedin | ask | No hashtags: LinkedIn reads 3 to 5. Add some?",
+        "network.repeat:linkedin | ok | The opening is new against your last 20 LinkedIn posts."
+      ],
+      "platforms": [
+        "linkedin"
+      ]
+    },
+    "fbFixed": {
+      "body": {
+        "content": "We used to skip the sand between coats on rush jobs.\nThen 4 doors from one July kitchen came back with the top coat lifting at the seams, and the fix cost more than the day we saved. Every coat gets the 320 pass now, rush or not, and the 41 Harlow Street doors are 18 months in with zero call-backs. Comment with the finish failure you see most and we will answer it in the next post.",
+        "target_platforms": [
+          "facebook"
+        ],
+        "target_accounts": [
+          "sacc_facebook_01"
+        ],
+        "first_comment": "The finish schedule we follow, coat by coat: https://brightsidefixtures.example/finish-schedule?utm_source=facebook&utm_medium=social",
+        "media_asset_ids": [
+          "ma_finish_room_01"
+        ],
+        "media_alt_texts": [
+          "A finisher scuff-sanding a lacquered cabinet door with 320 grit paper in the Brightside finish room."
+        ],
+        "avatar_id": "avt_marcus_01",
+        "journey_id": "cjm_trade_01",
+        "journey_stage": "Problem Aware",
+        "before_after_grid_id": "grid_harlow_01",
+        "before_after_item_id": "gi_harlow_01",
+        "pillar_id": "pil_educate"
+      },
+      "summary": {
+        "ok": 14,
+        "fix": 0,
+        "ask": 2,
+        "not_set": 0
+      },
+      "stage": {
+        "name": "Problem Aware",
+        "stage_id": "stg_trade_problem_aware",
+        "awareness": "problem_aware",
+        "awareness_source": "guess",
+        "guessed_from": "name"
+      },
+      "items": [
+        "who.icp | ok | Marcus: 3 pains and a quote in their own words.",
+        "who.networks | ok | Marcus is on Facebook.",
+        "where.journey | ok | Trade contractor journey.",
+        "where.stage | ask | Hiveku reads \"Problem Aware\" as feels the problem (a guess from its name): show the problem is solvable and what waiting costs. Is that right? Set its step on the journey if not.",
+        "where.journey_icp | ok | Trade contractor journey is for Marcus.",
+        "what.grid | ok | Harlow Street refit - Whitfield Renovations.",
+        "what.grid_icp | ok | Harlow Street refit - Whitfield Renovations was made for Marcus.",
+        "what.row | ok | Before: Before. After: After.",
+        "ask | ok | One ask, \"comment\", fits someone who feels the problem.",
+        "ask.pillar | ok | Educate reads as Educate.",
+        "proof | ok | Every number and quote matches a source you have.",
+        "voice | ok | None of Hiveku's banned phrases or your brand guide's phrases to avoid.",
+        "network.fold:facebook | ok | The first line fits before Facebook's cut (about 125 characters).",
+        "network.link:facebook | ok | The link is in the first comment, so the post keeps its reach on Facebook.",
+        "network.hashtags:facebook | ask | No hashtags: Facebook reads 1 to 2. Add some?",
+        "network.repeat:facebook | ok | The opening is new against your last 8 Facebook posts."
+      ],
+      "platforms": [
+        "facebook"
+      ]
+    },
+    "liBanned": {
+      "body": {
+        "content": "Stop asking your cabinet shop for a third coat. Two coats keyed with 320 grit outlast four that are not, and the 41 Harlow Street doors are 18 months in with zero call-backs. If you want to elevate the finish on a working kitchen, ask what happened between the coats, not how many there were. Save this for the next finish schedule you sign.",
+        "target_platforms": [
+          "linkedin"
+        ],
+        "target_accounts": [
+          "sacc_linkedin_01"
+        ],
+        "first_comment": "The finish schedule we follow, coat by coat: https://brightsidefixtures.example/finish-schedule?utm_source=linkedin&utm_medium=social",
+        "avatar_id": "avt_marcus_01",
+        "journey_id": "cjm_trade_01",
+        "journey_stage": "Problem Aware",
+        "before_after_grid_id": "grid_harlow_01",
+        "before_after_item_id": "gi_harlow_01",
+        "pillar_id": "pil_educate"
+      },
+      "summary": {
+        "ok": 12,
+        "fix": 2,
+        "ask": 2,
+        "not_set": 0
+      },
+      "stage": {
+        "name": "Problem Aware",
+        "stage_id": "stg_trade_problem_aware",
+        "awareness": "problem_aware",
+        "awareness_source": "guess",
+        "guessed_from": "name"
+      },
+      "items": [
+        "who.icp | ok | Marcus: 3 pains and a quote in their own words.",
+        "who.networks | ok | Marcus is on LinkedIn.",
+        "where.journey | ok | Trade contractor journey.",
+        "where.stage | ask | Hiveku reads \"Problem Aware\" as feels the problem (a guess from its name): show the problem is solvable and what waiting costs. Is that right? Set its step on the journey if not.",
+        "where.journey_icp | ok | Trade contractor journey is for Marcus.",
+        "what.grid | ok | Harlow Street refit - Whitfield Renovations.",
+        "what.grid_icp | ok | Harlow Street refit - Whitfield Renovations was made for Marcus.",
+        "what.row | ok | Before: Before. After: After.",
+        "ask | ok | One ask, \"save\", fits someone who feels the problem.",
+        "ask.pillar | ok | Educate reads as Educate.",
+        "proof | ok | Every number and quote matches a source you have.",
+        "voice | fix | Reword it: \"elevate\" reads like copy any business could post.",
+        "network.fold:linkedin | fix | The first line runs past LinkedIn's cut at about 210 characters: readers see \"Stop asking your cabinet shop for a third coat. Two coats keyed wit...\" and then \"more\".",
+        "network.link:linkedin | ok | The link is in the first comment, so the post keeps its reach on LinkedIn.",
+        "network.hashtags:linkedin | ask | No hashtags: LinkedIn reads 3 to 5. Add some?",
+        "network.repeat:linkedin | ok | The opening is new against your last 20 LinkedIn posts."
+      ],
+      "platforms": [
+        "linkedin"
+      ]
+    },
+    "unknownIcp": {
+      "body": {
+        "content": "Myth: the lacquer failed. Truth: the coat under it was never sanded.\nOf 312 doors through our finish room in July, the 4 that came back had skipped the 320 pass between coats on one rush order. The 41 Harlow Street doors got the pass and are 18 months in with zero call-backs. Ask your shop what happens between coats.\nSave this for the next finish schedule you sign.",
+        "target_platforms": [
+          "linkedin"
+        ],
+        "target_accounts": [
+          "sacc_linkedin_01"
+        ],
+        "first_comment": "The finish schedule, coat by coat, with flash times for a Texas August: https://brightsidefixtures.example/finish-schedule?utm_source=linkedin&utm_medium=social",
+        "avatar_id": "avt_nope",
+        "journey_id": "cjm_trade_01",
+        "journey_stage": "Problem Aware",
+        "before_after_grid_id": "grid_harlow_01",
+        "before_after_item_id": "gi_harlow_01",
+        "pillar_id": "pil_educate"
+      },
+      "summary": {
+        "ok": 10,
+        "fix": 1,
+        "ask": 2,
+        "not_set": 0
+      },
+      "stage": {
+        "name": "Problem Aware",
+        "stage_id": "stg_trade_problem_aware",
+        "awareness": "problem_aware",
+        "awareness_source": "guess",
+        "guessed_from": "name"
+      },
+      "items": [
+        "who.icp | fix | That ICP is not on this account: pick one of yours.",
+        "where.journey | ok | Trade contractor journey.",
+        "where.stage | ask | Hiveku reads \"Problem Aware\" as feels the problem (a guess from its name): show the problem is solvable and what waiting costs. Is that right? Set its step on the journey if not.",
+        "what.grid | ok | Harlow Street refit - Whitfield Renovations.",
+        "what.row | ok | Before: Before. After: After.",
+        "ask | ok | One ask, \"save\", fits someone who feels the problem.",
+        "ask.pillar | ok | Educate reads as Educate.",
+        "proof | ok | Every number and quote matches a source you have.",
+        "voice | ok | None of Hiveku's banned phrases or your brand guide's phrases to avoid.",
+        "network.fold:linkedin | ok | The first line fits before LinkedIn's cut (about 210 characters).",
+        "network.link:linkedin | ok | The link is in the first comment, so the post keeps its reach on LinkedIn.",
+        "network.hashtags:linkedin | ask | No hashtags: LinkedIn reads 3 to 5. Add some?",
+        "network.repeat:linkedin | ok | The opening is new against your last 20 LinkedIn posts."
+      ],
+      "platforms": [
+        "linkedin"
+      ]
+    },
+    "unknownJourney": {
+      "body": {
+        "content": "Myth: the lacquer failed. Truth: the coat under it was never sanded.\nOf 312 doors through our finish room in July, the 4 that came back had skipped the 320 pass between coats on one rush order. The 41 Harlow Street doors got the pass and are 18 months in with zero call-backs. Ask your shop what happens between coats.\nSave this for the next finish schedule you sign.",
+        "target_platforms": [
+          "linkedin"
+        ],
+        "target_accounts": [
+          "sacc_linkedin_01"
+        ],
+        "first_comment": "The finish schedule, coat by coat, with flash times for a Texas August: https://brightsidefixtures.example/finish-schedule?utm_source=linkedin&utm_medium=social",
+        "avatar_id": "avt_marcus_01",
+        "journey_id": "cjm_nope",
+        "journey_stage": "Problem Aware",
+        "before_after_grid_id": "grid_harlow_01",
+        "before_after_item_id": "gi_harlow_01",
+        "pillar_id": "pil_educate"
+      },
+      "summary": {
+        "ok": 11,
+        "fix": 1,
+        "ask": 1,
+        "not_set": 1
+      },
+      "stage": null,
+      "items": [
+        "who.icp | ok | Marcus: 3 pains and a quote in their own words.",
+        "who.networks | ok | Marcus is on LinkedIn.",
+        "where.journey | fix | That journey is not on this account: pick one of yours.",
+        "what.grid | ok | Harlow Street refit - Whitfield Renovations.",
+        "what.grid_icp | ok | Harlow Street refit - Whitfield Renovations was made for Marcus.",
+        "what.row | ok | Before: Before. After: After.",
+        "ask | not_set | Pick the stage to check the ask fits.",
+        "ask.pillar | ok | Educate reads as Educate.",
+        "proof | ok | Every number and quote matches a source you have.",
+        "voice | ok | None of Hiveku's banned phrases or your brand guide's phrases to avoid.",
+        "network.fold:linkedin | ok | The first line fits before LinkedIn's cut (about 210 characters).",
+        "network.link:linkedin | ok | The link is in the first comment, so the post keeps its reach on LinkedIn.",
+        "network.hashtags:linkedin | ask | No hashtags: LinkedIn reads 3 to 5. Add some?",
+        "network.repeat:linkedin | ok | The opening is new against your last 20 LinkedIn posts."
+      ],
+      "platforms": [
+        "linkedin"
+      ]
+    },
+    "unknownGrid": {
+      "body": {
+        "content": "Myth: the lacquer failed. Truth: the coat under it was never sanded.\nOf 312 doors through our finish room in July, the 4 that came back had skipped the 320 pass between coats on one rush order. The 41 Harlow Street doors got the pass and are 18 months in with zero call-backs. Ask your shop what happens between coats.\nSave this for the next finish schedule you sign.",
+        "target_platforms": [
+          "linkedin"
+        ],
+        "target_accounts": [
+          "sacc_linkedin_01"
+        ],
+        "first_comment": "The finish schedule, coat by coat, with flash times for a Texas August: https://brightsidefixtures.example/finish-schedule?utm_source=linkedin&utm_medium=social",
+        "avatar_id": "avt_marcus_01",
+        "journey_id": "cjm_trade_01",
+        "journey_stage": "Problem Aware",
+        "before_after_grid_id": "grid_nope",
+        "before_after_item_id": "gi_harlow_01",
+        "pillar_id": "pil_educate"
+      },
+      "summary": {
+        "ok": 10,
+        "fix": 1,
+        "ask": 3,
+        "not_set": 0
+      },
+      "stage": {
+        "name": "Problem Aware",
+        "stage_id": "stg_trade_problem_aware",
+        "awareness": "problem_aware",
+        "awareness_source": "guess",
+        "guessed_from": "name"
+      },
+      "items": [
+        "who.icp | ok | Marcus: 3 pains and a quote in their own words.",
+        "who.networks | ok | Marcus is on LinkedIn.",
+        "where.journey | ok | Trade contractor journey.",
+        "where.stage | ask | Hiveku reads \"Problem Aware\" as feels the problem (a guess from its name): show the problem is solvable and what waiting costs. Is that right? Set its step on the journey if not.",
+        "where.journey_icp | ok | Trade contractor journey is for Marcus.",
+        "what.grid | fix | That before and after grid is not on this account: pick one of yours.",
+        "ask | ok | One ask, \"save\", fits someone who feels the problem.",
+        "ask.pillar | ok | Educate reads as Educate.",
+        "proof | ask | Where is \"18 months\" from? Name its source.",
+        "voice | ok | None of Hiveku's banned phrases or your brand guide's phrases to avoid.",
+        "network.fold:linkedin | ok | The first line fits before LinkedIn's cut (about 210 characters).",
+        "network.link:linkedin | ok | The link is in the first comment, so the post keeps its reach on LinkedIn.",
+        "network.hashtags:linkedin | ask | No hashtags: LinkedIn reads 3 to 5. Add some?",
+        "network.repeat:linkedin | ok | The opening is new against your last 20 LinkedIn posts."
+      ],
+      "platforms": [
+        "linkedin"
+      ]
+    },
+    "noStage": {
+      "body": {
+        "content": "Myth: the lacquer failed. Truth: the coat under it was never sanded.\nOf 312 doors through our finish room in July, the 4 that came back had skipped the 320 pass between coats on one rush order. The 41 Harlow Street doors got the pass and are 18 months in with zero call-backs. Ask your shop what happens between coats.\nSave this for the next finish schedule you sign.",
+        "target_platforms": [
+          "linkedin"
+        ],
+        "target_accounts": [
+          "sacc_linkedin_01"
+        ],
+        "first_comment": "The finish schedule, coat by coat, with flash times for a Texas August: https://brightsidefixtures.example/finish-schedule?utm_source=linkedin&utm_medium=social",
+        "avatar_id": "avt_marcus_01",
+        "journey_id": "cjm_trade_01",
+        "before_after_grid_id": "grid_harlow_01",
+        "before_after_item_id": "gi_harlow_01",
+        "pillar_id": "pil_educate"
+      },
+      "summary": {
+        "ok": 13,
+        "fix": 0,
+        "ask": 1,
+        "not_set": 2
+      },
+      "stage": null,
+      "items": [
+        "who.icp | ok | Marcus: 3 pains and a quote in their own words.",
+        "who.networks | ok | Marcus is on LinkedIn.",
+        "where.journey | ok | Trade contractor journey.",
+        "where.stage | not_set | Pick the stage of Trade contractor journey this post is for.",
+        "where.journey_icp | ok | Trade contractor journey is for Marcus.",
+        "what.grid | ok | Harlow Street refit - Whitfield Renovations.",
+        "what.grid_icp | ok | Harlow Street refit - Whitfield Renovations was made for Marcus.",
+        "what.row | ok | Before: Before. After: After.",
+        "ask | not_set | Pick the stage to check the ask fits.",
+        "ask.pillar | ok | Educate reads as Educate.",
+        "proof | ok | Every number and quote matches a source you have.",
+        "voice | ok | None of Hiveku's banned phrases or your brand guide's phrases to avoid.",
+        "network.fold:linkedin | ok | The first line fits before LinkedIn's cut (about 210 characters).",
+        "network.link:linkedin | ok | The link is in the first comment, so the post keeps its reach on LinkedIn.",
+        "network.hashtags:linkedin | ask | No hashtags: LinkedIn reads 3 to 5. Add some?",
+        "network.repeat:linkedin | ok | The opening is new against your last 20 LinkedIn posts."
+      ],
+      "platforms": [
+        "linkedin"
+      ]
+    },
+    "badStage": {
+      "body": {
+        "content": "Myth: the lacquer failed. Truth: the coat under it was never sanded.\nOf 312 doors through our finish room in July, the 4 that came back had skipped the 320 pass between coats on one rush order. The 41 Harlow Street doors got the pass and are 18 months in with zero call-backs. Ask your shop what happens between coats.\nSave this for the next finish schedule you sign.",
+        "target_platforms": [
+          "linkedin"
+        ],
+        "target_accounts": [
+          "sacc_linkedin_01"
+        ],
+        "first_comment": "The finish schedule, coat by coat, with flash times for a Texas August: https://brightsidefixtures.example/finish-schedule?utm_source=linkedin&utm_medium=social",
+        "avatar_id": "avt_marcus_01",
+        "journey_id": "cjm_trade_01",
+        "journey_stage": "Vendor Selection",
+        "before_after_grid_id": "grid_harlow_01",
+        "before_after_item_id": "gi_harlow_01",
+        "pillar_id": "pil_educate"
+      },
+      "summary": {
+        "ok": 13,
+        "fix": 1,
+        "ask": 1,
+        "not_set": 1
+      },
+      "stage": null,
+      "items": [
+        "who.icp | ok | Marcus: 3 pains and a quote in their own words.",
+        "who.networks | ok | Marcus is on LinkedIn.",
+        "where.journey | ok | Trade contractor journey.",
+        "where.stage | fix | \"Vendor Selection\" is not a stage of Trade contractor journey. Its stages: \"Unaware\", \"Problem Aware\", \"Solution Aware\", \"Product Aware\" and \"Most Aware\".",
+        "where.journey_icp | ok | Trade contractor journey is for Marcus.",
+        "what.grid | ok | Harlow Street refit - Whitfield Renovations.",
+        "what.grid_icp | ok | Harlow Street refit - Whitfield Renovations was made for Marcus.",
+        "what.row | ok | Before: Before. After: After.",
+        "ask | not_set | Pick the stage to check the ask fits.",
+        "ask.pillar | ok | Educate reads as Educate.",
+        "proof | ok | Every number and quote matches a source you have.",
+        "voice | ok | None of Hiveku's banned phrases or your brand guide's phrases to avoid.",
+        "network.fold:linkedin | ok | The first line fits before LinkedIn's cut (about 210 characters).",
+        "network.link:linkedin | ok | The link is in the first comment, so the post keeps its reach on LinkedIn.",
+        "network.hashtags:linkedin | ask | No hashtags: LinkedIn reads 3 to 5. Add some?",
+        "network.repeat:linkedin | ok | The opening is new against your last 20 LinkedIn posts."
+      ],
+      "platforms": [
+        "linkedin"
+      ]
+    },
+    "noRow": {
+      "body": {
+        "content": "Myth: the lacquer failed. Truth: the coat under it was never sanded.\nOf 312 doors through our finish room in July, the 4 that came back had skipped the 320 pass between coats on one rush order. The 41 Harlow Street doors got the pass and are 18 months in with zero call-backs. Ask your shop what happens between coats.\nSave this for the next finish schedule you sign.",
+        "target_platforms": [
+          "linkedin"
+        ],
+        "target_accounts": [
+          "sacc_linkedin_01"
+        ],
+        "first_comment": "The finish schedule, coat by coat, with flash times for a Texas August: https://brightsidefixtures.example/finish-schedule?utm_source=linkedin&utm_medium=social",
+        "avatar_id": "avt_marcus_01",
+        "journey_id": "cjm_trade_01",
+        "journey_stage": "Problem Aware",
+        "before_after_grid_id": "grid_harlow_01",
+        "pillar_id": "pil_educate"
+      },
+      "summary": {
+        "ok": 13,
+        "fix": 0,
+        "ask": 2,
+        "not_set": 1
+      },
+      "stage": {
+        "name": "Problem Aware",
+        "stage_id": "stg_trade_problem_aware",
+        "awareness": "problem_aware",
+        "awareness_source": "guess",
+        "guessed_from": "name"
+      },
+      "items": [
+        "who.icp | ok | Marcus: 3 pains and a quote in their own words.",
+        "who.networks | ok | Marcus is on LinkedIn.",
+        "where.journey | ok | Trade contractor journey.",
+        "where.stage | ask | Hiveku reads \"Problem Aware\" as feels the problem (a guess from its name): show the problem is solvable and what waiting costs. Is that right? Set its step on the journey if not.",
+        "where.journey_icp | ok | Trade contractor journey is for Marcus.",
+        "what.grid | ok | Harlow Street refit - Whitfield Renovations.",
+        "what.grid_icp | ok | Harlow Street refit - Whitfield Renovations was made for Marcus.",
+        "what.row | not_set | Pick the row of Harlow Street refit - Whitfield Renovations this post shows: the before your reader knows, and the after they want.",
+        "ask | ok | One ask, \"save\", fits someone who feels the problem.",
+        "ask.pillar | ok | Educate reads as Educate.",
+        "proof | ok | Every number and quote matches a source you have.",
+        "voice | ok | None of Hiveku's banned phrases or your brand guide's phrases to avoid.",
+        "network.fold:linkedin | ok | The first line fits before LinkedIn's cut (about 210 characters).",
+        "network.link:linkedin | ok | The link is in the first comment, so the post keeps its reach on LinkedIn.",
+        "network.hashtags:linkedin | ask | No hashtags: LinkedIn reads 3 to 5. Add some?",
+        "network.repeat:linkedin | ok | The opening is new against your last 20 LinkedIn posts."
+      ],
+      "platforms": [
+        "linkedin"
+      ]
+    },
+    "promotion": {
+      "body": {
+        "content": "Myth: the lacquer failed. Truth: the coat under it was never sanded.\nOf 312 doors through our finish room in July, the 4 that came back had skipped the 320 pass between coats on one rush order. The 41 Harlow Street doors got the pass and are 18 months in with zero call-backs. Ask your shop what happens between coats.\nSave this for the next finish schedule you sign.",
+        "target_platforms": [
+          "linkedin"
+        ],
+        "target_accounts": [
+          "sacc_linkedin_01"
+        ],
+        "first_comment": "The finish schedule, coat by coat, with flash times for a Texas August: https://brightsidefixtures.example/finish-schedule?utm_source=linkedin&utm_medium=social",
+        "avatar_id": "avt_marcus_01",
+        "journey_id": "cjm_trade_01",
+        "journey_stage": "Problem Aware",
+        "before_after_grid_id": "grid_harlow_01",
+        "before_after_item_id": "gi_harlow_01",
+        "pillar_id": "pil_promotion"
+      },
+      "summary": {
+        "ok": 13,
+        "fix": 0,
+        "ask": 3,
+        "not_set": 0
+      },
+      "stage": {
+        "name": "Problem Aware",
+        "stage_id": "stg_trade_problem_aware",
+        "awareness": "problem_aware",
+        "awareness_source": "guess",
+        "guessed_from": "name"
+      },
+      "items": [
+        "who.icp | ok | Marcus: 3 pains and a quote in their own words.",
+        "who.networks | ok | Marcus is on LinkedIn.",
+        "where.journey | ok | Trade contractor journey.",
+        "where.stage | ask | Hiveku reads \"Problem Aware\" as feels the problem (a guess from its name): show the problem is solvable and what waiting costs. Is that right? Set its step on the journey if not.",
+        "where.journey_icp | ok | Trade contractor journey is for Marcus.",
+        "what.grid | ok | Harlow Street refit - Whitfield Renovations.",
+        "what.grid_icp | ok | Harlow Street refit - Whitfield Renovations was made for Marcus.",
+        "what.row | ok | Before: Before. After: After.",
+        "ask | ok | One ask, \"save\", fits someone who feels the problem.",
+        "ask.pillar | ask | Promotion is a Promotion pillar, and only someone ready to act is sold to. Is this post meant to sell to people who feel the problem?",
+        "proof | ok | Every number and quote matches a source you have.",
+        "voice | ok | None of Hiveku's banned phrases or your brand guide's phrases to avoid.",
+        "network.fold:linkedin | ok | The first line fits before LinkedIn's cut (about 210 characters).",
+        "network.link:linkedin | ok | The link is in the first comment, so the post keeps its reach on LinkedIn.",
+        "network.hashtags:linkedin | ask | No hashtags: LinkedIn reads 3 to 5. Add some?",
+        "network.repeat:linkedin | ok | The opening is new against your last 20 LinkedIn posts."
+      ],
+      "platforms": [
+        "linkedin"
+      ]
+    },
+    "linkCard": {
+      "body": {
+        "content": "Myth: the lacquer failed. Truth: the coat under it was never sanded.\nOf 312 doors through our finish room in July, the 4 that came back had skipped the 320 pass between coats on one rush order. The 41 Harlow Street doors got the pass and are 18 months in with zero call-backs. Ask your shop what happens between coats.\nSave this for the next finish schedule you sign.",
+        "target_platforms": [
+          "linkedin"
+        ],
+        "target_accounts": [
+          "sacc_linkedin_01"
+        ],
+        "first_comment": "The finish schedule, coat by coat.",
+        "avatar_id": "avt_marcus_01",
+        "journey_id": "cjm_trade_01",
+        "journey_stage": "Problem Aware",
+        "before_after_grid_id": "grid_harlow_01",
+        "before_after_item_id": "gi_harlow_01",
+        "pillar_id": "pil_educate",
+        "link_url": "https://brightsidefixtures.example/finish-schedule"
+      },
+      "summary": {
+        "ok": 13,
+        "fix": 0,
+        "ask": 3,
+        "not_set": 0
+      },
+      "stage": {
+        "name": "Problem Aware",
+        "stage_id": "stg_trade_problem_aware",
+        "awareness": "problem_aware",
+        "awareness_source": "guess",
+        "guessed_from": "name"
+      },
+      "items": [
+        "who.icp | ok | Marcus: 3 pains and a quote in their own words.",
+        "who.networks | ok | Marcus is on LinkedIn.",
+        "where.journey | ok | Trade contractor journey.",
+        "where.stage | ask | Hiveku reads \"Problem Aware\" as feels the problem (a guess from its name): show the problem is solvable and what waiting costs. Is that right? Set its step on the journey if not.",
+        "where.journey_icp | ok | Trade contractor journey is for Marcus.",
+        "what.grid | ok | Harlow Street refit - Whitfield Renovations.",
+        "what.grid_icp | ok | Harlow Street refit - Whitfield Renovations was made for Marcus.",
+        "what.row | ok | Before: Before. After: After.",
+        "ask | ok | One ask, \"save\", fits someone who feels the problem.",
+        "ask.pillar | ok | Educate reads as Educate.",
+        "proof | ok | Every number and quote matches a source you have.",
+        "voice | ok | None of Hiveku's banned phrases or your brand guide's phrases to avoid.",
+        "network.fold:linkedin | ok | The first line fits before LinkedIn's cut (about 210 characters).",
+        "network.link:linkedin | ask | A link card costs reach on LinkedIn, and the first comment keeps it. Keep the card?",
+        "network.hashtags:linkedin | ask | No hashtags: LinkedIn reads 3 to 5. Add some?",
+        "network.repeat:linkedin | ok | The opening is new against your last 20 LinkedIn posts."
+      ],
+      "platforms": [
+        "linkedin"
+      ]
+    },
+    "linkInBody": {
+      "body": {
+        "content": "Myth: the lacquer failed. Truth: the coat under it was never sanded.\nOf 312 doors through our finish room in July, the 4 that came back had skipped the 320 pass between coats on one rush order. The 41 Harlow Street doors got the pass and are 18 months in with zero call-backs. Ask your shop what happens between coats.\nSave this for the next finish schedule you sign. https://brightsidefixtures.example/finish-schedule",
+        "target_platforms": [
+          "linkedin"
+        ],
+        "target_accounts": [
+          "sacc_linkedin_01"
+        ],
+        "first_comment": "The finish schedule, coat by coat, with flash times for a Texas August: https://brightsidefixtures.example/finish-schedule?utm_source=linkedin&utm_medium=social",
+        "avatar_id": "avt_marcus_01",
+        "journey_id": "cjm_trade_01",
+        "journey_stage": "Problem Aware",
+        "before_after_grid_id": "grid_harlow_01",
+        "before_after_item_id": "gi_harlow_01",
+        "pillar_id": "pil_educate"
+      },
+      "summary": {
+        "ok": 13,
+        "fix": 1,
+        "ask": 2,
+        "not_set": 0
+      },
+      "stage": {
+        "name": "Problem Aware",
+        "stage_id": "stg_trade_problem_aware",
+        "awareness": "problem_aware",
+        "awareness_source": "guess",
+        "guessed_from": "name"
+      },
+      "items": [
+        "who.icp | ok | Marcus: 3 pains and a quote in their own words.",
+        "who.networks | ok | Marcus is on LinkedIn.",
+        "where.journey | ok | Trade contractor journey.",
+        "where.stage | ask | Hiveku reads \"Problem Aware\" as feels the problem (a guess from its name): show the problem is solvable and what waiting costs. Is that right? Set its step on the journey if not.",
+        "where.journey_icp | ok | Trade contractor journey is for Marcus.",
+        "what.grid | ok | Harlow Street refit - Whitfield Renovations.",
+        "what.grid_icp | ok | Harlow Street refit - Whitfield Renovations was made for Marcus.",
+        "what.row | ok | Before: Before. After: After.",
+        "ask | ok | One ask, \"save\", fits someone who feels the problem.",
+        "ask.pillar | ok | Educate reads as Educate.",
+        "proof | ok | Every number and quote matches a source you have.",
+        "voice | ok | None of Hiveku's banned phrases or your brand guide's phrases to avoid.",
+        "network.fold:linkedin | ok | The first line fits before LinkedIn's cut (about 210 characters).",
+        "network.link:linkedin | fix | Move the link from the post to the first comment: a link in the post costs reach on LinkedIn.",
+        "network.hashtags:linkedin | ask | No hashtags: LinkedIn reads 3 to 5. Add some?",
+        "network.repeat:linkedin | ok | The opening is new against your last 20 LinkedIn posts."
+      ],
+      "platforms": [
+        "linkedin"
+      ]
+    },
+    "fbCardWithMedia": {
+      "body": {
+        "content": "We used to skip the sand between coats on rush jobs.\nThen 4 doors from one July kitchen came back with the top coat lifting at the seams, and the fix cost more than the day we saved. Every coat gets the 320 pass now, rush or not, and the 41 Harlow Street doors are 18 months in with zero call-backs. Comment with the finish failure you see most and we will answer it in the next post.",
+        "target_platforms": [
+          "facebook"
+        ],
+        "target_accounts": [
+          "sacc_facebook_01"
+        ],
+        "link_url": "https://brightsidefixtures.example/finish-schedule",
+        "media_asset_ids": [
+          "ma_finish_room_01"
+        ],
+        "avatar_id": "avt_marcus_01",
+        "journey_id": "cjm_trade_01",
+        "journey_stage": "Problem Aware",
+        "before_after_grid_id": "grid_harlow_01",
+        "before_after_item_id": "gi_harlow_01",
+        "pillar_id": "pil_educate"
+      },
+      "summary": {
+        "ok": 13,
+        "fix": 1,
+        "ask": 2,
+        "not_set": 0
+      },
+      "stage": {
+        "name": "Problem Aware",
+        "stage_id": "stg_trade_problem_aware",
+        "awareness": "problem_aware",
+        "awareness_source": "guess",
+        "guessed_from": "name"
+      },
+      "items": [
+        "who.icp | ok | Marcus: 3 pains and a quote in their own words.",
+        "who.networks | ok | Marcus is on Facebook.",
+        "where.journey | ok | Trade contractor journey.",
+        "where.stage | ask | Hiveku reads \"Problem Aware\" as feels the problem (a guess from its name): show the problem is solvable and what waiting costs. Is that right? Set its step on the journey if not.",
+        "where.journey_icp | ok | Trade contractor journey is for Marcus.",
+        "what.grid | ok | Harlow Street refit - Whitfield Renovations.",
+        "what.grid_icp | ok | Harlow Street refit - Whitfield Renovations was made for Marcus.",
+        "what.row | ok | Before: Before. After: After.",
+        "ask | ok | One ask, \"comment\", fits someone who feels the problem.",
+        "ask.pillar | ok | Educate reads as Educate.",
+        "proof | ok | Every number and quote matches a source you have.",
+        "voice | ok | None of Hiveku's banned phrases or your brand guide's phrases to avoid.",
+        "network.fold:facebook | ok | The first line fits before Facebook's cut (about 125 characters).",
+        "network.link:facebook | fix | Facebook drops the link card on a post with pictures or a video: put the link in the first comment.",
+        "network.hashtags:facebook | ask | No hashtags: Facebook reads 1 to 2. Add some?",
+        "network.repeat:facebook | ok | The opening is new against your last 8 Facebook posts."
+      ],
+      "platforms": [
+        "facebook"
+      ]
+    },
+    "hashtags": {
+      "body": {
+        "content": "Myth: the lacquer failed. Truth: the coat under it was never sanded.\nOf 312 doors through our finish room in July, the 4 that came back had skipped the 320 pass between coats on one rush order. The 41 Harlow Street doors got the pass and are 18 months in with zero call-backs. Ask your shop what happens between coats.\nSave this for the next finish schedule you sign.\n#BrightsideBuilt #CabinetCare #FinishSchedule",
+        "target_platforms": [
+          "linkedin"
+        ],
+        "target_accounts": [
+          "sacc_linkedin_01"
+        ],
+        "first_comment": "The finish schedule, coat by coat, with flash times for a Texas August: https://brightsidefixtures.example/finish-schedule?utm_source=linkedin&utm_medium=social",
+        "avatar_id": "avt_marcus_01",
+        "journey_id": "cjm_trade_01",
+        "journey_stage": "Problem Aware",
+        "before_after_grid_id": "grid_harlow_01",
+        "before_after_item_id": "gi_harlow_01",
+        "pillar_id": "pil_educate"
+      },
+      "summary": {
+        "ok": 15,
+        "fix": 0,
+        "ask": 1,
+        "not_set": 0
+      },
+      "stage": {
+        "name": "Problem Aware",
+        "stage_id": "stg_trade_problem_aware",
+        "awareness": "problem_aware",
+        "awareness_source": "guess",
+        "guessed_from": "name"
+      },
+      "items": [
+        "who.icp | ok | Marcus: 3 pains and a quote in their own words.",
+        "who.networks | ok | Marcus is on LinkedIn.",
+        "where.journey | ok | Trade contractor journey.",
+        "where.stage | ask | Hiveku reads \"Problem Aware\" as feels the problem (a guess from its name): show the problem is solvable and what waiting costs. Is that right? Set its step on the journey if not.",
+        "where.journey_icp | ok | Trade contractor journey is for Marcus.",
+        "what.grid | ok | Harlow Street refit - Whitfield Renovations.",
+        "what.grid_icp | ok | Harlow Street refit - Whitfield Renovations was made for Marcus.",
+        "what.row | ok | Before: Before. After: After.",
+        "ask | ok | One ask, \"save\", fits someone who feels the problem.",
+        "ask.pillar | ok | Educate reads as Educate.",
+        "proof | ok | Every number and quote matches a source you have.",
+        "voice | ok | None of Hiveku's banned phrases or your brand guide's phrases to avoid.",
+        "network.fold:linkedin | ok | The first line fits before LinkedIn's cut (about 210 characters).",
+        "network.link:linkedin | ok | The link is in the first comment, so the post keeps its reach on LinkedIn.",
+        "network.hashtags:linkedin | ok | 3 hashtags, within LinkedIn's 3 to 5.",
+        "network.repeat:linkedin | ok | The opening is new against your last 20 LinkedIn posts."
+      ],
+      "platforms": [
+        "linkedin"
+      ]
+    },
+    "tooManyHashtags": {
+      "body": {
+        "content": "Myth: the lacquer failed. Truth: the coat under it was never sanded.\nOf 312 doors through our finish room in July, the 4 that came back had skipped the 320 pass between coats on one rush order. The 41 Harlow Street doors got the pass and are 18 months in with zero call-backs. Ask your shop what happens between coats.\nSave this for the next finish schedule you sign.\n#a #b #c #d #e #f",
+        "target_platforms": [
+          "linkedin"
+        ],
+        "target_accounts": [
+          "sacc_linkedin_01"
+        ],
+        "first_comment": "The finish schedule, coat by coat, with flash times for a Texas August: https://brightsidefixtures.example/finish-schedule?utm_source=linkedin&utm_medium=social",
+        "avatar_id": "avt_marcus_01",
+        "journey_id": "cjm_trade_01",
+        "journey_stage": "Problem Aware",
+        "before_after_grid_id": "grid_harlow_01",
+        "before_after_item_id": "gi_harlow_01",
+        "pillar_id": "pil_educate"
+      },
+      "summary": {
+        "ok": 14,
+        "fix": 1,
+        "ask": 1,
+        "not_set": 0
+      },
+      "stage": {
+        "name": "Problem Aware",
+        "stage_id": "stg_trade_problem_aware",
+        "awareness": "problem_aware",
+        "awareness_source": "guess",
+        "guessed_from": "name"
+      },
+      "items": [
+        "who.icp | ok | Marcus: 3 pains and a quote in their own words.",
+        "who.networks | ok | Marcus is on LinkedIn.",
+        "where.journey | ok | Trade contractor journey.",
+        "where.stage | ask | Hiveku reads \"Problem Aware\" as feels the problem (a guess from its name): show the problem is solvable and what waiting costs. Is that right? Set its step on the journey if not.",
+        "where.journey_icp | ok | Trade contractor journey is for Marcus.",
+        "what.grid | ok | Harlow Street refit - Whitfield Renovations.",
+        "what.grid_icp | ok | Harlow Street refit - Whitfield Renovations was made for Marcus.",
+        "what.row | ok | Before: Before. After: After.",
+        "ask | ok | One ask, \"save\", fits someone who feels the problem.",
+        "ask.pillar | ok | Educate reads as Educate.",
+        "proof | ok | Every number and quote matches a source you have.",
+        "voice | ok | None of Hiveku's banned phrases or your brand guide's phrases to avoid.",
+        "network.fold:linkedin | ok | The first line fits before LinkedIn's cut (about 210 characters).",
+        "network.link:linkedin | ok | The link is in the first comment, so the post keeps its reach on LinkedIn.",
+        "network.hashtags:linkedin | fix | 6 hashtags: LinkedIn reads 3 to 5.",
+        "network.repeat:linkedin | ok | The opening is new against your last 20 LinkedIn posts."
+      ],
+      "platforms": [
+        "linkedin"
+      ]
+    },
+    "recycled": {
+      "body": {
+        "content": "A question for our trade customers: what happens between coats?\nSave this for the next finish schedule you sign.",
+        "target_platforms": [
+          "linkedin"
+        ],
+        "target_accounts": [
+          "sacc_linkedin_01"
+        ],
+        "first_comment": "The finish schedule, coat by coat, with flash times for a Texas August: https://brightsidefixtures.example/finish-schedule?utm_source=linkedin&utm_medium=social",
+        "avatar_id": "avt_marcus_01",
+        "journey_id": "cjm_trade_01",
+        "journey_stage": "Problem Aware",
+        "before_after_grid_id": "grid_harlow_01",
+        "before_after_item_id": "gi_harlow_01",
+        "pillar_id": "pil_educate"
+      },
+      "summary": {
+        "ok": 13,
+        "fix": 1,
+        "ask": 2,
+        "not_set": 0
+      },
+      "stage": {
+        "name": "Problem Aware",
+        "stage_id": "stg_trade_problem_aware",
+        "awareness": "problem_aware",
+        "awareness_source": "guess",
+        "guessed_from": "name"
+      },
+      "items": [
+        "who.icp | ok | Marcus: 3 pains and a quote in their own words.",
+        "who.networks | ok | Marcus is on LinkedIn.",
+        "where.journey | ok | Trade contractor journey.",
+        "where.stage | ask | Hiveku reads \"Problem Aware\" as feels the problem (a guess from its name): show the problem is solvable and what waiting costs. Is that right? Set its step on the journey if not.",
+        "where.journey_icp | ok | Trade contractor journey is for Marcus.",
+        "what.grid | ok | Harlow Street refit - Whitfield Renovations.",
+        "what.grid_icp | ok | Harlow Street refit - Whitfield Renovations was made for Marcus.",
+        "what.row | ok | Before: Before. After: After.",
+        "ask | ok | One ask, \"save\", fits someone who feels the problem.",
+        "ask.pillar | ok | Educate reads as Educate.",
+        "proof | ok | No numbers, results or quotes to back.",
+        "voice | ok | None of Hiveku's banned phrases or your brand guide's phrases to avoid.",
+        "network.fold:linkedin | ok | All of it shows on LinkedIn before the cut.",
+        "network.link:linkedin | ok | The link is in the first comment, so the post keeps its reach on LinkedIn.",
+        "network.hashtags:linkedin | ask | No hashtags: LinkedIn reads 3 to 5. Add some?",
+        "network.repeat:linkedin | fix | It opens like 6 of your last 20 LinkedIn posts (\"a question for our trade customers\"): start this one differently."
+      ],
+      "platforms": [
+        "linkedin"
+      ]
+    },
+    "twoAsks": {
+      "body": {
+        "content": "Myth: the lacquer failed.\nSave this for your next job. Book a call with our finish room.",
+        "target_platforms": [
+          "linkedin"
+        ],
+        "target_accounts": [
+          "sacc_linkedin_01"
+        ],
+        "first_comment": "The finish schedule, coat by coat, with flash times for a Texas August: https://brightsidefixtures.example/finish-schedule?utm_source=linkedin&utm_medium=social",
+        "avatar_id": "avt_marcus_01",
+        "journey_id": "cjm_trade_01",
+        "journey_stage": "Problem Aware",
+        "before_after_grid_id": "grid_harlow_01",
+        "before_after_item_id": "gi_harlow_01",
+        "pillar_id": "pil_educate"
+      },
+      "summary": {
+        "ok": 13,
+        "fix": 1,
+        "ask": 2,
+        "not_set": 0
+      },
+      "stage": {
+        "name": "Problem Aware",
+        "stage_id": "stg_trade_problem_aware",
+        "awareness": "problem_aware",
+        "awareness_source": "guess",
+        "guessed_from": "name"
+      },
+      "items": [
+        "who.icp | ok | Marcus: 3 pains and a quote in their own words.",
+        "who.networks | ok | Marcus is on LinkedIn.",
+        "where.journey | ok | Trade contractor journey.",
+        "where.stage | ask | Hiveku reads \"Problem Aware\" as feels the problem (a guess from its name): show the problem is solvable and what waiting costs. Is that right? Set its step on the journey if not.",
+        "where.journey_icp | ok | Trade contractor journey is for Marcus.",
+        "what.grid | ok | Harlow Street refit - Whitfield Renovations.",
+        "what.grid_icp | ok | Harlow Street refit - Whitfield Renovations was made for Marcus.",
+        "what.row | ok | Before: Before. After: After.",
+        "ask | fix | 2 asks (\"save\" and \"book a call\"): keep the one that fits feels the problem.",
+        "ask.pillar | ok | Educate reads as Educate.",
+        "proof | ok | No numbers, results or quotes to back.",
+        "voice | ok | None of Hiveku's banned phrases or your brand guide's phrases to avoid.",
+        "network.fold:linkedin | ok | All of it shows on LinkedIn before the cut.",
+        "network.link:linkedin | ok | The link is in the first comment, so the post keeps its reach on LinkedIn.",
+        "network.hashtags:linkedin | ask | No hashtags: LinkedIn reads 3 to 5. Add some?",
+        "network.repeat:linkedin | ok | The opening is new against your last 20 LinkedIn posts."
+      ],
+      "platforms": [
+        "linkedin"
+      ]
+    },
+    "tooBig": {
+      "body": {
+        "content": "Myth: the lacquer failed.\nBook a call with our finish room today.",
+        "target_platforms": [
+          "linkedin"
+        ],
+        "target_accounts": [
+          "sacc_linkedin_01"
+        ],
+        "first_comment": "The finish schedule, coat by coat, with flash times for a Texas August: https://brightsidefixtures.example/finish-schedule?utm_source=linkedin&utm_medium=social",
+        "avatar_id": "avt_marcus_01",
+        "journey_id": "cjm_trade_01",
+        "journey_stage": "Problem Aware",
+        "before_after_grid_id": "grid_harlow_01",
+        "before_after_item_id": "gi_harlow_01",
+        "pillar_id": "pil_educate"
+      },
+      "summary": {
+        "ok": 13,
+        "fix": 1,
+        "ask": 2,
+        "not_set": 0
+      },
+      "stage": {
+        "name": "Problem Aware",
+        "stage_id": "stg_trade_problem_aware",
+        "awareness": "problem_aware",
+        "awareness_source": "guess",
+        "guessed_from": "name"
+      },
+      "items": [
+        "who.icp | ok | Marcus: 3 pains and a quote in their own words.",
+        "who.networks | ok | Marcus is on LinkedIn.",
+        "where.journey | ok | Trade contractor journey.",
+        "where.stage | ask | Hiveku reads \"Problem Aware\" as feels the problem (a guess from its name): show the problem is solvable and what waiting costs. Is that right? Set its step on the journey if not.",
+        "where.journey_icp | ok | Trade contractor journey is for Marcus.",
+        "what.grid | ok | Harlow Street refit - Whitfield Renovations.",
+        "what.grid_icp | ok | Harlow Street refit - Whitfield Renovations was made for Marcus.",
+        "what.row | ok | Before: Before. After: After.",
+        "ask | fix | \"book a call\" asks too much of someone who feels the problem. What fits: save, comment and get the free guide.",
+        "ask.pillar | ok | Educate reads as Educate.",
+        "proof | ok | No numbers, results or quotes to back.",
+        "voice | ok | None of Hiveku's banned phrases or your brand guide's phrases to avoid.",
+        "network.fold:linkedin | ok | All of it shows on LinkedIn before the cut.",
+        "network.link:linkedin | ok | The link is in the first comment, so the post keeps its reach on LinkedIn.",
+        "network.hashtags:linkedin | ask | No hashtags: LinkedIn reads 3 to 5. Add some?",
+        "network.repeat:linkedin | ok | The opening is new against your last 20 LinkedIn posts."
+      ],
+      "platforms": [
+        "linkedin"
+      ]
+    },
+    "customerAsk": {
+      "body": {
+        "content": "Myth: the lacquer failed.\nLeave a review of your last kitchen.",
+        "target_platforms": [
+          "linkedin"
+        ],
+        "target_accounts": [
+          "sacc_linkedin_01"
+        ],
+        "first_comment": "The finish schedule, coat by coat, with flash times for a Texas August: https://brightsidefixtures.example/finish-schedule?utm_source=linkedin&utm_medium=social",
+        "avatar_id": "avt_marcus_01",
+        "journey_id": "cjm_trade_01",
+        "journey_stage": "Problem Aware",
+        "before_after_grid_id": "grid_harlow_01",
+        "before_after_item_id": "gi_harlow_01",
+        "pillar_id": "pil_educate"
+      },
+      "summary": {
+        "ok": 13,
+        "fix": 0,
+        "ask": 3,
+        "not_set": 0
+      },
+      "stage": {
+        "name": "Problem Aware",
+        "stage_id": "stg_trade_problem_aware",
+        "awareness": "problem_aware",
+        "awareness_source": "guess",
+        "guessed_from": "name"
+      },
+      "items": [
+        "who.icp | ok | Marcus: 3 pains and a quote in their own words.",
+        "who.networks | ok | Marcus is on LinkedIn.",
+        "where.journey | ok | Trade contractor journey.",
+        "where.stage | ask | Hiveku reads \"Problem Aware\" as feels the problem (a guess from its name): show the problem is solvable and what waiting costs. Is that right? Set its step on the journey if not.",
+        "where.journey_icp | ok | Trade contractor journey is for Marcus.",
+        "what.grid | ok | Harlow Street refit - Whitfield Renovations.",
+        "what.grid_icp | ok | Harlow Street refit - Whitfield Renovations was made for Marcus.",
+        "what.row | ok | Before: Before. After: After.",
+        "ask | ask | \"leave a review\" is an ask for people who already bought. Is this post for customers?",
+        "ask.pillar | ok | Educate reads as Educate.",
+        "proof | ok | No numbers, results or quotes to back.",
+        "voice | ok | None of Hiveku's banned phrases or your brand guide's phrases to avoid.",
+        "network.fold:linkedin | ok | All of it shows on LinkedIn before the cut.",
+        "network.link:linkedin | ok | The link is in the first comment, so the post keeps its reach on LinkedIn.",
+        "network.hashtags:linkedin | ask | No hashtags: LinkedIn reads 3 to 5. Add some?",
+        "network.repeat:linkedin | ok | The opening is new against your last 20 LinkedIn posts."
+      ],
+      "platforms": [
+        "linkedin"
+      ]
+    },
+    "unbacked": {
+      "body": {
+        "content": "Myth: the lacquer failed.\nWe have finished doors for 250 clients.\nSave this for the next finish schedule you sign.",
+        "target_platforms": [
+          "linkedin"
+        ],
+        "target_accounts": [
+          "sacc_linkedin_01"
+        ],
+        "first_comment": "The finish schedule, coat by coat, with flash times for a Texas August: https://brightsidefixtures.example/finish-schedule?utm_source=linkedin&utm_medium=social",
+        "avatar_id": "avt_marcus_01",
+        "journey_id": "cjm_trade_01",
+        "journey_stage": "Problem Aware",
+        "before_after_grid_id": "grid_harlow_01",
+        "before_after_item_id": "gi_harlow_01",
+        "pillar_id": "pil_educate"
+      },
+      "summary": {
+        "ok": 13,
+        "fix": 0,
+        "ask": 3,
+        "not_set": 0
+      },
+      "stage": {
+        "name": "Problem Aware",
+        "stage_id": "stg_trade_problem_aware",
+        "awareness": "problem_aware",
+        "awareness_source": "guess",
+        "guessed_from": "name"
+      },
+      "items": [
+        "who.icp | ok | Marcus: 3 pains and a quote in their own words.",
+        "who.networks | ok | Marcus is on LinkedIn.",
+        "where.journey | ok | Trade contractor journey.",
+        "where.stage | ask | Hiveku reads \"Problem Aware\" as feels the problem (a guess from its name): show the problem is solvable and what waiting costs. Is that right? Set its step on the journey if not.",
+        "where.journey_icp | ok | Trade contractor journey is for Marcus.",
+        "what.grid | ok | Harlow Street refit - Whitfield Renovations.",
+        "what.grid_icp | ok | Harlow Street refit - Whitfield Renovations was made for Marcus.",
+        "what.row | ok | Before: Before. After: After.",
+        "ask | ok | One ask, \"save\", fits someone who feels the problem.",
+        "ask.pillar | ok | Educate reads as Educate.",
+        "proof | ask | Where is \"250 clients\" from? Name its source or use a result from Harlow Street refit - Whitfield Renovations.",
+        "voice | ok | None of Hiveku's banned phrases or your brand guide's phrases to avoid.",
+        "network.fold:linkedin | ok | All of it shows on LinkedIn before the cut.",
+        "network.link:linkedin | ok | The link is in the first comment, so the post keeps its reach on LinkedIn.",
+        "network.hashtags:linkedin | ask | No hashtags: LinkedIn reads 3 to 5. Add some?",
+        "network.repeat:linkedin | ok | The opening is new against your last 20 LinkedIn posts."
+      ],
+      "platforms": [
+        "linkedin"
+      ]
+    },
+    "attributed": {
+      "body": {
+        "content": "Myth: the lacquer failed.\nAccording to our 2025 client survey, 250 clients asked for the scuff pass.\nSave this for the next finish schedule you sign.",
+        "target_platforms": [
+          "linkedin"
+        ],
+        "target_accounts": [
+          "sacc_linkedin_01"
+        ],
+        "first_comment": "The finish schedule, coat by coat, with flash times for a Texas August: https://brightsidefixtures.example/finish-schedule?utm_source=linkedin&utm_medium=social",
+        "avatar_id": "avt_marcus_01",
+        "journey_id": "cjm_trade_01",
+        "journey_stage": "Problem Aware",
+        "before_after_grid_id": "grid_harlow_01",
+        "before_after_item_id": "gi_harlow_01",
+        "pillar_id": "pil_educate"
+      },
+      "summary": {
+        "ok": 14,
+        "fix": 0,
+        "ask": 2,
+        "not_set": 0
+      },
+      "stage": {
+        "name": "Problem Aware",
+        "stage_id": "stg_trade_problem_aware",
+        "awareness": "problem_aware",
+        "awareness_source": "guess",
+        "guessed_from": "name"
+      },
+      "items": [
+        "who.icp | ok | Marcus: 3 pains and a quote in their own words.",
+        "who.networks | ok | Marcus is on LinkedIn.",
+        "where.journey | ok | Trade contractor journey.",
+        "where.stage | ask | Hiveku reads \"Problem Aware\" as feels the problem (a guess from its name): show the problem is solvable and what waiting costs. Is that right? Set its step on the journey if not.",
+        "where.journey_icp | ok | Trade contractor journey is for Marcus.",
+        "what.grid | ok | Harlow Street refit - Whitfield Renovations.",
+        "what.grid_icp | ok | Harlow Street refit - Whitfield Renovations was made for Marcus.",
+        "what.row | ok | Before: Before. After: After.",
+        "ask | ok | One ask, \"save\", fits someone who feels the problem.",
+        "ask.pillar | ok | Educate reads as Educate.",
+        "proof | ok | Every number and quote matches a source you have.",
+        "voice | ok | None of Hiveku's banned phrases or your brand guide's phrases to avoid.",
+        "network.fold:linkedin | ok | All of it shows on LinkedIn before the cut.",
+        "network.link:linkedin | ok | The link is in the first comment, so the post keeps its reach on LinkedIn.",
+        "network.hashtags:linkedin | ask | No hashtags: LinkedIn reads 3 to 5. Add some?",
+        "network.repeat:linkedin | ok | The opening is new against your last 20 LinkedIn posts."
+      ],
+      "platforms": [
+        "linkedin"
+      ]
+    },
+    "marker": {
+      "body": {
+        "content": "Myth: the lacquer failed.\n41 doors, zero call-backs [source: testimonial:tst_dana_01].\nSave this for the next finish schedule you sign.",
+        "target_platforms": [
+          "linkedin"
+        ],
+        "target_accounts": [
+          "sacc_linkedin_01"
+        ],
+        "first_comment": "The finish schedule, coat by coat, with flash times for a Texas August: https://brightsidefixtures.example/finish-schedule?utm_source=linkedin&utm_medium=social",
+        "avatar_id": "avt_marcus_01",
+        "journey_id": "cjm_trade_01",
+        "journey_stage": "Problem Aware",
+        "before_after_grid_id": "grid_harlow_01",
+        "before_after_item_id": "gi_harlow_01",
+        "pillar_id": "pil_educate"
+      },
+      "summary": {
+        "ok": 13,
+        "fix": 1,
+        "ask": 2,
+        "not_set": 0
+      },
+      "stage": {
+        "name": "Problem Aware",
+        "stage_id": "stg_trade_problem_aware",
+        "awareness": "problem_aware",
+        "awareness_source": "guess",
+        "guessed_from": "name"
+      },
+      "items": [
+        "who.icp | ok | Marcus: 3 pains and a quote in their own words.",
+        "who.networks | ok | Marcus is on LinkedIn.",
+        "where.journey | ok | Trade contractor journey.",
+        "where.stage | ask | Hiveku reads \"Problem Aware\" as feels the problem (a guess from its name): show the problem is solvable and what waiting costs. Is that right? Set its step on the journey if not.",
+        "where.journey_icp | ok | Trade contractor journey is for Marcus.",
+        "what.grid | ok | Harlow Street refit - Whitfield Renovations.",
+        "what.grid_icp | ok | Harlow Street refit - Whitfield Renovations was made for Marcus.",
+        "what.row | ok | Before: Before. After: After.",
+        "ask | ok | One ask, \"save\", fits someone who feels the problem.",
+        "ask.pillar | ok | Educate reads as Educate.",
+        "proof | fix | Take \"[source: testimonial:tst_dana_01]\" out: the network would show it as written. Name the source in words beside the claim, such as \"from our 2025 client survey\".",
+        "voice | ok | None of Hiveku's banned phrases or your brand guide's phrases to avoid.",
+        "network.fold:linkedin | ok | All of it shows on LinkedIn before the cut.",
+        "network.link:linkedin | ok | The link is in the first comment, so the post keeps its reach on LinkedIn.",
+        "network.hashtags:linkedin | ask | No hashtags: LinkedIn reads 3 to 5. Add some?",
+        "network.repeat:linkedin | ok | The opening is new against your last 20 LinkedIn posts."
+      ],
+      "platforms": [
+        "linkedin"
+      ]
+    },
+    "quoted": {
+      "body": {
+        "content": "Myth: the lacquer failed.\n\"I stopped scheduling a call-back week.\" Dana, on the Harlow Street doors.\nSave this for the next finish schedule you sign.",
+        "target_platforms": [
+          "linkedin"
+        ],
+        "target_accounts": [
+          "sacc_linkedin_01"
+        ],
+        "first_comment": "The finish schedule, coat by coat, with flash times for a Texas August: https://brightsidefixtures.example/finish-schedule?utm_source=linkedin&utm_medium=social",
+        "avatar_id": "avt_marcus_01",
+        "journey_id": "cjm_trade_01",
+        "journey_stage": "Problem Aware",
+        "before_after_grid_id": "grid_harlow_01",
+        "before_after_item_id": "gi_harlow_01",
+        "pillar_id": "pil_educate"
+      },
+      "summary": {
+        "ok": 14,
+        "fix": 0,
+        "ask": 2,
+        "not_set": 0
+      },
+      "stage": {
+        "name": "Problem Aware",
+        "stage_id": "stg_trade_problem_aware",
+        "awareness": "problem_aware",
+        "awareness_source": "guess",
+        "guessed_from": "name"
+      },
+      "items": [
+        "who.icp | ok | Marcus: 3 pains and a quote in their own words.",
+        "who.networks | ok | Marcus is on LinkedIn.",
+        "where.journey | ok | Trade contractor journey.",
+        "where.stage | ask | Hiveku reads \"Problem Aware\" as feels the problem (a guess from its name): show the problem is solvable and what waiting costs. Is that right? Set its step on the journey if not.",
+        "where.journey_icp | ok | Trade contractor journey is for Marcus.",
+        "what.grid | ok | Harlow Street refit - Whitfield Renovations.",
+        "what.grid_icp | ok | Harlow Street refit - Whitfield Renovations was made for Marcus.",
+        "what.row | ok | Before: Before. After: After.",
+        "ask | ok | One ask, \"save\", fits someone who feels the problem.",
+        "ask.pillar | ok | Educate reads as Educate.",
+        "proof | ok | Every number and quote matches a source you have.",
+        "voice | ok | None of Hiveku's banned phrases or your brand guide's phrases to avoid.",
+        "network.fold:linkedin | ok | All of it shows on LinkedIn before the cut.",
+        "network.link:linkedin | ok | The link is in the first comment, so the post keeps its reach on LinkedIn.",
+        "network.hashtags:linkedin | ask | No hashtags: LinkedIn reads 3 to 5. Add some?",
+        "network.repeat:linkedin | ok | The opening is new against your last 20 LinkedIn posts."
+      ],
+      "platforms": [
+        "linkedin"
+      ]
+    },
+    "unquotedSource": {
+      "body": {
+        "content": "Myth: the lacquer failed.\n\"Every door we ever sold has held up for ten years straight.\" A customer.\nSave this for the next finish schedule you sign.",
+        "target_platforms": [
+          "linkedin"
+        ],
+        "target_accounts": [
+          "sacc_linkedin_01"
+        ],
+        "first_comment": "The finish schedule, coat by coat, with flash times for a Texas August: https://brightsidefixtures.example/finish-schedule?utm_source=linkedin&utm_medium=social",
+        "avatar_id": "avt_marcus_01",
+        "journey_id": "cjm_trade_01",
+        "journey_stage": "Problem Aware",
+        "before_after_grid_id": "grid_harlow_01",
+        "before_after_item_id": "gi_harlow_01",
+        "pillar_id": "pil_educate"
+      },
+      "summary": {
+        "ok": 13,
+        "fix": 0,
+        "ask": 3,
+        "not_set": 0
+      },
+      "stage": {
+        "name": "Problem Aware",
+        "stage_id": "stg_trade_problem_aware",
+        "awareness": "problem_aware",
+        "awareness_source": "guess",
+        "guessed_from": "name"
+      },
+      "items": [
+        "who.icp | ok | Marcus: 3 pains and a quote in their own words.",
+        "who.networks | ok | Marcus is on LinkedIn.",
+        "where.journey | ok | Trade contractor journey.",
+        "where.stage | ask | Hiveku reads \"Problem Aware\" as feels the problem (a guess from its name): show the problem is solvable and what waiting costs. Is that right? Set its step on the journey if not.",
+        "where.journey_icp | ok | Trade contractor journey is for Marcus.",
+        "what.grid | ok | Harlow Street refit - Whitfield Renovations.",
+        "what.grid_icp | ok | Harlow Street refit - Whitfield Renovations was made for Marcus.",
+        "what.row | ok | Before: Before. After: After.",
+        "ask | ok | One ask, \"save\", fits someone who feels the problem.",
+        "ask.pillar | ok | Educate reads as Educate.",
+        "proof | ask | Where is \"Every door we ever sold has held up f...\" from? Name its source or use a result from Harlow Street refit - Whitfield Renovations.",
+        "voice | ok | None of Hiveku's banned phrases or your brand guide's phrases to avoid.",
+        "network.fold:linkedin | ok | All of it shows on LinkedIn before the cut.",
+        "network.link:linkedin | ok | The link is in the first comment, so the post keeps its reach on LinkedIn.",
+        "network.hashtags:linkedin | ask | No hashtags: LinkedIn reads 3 to 5. Add some?",
+        "network.repeat:linkedin | ok | The opening is new against your last 20 LinkedIn posts."
+      ],
+      "platforms": [
+        "linkedin"
+      ]
+    },
+    "linkPointer": {
+      "body": {
+        "content": "Myth: the lacquer failed.\nThe finish schedule is in the first comment.",
+        "target_platforms": [
+          "linkedin"
+        ],
+        "target_accounts": [
+          "sacc_linkedin_01"
+        ],
+        "first_comment": "The finish schedule, coat by coat, with flash times for a Texas August: https://brightsidefixtures.example/finish-schedule?utm_source=linkedin&utm_medium=social",
+        "avatar_id": "avt_marcus_01",
+        "journey_id": "cjm_trade_01",
+        "journey_stage": "Problem Aware",
+        "before_after_grid_id": "grid_harlow_01",
+        "before_after_item_id": "gi_harlow_01",
+        "pillar_id": "pil_educate"
+      },
+      "summary": {
+        "ok": 13,
+        "fix": 1,
+        "ask": 2,
+        "not_set": 0
+      },
+      "stage": {
+        "name": "Problem Aware",
+        "stage_id": "stg_trade_problem_aware",
+        "awareness": "problem_aware",
+        "awareness_source": "guess",
+        "guessed_from": "name"
+      },
+      "items": [
+        "who.icp | ok | Marcus: 3 pains and a quote in their own words.",
+        "who.networks | ok | Marcus is on LinkedIn.",
+        "where.journey | ok | Trade contractor journey.",
+        "where.stage | ask | Hiveku reads \"Problem Aware\" as feels the problem (a guess from its name): show the problem is solvable and what waiting costs. Is that right? Set its step on the journey if not.",
+        "where.journey_icp | ok | Trade contractor journey is for Marcus.",
+        "what.grid | ok | Harlow Street refit - Whitfield Renovations.",
+        "what.grid_icp | ok | Harlow Street refit - Whitfield Renovations was made for Marcus.",
+        "what.row | ok | Before: Before. After: After.",
+        "ask | fix | No next step: ask for one thing that fits feels the problem, such as save, comment and get the free guide.",
+        "ask.pillar | ok | Educate reads as Educate.",
+        "proof | ok | No numbers, results or quotes to back.",
+        "voice | ok | None of Hiveku's banned phrases or your brand guide's phrases to avoid.",
+        "network.fold:linkedin | ok | All of it shows on LinkedIn before the cut.",
+        "network.link:linkedin | ok | The link is in the first comment, so the post keeps its reach on LinkedIn.",
+        "network.hashtags:linkedin | ask | No hashtags: LinkedIn reads 3 to 5. Add some?",
+        "network.repeat:linkedin | ok | The opening is new against your last 20 LinkedIn posts."
+      ],
+      "platforms": [
+        "linkedin"
+      ]
+    },
+    "dmMe": {
+      "body": {
+        "content": "Myth: the lacquer failed.\nWant the finish schedule? DM me and I will send it.",
+        "target_platforms": [
+          "linkedin"
+        ],
+        "target_accounts": [
+          "sacc_linkedin_01"
+        ],
+        "first_comment": "The finish schedule, coat by coat, with flash times for a Texas August: https://brightsidefixtures.example/finish-schedule?utm_source=linkedin&utm_medium=social",
+        "avatar_id": "avt_marcus_01",
+        "journey_id": "cjm_trade_01",
+        "journey_stage": "Problem Aware",
+        "before_after_grid_id": "grid_harlow_01",
+        "before_after_item_id": "gi_harlow_01",
+        "pillar_id": "pil_educate"
+      },
+      "summary": {
+        "ok": 13,
+        "fix": 1,
+        "ask": 2,
+        "not_set": 0
+      },
+      "stage": {
+        "name": "Problem Aware",
+        "stage_id": "stg_trade_problem_aware",
+        "awareness": "problem_aware",
+        "awareness_source": "guess",
+        "guessed_from": "name"
+      },
+      "items": [
+        "who.icp | ok | Marcus: 3 pains and a quote in their own words.",
+        "who.networks | ok | Marcus is on LinkedIn.",
+        "where.journey | ok | Trade contractor journey.",
+        "where.stage | ask | Hiveku reads \"Problem Aware\" as feels the problem (a guess from its name): show the problem is solvable and what waiting costs. Is that right? Set its step on the journey if not.",
+        "where.journey_icp | ok | Trade contractor journey is for Marcus.",
+        "what.grid | ok | Harlow Street refit - Whitfield Renovations.",
+        "what.grid_icp | ok | Harlow Street refit - Whitfield Renovations was made for Marcus.",
+        "what.row | ok | Before: Before. After: After.",
+        "ask | fix | \"dm\" asks too much of someone who feels the problem. What fits: save, comment and get the free guide.",
+        "ask.pillar | ok | Educate reads as Educate.",
+        "proof | ok | No numbers, results or quotes to back.",
+        "voice | ok | None of Hiveku's banned phrases or your brand guide's phrases to avoid.",
+        "network.fold:linkedin | ok | All of it shows on LinkedIn before the cut.",
+        "network.link:linkedin | ok | The link is in the first comment, so the post keeps its reach on LinkedIn.",
+        "network.hashtags:linkedin | ask | No hashtags: LinkedIn reads 3 to 5. Add some?",
+        "network.repeat:linkedin | ok | The opening is new against your last 20 LinkedIn posts."
+      ],
+      "platforms": [
+        "linkedin"
+      ]
+    },
+    "leadClause": {
+      "body": {
+        "content": "Myth: the lacquer failed.\nIf this helped, save it for your next job.",
+        "target_platforms": [
+          "linkedin"
+        ],
+        "target_accounts": [
+          "sacc_linkedin_01"
+        ],
+        "first_comment": "The finish schedule, coat by coat, with flash times for a Texas August: https://brightsidefixtures.example/finish-schedule?utm_source=linkedin&utm_medium=social",
+        "avatar_id": "avt_marcus_01",
+        "journey_id": "cjm_trade_01",
+        "journey_stage": "Problem Aware",
+        "before_after_grid_id": "grid_harlow_01",
+        "before_after_item_id": "gi_harlow_01",
+        "pillar_id": "pil_educate"
+      },
+      "summary": {
+        "ok": 14,
+        "fix": 0,
+        "ask": 2,
+        "not_set": 0
+      },
+      "stage": {
+        "name": "Problem Aware",
+        "stage_id": "stg_trade_problem_aware",
+        "awareness": "problem_aware",
+        "awareness_source": "guess",
+        "guessed_from": "name"
+      },
+      "items": [
+        "who.icp | ok | Marcus: 3 pains and a quote in their own words.",
+        "who.networks | ok | Marcus is on LinkedIn.",
+        "where.journey | ok | Trade contractor journey.",
+        "where.stage | ask | Hiveku reads \"Problem Aware\" as feels the problem (a guess from its name): show the problem is solvable and what waiting costs. Is that right? Set its step on the journey if not.",
+        "where.journey_icp | ok | Trade contractor journey is for Marcus.",
+        "what.grid | ok | Harlow Street refit - Whitfield Renovations.",
+        "what.grid_icp | ok | Harlow Street refit - Whitfield Renovations was made for Marcus.",
+        "what.row | ok | Before: Before. After: After.",
+        "ask | ok | One ask, \"save\", fits someone who feels the problem.",
+        "ask.pillar | ok | Educate reads as Educate.",
+        "proof | ok | No numbers, results or quotes to back.",
+        "voice | ok | None of Hiveku's banned phrases or your brand guide's phrases to avoid.",
+        "network.fold:linkedin | ok | All of it shows on LinkedIn before the cut.",
+        "network.link:linkedin | ok | The link is in the first comment, so the post keeps its reach on LinkedIn.",
+        "network.hashtags:linkedin | ask | No hashtags: LinkedIn reads 3 to 5. Add some?",
+        "network.repeat:linkedin | ok | The opening is new against your last 20 LinkedIn posts."
+      ],
+      "platforms": [
+        "linkedin"
+      ]
+    },
+    "noNetwork": {
+      "body": {
+        "content": "Myth: the lacquer failed. Truth: the coat under it was never sanded.\nOf 312 doors through our finish room in July, the 4 that came back had skipped the 320 pass between coats on one rush order. The 41 Harlow Street doors got the pass and are 18 months in with zero call-backs. Ask your shop what happens between coats.\nSave this for the next finish schedule you sign.",
+        "avatar_id": "avt_marcus_01",
+        "journey_id": "cjm_trade_01",
+        "journey_stage": "Problem Aware",
+        "before_after_grid_id": "grid_harlow_01",
+        "before_after_item_id": "gi_harlow_01",
+        "pillar_id": "pil_educate"
+      },
+      "summary": {
+        "ok": 10,
+        "fix": 0,
+        "ask": 1,
+        "not_set": 1
+      },
+      "stage": {
+        "name": "Problem Aware",
+        "stage_id": "stg_trade_problem_aware",
+        "awareness": "problem_aware",
+        "awareness_source": "guess",
+        "guessed_from": "name"
+      },
+      "items": [
+        "who.icp | ok | Marcus: 3 pains and a quote in their own words.",
+        "who.networks | not_set | Pick where this post goes.",
+        "where.journey | ok | Trade contractor journey.",
+        "where.stage | ask | Hiveku reads \"Problem Aware\" as feels the problem (a guess from its name): show the problem is solvable and what waiting costs. Is that right? Set its step on the journey if not.",
+        "where.journey_icp | ok | Trade contractor journey is for Marcus.",
+        "what.grid | ok | Harlow Street refit - Whitfield Renovations.",
+        "what.grid_icp | ok | Harlow Street refit - Whitfield Renovations was made for Marcus.",
+        "what.row | ok | Before: Before. After: After.",
+        "ask | ok | One ask, \"save\", fits someone who feels the problem.",
+        "ask.pillar | ok | Educate reads as Educate.",
+        "proof | ok | Every number and quote matches a source you have.",
+        "voice | ok | None of Hiveku's banned phrases or your brand guide's phrases to avoid."
+      ],
+      "platforms": []
+    },
+    "emptyContent": {
+      "body": {
+        "content": "",
+        "target_platforms": [
+          "linkedin"
+        ],
+        "target_accounts": [
+          "sacc_linkedin_01"
+        ],
+        "first_comment": "The finish schedule, coat by coat, with flash times for a Texas August: https://brightsidefixtures.example/finish-schedule?utm_source=linkedin&utm_medium=social",
+        "avatar_id": "avt_marcus_01",
+        "journey_id": "cjm_trade_01",
+        "journey_stage": "Problem Aware",
+        "before_after_grid_id": "grid_harlow_01",
+        "before_after_item_id": "gi_harlow_01",
+        "pillar_id": "pil_educate"
+      },
+      "summary": {
+        "ok": 11,
+        "fix": 1,
+        "ask": 2,
+        "not_set": 1
+      },
+      "stage": {
+        "name": "Problem Aware",
+        "stage_id": "stg_trade_problem_aware",
+        "awareness": "problem_aware",
+        "awareness_source": "guess",
+        "guessed_from": "name"
+      },
+      "items": [
+        "who.icp | ok | Marcus: 3 pains and a quote in their own words.",
+        "who.networks | ok | Marcus is on LinkedIn.",
+        "where.journey | ok | Trade contractor journey.",
+        "where.stage | ask | Hiveku reads \"Problem Aware\" as feels the problem (a guess from its name): show the problem is solvable and what waiting costs. Is that right? Set its step on the journey if not.",
+        "where.journey_icp | ok | Trade contractor journey is for Marcus.",
+        "what.grid | ok | Harlow Street refit - Whitfield Renovations.",
+        "what.grid_icp | ok | Harlow Street refit - Whitfield Renovations was made for Marcus.",
+        "what.row | ok | Before: Before. After: After.",
+        "ask | fix | No next step: ask for one thing that fits feels the problem, such as save, comment and get the free guide.",
+        "ask.pillar | ok | Educate reads as Educate.",
+        "proof | ok | No numbers, results or quotes to back.",
+        "voice | ok | None of Hiveku's banned phrases or your brand guide's phrases to avoid.",
+        "network.fold:linkedin | not_set | Nothing written for LinkedIn yet.",
+        "network.link:linkedin | ok | The link is in the first comment, so the post keeps its reach on LinkedIn.",
+        "network.hashtags:linkedin | ask | No hashtags: LinkedIn reads 3 to 5. Add some?"
+      ],
+      "platforms": [
+        "linkedin"
+      ]
+    },
+    "instagram": {
+      "body": {
+        "content": "Myth: the lacquer failed. Truth: the coat under it was never sanded.\nOf 312 doors through our finish room in July, the 4 that came back had skipped the 320 pass between coats on one rush order. The 41 Harlow Street doors got the pass and are 18 months in with zero call-backs. Ask your shop what happens between coats.\nSave this for the next finish schedule you sign.",
+        "target_platforms": [
+          "instagram"
+        ],
+        "target_accounts": [
+          "sacc_instagram_01"
+        ],
+        "media_asset_ids": [
+          "ma_finish_room_01"
+        ],
+        "avatar_id": "avt_marcus_01",
+        "journey_id": "cjm_trade_01",
+        "journey_stage": "Problem Aware",
+        "before_after_grid_id": "grid_harlow_01",
+        "before_after_item_id": "gi_harlow_01",
+        "pillar_id": "pil_educate"
+      },
+      "summary": {
+        "ok": 14,
+        "fix": 0,
+        "ask": 2,
+        "not_set": 0
+      },
+      "stage": {
+        "name": "Problem Aware",
+        "stage_id": "stg_trade_problem_aware",
+        "awareness": "problem_aware",
+        "awareness_source": "guess",
+        "guessed_from": "name"
+      },
+      "items": [
+        "who.icp | ok | Marcus: 3 pains and a quote in their own words.",
+        "who.networks | ask | Is Marcus on Instagram? Their profile lists linkedin and facebook.",
+        "where.journey | ok | Trade contractor journey.",
+        "where.stage | ask | Hiveku reads \"Problem Aware\" as feels the problem (a guess from its name): show the problem is solvable and what waiting costs. Is that right? Set its step on the journey if not.",
+        "where.journey_icp | ok | Trade contractor journey is for Marcus.",
+        "what.grid | ok | Harlow Street refit - Whitfield Renovations.",
+        "what.grid_icp | ok | Harlow Street refit - Whitfield Renovations was made for Marcus.",
+        "what.row | ok | Before: Before. After: After.",
+        "ask | ok | One ask, \"save\", fits someone who feels the problem.",
+        "ask.pillar | ok | Educate reads as Educate.",
+        "proof | ok | Every number and quote matches a source you have.",
+        "voice | ok | None of Hiveku's banned phrases or your brand guide's phrases to avoid.",
+        "network.fold:instagram | ok | The first line fits before Instagram's cut (about 125 characters).",
+        "network.link:instagram | ok | No link.",
+        "network.hashtags:instagram | ok | 0 hashtags, within Instagram's up to 30.",
+        "network.repeat:instagram | ok | The opening is new against your last 3 Instagram posts."
+      ],
+      "platforms": [
+        "instagram"
+      ]
+    },
+    "overrideFb": {
+      "body": {
+        "content": "Myth: the lacquer failed. Truth: the coat under it was never sanded.\nOf 312 doors through our finish room in July, the 4 that came back had skipped the 320 pass between coats on one rush order. The 41 Harlow Street doors got the pass and are 18 months in with zero call-backs. Ask your shop what happens between coats.\nSave this for the next finish schedule you sign.",
+        "target_platforms": [
+          "linkedin",
+          "facebook"
+        ],
+        "target_accounts": [
+          "sacc_linkedin_01",
+          "sacc_facebook_01"
+        ],
+        "first_comment": "The finish schedule, coat by coat, with flash times for a Texas August: https://brightsidefixtures.example/finish-schedule?utm_source=linkedin&utm_medium=social",
+        "platform_overrides": {
+          "facebook": {
+            "content": "We used to skip the sand between coats on rush jobs.\nThen 4 doors from one July kitchen came back with the top coat lifting at the seams, and the fix cost more than the day we saved. Every coat gets the 320 pass now, rush or not, and the 41 Harlow Street doors are 18 months in with zero call-backs. Comment with the finish failure you see most and we will answer it in the next post.",
+            "firstComment": "The finish schedule we follow, coat by coat: https://brightsidefixtures.example/finish-schedule?utm_source=facebook&utm_medium=social"
+          }
+        },
+        "avatar_id": "avt_marcus_01",
+        "journey_id": "cjm_trade_01",
+        "journey_stage": "Problem Aware",
+        "before_after_grid_id": "grid_harlow_01",
+        "before_after_item_id": "gi_harlow_01",
+        "pillar_id": "pil_educate"
+      },
+      "summary": {
+        "ok": 18,
+        "fix": 0,
+        "ask": 3,
+        "not_set": 0
+      },
+      "stage": {
+        "name": "Problem Aware",
+        "stage_id": "stg_trade_problem_aware",
+        "awareness": "problem_aware",
+        "awareness_source": "guess",
+        "guessed_from": "name"
+      },
+      "items": [
+        "who.icp | ok | Marcus: 3 pains and a quote in their own words.",
+        "who.networks | ok | Marcus is on LinkedIn and Facebook.",
+        "where.journey | ok | Trade contractor journey.",
+        "where.stage | ask | Hiveku reads \"Problem Aware\" as feels the problem (a guess from its name): show the problem is solvable and what waiting costs. Is that right? Set its step on the journey if not.",
+        "where.journey_icp | ok | Trade contractor journey is for Marcus.",
+        "what.grid | ok | Harlow Street refit - Whitfield Renovations.",
+        "what.grid_icp | ok | Harlow Street refit - Whitfield Renovations was made for Marcus.",
+        "what.row | ok | Before: Before. After: After.",
+        "ask:linkedin | ok | LinkedIn: One ask, \"save\", fits someone who feels the problem.",
+        "ask:facebook | ok | Facebook: One ask, \"comment\", fits someone who feels the problem.",
+        "ask.pillar | ok | Educate reads as Educate.",
+        "proof | ok | Every number and quote matches a source you have.",
+        "voice | ok | None of Hiveku's banned phrases or your brand guide's phrases to avoid.",
+        "network.fold:linkedin | ok | The first line fits before LinkedIn's cut (about 210 characters).",
+        "network.link:linkedin | ok | The link is in the first comment, so the post keeps its reach on LinkedIn.",
+        "network.hashtags:linkedin | ask | No hashtags: LinkedIn reads 3 to 5. Add some?",
+        "network.repeat:linkedin | ok | The opening is new against your last 20 LinkedIn posts.",
+        "network.fold:facebook | ok | The first line fits before Facebook's cut (about 125 characters).",
+        "network.link:facebook | ok | The link is in the first comment, so the post keeps its reach on Facebook.",
+        "network.hashtags:facebook | ask | No hashtags: Facebook reads 1 to 2. Add some?",
+        "network.repeat:facebook | ok | The opening is new against your last 8 Facebook posts."
+      ],
+      "platforms": [
+        "linkedin",
+        "facebook"
+      ]
+    },
+    "altBanned": {
+      "body": {
+        "content": "We used to skip the sand between coats on rush jobs.\nThen 4 doors from one July kitchen came back with the top coat lifting at the seams, and the fix cost more than the day we saved. Every coat gets the 320 pass now, rush or not, and the 41 Harlow Street doors are 18 months in with zero call-backs. Comment with the finish failure you see most and we will answer it in the next post.",
+        "target_platforms": [
+          "facebook"
+        ],
+        "target_accounts": [
+          "sacc_facebook_01"
+        ],
+        "first_comment": "The finish schedule we follow, coat by coat: https://brightsidefixtures.example/finish-schedule?utm_source=facebook&utm_medium=social",
+        "media_asset_ids": [
+          "ma_finish_room_01"
+        ],
+        "media_alt_texts": [
+          "A seamless finish on a cabinet door."
+        ],
+        "avatar_id": "avt_marcus_01",
+        "journey_id": "cjm_trade_01",
+        "journey_stage": "Problem Aware",
+        "before_after_grid_id": "grid_harlow_01",
+        "before_after_item_id": "gi_harlow_01",
+        "pillar_id": "pil_educate"
+      },
+      "summary": {
+        "ok": 13,
+        "fix": 1,
+        "ask": 2,
+        "not_set": 0
+      },
+      "stage": {
+        "name": "Problem Aware",
+        "stage_id": "stg_trade_problem_aware",
+        "awareness": "problem_aware",
+        "awareness_source": "guess",
+        "guessed_from": "name"
+      },
+      "items": [
+        "who.icp | ok | Marcus: 3 pains and a quote in their own words.",
+        "who.networks | ok | Marcus is on Facebook.",
+        "where.journey | ok | Trade contractor journey.",
+        "where.stage | ask | Hiveku reads \"Problem Aware\" as feels the problem (a guess from its name): show the problem is solvable and what waiting costs. Is that right? Set its step on the journey if not.",
+        "where.journey_icp | ok | Trade contractor journey is for Marcus.",
+        "what.grid | ok | Harlow Street refit - Whitfield Renovations.",
+        "what.grid_icp | ok | Harlow Street refit - Whitfield Renovations was made for Marcus.",
+        "what.row | ok | Before: Before. After: After.",
+        "ask | ok | One ask, \"comment\", fits someone who feels the problem.",
+        "ask.pillar | ok | Educate reads as Educate.",
+        "proof | ok | Every number and quote matches a source you have.",
+        "voice | fix | Reword it: \"seamless\" reads like copy any business could post.",
+        "network.fold:facebook | ok | The first line fits before Facebook's cut (about 125 characters).",
+        "network.link:facebook | ok | The link is in the first comment, so the post keeps its reach on Facebook.",
+        "network.hashtags:facebook | ask | No hashtags: Facebook reads 1 to 2. Add some?",
+        "network.repeat:facebook | ok | The opening is new against your last 8 Facebook posts."
+      ],
+      "platforms": [
+        "facebook"
+      ]
+    },
+    "askBanned": {
+      "body": {
+        "content": "Myth: the lacquer failed.\nComment below with the finish failure you see most.",
+        "target_platforms": [
+          "linkedin"
+        ],
+        "target_accounts": [
+          "sacc_linkedin_01"
+        ],
+        "first_comment": "The finish schedule, coat by coat, with flash times for a Texas August: https://brightsidefixtures.example/finish-schedule?utm_source=linkedin&utm_medium=social",
+        "avatar_id": "avt_marcus_01",
+        "journey_id": "cjm_trade_01",
+        "journey_stage": "Problem Aware",
+        "before_after_grid_id": "grid_harlow_01",
+        "before_after_item_id": "gi_harlow_01",
+        "pillar_id": "pil_educate"
+      },
+      "summary": {
+        "ok": 13,
+        "fix": 1,
+        "ask": 2,
+        "not_set": 0
+      },
+      "stage": {
+        "name": "Problem Aware",
+        "stage_id": "stg_trade_problem_aware",
+        "awareness": "problem_aware",
+        "awareness_source": "guess",
+        "guessed_from": "name"
+      },
+      "items": [
+        "who.icp | ok | Marcus: 3 pains and a quote in their own words.",
+        "who.networks | ok | Marcus is on LinkedIn.",
+        "where.journey | ok | Trade contractor journey.",
+        "where.stage | ask | Hiveku reads \"Problem Aware\" as feels the problem (a guess from its name): show the problem is solvable and what waiting costs. Is that right? Set its step on the journey if not.",
+        "where.journey_icp | ok | Trade contractor journey is for Marcus.",
+        "what.grid | ok | Harlow Street refit - Whitfield Renovations.",
+        "what.grid_icp | ok | Harlow Street refit - Whitfield Renovations was made for Marcus.",
+        "what.row | ok | Before: Before. After: After.",
+        "ask | fix | The ask fits someone who feels the problem: put it in your own words, not \"Comment below\".",
+        "ask.pillar | ok | Educate reads as Educate.",
+        "proof | ok | No numbers, results or quotes to back.",
+        "voice | ok | None of Hiveku's banned phrases or your brand guide's phrases to avoid.",
+        "network.fold:linkedin | ok | All of it shows on LinkedIn before the cut.",
+        "network.link:linkedin | ok | The link is in the first comment, so the post keeps its reach on LinkedIn.",
+        "network.hashtags:linkedin | ask | No hashtags: LinkedIn reads 3 to 5. Add some?",
+        "network.repeat:linkedin | ok | The opening is new against your last 20 LinkedIn posts."
+      ],
+      "platforms": [
+        "linkedin"
+      ]
+    }
+  }
+}

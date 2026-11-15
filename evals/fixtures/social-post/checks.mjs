@@ -30,9 +30,15 @@
  *     customer_avatar_get precede talk_to_department; social_post_strategy_check
  *     and social_post_validate precede the first create; social_post_preview
  *     follows it;
+ *   - every create follows a strategy check of the same text (each draft is
+ *     checked as it is saved), and that check left no fix item about the post's
+ *     own words (the ask, proof, voice, each network): those are fixed in the
+ *     draft and checked again; a who, where or what item is the person's;
  *   - social_post_strategy_update and customer_journey_stage_update are never
- *     called: the check's ask items are questions for the person, and nobody
- *     answers them in an eval run, so no pick may change on the person's behalf;
+ *     called, and no social_update_post changes a post's ICP, journey, stage,
+ *     grid, row or pillar: the check's ask items are questions for the person,
+ *     and nobody answers them in an eval run, so no pick may change on the
+ *     person's behalf;
  *   - at least one PM task is filed (the X ask and the boilerplate avatar are
  *     tasks, not posts); the memory write-back resends the prior document;
  *   - the sidecar's drafts rows reconcile with the transcript and with the
@@ -104,6 +110,24 @@ const PRIOR_MEMORY = MISC.memory.entries.find((e) => e.name === 'social')?.conte
 const BREACHED = BOUNDS.breached_hooks || {};
 
 const slugify = (s) => String(s || '').trim().toLowerCase().replace(/\s+/g, '-');
+
+/** The check's groups about the post's own words; who, where and what are about the person's picks. */
+const POST_GROUPS = new Set(['ask', 'proof', 'voice', 'network']);
+/** What a post is for, as the strategy check reads it: the six picks. */
+const PICK_KEYS = ['avatar_id', 'journey_id', 'journey_stage', 'before_after_grid_id', 'before_after_item_id', 'pillar_id'];
+/** A text as the check compares it: its runs of whitespace one space, trimmed. */
+const sameText = (text) => String(text ?? '').replace(/\s+/g, ' ').trim();
+/**
+ * The picks a create, an update or a dataset row carries, only those it names: the grid's row rides in
+ * settings.before_after_item_id there, and at the top of a strategy check's arguments (rowAtTop).
+ */
+function pickValues(args, rowAtTop = false) {
+  const out = {};
+  for (const key of PICK_KEYS) if (key !== 'before_after_item_id' && key in args && args[key] !== undefined) out[key] = args[key];
+  const holder = rowAtTop ? args : args.settings && typeof args.settings === 'object' ? args.settings : {};
+  if ('before_after_item_id' in holder && holder.before_after_item_id !== undefined) out.before_after_item_id = holder.before_after_item_id;
+  return out;
+}
 
 // A predicate receives the call's arguments. Guard against being handed the
 // whole call record instead - an `args.scheduled_at` on a record is always
@@ -226,6 +250,21 @@ export function checks(transcript, outputs = {}) {
   const creates = callsTo(transcript, 'social_create_post');
   const successfulCreates = creates.filter((c) => c.result && c.result.data && c.result.data.id);
   const createdIds = successfulCreates.map((c) => c.result.data.id);
+  const checksRun = callsTo(transcript, 'social_post_strategy_check');
+  /** The last strategy check before a create that read the same text (its whitespace aside), or null. */
+  const lastCheckOf = (create) => {
+    const text = sameText(argsOf(create).content);
+    return checksRun.filter((c) => c.index < create.index && sameText(argsOf(c).content) === text).pop() || null;
+  };
+  /**
+   * What each post was for before an update: for a post made in this run, the picks its last check proposed with
+   * the create's own over them (so saving the checked row later changes nothing); else the dataset row's.
+   */
+  const createdPicks = new Map(successfulCreates.map((c) => {
+    const check = lastCheckOf(c);
+    return [c.result.data.id, { ...(check ? pickValues(argsOf(check), true) : {}), ...pickValues(argsOf(c)) }];
+  }));
+  const picksOf = (postId) => createdPicks.get(postId) || pickValues(POSTS.find((p) => p.id === postId) || {});
 
   // -- Transcript: the tool arguments -----------------------------------------
   run('drafts omit scheduled_at', () =>
@@ -343,10 +382,36 @@ export function checks(transcript, outputs = {}) {
     const checkIdx = transcript.findIndex((c) => c.tool === 'social_post_strategy_check');
     if (checkIdx < 0) fail('social_post_strategy_check was never called: who the post is for and why is checked before the draft is saved');
     if (firstCreate >= 0 && checkIdx > firstCreate) fail('social_post_strategy_check ran only after the first create');
+    // Every draft, as it is saved: a check of the same text before each create (one checked draft covers no other).
+    const unchecked = creates.filter((c) => !lastCheckOf(c)).map((c) => `index ${c.index} (${(argsOf(c).target_platforms || []).join(', ')})`);
+    if (unchecked.length) fail(`social_create_post at ${unchecked.join('; ')} was saved with no strategy check of its text before it: check every draft as it will be saved`);
   });
 
-  run("no pick changed without the person's word", () =>
-    assertNeverCalled(transcript, ['social_post_strategy_update', 'customer_journey_stage_update']));
+  run('fix items fixed before the save', () => {
+    // A fix item about the post's own words (the ask, proof, voice, each network) is fixed in the draft, then checked
+    // again; one about the ICP, the journey or the grid (who, where, what) is the person's, and goes in the report.
+    const issues = [];
+    for (const c of successfulCreates) {
+      const check = lastCheckOf(c);
+      const open = (check?.result?.items || []).filter((i) => i.status === 'fix' && POST_GROUPS.has(i.group));
+      if (open.length) issues.push(`social_create_post at transcript index ${c.index} saved the draft with ${open.map((i) => (i.platform ? `${i.id}:${i.platform}` : i.id)).join(', ')} still a fix item in its last check`);
+    }
+    if (issues.length) fail(`${issues.join('; ')} - fix each fix item in the draft and check again before the save`);
+  });
+
+  run("no pick changed without the person's word", () => {
+    assertNeverCalled(transcript, ['social_post_strategy_update', 'customer_journey_stage_update']);
+    // Nor through the ordinary update: who a post is for changes only on the person's word, and nobody answers here.
+    const issues = [];
+    for (const c of callsTo(transcript, 'social_update_post')) {
+      const args = argsOf(c);
+      const before = picksOf(args.post_id);
+      const sent = pickValues(args);
+      const changed = PICK_KEYS.filter((key) => key in sent && sent[key] !== before[key]);
+      if (changed.length) issues.push(`social_update_post at transcript index ${c.index} changes ${changed.join(', ')} of ${args.post_id}`);
+    }
+    if (issues.length) fail(`${issues.join('; ')}: who a post is for changes only on the person's word, and the check's questions go in the report`);
+  });
 
   run('validate before create, preview after', () => {
     const firstCreate = transcript.findIndex((c) => c.tool === 'social_create_post');

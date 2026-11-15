@@ -18,14 +18,20 @@
  *     quota and unknown ids like the route. It ALSO warns (never errors) on a
  *     brand.ai_forbidden_phrases hit, and still answers ok: true - the
  *     server does not score copy, so ok is not a green light for the words.
- *   - social_post_strategy_check writes nothing and answers the route's shape,
- *     { summary, stage, items, platforms }, each item ok, fix, ask or not_set:
- *     who (the ICP, its networks), where (the journey, its ICP, the stage),
- *     what (the grid, its ICP, its row), voice (the brand's phrases to avoid
- *     only; the fixture does not carry Hiveku's banned list) and each
- *     network's first line against its fold. The trade journey's stages carry
- *     the step Hiveku guessed from their names (awareness_source guess), so a
- *     stage is an ask item: a question for the person, which no tool answers.
+ *   - social_post_strategy_check writes nothing and answers what the route
+ *     answers for this dataset: { summary, stage, items, platforms }, the
+ *     stage with its step, guessed_from on a guess, and its job in the route's
+ *     shape ({ step, words, job, openings, formats, asks, avoid }); each item
+ *     ok, fix, ask or not_set, in the route's order and words: who (the ICP,
+ *     its networks), where (the journey, the stage, the journey's ICP), what
+ *     (the grid, its ICP, its row), the ask and the pillar's job, proof, voice,
+ *     and per network the first line before the cut, the link, the hashtags
+ *     and a repeated opening. route-answers.json is the route's own answers
+ *     for this dataset, recorded, and the self-test holds this fake to them.
+ *     The trade journey's stages carry the step Hiveku guessed from their
+ *     names (awareness_source guess), so a stage is an ask item, as are the
+ *     hashtags the drafts leave out: questions for the person, which no tool
+ *     answers.
  *   - social_post_strategy_update and customer_journey_stage_update REFUSE:
  *     no person answered anything in an eval run, and who a post is for, or a
  *     stage's step, changes only on the person's word.
@@ -69,8 +75,7 @@ const HASHTAG_NORMS = {
 // The X publish gate's soft cap as social_list_accounts reports it.
 export const X_QUOTA = { plan: 'growth', eligible: true, used: 14, limit: 60, remaining: 46, required_plan: 'growth' };
 
-// A journey stage's step and the app's words for it (the tool server's STAGE_STEP_WORDS), and the job a post does
-// at each step, as the strategy check names it.
+// A journey stage's step and the app's words for it (the tool server's STAGE_STEP_WORDS).
 export const STAGE_STEP_WORDS = {
   unaware: "Doesn't see the problem yet",
   problem_aware: 'Feels the problem',
@@ -79,17 +84,270 @@ export const STAGE_STEP_WORDS = {
   most_aware: 'Ready to act',
   customer: 'Already a customer',
 };
-const STAGE_JOBS = {
-  unaware: 'Name the problem in their words; get remembered.',
-  problem_aware: 'Show it can be fixed, and what waiting costs.',
-  solution_aware: 'Show why this way beats the others.',
-  product_aware: 'Remove the one risk holding them back.',
-  most_aware: 'Make it easy, and give an honest reason for now.',
-  customer: 'Keep them; earn the review and the referral.',
-};
-const TEMPLATE_TEXT = /your tool|\[Company\]|your website|your city/i;
 
 const refuse = (tool, reason) => ({ refused: true, tool, reason });
+
+// -- The strategy check, as the route answers it --------------------------------------------------------------
+// social_post_strategy_check below answers what Hiveku's route answers for this dataset: the route's items, in its
+// order, with its statuses and its reasons. route-answers.json holds the route's own answers for this dataset,
+// recorded, and the self-test holds this fake to them. Left out, because this dataset never reaches them: the
+// brand's proof points (the brand guide has none), a stage's template asks (the journey has no template) and a
+// stage renamed since the post was saved (no saved post keeps a stage id here).
+
+/** The job a post does at each step, as the route answers it (dataset/stage-jobs.json). */
+const STAGE_JOBS = load('stage-jobs.json');
+/** The hashtag count each network reads (min null: no lower bound; max 0: the network does not use them). */
+const CHECK_HASHTAG_NORMS = {
+  instagram: { min: null, max: 30 },
+  tiktok: { min: 3, max: 5 },
+  linkedin: { min: 3, max: 5 },
+  twitter: { min: 1, max: 2 },
+  facebook: { min: 1, max: 2 },
+  google_business_profile: { min: 0, max: 0 },
+};
+/** Where each network uses a link: the first comment, the post itself, the link card, or the bio. */
+const LINK_HOME = { linkedin: 'first_comment', facebook: 'first_comment', twitter: 'body', google_business_profile: 'link_card', instagram: 'bio', tiktok: 'bio' };
+/** Hiveku's banned phrases, as the route's voice item reads them (the anti-fluff list, with its one pattern). */
+const HIVEKU_BANNED_PHRASES = ['elevate', 'unlock', 'unleash', 'seamless', 'game-changer', 'game-changing', 'cutting-edge', 'best-in-class', 'world-class', "in today's fast-paced world", "in today's digital age", 'ever-evolving', 'navigate the landscape', 'delve', 'dive in', "let's dive in", 'leverage', 'empower', 'supercharge', 'revolutionize', 'robust', 'holistic', 'synergy', 'at the end of the day', 'excited to announce', 'thrilled to share', "we're proud to", 'your journey', "it's not just X, it's Y", "here's the thing", 'ready to level up', 'pro tip', 'discover how', 'comment below', 'thoughts?', 'agree?', 'tag someone who', 'double tap if', 'secret sauce', 'take it to the next level', 'unlock your potential', 'transform your business', 'look no further', 'in conclusion'];
+/** The asks the route reads, each with the smallest step it belongs to (how much it asks of the reader). */
+const ASK_PHRASES_BY_STEP = {
+  unaware: ['bookmark', 'check out', 'follow', 'keep reading', 'learn more', 'read', 'read next', 'save', 'share', 'subscribe', 'try these', 'try this'],
+  problem_aware: ['browse', 'comment', 'dm for the free guide', 'download', 'find out', 'get the checklist', 'get the free', 'get the free guide', 'get the guide', 'get the template', 'grab', 'join', 'learn how', 'leave a comment', 'register for the free', 'reply', 'see how', 'sign up for the free', 'tag', 'take the quiz'],
+  solution_aware: ['calculate', 'compare', 'estimate', 'explore', 'see how it works', 'see plans', 'see pricing', 'see the difference', 'take the tour', 'try', 'view pricing', 'watch'],
+  product_aware: ['ask me', 'ask us', 'book a call', 'book a demo', 'call for a quote', 'dm', 'get a quote', 'get the one-pager', 'get your quote', 'message me', 'message us', 'read the case study', 'request a demo', 'request a quote', 'see the case study', 'see the offer', 'see the product', 'start a free trial', 'start your free trial', 'start your trial', 'talk to', 'try for free', 'try it free', 'watch a demo', 'watch the demo'],
+  most_aware: ['apply', 'book', 'buy', 'call', 'checkout', 'claim', 'contact', 'enrol', 'enroll', 'enroll now', 'get started', 'hire', 'order', 'purchase', 'register', 'request', 'reserve', 'schedule', 'shop', 'shop now', 'sign up', 'signup', 'speak to', 'start now', 'upgrade'],
+  customer: ['give a testimonial', 'invite', 'leave a review', 'leave a testimonial', 'rate', 'refer', 'renew', 'review', 'share your win'],
+};
+const LADDER = ['unaware', 'problem_aware', 'solution_aware', 'product_aware', 'most_aware'];
+const GUESS_BASIS = { template_name: 'its template', template_position: 'its template', after_the_sale: 'its name', name: 'its name', position: 'its place in the journey' };
+/** A stage name that reads as its own step ("Problem Aware"): the route guesses its step from the name. */
+const STEP_IN_NAME = /\b(?:unaware|problem[\s-]aware|solution[\s-]aware|product[\s-]aware|most[\s-]aware|customers?)\b/i;
+const PEOPLE_WHO = { unaware: "don't see the problem yet", problem_aware: 'feel the problem', solution_aware: 'are weighing kinds of fix', product_aware: 'are weighing you', most_aware: 'are ready to act', customer: 'are already customers' };
+const SOMEONE_WHO = { unaware: "doesn't see the problem yet", problem_aware: 'feels the problem', solution_aware: 'is weighing kinds of fix', product_aware: 'is weighing you', most_aware: 'is ready to act', customer: 'is already a customer' };
+const PILLAR_JOB_WORDS = [
+  ['promotion', /\b(?:promot\w*|offers?|sales?|sell\w*|launch\w*|deals?|discounts?|book now|buy)\b/i],
+  ['educate', /\b(?:educat\w*|teach\w*|tips?|how[\s-]?to|tutorials?|guides?|learn\w*|lessons?)\b/i],
+  ['authority', /\b(?:authority|expert\w*|insights?|thought leadership|proof|case stud\w*|results?|credib\w*)\b/i],
+  ['connection', /\b(?:connect\w*|community|behind the scenes|stor(?:y|ies)|culture|team|personal|relationships?|values)\b/i],
+];
+const PILLAR_JOB_NAMES = { educate: 'Educate', authority: 'Authority', connection: 'Connection', promotion: 'Promotion' };
+const TEMPLATE_TEXT_RES = [/\[[A-Z][A-Za-z ]{1,30}\]/, /\{\{[^}]{1,40}\}\}/, /\byour (?:tool|website)\b/i, /_{3,}/, /\blorem ipsum\b/i];
+const NETWORK_WORDS = [
+  ['instagram', /\b(?:instagram|insta|ig)\b/i],
+  ['facebook', /\b(?:facebook|fb|meta)\b/i],
+  ['linkedin', /\blinked\s?in\b/i],
+  ['twitter', /\b(?:twitter|x)\b/i],
+  ['tiktok', /\btik\s?tok\b/i],
+  ['google_business_profile', /\b(?:google(?: business(?: profile)?| maps)?|gbp)\b/i],
+  ['youtube', /\byou\s?tube\b/i],
+  ['pinterest', /\bpinterest\b/i],
+];
+
+const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const labelOf = (platform) => (PLATFORM_LIMITS[platform] ? PLATFORM_LIMITS[platform].label : platform);
+const listWords = (words) => (words.length <= 1 ? words.join('') : `${words.slice(0, -1).join(', ')} and ${words[words.length - 1]}`);
+const lower = (text) => text.charAt(0).toLowerCase() + text.slice(1);
+function quoteText(text, max = 60) {
+  const flat = text.replace(/\s+/g, ' ').trim();
+  return flat.length > max ? `${flat.slice(0, max - 3).trimEnd()}...` : flat;
+}
+/** Sentences as the route reads them: split after . ! or ? and at each line break. */
+const sentencesOf = (text) => text.split(/(?<=[.!?])\s+|\n+/).map((s) => s.trim()).filter(Boolean);
+const normalizeWords = (text) => text.toLowerCase().replace(/[\u2018\u2019`]/g, "'").replace(/[^\p{L}\p{N}'%]+/gu, ' ').trim();
+/** A post's opening six words as the route compares them for a repeat. */
+const openingSix = (text) => normalizeWords(text).replace(/'/g, '').split(/\s+/).filter(Boolean).slice(0, 6).join(' ');
+const numbersIn = (text) => new Set(Array.from(text.matchAll(/\d[\d,]*(?:\.\d+)?/g), (m) => m[0].replace(/,/g, '')));
+const urlsIn = (text) => (text ? Array.from(text.matchAll(/https?:\/\/[^\s<>()"']+/gi), (m) => m[0]) : []);
+const hashtagsIn = (text) => (text ? Array.from(text.matchAll(/(^|[^\p{L}\p{N}_&#])#([\p{L}\p{N}_]+)/gu), (m) => `#${m[2]}`) : []);
+
+/** A banned phrase as the route matches it: each word with its forms, whole words only. */
+function routePhrasePattern(phrase) {
+  const text = phrase.trim().replace(/[\u2018\u2019`]/g, "'");
+  if (!text) return null;
+  if (/^it's not just x, it's y$/i.test(text)) return /(?<![\p{L}\p{N}])it['\u2019]?s\s+not\s+just\s+[^.!?\n]{1,80}?[,;:.]\s*it['\u2019]?s(?![\p{L}\p{N}])/iu;
+  const token = (word) => {
+    if (!/^[a-z]+$/i.test(word) || word.length < 4) {
+      return `${escapeRe(word).replace(/'/g, "['\u2019]").replace(/-/g, '[-\\s]?')}${/^[a-z-]+$/i.test(word) && word.length >= 4 ? 's?' : ''}`;
+    }
+    if (/[^aeiou]y$/i.test(word)) return `${word.slice(0, -1)}(?:y|ies|ied|ying)`;
+    if (/e$/i.test(word)) return `${word.slice(0, -1)}(?:e|es|ed|ing|ely)`;
+    return `${word}(?:s|es|ed|ing|ly)?`;
+  };
+  const question = text.endsWith('?');
+  const words = (question ? text.slice(0, -1) : text).trim().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return null;
+  return new RegExp(`(?<![\\p{L}\\p{N}])${words.map(token).join('\\s+')}${question ? '\\s*\\?' : '(?![\\p{L}\\p{N}])'}`, 'iu');
+}
+/** Every phrase of Hiveku's list and the brand's that a text uses, once each, Hiveku's first. */
+function phrasesIn(text, brandPhrases) {
+  const hits = [];
+  const seen = new Set();
+  for (const [list, phrases] of [['hiveku', HIVEKU_BANNED_PHRASES], ['account', brandPhrases]]) {
+    for (const phrase of phrases) {
+      const key = phrase.trim().toLowerCase();
+      if (!key || seen.has(key)) continue;
+      const re = routePhrasePattern(phrase);
+      const match = re ? text.match(re) : null;
+      if (match) {
+        seen.add(key);
+        hits.push({ phrase: phrase.trim(), list, found: match[0] });
+      }
+    }
+  }
+  return hits;
+}
+
+// The asks: a sentence that opens (after its lead words, or a clause such as "If this helped,") with an ask, its
+// verb taking its object with a word or two allowed between them; "DM me" anywhere; one ask per sentence; where the
+// link is ("Link in bio") is never a second ask.
+const ASK_LEAD_RE = /^(?:(?:please|so|now|then|just|go|and|or|simply|today|next|first|why not|feel free to|make sure to|be sure to|don't forget to|do not forget to)\s+)+/i;
+const ASK_LEAD_CLAUSE_RE = /^(?:if|when|whenever|once|before|after|while)\b[^,.!?\n]{0,80},\s*/i;
+const LINK_POINTER_RE = /\b(?:links?\s+(?:is\s+|are\s+)?in\s+(?:my\s+|our\s+|the\s+)?bio|links?\s+(?:is\s+|are\s+)?in\s+(?:the\s+)?(?:first\s+)?comments?|links?\s+(?:is\s+|are\s+)?below|(?:click|tap)\s+(?:the\s+|my\s+|our\s+)?link)(?![\p{L}\p{N}])/iu;
+const AFTER_POINTER_RE = /^[\s,]*(?:to|and)\s+(.+)$/i;
+const ASK_FILLER = String.raw`(?:a|an|the|your|our|my|their|his|her|its|us|me|them|it|this|that|these|those|some|free|quick|short|new|full|first|own|honest|personal|live|discovery|strategy|intro|introductory|\d+[-\s]?(?:min|minute|day|week|month)s?)`;
+const ASK_DET = String.raw`(?:a|an|the|your|our|my|their|this|that|these|those)`;
+const ASK_DETS = new Set(['a', 'an', 'the', 'your', 'our', 'my', 'their', 'this', 'that', 'these', 'those']);
+const ASK_PARTICLES = new Set(['up', 'out', 'to', 'in', 'on', 'off', 'back', 'through']);
+const ASK_WORD_END = String.raw`(?![\p{L}\p{N}])`;
+function askPhrasePattern(phrase) {
+  const tokens = phrase.toLowerCase().split(/\s+/).filter(Boolean);
+  const verb = tokens.slice(0, 1);
+  let at = 1;
+  while (at < tokens.length && ASK_PARTICLES.has(tokens[at])) verb.push(tokens[at++]);
+  const object = tokens.slice(at).filter((token) => !ASK_DETS.has(token));
+  const tokenRe = (token) => escapeRe(token).replace(/-/g, '[-\\s]?');
+  const verbPattern = verb.map(tokenRe).join('[\\s-]+');
+  if (object.length === 0) return new RegExp(`^${verbPattern}${ASK_WORD_END}`, 'iu');
+  return new RegExp(`^${verbPattern}(?:\\s+${ASK_FILLER}){0,3}?\\s+${object.map(tokenRe).join(`(?:\\s+${ASK_DET})*\\s+`)}${ASK_WORD_END}`, 'iu');
+}
+/** Asks whose object decides the step: a comment, a customer's story, the free guide by message, a quote, a call. */
+const OBJECT_ASKS = [
+  { phrase: 'comment', verbs: ['share', 'drop', 'tell', 'post', 'put', 'add', 'answer', 'write', 'ask'], re: /^(?:share|drop|tell|post|put|add|answer|write|ask)\b[^.!?\n]{0,120}?\b(?:in the comments|in comments|in a comment|in the replies|below)(?![\p{L}\p{N}])/iu },
+  { phrase: 'share your win', verbs: ['share'], re: new RegExp(String.raw`^share(?:\s+${ASK_FILLER}){0,3}?\s+(?:wins?|stor(?:y|ies)|results?|progress|unboxing|photos?|pictures?|pics|experiences?|milestones?|testimonials?|transformation|before and after)${ASK_WORD_END}`, 'iu') },
+  { phrase: 'dm for the free guide', verbs: ['dm', 'message'], re: /^(?:dm|message)\b[^.!?\n]{0,80}?\b(?:free|guides?|checklists?|templates?|cheat ?sheets?|workbooks?|playbooks?|e-?books?|pdfs?|swipe files?)(?![\p{L}\p{N}])/iu },
+  { phrase: 'call for a quote', verbs: ['call'], re: /^call\b[^.!?\n]{0,40}?\bfor\s+(?:(?:a|an|your|our)\s+)?(?:free\s+)?(?:quotes?|estimates?)(?![\p{L}\p{N}])/iu },
+  { phrase: 'book a call', verbs: ['book'], re: new RegExp(String.raw`^book(?:\s+${ASK_FILLER}){0,3}?\s+(?:calls?|chats?|consults?|consultations?|meetings?|sessions?|conversations?)${ASK_WORD_END}`, 'iu') },
+];
+const ASK_PHRASES = Object.entries(ASK_PHRASES_BY_STEP)
+  .flatMap(([step, phrases]) => phrases.map((phrase) => ({ phrase, step })))
+  .sort((a, b) => b.phrase.length - a.phrase.length);
+const ASK_STEP = new Map(ASK_PHRASES.map((ask) => [ask.phrase, ask.step]));
+const firstWordOf = (text) => (text.match(/^[\p{L}\p{N}]+/u)?.[0] ?? '').toLowerCase();
+const ASK_MATCHERS = (() => {
+  const byVerb = new Map();
+  const add = (verb, matcher) => byVerb.set(verb, [...(byVerb.get(verb) || []), matcher]);
+  for (const ask of ASK_PHRASES) add(firstWordOf(ask.phrase), { phrase: ask.phrase, step: ask.step, re: askPhrasePattern(ask.phrase) });
+  for (const entry of OBJECT_ASKS) for (const verb of entry.verbs) add(verb, { phrase: entry.phrase, step: ASK_STEP.get(entry.phrase), re: entry.re });
+  return byVerb;
+})();
+function askOpening(words) {
+  const opening = words.replace(/^[^\p{L}\p{N}]+/u, '').replace(ASK_LEAD_RE, '').replace(ASK_LEAD_CLAUSE_RE, '').replace(ASK_LEAD_RE, '');
+  let best = null;
+  for (const matcher of ASK_MATCHERS.get(firstWordOf(opening)) || []) {
+    const match = opening.match(matcher.re);
+    if (!match) continue;
+    const literal = opening.toLowerCase().startsWith(matcher.phrase);
+    if (!best || match[0].length > best.length || (match[0].length === best.length && literal && !best.literal)) best = { matcher, length: match[0].length, literal };
+  }
+  if (!best) return null;
+  // "Save 20%" is a discount, not an ask.
+  if (best.matcher.phrase === 'save' && /^\s*[$\u20AC\u00A3\d]/u.test(opening.slice(best.length))) return null;
+  return { phrase: best.matcher.phrase, step: best.matcher.step };
+}
+function readAsks(text) {
+  const asks = [];
+  let pointer = null;
+  for (const sentence of sentencesOf(text)) {
+    let found = askOpening(sentence);
+    if (!found) {
+      const link = sentence.match(LINK_POINTER_RE);
+      if (link && link.index !== undefined) {
+        const rest = sentence.slice(link.index + link[0].length).match(AFTER_POINTER_RE);
+        found = rest ? askOpening(rest[1]) : null;
+        if (!found) {
+          pointer = pointer ?? sentence;
+          continue;
+        }
+      }
+    }
+    if (!found && /\b(?:dm|message)\s+(?:me|us)\b/i.test(sentence)) found = { phrase: 'dm', step: ASK_STEP.get('dm') };
+    if (found) asks.push({ ...found, sentence: quoteText(sentence, 80), full: sentence });
+  }
+  if (asks.length === 0 && pointer) asks.push({ phrase: 'check out', step: ASK_STEP.get('check out'), sentence: quoteText(pointer, 80), full: pointer });
+  return asks;
+}
+const rank = (step) => (step === 'customer' ? -1 : LADDER.indexOf(step));
+function askFit(ask, step) {
+  if (step === 'customer') return ask === 'most_aware' || ask === 'product_aware' ? 'sells_to_customers' : 'fits';
+  if (ask === 'customer') return 'customer_ask';
+  if (rank(ask) > rank(step)) return 'too_big';
+  if (step === 'most_aware' && rank(ask) <= rank('problem_aware')) return 'too_small';
+  return 'fits';
+}
+
+// Proof: the numbers, results and quotes a post states, each matched to the grid, the brand's proof points, a
+// public testimonial, or a source named in words in the claim's own sentence.
+const CLAIM_RES = [
+  /(?<![\p{L}\p{N}])\d{1,3}(?:[.,]\d+)?\s?%/gu,
+  /[$\u20AC\u00A3]\s?\d[\d,]*(?:\.\d+)?(?:\s?(?:k|m|bn|million|billion|thousand))?(?![\p{L}\p{N}])/giu,
+  /(?<![\p{L}\p{N}])\d+(?:\.\d+)?x(?![\p{L}\p{N}])/giu,
+  /(?<![\p{L}\p{N}$\u20AC\u00A3.,])\d[\d,]*\+?\s+(?:clients?|customers?|people|students?|patients?|leads?|sales|calls|bookings?|reviews?|hours?|days?|weeks?|months?|years?|businesses|companies|homes|jobs|projects|members|subscribers|followers|downloads|orders|minutes?)(?![\p{L}\p{N}])/giu,
+  /(?<![\p{L}\p{N}])\d(?:\.\d)?\s?(?:stars?|\u2605)/giu,
+];
+const SOURCE_MARKER_RE = /\[source:\s*[^\]\s][^\]]*\]/i;
+const ATTRIBUTION_RE = /\b(?:according to|sources?:|per (?:the|our|a|an)\b|(?:from|in|by) (?:our|the|a|an|this|their|its)\b[^.!?\n]{0,60}?\b(?:surveys?|stud(?:y|ies)|reports?|data|research|polls?|census|analys[ie]s|audits?|records|benchmarks?|index)\b|(?:surveys?|stud(?:y|ies)|reports?|research|data|polls?|census|analys[ie]s|audits?|benchmarks?)\s+(?:by|from|of|for)\b)/i;
+function findClaims(text) {
+  const claims = [];
+  const seen = new Set();
+  for (const re of CLAIM_RES) {
+    for (const match of text.matchAll(re)) {
+      const claim = match[0].trim();
+      if (seen.has(claim.toLowerCase())) continue;
+      seen.add(claim.toLowerCase());
+      claims.push({ text: claim, kind: 'number', number: (claim.match(/\d[\d,]*(?:\.\d+)?/) || [''])[0].replace(/,/g, '') });
+    }
+  }
+  for (const match of text.matchAll(/[\u201C"]([^\u201D"\n]{12,240})[\u201D"]/g)) {
+    const inner = match[1].trim();
+    if (inner.split(/\s+/).length < 3 || seen.has(inner.toLowerCase())) continue;
+    seen.add(inner.toLowerCase());
+    claims.push({ text: inner, kind: 'quote' });
+  }
+  return claims;
+}
+/** What a grid row says, as text: its titles, descriptions, pains, benefits and the change between them. */
+function rowTexts(row) {
+  if (!row || typeof row !== 'object') return [];
+  const out = [];
+  const take = (value) => {
+    if (typeof value === 'string') out.push(value);
+    else if (Array.isArray(value)) for (const entry of value) if (typeof entry === 'string') out.push(entry);
+  };
+  for (const side of ['before', 'after']) {
+    const part = row[side];
+    if (typeof part === 'string') out.push(part);
+    else if (part && typeof part === 'object') {
+      take(part.title);
+      take(part.description);
+      take(part.pain_points);
+      take(part.benefits);
+    }
+  }
+  take(row.transformation_details);
+  return out;
+}
+
+/** One item when every network reads the same, else one per network, its reason naming the network. */
+function pushPerNetwork(items, id, group, verdicts) {
+  const [first] = verdicts;
+  if (!first) return;
+  const platforms = verdicts.map((v) => v.platform).filter(Boolean);
+  if (verdicts.every((v) => v.status === first.status && v.reason === first.reason)) {
+    items.push({ id, group, status: first.status, reason: first.reason, data: platforms.length > 0 ? { ...first.data, platforms } : first.data });
+    return;
+  }
+  for (const v of verdicts) items.push({ id, group, ...(v.platform ? { platform: v.platform } : {}), status: v.status, reason: v.platform ? `${labelOf(v.platform)}: ${v.reason}` : v.reason, data: v.data });
+}
 
 /**
  * A banned phrase matched the way anti-fluff.md says: case-insensitive, and
@@ -504,74 +762,274 @@ export async function createTools() {
       return out;
     },
 
-    // -- Who and why: reads only, item by item, like the strategy-check route -----
+    // -- Who and why: reads only, item by item, as the strategy-check route answers -----
     social_post_strategy_check(body = {}) {
-      if (typeof body.content !== 'string') return { error: 'content must be a string (it may be empty for a post that is only media)' };
+      if (typeof body.content !== 'string') return { error: 'content is required (a string; it may be empty)' };
       const items = [];
-      const add = (id, group, status, reason, data = null, platform = null) => items.push({ id, group, ...(platform ? { platform } : {}), status, reason, data });
+      const add = (id, group, status, reason, data = {}, platform = null) => items.push({ id, group, ...(platform ? { platform } : {}), status, reason, data });
       const { platforms } = platformsOf(body);
+      const overrides = body.platform_overrides && typeof body.platform_overrides === 'object' ? body.platform_overrides : {};
+      const firstComment = typeof body.first_comment === 'string' ? body.first_comment : null;
+      const textFor = (platform) => (overrides[platform] && typeof overrides[platform].content === 'string' && overrides[platform].content.length > 0 ? overrides[platform].content : body.content);
+      const commentFor = (platform) => {
+        const own = overrides[platform] && overrides[platform].firstComment;
+        if (typeof own === 'string' && own.trim()) return own;
+        return firstComment && firstComment.trim() ? firstComment : null;
+      };
+      // The texts an item that reads the post's words reads: each network's own text with the first comment it gets.
+      const readerTexts = () => {
+        const joined = (text, comment) => (comment ? `${text}\n${comment}` : text);
+        if (platforms.length === 0) return [{ platform: null, text: joined(body.content, firstComment && firstComment.trim() ? firstComment : null) }];
+        return platforms.map((platform) => ({ platform, text: joined(textFor(platform), FIRST_COMMENT_PLATFORMS.has(platform) ? commentFor(platform) : null) }));
+      };
 
-      const avatar = body.avatar_id ? avatarById.get(body.avatar_id) : null;
-      if (!body.avatar_id) add('who.icp', 'who', 'not_set', 'No ICP chosen: who is this post for?');
-      else if (!avatar) add('who.icp', 'who', 'not_set', 'That ICP is not on this account.', { avatar_id: body.avatar_id });
-      else if ([avatar.name, avatar.summary, avatar.description, avatar.typical_quote].some((f) => TEMPLATE_TEXT.test(String(f || '')))) {
-        add('who.icp', 'who', 'fix', `${avatar.name} still holds template text: fill in its pains and its quote, or choose another ICP.`, { avatar_id: avatar.id });
-      } else add('who.icp', 'who', 'ok', `For ${avatar.name}.`, { avatar_id: avatar.id, name: avatar.name });
-      if (avatar) {
-        const own = avatar.online_behavior?.social_platforms || [];
-        const outside = platforms.filter((p) => !own.includes(p));
-        if (outside.length) add('who.networks', 'who', 'ask', `${avatar.name} does not list ${outside.join(', ')} among their networks. Post there anyway?`, { outside, own });
-        else add('who.networks', 'who', 'ok', `${avatar.name} reads ${platforms.join(', ')}.`, { own });
-      }
-
-      let stage = null;
-      const journey = body.journey_id ? journeyById.get(body.journey_id) : null;
-      if (!body.journey_id) add('where.journey', 'where', 'not_set', 'No journey chosen: which journey does this post move people along?');
-      else if (!journey) add('where.journey', 'where', 'not_set', 'That journey is not on this account.', { journey_id: body.journey_id });
+      // who: the ICP, real (pains and a quote in their own words, no template text), and the networks it lists
+      const icp = body.avatar_id ? avatarById.get(body.avatar_id) || null : null;
+      if (!body.avatar_id) add('who.icp', 'who', 'not_set', 'Pick who this post is for: one of your ICPs.');
+      else if (!icp) add('who.icp', 'who', 'fix', 'That ICP is not on this account: pick one of yours.', { avatar_id: body.avatar_id });
       else {
-        add('where.journey', 'where', 'ok', `Journey: ${journey.name}.`, { journey_id: journey.id });
-        if (avatar) {
-          const linked = (journey.target_avatar_ids || []).includes(avatar.id);
-          add('where.journey_icp', 'where', linked ? 'ok' : 'ask', linked ? `${journey.name} is linked to ${avatar.name}.` : `${journey.name} is not linked to ${avatar.name}. Is it their journey?`, { journey_id: journey.id, avatar_id: avatar.id });
+        const pains = (icp.pain_points || []).filter((pain) => pain.trim());
+        const hasQuote = Boolean(icp.typical_quote && icp.typical_quote.trim());
+        const template = [];
+        for (const text of [icp.name, icp.description, icp.typical_quote, ...(icp.pain_points || []), ...(icp.frustrations || [])]) {
+          if (typeof text !== 'string' || !text) continue;
+          for (const re of TEMPLATE_TEXT_RES) {
+            const match = text.match(re);
+            if (match && !template.includes(match[0])) template.push(match[0]);
+          }
         }
-        const asked = String(body.journey_stage || '').trim();
-        const row = asked ? journey.stages.find((s) => s.name.toLowerCase() === asked.toLowerCase() || s.stage_id === asked) : null;
-        if (!asked) add('where.stage', 'where', 'not_set', 'No stage chosen: where is the reader in the journey?');
-        else if (!row) add('where.stage', 'where', 'fix', `"${asked}" is not a stage of ${journey.name}. Stages: ${journey.stages.map((s) => s.name).join(', ')}.`);
+        const data = { avatar_id: icp.id, name: icp.name, pain_points: pains.length, has_quote: hasQuote, template_text: template };
+        if (icp.populate_status === 'failed') add('who.icp', 'who', 'fix', `${icp.name}'s AI fill failed: fill in their pains and a quote in their own words.`, data);
+        else if (template.length > 0) add('who.icp', 'who', 'fix', `${icp.name} still has template text (${listWords(template.map((t) => `"${t}"`))}): rewrite it in your customer's words.`, data);
+        else if (pains.length === 0 || !hasQuote) {
+          const missing = [pains.length === 0 ? 'their pains' : null, hasQuote ? null : 'a quote in their own words'].filter(Boolean);
+          add('who.icp', 'who', 'fix', `Add ${listWords(missing)} to ${icp.name}, so the post can speak to them.`, data);
+        } else add('who.icp', 'who', 'ok', `${icp.name}: ${pains.length} ${pains.length === 1 ? 'pain' : 'pains'} and a quote in their own words.`, data);
+        const listed = icp.online_behavior?.social_platforms || [];
+        if (platforms.length === 0) add('who.networks', 'who', 'not_set', 'Pick where this post goes.');
+        else if (listed.length === 0) add('who.networks', 'who', 'not_set', `${icp.name}'s profile does not say where they spend time online: add their networks to check this.`, { chosen: platforms });
         else {
-          stage = { name: row.name, stage_id: row.stage_id || null, awareness: row.awareness, awareness_source: row.awareness_source, job: STAGE_JOBS[row.awareness] };
-          const data = { stage_id: row.stage_id || null, awareness: row.awareness, awareness_source: row.awareness_source };
-          if (row.awareness_source === 'guess') add('where.stage', 'where', 'ask', `Hiveku guessed that "${row.name}" is the step ${STAGE_STEP_WORDS[row.awareness]}. Is it?`, data);
-          else add('where.stage', 'where', 'ok', `${row.name}: ${STAGE_STEP_WORDS[row.awareness]}.`, data);
+          const theirs = [];
+          for (const entry of listed) for (const [slug, re] of NETWORK_WORDS) if (re.test(entry) && !theirs.includes(slug)) theirs.push(slug);
+          const notListed = platforms.filter((platform) => !theirs.includes(platform));
+          const data2 = { chosen: platforms, icp_platforms: listed, matched: theirs, not_listed: notListed };
+          if (notListed.length === 0) add('who.networks', 'who', 'ok', `${icp.name} is on ${listWords(platforms.map(labelOf))}.`, data2);
+          else add('who.networks', 'who', 'ask', `Is ${icp.name} on ${listWords(notListed.map(labelOf))}? Their profile lists ${listWords(listed.map((entry) => entry.trim()))}.`, data2);
         }
       }
 
-      const grid = body.before_after_grid_id ? gridById.get(body.before_after_grid_id) : null;
-      if (!body.before_after_grid_id) add('what.grid', 'what', 'not_set', 'No before and after chosen: what changes for the reader?');
-      else if (!grid) add('what.grid', 'what', 'not_set', 'That grid is not on this account.', { before_after_grid_id: body.before_after_grid_id });
+      // where: the journey, its stage with the stage's step and job (a guessed step is a question), the journey's ICP
+      let stage = null;
+      const journey = body.journey_id ? journeyById.get(body.journey_id) || null : null;
+      if (!body.journey_id) add('where.journey', 'where', 'not_set', 'Pick the journey this post moves people along, and its stage.');
+      else if (!journey) add('where.journey', 'where', 'fix', 'That journey is not on this account: pick one of yours.', { journey_id: body.journey_id });
       else {
-        add('what.grid', 'what', 'ok', `Before and after: ${grid.name}.`, { before_after_grid_id: grid.id });
-        if (avatar) {
-          const mine = grid.target_avatar_id === avatar.id;
-          add('what.grid_icp', 'what', mine ? 'ok' : 'ask', mine ? `${grid.name} was made for ${avatar.name}.` : `${grid.name} was not made for ${avatar.name}. Does it fit them?`, { target_avatar_id: grid.target_avatar_id });
+        add('where.journey', 'where', 'ok', `${journey.name}.`, { journey_id: journey.id, name: journey.name });
+        const names = journey.stages.map((s) => s.name);
+        const asked = typeof body.journey_stage === 'string' ? body.journey_stage.trim() : '';
+        if (!asked) add('where.stage', 'where', 'not_set', `Pick the stage of ${journey.name} this post is for.`, { stages: names });
+        else {
+          const row = journey.stages.find((s) => s.name.trim().toLowerCase() === asked.toLowerCase()) || journey.stages.find((s) => s.stage_id === asked);
+          if (!row) add('where.stage', 'where', 'fix', `"${asked}" is not a stage of ${journey.name}. Its stages: ${listWords(names.map((n) => `"${n}"`)) || 'none yet'}.`, { journey_stage: asked, stages: names });
+          else {
+            const stored = row.awareness_source === 'template' || row.awareness_source === 'person';
+            const guessedFrom = stored ? null : STEP_IN_NAME.test(row.name) ? 'name' : 'position';
+            const job = STAGE_JOBS[row.awareness];
+            stage = { name: row.name, stage_id: row.stage_id || null, awareness: row.awareness, awareness_source: stored ? row.awareness_source : 'guess', ...(guessedFrom ? { guessed_from: guessedFrom } : {}), job };
+            const data = { stage_id: stage.stage_id, name: row.name, awareness: stage.awareness, awareness_source: stage.awareness_source, ...(guessedFrom ? { guessed_from: guessedFrom } : {}), words: job.words, job: job.job };
+            if (!stored) add('where.stage', 'where', 'ask', `Hiveku reads "${row.name}" as ${lower(job.words)} (a guess from ${GUESS_BASIS[guessedFrom]}): ${lower(job.job)}. Is that right? Set its step on the journey if not.`, data);
+            else add('where.stage', 'where', 'ok', `"${row.name}" is for people who ${PEOPLE_WHO[stage.awareness]}: ${lower(job.job)}.`, data);
+          }
         }
-        const rows = (grid.grid_items || []).map((it) => it.item_id).filter(Boolean);
-        if (!body.before_after_item_id) add('what.row', 'what', 'not_set', `Which row of ${grid.name} does this post show?`, { rows });
-        else if (!rows.includes(body.before_after_item_id)) add('what.row', 'what', 'fix', `That row is not in ${grid.name}.`, { before_after_item_id: body.before_after_item_id, rows });
-        else add('what.row', 'what', 'ok', 'The row the post shows is chosen.', { before_after_item_id: body.before_after_item_id });
+        if (icp) {
+          const linked = (journey.target_avatar_ids || []).map((id) => avatarById.get(id)).filter(Boolean);
+          if (linked.some((a) => a.id === icp.id)) add('where.journey_icp', 'where', 'ok', `${journey.name} is for ${icp.name}.`, { linked: linked.map((a) => a.name) });
+          else if (linked.length === 0) add('where.journey_icp', 'where', 'fix', `${journey.name} is linked to no ICP: link it to ${icp.name}, or pick ${icp.name}'s journey.`, { linked: [] });
+          else add('where.journey_icp', 'where', 'ask', `${journey.name} is for ${listWords(linked.map((a) => a.name))}. Is this post for ${icp.name} on that journey?`, { linked: linked.map((a) => a.name) });
+        }
       }
 
-      const phrases = forbiddenPatterns.filter(([, re]) => copyOf(body).some((t) => re.test(t))).map(([p]) => p);
-      if (phrases.length) add('voice', 'voice', 'fix', `The brand guide asks to avoid: ${phrases.join(', ')}.`, { phrases });
-      else add('voice', 'voice', 'ok', 'None of the brand\'s phrases to avoid.', { phrases: [] });
+      // what: the grid, made for this ICP, and its row
+      let row = null;
+      const grid = body.before_after_grid_id ? gridById.get(body.before_after_grid_id) || null : null;
+      if (!body.before_after_grid_id) add('what.grid', 'what', 'not_set', 'Pick the before and after this post shows.');
+      else if (!grid) add('what.grid', 'what', 'fix', 'That before and after grid is not on this account: pick one of yours.', { before_after_grid_id: body.before_after_grid_id });
+      else {
+        add('what.grid', 'what', 'ok', `${grid.name}.`, { before_after_grid_id: grid.id, name: grid.name });
+        if (icp) {
+          const made = grid.target_avatar_id ? avatarById.get(grid.target_avatar_id) || { id: grid.target_avatar_id, name: 'another ICP' } : null;
+          if (made && made.id === icp.id) add('what.grid_icp', 'what', 'ok', `${grid.name} was made for ${icp.name}.`, { target_avatar: made.name });
+          else if (!made) add('what.grid_icp', 'what', 'ask', `${grid.name} is for no ICP yet. Is it for ${icp.name}?`, { target_avatar: null });
+          else add('what.grid_icp', 'what', 'ask', `${grid.name} was made for ${made.name}. Is it right for ${icp.name}?`, { target_avatar: made.name });
+        }
+        if (!body.before_after_item_id) add('what.row', 'what', 'not_set', `Pick the row of ${grid.name} this post shows: the before your reader knows, and the after they want.`);
+        else {
+          const index = (grid.grid_items || []).findIndex((it) => it.item_id === body.before_after_item_id);
+          if (index < 0) add('what.row', 'what', 'fix', `That row is not in ${grid.name}: pick one of its rows.`, { before_after_item_id: body.before_after_item_id });
+          else {
+            row = grid.grid_items[index];
+            const pictures = [...(row.before?.images || []), ...(row.after?.images || [])];
+            const ai = pictures.filter((image) => image && typeof image.prompt === 'string' && image.prompt).length;
+            add('what.row', 'what', 'ok', `Before: ${row.before?.title || 'no title yet'}. After: ${row.after?.title || 'no title yet'}.`, { item_id: row.item_id, index, real_photos: pictures.length - ai, ai_pictures: ai });
+          }
+        }
+      }
 
+      // the ask: one, and one that fits the reader's step; then the pillar's job against the step
+      const said = new Set();
+      const askVerdict = (text) => {
+        const distinct = Array.from(new Map(readAsks(text).map((ask) => [ask.phrase, ask])).values());
+        const fitWords = stage ? stage.job.asks.map(lower) : [];
+        const data = { asks: distinct.map(({ phrase, step, sentence }) => ({ phrase, step, sentence })), count: distinct.length, step: stage ? stage.awareness : null, fits: stage ? stage.job.asks : [] };
+        const verdict = (status, reason) => ({ status, reason, data });
+        const named = () => listWords(distinct.map((ask) => `"${ask.phrase}"`));
+        if (!stage) return distinct.length > 1 ? verdict('fix', `${distinct.length} asks (${named()}): keep one.`) : verdict('not_set', 'Pick the stage to check the ask fits.');
+        if (distinct.length === 0) return verdict('fix', `No next step: ask for one thing that fits ${lower(stage.job.words)}, such as ${listWords(fitWords)}.`);
+        if (distinct.length > 1) return verdict('fix', `${distinct.length} asks (${named()}): keep the one that fits ${lower(stage.job.words)}.`);
+        const [ask] = distinct;
+        const fit = askFit(ask.step, stage.awareness);
+        if (fit === 'fits') {
+          if (stage.awareness === 'most_aware' && stage.guessed_from === 'position' && (ask.step === 'most_aware' || ask.step === 'product_aware')) {
+            return verdict('ask', `Hiveku reads "${stage.name}" as ready to act only from its place in the journey. Have the people there not bought yet? If they have, "${ask.phrase}" sells to them again: set the stage's step on the journey.`);
+          }
+          const [banned] = phrasesIn(ask.full, forbidden);
+          if (banned) {
+            said.add(banned.phrase.toLowerCase());
+            return verdict('fix', `The ask fits someone who ${SOMEONE_WHO[stage.awareness]}: put it in your own words, not "${banned.found}".`);
+          }
+          return verdict('ok', `One ask, "${ask.phrase}", fits someone who ${SOMEONE_WHO[stage.awareness]}.`);
+        }
+        if (fit === 'too_big') return verdict('fix', `"${ask.phrase}" asks too much of someone who ${SOMEONE_WHO[stage.awareness]}. What fits: ${listWords(fitWords)}.`);
+        if (fit === 'too_small') return verdict('ask', `Someone ready to act needs the real next step, not "${ask.phrase}". What fits: ${listWords(fitWords)}.`);
+        if (fit === 'customer_ask') return verdict('ask', `"${ask.phrase}" is an ask for people who already bought. Is this post for customers?`);
+        return verdict('ask', `"${ask.phrase}" sells again to people who already bought. Is that what this post is for?`);
+      };
+      pushPerNetwork(items, 'ask', 'ask', readerTexts().map(({ platform, text }) => ({ platform, ...askVerdict(text) })));
+      const pillar = body.pillar_id ? pillarById.get(body.pillar_id) || null : null;
+      if (pillar) {
+        let job = null;
+        for (const text of [pillar.name, pillar.description]) {
+          if (job || typeof text !== 'string' || !text.trim()) continue;
+          for (const [name, re] of PILLAR_JOB_WORDS) if (!job && re.test(text)) job = name;
+        }
+        const pillarData = { pillar_id: pillar.id, name: pillar.name, job };
+        if (!job) add('ask.pillar', 'ask', 'not_set', `Hiveku cannot tell ${pillar.name}'s job from its name: say if it educates, builds authority, connects or promotes.`, pillarData);
+        else if (job === 'promotion' && stage && stage.awareness !== 'most_aware') add('ask.pillar', 'ask', 'ask', `${pillar.name} is a Promotion pillar, and only someone ready to act is sold to. Is this post meant to sell to people who ${PEOPLE_WHO[stage.awareness]}?`, pillarData);
+        else add('ask.pillar', 'ask', 'ok', `${pillar.name} reads as ${PILLAR_JOB_NAMES[job]}.`, pillarData);
+      }
+
+      // proof: each number, result and quote matched to a source the account has
+      const proofVerdict = (text) => {
+        if (SOURCE_MARKER_RE.test(text)) {
+          const marker = text.match(SOURCE_MARKER_RE)[0];
+          return { status: 'fix', reason: `Take "${quoteText(marker, 50)}" out: the network would show it as written. Name the source in words beside the claim, such as "from our 2025 client survey".`, data: { claims: findClaims(text), marker } };
+        }
+        const claims = findClaims(text);
+        if (claims.length === 0) return { status: 'ok', reason: 'No numbers, results or quotes to back.', data: { claims: [] } };
+        const gridTexts = grid ? [...(grid.measurable_results || []), ...(grid.key_benefits || []), grid.transformation_story || ''] : [];
+        if (grid && row) gridTexts.push(...rowTexts(row));
+        const testimonials = misc.testimonials.filter((t) => t.is_public).map((t) => ({ id: t.id, text: t.content }));
+        const attributed = sentencesOf(text).filter((sentence) => ATTRIBUTION_RE.test(sentence));
+        const backed = claims.map((claim) => {
+          let backedBy = null;
+          if (claim.kind === 'number' && claim.number) {
+            const has = (source) => numbersIn(source).has(claim.number);
+            if (gridTexts.some(has)) backedBy = 'grid';
+            else if (testimonials.some((t) => has(t.text))) backedBy = 'testimonial';
+            else if (attributed.some((sentence) => sentence.includes(claim.text))) backedBy = 'attribution';
+          } else {
+            const wanted = normalizeWords(claim.text);
+            const testimonial = testimonials.find((t) => normalizeWords(t.text).includes(wanted));
+            if (testimonial) backedBy = `testimonial:${testimonial.id}`;
+          }
+          return { ...claim, backed_by: backedBy };
+        });
+        const unbacked = backed.filter((claim) => !claim.backed_by);
+        if (unbacked.length === 0) return { status: 'ok', reason: 'Every number and quote matches a source you have.', data: { claims: backed } };
+        const where = grid ? ` or use a result from ${grid.name}` : '';
+        return { status: 'ask', reason: `Where is ${listWords(unbacked.slice(0, 3).map((claim) => `"${quoteText(claim.text, 40)}"`))} from? Name its source${where}.`, data: { claims: backed } };
+      };
+      pushPerNetwork(items, 'proof', 'proof', readerTexts().map(({ platform, text }) => ({ platform, ...proofVerdict(text) })));
+
+      // voice: Hiveku's banned phrases and the brand guide's phrases to avoid, in the text, comments and alt text
+      const voiceTexts = [body.content, firstComment || '', ...(Array.isArray(body.media_alt_texts) ? body.media_alt_texts : [])];
+      for (const own of Object.values(overrides)) {
+        if (own && own.content) voiceTexts.push(own.content);
+        if (own && own.firstComment) voiceTexts.push(own.firstComment);
+      }
+      const all = voiceTexts.filter((text) => text && text.trim()).join('\n');
+      if (!all.trim()) add('voice', 'voice', 'not_set', 'Nothing written yet.');
+      else {
+        const hits = phrasesIn(all, forbidden).filter((hit) => !said.has(hit.phrase.toLowerCase()));
+        const data = { found: hits, account_phrases: forbidden.length };
+        if (hits.length === 0) add('voice', 'voice', 'ok', forbidden.length > 0 ? "None of Hiveku's banned phrases or your brand guide's phrases to avoid." : "None of Hiveku's banned phrases. Your brand guide lists no phrases to avoid yet.", data);
+        else {
+          const ours = hits.filter((hit) => hit.list === 'hiveku');
+          const theirs = hits.filter((hit) => hit.list === 'account');
+          const parts = [];
+          if (ours.length) parts.push(`${listWords(ours.slice(0, 3).map((hit) => `"${hit.found}"`))} ${ours.length === 1 ? 'reads' : 'read'} like copy any business could post`);
+          if (theirs.length) parts.push(`${listWords(theirs.slice(0, 3).map((hit) => `"${hit.found}"`))} ${theirs.length === 1 ? 'is' : 'are'} on your brand guide's phrases to avoid`);
+          add('voice', 'voice', 'fix', `Reword it: ${parts.join(', and ')}.`, data);
+        }
+      }
+
+      // each network: the first line before the cut, where the link goes, the hashtag count, a repeated opening
+      const hasMedia = (Array.isArray(body.media_urls) ? body.media_urls.length : 0) + (Array.isArray(body.media_asset_ids) ? body.media_asset_ids.length : 0) > 0;
+      const linkUrl = typeof body.link_url === 'string' && body.link_url.trim() ? body.link_url : null;
       for (const platform of platforms) {
-        const limits = PLATFORM_LIMITS[platform];
-        const override = body.platform_overrides && body.platform_overrides[platform];
-        const text = override && typeof override.content === 'string' && override.content.length > 0 ? override.content : String(body.content || '');
-        const firstLine = text.split('\n')[0];
-        const fits = firstLine.length <= limits.fold;
-        add('network.fold', 'network', fits ? 'ok' : 'fix', fits ? `The first line lands before ${limits.label}'s cut.` : `The first line runs past ${limits.label}'s cut at about ${limits.fold} characters.`, { fold: limits.fold, first_line_chars: firstLine.length }, platform);
+        const name = labelOf(platform);
+        const text = textFor(platform);
+        const comment = commentFor(platform);
+        const limit = PLATFORM_LIMITS[platform].fold;
+        if (!text.trim()) add('network.fold', 'network', 'not_set', `Nothing written for ${name} yet.`, { limit }, platform);
+        else {
+          const firstLine = text.split(/\r?\n/).map((line) => line.trim()).find(Boolean) || '';
+          const data = { limit, chars: text.length, first_line_chars: firstLine.length, before_the_cut: text.slice(0, limit) };
+          if (text.length <= limit) add('network.fold', 'network', 'ok', `All of it shows on ${name} before the cut.`, data, platform);
+          else if (firstLine.length <= limit) add('network.fold', 'network', 'ok', `The first line fits before ${name}'s cut (about ${limit} characters).`, data, platform);
+          else add('network.fold', 'network', 'fix', `The first line runs past ${name}'s cut at about ${limit} characters: readers see "${quoteText(text.slice(0, limit), 70)}" and then "more".`, data, platform);
+        }
+        const home = LINK_HOME[platform];
+        const bodyUrls = urlsIn(text);
+        const commentUrls = comment ? urlsIn(comment) : [];
+        let link;
+        if (bodyUrls.length === 0 && commentUrls.length === 0 && !linkUrl) link = ['ok', 'No link.'];
+        else if (home === 'first_comment') {
+          if (bodyUrls.length > 0) link = ['fix', `Move the link from the post to the first comment: a link in the post costs reach on ${name}.`];
+          else if (commentUrls.length > 0) link = ['ok', `The link is in the first comment, so the post keeps its reach on ${name}.`];
+          else if (platform === 'facebook' && hasMedia) link = ['fix', 'Facebook drops the link card on a post with pictures or a video: put the link in the first comment.'];
+          else link = ['ask', `A link card costs reach on ${name}, and the first comment keeps it. Keep the card?`];
+        } else if (home === 'body') {
+          if (bodyUrls.length > 0) link = ['ok', 'The link is in the post, where X shows it.'];
+          else if (commentUrls.length > 0) link = ['fix', 'X gets no first comment from Hiveku, so that link never reaches readers: put it in the post.'];
+          else link = ['fix', 'X never shows the link card: put the link in the post.'];
+        } else if (home === 'link_card') {
+          link = linkUrl && bodyUrls.length === 0 ? ['ok', 'The link card becomes the Learn more button.'] : ['fix', `Put the link in the link card: ${name} shows it as the Learn more button.`];
+        } else if (bodyUrls.length > 0) link = ['fix', `${name} does not make links in a caption clickable: point to the link in your bio instead.`];
+        else if (commentUrls.length > 0) link = ['fix', `${name} comments do not make links clickable either: point to the link in your bio.`];
+        else link = ['fix', `${name} never shows the link card: point to the link in your bio.`];
+        add('network.link', 'network', link[0], link[1], { should_go: home, body_links: bodyUrls.length, first_comment_links: commentUrls.length, link_card: Boolean(linkUrl) }, platform);
+        const norm = CHECK_HASHTAG_NORMS[platform];
+        const tags = hashtagsIn(text);
+        const range = norm.min !== null && norm.min > 0 ? `${norm.min} to ${norm.max}` : `up to ${norm.max}`;
+        const tagData = { count: tags.length, hashtags: tags, min: norm.min, max: norm.max };
+        if (tags.length > norm.max) add('network.hashtags', 'network', 'fix', norm.max === 0 ? `${name} does not use hashtags: take them out.` : `${tags.length} hashtags: ${name} reads ${range}.`, tagData, platform);
+        else if (norm.min !== null && tags.length < norm.min) add('network.hashtags', 'network', 'ask', `${tags.length === 0 ? 'No hashtags' : `${tags.length} ${tags.length === 1 ? 'hashtag' : 'hashtags'}`}: ${name} reads ${range}. Add some?`, tagData, platform);
+        else add('network.hashtags', 'network', 'ok', norm.max === 0 ? `No hashtags, as ${name} wants.` : `${tags.length} ${tags.length === 1 ? 'hashtag' : 'hashtags'}, within ${name}'s ${range}.`, tagData, platform);
+        const opening = openingSix(text);
+        if (opening.split(' ').filter(Boolean).length >= 3) {
+          // The account's last 20 posts on this network that went out or will, this post left out.
+          const recent = allPosts()
+            .filter((p) => ['published', 'publishing', 'scheduled'].includes(p.status) && (p.target_platforms || []).includes(platform) && p.id !== body.post_id)
+            .sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)))
+            .slice(0, 20)
+            .map((p) => ({ id: p.id, text: p.platform_overrides && p.platform_overrides[platform] && p.platform_overrides[platform].content ? p.platform_overrides[platform].content : p.content }));
+          const repeats = recent.filter((p) => openingSix(p.text) === opening).map((p) => p.id);
+          const data = { opening, compared: recent.length, repeats };
+          if (repeats.length > 0) add('network.repeat', 'network', 'fix', `It opens like ${repeats.length === 1 ? 'one' : repeats.length} of your last ${recent.length} ${name} posts ("${opening}"): start this one differently.`, data, platform);
+          else if (recent.length === 0) add('network.repeat', 'network', 'ok', `No recent ${name} posts to compare the opening with.`, data, platform);
+          else add('network.repeat', 'network', 'ok', `The opening is new against your last ${recent.length} ${name} posts.`, data, platform);
+        }
       }
 
       const summary = { ok: 0, fix: 0, ask: 0, not_set: 0 };
