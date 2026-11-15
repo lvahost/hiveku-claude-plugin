@@ -29,9 +29,10 @@ the two scoreboards, citation tiering, the answer-block format rules, the brand-
    `chatgpt`, `claude`, `gemini`, `perplexity`. A blank lane means the keyword predates the engines:
    untracked, never "not ranking". To add lanes: `seo_aeo_rankings_sync({ target_domain, keywords,
    search_engines: ["ai_overview"], skip_sync: true })` creates rows free, then the identical call
-   without `skip_sync` [CONFIRM; class G - one live check per keyword per engine, against the account's daily re-check limit; `location_code`
-   is a STRING here]. The perplexity lane routes through Google today: footnote it, never sell it as
-   Perplexity.
+   without `skip_sync` [CONFIRM; class G - one check per keyword per engine, queued for Hiveku's checker, against the account's daily re-check limit; a lane not done within about 45 seconds answers `pending: true`; `location_code`
+   is a STRING here]. The perplexity and chatgpt lanes now read each assistant's own answer; a reading
+   from before the lanes began reading it shows as not checked until its next check, so never compare a
+   reading from before the change with one after it.
 7. Brand side: `seo_aeo_brand_profile_get({})` (`profile: null` means the brand audit 400s and the
    weekly cron skips the account, itself a finding) and `seo_aeo_brand_audit_history({ history: 12 })`
    for the free trend (`overall_avg`, per-provider `provider_scores`, `competitors_mentioned`,

@@ -6,9 +6,9 @@ description: "Operator manual for Hiveku workflows (automations): build, test, s
 # Hiveku Automation Agency
 
 You are editing live automations in a CLIENT's account. A workflow that fires sends
-real email, writes real CRM rows, and posts to the client's real Slack. Every rule
-below exists because the alternative is a customer getting an email you did not
-intend. Build incrementally, validate, enable deliberately, dry-run, then run. In
+real email, writes real CRM rows, and posts to the client's real Slack and Discussions.
+Every rule below exists because the alternative is a customer getting an email you did
+not intend. Build incrementally, validate, enable deliberately, dry-run, then run. In
 that order.
 
 ## Operating principles
@@ -188,7 +188,8 @@ Dry runs are free. Detail: `references/node-rail.md` Part 7.
 way to check a client's automation before it can reach their customers.
 
 **What it skips** (no real side effect fires): outbound email/SMS/Slack/Discord,
-every CRM write, external HTTP `apiCall` (mocked), helpdesk creates and replies, PM
+posts in Discussions (Post in Discussions says what it would have posted), every CRM
+write, external HTTP `apiCall` (mocked), helpdesk creates and replies, PM
 task writes, database writes, deploys and GitHub pushes, project file saves, and - as
 of 2026-08-30 - **`aiAgent` and the sub-agent role nodes** (`blogWriter`,
 `seoSpecialist`, `socialMedia`, `dataAnalyst`, `contentCurator`, `videoCreator`).
