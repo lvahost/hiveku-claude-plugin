@@ -17,7 +17,7 @@ tier, and why, then wait for the confirmation before calling `deploy_site`.
 
 **The tiers DO NOT share code and there is no auto-promote.** Every change you want in production -
 `middleware.ts` and `next.config.js` included - needs its own `deploy_site({ environment:
-"production" })` call. Saving files reaches the Fly preview instantly and touches no deployed tier.
+"production" })` call. Saving files reaches the Live Preview at once and touches no deployed tier.
 
 0. WHICH TREE SHIPS: `project_vcs_env_bindings({ project_id: <the project_id> })` before anything
    else. The environment BINDINGS decide, not the call. `production` ALWAYS ships `main` and can
@@ -28,7 +28,9 @@ tier, and why, then wait for the confirmation before calling `deploy_site`.
    the confirmation ("development will ship `feature/x` as its latest version"). To put branch work
    into production, promote it through `/hiveku:pr` (merge into `main`; with the site's "Require an
    approval" rule on, a person approves that pull request in the Hiveku dashboard first) and then
-   deploy `production`; to point a tier at a branch, `/hiveku:branch bind`. On `deploy_site`, `branch` is an
+   deploy `production`; to point a tier at a branch, `/hiveku:branch bind`; and to show a branch to someone
+   without moving any tier, `/hiveku:branch share` (a temporary environment: its own link for 1, 3 or 7 days at 50
+   cents a day, which the person confirms; no tier changes). On `deploy_site`, `branch` is an
    ASSERTION, never a selector: pass the branch you believe the tier serves and the server refuses a
    mismatch instead of shipping the wrong tree - 409 `branch_not_bound` (the tier is bound elsewhere
    or unbound and tracking `main`; the hint names `project_vcs_env_bind`), 400

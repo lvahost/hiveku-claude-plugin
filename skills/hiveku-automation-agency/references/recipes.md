@@ -99,8 +99,8 @@ notification, both hanging directly off the trigger.
    `workflow_create_from_template` plus `workflow_bind_form` each instead.
 2. Hand-building: discover with `workflow_node_types_list`. The shape is `webhookTrigger`
    fanning out to `crmUpsertContact` (idempotent on email, revives soft-deleted matches,
-   the palette's own guidance for any repeat-submitter flow) and to `sendEmail` or
-   `slackNotification`, as siblings.
+   the palette's own guidance for any repeat-submitter flow) and to `sendEmail`,
+   `discussionsAddMessage` (Post in Discussions) or `slackNotification`, as siblings.
 3. Paste a real sample submission through `workflow_normalize_payload` before writing a
    single `{{...}}`. Its `added_aliases[]` tells you what
    `{{trigger.output.payload.email}}` actually reaches on a mixed-case vendor form. Then
@@ -184,8 +184,11 @@ to default. That is a data problem, not an automation problem. Say so before bui
    `switchConfig.cases[].handleId` plus `switchConfig.defaultHandleId`, and every
    outgoing `workflow_edge_add` MUST set `sourceHandle` to one of them. Two branches
    only? Use `conditional`, whose handles are `'true'` and `'false'`.
-3. Per branch: `crmUpdateContact` to set the owner, plus `slackNotification` or
-   `sendEmail`. Always wire the default handle; an unwired default is a dropped lead.
+3. Per branch: `crmUpdateContact` to set the owner, plus `discussionsAddMessage` or
+   `slackNotification`, or `sendEmail`. To tell the assigned rep directly, Post in Discussions
+   with `postTo: 'person'` lands in the direct message between the workflow's owner and that
+   rep, and only the workflow's owner can set that step up. Always wire the default handle; an
+   unwired default is a dropped lead.
 
 **Prove it works.** Dry-run once per branch INCLUDING the default, with `input_data` that
 should land there, and confirm in `data.step_states` that the notification on that branch
@@ -310,8 +313,8 @@ config is read-only via Olympus; writes go through the dashboard.
    `disapprovalTrigger` (fires on the crossing only, gated on the deduped ops-inbox row,
    Google Ads only on the daily sweep today). For support SLA the check-node route is
    `scheduledTrigger` to `mcSlaBreached` into a `conditional`.
-2. Alert leg: `slackNotification` or `sendEmail`, plus `mcTaskCreate` so the escalation
-   has an owner and a paper trail.
+2. Alert leg: `discussionsAddMessage` or `slackNotification`, or `sendEmail`, plus
+   `mcTaskCreate` so the escalation has an owner and a paper trail.
 3. Do NOT wire a corrective write on the true branch. `ppcPauseResource` and
    `ppcBudgetUpdate` exist, and every PPC write defaults `auto_apply` OFF, staging an
    approval item instead of spending. Leave it off. Turning it on converts a review queue
@@ -353,9 +356,9 @@ broken workflow. `workflow_event_trigger_types_list` says so per entry. Confirm 
    `workflow_validate` reports an invalid source handle only as a WARNING, so a wrong
    handle saves and enables cleanly and the branch never runs.
 3. Fan out off the true handle as siblings: `crmLogActivity`, `createTask` or
-   `mcTaskCreate` for onboarding, `sendEmail` announcement, `slackNotification`. Set
-   `on_error: 'continue'` on the non-critical legs so a Slack outage cannot kill the
-   onboarding task.
+   `mcTaskCreate` for onboarding, `sendEmail` announcement, `discussionsAddMessage` or
+   `slackNotification`. Set `on_error: 'continue'` on the non-critical legs so a failed team
+   post cannot kill the onboarding task.
 
 **Prove it works.** Dry-run a won deal and a stage change that is NOT won. On the won run
 read every leg's `would_have` and `template_values` in `data.step_states` and confirm the
@@ -389,7 +392,8 @@ where. Load **hiveku-helpdesk-agency** for reply and SLA methodology; this is th
    `output_shape_keys`.
 2. `conditional` on priority, or on a keyword match computed upstream in `transformData`
    (there is no conditional logic inside a `{{...}}` expression).
-3. Urgent branch: `helpdeskSetPriority`, `helpdeskAssignTicket`, `slackNotification`.
+3. Urgent branch: `helpdeskSetPriority`, `helpdeskAssignTicket`, `discussionsAddMessage` or
+   `slackNotification`.
    Normal branch: `helpdeskAddInternalNote` (never customer-visible) plus assignment.
    `helpdeskSendReply` IS customer-visible: use it only for an acknowledgement the
    operator approved verbatim, and only if `auto_acknowledge` is off.
@@ -422,8 +426,8 @@ returns actual rows. Load **hiveku-seo-agency** for the reply methodology.
 1. `workflow_templates_list`, read `variables[]` for both slugs, then
    `workflow_create_from_template({ slug, overrides, is_enabled: false })`.
 2. Hand-building instead: `newReviewTrigger` (6h GBP sync, filterable by rating below)
-   into a `conditional` on rating, into `slackNotification` plus `mcTaskCreate` on the
-   negative branch.
+   into a `conditional` on rating, into `discussionsAddMessage` or `slackNotification`, plus
+   `mcTaskCreate` on the negative branch.
 3. `gbpReviewReply` DRAFTS an ops-inbox item for human approval; it never posts to
    Google. That is the safety property, not a limitation to route around.
 
@@ -530,7 +534,8 @@ accept a `connectionId`.
    `billingInvoiceTrigger` (sent, viewed, paid, partially paid, voided, overdue, payment
    failed, refunded). Read `output_shape_keys` for the one you pick.
 2. Fan out: `crmUpsertContact` or `crmAddTag` so the CRM shows the at-risk flag,
-   `crmCreateTask` for the save call, `slackNotification` for the channel that acts today.
+   `crmCreateTask` for the save call, `discussionsAddMessage` or `slackNotification` for the
+   channel that acts today.
 3. Do NOT wire an automatic customer email on a payment failure without the operator
    reading the copy. Dunning mail firing on a transient card decline reads as dunning mail.
 
@@ -539,7 +544,7 @@ its `template_values` entry for that token reads `resolved`; a blank there (`mis
 the trigger key you referenced does not exist, and a real run would write a contact with no
 email address.
 
-**Ship.** Enable, and confirm the Slack channel is one somebody reads.
+**Ship.** Enable, and confirm the channel (in Discussions or Slack) is one somebody reads.
 
 **How this fails in the wild.** Duplicate contacts, because the commerce email does not
 match the CRM email casing or the customer used a different address. `crmUpsertContact` is

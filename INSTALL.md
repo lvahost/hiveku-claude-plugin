@@ -881,7 +881,11 @@ of authorization for signing (`voice_port_order_loa_send`), asking your phone to
 bringing deleted contacts back (`crm_contacts_restore`),
 adding leads to a cold email campaign (`outbound_leads_bulk_create`, `outbound_create_lead`),
 stopping a site's builds (`deploy_build_cancel`), making a backup of a site
-(`project_backup_create`), and on Content's SEO plan saving a post's search phrase, which can
+(`project_backup_create`), putting a branch on a temporary environment, giving one more days, bringing one back or
+making a failed one again (each adds 50 cents a day to the account's bill: `project_vcs_temp_env_create`,
+`project_vcs_temp_env_extend`, `project_vcs_temp_env_revive`, `project_vcs_temp_env_try_again`), changing a
+temporary environment's passcode or settings or turning it off (`project_vcs_temp_env_password_set`,
+`project_vcs_temp_env_settings_set`, `project_vcs_temp_env_delete`), and on Content's SEO plan saving a post's search phrase, which can
 start billed rank checks (`seo_plan_phrase_set`), and the suggestions that spend AI credit
 (`seo_plan_suggest_phrases`, `seo_plan_suggest_links`), whatever
 your settings allow, so those prompt even on a machine with an older copy.

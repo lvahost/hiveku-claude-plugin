@@ -132,9 +132,9 @@ quote through a signature envelope.
   `subject_type: 'estimate'`, `subject_id: <estimate_id>`, `contact_id`, `company_id`,
   `deal_id`, and set `signing_order` ('parallel' or 'sequential', default parallel) and
   `expires_at`.
-- The create response includes PLAINTEXT signer tokens. Capture them if you may need to
-  send a manual signing link - they are not derivable from the stored hash and cannot be
-  recovered.
+- The create answer lists each signer's id (`data.signers`). It never carries a signing
+  link: a client's link reaches only the client, in the invite email `crm_envelope_send`
+  sends. Never ask for one to text or paste: whoever holds it can sign as the client.
 - `crm_envelope_add_signer({ envelope_id, name, email, role?, contact_id?, access_code?,
   is_cc_only? })` only APPENDS a forgotten signer to a still-DRAFT envelope (409
   otherwise) and auto-assigns signing order to max+1. It is not the way you populate a
@@ -153,9 +153,8 @@ quote through a signature envelope.
   `agreements@notifications.hiveku.com` via Resend, so the signer is emailed either way.
   Treat `from_email` as a branding question for the client, not a blocker, and never
   blame a failed send on it without evidence. On first send status moves draft -> sent
-  and per-signer plaintext access tokens are minted server-side; omitting
-  `signer_tokens` regenerates fresh ones, which stales any token you captured at create
-  time. On a PARALLEL envelope every pending signer is emailed; on a SEQUENTIAL envelope
+  and each signer's own link is made on the server and emailed to them. On a PARALLEL
+  envelope every pending signer is emailed; on a SEQUENTIAL envelope
   only the first pending signer is - the downstream invites fire when the prior signer
   completes. Do not report a sequential envelope as broken because signers 2 and 3 got
   nothing; that is the design.

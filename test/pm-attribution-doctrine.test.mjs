@@ -885,8 +885,10 @@ test('source cross-check: every site birth path calls the site-birth helper, whi
   }
   // Webflow makes it after the site's transaction has committed, not inside it.
   const wf = read(webflow);
-  assert.ok(wf.indexOf('$transaction(') > 0, 'project-from-site.ts no longer makes the site in a transaction');
-  assert.ok(wf.indexOf('createSiteBirthPmProject(') > wf.indexOf('$transaction('), 'Webflow projects-from-site makes the PM project inside (or before) the site transaction');
+  // builder #2278 (2026-11-14): createProjectWithAddress opens the site transaction, so the row and its address claims commit together.
+  const txAt = wf.indexOf('createProjectWithAddress(prisma,');
+  assert.ok(txAt > 0, 'project-from-site.ts no longer makes the site in a transaction');
+  assert.ok(wf.indexOf('await createSiteBirthPmProject(') > txAt, 'Webflow projects-from-site makes the PM project inside (or before) the site transaction');
   // A clone copies nothing PM-related; it gets its own fresh project.
   assert.doesNotMatch(read(clone), /\bpm_(tasks|task_sections|milestones|projects)\b/, 'the clone service now copies PM rows - the "the clone gets its own new PM - <name>" prose must change');
   for (const file of [olympusClone, dashboardClone]) {
