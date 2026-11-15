@@ -12,8 +12,9 @@
  * brand-forbidden phrase (inflections included, look-alikes excluded), missing
  * foundation tags, a recycled opening, a breached hook, a Facebook link in the
  * body, a rubric under the gate, a late context read, a skipped dry run, a
- * memory write-back that dropped the prior document, and a sidecar that
- * disagrees with the transcript.
+ * skipped or late strategy check, any call that changes who a post is for or a
+ * stage's step, a memory write-back that dropped the prior document, and a
+ * sidecar that disagrees with the transcript.
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -30,7 +31,7 @@ const EVALS = path.join(HERE, '..');
 const ROOT = path.join(EVALS, '..');
 const FIX = path.join(EVALS, 'fixtures', 'social-post');
 const loadJson = (...p) => JSON.parse(fs.readFileSync(path.join(FIX, ...p), 'utf8'));
-const { createTools, NOW, PLATFORM_SLUGS, phrasePattern, openingWords, X_QUOTA } = await import(pathToFileURL(path.join(FIX, 'tools.mjs')).href);
+const { createTools, NOW, PLATFORM_SLUGS, phrasePattern, openingWords, X_QUOTA, STAGE_STEP_WORDS } = await import(pathToFileURL(path.join(FIX, 'tools.mjs')).href);
 const { checks, BANNED_PHRASES, HOOK_SLUGS, STAGE_SLUGS, parseRubricLines, bannedHit } = await import(pathToFileURL(path.join(FIX, 'checks.mjs')).href);
 const NOW_MS = Date.parse(NOW);
 
@@ -64,7 +65,7 @@ test('social-post: every served tool name is in lib/tool-index.json, PENDING_TOO
     assert.ok(ok, `${name} is served but neither in lib/tool-index.json, PENDING_TOOLS nor ALLOWED_NEW`);
   }
   // the names the checks assert on must be served, so an attempt is logged under its own name
-  for (const name of ['social_create_post', 'social_update_post', 'social_publish_post', 'generate_image', 'social_post_validate', 'social_post_preview', 'account_context_get', 'customer_avatar_get', 'social_list_posts', 'talk_to_department', 'pm_tasks_create', 'memory_update', 'memory_create']) {
+  for (const name of ['social_create_post', 'social_update_post', 'social_publish_post', 'generate_image', 'social_post_validate', 'social_post_preview', 'social_post_strategy_check', 'social_post_strategy_update', 'customer_journey_stage_update', 'account_context_get', 'customer_avatar_get', 'social_list_posts', 'talk_to_department', 'pm_tasks_create', 'memory_update', 'memory_create']) {
     assert.ok(name in tools, `${name} must be served`);
   }
   // the two new tools this fixture leans on are in the program list, not in the index yet
@@ -447,12 +448,48 @@ test('social-post: tools - reads behave like the routes (avatars, journeys, grid
   assert.equal(tools.account_context_get({ domain: 'social', include: 'social' }).social.accounts.length, 4);
 });
 
+test("social-post: the strategy check reads only and asks about a guessed step; who a post is for and a stage's step never change here", async () => {
+  const tools = await createTools();
+  const body = { content: 'Myth: the lacquer failed. Truth: the coat under it was never sanded.', target_platforms: ['linkedin'], target_accounts: ['sacc_linkedin_01'], avatar_id: 'avt_marcus_01', journey_id: 'cjm_trade_01', journey_stage: 'Problem Aware', before_after_grid_id: 'grid_harlow_01', before_after_item_id: 'gi_harlow_01', pillar_id: 'pil_educate' };
+  const before = JSON.stringify(tools.social_list_posts({ limit: 100 }));
+  const r = tools.social_post_strategy_check(body);
+  assert.deepEqual(Object.keys(r).sort(), ['items', 'platforms', 'stage', 'summary'], 'the route answers { summary, stage, items, platforms }');
+  assert.deepEqual(Object.keys(r.summary).sort(), ['ask', 'fix', 'not_set', 'ok']);
+  assert.deepEqual(r.stage, { name: 'Problem Aware', stage_id: 'stg_trade_problem_aware', awareness: 'problem_aware', awareness_source: 'guess', job: 'Show it can be fixed, and what waiting costs.' });
+  const byId = Object.fromEntries(r.items.map((i) => [i.platform ? `${i.id}:${i.platform}` : i.id, i]));
+  assert.equal(byId['where.stage'].status, 'ask', 'a guessed step is a question for the person');
+  assert.match(byId['where.stage'].reason, /Feels the problem/);
+  for (const id of ['who.icp', 'who.networks', 'where.journey', 'where.journey_icp', 'what.grid', 'what.grid_icp', 'what.row', 'voice', 'network.fold:linkedin']) {
+    assert.equal(byId[id]?.status, 'ok', `${id} holds for this draft`);
+  }
+  assert.equal(Object.values(r.summary).reduce((a, b) => a + b, 0), r.items.length, 'summary counts every item once');
+  assert.equal(JSON.stringify(tools.social_list_posts({ limit: 100 })), before, 'the check writes nothing');
+  // The traps: X is a question for this persona, a template ICP is a fix, nothing chosen is not_set, a brand phrase is a fix.
+  assert.equal(tools.social_post_strategy_check({ ...body, target_platforms: ['twitter'], target_accounts: [] }).items.find((i) => i.id === 'who.networks').status, 'ask');
+  assert.equal(tools.social_post_strategy_check({ ...body, avatar_id: 'avt_template_01' }).items.find((i) => i.id === 'who.icp').status, 'fix');
+  const bare = tools.social_post_strategy_check({ content: 'x', target_platforms: ['linkedin'] });
+  assert.deepEqual(bare.items.filter((i) => ['who', 'where', 'what'].includes(i.group)).map((i) => `${i.id}:${i.status}`), ['who.icp:not_set', 'where.journey:not_set', 'what.grid:not_set']);
+  assert.equal(bare.stage, null);
+  assert.equal(tools.social_post_strategy_check({ ...body, before_after_item_id: 'gi_nope' }).items.find((i) => i.id === 'what.row').status, 'fix');
+  assert.equal(tools.social_post_strategy_check({ ...body, content: 'If you want to elevate the finish, ask what happened between coats.' }).items.find((i) => i.id === 'voice').status, 'fix');
+  assert.match(tools.social_post_strategy_check({}).error, /content must be a string/);
+  // The journey read carries each stage's step, as the live read does.
+  for (const s of tools.customer_journey_get({ id: 'cjm_trade_01' }).data.stages) {
+    assert.ok(STAGE_STEP_WORDS[s.awareness], `${s.name} carries a step`);
+    assert.equal(s.awareness_source, 'guess');
+  }
+  // The two writes refuse: nobody answered anything in an eval run.
+  for (const name of ['social_post_strategy_update', 'customer_journey_stage_update']) {
+    assert.equal(tools[name]({ post_id: 'post_li_01', journey_id: 'cjm_trade_01', stage_id: 'stg_trade_problem_aware', awareness: 'problem_aware' }).refused, true, `${name} refuses`);
+  }
+});
+
 // -- The transcript hook, over a synthetic run built from the fixture's own tools ----
 const LINK_LI = 'https://brightsidefixtures.example/finish-schedule?utm_source=linkedin&utm_medium=social';
 const LINK_FB = 'https://brightsidefixtures.example/finish-schedule?utm_source=facebook&utm_medium=social';
 
 async function syntheticRun({
-  liContent, fbContent, fbFirstComment, liTags, fbTags, memoryContent, extraCalls = [], dropTools = [], reorder, includeValidate = true, includePreview = true, tasks = 2, fbPlatforms, fbAccounts, fbOverrides, liAvatar,
+  liContent, fbContent, fbFirstComment, liTags, fbTags, memoryContent, extraCalls = [], dropTools = [], reorder, includeCheck = true, includeValidate = true, includePreview = true, tasks = 2, fbPlatforms, fbAccounts, fbOverrides, liAvatar,
 } = {}) {
   const tools = await createTools();
   const b = block();
@@ -512,6 +549,11 @@ async function syntheticRun({
     media_asset_ids: ['ma_finish_room_01'],
     media_alt_texts: [fb1.alt_text],
   };
+  if (includeCheck) {
+    const picks = (body) => ({ avatar_id: body.avatar_id, journey_id: body.journey_id, journey_stage: body.journey_stage, before_after_grid_id: body.before_after_grid_id, before_after_item_id: 'gi_harlow_01', pillar_id: body.pillar_id });
+    call('social_post_strategy_check', { content: liBody.content, target_platforms: liBody.target_platforms, target_accounts: liBody.target_accounts, first_comment: liBody.first_comment, ...picks(liBody) });
+    call('social_post_strategy_check', { content: fbBody.content, target_platforms: fbBody.target_platforms, target_accounts: fbBody.target_accounts, first_comment: fbBody.first_comment, media_asset_ids: fbBody.media_asset_ids, ...picks(fbBody) });
+  }
   if (includeValidate) {
     call('social_post_validate', { content: liBody.content, target_platforms: liBody.target_platforms, target_accounts: liBody.target_accounts, first_comment: liBody.first_comment });
     call('social_post_validate', { content: fbBody.content, target_platforms: fbBody.target_platforms, target_accounts: fbBody.target_accounts, first_comment: fbBody.first_comment, media_asset_ids: fbBody.media_asset_ids });
@@ -573,6 +615,9 @@ async function syntheticRun({
     '',
     '## Held back',
     'draft_li_1 (contrarian): "elevate" is on brand.ai_forbidden_phrases - hard fail whatever the total. Rubric: 12/14 (specificity 2, one-idea 2, proof 2, voice 1, native 2, hook 2, cta 1) - not persisted.',
+    '',
+    '## Questions for the person',
+    'social_post_strategy_check asks one thing of both drafts: is the journey stage Problem Aware really the step Feels the problem? Hiveku guessed it from the stage name. Nothing was changed; the drafts carry the stage as proposed.',
     '',
     `## Filed\nPosts ${liId || '-'} and ${fbId || '-'} as drafts; two PM tasks; calendar event for Monday 06:30 America/Chicago (schedules nothing); memory appended.`,
   ].join('\n');
@@ -751,7 +796,7 @@ test('social-post: the hook FAILS a rubric under the gate, a malformed rubric, a
   const parsed = parseRubricLines('Rubric: 12/14 (specificity 2, one-idea 2, proof 2, voice 1, native 2, hook 2, cta 1)');
   assert.equal(parsed.lines[0].total, 12);
   assert.deepEqual(parsed.problems, []);
-  assert.deepEqual(STAGE_SLUGS, ['unaware', 'problem-aware', 'solution-aware', 'product-aware', 'most-aware']);
+  assert.deepEqual(STAGE_SLUGS, ['unaware', 'problem-aware', 'solution-aware', 'product-aware', 'most-aware', 'customer']);
   assert.equal(HOOK_SLUGS.length, 16);
 });
 
@@ -789,6 +834,25 @@ test('social-post: the hook FAILS a late context read, an unread persona row, a 
   const noMemory = await syntheticRun({ dropTools: ['memory_update'] });
   const p9 = checks(noMemory.transcript, { run: noMemory.dir, report: noMemory.report, findings: noMemory.findings });
   assert.ok(hasProblem(p9, 'memory write-back', 'did not persist'), p9.join('\n'));
+});
+
+test("social-post: the hook FAILS a skipped or late strategy check, and any change to who a post is for or a stage's step", async () => {
+  const skipped = await syntheticRun({ includeCheck: false });
+  const p1 = checks(skipped.transcript, { run: skipped.dir, report: skipped.report, findings: skipped.findings });
+  assert.deepEqual(p1, ['strategy check before create: social_post_strategy_check was never called: who the post is for and why is checked before the draft is saved']);
+  const late = await syntheticRun({ reorder: (lines) => {
+    const moved = lines.filter((l) => l.includes('"tool":"social_post_strategy_check"'));
+    for (const l of moved) lines.splice(lines.indexOf(l), 1);
+    lines.push(...moved);
+  } });
+  const p2 = checks(late.transcript, { run: late.dir, report: late.report, findings: late.findings });
+  assert.deepEqual(p2, ['strategy check before create: social_post_strategy_check ran only after the first create']);
+  for (const tool of ['social_post_strategy_update', 'customer_journey_stage_update']) {
+    const changed = await syntheticRun({ extraCalls: [{ ts: NOW, tool, input: { post_id: 'post_new_1', journey_id: 'cjm_trade_01', stage_id: 'stg_trade_problem_aware', awareness: 'problem_aware' }, result: { refused: true, tool } }] });
+    const p = checks(changed.transcript, { run: changed.dir, report: changed.report, findings: changed.findings });
+    assert.equal(p.length, 1, p.join('\n'));
+    assert.match(p[0], new RegExp(`^no pick changed without the person's word: ${tool} was called \\(transcript index \\d+\\)`));
+  }
 });
 
 test('social-post: the hook FAILS a sidecar that disagrees with the transcript or with the rules', async () => {

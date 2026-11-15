@@ -26,7 +26,10 @@
         ],
         "opportunities": [
           "name the call-back in his words"
-        ]
+        ],
+        "stage_id": "stg_trade_unaware",
+        "awareness": "unaware",
+        "awareness_source": "guess"
       },
       {
         "name": "Problem Aware",
@@ -49,7 +52,10 @@
         ],
         "opportunities": [
           "show the failure mechanism: no key between coats"
-        ]
+        ],
+        "stage_id": "stg_trade_problem_aware",
+        "awareness": "problem_aware",
+        "awareness_source": "guess"
       },
       {
         "name": "Solution Aware",
@@ -71,7 +77,10 @@
         ],
         "opportunities": [
           "numbers from the finish room"
-        ]
+        ],
+        "stage_id": "stg_trade_solution_aware",
+        "awareness": "solution_aware",
+        "awareness_source": "guess"
       },
       {
         "name": "Product Aware",
@@ -93,7 +102,10 @@
         ],
         "opportunities": [
           "Harlow Street 18-month check"
-        ]
+        ],
+        "stage_id": "stg_trade_product_aware",
+        "awareness": "product_aware",
+        "awareness_source": "guess"
       },
       {
         "name": "Most Aware",
@@ -114,7 +126,10 @@
         ],
         "opportunities": [
           "the fall hardware run date"
-        ]
+        ],
+        "stage_id": "stg_trade_most_aware",
+        "awareness": "most_aware",
+        "awareness_source": "guess"
       }
     ],
     "is_active": true,

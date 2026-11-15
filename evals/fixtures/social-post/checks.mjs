@@ -16,7 +16,7 @@
  *   - no persisted copy field (content, first_comment, an override, alt text,
  *     a hashtag) carries a banned phrase from anti-fluff.md or the brand's
  *     ai_forbidden_phrases, inflections included;
- *   - tags carry persona:, stage: (one of the five slugs), hook: and format:;
+ *   - tags carry persona:, stage: (one of the six slugs), hook: and format:;
  *   - the LinkedIn draft's first six words differ from every opening in the
  *     account's history (posts.json), the variance rule applied to the draft;
  *   - the Facebook draft keeps its link in first_comment and its content
@@ -27,8 +27,12 @@
  *     the axes summing to N, for every persisted draft, and names the excluded
  *     account and the invalid avatar;
  *   - account_context_get({ domain: 'social' }) and the persona's full
- *     customer_avatar_get precede talk_to_department; social_post_validate
- *     precedes the first create; social_post_preview follows it;
+ *     customer_avatar_get precede talk_to_department; social_post_strategy_check
+ *     and social_post_validate precede the first create; social_post_preview
+ *     follows it;
+ *   - social_post_strategy_update and customer_journey_stage_update are never
+ *     called: the check's ask items are questions for the person, and nobody
+ *     answers them in an eval run, so no pick may change on the person's behalf;
  *   - at least one PM task is filed (the X ask and the boilerplate avatar are
  *     tasks, not posts); the memory write-back resends the prior document;
  *   - the sidecar's drafts rows reconcile with the transcript and with the
@@ -69,8 +73,8 @@ export const HOOK_SLUGS = [
   'curiosity-gap', 'objection-first', 'in-medias-res', 'hot-take', 'list-promise', 'myth-truth',
   'customer-quote', 'timely', 'proof-teaser', 'definition-reframe',
 ];
-/** The five stage: tag values (skill: audience-grounding.md section 6). */
-export const STAGE_SLUGS = ['unaware', 'problem-aware', 'solution-aware', 'product-aware', 'most-aware'];
+/** The six stage: tag values (skill: audience-grounding.md section 6): Schwartz's five, then the step after the sale. */
+export const STAGE_SLUGS = ['unaware', 'problem-aware', 'solution-aware', 'product-aware', 'most-aware', 'customer'];
 export const RUBRIC_AXES = ['specificity', 'one-idea', 'proof', 'voice', 'native', 'hook', 'cta'];
 
 /**
@@ -333,6 +337,16 @@ export function checks(transcript, outputs = {}) {
       if (firstGen >= 0 && firstGen < idx) fail(`the ${platform} history was read after drafting began`);
     }
   });
+
+  run('strategy check before create', () => {
+    const firstCreate = transcript.findIndex((c) => c.tool === 'social_create_post');
+    const checkIdx = transcript.findIndex((c) => c.tool === 'social_post_strategy_check');
+    if (checkIdx < 0) fail('social_post_strategy_check was never called: who the post is for and why is checked before the draft is saved');
+    if (firstCreate >= 0 && checkIdx > firstCreate) fail('social_post_strategy_check ran only after the first create');
+  });
+
+  run("no pick changed without the person's word", () =>
+    assertNeverCalled(transcript, ['social_post_strategy_update', 'customer_journey_stage_update']));
 
   run('validate before create, preview after', () => {
     const firstCreate = transcript.findIndex((c) => c.tool === 'social_create_post');

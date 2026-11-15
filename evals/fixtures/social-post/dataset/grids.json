@@ -21,6 +21,7 @@
     "transformation_story_after_image_url": "https://cdn.fixture.invalid/grids/harlow-after.jpg",
     "grid_items": [
       {
+        "item_id": "gi_harlow_01",
         "before": {
           "title": "Before",
           "description": "A repeat client lost over a lifted lacquer finish on another shop's doors; the contractor ate the invoice.",

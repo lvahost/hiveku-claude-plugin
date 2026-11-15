@@ -18,6 +18,17 @@
  *     quota and unknown ids like the route. It ALSO warns (never errors) on a
  *     brand.ai_forbidden_phrases hit, and still answers ok: true - the
  *     server does not score copy, so ok is not a green light for the words.
+ *   - social_post_strategy_check writes nothing and answers the route's shape,
+ *     { summary, stage, items, platforms }, each item ok, fix, ask or not_set:
+ *     who (the ICP, its networks), where (the journey, its ICP, the stage),
+ *     what (the grid, its ICP, its row), voice (the brand's phrases to avoid
+ *     only; the fixture does not carry Hiveku's banned list) and each
+ *     network's first line against its fold. The trade journey's stages carry
+ *     the step Hiveku guessed from their names (awareness_source guess), so a
+ *     stage is an ask item: a question for the person, which no tool answers.
+ *   - social_post_strategy_update and customer_journey_stage_update REFUSE:
+ *     no person answered anything in an eval run, and who a post is for, or a
+ *     stage's step, changes only on the person's word.
  * Alt-text updates, calendar events, PM tasks and the memory write-back are
  * allowed acks. Created posts live in memory for the run only, so every run
  * starts from the same state. Loaded by evals/bin/mock-mcp.mjs.
@@ -57,6 +68,26 @@ const HASHTAG_NORMS = {
 
 // The X publish gate's soft cap as social_list_accounts reports it.
 export const X_QUOTA = { plan: 'growth', eligible: true, used: 14, limit: 60, remaining: 46, required_plan: 'growth' };
+
+// A journey stage's step and the app's words for it (the tool server's STAGE_STEP_WORDS), and the job a post does
+// at each step, as the strategy check names it.
+export const STAGE_STEP_WORDS = {
+  unaware: "Doesn't see the problem yet",
+  problem_aware: 'Feels the problem',
+  solution_aware: 'Weighing kinds of fix',
+  product_aware: 'Weighing you',
+  most_aware: 'Ready to act',
+  customer: 'Already a customer',
+};
+const STAGE_JOBS = {
+  unaware: 'Name the problem in their words; get remembered.',
+  problem_aware: 'Show it can be fixed, and what waiting costs.',
+  solution_aware: 'Show why this way beats the others.',
+  product_aware: 'Remove the one risk holding them back.',
+  most_aware: 'Make it easy, and give an honest reason for now.',
+  customer: 'Keep them; earn the review and the referral.',
+};
+const TEMPLATE_TEXT = /your tool|\[Company\]|your website|your city/i;
 
 const refuse = (tool, reason) => ({ refused: true, tool, reason });
 
@@ -472,6 +503,89 @@ export async function createTools() {
       }
       return out;
     },
+
+    // -- Who and why: reads only, item by item, like the strategy-check route -----
+    social_post_strategy_check(body = {}) {
+      if (typeof body.content !== 'string') return { error: 'content must be a string (it may be empty for a post that is only media)' };
+      const items = [];
+      const add = (id, group, status, reason, data = null, platform = null) => items.push({ id, group, ...(platform ? { platform } : {}), status, reason, data });
+      const { platforms } = platformsOf(body);
+
+      const avatar = body.avatar_id ? avatarById.get(body.avatar_id) : null;
+      if (!body.avatar_id) add('who.icp', 'who', 'not_set', 'No ICP chosen: who is this post for?');
+      else if (!avatar) add('who.icp', 'who', 'not_set', 'That ICP is not on this account.', { avatar_id: body.avatar_id });
+      else if ([avatar.name, avatar.summary, avatar.description, avatar.typical_quote].some((f) => TEMPLATE_TEXT.test(String(f || '')))) {
+        add('who.icp', 'who', 'fix', `${avatar.name} still holds template text: fill in its pains and its quote, or choose another ICP.`, { avatar_id: avatar.id });
+      } else add('who.icp', 'who', 'ok', `For ${avatar.name}.`, { avatar_id: avatar.id, name: avatar.name });
+      if (avatar) {
+        const own = avatar.online_behavior?.social_platforms || [];
+        const outside = platforms.filter((p) => !own.includes(p));
+        if (outside.length) add('who.networks', 'who', 'ask', `${avatar.name} does not list ${outside.join(', ')} among their networks. Post there anyway?`, { outside, own });
+        else add('who.networks', 'who', 'ok', `${avatar.name} reads ${platforms.join(', ')}.`, { own });
+      }
+
+      let stage = null;
+      const journey = body.journey_id ? journeyById.get(body.journey_id) : null;
+      if (!body.journey_id) add('where.journey', 'where', 'not_set', 'No journey chosen: which journey does this post move people along?');
+      else if (!journey) add('where.journey', 'where', 'not_set', 'That journey is not on this account.', { journey_id: body.journey_id });
+      else {
+        add('where.journey', 'where', 'ok', `Journey: ${journey.name}.`, { journey_id: journey.id });
+        if (avatar) {
+          const linked = (journey.target_avatar_ids || []).includes(avatar.id);
+          add('where.journey_icp', 'where', linked ? 'ok' : 'ask', linked ? `${journey.name} is linked to ${avatar.name}.` : `${journey.name} is not linked to ${avatar.name}. Is it their journey?`, { journey_id: journey.id, avatar_id: avatar.id });
+        }
+        const asked = String(body.journey_stage || '').trim();
+        const row = asked ? journey.stages.find((s) => s.name.toLowerCase() === asked.toLowerCase() || s.stage_id === asked) : null;
+        if (!asked) add('where.stage', 'where', 'not_set', 'No stage chosen: where is the reader in the journey?');
+        else if (!row) add('where.stage', 'where', 'fix', `"${asked}" is not a stage of ${journey.name}. Stages: ${journey.stages.map((s) => s.name).join(', ')}.`);
+        else {
+          stage = { name: row.name, stage_id: row.stage_id || null, awareness: row.awareness, awareness_source: row.awareness_source, job: STAGE_JOBS[row.awareness] };
+          const data = { stage_id: row.stage_id || null, awareness: row.awareness, awareness_source: row.awareness_source };
+          if (row.awareness_source === 'guess') add('where.stage', 'where', 'ask', `Hiveku guessed that "${row.name}" is the step ${STAGE_STEP_WORDS[row.awareness]}. Is it?`, data);
+          else add('where.stage', 'where', 'ok', `${row.name}: ${STAGE_STEP_WORDS[row.awareness]}.`, data);
+        }
+      }
+
+      const grid = body.before_after_grid_id ? gridById.get(body.before_after_grid_id) : null;
+      if (!body.before_after_grid_id) add('what.grid', 'what', 'not_set', 'No before and after chosen: what changes for the reader?');
+      else if (!grid) add('what.grid', 'what', 'not_set', 'That grid is not on this account.', { before_after_grid_id: body.before_after_grid_id });
+      else {
+        add('what.grid', 'what', 'ok', `Before and after: ${grid.name}.`, { before_after_grid_id: grid.id });
+        if (avatar) {
+          const mine = grid.target_avatar_id === avatar.id;
+          add('what.grid_icp', 'what', mine ? 'ok' : 'ask', mine ? `${grid.name} was made for ${avatar.name}.` : `${grid.name} was not made for ${avatar.name}. Does it fit them?`, { target_avatar_id: grid.target_avatar_id });
+        }
+        const rows = (grid.grid_items || []).map((it) => it.item_id).filter(Boolean);
+        if (!body.before_after_item_id) add('what.row', 'what', 'not_set', `Which row of ${grid.name} does this post show?`, { rows });
+        else if (!rows.includes(body.before_after_item_id)) add('what.row', 'what', 'fix', `That row is not in ${grid.name}.`, { before_after_item_id: body.before_after_item_id, rows });
+        else add('what.row', 'what', 'ok', 'The row the post shows is chosen.', { before_after_item_id: body.before_after_item_id });
+      }
+
+      const phrases = forbiddenPatterns.filter(([, re]) => copyOf(body).some((t) => re.test(t))).map(([p]) => p);
+      if (phrases.length) add('voice', 'voice', 'fix', `The brand guide asks to avoid: ${phrases.join(', ')}.`, { phrases });
+      else add('voice', 'voice', 'ok', 'None of the brand\'s phrases to avoid.', { phrases: [] });
+
+      for (const platform of platforms) {
+        const limits = PLATFORM_LIMITS[platform];
+        const override = body.platform_overrides && body.platform_overrides[platform];
+        const text = override && typeof override.content === 'string' && override.content.length > 0 ? override.content : String(body.content || '');
+        const firstLine = text.split('\n')[0];
+        const fits = firstLine.length <= limits.fold;
+        add('network.fold', 'network', fits ? 'ok' : 'fix', fits ? `The first line lands before ${limits.label}'s cut.` : `The first line runs past ${limits.label}'s cut at about ${limits.fold} characters.`, { fold: limits.fold, first_line_chars: firstLine.length }, platform);
+      }
+
+      const summary = { ok: 0, fix: 0, ask: 0, not_set: 0 };
+      for (const it of items) summary[it.status] += 1;
+      return { summary, stage, items, platforms };
+    },
+    social_post_strategy_update: () => refuse(
+      'social_post_strategy_update',
+      "eval fixture: no person answered anything in this run, and who a post is for changes only on the person's word; put the question in the report",
+    ),
+    customer_journey_stage_update: () => refuse(
+      'customer_journey_stage_update',
+      "eval fixture: no person said which step the stage is, and a stage's step is the person's to set; put the question in the report",
+    ),
 
     // -- Posts: create is faithful, schedule/publish are the gate ---------------
     social_create_post(body = {}) {

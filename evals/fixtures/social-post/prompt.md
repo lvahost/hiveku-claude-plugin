@@ -26,6 +26,10 @@ Overrides for this eval run only:
   the report instead. (The fixture refuses the gate-crossing forms anyway.)
 - Do create the draft(s), the PM task(s) and the memory write-back the command
   calls for - those tools are part of the fixture and are allowed.
+- Questions the command says to put to the person (the strategy check's `ask`
+  items among them) go in the report as questions. Nobody answers them in this
+  run, so no tool may change who a post is for, or a journey stage's step, on
+  the person's behalf.
 - Every caption, first comment and alt text in the report goes inside a ```
   fenced block. Prose outside fences must be your own synthesis, and every
   number in that prose must come from a tool result - when you derive a
@@ -40,8 +44,9 @@ Deliverables - write BOTH files to the current working directory:
    `For: <avatar> | Stage: <Schwartz stage> | Pillar: <pillar> | Hook: <pattern> | Format: <format> | CTA: <verb>`
    and the line `Rubric: N/14 (specificity n, one-idea n, proof n, voice n, native n, hook n, cta n)`
    written exactly, once per variant you scored, each variant as a fenced
-   exhibit with its first comment and alt text, the validation and preview
-   results, the exact create call(s), the proposed slot, and what was filed.
+   exhibit with its first comment and alt text, the strategy check, validation
+   and preview results, the questions for the person, the exact create
+   call(s), the proposed slot, and what was filed.
 2. `findings.json` - machine-readable findings, exactly this shape:
 
 ```json
