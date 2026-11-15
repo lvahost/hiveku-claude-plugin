@@ -78,7 +78,10 @@ test('node-rail says how a Post in Discussions step is set up, who may set which
     '`replyTo` (the `message_id` of an earlier post in the same conversation)',
     'A name a variable fills in mentions nobody.',
     "it posts nothing, answers `posted: false` with `skipped: 'hourly_limit'`, and the run goes on",
-    "Only the workflow's owner adds or changes a step that posts to a teammate or into a private channel; anyone else gets 403 `discussions_owner_only`",
+    "Only the workflow's owner adds or changes a step that posts to a teammate or into a private channel",
+    // The whole workflow is the owner's while it holds such a step, not only that step (the server's gate).
+    'while a workflow holds such a step only its owner saves, renames, restores or changes any of it, or runs that step for real; anyone else gets 403 `discussions_owner_only`',
+    'Switching it on or off, pausing it, testing it, copying it and deleting it stay open to anyone who may manage it.',
     '`workflow_get` and `workflow_list` show the owner',
     '`workflow_update({ id, take_ownership: true })`, sent on its own, makes the person behind the key the owner',
     'an account owner or admin may take any workflow, anyone else one with no owner or whose owner left the team',

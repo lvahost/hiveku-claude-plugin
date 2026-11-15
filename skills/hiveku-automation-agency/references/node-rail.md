@@ -1372,8 +1372,11 @@ mentions that person, and `@here` or `@channel` tell a channel at most once ever
 conversation). A name a variable fills in mentions nobody. Past 60 posts an hour in one
 conversation, or 300 in all, it posts nothing, answers `posted: false` with
 `skipped: 'hourly_limit'`, and the run goes on. Only the workflow's owner adds or changes a step
-that posts to a teammate or into a private channel; anyone else gets 403
-`discussions_owner_only`, whose words say who can. `workflow_get` and `workflow_list` show the
+that posts to a teammate or into a private channel, and while a workflow holds such a step only
+its owner saves, renames, restores or changes any of it, or runs that step for real; anyone else
+gets 403 `discussions_owner_only`, whose words say who can. Switching it on or off, pausing it,
+testing it, copying it and deleting it stay open to anyone who may manage it. `workflow_get` and
+`workflow_list` show the
 owner, and `workflow_update({ id, take_ownership: true })`, sent on its own, makes the person
 behind the key the owner (an account owner or admin may take any workflow, anyone else one with
 no owner or whose owner left the team). Ask that person first: the workflow's posts then go out
