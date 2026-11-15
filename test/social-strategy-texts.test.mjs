@@ -400,8 +400,8 @@ test('5. the lines naming the tools and fields the Social team\'s agent lacks ar
       else untagged.push(`${REF(name)}:${i + 1}`);
     });
   }
-  assert.ok(tagged >= 10, `only ${tagged} tagged line(s) name the tools and fields in the playbook references - the texts lost them`);
   assert.deepEqual(untagged, [], 'these lines would teach the Social team\'s agent a tool or a field it cannot use: end each with the plugin-only tag');
+  assert.ok(tagged >= 10, `only ${tagged} tagged line(s) name the tools and fields in the playbook references - the texts lost them`);
 });
 
 test("5. the playbook the Social team's agent reads says what a stage with no step means, and claims no step it lacks", () => {
