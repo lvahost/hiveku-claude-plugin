@@ -1358,8 +1358,31 @@ the transcript), `voiceMissedCallTrigger` (the speed-to-lead hook), `voiceListCa
 everything phone/SMS (sends, caps, opt-outs, 10DLC readiness, the STOP-suppression trigger
 trap) is the **hiveku-phone-agency** skill - load it before wiring an `sms` or voice node.
 
-**Team notifications**: `slackNotification`, `discordNotification`, `teamsNotification`,
-`pushNotification`.
+**Team notifications**: `discussionsAddMessage` (Post in Discussions, the team chat inside
+Hiveku), `slackNotification`, `discordNotification`, `teamsNotification`, `pushNotification`.
+
+Post in Discussions posts as the workflow (its name, with an Automation tag), sent with the
+access of the workflow's owner. Its `data.config` takes `postTo` (`'channel'`, the default, or
+`'person'`), then `threadId` (a channel, from `workflow_field_options` with
+`discussion-channel-options`; `shared_with` names any other workspace that reads it) or `userId`
+(a teammate, from `team-member-options`, or a teammate's email: the post goes to the direct
+message between the owner and them), `body` (the words, with `{{...}}`; an `@Name` typed there
+mentions that person, and `@here` or `@channel` tell a channel at most once every 10 minutes),
+`mentionIds` (up to 20 people) and `replyTo` (the `message_id` of an earlier post in the same
+conversation). A name a variable fills in mentions nobody. Past 60 posts an hour in one
+conversation, or 300 in all, it posts nothing, answers `posted: false` with
+`skipped: 'hourly_limit'`, and the run goes on. Only the workflow's owner adds or changes a step
+that posts to a teammate or into a private channel, and while a workflow holds such a step only
+its owner saves, renames, restores or changes any of it, or runs that step for real; anyone else
+gets 403 `discussions_owner_only`, whose words say who can. Switching it on or off, pausing it,
+testing it, copying it and deleting it stay open to anyone who may manage it. `workflow_get` and
+`workflow_list` show the
+owner, and `workflow_update({ id, take_ownership: true })`, sent on its own, makes the person
+behind the key the owner (an account owner or admin may take any workflow, anyone else one with
+no owner or whose owner left the team). Ask that person first: the workflow's posts then go out
+with their access. In `workflow_test` it posts nothing and says what it would have posted
+("Would post in #sales as Lead alerts: ..."). Its node's `hint` in `workflow_node_types_list`
+says the rest.
 
 **Helpdesk**: `helpdeskCreateTicket` (lazy-creates the contact from an email alone),
 `helpdeskSendReply` (customer-visible), `helpdeskAddInternalNote` (never sent to the
@@ -1584,11 +1607,13 @@ The last three are read-only and exist to be fed into an `aiAgent` prompt.
 **Collaboration and infrastructure**: `hiveboardCreate`, `hiveboardGet`, `hiveboardList`,
 `hiveboardElementCreate`, `hiveboardElementsBulkCreate` (up to 200 elements per call),
 `hiveboardSitemapScaffold` (a page tree as labelled frames joined by arrows),
-`hiveboardDuplicate`, `discussionsList`, `discussionsGetThread`, `discussionsCreate`,
-`discussionsAddMessage`, `discussionCreatedTrigger`, `supabaseAuthUserCreate`,
+`hiveboardDuplicate`, `discussionsList`, `discussionsGetThread`, `discussionsCreate` (it cannot
+run yet: a workflow cannot start a Discussions channel, so the step stops with an error),
+`discussionCreatedTrigger`, `supabaseAuthUserCreate`,
 `supabaseAuthUserUpdate`, `supabaseAuthUsersList`, `supabaseAuthUserGenerateLink`,
 `supabaseEdgeFunctionInvoke`, `supabaseStorageObjectUpload`, `supabaseStorageObjectSignedUrl`
 ( the URL is a bearer credential and is withheld from the run output unless you opt in).
+Post in Discussions (`discussionsAddMessage`) is a team notification: see 6.2.
 
 ---
 
@@ -1687,7 +1712,8 @@ workflow means the next session re-derives it from scratch.
 Every one verified present in `hiveku-mcp-api-server/src/tools/*.ts`.
 
 **Discovery**: `workflow_node_types_list`, `workflow_trigger_types_list`,
-`workflow_event_trigger_types_list`, `workflow_templating_syntax`, `workflow_templates_list`.
+`workflow_event_trigger_types_list`, `workflow_templating_syntax`, `workflow_templates_list`,
+`workflow_field_options` (the legal values of a field that names an `optionsEndpoint`).
 
 **Build**: `workflow_create`, `workflow_update`, `workflow_node_add`, `workflow_node_update`,
 `workflow_node_delete`, `workflow_edge_add`, `workflow_edge_delete`, `workflow_validate`,
