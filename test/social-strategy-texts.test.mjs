@@ -15,15 +15,19 @@
  *
  * What this file holds:
  *   1. Every social text that saves, schedules or sends a post for approval runs the check first: it is named before
- *      social_post_validate there, and the ask items go to the person.
- *   2. Nothing tells an agent to set a person's picks without asking: every paragraph that names the strategy write,
- *      or the stage update with awareness, says the person is asked or gives their word.
- *   3. The words stay true to the tool: a sentence naming the check never says it scores, blocks, costs or calls AI,
- *      except to say it does not.
+ *      social_post_validate there, the ask items go to the person, a fix item about the ICP, the journey or the grid
+ *      is the person's (never fixed in the post), and every spelled-out call sends the draft.
+ *   2. Nothing tells an agent to set a person's picks without asking: every unit (a paragraph, a list item, a table
+ *      row) that names the strategy write, or the stage update with awareness, says in that same unit that the
+ *      person is asked or gives their word, and nothing there takes it back ("without asking").
+ *   3. The words stay true to the tool: a unit naming the check never says it blocks, costs or calls AI, and a
+ *      sentence about the check never says it scores, except to say it does not.
  *   4. Each stage's step: the six steps and three sources, the stage id the server keeps, and the sixth step
  *      (Already a customer) in the stage tables and the stage: tag lists.
- *   5. The Social team's own agent has neither tool, so every line naming them in the references
- *      scripts/gen-social-playbooks.mjs copies into that agent's playbook carries the generator's plugin-only tag.
+ *   5. The Social team's own agent has neither tool, takes no grid row and keeps no stage id, and reads its journeys
+ *      as stored (a stage only Hiveku guesses carries no step there): every line naming those in the references
+ *      scripts/gen-social-playbooks.mjs copies into that agent's playbook carries the generator's plugin-only tag,
+ *      and what it keeps says what a stage with no step means.
  *
  * Run: node --test test/*.test.mjs
  */
@@ -45,6 +49,11 @@ const CHECK = 'social_post_strategy_check';
 const WRITE = 'social_post_strategy_update';
 const STAGE_WRITE = 'customer_journey_stage_update';
 const PLUGIN_ONLY = '<!-- plugin-only -->';
+/**
+ * Fields the Social team's agent cannot use: its own post create and update take no settings (so no grid row), and
+ * its posts keep no stage id; the generator's translation table maps no customer_journey_stage_list.
+ */
+const AGENT_LACKS = ['before_after_item_id', 'journey_stage_id', 'customer_journey_stage_list'];
 
 const SKILL = 'skills/hiveku-social-agency/SKILL.md';
 const REF = (name) => `skills/hiveku-social-agency/references/${name}`;
@@ -76,6 +85,34 @@ function paragraphsOf(text) {
   return out;
 }
 
+/**
+ * The units a reader takes one at a time: a paragraph, and inside it each list item (a line opening `- `, `* ` or
+ * `N. `), each table row and each heading on its own, with its continuation lines. So a rule written as one bullet
+ * of a long list is read as that bullet, never with the list's other bullets.
+ */
+function unitsOf(text) {
+  const out = [];
+  let current = null;
+  text.split('\n').forEach((raw, i) => {
+    if (!raw.trim()) {
+      current = null;
+      return;
+    }
+    const opens = /^\s*(?:[-*] |\d+\. |\| |#{1,6} )/.test(raw);
+    if (!current || opens) {
+      current = { line: i + 1, text: raw };
+      out.push(current);
+    } else current.text += `\n${raw}`;
+  });
+  return out;
+}
+
+/** A list of tools an agent lacks or must never call ("It has NO `a`, `b`", "Never call `a`, `b`, or"), taken out. */
+const TOOLS_IT_LACKS = /\b(?:has no|Never call|never)\s+(?:`[\w*]+`(?:\([^)]*\))?(?:,\s*(?:or\s+)?|\s+or\s+)?)+/gi;
+
+/** Words that take the asking back: "Without asking the person", "no need to ask". */
+const DENIES_ASKING = /without (?:asking|the (?:person|client)|their (?:word|yes|answer))|no need to ask|(?:need not|needn't|do not need to|don't need to) ask|instead of asking|skip(?:ping)? the question/i;
+
 /** Every .md the plugin's prose lives in: the skills, the commands, the agents. */
 function proseFiles() {
   const out = [];
@@ -99,6 +136,14 @@ function sentencesOf(paragraph) {
 
 const ASKS_THE_PERSON = /ask(?:s|ed|ing)? the (?:person|client)|the (?:person|client)'s (?:word|yes|answer)|(?:person|client) (?:says|said|has said|confirms|confirmed|answers|answered)/i;
 
+/**
+ * Where the check's items are explained: a fix item about the ICP, the journey or the grid is a pick or a
+ * foundation, so it is never "fixed" in the post (the route's reasons there say "pick one of yours", "fill in
+ * their pains and a quote in their own words", "link it to ...").
+ */
+const PICKS_ARE_THE_PERSONS =
+  "A `fix` item in the `who`, `where` or `what` group (the ICP, the journey and its stage, the grid and its row) is about a pick or a foundation, not the post's words: tell the person what it says, change a pick only to what they choose, and change a foundation only as `hiveku-orient/references/foundation-first.md` says, never making up their pains or a quote in their own words.";
+
 test('1. the skill runs the check before every save, schedule and send for approval, and says what it answers', () => {
   const skill = read(SKILL);
   // The operating principles are one bulleted block; the principle is its own bullet.
@@ -110,6 +155,9 @@ test('1. the skill runs the check before every save, schedule and send for appro
   }
   assert.match(principle, /never blocks a post, costs nothing,? (?:and )?calls no AI/, 'the principle must say what the MCP description says: never blocks, costs nothing, calls no AI');
   assert.match(principle, /Never answer an `ask` item yourself/, 'the principle must forbid answering an ask item for the person');
+  assert.ok(principle.includes("fix each `fix` item about the post's own words"), "the principle fixes in the post only the items about the post's own words");
+  assert.ok(principle.includes(PICKS_ARE_THE_PERSONS), 'the principle must say a who, where or what fix item is a pick or a foundation, never fixed in the post');
+  assert.ok(principle.includes('never change what the person chose'), 'the principle must keep the person\'s picks');
 
   const play3 = fold(skill.slice(skill.indexOf('**Play 3 - Ideation and drafting.**'), skill.indexOf('**Play 4 - Creative and media.**')));
   assert.ok(play3.length > 0, 'Play 3 is gone from the social skill');
@@ -118,6 +166,11 @@ test('1. the skill runs the check before every save, schedule and send for appro
   assert.ok(at(CHECK) < at('Dry-run with `social_post_validate`'), 'Play 3 runs the check before the dry run');
   assert.ok(at('Dry-run with `social_post_validate`') < at('`social_create_post`'), 'Play 3 dry-runs before it persists');
   assert.ok(play3.includes(WRITE), 'Play 3 must say a published post\'s who-and-why changes through the strategy write');
+  assert.ok(
+    play3.includes('/hiveku:social-audit (the rubric and histogram of the last 30 posts; its only writes, each on a yes, are the memory line and the who-and-why fixes)'),
+    'Play 3 must say what the audit writes, each on a yes, never that it is read-only',
+  );
+  assert.doesNotMatch(play3, /social-audit \(read-only/, 'the audit can end with the who-and-why fixes, so the skill must not call it read-only');
 
   const r8 = paragraphsOf(skill).find((p) => p.text.includes('- R8.'));
   assert.ok(r8 && r8.text.includes(CHECK), 'R8 must check who and why beside the caps');
@@ -138,7 +191,7 @@ test('1. the publishing reference checks before it validates, and documents the 
   assert.ok(checkStep.startsWith(`2. \`${CHECK}\``), 'step 2 of "Creating a post" is the strategy check');
   assert.ok(validateStep.startsWith('3. `social_post_validate`'), 'step 3 of "Creating a post" is the dry run');
   assert.ok(createStep.startsWith('4. `social_create_post` as a DRAFT'), 'step 4 of "Creating a post" is the draft create');
-  for (const words of ['fix each `fix` item', 'ask the person each `ask` item', '`summary`', '`stage`', '`items`', 'never blocks a post, costs nothing', 'Never answer an `ask` item yourself']) {
+  for (const words of ["fix each `fix` item about the post's own words", 'ask the person each `ask` item', '`summary`', '`stage`', '`items`', 'never blocks a post, costs nothing', 'Never answer an `ask` item yourself', PICKS_ARE_THE_PERSONS, 'never change what the person chose']) {
     assert.ok(checkStep.includes(words), `the check step no longer says ${JSON.stringify(words)}`);
   }
 
@@ -173,8 +226,20 @@ test('1. every drafting command runs the check before its dry run, fixes the fix
     assert.match(text, /never answered by you|never answering one yourself/, `${rel} must leave each ask item to the person`);
   }
   const post = fold(read('commands/social-post.md'));
+  // The check takes the draft as validate does, link and alt text included: its link item reads link_url, and the
+  // voice item reads the alt text.
+  const call = post.slice(post.indexOf(`\`${CHECK}({`), post.indexOf('})`', post.indexOf(`\`${CHECK}({`)));
+  for (const field of ['content', 'target_platforms', 'target_accounts', 'platform_overrides', 'first_comment', 'link_url', 'media_asset_ids', 'media_alt_texts', 'avatar_id', 'journey_id', 'journey_stage', 'before_after_grid_id', 'before_after_item_id', 'pillar_id']) {
+    assert.ok(new RegExp(`\\b${field}\\b`).test(call), `/hiveku:social-post's check call leaves out ${field}`);
+  }
+  assert.ok(post.includes('`link_url` and `media_alt_texts` included, without the schedule or the media types'), "/hiveku:social-post must say the check takes the draft as validate does, link and alt text included");
+  assert.ok(
+    post.includes("a `fix` item in the `who`, `where` or `what` group (the ICP, the journey and its stage, the grid and its row) is the person's, put to them at step 5's STOP, and you never make up an ICP's pains or a quote in their own words"),
+    "/hiveku:social-post must leave a who, where or what fix item to the person",
+  );
   const stop = post.slice(post.indexOf('5. STOP'), post.indexOf('6. Finish'));
   assert.match(stop, /`ask` item as a question/, '/hiveku:social-post shows each ask item at its STOP');
+  assert.match(stop, /each `who`, `where` or `what` fix item as what the person needs to pick or fill in/, '/hiveku:social-post shows the who, where and what fix items at its STOP');
   assert.match(stop, /after any change to the copy or to what the post is for, run `social_post_strategy_check` again with its `post_id`/, '/hiveku:social-post checks a saved draft again after it changes');
   const plan = fold(read('commands/social-plan.md'));
   const step4 = plan.slice(plan.indexOf('4. Present the week'), plan.indexOf('5. Finish'));
@@ -182,6 +247,24 @@ test('1. every drafting command runs the check before its dry run, fixes the fix
   const calendar = fold(read('commands/social-calendar.md'));
   const handoff = calendar.slice(calendar.indexOf('The schedule is `/hiveku:social-plan` step 4'), calendar.indexOf('5. Finish'));
   assert.ok(handoff.includes(CHECK), '/hiveku:social-calendar hands the schedule over with the check in its order');
+  assert.ok(handoff.includes(`\`${CHECK}\` with the post's text, its picks and its \`post_id\``), "/hiveku:social-calendar's hand-off must send the check the post's text and picks, not its post_id alone");
+});
+
+test('1. every spelled-out call of the check sends the draft, never a post_id alone', () => {
+  // content is required (the route answers 400 without it); a saved post's id only adds the repeat check and a
+  // renamed stage.
+  const offenders = [];
+  let calls = 0;
+  for (const rel of proseFiles()) {
+    const text = fold(read(rel));
+    for (const m of text.matchAll(new RegExp(`\`${CHECK}\\(\\{([^}]*)\\}\\)\``, 'g'))) {
+      calls++;
+      if (!/\bcontent\b|\.\.\./.test(m[1])) offenders.push(`${rel}: ${m[0].slice(0, 100)}`);
+    }
+    for (const m of text.matchAll(new RegExp(`\`${CHECK}\` with (?:the|its) \`post_id\``, 'g'))) offenders.push(`${rel}: ${m[0]}`);
+  }
+  assert.ok(calls >= 6, `only ${calls} spelled-out call(s) of the check - the walker is broken, or the texts lost them`);
+  assert.deepEqual(offenders, [], 'the check takes the draft (content is required); these calls send it less');
 });
 
 test('1. the social audit can fix an old post\'s who-and-why, only on the person\'s word', () => {
@@ -222,40 +305,45 @@ test('2. no text tells an agent to set a person\'s picks without asking', () => 
   let writes = 0;
   let stageWrites = 0;
   for (const rel of proseFiles()) {
-    for (const p of paragraphsOf(read(rel))) {
-      const namesWrite = p.text.includes(WRITE);
-      const setsStep = p.text.includes(STAGE_WRITE) && /\bawareness\b/.test(p.text);
+    for (const u of unitsOf(read(rel))) {
+      // A heading names a section; a list of the tools an agent lacks, or must never call, tells no one to run them.
+      if (/^#{1,6} /.test(u.text.trim())) continue;
+      const text = fold(u.text).replace(TOOLS_IT_LACKS, ' ');
+      const namesWrite = text.includes(WRITE);
+      const setsStep = text.includes(STAGE_WRITE) && /\bawareness\b/.test(text);
       if (!namesWrite && !setsStep) continue;
-      // A heading names a section, a never-call list and a list of tools an agent lacks set nothing.
-      if (/^#{1,6} [^\n]*$/.test(p.text.trim())) continue;
       if (namesWrite) writes++;
       if (setsStep) stageWrites++;
-      if (/Never call|has NO|has no\b|never `memory_create`/.test(p.text)) continue;
-      if (!ASKS_THE_PERSON.test(fold(p.text))) offenders.push(`${rel}:${p.line}`);
+      // The ask words in the same unit as the write, and nothing there that takes them back.
+      if (!ASKS_THE_PERSON.test(text) || DENIES_ASKING.test(text)) offenders.push(`${rel}:${u.line}`);
     }
   }
-  assert.ok(writes >= 8, `only ${writes} paragraph(s) name ${WRITE} - the walker is broken, or the texts lost it`);
-  assert.ok(stageWrites >= 2, `only ${stageWrites} paragraph(s) set a stage's step - the walker is broken, or the texts lost it`);
-  assert.deepEqual(offenders, [], 'these paragraphs change who a post is for, or a stage\'s step, without asking the person');
+  assert.ok(writes >= 8, `only ${writes} unit(s) name ${WRITE} - the walker is broken, or the texts lost it`);
+  assert.ok(stageWrites >= 2, `only ${stageWrites} unit(s) set a stage's step - the walker is broken, or the texts lost it`);
+  assert.deepEqual(offenders, [], 'these units change who a post is for, or a stage\'s step, without asking the person');
 });
 
-test('3. a sentence naming the check never claims it scores, blocks, costs or calls AI', () => {
+test('3. a text naming the check never claims it scores, blocks, costs or calls AI', () => {
   const offenders = [];
   let sentences = 0;
+  // Read across the whole unit that names the check (its other sentences are about it too): blocking, a cost and AI.
+  // Scoring, in a sentence that names the check or goes on about it ("It ...", "Its ..."): the unit's other
+  // sentences score drafts on the rubric, which is the agent's own work.
+  const wholeUnit = [
+    [/(?<!`\s*)\bblock(?:s|ed|ing)?\b/i, /never blocks|blocks nothing|not block/i],
+    // A credit spent, not the credit a link gives its piece ("so the piece gets the credit").
+    [/\bcosts?\b|\bcharge[sd]?\b|\b(?:spends?|uses?|takes?|draws?) (?:an? |the |your |its |the account's )?(?:AI )?credits?\b|\bbill(?:s|ed|ing)?\b/i, /costs nothing/i],
+    [/\bAI\b/, /calls no AI|no AI/],
+  ];
+  const aboutTheCheck = [[/\bscor/i, /never scores|scores nothing|no score|not scor|score stays yours/i]];
   for (const rel of proseFiles()) {
-    for (const p of paragraphsOf(read(rel))) {
-      if (!p.text.includes(CHECK)) continue;
-      for (const s of sentencesOf(p.text)) {
-        if (!s.includes(CHECK)) continue;
-        sentences++;
-        const claims = [
-          [/\bscor/i, /never scores|scores nothing|no score|not scor/i],
-          [/\bblock/i, /never blocks|blocks nothing|not block/i],
-          [/\bcost|\bcharge|\bcredit|\bbill/i, /costs nothing/i],
-          [/\bAI\b/, /calls no AI|no AI/],
-        ];
-        for (const [claim, denial] of claims) {
-          if (claim.test(s) && !denial.test(s)) offenders.push(`${rel}:${p.line}: ${s.slice(0, 140)}`);
+    for (const u of unitsOf(read(rel))) {
+      if (!u.text.includes(CHECK)) continue;
+      for (const s of sentencesOf(u.text)) {
+        const namesIt = s.includes(CHECK) || /^(?:It|Its|This|That|The check)\b/.test(s);
+        if (s.includes(CHECK)) sentences++;
+        for (const [claim, denial] of namesIt ? [...wholeUnit, ...aboutTheCheck] : wholeUnit) {
+          if (claim.test(s) && !denial.test(s)) offenders.push(`${rel}:${u.line}: ${s.slice(0, 140)}`);
         }
       }
     }
@@ -280,7 +368,10 @@ test('4. each stage\'s step: the six steps, their sources, the stage id the serv
   for (const source of ['`template`', '`person`', '`guess`', '`awareness_source`']) {
     assert.ok(grounding.includes(source), `audience-grounding.md does not name ${source}`);
   }
-  assert.match(grounding, /a `guess` is a question for the person/, 'a guessed step is a question for the person');
+  assert.ok(
+    grounding.includes('A `guess`, or a stage with no `awareness` at all (no step set yet), is a question for the person'),
+    'a guessed step, and a stage with no step set, is a question for the person',
+  );
   assert.match(grounding, /`settings\.journey_stage_id`/, 'audience-grounding.md must say the server keeps the stage id');
   assert.match(grounding, /`settings\.before_after_item_id`/, 'audience-grounding.md must say how a post names its grid row');
   for (const rel of [GROUNDING, HOOKS]) {
@@ -295,7 +386,7 @@ test('4. each stage\'s step: the six steps, their sources, the stage id the serv
   }
 });
 
-test('5. the lines naming the tools the Social team\'s agent lacks are kept out of its playbook', () => {
+test('5. the lines naming the tools and fields the Social team\'s agent lacks are kept out of its playbook', () => {
   const generator = read('scripts/gen-social-playbooks.mjs');
   const files = [...generator.matchAll(/\['SOCIAL_[A-Z_]+', '([a-z-]+\.md)'\]/g)].map((m) => m[1]);
   assert.ok(files.length >= 5, `read ${files.length} playbook files from the generator - its FILES list moved`);
@@ -304,11 +395,27 @@ test('5. the lines naming the tools the Social team\'s agent lacks are kept out 
   let tagged = 0;
   for (const name of files) {
     read(REF(name)).split('\n').forEach((line, i) => {
-      if (![CHECK, WRITE, STAGE_WRITE].some((tool) => line.includes(tool))) return;
+      if (![...AGENT_LACKS, CHECK, WRITE, STAGE_WRITE].some((name2) => line.includes(name2))) return;
       if (line.includes(PLUGIN_ONLY)) tagged++;
       else untagged.push(`${REF(name)}:${i + 1}`);
     });
   }
-  assert.ok(tagged >= 6, `only ${tagged} tagged line(s) name the tools in the playbook references - the texts lost them`);
-  assert.deepEqual(untagged, [], 'these lines would teach the Social team\'s agent a tool it cannot call: end each with the plugin-only tag');
+  assert.ok(tagged >= 10, `only ${tagged} tagged line(s) name the tools and fields in the playbook references - the texts lost them`);
+  assert.deepEqual(untagged, [], 'these lines would teach the Social team\'s agent a tool or a field it cannot use: end each with the plugin-only tag');
+});
+
+test("5. the playbook the Social team's agent reads says what a stage with no step means, and claims no step it lacks", () => {
+  // The agent reads its journeys as stored, where a stage only Hiveku guesses carries no step (the guess is made when
+  // a journey is read through Hiveku), so its playbook must not say every stage carries one.
+  const generator = read('scripts/gen-social-playbooks.mjs');
+  const files = [...generator.matchAll(/\['SOCIAL_[A-Z_]+', '([a-z-]+\.md)'\]/g)].map((m) => m[1]);
+  const kept = (name) => fold(read(REF(name)).split('\n').filter((line) => !line.includes(PLUGIN_ONLY)).join('\n'));
+  const grounding = kept('audience-grounding.md');
+  assert.ok(grounding.includes('A `guess`, or a stage with no `awareness` at all (no step set yet), is a question for the person'), "the agent's playbook must say a stage with no step set is a question for the person");
+  assert.ok(grounding.includes('a stage with no `awareness` has no step set yet'), "the agent's playbook keeps the trap of a missing step");
+  for (const name of files) {
+    const text = kept(name);
+    assert.doesNotMatch(text, /\b[Ee]very stage\b[^.]*\bcarries\b/, `${REF(name)} tells the agent every stage carries a step`);
+    assert.doesNotMatch(text, /stages each carry their step/, `${REF(name)} tells the agent every stage carries a step`);
+  }
 });
