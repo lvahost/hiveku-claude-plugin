@@ -590,6 +590,16 @@
  *                         email_sequence_disconnect, email_topic_create, email_topic_update,
  *                         marketing_template_copy_to_account. Landed 2026-11-13 (MCP #550, live at bd36a92a8ed1; the
  *                         0.27.275 index carries all six); entries deleted.
+ *
+ *   Social strategy (2026-11-14): who a post is for and why. social_post_strategy_check (POST, read-only: it checks a
+ *   draft or a saved post item by item and writes nothing) and social_post_strategy_update (PATCH: the ICP, journey,
+ *   stage, grid, row, pillar and tags of any post, published included, and nothing else). The social skill, its
+ *   references, the social commands and the social analyst name both before the MCP release serves them. Neither is
+ *   on the ask list: the check only reads, and the write changes nothing a network sees (social_update_post, which
+ *   changes far more, does not ask either). Release step, after the MCP deploy: regenerate the index and the
+ *   read-only list from the live server (the check joins the read-only list, the write does not), then delete these
+ *   entries.
+ *     SOCIAL-STRATEGY     social_post_strategy_check, social_post_strategy_update.
  */
 const SEO_SINCE = '2026-08-30';
 const seo = (batch) => ({ since: SEO_SINCE, batch });
@@ -871,4 +881,9 @@ export const PENDING_TOOLS = new Map([
   ['project_vcs_temp_env_delete', { since: '2026-11-13', batch: 'TEMP-ENV-1' }],
   ['project_vcs_temp_env_request_dismiss', { since: '2026-11-13', batch: 'TEMP-ENV-1' }],
   ['project_vcs_temp_env_open', { since: '2026-11-13', batch: 'TEMP-ENV-1' }],
+  // SOCIAL-STRATEGY (2026-11-14): the strategy check and the strategy write, named by the social texts before the MCP
+  // release serves them. Delete both once the tool index is regenerated after that release (the tool-names test
+  // forces the cleanup).
+  ['social_post_strategy_check', { since: '2026-11-14', batch: 'SOCIAL-STRATEGY' }],
+  ['social_post_strategy_update', { since: '2026-11-14', batch: 'SOCIAL-STRATEGY' }],
 ]);

@@ -18,7 +18,13 @@ opinionated on purpose.
 
 3. **Audit before you touch it**, in this order, reporting as you go:
    - `customer_journey_stage_list` - every stage must have a `stage_id`. A null one is
-     invisible to every tool that addresses stages by id; repair it first.
+     invisible to every tool that addresses stages by id; repair it first. Each stage also
+     carries `awareness`, its step of the awareness ladder (`unaware`, `problem_aware`,
+     `solution_aware`, `product_aware`, `most_aware` or `customer`, the app's "Doesn't see
+     the problem yet" through "Already a customer"), and `awareness_source`: `template` (the
+     journey's template set it), `person` (a person chose it) or `guess` (Hiveku's reading
+     of the stage's name and place). Name every `guess` in the audit and ask the person
+     which step that stage is; the content written for a stage follows its step.
    - `customer_journey_avatar_list` - is a persona linked, and the right one? No persona
      means the map is for nobody. Link with `customer_journey_avatar_link`.
    - `customer_journey_stage_assets_list` - the coverage map. Linked assets are coverage,
@@ -56,6 +62,11 @@ Rules for this command:
   checkpoints keyed to ids that differ.
 - **Edit one stage at a time** with `customer_journey_stage_update`, not a whole-blob
   `customer_journey_update`.
+- **A stage's step is the person's to set.** When the person says which step a stage is,
+  `customer_journey_stage_update({ journey_id, stage_id, awareness })` stores it as theirs
+  (`awareness_source: person`), over the template's step and Hiveku's guess; `awareness:
+  null` clears it back to Hiveku's guess, and any other value is a 400
+  `invalid_awareness`. Never set it from your own reading of the stage.
 - **This command writes briefs. It does not produce assets.** Production is a separate,
   confirmed act through the owning department.
 - **On a thin journey, thinness IS the finding.** Report it plainly rather than filling the
