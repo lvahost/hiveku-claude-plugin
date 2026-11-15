@@ -175,6 +175,7 @@ test('1. every drafting command runs the check before its dry run, fixes the fix
   const post = fold(read('commands/social-post.md'));
   const stop = post.slice(post.indexOf('5. STOP'), post.indexOf('6. Finish'));
   assert.match(stop, /`ask` item as a question/, '/hiveku:social-post shows each ask item at its STOP');
+  assert.match(stop, /after any change to the copy or to what the post is for, run `social_post_strategy_check` again with its `post_id`/, '/hiveku:social-post checks a saved draft again after it changes');
   const plan = fold(read('commands/social-plan.md'));
   const step4 = plan.slice(plan.indexOf('4. Present the week'), plan.indexOf('5. Finish'));
   assert.ok(step4.indexOf(CHECK) >= 0 && step4.indexOf(CHECK) < step4.indexOf('`social_post_validate` with the draft\'s body'), '/hiveku:social-plan checks each post again before its scheduling update');
