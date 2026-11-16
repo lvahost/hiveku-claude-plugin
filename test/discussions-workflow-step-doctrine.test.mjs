@@ -112,6 +112,8 @@ test('node-rail says how Create a channel and Add people to a channel are set up
     "`people` (up to 50 user ids or teammates' emails)",
     '`project_id` (a website, from `site-options`)',
     "`ifTaken`: `'use'`, the default, takes the channel with that name when there is one and adds the people to it, and `'stop'` stops the step",
+    // A private channel is taken only when this workflow made it: a name a variable fills in never reaches the owner's others.
+    'for a private channel the one that is taken is the one this workflow made for that name (a first run makes it, a later run finds it), never one of the owner\'s other private channels, even when a variable fills in the name',
     'a channel with that name that was archived stops it either way',
     "A public channel starts the account's `discussionCreatedTrigger` workflows like any new channel",
     '`created`, `thread_id`, `name` ("#acme", or "a private channel"), `private`, `link`, `added` and `already_in` (each a list of `{ user_id, name }`)',
@@ -136,6 +138,8 @@ test('node-rail says who may set which, the wider owner rule, and how the owner 
   const p = paragraphFrom(read(NODE_RAIL), 'Who may set which:');
   for (const part of [
     'anyone who may edit workflows sets a post in a public channel, a public channel to make, or people to add to a public channel',
+    // The owner's role is not stood in for: only a missing owner is.
+    "with no owner on the team an account owner's access stands in for a public channel, and the run log says so, but an owner on the team whose role may not make channels or add people is refused",
     "Only the workflow's owner adds or changes a step that messages a teammate, a group or yourself, posts into a private channel or a channel shared in, or makes or fills a private channel",
     // The whole workflow is the owner's while it holds such a step, not only that step (the server's gate).
     'while a workflow holds such a step only its owner saves, renames, restores or changes any of it, or runs that step for real; anyone else gets 403 `discussions_owner_only`',
@@ -171,7 +175,7 @@ test('node-rail files the three steps under team notifications, and the collabor
   // The two reads, with their fields and the read permission they ask for.
   assert.match(collab, /`discussionsList` \(List channels: `search`, `project_id`, `archived` of `'exclude'`, the default, `'include'` or `'only'`, and `limit`, 20 unless set, at most 50\)/);
   assert.match(collab, /`discussionsGetThread` \(Read a channel: `threadId`, and `limit`, how many of its newest messages, 20 unless set, at most 100; newest first\)/);
-  assert.match(collab, /The two Discussions reads take channels only, never a direct or group message or a private channel; saving, switching on, testing or running a workflow that holds either needs Discussions read, and the run's step outputs show only to people who may read Discussions\./);
+  assert.match(collab, /The two Discussions reads take channels only, never a direct or group message, a private channel or an old Account Only channel \(kept from Hiveku's own team\); saving, switching on, testing or running a workflow that holds either needs Discussions read, and the run's step outputs show only to people who may read Discussions\./);
   assert.match(collab, /Post in Discussions, Create a channel and Add people to a channel \(`discussionsAddMessage`, `discussionsCreate`, `discussionsAddPeople`\) are team notifications: see 6\.2\./);
 });
 

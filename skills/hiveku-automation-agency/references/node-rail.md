@@ -1391,8 +1391,10 @@ characters once filled in), `description`, `private` (true or false, or a variab
 variable, counts as a private channel for the owner's rule below), `people` (up to 50 user ids
 or teammates' emails), `project_id` (a website, from `site-options`) and
 `ifTaken`: `'use'`, the default, takes the channel with that name when there is one and adds the
-people to it, and `'stop'` stops the step; a channel with that name that was archived stops it
-either way. A public channel starts the account's `discussionCreatedTrigger` workflows like any
+people to it, and `'stop'` stops the step; for a private channel the one that is taken is the
+one this workflow made for that name (a first run makes it, a later run finds it), never one of
+the owner's other private channels, even when a variable fills in the name; a channel with that
+name that was archived stops it either way. A public channel starts the account's `discussionCreatedTrigger` workflows like any
 new channel, carrying this run's chain, so the cascade guard counts it. It answers `created`,
 `thread_id`, `name` ("#acme", or "a private channel"), `private`, `link`, `added` and
 `already_in` (each a list of `{ user_id, name }`). A later step reaches the new channel with
@@ -1407,7 +1409,10 @@ workflow's owner. Someone already in the channel is listed in `already_in`, the 
 it also answers `thread_id`, `name` and `link`.
 
 Who may set which: anyone who may edit workflows sets a post in a public channel, a public
-channel to make, or people to add to a public channel. Only the workflow's owner adds or changes
+channel to make, or people to add to a public channel. The owner's role still has to allow it:
+with no owner on the team an account owner's access stands in for a public channel, and the run
+log says so, but an owner on the team whose role may not make channels or add people is refused.
+Only the workflow's owner adds or changes
 a step that messages a teammate, a group or yourself, posts into a private channel or a channel
 shared in, or makes or fills a private channel, and while a workflow holds such a step only its
 owner saves, renames, restores or changes any of it, or runs that step for real; anyone else
@@ -1656,9 +1661,10 @@ The last three are read-only and exist to be fed into an `aiAgent` prompt.
 `supabaseAuthUserUpdate`, `supabaseAuthUsersList`, `supabaseAuthUserGenerateLink`,
 `supabaseEdgeFunctionInvoke`, `supabaseStorageObjectUpload`, `supabaseStorageObjectSignedUrl`
 ( the URL is a bearer credential and is withheld from the run output unless you opt in).
-The two Discussions reads take channels only, never a direct or group message or a private
-channel; saving, switching on, testing or running a workflow that holds either needs Discussions
-read, and the run's step outputs show only to people who may read Discussions. Post in
+The two Discussions reads take channels only, never a direct or group message, a private
+channel or an old Account Only channel (kept from Hiveku's own team); saving, switching on, testing
+or running a workflow that holds either needs Discussions read, and the run's step outputs show
+only to people who may read Discussions. Post in
 Discussions, Create a channel and Add people to a channel (`discussionsAddMessage`,
 `discussionsCreate`, `discussionsAddPeople`) are team notifications: see 6.2.
 
