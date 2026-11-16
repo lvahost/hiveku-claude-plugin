@@ -1,0 +1,255 @@
+{
+  "unaware": {
+    "step": "unaware",
+    "words": "Doesn't see the problem yet",
+    "job": "Name the problem in the reader's own words before they have named it",
+    "openings": [
+      {
+        "slug": "unanswerable-question",
+        "name": "Unanswerable question",
+        "definition": "A question the reader cannot answer and wants to."
+      },
+      {
+        "slug": "persona-callout",
+        "name": "Persona callout",
+        "definition": "Names the reader by situation, not demographic."
+      },
+      {
+        "slug": "curiosity-gap",
+        "name": "Curiosity gap",
+        "definition": "Promises a payoff and names it."
+      },
+      {
+        "slug": "in-medias-res",
+        "name": "In medias res",
+        "definition": "Drops into the middle of a story."
+      },
+      {
+        "slug": "definition-reframe",
+        "name": "Definition reframe",
+        "definition": "Redefines the thing the reader thinks they are buying."
+      }
+    ],
+    "formats": [
+      "Story",
+      "Behind the scenes",
+      "Myth and truth",
+      "Short video"
+    ],
+    "asks": [
+      "Follow",
+      "Save"
+    ],
+    "avoid": [
+      "A pitch",
+      "Prices",
+      "Book now"
+    ]
+  },
+  "problem_aware": {
+    "step": "problem_aware",
+    "words": "Feels the problem",
+    "job": "Show the problem is solvable and what waiting costs",
+    "openings": [
+      {
+        "slug": "contrarian",
+        "name": "Contrarian",
+        "definition": "Reverses a belief the reader holds."
+      },
+      {
+        "slug": "mistake",
+        "name": "Mistake",
+        "definition": "A confession, or the one error everyone makes."
+      },
+      {
+        "slug": "curiosity-gap",
+        "name": "Curiosity gap",
+        "definition": "Promises a payoff and names it."
+      },
+      {
+        "slug": "objection-first",
+        "name": "Objection first",
+        "definition": "Opens with the reader's own objection."
+      },
+      {
+        "slug": "myth-truth",
+        "name": "Myth and truth",
+        "definition": "Names a myth and replaces it."
+      }
+    ],
+    "formats": [
+      "Checklist",
+      "Teardown",
+      "Carousel",
+      "List"
+    ],
+    "asks": [
+      "Save",
+      "Comment",
+      "Get the free guide"
+    ],
+    "avoid": [
+      "Selling",
+      "Feature lists"
+    ]
+  },
+  "solution_aware": {
+    "step": "solution_aware",
+    "words": "Weighing kinds of fix",
+    "job": "Prove this approach beats the alternatives the reader is weighing",
+    "openings": [
+      {
+        "slug": "specific-number",
+        "name": "Specific number",
+        "definition": "A real figure from account data leads the line."
+      },
+      {
+        "slug": "curiosity-gap",
+        "name": "Curiosity gap",
+        "definition": "Promises a payoff and names it."
+      },
+      {
+        "slug": "hot-take",
+        "name": "Hot take",
+        "definition": "A defensible opinion stated flat."
+      },
+      {
+        "slug": "list-promise",
+        "name": "List promise",
+        "definition": "A count and a payoff."
+      }
+    ],
+    "formats": [
+      "Comparison",
+      "Data point",
+      "List",
+      "Point of view"
+    ],
+    "asks": [
+      "Compare",
+      "Read",
+      "Watch"
+    ],
+    "avoid": [
+      "\"We're the best\" with nothing behind it"
+    ]
+  },
+  "product_aware": {
+    "step": "product_aware",
+    "words": "Weighing you",
+    "job": "Remove the last objections to choosing us",
+    "openings": [
+      {
+        "slug": "specific-number",
+        "name": "Specific number",
+        "definition": "A real figure from account data leads the line."
+      },
+      {
+        "slug": "before-after",
+        "name": "Before and after",
+        "definition": "The transformation snapshot: a real before, a real after."
+      },
+      {
+        "slug": "curiosity-gap",
+        "name": "Curiosity gap",
+        "definition": "Promises a payoff and names it."
+      },
+      {
+        "slug": "objection-first",
+        "name": "Objection first",
+        "definition": "Opens with the reader's own objection."
+      },
+      {
+        "slug": "customer-quote",
+        "name": "Customer quote",
+        "definition": "The customer's own words, verbatim, with permission."
+      },
+      {
+        "slug": "proof-teaser",
+        "name": "Proof teaser",
+        "definition": "The result before the method."
+      }
+    ],
+    "formats": [
+      "Three-line case study",
+      "Real-photo before and after",
+      "Quote card",
+      "Objection answer",
+      "FAQ"
+    ],
+    "asks": [
+      "See the offer",
+      "Ask a question",
+      "Book a demo"
+    ],
+    "avoid": [
+      "Invented befores",
+      "Paraphrased quotes"
+    ]
+  },
+  "most_aware": {
+    "step": "most_aware",
+    "words": "Ready to act",
+    "job": "Make acting now the obvious move",
+    "openings": [
+      {
+        "slug": "specific-number",
+        "name": "Specific number",
+        "definition": "A real figure from account data leads the line."
+      },
+      {
+        "slug": "curiosity-gap",
+        "name": "Curiosity gap",
+        "definition": "Promises a payoff and names it."
+      },
+      {
+        "slug": "timely",
+        "name": "Timely",
+        "definition": "Tied to a date the reader is watching."
+      }
+    ],
+    "formats": [
+      "Offer with real scarcity",
+      "FAQ",
+      "Behind the scenes"
+    ],
+    "asks": [
+      "Book, buy or call, in your own button words"
+    ],
+    "avoid": [
+      "Fake urgency",
+      "More teaching"
+    ]
+  },
+  "customer": {
+    "step": "customer",
+    "words": "Already a customer",
+    "job": "Keep them, and earn the review and the referral",
+    "openings": [
+      {
+        "slug": "in-medias-res",
+        "name": "In medias res",
+        "definition": "Drops into the middle of a story."
+      },
+      {
+        "slug": "customer-quote",
+        "name": "Customer quote",
+        "definition": "The customer's own words, verbatim, with permission."
+      }
+    ],
+    "formats": [
+      "Customer story, with permission",
+      "How-to tip",
+      "Milestone"
+    ],
+    "asks": [
+      "Leave a review",
+      "Refer a friend",
+      "Share"
+    ],
+    "avoid": [
+      "Selling again straight away",
+      "Private details"
+    ]
+  }
+}

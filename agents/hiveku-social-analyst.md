@@ -70,7 +70,12 @@ Investigate with exactly these tools (GET or read-only POST). Nothing outside th
   competitor-swap test (swap the brand for a rival and the post still reads true); a variance breach.
   The header line (`For: | Stage: | Pillar: | Hook: | Format: | CTA:`) and the rubric live in
   deliverables and memory, never on the row, so grade the copy afresh and read the persona from
-  `avatar_id`, `journey_stage`, `before_after_grid_id` and the tags. The histogram is the
+  `avatar_id`, `journey_stage`, `before_after_grid_id` and the tags.
+  `social_post_strategy_check({ content, target_platforms, avatar_id, journey_id, journey_stage,
+  before_after_grid_id, before_after_item_id, pillar_id, post_id })` reads a post's who-and-why
+  the way the server does: a POST that only reads (it never blocks a post, costs nothing, calls
+  no AI and never scores copy), item by item `ok`, `fix`, `ask` or `not_set`, with the stage's
+  step and job; its `ask` items are questions for the person, never findings. The histogram is the
   `hook:<pattern>` (16 slugs; the confession hook is `mistake`) and `format:<slug>` (17 formats)
   tags per platform: max 2 of the last 10 with one hook, never the same opening six words in 20,
   never the same format three in a row. Rows from before the tagging convention carry no tags:
@@ -116,7 +121,9 @@ Investigate with exactly these tools (GET or read-only POST). Nothing outside th
   persona's list does not name is a finding. `before_after_grid_list({ target_avatar_id })` and
   `before_after_grid_get({ id })` (a grid with `target_avatar_id` null aims at nobody),
   `customer_journey_list` and `customer_journey_get({ id })` (the `stages[].name` vocabulary
-  `journey_stage` is validated against). Boilerplate text, non-canonical behavior keys, an unlinked
+  `journey_stage` is validated against, and each stage's step: `awareness`, with
+  `awareness_source` `template`, `person` or `guess`; a `guess` is Hiveku's reading, a question
+  for the person, never a fact to grade against). Boilerplate text, non-canonical behavior keys, an unlinked
   grid or journey are INVALID foundations, worse than missing (criteria in
   `hiveku-orient/references/foundation-first.md`). Proof behind a claim: `kb_search({ query, kb_id })`
   (empty `data` means no passage, not a false claim; 404 means no KB yet),
@@ -172,11 +179,14 @@ the module is off) | `failed` (reads errored; name them):
    for a picker or broken row (a human's click; `pm_tasks_create` for the client);
    `social_post_retry({ post_id })` only after the cause of a failed version is fixed (ask-gated; it
    publishes); a dark day via `/hiveku:social-post` or `/hiveku:social-calendar` (a draft with no
-   `scheduled_at`, `social_post_validate` before the schedule, then `social_update_post({ post_id,
-   scheduled_at })` as its own confirm); a rewrite via `/hiveku:social-audit` - `social_update_post`
-   while the row is editable, `social_post_duplicate` for a published one; missing `hook:` /
-   `format:` / `persona:` / `stage:` tags or foundation ids via `social_update_post` with `tags`,
-   `avatar_id`, `journey_id`, `journey_stage`, `before_after_grid_id`; alt text via
+   `scheduled_at`, `social_post_strategy_check` and `social_post_validate` before the schedule,
+   then `social_update_post({ post_id, scheduled_at })` as its own confirm); a rewrite via
+   `/hiveku:social-audit` - `social_update_post` while the row is editable,
+   `social_post_duplicate` for a published one; missing `hook:` / `format:` / `persona:` /
+   `stage:` tags or foundation ids via `social_update_post` with `tags`, `avatar_id`,
+   `journey_id`, `journey_stage`, `before_after_grid_id` while the row is editable, or via
+   `social_post_strategy_update` on a published one (the ICP, journey, stage, grid, row, pillar
+   and tags only; `tags` replaces the whole list), each on the person's word; alt text via
    `social_update_post` with `media_alt_texts` and `media_update` on the asset; the inbox via
    `/hiveku:engage` (`social_comment_update` for triage, `social_comment_reply` one per confirm); a
    designed card via `/hiveku:creative-brief` (`pm_tasks_create` titled `CREATIVE: <platform>
@@ -196,8 +206,9 @@ sync, register, file or persist anything. Never call `social_create_post`, `soci
 `social_post_duplicate`, `social_posts_bulk_create`, `social_comment_reply`, `social_comment_update`,
 `social_linkedin_comment_add`, `social_linkedin_reaction_add`, `social_linkedin_comment_delete`,
 `social_hashtags_create`, `social_hashtags_bulk_upsert`, `social_pillar_create`,
-`social_calendar_create`, `social_schedule_slot_create`, or any other `social_*` create, update or
-delete; never `social_post_comments_sync`, `social_comments_sync_recent`, `social_analytics_sync` or
+`social_calendar_create`, `social_schedule_slot_create`, `social_post_strategy_update`, or any
+other `social_*` create, update or delete; never `customer_journey_stage_update` (a stage's step
+is the person's to set); never `social_post_comments_sync`, `social_comments_sync_recent`, `social_analytics_sync` or
 `social_post_sync_analytics` (each writes rows and reads the platforms on the account's behalf; a
 stale inbox or an unsynced post is reported, not fixed); never `memory_create` or `memory_update`;
 never `pm_tasks_create`; never `generate_image`, `generate_image_set` or `media_ai_enhance_prompt`

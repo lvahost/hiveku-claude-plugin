@@ -590,6 +590,18 @@
  *                         email_sequence_disconnect, email_topic_create, email_topic_update,
  *                         marketing_template_copy_to_account. Landed 2026-11-13 (MCP #550, live at bd36a92a8ed1; the
  *                         0.27.275 index carries all six); entries deleted.
+ *
+ *   Social strategy (2026-11-14): who a post is for and why. social_post_strategy_check (POST, read-only: it checks a
+ *   draft or a saved post item by item and writes nothing) and social_post_strategy_update (PATCH: the ICP, journey,
+ *   stage, grid, row, pillar and tags of any post, published included, and nothing else). The social skill, its
+ *   references, the social commands and the social analyst name both before the MCP release serves them. Neither is
+ *   on the ask list: the check only reads, and the write changes nothing a network sees (social_update_post, which
+ *   changes far more, does not ask either). Release step, after the MCP deploy: regenerate the index and the
+ *   read-only list from the live server (the check joins the read-only list, the write does not), then delete these
+ *   entries.
+ *     SOCIAL-STRATEGY     social_post_strategy_check, social_post_strategy_update. Landed 2026-11-15 (MCP #571, live
+ *                         at 7149d474ebf2; the 0.27.282 index carries both, the check on the read-only list and the
+ *                         write not); entries deleted.
  */
 const SEO_SINCE = '2026-08-30';
 const seo = (batch) => ({ since: SEO_SINCE, batch });
@@ -858,4 +870,6 @@ export const PENDING_TOOLS = new Map([
   ['outbound_lead_subsequence_push', { since: '2026-11-13', batch: 'BUCKET-C-OUTBOUND' }],
   ['outbound_blocklist_remove', { since: '2026-11-13', batch: 'BUCKET-C-OUTBOUND' }],
   ['outbound_campaign_email_accounts_detach', { since: '2026-11-13', batch: 'BUCKET-C-OUTBOUND' }],
+  // SOCIAL-STRATEGY (2026-11-15, MCP #571, served since 2026-11-15): social_post_strategy_check and
+  // social_post_strategy_update are served and indexed (the 0.27.282 index carries both). Entries deleted.
 ]);
