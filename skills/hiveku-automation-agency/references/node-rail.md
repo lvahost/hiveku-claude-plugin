@@ -1359,30 +1359,70 @@ everything phone/SMS (sends, caps, opt-outs, 10DLC readiness, the STOP-suppressi
 trap) is the **hiveku-phone-agency** skill - load it before wiring an `sms` or voice node.
 
 **Team notifications**: `discussionsAddMessage` (Post in Discussions, the team chat inside
-Hiveku), `slackNotification`, `discordNotification`, `teamsNotification`, `pushNotification`.
+Hiveku), `discussionsCreate` (Create a channel), `discussionsAddPeople` (Add people to a
+channel), `slackNotification`, `discordNotification`, `teamsNotification`, `pushNotification`.
 
 Post in Discussions posts as the workflow (its name, with an Automation tag), sent with the
-access of the workflow's owner. Its `data.config` takes `postTo` (`'channel'`, the default, or
-`'person'`), then `threadId` (a channel, from `workflow_field_options` with
-`discussion-channel-options`; `shared_with` names any other workspace that reads it) or `userId`
-(a teammate, from `team-member-options`, or a teammate's email: the post goes to the direct
-message between the owner and them), `body` (the words, with `{{...}}`; an `@Name` typed there
-mentions that person, and `@here` or `@channel` tell a channel at most once every 10 minutes),
-`mentionIds` (up to 20 people) and `replyTo` (the `message_id` of an earlier post in the same
-conversation). A name a variable fills in mentions nobody. Past 60 posts an hour in one
-conversation, or 300 in all, it posts nothing, answers `posted: false` with
-`skipped: 'hourly_limit'`, and the run goes on. Only the workflow's owner adds or changes a step
-that posts to a teammate or into a private channel, and while a workflow holds such a step only
-its owner saves, renames, restores or changes any of it, or runs that step for real; anyone else
-gets 403 `discussions_owner_only`, whose words say who can. Switching it on or off, pausing it,
-testing it, copying it and deleting it stay open to anyone who may manage it. `workflow_get` and
-`workflow_list` show the
-owner, and `workflow_update({ id, take_ownership: true })`, sent on its own, makes the person
-behind the key the owner (an account owner or admin may take any workflow, anyone else one with
-no owner or whose owner left the team). Ask that person first: the workflow's posts then go out
-with their access. In `workflow_test` it posts nothing and says what it would have posted
-("Would post in #sales as Lead alerts: ..."). Its node's `hint` in `workflow_node_types_list`
-says the rest.
+access of the workflow's owner. Its `data.config` takes `postTo` (`'channel'`, the default,
+`'person'`, `'group'` or `'yourself'`) and, with it, `threadId` for a channel, `userId` for a
+person or `userIds` for a group; `'yourself'` takes none. `threadId` is a channel from
+`workflow_field_options` with `discussion-channel-options`: each option says its `kind`
+(`channel` or `shared_in`), `shared_with` (any other workspace that reads it) and `shared_from`
+(the workspace a shared-in channel comes from). `userId` is a teammate, from
+`team-member-options`, or a teammate's email: the post goes to the direct message between the
+owner and them (the owner's own id or email means the owner's own conversation). `userIds` is 2
+to 20 teammates besides the owner, as ids or emails: the post goes to the group of exactly them
+and the owner, made on the first post and used again after (someone who leaves the group is in
+the next one this workflow makes). `'yourself'` posts in the owner's own
+conversation, where the owner is told and the post stays unread until they open it. `body` is
+the words, with `{{...}}`; an `@Name` typed there mentions that person, and `@here` or
+`@channel` tell a channel at most once every 10 minutes. `mentionIds` (up to 20 people) are
+mentioned too and named at the end of the message; in a direct message, a group, a private
+channel or the owner's own conversation, only people in it are. `replyTo` (the `message_id` of
+an earlier post in the same conversation). A name a variable fills in mentions nobody. Past 60
+posts an hour in one conversation, or 300 in all, it posts nothing, answers `posted: false`
+with `skipped: 'hourly_limit'`, and the run goes on. It answers `posted`, `message_id`,
+`thread_id`, `conversation` (`'channel'`, `'direct'`, `'group'` or `'self'`), `name`, `link` and
+`posted_at`.
+
+Create a channel (`discussionsCreate`) makes a channel as the workflow's owner, with their
+access. Its `data.config` takes `name` (required; a leading `#` is dropped; at most 500
+characters once filled in), `description`, `private` (true or false, or a variable), `people`
+(up to 50 user ids or teammates' emails), `project_id` (a website, from `site-options`) and
+`ifTaken`: `'use'`, the default, takes the channel with that name when there is one and adds the
+people to it, and `'stop'` stops the step; a channel with that name that was archived stops it
+either way. A public channel starts the account's `discussionCreatedTrigger` workflows like any
+new channel, carrying this run's chain, so the cascade guard counts it. It answers `created`,
+`thread_id`, `name` ("#acme", or "a private channel"), `private`, `link`, `added` and
+`already_in` (each a list of `{ user_id, name }`). A later step reaches the new channel with
+`{{<createId>.thread_id}}`: that is how "deal won: make #acme, add the team and post there" is
+wired, as steps one after another, never as siblings.
+
+Add people to a channel (`discussionsAddPeople`) adds `people` (1 to 50 user ids or teammates'
+emails, all on the team: when one is not, nobody is added) to `threadId`, a channel of this
+workspace from `discussion-channel-options` (kind `channel`; never a direct or group message, an
+archived channel or one shared in), as the workflow's owner. Someone already in the channel is
+listed in `already_in`, the rest in `added`; it also answers `thread_id`, `name` and `link`.
+
+Who may set which: anyone who may edit workflows sets a post in a public channel, a public
+channel to make, or people to add to a public channel. Only the workflow's owner adds or changes
+a step that messages a teammate, a group or yourself, posts into a private channel or a channel
+shared in, or makes or fills a private channel, and while a workflow holds such a step only its
+owner saves, renames, restores or changes any of it, or runs that step for real; anyone else
+gets 403 `discussions_owner_only`, whose words say who can. A channel shared in has to be picked
+in the step, never named by a variable. A private channel has to be picked too, except in a
+workflow that holds a step only its owner sets (making a private channel is one), where a
+variable such as `{{<createId>.thread_id}}` may reach it. A key's channel list never holds a
+private channel: the owner picks one in the app. Switching a workflow on or off, pausing it,
+testing it, simulating it, copying it and deleting it stay open to anyone who may manage it.
+`workflow_get` and `workflow_list` show the owner, and
+`workflow_update({ id, take_ownership: true })`, sent on its own, makes the person behind the
+key the owner (an account owner or admin may take any workflow, anyone else one with no owner
+or whose owner left the team). Ask that person first: the workflow's posts, channels and added
+people then go out with their access. In `workflow_test` these steps post, make and add nothing
+and say what they would have done ("Would post in #sales as Lead alerts: ...", "Would make
+#acme.", "Would add ... to #acme"). Each node's `hint` in `workflow_node_types_list` says the
+rest.
 
 **Helpdesk**: `helpdeskCreateTicket` (lazy-creates the contact from an email alone),
 `helpdeskSendReply` (customer-visible), `helpdeskAddInternalNote` (never sent to the
@@ -1607,13 +1647,18 @@ The last three are read-only and exist to be fed into an `aiAgent` prompt.
 **Collaboration and infrastructure**: `hiveboardCreate`, `hiveboardGet`, `hiveboardList`,
 `hiveboardElementCreate`, `hiveboardElementsBulkCreate` (up to 200 elements per call),
 `hiveboardSitemapScaffold` (a page tree as labelled frames joined by arrows),
-`hiveboardDuplicate`, `discussionsList`, `discussionsGetThread`, `discussionsCreate` (it cannot
-run yet: a workflow cannot start a Discussions channel, so the step stops with an error),
-`discussionCreatedTrigger`, `supabaseAuthUserCreate`,
+`hiveboardDuplicate`, `discussionsList` (List channels: `search`, `project_id`, `archived` of
+`'exclude'`, the default, `'include'` or `'only'`, and `limit`, 20 unless set, at most 50),
+`discussionsGetThread` (Read a channel: `threadId`, and `limit`, how many of its newest messages,
+20 unless set, at most 100; newest first), `discussionCreatedTrigger`, `supabaseAuthUserCreate`,
 `supabaseAuthUserUpdate`, `supabaseAuthUsersList`, `supabaseAuthUserGenerateLink`,
 `supabaseEdgeFunctionInvoke`, `supabaseStorageObjectUpload`, `supabaseStorageObjectSignedUrl`
 ( the URL is a bearer credential and is withheld from the run output unless you opt in).
-Post in Discussions (`discussionsAddMessage`) is a team notification: see 6.2.
+The two Discussions reads take channels only, never a direct or group message or a private
+channel; saving, switching on, testing or running a workflow that holds either needs Discussions
+read, and the run's step outputs show only to people who may read Discussions. Post in
+Discussions, Create a channel and Add people to a channel (`discussionsAddMessage`,
+`discussionsCreate`, `discussionsAddPeople`) are team notifications: see 6.2.
 
 ---
 

@@ -188,7 +188,8 @@ Dry runs are free. Detail: `references/node-rail.md` Part 7.
 way to check a client's automation before it can reach their customers.
 
 **What it skips** (no real side effect fires): outbound email/SMS/Slack/Discord,
-posts in Discussions (Post in Discussions says what it would have posted), every CRM
+posts in Discussions, channels made and people added to them (Post in Discussions, Create a
+channel and Add people to a channel say what they would have done), every CRM
 write, external HTTP `apiCall` (mocked), helpdesk creates and replies, PM
 task writes, database writes, deploys and GitHub pushes, project file saves, and - as
 of 2026-08-30 - **`aiAgent` and the sub-agent role nodes** (`blogWriter`,
