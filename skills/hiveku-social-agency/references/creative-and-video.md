@@ -115,8 +115,8 @@ Rules:
   `social_post_validate` reports the same problems (`media.missing`, `media.warnings`)
   without writing anything - run it before a week of drafts.
 - Platform media caps are platform errors: Instagram requires media on every post and
-  takes 10 images; LinkedIn 9 images or one document; X 4 images; GBP exactly one
-  image and no video; TikTok video only (images are ignored, no video is an error).
+  takes up to 20 images as a carousel (or one video, a Reel); Facebook 10 images;
+  LinkedIn 9 images or one document; X 4 images; GBP exactly one image and no video; TikTok video only (images are ignored, no video is an error).
   On a draft the errors are echoed on the 201; on a scheduled post they are a 400
   (references/publishing-approval-mechanics.md).
 - A post at 'publishing' or 'published' is edit-locked, media included.
