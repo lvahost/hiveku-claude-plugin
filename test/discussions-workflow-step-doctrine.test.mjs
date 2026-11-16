@@ -108,7 +108,7 @@ test('node-rail says how Create a channel and Add people to a channel are set up
   for (const part of [
     "makes a channel as the workflow's owner, with their access",
     '`name` (required; a leading `#` is dropped; at most 500 characters once filled in)',
-    '`private` (true or false, or a variable)',
+    "`private` (true or false, or a variable; true, or a variable, counts as a private channel for the owner's rule below)",
     "`people` (up to 50 user ids or teammates' emails)",
     '`project_id` (a website, from `site-options`)',
     "`ifTaken`: `'use'`, the default, takes the channel with that name when there is one and adds the people to it, and `'stop'` stops the step",
@@ -124,7 +124,7 @@ test('node-rail says how Create a channel and Add people to a channel are set up
   const add = paragraphFrom(read(NODE_RAIL), 'Add people to a channel (`discussionsAddPeople`) adds');
   for (const part of [
     "`people` (1 to 50 user ids or teammates' emails, all on the team: when one is not, nobody is added)",
-    '`threadId`, a channel of this workspace from `discussion-channel-options` (kind `channel`; never a direct or group message, an archived channel or one shared in)',
+    '`threadId`, a channel of this workspace (a public one from `discussion-channel-options`, kind `channel`, or a private one the owner is in; never a direct or group message, an archived channel or one shared in)',
     "as the workflow's owner",
     'Someone already in the channel is listed in `already_in`, the rest in `added`',
   ]) {
@@ -141,7 +141,7 @@ test('node-rail says who may set which, the wider owner rule, and how the owner 
     'while a workflow holds such a step only its owner saves, renames, restores or changes any of it, or runs that step for real; anyone else gets 403 `discussions_owner_only`',
     'A channel shared in has to be picked in the step, never named by a variable.',
     'except in a workflow that holds a step only its owner sets (making a private channel is one), where a variable such as `{{<createId>.thread_id}}` may reach it',
-    "A key's channel list never holds a private channel: the owner picks one in the app.",
+    'The channel list read through this connection never holds a private channel: the owner picks one in the app.',
     'Switching a workflow on or off, pausing it, testing it, simulating it, copying it and deleting it stay open to anyone who may manage it.',
     '`workflow_get` and `workflow_list` show the owner',
     '`workflow_update({ id, take_ownership: true })`, sent on its own, makes the person behind the key the owner',

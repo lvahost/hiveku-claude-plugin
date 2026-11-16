@@ -1387,8 +1387,9 @@ with `skipped: 'hourly_limit'`, and the run goes on. It answers `posted`, `messa
 
 Create a channel (`discussionsCreate`) makes a channel as the workflow's owner, with their
 access. Its `data.config` takes `name` (required; a leading `#` is dropped; at most 500
-characters once filled in), `description`, `private` (true or false, or a variable), `people`
-(up to 50 user ids or teammates' emails), `project_id` (a website, from `site-options`) and
+characters once filled in), `description`, `private` (true or false, or a variable; true, or a
+variable, counts as a private channel for the owner's rule below), `people` (up to 50 user ids
+or teammates' emails), `project_id` (a website, from `site-options`) and
 `ifTaken`: `'use'`, the default, takes the channel with that name when there is one and adds the
 people to it, and `'stop'` stops the step; a channel with that name that was archived stops it
 either way. A public channel starts the account's `discussionCreatedTrigger` workflows like any
@@ -1400,9 +1401,10 @@ wired, as steps one after another, never as siblings.
 
 Add people to a channel (`discussionsAddPeople`) adds `people` (1 to 50 user ids or teammates'
 emails, all on the team: when one is not, nobody is added) to `threadId`, a channel of this
-workspace from `discussion-channel-options` (kind `channel`; never a direct or group message, an
-archived channel or one shared in), as the workflow's owner. Someone already in the channel is
-listed in `already_in`, the rest in `added`; it also answers `thread_id`, `name` and `link`.
+workspace (a public one from `discussion-channel-options`, kind `channel`, or a private one the
+owner is in; never a direct or group message, an archived channel or one shared in), as the
+workflow's owner. Someone already in the channel is listed in `already_in`, the rest in `added`;
+it also answers `thread_id`, `name` and `link`.
 
 Who may set which: anyone who may edit workflows sets a post in a public channel, a public
 channel to make, or people to add to a public channel. Only the workflow's owner adds or changes
@@ -1412,10 +1414,10 @@ owner saves, renames, restores or changes any of it, or runs that step for real;
 gets 403 `discussions_owner_only`, whose words say who can. A channel shared in has to be picked
 in the step, never named by a variable. A private channel has to be picked too, except in a
 workflow that holds a step only its owner sets (making a private channel is one), where a
-variable such as `{{<createId>.thread_id}}` may reach it. A key's channel list never holds a
-private channel: the owner picks one in the app. Switching a workflow on or off, pausing it,
-testing it, simulating it, copying it and deleting it stay open to anyone who may manage it.
-`workflow_get` and `workflow_list` show the owner, and
+variable such as `{{<createId>.thread_id}}` may reach it. The channel list read through this
+connection never holds a private channel: the owner picks one in the app. Switching a workflow
+on or off, pausing it, testing it, simulating it, copying it and deleting it stay open to
+anyone who may manage it. `workflow_get` and `workflow_list` show the owner, and
 `workflow_update({ id, take_ownership: true })`, sent on its own, makes the person behind the
 key the owner (an account owner or admin may take any workflow, anyone else one with no owner
 or whose owner left the team). Ask that person first: the workflow's posts, channels and added
