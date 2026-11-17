@@ -293,8 +293,14 @@ both set `X-Robots-Tag: noindex, nofollow`), so it is a pattern the codebase alr
 Hiveku's hosting relies on the header too, on purpose:
 
 - **Development, staging and deploy-slot hosts** (`*-development.hiveku.com`,
-  `*-staging.hiveku.com`, `*.deployment.hiveku.com`) get `x-robots-tag: noindex, nofollow` from the
-  edge on every page, replacing whatever the site sends. Their HTML carries no robots meta tag.
+  `*-development.hiveku.dev`, `*-staging.hiveku.com`, `*-staging.hiveku.dev`,
+  `*.deployment.hiveku.com`) get `x-robots-tag: noindex, nofollow` from the edge on every page,
+  replacing whatever the site sends. Their HTML carries no robots meta tag. A Development or Staging
+  address ends in hiveku.com or hiveku.dev depending on whether that tier has moved, so take the
+  exact address from `deploy_get` or `project_get` (`tiers.development.url`, `tiers.staging.url`)
+  and never build it from a pattern. The old hiveku.com address of a tier that has moved only
+  redirects (a 308 that also sends `noindex`): it serves no page, so read the header on the address
+  the tool returned.
 - **Preview hosts** (`*.preview.hiveku.com`) get `noindex, nofollow, noarchive` from the preview
   router. Their `robots.txt` allows crawling deliberately, because a crawler can only obey a
   `noindex` it is allowed to fetch.
