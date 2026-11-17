@@ -1367,8 +1367,9 @@ access of the workflow's owner. Its `data.config` takes `postTo` (`'channel'`, t
 `'person'`, `'group'` or `'yourself'`) and, with it, `threadId` for a channel, `userId` for a
 person or `userIds` for a group; `'yourself'` takes none. `threadId` is a channel from
 `workflow_field_options` with `discussion-channel-options`: each option says its `kind`
-(`channel` or `shared_in`), `shared_with` (any other workspace that reads it) and `shared_from`
-(the workspace a shared-in channel comes from). `userId` is a teammate, from
+(`channel`, `shared_in`, or `account_only`, an old channel kept from Hiveku's own team, which
+only Post in Discussions takes), `shared_with` (any other workspace that reads it) and
+`shared_from` (the workspace a shared-in channel comes from). `userId` is a teammate, from
 `team-member-options`, or a teammate's email: the post goes to the direct message between the
 owner and them (the owner's own id or email means the owner's own conversation). `userIds` is 2
 to 20 teammates besides the owner, as ids or emails: the post goes to the group of exactly them

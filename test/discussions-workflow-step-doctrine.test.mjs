@@ -86,7 +86,7 @@ test('node-rail says how a Post in Discussions step is set up: its four targets,
     "`postTo` (`'channel'`, the default, `'person'`, `'group'` or `'yourself'`)",
     '`threadId` for a channel, `userId` for a person or `userIds` for a group; `\'yourself\'` takes none',
     // The channel list: what each option carries, in the words of the tool.
-    '`threadId` is a channel from `workflow_field_options` with `discussion-channel-options`: each option says its `kind` (`channel` or `shared_in`), `shared_with` (any other workspace that reads it) and `shared_from` (the workspace a shared-in channel comes from)',
+    '`threadId` is a channel from `workflow_field_options` with `discussion-channel-options`: each option says its `kind` (`channel`, `shared_in`, or `account_only`, an old channel kept from Hiveku\'s own team, which only Post in Discussions takes), `shared_with` (any other workspace that reads it) and `shared_from` (the workspace a shared-in channel comes from)',
     "`userId` is a teammate, from `team-member-options`, or a teammate's email: the post goes to the direct message between the owner and them (the owner's own id or email means the owner's own conversation)",
     '`userIds` is 2 to 20 teammates besides the owner, as ids or emails: the post goes to the group of exactly them and the owner, made on the first post and used again after (someone who leaves the group is in the next one this workflow makes)',
     "`'yourself'` posts in the owner's own conversation, where the owner is told and the post stays unread until they open it",
