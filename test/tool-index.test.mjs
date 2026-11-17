@@ -156,6 +156,20 @@ test('CORE_TOOLS holds the five callable on every profile', () => {
   }
 });
 
+test('HK-1866: About your business is listed up front, so ToolSearch finds it before any hiveku_find_tools search', () => {
+  // The source-of-truth rule and the orient skill tell every session to read it with account_memory_get, and an agent
+  // suggests a line with account_memory_append. Neither was in CORE_TOOLS, so "select:" found nothing in a bound session
+  // and About your business was read through account_context_get instead.
+  for (const n of ['account_memory_get', 'account_memory_append']) {
+    assert.ok(CORE_TOOLS.includes(n), `${n} must be advertised up front`);
+  }
+  // Listed only when the server offers them, like the rest: a key that cannot call one never has it advertised.
+  const offered = [{ name: 'account_memory_get' }, { name: 'account_memory_append' }, { name: 'crm_list_contacts' }];
+  assert.deepEqual(indexModeTools(offered).map((t) => t.name), [FIND_TOOL_NAME, 'account_memory_get', 'account_memory_append']);
+  assert.deepEqual(indexModeTools([{ name: 'account_memory_get' }]).map((t) => t.name), [FIND_TOOL_NAME, 'account_memory_get']);
+  assert.deepEqual(indexModeTools([{ name: 'crm_list_contacts' }]).map((t) => t.name), [FIND_TOOL_NAME]);
+});
+
 // ── 0.9.0: the discovery-to-call loop ──────────────────────────────────────
 // A client dispatches tool_use only for REGISTERED tools, so a found tool must
 // be PROMOTED into the advertised list or it is findable but uncallable. These
