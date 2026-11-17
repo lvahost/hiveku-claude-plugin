@@ -1398,7 +1398,9 @@ the owner's other private channels, even when a variable fills in the name; a ch
 name that was archived stops it either way. A public channel starts the account's `discussionCreatedTrigger` workflows like any
 new channel, carrying this run's chain, so the cascade guard counts it. It answers `created`,
 `thread_id`, `name` ("#acme", or "a private channel"), `private`, `link`, `added` and
-`already_in` (each a list of `{ user_id, name }`). A later step reaches the new channel with
+`already_in`: for a public channel each is a list of `{ user_id, name }`; for a private channel
+they are left out, so who is in it stays out of the run's results, and `added_count` and
+`already_in_count` say how many. A later step reaches the new channel with
 `{{<createId>.thread_id}}`: that is how "deal won: make #acme, add the team and post there" is
 wired, as steps one after another, never as siblings.
 
@@ -1406,8 +1408,10 @@ Add people to a channel (`discussionsAddPeople`) adds `people` (1 to 50 user ids
 emails, all on the team: when one is not, nobody is added) to `threadId`, a channel of this
 workspace (a public one from `discussion-channel-options`, kind `channel`, or a private one the
 owner is in; never a direct or group message, an archived channel or one shared in), as the
-workflow's owner. Someone already in the channel is listed in `already_in`, the rest in `added`;
-it also answers `thread_id`, `name` and `link`.
+workflow's owner. Someone already in the channel is listed in `already_in`, the rest in `added`
+(for a public channel each is a list of `{ user_id, name }`; for a private channel the two lists
+are left out, so who is in it stays out of the run's results, and `added_count` and
+`already_in_count` say how many); it also answers `thread_id`, `name` and `link`.
 
 Who may set which: anyone who may edit workflows sets a post in a public channel, a public
 channel to make, or people to add to a public channel. The owner's role still has to allow it:

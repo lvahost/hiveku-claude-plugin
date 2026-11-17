@@ -116,7 +116,9 @@ test('node-rail says how Create a channel and Add people to a channel are set up
     'for a private channel the one that is taken is the one this workflow made for that name (a first run makes it, a later run finds it), never one of the owner\'s other private channels, even when a variable fills in the name',
     'a channel with that name that was archived stops it either way',
     "A public channel starts the account's `discussionCreatedTrigger` workflows like any new channel",
-    '`created`, `thread_id`, `name` ("#acme", or "a private channel"), `private`, `link`, `added` and `already_in` (each a list of `{ user_id, name }`)',
+    '`created`, `thread_id`, `name` ("#acme", or "a private channel"), `private`, `link`, `added` and `already_in`',
+    // A public channel's lists name its people; a private channel's are left out and counted, so a run's results never say who is in it.
+    'for a public channel each is a list of `{ user_id, name }`; for a private channel they are left out, so who is in it stays out of the run\'s results, and `added_count` and `already_in_count` say how many',
     // The chain people ask for: a later step reads the new channel's id, as steps one after another.
     'A later step reaches the new channel with `{{<createId>.thread_id}}`',
     'as steps one after another, never as siblings',
@@ -128,7 +130,7 @@ test('node-rail says how Create a channel and Add people to a channel are set up
     "`people` (1 to 50 user ids or teammates' emails, all on the team: when one is not, nobody is added)",
     '`threadId`, a channel of this workspace (a public one from `discussion-channel-options`, kind `channel`, or a private one the owner is in; never a direct or group message, an archived channel or one shared in)',
     "as the workflow's owner",
-    'Someone already in the channel is listed in `already_in`, the rest in `added`',
+    'Someone already in the channel is listed in `already_in`, the rest in `added` (for a public channel each is a list of `{ user_id, name }`; for a private channel the two lists are left out, so who is in it stays out of the run\'s results, and `added_count` and `already_in_count` say how many); it also answers `thread_id`, `name` and `link`',
   ]) {
     assert.ok(add.includes(part), `node-rail's Add people paragraph is missing: ${part}`);
   }
