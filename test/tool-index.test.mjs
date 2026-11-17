@@ -250,25 +250,30 @@ test('a failed promotion says so instead of claiming the tools are loaded', () =
   assert.doesNotMatch(text, /have just been added to this session's tool list/i);
 });
 
-test('HK-1866: a failed promotion marks no match as NOT served and does not call the key read-only', () => {
-  // The list could not be read, so nothing is known about what the connection is served. Every match used to be tagged
-  // "NOT served to this connection ... naming it will not work" under a header that said the list was not refreshed, and
-  // the paragraph about a read-only key came with it, so a tool the key can call read as one it cannot.
-  const two = [
-    { name: 'crm_list_contacts', method: 'GET', description: 'x' },
-    { name: 'voice_call_place', method: 'POST', description: 'y' },
-  ];
-  const text = renderResults(two, 'contacts', { promoted: new Set(), promotionFailed: true });
+// The list could not be read, so nothing is known about what the connection is served. Every match used to be tagged
+// "NOT served to this connection ... naming it will not work" under a header that said the list was not refreshed, and
+// the paragraph about a read-only key came with it, so a tool the key can call read as one it cannot (HK-1866).
+const TWO = [
+  { name: 'crm_list_contacts', method: 'GET', description: 'x' },
+  { name: 'voice_call_place', method: 'POST', description: 'y' },
+];
+
+test('HK-1866: a failed promotion marks no match as NOT served', () => {
+  const text = renderResults(TWO, 'contacts', { promoted: new Set(), promotionFailed: true });
   assert.match(text, /could NOT be refreshed/i);
   assert.doesNotMatch(text, /NOT served to this connection/);
+  assert.doesNotMatch(text, /report that rather than retrying/);
+});
+
+test('HK-1866: a failed promotion does not call the key read-only, and a tool a read-only key cannot call still says so', () => {
+  const text = renderResults(TWO, 'contacts', { promoted: new Set(), promotionFailed: true });
   assert.doesNotMatch(text, /read-only/);
-  // A tool a read-only key cannot call is still said so, whether or not the list could be read.
-  const blocked = renderResults([{ ...two[1], blockedByScope: true }], 'call', { promoted: new Set(), promotionFailed: true });
+  const blocked = renderResults([{ ...TWO[1], blockedByScope: true }], 'call', { promoted: new Set(), promotionFailed: true });
   assert.match(blocked, /NOT callable with this read-only key/);
   assert.match(blocked, /read-only/);
 });
 
-test('HK-1866: a result says to run a tool through hiveku_batch when a direct call is refused, in the words a lookup uses', () => {
+test('HK-1866: a result for tools added to the list says to run one through hiveku_batch when a direct call is refused, in the words a lookup uses', () => {
   const one = [{ name: 'memory_delete', method: 'DELETE', description: 'x' }];
   const added = renderResults(one, 'memory delete', { promoted: new Set(['memory_delete']) });
   assert.ok(added.includes(noSuchToolFallback('<tool_name>')), added);
@@ -282,10 +287,17 @@ test('HK-1866: a result says to run a tool through hiveku_batch when a direct ca
     { listed: new Set(['memory_delete', 'hiveku_batch']), added: new Set(), findTool: FIND_TOOL_NAME },
   );
   assert.ok(facts.how_to_call.includes(noSuchToolFallback('memory_delete')), facts.how_to_call);
-  // A refresh that failed says it with "Meanwhile": nothing was added, so the batch is the way to call it now.
+});
+
+test('HK-1866: a result for a refresh that failed names the batch as the way to call a tool now', () => {
+  const one = [{ name: 'memory_delete', method: 'DELETE', description: 'x' }];
   const failed = renderResults(one, 'memory delete', { promoted: new Set(), promotionFailed: true });
   assert.ok(failed.includes(`Meanwhile, ${batchRoute('<tool_name>')}.`), failed);
-  // A tool this connection is not served cannot be run through the batch either: no way round is offered.
+});
+
+test('HK-1866: a tool this connection is not served gets no way round through the batch', () => {
+  // The batch runs only what the key can call, so a tool that is not served cannot be run through it either.
+  const one = [{ name: 'memory_delete', method: 'DELETE', description: 'x' }];
   const notServed = renderResults(one, 'memory delete', { promoted: new Set() });
   assert.match(notServed, /NOT served to this connection/);
   assert.doesNotMatch(notServed, /hiveku_batch/);

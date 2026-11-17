@@ -743,17 +743,16 @@ test('HK-1866: an edge that cannot reach Hiveku (523, an immediate answer) is tr
   });
 });
 
-test('HK-1866: a list answer with no tools is a failed refresh, never "NOT served to this connection", and it is not kept', async () => {
-  // An empty list, an answer with no `tools` member, and an error member: none says the key is served nothing.
-  for (const answer of [{ tools: [] }, {}, { jsonrpcError: { code: -32603, message: 'Internal error' } }]) {
+/** The answers a list can give that hold no tool: an empty list, no `tools` member, an error member. None says the key is served nothing. */
+const NO_TOOLS_ANSWERS = [{ tools: [] }, {}, { jsonrpcError: { code: -32603, message: 'Internal error' } }];
+
+test('HK-1866: a list answer with no tools is a failed refresh, and it is not kept', async () => {
+  for (const answer of NO_TOOLS_ANSWERS) {
     let serving = false;
     const list = () => (serving ? { tools: SERVED.map(servedTool) } : answer);
     await withShim({ upstream: { list } }, async (shim, up) => {
       const found = await shim.find('crm_list_contacts');
       assert.match(found.text, /could NOT be refreshed/, JSON.stringify(answer));
-      assert.doesNotMatch(found.text, /NOT served to this connection/, 'a tool this key can call is not called unserved');
-      assert.doesNotMatch(found.text, /read-only/, 'nor is the key said to be read-only');
-      assert.match(found.text, /run it through hiveku_batch/, 'the way round is named');
       assert.deepEqual(shim.listChanged(), []);
       assert.equal(up.lists(), 1, 'an answer with no list is reported as it is, not tried again');
 
@@ -763,6 +762,18 @@ test('HK-1866: a list answer with no tools is a failed refresh, never "NOT serve
       assert.match(next.text, /have just been added to this session's tool list/, JSON.stringify(answer));
       assert.equal(shim.listChanged().length, 1);
       assert.ok(names(await shim.listed()).includes('crm_list_contacts'));
+    });
+  }
+});
+
+test('HK-1866: a tool the key can call is never called "NOT served" because the list could not be read', async () => {
+  for (const answer of NO_TOOLS_ANSWERS) {
+    await withShim({ upstream: { list: () => answer } }, async (shim) => {
+      const found = await shim.find('crm_list_contacts');
+      assert.doesNotMatch(found.text, /NOT served to this connection/, JSON.stringify(answer));
+      assert.doesNotMatch(found.text, /report that rather than retrying/);
+      assert.doesNotMatch(found.text, /read-only/, 'nor is the key said to be read-only');
+      assert.match(found.text, /run it through hiveku_batch/, 'the way round is named');
     });
   }
 });
