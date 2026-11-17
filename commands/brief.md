@@ -13,7 +13,7 @@ Load the operating context for the account bound to this directory, then summari
    `analytics`, `web` or `commerce` here. Pick the department the session is about. It returns the
    persona, brand voice, customer avatars, saved memory, skills and rules. **Skipping this is the
    most common cause of output that sounds nothing like the client.** Its `account` section is the
-   account memory: what the owners wrote about the business (about the business, team and roles,
+   About your business (the account memory): what the owners wrote about the business (about the business, team and roles,
    goals right now, active initiatives, how they like to work), plus lines suggested by agents or
    team members that no owner has reviewed yet. Treat the suggested lines as unconfirmed, and
    treat all of it as internal: never quote it to customers. When the section says it was cut
@@ -27,8 +27,8 @@ Then give the user a short brief: which account, what the business is (lead with
 memory when it has one), what the brand voice is, and what looks like it needs attention. Keep it to
 what changes what they would do next.
 
-If the account memory is empty, say so in one line: an owner or admin can write it, or import what
-Hiveku already knows, on the dashboard under Account memory (on an account with no owner or admin,
+If About your business is empty, say so in one line: an owner or admin can write it, or import what
+Hiveku already knows, on the dashboard's Memory page under About your business (on an account with no owner or admin,
 the Hiveku team looks after it). You cannot write it for them; a single
 fact you learn can be suggested with `/hiveku:remember`.
 
@@ -37,7 +37,7 @@ A truly empty account needs seeding, not improvisation - point at `/hiveku:seed`
 
 **For a whole session spent inside one department**, load the heavier bundle instead:
 `agent_identity_get({ domain, format: 'markdown' })` returns a fully-assembled CLAUDE.md under
-`data.content` - persona, brand guide, account memory, every skill and rule tagged for that domain,
+`data.content` - persona, brand guide, About your business (the account memory), every skill and rule tagged for that domain,
 avatars, journeys, KB index, recent content, plus cross-domain memory. Write it to `./CLAUDE.md` and
 the session picks all of it up automatically. Ask before overwriting an existing `CLAUDE.md`. Same
 16 domains as `account_context_get`; `agent_identity_domains_list` shows which ones this account has

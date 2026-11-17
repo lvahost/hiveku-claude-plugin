@@ -50,6 +50,10 @@ again from Hiveku before you act on it. When `memory_log_add` is listed, record 
 line when you start a task for the person and a Done line when it ends. Save what you learned with
 the memory_* tools.
 
+- **"The account memory" means two things to people.** They say "the account memory" or "fill the memory" for the whole
+  Memory page, which holds About your business (the tools `account_memory_get` and `account_memory_append`; an
+  assistant can only suggest one line at a time) and each agent's Notes, Rules, Skills and Shortcuts (`memory_list`,
+  `memory_create`, `memory_update`; an assistant can write those). Say which part you mean, and do both.
 - **Hiveku's own rules come before memory.** `account_context_get` returns `platform_rules` on
   every domain: Hiveku's rules, the same for every account, beside the memory that says how this
   business works. Where the two disagree, follow the rule and tell the person why. Today they cover
