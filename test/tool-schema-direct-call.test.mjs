@@ -35,7 +35,12 @@
  *      was not sent it, not only the first time: the client's refresh can be
  *      lost (the bridge's own connect timeouts), and then the tool was found
  *      and listed but "No such tool available". A failed list fetch is tried
- *      once more, and not again after a rate limit.
+ *      once more when it failed fast (a connect timeout, an unreachable edge),
+ *      and not again after a rate limit, a timeout (a search must not wait twice
+ *      while Hiveku hangs) or the edge's own timeout. An answer with no list in it
+ *      (an error, an empty list) is a failed refresh too, never "NOT served", and
+ *      is not kept; a result says to run a tool through hiveku_batch when it is
+ *      not callable by its own name.
  *
  * Run: node --test test/tool-schema-direct-call.test.mjs
  */
@@ -54,7 +59,7 @@ import { bindingPathFor, writeBinding } from '../lib/binding.mjs';
 import { CORE_TOOLS, FIND_TOOL_NAME, findToolDefinition, indexModeTools } from '../lib/tool-index.mjs';
 import { ALWAYS_AVAILABLE, filterTools } from '../lib/tool-focus.mjs';
 import { decideForPayload, isAutoApprovable } from '../lib/tool-safety.mjs';
-import { directCallFacts, schemaReport, withDirectCallFacts } from '../lib/tool-schema-answer.mjs';
+import { batchRoute, directCallFacts, noSuchToolFallback, schemaReport, withDirectCallFacts } from '../lib/tool-schema-answer.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const ACCOUNT = '3f2504e0-4f89-11d3-9a0c-0305e82c3301';
@@ -146,7 +151,15 @@ function fakeUpstream({ list = () => ({ tools: SERVED.map(servedTool) }), call =
       });
     }
     if (message.method === 'notifications/initialized') return new Response(null, { status: 204 });
-    if (message.method === 'tools/list') return jsonResponse({ jsonrpc: '2.0', id: message.id, result: list() });
+    if (message.method === 'tools/list') {
+      const answer = list();
+      // A list that answers with a JSON-RPC error member instead of a result, as the server can (`{ jsonrpcError }`).
+      return jsonResponse(
+        answer?.jsonrpcError
+          ? { jsonrpc: '2.0', id: message.id, error: answer.jsonrpcError }
+          : { jsonrpc: '2.0', id: message.id, result: answer },
+      );
+    }
     if (message.method === 'tools/call') {
       const result = call
         ? call(message)
@@ -655,5 +668,113 @@ test('HK-1866: the answer to a lookup that named nothing is passed through untou
     assert.deepEqual(reply.line.msg.result, result);
     assert.equal(up.lists(), lists, 'no server list was read for an answer that names no tool');
     assert.deepEqual(shim.listChanged(), []);
+  });
+});
+
+/* ── 7b: what a refresh that fails slowly, or answers with nothing, does (HK-1866) ── */
+
+/** What Upstream.send reads as "Hiveku sent no response": the request's timer fired, so fetch rejects with an AbortError. */
+const abortError = () => Object.assign(new Error('This operation was aborted'), { name: 'AbortError' });
+
+/** A tools/list answered with this HTTP status and body, for every call; every other request goes to the standard fake. */
+function listAnsweredWith(status, body) {
+  const standard = globalThis.fetch;
+  const counted = { lists: 0 };
+  globalThis.fetch = async (url, init) => {
+    const message = JSON.parse(fetchBodyText(init));
+    if (message.method !== 'tools/list') return standard(url, init);
+    counted.lists += 1;
+    return new Response(typeof body === 'string' ? body : JSON.stringify({ jsonrpc: '2.0', id: message.id, ...body }), {
+      status,
+      headers: { 'content-type': 'application/json' },
+    });
+  };
+  return counted;
+}
+
+test('HK-1866: a timeout is not tried again: a search must not wait a second time while Hiveku hangs', async () => {
+  // Upstream list 1 is the search's own read, which times out; a second try would wait another PROTOCOL_TIMEOUT_MS.
+  const timesOutOnce = (() => {
+    let calls = 0;
+    return () => {
+      calls += 1;
+      if (calls === 1) throw abortError();
+      return { tools: SERVED.map(servedTool) };
+    };
+  })();
+  await withShim({ upstream: { list: timesOutOnce } }, async (shim, up) => {
+    const found = await shim.find('crm_list_contacts');
+    assert.equal(up.lists(), 1, 'one read, no second wait');
+    assert.match(found.text, /could NOT be refreshed/);
+    assert.deepEqual(shim.listChanged(), [], 'nothing was promoted');
+    // The next search reads the list afresh and, with Hiveku answering, promotes it.
+    const next = await shim.find('crm_list_contacts');
+    assert.equal(up.lists(), 2);
+    assert.match(next.text, /have just been added to this session's tool list/);
+  });
+});
+
+test('HK-1866: the lookup does not try a timeout again either', async () => {
+  await withShim({ upstream: { list: () => { throw abortError(); } } }, async (shim, up) => {
+    const lookup = await shim.lookup(['pm_tasks_update']);
+    assert.equal(up.lists(), 1, 'one read, no second wait');
+    // The list could not be read, so the answer judges the tool on what it reports and sends it to hiveku_batch.
+    assert.equal(lookup.entry('pm_tasks_update').callable_directly, false);
+    assert.deepEqual(shim.listChanged(), []);
+  });
+});
+
+test("HK-1866: the edge's own timeout (524, after its own long wait) is not tried again", async () => {
+  await withShim({}, async (shim) => {
+    const counted = listAnsweredWith(524, 'error code: 524');
+    const found = await shim.find('crm_list_contacts');
+    assert.equal(counted.lists, 1, 'the edge already waited its ceiling: a second wait would double it');
+    assert.match(found.text, /could NOT be refreshed/);
+    assert.deepEqual(shim.listChanged(), []);
+  });
+});
+
+test('HK-1866: an edge that cannot reach Hiveku (523, an immediate answer) is tried once more', async () => {
+  await withShim({}, async (shim) => {
+    const counted = listAnsweredWith(523, 'error code: 523');
+    const found = await shim.find('crm_list_contacts');
+    assert.equal(counted.lists, 2, 'it fails at once, so one more try costs nothing');
+    assert.match(found.text, /could NOT be refreshed/);
+  });
+});
+
+test('HK-1866: a list answer with no tools is a failed refresh, never "NOT served to this connection", and it is not kept', async () => {
+  // An empty list, an answer with no `tools` member, and an error member: none says the key is served nothing.
+  for (const answer of [{ tools: [] }, {}, { jsonrpcError: { code: -32603, message: 'Internal error' } }]) {
+    let serving = false;
+    const list = () => (serving ? { tools: SERVED.map(servedTool) } : answer);
+    await withShim({ upstream: { list } }, async (shim, up) => {
+      const found = await shim.find('crm_list_contacts');
+      assert.match(found.text, /could NOT be refreshed/, JSON.stringify(answer));
+      assert.doesNotMatch(found.text, /NOT served to this connection/, 'a tool this key can call is not called unserved');
+      assert.doesNotMatch(found.text, /read-only/, 'nor is the key said to be read-only');
+      assert.match(found.text, /run it through hiveku_batch/, 'the way round is named');
+      assert.deepEqual(shim.listChanged(), []);
+      assert.equal(up.lists(), 1, 'an answer with no list is reported as it is, not tried again');
+
+      // Hiveku answers properly the next time: the empty answer was not kept, so the tool is found and promoted.
+      serving = true;
+      const next = await shim.find('crm_list_contacts');
+      assert.match(next.text, /have just been added to this session's tool list/, JSON.stringify(answer));
+      assert.equal(shim.listChanged().length, 1);
+      assert.ok(names(await shim.listed()).includes('crm_list_contacts'));
+    });
+  }
+});
+
+test('HK-1866: a result for a tool added to the list also says to run it through hiveku_batch if a direct call is refused', async () => {
+  await withShim({}, async (shim) => {
+    const found = await shim.find('crm_list_contacts');
+    assert.match(found.text, /have just been added to this session's tool list/);
+    assert.ok(found.text.includes(noSuchToolFallback('<tool_name>')), found.text);
+    // The sentence a hiveku_tool_schema answer gives for a listed tool is the same one, word for word.
+    const lookup = await shim.lookup(['pm_tasks_comment']);
+    assert.ok(lookup.entry('pm_tasks_comment').how_to_call.includes(noSuchToolFallback('pm_tasks_comment')));
+    assert.equal(noSuchToolFallback('x'), `If a direct call answers "No such tool available", ${batchRoute('x')}.`);
   });
 });
