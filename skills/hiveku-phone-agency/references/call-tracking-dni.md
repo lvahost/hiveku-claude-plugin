@@ -344,8 +344,9 @@ with three numbers pointing 911 at the old suite. Contract details:
 - **Toll-free members are SKIPPED, not failed** (TF is not E911-capable at the carrier); a mixed
   pool applies to its local half and reports `skipped_toll_free`.
 - The address must already be registered AND carrier-validated on the account (422
-  `e911_address_invalid` otherwise - register on the E911 page / `voice_e911_address_create`
-  first).
+  `e911_address_invalid` otherwise - register it first with `voice_e911_address_create`, or a
+  person does it in the app: desktop Communications > Admin > 911 addresses, web Communications,
+  Admin, E911).
 - Carrier is updated first, the row only after, per number - so a number can never read
   "validated" against an address the carrier does not hold. Per-number failures are collected in
   `failed[]`; the batch never aborts. Re-run after fixing; already-correct numbers are skipped.
