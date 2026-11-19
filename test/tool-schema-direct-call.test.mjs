@@ -35,9 +35,10 @@
  *      was not sent it, not only the first time: the client's refresh can be
  *      lost (the bridge's own connect timeouts), and then the tool was found
  *      and listed but "No such tool available". A failed list fetch is tried
- *      once more when it failed fast (a connect timeout, an unreachable edge),
- *      and not again after a rate limit, a timeout (a search must not wait twice
- *      while Hiveku hangs) or the edge's own timeout. An answer with no list in it
+ *      once more when it failed fast (a connect timeout, the edge's immediate
+ *      523), and not again after a rate limit, a timeout (a search must not wait
+ *      twice while Hiveku hangs), the edge's own timeout or the edge's 522 (it
+ *      comes after the edge's own connect wait). An answer with no list in it
  *      (an error, an empty list) is a failed refresh too, never "NOT served", and
  *      is not kept; a result says to run a tool through hiveku_batch when it is
  *      not callable by its own name.
@@ -740,6 +741,16 @@ test('HK-1866: an edge that cannot reach Hiveku (523, an immediate answer) is tr
     const found = await shim.find('crm_list_contacts');
     assert.equal(counted.lists, 2, 'it fails at once, so one more try costs nothing');
     assert.match(found.text, /could NOT be refreshed/);
+  });
+});
+
+test("HK-1866: the edge's 522 (after its own connect wait of about 19 s) is not tried again", async () => {
+  await withShim({}, async (shim) => {
+    const counted = listAnsweredWith(522, 'error code: 522');
+    const found = await shim.find('crm_list_contacts');
+    assert.equal(counted.lists, 1, 'the edge already waited to connect: a second try would make the search wait that long again');
+    assert.match(found.text, /could NOT be refreshed/);
+    assert.deepEqual(shim.listChanged(), []);
   });
 });
 
