@@ -412,7 +412,11 @@ inert for real traffic; the dashboard's "Watch it swap" button drives it).
 One operation that wires the whole lane for a project: number pool, tracking DIDs, per-project
 phone-tracking config, the tenant conversion-upload policy, and the Google "Hiveku - Phone Call"
 conversion action. Per-step results plus an overall state - success is never inferred from a bare
-200 - and re-runs report `already_configured` per step instead of duplicating.
+200 - and re-runs report `already_configured` per step instead of duplicating. One exception:
+after a run whose DID step says an order is in doubt, or after a setup call that got no answer
+(a timeout, a 502, 503 or 504), run it again only with `did_count` 0 or as a dry run. Read
+`voice_pool_numbers_list` and `agent_inbox_list({ category: 'voice_number_order' })`; if the pool is
+short or a note is open, contact Hiveku support with the time instead of buying (HK-1860).
 
 - **`did_count` is THE money field** - the ONLY input that spends. Omit it or send 0 and nothing
   is bought. When set it buys only the shortfall between the pool's current active size and the
