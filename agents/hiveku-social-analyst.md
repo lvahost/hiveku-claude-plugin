@@ -50,9 +50,10 @@ Investigate with exactly these tools (GET or read-only POST). Nothing outside th
   for event rows with `linked_post` (an event with none is a sticky note). `social_pillar_list` (its
   post count is LIFETIME; the window count is `social_list_posts({ pillar_id, status: "published",
   from_date, to_date })` and `pagination.total`, dates on `created_at` - say so). A post whose every
-  TikTok copy still waits as a draft in the creator's inbox is in `published` too but is not out on
-  any network: `counts.tiktok_inbox` on `social_list_posts` says how many, so do not count them as
-  cadence kept or as posts that should have numbers.
+  TikTok copy still waits as a draft in the creator's inbox is not out on any network:
+  `counts.tiktok_inbox` on `social_list_posts` counts it and `counts.published` does not, but a
+  `status: "published"` list and its `pagination.total` still hold it, so do not count it as
+  cadence kept or as a post that should have numbers.
   `social_schedule_slot_list` for the committed cadence. The queue: `social_list_posts({ status:
   "pending_approval", limit: 100 })` plus the legacy shape (draft or scheduled with
   `approval_status: "pending"`), each named by id, title, platforms, the event it was meant for and
