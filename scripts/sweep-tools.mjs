@@ -44,7 +44,7 @@ import { fileURLToPath } from 'node:url';
 import { isAutoApprovable } from '../lib/tool-safety.mjs';
 import { classify } from '../lib/sweep-classify.mjs';
 import { harvestCandidates, resolveTool, assertSuppliersAreReadOnly } from '../lib/sweep-resolvers.mjs';
-import { reportRows } from '../lib/sweep-report.mjs';
+import { failureLine, reportRows } from '../lib/sweep-report.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const PLUGIN_ROOT = path.resolve(HERE, '..');
@@ -397,7 +397,7 @@ async function main() {
   }
   if (err.length) {
     console.log('\n  failures:');
-    for (const r of err) console.log(`    ${r.tool.padEnd(46)} ${r.detail}`);
+    for (const r of err) console.log(failureLine(r));
   } else {
     console.log('\n  no failures — every non-ok result was a parameter refusal or an unconnected integration.');
   }
