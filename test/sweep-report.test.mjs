@@ -40,6 +40,7 @@ test('the other providers\' key shapes are cut too (review)', () => {
     'ghp_' + 'k'.repeat(36),
     'gho_' + 'k'.repeat(36),
     'ghs_' + 'k'.repeat(36),
+    'github_' + 'pat_' + '11' + 'Q'.repeat(20) + '_' + 'r'.repeat(59),
     'xoxb-' + '1'.repeat(12) + '-' + 'm'.repeat(24),
     'xoxp-' + '2'.repeat(12) + '-' + 'n'.repeat(24),
     'AIza' + 'p'.repeat(35),
