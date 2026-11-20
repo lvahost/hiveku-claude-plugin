@@ -14,7 +14,8 @@
  * What it does:
  *   - reads the five references in FILES below;
  *   - drops any line tagged `<!-- plugin-only -->` (plugin-side availability or
- *     profile notes the department agent does not need);
+ *     profile notes the department agent does not need), except the tagged lines
+ *     AGENT_KEEPS names, which it keeps with the tag taken off;
  *   - appends a tool-name translation table, because the agent server spells
  *     its tools differently from the MCP registry (social_post_create vs
  *     social_create_post, and so on) and the doctrine is written in MCP names;
@@ -29,6 +30,9 @@
  *
  * The sibling checkout defaults to ../hiveku_agent_marketing_server; override
  * with HIVEKU_AGENT_SERVER_PATH.
+ *
+ * Exits 1 when an AGENT_KEEPS line no longer matches exactly one tagged line of
+ * its reference (a reworded line is fixed there, never silently dropped).
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -51,9 +55,66 @@ const FILES = [
   ['SOCIAL_CREATIVE_HANDOFF', 'creative-handoff.md'],
 ];
 
+const PLUGIN_ONLY = '<!-- plugin-only -->';
+
+/**
+ * Plugin-only lines the department agent can act on now (HK-1824), by reference,
+ * each as the line reads without its tag. Its social_post_create and
+ * social_post_update take the post's grid row (before_after_item_id, in the
+ * translation table below), and its posts keep their stage's id
+ * (settings.journey_stage_id) because its post writes go through the builder
+ * (HK-1794). The lines stay tagged in the references, where the tag keeps them
+ * next to the strategy tools, customer_journey_stage_list and the stage update
+ * that the agent still lacks; this list is the one place that lets the agent's
+ * copy have them. Each entry must match exactly one tagged line of its file.
+ */
+export const AGENT_KEEPS = {
+  'audience-grounding.md': [
+    "The server keeps the stage's id beside the name in `settings.journey_stage_id` (no caller",
+    'sets it), so a renamed stage keeps its posts.',
+    "  The grid's row goes in `settings.before_after_item_id`: the one row of the grid the post",
+    '  shows (a row the grid lacks, or a row with no grid, is a 400). Never send',
+    '  `settings.journey_stage_id`: the server sets it from the stage.',
+    'A post that uses a grid item names its row in `settings.before_after_item_id`.',
+  ],
+  'repurpose.md': [
+    "  The grid item's row goes in `settings.before_after_item_id`.",
+  ],
+};
+
+/**
+ * A reference as the department agent reads it: every line without the tag, and
+ * the tagged lines AGENT_KEEPS names for this file with the tag taken off. Throws
+ * when a kept line matches no tagged line, or more than one.
+ */
+export function agentText(file, raw) {
+  const wanted = new Map((AGENT_KEEPS[file] ?? []).map((line) => [line, 0]));
+  const kept = [];
+  for (const line of raw.split('\n')) {
+    if (!line.includes('<!-- plugin-only -->')) {
+      kept.push(line);
+      continue;
+    }
+    const bare = line.replace(/ *<!-- plugin-only -->\s*$/, '');
+    if (wanted.has(bare)) {
+      wanted.set(bare, wanted.get(bare) + 1);
+      kept.push(bare);
+    }
+  }
+  for (const [line, count] of wanted) {
+    if (count !== 1) {
+      throw new Error(
+        `${file}: the kept line ${JSON.stringify(line)} matches ${count} line(s) tagged ${PLUGIN_ONLY}, not one; fix AGENT_KEEPS`,
+      );
+    }
+  }
+  return kept.join('\n');
+}
+
 /**
  * MCP registry name -> the department agent's own tool (or where the data
- * already sits in its workspace). Only names the five references actually use.
+ * already sits in its workspace). Only names the five references actually use,
+ * and the two settings keys AGENT_KEEPS lets through.
  */
 const TRANSLATION = [
   ['social_create_post', 'social_post_create (same fields; platforms takes the canonical slugs)'],
@@ -79,6 +140,8 @@ const TRANSLATION = [
   ['before_after_grid_list', 'data/before_after_grids.json'],
   ['customer_journey_get', 'data/customer_journey_maps.json'],
   ['customer_journey_list', 'data/customer_journey_maps.json'],
+  ['settings.before_after_item_id', 'before_after_item_id, an argument of social_post_create and social_post_update (they take no settings; on an update "" takes the row off)'],
+  ['settings.journey_stage_id', 'kept by Hiveku from journey_stage; no tool here sends it'],
   ['media_library_list', 'media_library_list'],
   ['media_library_get', 'media_library_get'],
   ['media_library_register_external_url', 'media_library_register_external_url'],
@@ -135,11 +198,7 @@ function buildModule() {
   ].join('\n');
   for (const [constName, file] of FILES) {
     const raw = fs.readFileSync(path.join(REF_DIR, file), 'utf8');
-    const kept = raw
-      .split('\n')
-      .filter((line) => !line.includes('<!-- plugin-only -->'))
-      .join('\n')
-      .trimEnd();
+    const kept = agentText(file, raw).trimEnd();
     parts.push(`${constName} = """`);
     parts.push(escapePy(kept + '\n' + table));
     parts.push('"""');
@@ -154,7 +213,13 @@ function main() {
     console.error(`[gen-social-playbooks] agent server checkout not found at ${SERVER}`);
     process.exit(3);
   }
-  const next = buildModule();
+  let next;
+  try {
+    next = buildModule();
+  } catch (error) {
+    console.error(`[gen-social-playbooks] ${error.message}`);
+    process.exit(1);
+  }
   const current = fs.existsSync(TARGET) ? fs.readFileSync(TARGET, 'utf8') : null;
   if (check) {
     if (current === next) {
@@ -168,4 +233,7 @@ function main() {
   console.log(`[gen-social-playbooks] wrote ${path.relative(process.cwd(), TARGET)} (${next.length} bytes, ${FILES.length} playbooks)`);
 }
 
-main();
+// Run as a script only: the texts test imports agentText and AGENT_KEEPS.
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  main();
+}
