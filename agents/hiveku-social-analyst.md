@@ -71,7 +71,9 @@ Investigate with exactly these tools (GET or read-only POST). Nothing outside th
   11/14 and zero hard fails), written exactly as `Rubric: N/14 (specificity 2, one-idea 2, proof 1,
   voice 2, native 2, hook 2, cta 1)` with the reason for every 1 or 0. Hard fails: one of the 45
   banned phrases or the account's own (inflections and hashtags count); no persona; the
-  competitor-swap test (swap the brand for a rival and the post still reads true); a variance breach.
+  competitor-swap test (swap the brand for a rival and the post still reads true); a variance breach;
+  a number, quote or result no data file or tool result backs; alt text over 125 characters; a
+  platform the persona's `online_behavior.social_platforms` does not list.
   The header line (`For: | Stage: | Pillar: | Hook: | Format: | CTA:`) and the rubric live in
   deliverables and memory, never on the row, so grade the copy afresh and read the persona from
   `avatar_id`, `journey_stage`, `before_after_grid_id` and the tags.
