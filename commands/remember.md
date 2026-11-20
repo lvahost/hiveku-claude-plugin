@@ -1,31 +1,39 @@
 ---
-description: Persist what you learned/did into the right Hiveku department memory (source of truth), or suggest a business-wide fact for the account memory.
+description: Persist what you learned/did into the right Hiveku department memory (source of truth), or suggest a business-wide fact for About your business (the account memory).
 argument-hint: "[department] [what you learned]"
 ---
 Record a learning to Hiveku so every department stays in sync.
 
-## A fact about the whole business goes to the account memory
+## A fact about the whole business goes to About your business
 
 Some facts belong to every department, not one: opening hours, locations, who the key people are,
-standing policies ("Closed on Mondays from November to March"). Those go to the **account memory**,
-the one document every department agent reads at the start of each conversation. You cannot edit
-it: the account's owners and admins write it on the Hiveku dashboard (Account memory), and there is
-no tool that sets, replaces or deletes it. What you can do is suggest one line:
+standing policies ("Closed on Mondays from November to March"). Those go to **About your business**
+(the tools call it the account memory), the one document every department agent reads at the start
+of each conversation. You cannot edit it: the account's owners and admins write it on the Hiveku
+dashboard (the Memory page, About your business), and there is no tool that sets, replaces or
+deletes it. What you can do is suggest one line:
 
 1. Read it first: `account_memory_get()`. If the fact is already in the text or already waiting as
    a suggestion, stop.
 2. `account_memory_append({ text })` with ONE plain sentence of at most 400 characters. Never
    secrets, customer personal data, or something only one department needs (that goes in the
    department memory below).
-3. Tell the person plainly: "I suggested this for the account memory. An owner or admin keeps or
-   removes it on the dashboard under Account memory." (On an account with no owner or admin, the
+3. Tell the person plainly: "I suggested this for About your business. An owner or admin keeps or
+   removes it on the Memory page, under About your business." (On an account with no owner or admin, the
    Hiveku team reviews it.) Until then the agents read it marked as not
    reviewed, and the owner's text wins where they disagree. `duplicate: true` means it was already
    there; a 409 `account_memory_full` means an owner has to review the waiting suggestions first.
 
-If the person wants to change what the account memory already says, that is an edit on the
+If the person wants to change what About your business already says, that is an edit on the
 dashboard, not something you can do here. Do not work around it by copying the fact into every
 department's memory, and do not try `memory_create` / `memory_update` on it (they refuse).
+
+**"Fill the account's memory" usually means the whole Memory page, not only this document.** The Memory
+page holds two different things: About your business (above: you can only suggest one line at a time)
+and each agent's own Notes, Rules, Skills and Shortcuts, which you CAN write with `memory_create` and
+`memory_update` (find them with `hiveku_find_tools`). When a request is that broad, say which part is
+which, suggest the business-wide facts here, and write the rest as each department's notes below. Do
+not ask the person to choose before you have said what each part is.
 
 Everything else - what one department learned - goes to that department's memory:
 

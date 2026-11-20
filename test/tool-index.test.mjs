@@ -15,6 +15,7 @@ import {
   renderResults,
   searchTools,
 } from '../lib/tool-index.mjs';
+import { batchRoute, directCallFacts, noSuchToolFallback } from '../lib/tool-schema-answer.mjs';
 
 test('the catalogue is present and complete', () => {
   const idx = loadIndex();
@@ -156,6 +157,20 @@ test('CORE_TOOLS holds the five callable on every profile', () => {
   }
 });
 
+test('HK-1866: About your business is listed up front, so ToolSearch finds it before any hiveku_find_tools search', () => {
+  // The source-of-truth rule and the orient skill tell every session to read it with account_memory_get, and an agent
+  // suggests a line with account_memory_append. Neither was in CORE_TOOLS, so "select:" found nothing in a bound session
+  // and About your business was read through account_context_get instead.
+  for (const n of ['account_memory_get', 'account_memory_append']) {
+    assert.ok(CORE_TOOLS.includes(n), `${n} must be advertised up front`);
+  }
+  // Listed only when the server offers them, like the rest: a key that cannot call one never has it advertised.
+  const offered = [{ name: 'account_memory_get' }, { name: 'account_memory_append' }, { name: 'crm_list_contacts' }];
+  assert.deepEqual(indexModeTools(offered).map((t) => t.name), [FIND_TOOL_NAME, 'account_memory_get', 'account_memory_append']);
+  assert.deepEqual(indexModeTools([{ name: 'account_memory_get' }]).map((t) => t.name), [FIND_TOOL_NAME, 'account_memory_get']);
+  assert.deepEqual(indexModeTools([{ name: 'crm_list_contacts' }]).map((t) => t.name), [FIND_TOOL_NAME]);
+});
+
 // ── 0.9.0: the discovery-to-call loop ──────────────────────────────────────
 // A client dispatches tool_use only for REGISTERED tools, so a found tool must
 // be PROMOTED into the advertised list or it is findable but uncallable. These
@@ -233,6 +248,59 @@ test('a failed promotion says so instead of claiming the tools are loaded', () =
   const text = renderResults(one, 'contacts', { promoted: new Set(), promotionFailed: true });
   assert.match(text, /could NOT be refreshed/i);
   assert.doesNotMatch(text, /have just been added to this session's tool list/i);
+});
+
+// The list could not be read, so nothing is known about what the connection is served. Every match used to be tagged
+// "NOT served to this connection ... naming it will not work" under a header that said the list was not refreshed, and
+// the paragraph about a read-only key came with it, so a tool the key can call read as one it cannot (HK-1866).
+const TWO = [
+  { name: 'crm_list_contacts', method: 'GET', description: 'x' },
+  { name: 'voice_call_place', method: 'POST', description: 'y' },
+];
+
+test('HK-1866: a failed promotion marks no match as NOT served', () => {
+  const text = renderResults(TWO, 'contacts', { promoted: new Set(), promotionFailed: true });
+  assert.match(text, /could NOT be refreshed/i);
+  assert.doesNotMatch(text, /NOT served to this connection/);
+  assert.doesNotMatch(text, /report that rather than retrying/);
+});
+
+test('HK-1866: a failed promotion does not call the key read-only, and a tool a read-only key cannot call still says so', () => {
+  const text = renderResults(TWO, 'contacts', { promoted: new Set(), promotionFailed: true });
+  assert.doesNotMatch(text, /read-only/);
+  const blocked = renderResults([{ ...TWO[1], blockedByScope: true }], 'call', { promoted: new Set(), promotionFailed: true });
+  assert.match(blocked, /NOT callable with this read-only key/);
+  assert.match(blocked, /read-only/);
+});
+
+test('HK-1866: a result for tools added to the list says to run one through hiveku_batch when a direct call is refused, in the words a lookup uses', () => {
+  const one = [{ name: 'memory_delete', method: 'DELETE', description: 'x' }];
+  const added = renderResults(one, 'memory delete', { promoted: new Set(['memory_delete']) });
+  assert.ok(added.includes(noSuchToolFallback('<tool_name>')), added);
+  assert.equal(
+    noSuchToolFallback('<tool_name>'),
+    'If a direct call answers "No such tool available", run it through hiveku_batch with the same arguments: {"calls":[{"tool":"<tool_name>","args":{...}}]}.',
+  );
+  // The sentence of a hiveku_tool_schema answer for a listed tool is this one, for that tool's own name.
+  const facts = directCallFacts(
+    { name: 'memory_delete', available: true },
+    { listed: new Set(['memory_delete', 'hiveku_batch']), added: new Set(), findTool: FIND_TOOL_NAME },
+  );
+  assert.ok(facts.how_to_call.includes(noSuchToolFallback('memory_delete')), facts.how_to_call);
+});
+
+test('HK-1866: a result for a refresh that failed names the batch as the way to call a tool now', () => {
+  const one = [{ name: 'memory_delete', method: 'DELETE', description: 'x' }];
+  const failed = renderResults(one, 'memory delete', { promoted: new Set(), promotionFailed: true });
+  assert.ok(failed.includes(`Meanwhile, ${batchRoute('<tool_name>')}.`), failed);
+});
+
+test('HK-1866: a tool this connection is not served gets no way round through the batch', () => {
+  // The batch runs only what the key can call, so a tool that is not served cannot be run through it either.
+  const one = [{ name: 'memory_delete', method: 'DELETE', description: 'x' }];
+  const notServed = renderResults(one, 'memory delete', { promoted: new Set() });
+  assert.match(notServed, /NOT served to this connection/);
+  assert.doesNotMatch(notServed, /hiveku_batch/);
 });
 
 test('★ naming a tool exactly returns THAT tool, not its near-anagram', () => {
