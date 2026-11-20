@@ -190,7 +190,7 @@ Give each URL exactly one owner. In practice that is one of:
 - Keep the concrete page and remove that slug from the dynamic route's data source, so `generateStaticParams()` stops emitting it. In the 3rd Degree Screening case this meant editing `lib/page-content.ts`, a file that contains no routes and would not appear in any route-focused search.
 - Narrow the dynamic route so it cannot produce the pathname at all.
 
-Then re-run `project_files_validate_orphan_routes` and confirm with `project_route_owner` that `shadowed[]` is empty and `served_by_certain` is true for the URLs involved. If the fix removes a URL rather than reassigning it, consider a redirect for it (section 7) so inbound links do not die.
+Then re-run `project_files_validate_orphan_routes` and confirm with `project_route_owner` that `shadowed[]` is empty and `served_by_certain` is true for the URLs involved. When `served_by_certain` stays false (the sibling's list comes from a database, an import or a layout), open the live URL to confirm your page answers. If the fix removes a URL rather than reassigning it, consider a redirect for it (section 7) so inbound links do not die.
 
 ---
 
