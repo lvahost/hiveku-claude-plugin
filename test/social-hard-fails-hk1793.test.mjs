@@ -58,20 +58,20 @@ test('every command and agent text that spells the hard fails out names all seve
     .filter((rel) => rel.endsWith('.md'))
     .map((rel) => ({ rel, text: flat(read(rel)) }))
     .filter(({ text }) => text.includes('hard fail') && text.includes('variance breach'));
-  // The six that list them, and anti-fluff.md itself: a new list is pinned the moment it is written.
+  // The six that list them, and anti-fluff.md itself. A new text that names a hard fail and a variance breach is
+  // pinned too; one that lists them without those words is not seen by this scan.
   assert.ok(texts.length >= 7, `only ${texts.length} texts spell the hard fails out; the scan broke`);
   const needles = [
-    'banned phrase',
-    'competitor',
-    'variance breach',
-    'no data file or tool result backs',
-    'alt text over 125 characters',
-    'online_behavior.social_platforms does not list',
+    ['a banned phrase', /banned phrase/],
+    ['no persona-and-stage header', /header you cannot fill|no header|persona-and-stage|persona or no stage/],
+    ['the competitor-swap test', /competitor[- ]swap/],
+    ['a variance breach', /variance breach/],
+    ['an unbacked claim', /no data file or tool result backs/],
+    ['alt text over 125 characters', /alt text over 125 characters/],
+    ['a platform the persona does not use', /online_behavior\.social_platforms does not list/],
   ];
   const offenders = texts.flatMap(({ rel, text }) =>
-    [...needles.filter((needle) => !text.includes(needle)), ...(/header|persona/.test(text) ? [] : ['the header'])].map(
-      (needle) => `${rel}: ${needle}`,
-    ),
+    needles.filter(([, pattern]) => !pattern.test(text)).map(([name]) => `${rel}: ${name}`),
   );
   assert.deepEqual(offenders, []);
 });
