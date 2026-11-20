@@ -255,6 +255,7 @@ test('no guardrails file changes nothing', () => {
 // recording URL) and a read whose safety depends on its arguments.
 import { ARG_GATED_READS, NEVER_AUTO_APPROVE, VETO_REASONS, isAutoApprovable } from '../lib/tool-safety.mjs';
 import { PENDING_TOOLS } from './pending-tools.mjs';
+import { APP_KEY_ONLY_TOOLS } from './app-key-only-tools.mjs';
 
 test('vetoed reads never auto-approve, even while the server lists them as reads', () => {
   // voice_recording_url_get is a server-declared GET, so nothing about its HTTP
@@ -2059,7 +2060,10 @@ test('every always-ask name is a real, non-GET tool (a typo gates nothing)', () 
       .tools.map((t) => [t.name, t.method]),
   );
   for (const name of ALWAYS_ASK_WRITES.keys()) {
-    assert.ok(index.has(name) || PENDING_TOOLS.has(name), `${name} exists neither in the index nor PENDING_TOOLS`);
+    assert.ok(
+      index.has(name) || PENDING_TOOLS.has(name) || APP_KEY_ONLY_TOOLS.has(name),
+      `${name} exists neither in the index nor PENDING_TOOLS nor APP_KEY_ONLY_TOOLS`,
+    );
     if (index.has(name)) assert.notEqual(index.get(name), 'GET', `${name} is a GET; gate a read elsewhere`);
     assert.ok(ALWAYS_ASK_WRITES.get(name).length > 40, `${name} must say why it asks`);
   }

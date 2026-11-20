@@ -22,6 +22,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { PENDING_TOOLS } from './pending-tools.mjs';
+import { APP_KEY_ONLY_TOOLS } from './app-key-only-tools.mjs';
 import { ALWAYS_ASK_WRITES, LIVE_CHANGE_WRITES } from '../lib/tool-safety.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -124,13 +125,21 @@ test('count matches and no name is duplicated', () => {
 test('every gated name exists in the tool index or is a contracted pending tool', () => {
   const unknown = permFile.tools
     .map((t) => t.name)
-    .filter((n) => !indexMethods.has(n) && !PENDING_TOOLS.has(n));
+    .filter((n) => !indexMethods.has(n) && !PENDING_TOOLS.has(n) && !APP_KEY_ONLY_TOOLS.has(n));
   assert.deepEqual(
     unknown,
     [],
     'gated names that exist nowhere — a rename upstream makes the ask rule stop matching silently: ' +
       unknown.join(', '),
   );
+});
+
+test('every app-key-only name is gated and not in the tool index (delete it once the index lists it again)', () => {
+  const gated = new Set([...permFile.tools.map((t) => t.name), ...ALWAYS_ASK_WRITES.keys()]);
+  const stale = [...APP_KEY_ONLY_TOOLS].filter((n) => indexMethods.has(n));
+  const orphans = [...APP_KEY_ONLY_TOOLS].filter((n) => !gated.has(n));
+  assert.deepEqual(stale, [], `in the index again, so delete from test/app-key-only-tools.mjs: ${stale.join(', ')}`);
+  assert.deepEqual(orphans, [], `on neither the ask list nor ALWAYS_ASK_WRITES, so nothing needs the entry: ${orphans.join(', ')}`);
 });
 
 test('every gated method matches the tool index where the tool has landed', () => {
