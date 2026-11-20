@@ -606,90 +606,6 @@
 const SEO_SINCE = '2026-08-30';
 const seo = (batch) => ({ since: SEO_SINCE, batch });
 
-/**
- * HK-1816 (2026-11-20, index regenerated at 3136 tools from MCP 16a03640c316 for 0.27.291): the Hiveku app's own page
- * writes. Their routes answer 403 app_key_required to every key but the app's own, and since HK-1816 the MCP lists them
- * for that key alone, so the index (read with an agent key) dropped them with 194 other app-only tools no list here
- * names. Each says ASK THE PERSON FIRST, so the MCP's ask-first guard keeps them on the ask list and ALWAYS_ASK_WRITES as
- * second guards, and they stay here for good, as voice_sip_credentials_get does.
- */
-const HK_1816_APP_PAGE_WRITES = [
-  'account_memory_save',
-  'account_memory_restore',
-  'account_memory_suggest',
-  'account_memory_suggestion_keep',
-  'account_memory_suggestions_remove',
-  'account_memory_suggestions_restore',
-  'agent_switch_set',
-  'meet_recording_delete',
-  'discussion_recording_delete',
-  'calendar_booking_create',
-  'dashboards_page_create',
-  'dashboards_page_home_set',
-  'dashboards_page_shared_home_save',
-  'dashboards_page_update',
-  'dashboards_page_delete',
-  'dashboards_page_publish',
-  'dashboards_page_restore',
-  'dashboards_page_sharing_set',
-  'dashboards_page_editor_add',
-  'dashboards_page_editor_remove',
-  'dashboards_page_version_restore',
-  'dashboards_page_copy',
-  'dashboards_page_action_run',
-  'dashboards_page_workflow_button_run',
-  'dashboards_page_widget_describe',
-  'dashboards_page_rows_send',
-  'dashboards_page_tally_add',
-  'dashboards_page_data_table_create',
-  'dashboards_page_data_table_update',
-  'dashboards_page_data_table_delete',
-  'dashboards_page_data_table_restore',
-  'dashboards_page_data_row_update',
-  'dashboards_page_data_rows_delete',
-  'dashboards_page_data_rows_restore',
-  'dashboards_page_data_column_change',
-  'dashboards_page_data_column_undo',
-  'dashboards_page_data_tally_add_remove',
-  'dashboards_page_data_tally_settings_save',
-  'dashboards_page_data_tally_start_from_zero',
-  'dashboards_page_data_workflow_writer_stop',
-  'workspaces_page_prefs_save',
-  'workspaces_page_view_create',
-  'workspaces_page_view_from_template',
-  'workspaces_page_view_update',
-  'workspaces_page_view_delete',
-  'workspaces_page_view_grants_set',
-  'workspaces_page_pm_project_update',
-  'workspaces_page_pm_task_create',
-  'workspaces_page_pm_task_update',
-  'workspaces_page_mc_lane_create',
-  'workspaces_page_mc_lane_update',
-  'workspaces_page_mc_lane_delete',
-  'workspaces_page_mc_task_update',
-  'workspaces_page_mc_task_answer',
-  'workspaces_page_mc_task_claim',
-  'workspaces_page_mc_task_release',
-  'workspaces_page_mc_task_comment',
-  'workspaces_page_mc_task_transition',
-  'workspaces_page_attention_item_update',
-  'workspaces_page_attention_recheck',
-  'workspaces_page_custom_field_create',
-  'workspaces_page_custom_field_value_set',
-  'workspaces_page_custom_field_update',
-  'workspaces_page_custom_field_delete',
-  'workspaces_page_custom_field_grants_set',
-  'workspaces_page_dashboard_create',
-  'workspaces_page_dashboard_home_set',
-  'workspaces_page_dashboard_update',
-  'workspaces_page_dashboard_delete',
-  'workspaces_page_dashboard_restore',
-  'workspaces_page_dashboard_version_restore',
-  'workspaces_page_partner_account_create',
-  'workspaces_page_partner_branding_save',
-  'workspaces_page_partner_payout_details_save',
-];
-
 export const PENDING_TOOLS = new Map([
   // 2026-11-13 (index regenerated at 3373 tools for 0.27.275): the six Email waves 2 and 3 writes (EMAIL-W23-1) are
   // served and indexed. Entries deleted; the batch has landed.
@@ -956,6 +872,4 @@ export const PENDING_TOOLS = new Map([
   ['outbound_campaign_email_accounts_detach', { since: '2026-11-13', batch: 'BUCKET-C-OUTBOUND' }],
   // SOCIAL-STRATEGY (2026-11-15, MCP #571, served since 2026-11-15): social_post_strategy_check and
   // social_post_strategy_update are served and indexed (the 0.27.282 index carries both). Entries deleted.
-  // HK-1816 (2026-11-20): the app's page writes, here for good (HK_1816_APP_PAGE_WRITES above says why).
-  ...HK_1816_APP_PAGE_WRITES.map((name) => [name, { since: '2026-11-20', batch: 'HK-1816' }]),
 ]);
