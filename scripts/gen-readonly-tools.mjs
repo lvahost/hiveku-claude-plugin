@@ -53,21 +53,32 @@ const SERVER_SRC = path.resolve(PLUGIN_ROOT, '..', 'hiveku-mcp-api-server', 'src
  * and the miss was invisible because the dist path, which reads real objects,
  * covered for it whenever the server happened to be built.
  */
-const TOKEN = /(?:^[ \t]*"?name"?:\s*['"]([a-z0-9_]+)['"],[ \t]*(?:$|(?="?(?:description|readOnlyHint)"?:)))|(?:"?method"?:\s*['"]([A-Z]+)['"])|(?:"?readOnlyHint"?:\s*(true))/gm;
+/**
+ * ★ A THIRD FORM: `name: SOME_CONSTANT,` alone on its line, where the same file declares
+ * `export const SOME_CONSTANT = 'tool_name'` (deploy-serve-version-tools.ts and friends). gen-tool-index.mjs reads it
+ * (NAME_CONST_LINE there); this parse did not, so the source-parse list of 0.27.291 (2026-11-20) lost five GET reads a
+ * built server lists (project_cache_clear_status, project_concurrency_get, project_page_cache_get,
+ * project_request_log, site_seo_overview_get), and each asked for permission again. A constant the file does not
+ * resolve still ends the tool above it, so it never lends that tool its method.
+ */
+const TOKEN = /(?:^[ \t]*"?name"?:\s*['"]([a-z0-9_]+)['"],[ \t]*(?:$|(?="?(?:description|readOnlyHint)"?:)))|(?:"?method"?:\s*['"]([A-Z]+)['"])|(?:"?readOnlyHint"?:\s*(true))|(?:^[ \t]*name:\s*([A-Z][A-Z0-9_]*),[ \t]*$)/gm;
+const TOOL_NAME_CONST = /^[ \t]*(?:export[ \t]+)?const[ \t]+([A-Z][A-Z0-9_]*)[ \t]*=[ \t]*'([a-z0-9_]+)'/gm;
 
 function extract(source) {
+  const consts = new Map([...source.matchAll(TOOL_NAME_CONST)].map((m) => [m[1], m[2]]));
   // Every tool name, every HTTP method and every readOnlyHint, in document order.
   const tokens = [];
   for (const m of source.matchAll(TOKEN)) {
     if (m[1]) tokens.push({ kind: 'name', value: m[1] });
     else if (m[2]) tokens.push({ kind: 'method', value: m[2] });
-    else tokens.push({ kind: 'hint', value: true });
+    else if (m[3]) tokens.push({ kind: 'hint', value: true });
+    else tokens.push({ kind: 'name', value: consts.get(m[4]) ?? null });
   }
 
   // Pair each name with the first method before the next name. No window.
   const pairs = [];
   for (let i = 0; i < tokens.length; i++) {
-    if (tokens[i].kind !== 'name') continue;
+    if (tokens[i].kind !== 'name' || tokens[i].value === null) continue;
     let method = null;
     let readOnlyHint = false;
     for (let j = i + 1; j < tokens.length && tokens[j].kind !== 'name'; j++) {
