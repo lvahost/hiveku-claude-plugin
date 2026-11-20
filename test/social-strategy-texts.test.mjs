@@ -24,10 +24,12 @@
  *      sentence about the check never says it scores, except to say it does not.
  *   4. Each stage's step: the six steps and three sources, the stage id the server keeps, and the sixth step
  *      (Already a customer) in the stage tables and the stage: tag lists.
- *   5. The Social team's own agent has neither tool, takes no grid row and keeps no stage id, and reads its journeys
- *      as stored (a stage only Hiveku guesses carries no step there): every line naming those in the references
- *      scripts/gen-social-playbooks.mjs copies into that agent's playbook carries the generator's plugin-only tag,
- *      and what it keeps says what a stage with no step means.
+ *   5. The Social team's own agent has neither tool, no stage update and no customer_journey_stage_list: every line
+ *      naming those in the references scripts/gen-social-playbooks.mjs copies into that agent's playbook carries the
+ *      generator's plugin-only tag, and what it keeps says what a stage with no step means. Since HK-1824 the agent
+ *      takes a post's grid row (its create and update take before_after_item_id) and its posts keep their stage id,
+ *      so the generator keeps the tagged lines naming those two settings (AGENT_KEEPS), with the tag taken off; its
+ *      journeys file carries each stage's step read through Hiveku, or not_read when Hiveku could not be asked.
  *
  * Run: node --test test/*.test.mjs
  */
@@ -36,6 +38,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { AGENT_KEEPS, agentText } from '../scripts/gen-social-playbooks.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const read = (rel) => fs.readFileSync(path.join(root, rel), 'utf8');
@@ -49,11 +52,14 @@ const CHECK = 'social_post_strategy_check';
 const WRITE = 'social_post_strategy_update';
 const STAGE_WRITE = 'customer_journey_stage_update';
 const PLUGIN_ONLY = '<!-- plugin-only -->';
+/** What the Social team's agent cannot use: the generator's translation table maps no customer_journey_stage_list. */
+const AGENT_LACKS = ['customer_journey_stage_list'];
 /**
- * Fields the Social team's agent cannot use: its own post create and update take no settings (so no grid row), and
- * its posts keep no stage id; the generator's translation table maps no customer_journey_stage_list.
+ * Settings the agent's own tools now carry (HK-1824): its post create and update take the grid row as
+ * before_after_item_id, and its posts keep the stage id. The lines naming them stay tagged in the references (they sit
+ * beside tools the agent lacks) and reach its playbook only through the generator's AGENT_KEEPS.
  */
-const AGENT_LACKS = ['before_after_item_id', 'journey_stage_id', 'customer_journey_stage_list'];
+const AGENT_KEPT_SETTINGS = ['before_after_item_id', 'journey_stage_id'];
 
 const SKILL = 'skills/hiveku-social-agency/SKILL.md';
 const REF = (name) => `skills/hiveku-social-agency/references/${name}`;
@@ -395,21 +401,45 @@ test('5. the lines naming the tools and fields the Social team\'s agent lacks ar
   let tagged = 0;
   for (const name of files) {
     read(REF(name)).split('\n').forEach((line, i) => {
-      if (![...AGENT_LACKS, CHECK, WRITE, STAGE_WRITE].some((name2) => line.includes(name2))) return;
+      if (![...AGENT_LACKS, ...AGENT_KEPT_SETTINGS, CHECK, WRITE, STAGE_WRITE].some((name2) => line.includes(name2))) return;
       if (line.includes(PLUGIN_ONLY)) tagged++;
       else untagged.push(`${REF(name)}:${i + 1}`);
     });
   }
-  assert.deepEqual(untagged, [], 'these lines would teach the Social team\'s agent a tool or a field it cannot use: end each with the plugin-only tag');
+  assert.deepEqual(untagged, [], 'end each of these lines with the plugin-only tag: the agent\'s copy keeps only the tagged lines the generator\'s AGENT_KEEPS names');
   assert.ok(tagged >= 10, `only ${tagged} tagged line(s) name the tools and fields in the playbook references - the texts lost them`);
 });
 
-test("5. the playbook the Social team's agent reads says what a stage with no step means, and claims no step it lacks", () => {
-  // The agent reads its journeys as stored, where a stage only Hiveku guesses carries no step (the guess is made when
-  // a journey is read through Hiveku), so its playbook must not say every stage carries one.
+test("5. the agent's playbook keeps the grid row and the stage id, untagged, and nothing it cannot use", () => {
   const generator = read('scripts/gen-social-playbooks.mjs');
   const files = [...generator.matchAll(/\['SOCIAL_[A-Z_]+', '([a-z-]+\.md)'\]/g)].map((m) => m[1]);
-  const kept = (name) => fold(read(REF(name)).split('\n').filter((line) => !line.includes(PLUGIN_ONLY)).join('\n'));
+  for (const name of Object.keys(AGENT_KEEPS)) assert.ok(files.includes(name), `AGENT_KEEPS names ${name}, which the generator does not copy`);
+  for (const name of files) {
+    const lines = agentText(name, read(REF(name))).split('\n');
+    assert.deepEqual(lines.filter((line) => line.includes(PLUGIN_ONLY)), [], `${REF(name)}: a kept line still carries the tag`);
+    const lacking = lines.filter((line) => [...AGENT_LACKS, CHECK, WRITE, STAGE_WRITE].some((word) => line.includes(word)));
+    assert.deepEqual(lacking, [], `${REF(name)}: the agent's copy names a tool it lacks`);
+    const settings = lines.filter((line) => AGENT_KEPT_SETTINGS.some((word) => line.includes(word)));
+    for (const line of settings) {
+      assert.ok((AGENT_KEEPS[name] ?? []).includes(line), `${REF(name)}: ${JSON.stringify(line)} reached the agent's copy without AGENT_KEEPS`);
+    }
+  }
+  const grounding = fold(agentText('audience-grounding.md', read(GROUNDING)));
+  assert.ok(grounding.includes("The grid's row goes in `settings.before_after_item_id`: the one row of the grid the post shows"), "the agent's copy lost where the grid row goes");
+  assert.ok(grounding.includes('The server keeps the stage\'s id beside the name in `settings.journey_stage_id`'), "the agent's copy lost the kept stage id");
+  assert.match(fold(agentText('repurpose.md', read(REPURPOSE_REF))), /The grid item's row goes in `settings\.before_after_item_id`\./);
+  // The agent's tools take no settings: the table says where the row goes on that server.
+  assert.match(generator, /\['settings\.before_after_item_id', 'before_after_item_id, an argument of social_post_create and social_post_update/);
+  // A reworded kept line stops the generator instead of being dropped without a word.
+  assert.throws(() => agentText('repurpose.md', read(REPURPOSE_REF).replace("The grid item's row", 'The row')), /fix AGENT_KEEPS/);
+});
+
+test("5. the playbook the Social team's agent reads says what a stage with no step means, and claims no step it lacks", () => {
+  // The agent's journeys file carries each stage's step read through Hiveku, but a journey Hiveku could not be asked
+  // for this turn says not_read there, so its playbook must not say every stage carries one.
+  const generator = read('scripts/gen-social-playbooks.mjs');
+  const files = [...generator.matchAll(/\['SOCIAL_[A-Z_]+', '([a-z-]+\.md)'\]/g)].map((m) => m[1]);
+  const kept = (name) => fold(agentText(name, read(REF(name))));
   const grounding = kept('audience-grounding.md');
   assert.ok(grounding.includes('A `guess`, or a stage with no `awareness` at all (no step set yet), is a question for the person'), "the agent's playbook must say a stage with no step set is a question for the person");
   assert.ok(grounding.includes('a stage with no `awareness` has no step set yet'), "the agent's playbook keeps the trap of a missing step");
