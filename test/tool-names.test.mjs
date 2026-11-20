@@ -187,6 +187,8 @@ const KNOWN_NON_TOOLS = new Map([
   ['voice_pool_members', 'table'],
   ['voice_did_pools', 'table'],
   ['voice_number_orders', 'table'],
+  // agent_inbox_list's category for an order in doubt (HK-1860), named as the live tool texts name it.
+  ['voice_number_order', 'field'],
   ['voice_port_orders', 'table'],
   ['voice_tenant_config', 'table'],
   ['voice_conversion_uploads', 'table'],
