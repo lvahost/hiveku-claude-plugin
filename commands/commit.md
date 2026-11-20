@@ -54,7 +54,7 @@ commit, never `main`.
    re-save, re-build. Version green states only.
 
 4. If pages moved: `project_files_validate_orphan_routes({ project_id })` and read
-   `route_collisions[]`, not the orphan count - `orphans: 0` does not mean routing is healthy. It
+   `route_collisions[]` and `possible_route_collisions[]`, not the orphan count - `orphans: 0` does not mean routing is healthy. It
    reads the live project, so for branch work run it after the merge as well.
 
 5. SAVE THE VERSION - one tool, two shapes. The PROMOTE is the normal one:
