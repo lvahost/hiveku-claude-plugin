@@ -187,8 +187,9 @@ to default. That is a data problem, not an automation problem. Say so before bui
 3. Per branch: `crmUpdateContact` to set the owner, plus `discussionsAddMessage` or
    `slackNotification`, or `sendEmail`. To tell the assigned rep directly, Post in Discussions
    with `postTo: 'person'` lands in the direct message between the workflow's owner and that
-   rep, and only the workflow's owner can set that step up. Always wire the default handle; an
-   unwired default is a dropped lead.
+   rep, `postTo: 'group'` with `userIds` messages a group of them, and `postTo: 'yourself'`
+   posts in the owner's own conversation; only the workflow's owner can set up any of those.
+   Always wire the default handle; an unwired default is a dropped lead.
 
 **Prove it works.** Dry-run once per branch INCLUDING the default, with `input_data` that
 should land there, and confirm in `data.step_states` that the notification on that branch
@@ -358,7 +359,10 @@ broken workflow. `workflow_event_trigger_types_list` says so per entry. Confirm 
 3. Fan out off the true handle as siblings: `crmLogActivity`, `createTask` or
    `mcTaskCreate` for onboarding, `sendEmail` announcement, `discussionsAddMessage` or
    `slackNotification`. Set `on_error: 'continue'` on the non-critical legs so a failed team
-   post cannot kill the onboarding task.
+   post cannot kill the onboarding task. To give the deal its own channel, chain these one
+   after another (not as siblings): `discussionsCreate` (`name` from the deal, `ifTaken: 'use'`),
+   then `discussionsAddPeople` and `discussionsAddMessage`, each with
+   `threadId: '{{<createId>.thread_id}}'`.
 
 **Prove it works.** Dry-run a won deal and a stage change that is NOT won. On the won run
 read every leg's `would_have` and `template_values` in `data.step_states` and confirm the
