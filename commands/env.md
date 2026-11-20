@@ -37,6 +37,12 @@ values never shown to you, withheld names listed as comments with the reason):
 Never call `project_secrets_reveal` yourself to fill a file: its values would land in your context. The
 pull above writes them straight to disk.
 
+**A value the person must type** (an API key, token or password): never ask for it in chat, and never have them
+put it in a file, Finder or a terminal command. If `secure_value_request` is among your tools (the Hiveku desktop
+app), call it with a short header and the variable names: the person types the values into a secure card and you
+hear only which names were saved where. Otherwise tell them the variable's name and ask them to add it in the
+Hiveku app under the site's Settings > Variables.
+
 **Add or change a secret ("$ARGUMENTS"):** call `project_secrets_set({ project_id: <the project_id>, secrets: { KEY: value }, tier })`
 (this CONFIRMS - it updates Hiveku + auto-syncs the deployed Lambdas). Mind the tier: with no `tier`, a
 plain `KEY` applies to EVERY tier, production included. A value for local dev or the preview takes
