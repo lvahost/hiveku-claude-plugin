@@ -37,12 +37,24 @@ values never shown to you, withheld names listed as comments with the reason):
 Never call `project_secrets_reveal` yourself to fill a file: its values would land in your context. The
 pull above writes them straight to disk.
 
+**A key, token or password the site needs, which the person must type:** never ask for it in chat, and never have
+them put it in a file, Finder or a terminal command. If `secure_value_request` is among your tools (the Hiveku
+desktop app), call it with a short header and the variable names: the person types the values into a secure card
+and you hear only which names were saved where. Never pass a value the person gave you to `project_secrets_set`.
+Otherwise tell them the variable's name and ask them to add it in the Hiveku app under the site's Settings >
+Environment variables.
+
 **Add or change a secret ("$ARGUMENTS"):** call `project_secrets_set({ project_id: <the project_id>, secrets: { KEY: value }, tier })`
-(this CONFIRMS - it updates Hiveku + auto-syncs the deployed Lambdas). Mind the tier: with no `tier`, a
+(this CONFIRMS - it updates Hiveku + auto-syncs the deployed Lambdas) only with `generate` or with a value you
+already have that the person did not type (a URL, a setting). A key, token or password the person types goes through
+the paragraph above, never through this call. If the command's arguments hold one, it has already been through this
+chat: don't save it from here. Ask for it on the card, or send the person to the site's Settings > Environment
+variables, and tell them it went through the chat so they can replace it if it is a live key. Mind the tier: with no `tier`, a
 plain `KEY` applies to EVERY tier, production included. A value for local dev or the preview takes
 `tier: 'development'` (stored as `KEY_DEV`); `'staging'` and `'production'` scope the others. Setting
-several keys? Put them all in ONE call's `secrets` map instead of one call per key. Or edit `.env.local`
-and have the user run **"Hiveku: Push Env"** in VS Code, which saves them for development only.
+several keys? Put them all in ONE call's `secrets` map instead of one call per key. A value you already have
+(never one the person types) can also go in `.env.local` for the person to push with **"Hiveku: Push Env"** in
+VS Code, which saves it for development only.
 
 **Setting a secret RESTARTS the client's live preview.** The write pushes the new env into the Fly
 machine (stop → updateMachine → start, about 11 seconds of downtime) so the dev server sees the values
