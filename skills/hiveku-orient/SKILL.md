@@ -185,9 +185,11 @@ the memory_* tools.
 - **Never push local config into a project.** `.mcp.json`, `.env*` and `.hiveku/` carry local
   credentials; exclude them from every bulk save and archive. Real application secrets belong in
   `project_secrets_*` and are injected at deploy. Never read or print `.env.local`.
-- **A value the person must type** (an API key, token or password): never ask for it in chat or have them put it
-  in a file. Call `secure_value_request` if it is among your tools (the Hiveku desktop app); otherwise ask them to
-  add it in the Hiveku app under the site's Settings > Variables.
+- **A key, token or password a site needs:** never ask for it in chat, and never have the person put it in a
+  file, Finder or a terminal command. Call `secure_value_request` if it is among your tools (the Hiveku desktop
+  app); otherwise tell the person the variable's name and ask them to add it in the Hiveku app under the site's
+  Settings > Environment variables. A value an automation uses goes under Automations > More > Environment
+  variables, and an app's or a connection's secret follows its own steps (references/integrations.md).
 - **The proxy sends only the arguments a tool DECLARES.** Anything outside a tool's own
   `inputSchema` (or its `bodyParams` allowlist, where one has one) is dropped before the request
   leaves. A real-sounding but undeclared field returns **200 with that field unset and no error** -
