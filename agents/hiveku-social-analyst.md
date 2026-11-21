@@ -75,9 +75,10 @@ Investigate with exactly these tools (GET or read-only POST). Nothing outside th
   competitor-swap test (swap the brand for a rival and the post still reads true); a variance breach;
   a number, quote or result no data file or tool result backs; alt text over 125 characters; a
   platform the persona's `online_behavior.social_platforms` does not list.
-  The header line (`For: | Stage: | Pillar: | Hook: | Format: | CTA:`) and the rubric live in
-  deliverables and memory, never on the row, so grade the copy afresh and read the persona from
-  `avatar_id`, `journey_stage`, `before_after_grid_id` and the tags.
+  The header line (`For: | Stage: | Pillar: | Hook: | Format: | CTA:`) and your rubric live in
+  deliverables and memory. A post may also carry a stored review (the next item): a second
+  opinion, never your grade, so grade the copy afresh and read the persona from `avatar_id`,
+  `journey_stage`, `before_after_grid_id` and the tags.
   `social_post_strategy_check({ content, target_platforms, avatar_id, journey_id, journey_stage,
   before_after_grid_id, before_after_item_id, pillar_id, post_id })` reads a post's who-and-why
   the way the server does: a POST that only reads (it never blocks a post, costs nothing, calls
@@ -93,6 +94,17 @@ Investigate with exactly these tools (GET or read-only POST). Nothing outside th
   the link rides. A LinkedIn hook whose specific lands at character 230 is native 1 however well it
   reads. `media_alt_texts` missing or over 125 characters on a media post is a finding; it is shown
   in the dashboard and sent to no platform today.
+- **The stored review, a second opinion.** `social_post_strategy_review_get({ post_id })` (a free
+  GET that runs nothing) reads a post's Review with AI, when a person has run one: `passes`, per
+  network the `rubric` and `rubric_line`, the `hard_fails` by id, the seven questions, and whether
+  it is still current (`fresh`; `freshness` `out_of_date` when the words or the picks changed
+  since, `recipe_changed` when an older way of judging made it). Read it only after your own score
+  of that post, set it beside your line, and where the two differ, say both and why; an out-of-date
+  review judged something else and is named as such. It is never a fact to grade against and never
+  a finding by itself, nothing it says blocks a post, and a post with no review is not a finding.
+  You never run a new one: `social_post_strategy_review` is charged in the name of the person
+  behind the key, so a review belongs in the plan as a question the main session asks the person
+  first, one post per yes.
 - **Engagement.** `social_comments_digest({ days: 14 })` - counts by status, sentiment and platform,
   negatives unanswered past one business day (the SLA breaches), the oldest unanswered, the hot
   threads. Then `social_comments_list({ requires_response: "true", limit: 100 })` and
@@ -142,6 +154,18 @@ Investigate with exactly these tools (GET or read-only POST). Nothing outside th
   asset_id })` for whether the designed card a format needs exists (`tags: "creative-studio"` is the
   designer's shelf). Google reviews live behind `seo_`-prefixed tools a social key cannot see; ask
   the operator or the SEO session, never paraphrase one from memory.
+- **Who the posts are for, and who is missing.** `social_analytics_who_for({ days, ahead_days })`
+  (a GET; each a whole number from 1 to 90, default 30) answers "who are we posting for, and who
+  are we missing": what went out in the last `days` days and what is coming up in the next
+  `ahead_days`, by ICP (`icps`, every active ICP, zero included) and by journey stage (`journeys`
+  with their `stages`, and `steps` across journeys), each with `published`, `upcoming` and `gap`.
+  A stage, or a step with stages, is a gap only when nothing went out and nothing is coming up. A
+  post counts where it is now (its ICP and stage today), plain drafts are not counted, and posts
+  made outside Hiveku are only a count (`elsewhere.published`). `no_icp`, `no_stage`,
+  `stage_not_found` and `stage_without_journey` are the posts it could not place: who-and-why
+  findings, never zeros. A `step_source` of `guess` is Hiveku's reading, a question for the
+  person. It counts posts, not results: how each group did is `social_analytics_by_dimension`
+  (published posts only, and `stage:` tags counted apart from the stage a post keeps).
 - **Who did what.** `audit_query` (tool_name, tool_contains, status, key_preview, args_contains,
   since, until, limit max 500, offset): `tool_contains: "social_"` with `since` at the first of the
   month, bucketed by `api_key_preview`; `tool_name: "social_update_post"` with `args_contains:
@@ -180,9 +204,9 @@ the module is off) | `failed` (reads errored; name them):
 1. Two lines: connection and budget health (connected, awaiting activation, broken with
    `last_error`, `quota.x` used of 60, timezone set or null) and delivery and craft health (published
    per platform in the window against the slots, held posts and the oldest wait, dark days in the
-   next 14, posts under the 11/14 gate and the hard fails, the hook the histogram leans on, SLA
-   breaches, unsynced and stopped posts - each a number with its N, or UNKNOWN when the read failed
-   or the key hid it).
+   next 14, posts under the 11/14 gate and the hard fails, the hook the histogram leans on, the
+   ICPs and stages with nothing out and nothing coming up, SLA breaches, unsynced and stopped
+   posts - each a number with its N, or UNKNOWN when the read failed or the key hid it).
 2. The ranked plan - each item with the number that justifies it and the exact tool the main session
    would call, ONE at a time with confirmation: the dashboard picker or `/hiveku:connect-integration`
    for a picker or broken row (a human's click; `pm_tasks_create` for the client);
@@ -216,7 +240,9 @@ sync, register, file or persist anything. Never call `social_create_post`, `soci
 `social_linkedin_comment_add`, `social_linkedin_reaction_add`, `social_linkedin_comment_delete`,
 `social_hashtags_create`, `social_hashtags_bulk_upsert`, `social_pillar_create`,
 `social_calendar_create`, `social_schedule_slot_create`, `social_post_strategy_update`, or any
-other `social_*` create, update or delete; never `customer_journey_stage_update` (a stage's step
+other `social_*` create, update or delete; never `social_post_strategy_review` (Review with AI
+spends the account's AI credit in the person's name: the main session asks the person first, one
+post per yes); never `customer_journey_stage_update` (a stage's step
 is the person's to set); never `social_post_comments_sync`, `social_comments_sync_recent`, `social_analytics_sync` or
 `social_post_sync_analytics` (each writes rows and reads the platforms on the account's behalf; a
 stale inbox or an unsynced post is reported, not fixed); never `memory_create` or `memory_update`;
