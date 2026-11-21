@@ -188,6 +188,8 @@ const LIVE_CHANGE_NAMES = [
   // HK-1607: a person's Send for approval holds a scheduled post back from its time.
   'social_post_send_for_approval',
   'social_posts_bulk_create',
+  // 2026-11-21 (SOCIAL-REVIEW, pending): Review with AI of a saved social post spends the account's AI credit.
+  'social_post_strategy_review',
   'account_timezone_set',
   'helpdesk_assistant_knowledge_sources_update',
   // 2026-11-11 (HK-1504): the help desk away message answers every customer who emails in while its window is on.

@@ -6,7 +6,7 @@
     "mcp__hiveku__"
   ],
   "plugin_version": "0.27.298",
-  "count": 738,
+  "count": 739,
   "tools": [
     {
       "name": "deploy_site",
@@ -2522,6 +2522,11 @@
       "name": "social_posts_bulk_create",
       "method": "POST",
       "why_gated": "creates up to 25 drafts and their calendar events in one call; nothing publishes, but it is a lot to unwind by hand"
+    },
+    {
+      "name": "social_post_strategy_review",
+      "method": "POST",
+      "why_gated": "runs Review with AI on a saved social post: the Social team scores it, which spends the account's AI credit in the name of the person behind the key (priced once it has run). Nothing it says blocks a post"
     },
     {
       "name": "webflow_project_cms_provider_set",
