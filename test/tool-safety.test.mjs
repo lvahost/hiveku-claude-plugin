@@ -753,7 +753,7 @@ test('★ every UNMAPPED tool is accounted for, including vendors we have not me
   // vendor, no per-call charge.
   const LOCAL = [
     'hiveku_batch', 'hiveku_tool_schema', 'hiveku_find_tools',
-    'list_departments', 'talk_to_department',
+    'list_departments', 'talk_to_department', 'department_turns_wait',
   ];
   // Firecrawl was the first thing this guard found, and it is classified now
   // (4fdc492) — so it is deliberately NOT acknowledged here. It has to pass on
