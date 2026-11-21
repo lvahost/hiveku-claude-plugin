@@ -45,11 +45,11 @@ Otherwise tell them the variable's name and ask them to add it in the Hiveku app
 Environment variables.
 
 **Add or change a secret ("$ARGUMENTS"):** call `project_secrets_set({ project_id: <the project_id>, secrets: { KEY: value }, tier })`
-only with `generate` or with a value you already have that the person did not type (a URL, a setting); a value the
-person types goes through the paragraph above. If $ARGUMENTS holds a value the person typed, it has already been
-through this chat: with `secure_value_request` among your tools, ask for it on the card instead; otherwise save it,
-and tell the person it went through the chat so they can replace it if it is a live key.
-(this CONFIRMS - it updates Hiveku + auto-syncs the deployed Lambdas). Mind the tier: with no `tier`, a
+(this CONFIRMS - it updates Hiveku + auto-syncs the deployed Lambdas) only with `generate` or with a value you
+already have that the person did not type (a URL, a setting). A key, token or password the person types goes through
+the paragraph above, never through this call. If the command's arguments hold one, it has already been through this
+chat: don't save it from here. Ask for it on the card, or send the person to the site's Settings > Environment
+variables, and tell them it went through the chat so they can replace it if it is a live key. Mind the tier: with no `tier`, a
 plain `KEY` applies to EVERY tier, production included. A value for local dev or the preview takes
 `tier: 'development'` (stored as `KEY_DEV`); `'staging'` and `'production'` scope the others. Setting
 several keys? Put them all in ONE call's `secrets` map instead of one call per key. A value you already have
