@@ -258,8 +258,8 @@ test('2. the publishing reference reads first, asks second, runs third, follows 
     'is final for that key: nothing was charged; never call again with it and never move on to other posts',
     '409 `needs_who`',
   ], 'the Review with AI section');
-  // The answers that start no run, in the order the server's route decides them: needs_who, then the two answers that
-  // charge nothing again, before the 402.
+  // The answers that start no run, in the order the server's route decides them: needs_who, then the three answers that
+  // charge nothing (a live run handed back, a stale `again: true` refused, a current review), before the 402.
   const answers = fold(section.slice(section.indexOf('The answers that start no run, in the order Hiveku decides them.')));
   assert.ok(answers.length > 0 && section.includes('The answers that start no run'), 'the section lost its list of answers');
   inOrder(answers, [
@@ -269,11 +269,16 @@ test('2. the publishing reference reads first, asks second, runs third, follows 
     '400 `empty_post`',
     '409 `needs_who`',
     '202 `reused: true`',
+    '409 `state_changed` (step 3: a send with `again: true` whose stored review changed since)',
     '200 `ran: false`',
+    'none of these three is charged',
     '402: the account may not run AI',
-    '500 `could_not_start` or `review_failed`',
-    'A send with `again: true` can also answer 409 `state_changed` (step 3): nothing was charged.',
+    'A review that could not be started answers 500 `could_not_start` or `review_failed`: nothing was charged.',
+    'A run that started and then made no review is `last_failure` (step 1), with what it cost.',
   ], 'the answers, in the server\'s order');
+  // Both 500s mean the review was never started. A run that started and failed is charged and shows in last_failure,
+  // so the list never says a run that did not finish was free.
+  assert.doesNotMatch(answers, /did not finish/, 'a run that started and failed is last_failure, with what it cost, not a free 500');
   assert.ok(fold(ref.slice(0, ref.indexOf('## The calendar'))).includes('before Review with AI'), 'the reference\'s load line names Review with AI');
   // The hard fails a review names are anti-fluff.md section 4's seven.
   const antiFluff = read(ANTI_FLUFF);
