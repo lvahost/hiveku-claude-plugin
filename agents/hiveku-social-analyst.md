@@ -69,12 +69,14 @@ Investigate with exactly these tools (GET or read-only POST). Nothing outside th
   `published_at` yourself - the list orders by `created_at`). Score every post on the 7-axis rubric
   from anti-fluff.md (specificity, one-idea, proof, voice, native, hook, cta; 0, 1 or 2 each; gate
   11/14 and zero hard fails), written exactly as `Rubric: N/14 (specificity 2, one-idea 2, proof 1,
-  voice 2, native 2, hook 2, cta 1)` with the reason for every 1 or 0. Hard fails: one of the 45
-  banned phrases or the account's own (inflections and hashtags count); no persona or no stage
-  (`avatar_id`, and a `journey_stage` on the post's journey: a `stage:` tag alone is not one); the
-  competitor-swap test (swap the brand for a rival and the post still reads true); a variance breach;
-  a number, quote or result no data file or tool result backs; alt text over 125 characters; a
-  platform the persona's `online_behavior.social_platforms` does not list.
+  voice 2, native 2, hook 2, cta 1)` with the reason for every 1 or 0. Hard fails, each named by
+  its id as a stored review names them: one of the 45 banned phrases or the account's own
+  (inflections and hashtags count) (`banned_phrase`); no persona or no stage (`avatar_id`, and a
+  `journey_stage` on the post's journey: a `stage:` tag alone is not one) (`no_persona_and_stage`);
+  the competitor-swap test (swap the brand for a rival and the post still reads true)
+  (`competitor_swap`); a variance breach (`variance_breach`); a number, quote or result no data
+  file or tool result backs (`unbacked_claim`); alt text over 125 characters (`alt_text_over_125`);
+  a platform the persona's `online_behavior.social_platforms` does not list (`platform_not_used`).
   The header line (`For: | Stage: | Pillar: | Hook: | Format: | CTA:`) and your rubric live in
   deliverables and memory. A post may also carry a stored review (the next item): a second
   opinion, never your grade, so grade the copy afresh and read the persona from `avatar_id`,
@@ -158,8 +160,9 @@ Investigate with exactly these tools (GET or read-only POST). Nothing outside th
   (a GET; each a whole number from 1 to 90, default 30) answers "who are we posting for, and who
   are we missing": what went out in the last `days` days and what is coming up in the next
   `ahead_days`, by ICP (`icps`, every active ICP, zero included) and by journey stage (`journeys`
-  with their `stages`, and `steps` across journeys), each with `published`, `upcoming` and `gap`.
-  A stage, or a step with stages, is a gap only when nothing went out and nothing is coming up. A
+  with their `stages`, and `steps` across journeys), each with `published` and `upcoming`; stages
+  and steps also carry `gap`. An ICP with nothing out and nothing coming up shows 0 and 0. A
+  stage, or a step with stages, is a gap only when nothing went out and nothing is coming up. A
   post counts where it is now (its ICP and stage today), plain drafts are not counted, and posts
   made outside Hiveku are only a count (`elsewhere.published`). `no_icp`, `no_stage`,
   `stage_not_found` and `stage_without_journey` are the posts it could not place: who-and-why

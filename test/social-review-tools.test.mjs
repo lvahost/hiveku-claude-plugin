@@ -211,7 +211,7 @@ test('2. the skill reads the stored review first, asks the person before a run, 
     "It spends the account's AI credit in the name of the person behind the key",
     `read \`${REVIEW_GET}({ post_id })\` first`,
     'a `fresh` review already answers, so show it and run nothing',
-    'ask the person first',
+    'For a missing review, or one that is not `fresh`, ask the person first',
     'run it only on their yes, one post per yes, never on their behalf',
     `after a timeout or a 524, read \`${REVIEW_GET}\` and never send it twice`,
     'Nothing a review says blocks a post',
@@ -252,6 +252,21 @@ test('2. the publishing reference reads first, asks second, runs third, follows 
     'is final for that key: nothing was charged; never call again with it and never move on to other posts',
     '409 `needs_who`',
   ], 'the Review with AI section');
+  // The answers that start no run, in the order the server's route decides them: needs_who, then the two answers that
+  // charge nothing again, before the 402.
+  const answers = fold(section.slice(section.indexOf('The answers that start no run, in the order Hiveku decides them.')));
+  assert.ok(answers.length > 0 && section.includes('The answers that start no run'), 'the section lost its list of answers');
+  inOrder(answers, [
+    '403 `person_key_required`',
+    '403 `key_creator_lacks_access`',
+    '400 `bad_id` or `bad_request`; 404 `not_found`; 409 `post_publishing`',
+    '400 `empty_post`',
+    '409 `needs_who`',
+    '202 `reused: true`',
+    '200 `ran: false`',
+    '402: the account may not run AI',
+    '500 `could_not_start` or `review_failed`',
+  ], 'the answers, in the server\'s order');
   assert.ok(fold(ref.slice(0, ref.indexOf('## The calendar'))).includes('before Review with AI'), 'the reference\'s load line names Review with AI');
   // The hard fails a review names are anti-fluff.md section 4's seven.
   const antiFluff = read(ANTI_FLUFF);
@@ -288,7 +303,21 @@ test('2. the audit reads a stored review only after its own score, as a second o
     'where the two differ, say both and why',
     'It never replaces your score and never blocks a post',
   ], 'the audit\'s step 2');
-  assert.match(fold(raw), /the stored review beside it \(its total, hard fails and freshness, or "none"\)/, 'the audit table shows the stored review beside the audit\'s own line');
+  assert.match(fold(raw), /hard fails by id, banned hits, tells, the stored review beside it \(its total, hard fails by id and freshness, or "none"\)/, 'the audit table shows the stored review beside the audit\'s own line, both by id');
+});
+
+/** The seven hard fails as each text words them, in anti-fluff.md section 4's order, so each id follows its words. */
+const AUDIT_HARD_FAIL_WORDS = ['a banned phrase from anti-fluff.md', 'a header you cannot fill', 'the competitor-swap test', 'a variance breach', 'no data file or tool result backs', 'alt text over 125 characters', '`online_behavior.social_platforms` does not list'];
+const ANALYST_HARD_FAIL_WORDS = ['one of the 45 banned phrases', 'no persona or no stage', 'the competitor-swap test', 'a variance breach', 'no data file or tool result backs', 'alt text over 125 characters', '`online_behavior.social_platforms` does not list'];
+const wordsThenIds = (words) => words.flatMap((phrase, index) => [phrase, `(\`${HARD_FAIL_IDS[index]}\`)`]);
+
+test('2. the audit and the analyst name each hard fail by its id, after its words, as a stored review names them', () => {
+  const audit = read(AUDIT);
+  const step2 = fold(audit.slice(audit.indexOf('2. **Score every post'), audit.indexOf('3. **Winners and losers')));
+  inOrder(step2, ['Hard fails, each named per post by its id, as a stored review names them:', ...wordsThenIds(AUDIT_HARD_FAIL_WORDS), 'its hard fails by id beside your line'], 'the audit\'s hard fails');
+  const analyst = read(ANALYST);
+  const craft = fold(analyst.slice(analyst.indexOf('- **Craft audit.**'), analyst.indexOf('The header line (`For: |')));
+  inOrder(craft, ['Hard fails, each named by its id as a stored review names them:', ...wordsThenIds(ANALYST_HARD_FAIL_WORDS)], 'the analyst\'s hard fails');
 });
 
 test('2. the analyst reads a stored review as a second opinion, reads who the posts are for, and never runs a review', () => {
@@ -306,13 +335,18 @@ test('2. the analyst reads a stored review as a second opinion, reads who the po
     '- **Who the posts are for, and who is missing.**',
     `\`${WHO_FOR}({ days, ahead_days })\``,
     '"who are we posting for, and who are we missing"',
+    'each with `published` and `upcoming`; stages and steps also carry `gap`',
+    'An ICP with nothing out and nothing coming up shows 0 and 0',
     'is a gap only when nothing went out and nothing is coming up',
   ], 'the analyst\'s tool list');
+  assert.doesNotMatch(investigate, /`upcoming` and `gap`/, 'an ICP row carries no gap: only stages and steps do');
   const never = fold(analyst.slice(analyst.indexOf('You do not create, update, delete')));
   assert.ok(never.includes(`never \`${REVIEW}\``), 'the analyst\'s never-call list must name the review');
   const analytics = fold(read(ANALYTICS));
   assert.ok(analytics.includes(`\`${WHO_FOR}({ days, ahead_days })\``), 'the analytics reference must name the who-for read');
   assert.ok(analytics.includes('"who are we posting for, and who are we missing"'), 'the analytics reference must say what the who-for read answers');
+  assert.ok(analytics.includes('each with `published` and `upcoming`; stages and steps also carry `gap`. An ICP with nothing out and nothing coming up shows 0 and 0.'), 'the analytics reference must say only stages and steps carry a gap');
+  assert.doesNotMatch(analytics, /`upcoming` and `gap`/, 'an ICP row carries no gap: only stages and steps do');
 });
 
 test('2. the new words carry no long dashes', () => {
