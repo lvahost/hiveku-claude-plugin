@@ -1319,17 +1319,11 @@ const DEPARTMENT_APPROVALS_THAT_ASK = [
  * are pinned in test/live-change-writes.test.mjs.
  */
 const EMAIL_W23_SENDS_THAT_ASK = ['email_sequence_connection_turn_on', 'marketing_form_confirm_signups_set'];
-/**
- * The Creative Studio's layer removes (2026-11-21, S54; builder #2397, MCP #629): one layer, many layers at once, and a
- * layer folder (with keep_layers false, its layers too). The one-layer remove was on the ask list only; the two new
- * ones are contracted in test/pending-tools.mjs until the tool index carries them.
- */
-const DESIGN_LAYER_REMOVES_THAT_ASK = ['design_layer_delete', 'design_layers_delete', 'design_layer_folder_delete'];
 
-test('the always-ask set is exactly the memory, form-capture and indexing writes, the secrets reveal, the A/B test writes, the mobile app writes, the PPC override, the lead-email change, a checks rerun, the Email Service setup writes, the record-again ask, the LOA email, the Confirm on your phone start and cancel, the help desk privacy writes, the site inbox delete and move, the ad account connection delete, an email webhook\'s delete, the SEO page\'s erases and overwrites, the Memory page\'s writes, a person\'s Mission Control claim, release and decision, a person\'s Projects leave and comment delete, the other Projects wave 2 writes, a project\'s share, unshare and delete and a task\'s delete, the Meet and Discussions sends, shares and deletes, a webinar\'s edit, the Meet calendar sends, and the brand guide narrators and a journey\'s published version, and the Referrals sends, pauses, archives and edits, and the department agents\' approval cards, and the two email sends of email waves 2 and 3, and the Creative Studio\'s layer removes', () => {
+test('the always-ask set is exactly the memory, form-capture and indexing writes, the secrets reveal, the A/B test writes, the mobile app writes, the PPC override, the lead-email change, a checks rerun, the Email Service setup writes, the record-again ask, the LOA email, the Confirm on your phone start and cancel, the help desk privacy writes, the site inbox delete and move, the ad account connection delete, an email webhook\'s delete, the SEO page\'s erases and overwrites, the Memory page\'s writes, a person\'s Mission Control claim, release and decision, a person\'s Projects leave and comment delete, the other Projects wave 2 writes, a project\'s share, unshare and delete and a task\'s delete, the Meet and Discussions sends, shares and deletes, a webinar\'s edit, the Meet calendar sends, and the brand guide narrators and a journey\'s published version, and the Referrals sends, pauses, archives and edits, and the department agents\' approval cards, and the two email sends of email waves 2 and 3', () => {
   assert.deepEqual(
     [...ALWAYS_ASK_WRITES.keys()].sort(),
-    [...MEMORY_WRITES_THAT_ASK, ...FORM_CAPTURE_WRITES_THAT_ASK, ...INDEXING_WRITES_THAT_ASK, ...SECRETS_REVEAL_THAT_ASKS, ...AB_TEST_WRITES_THAT_ASK, ...MOBILE_WRITES_THAT_ASK, ...PPC_OVERRIDE_THAT_ASKS, ...LEAD_EMAIL_WRITES_THAT_ASK, ...CHECKS_RERUN_THAT_ASKS, ...EMAIL_SERVICE_WRITES_THAT_ASK, ...TESTIMONIAL_RERECORD_THAT_ASKS, ...LOA_SEND_THAT_ASKS, ...CONFIRM_ON_PHONE_THAT_ASKS, ...CONTACT_RESTORE_THAT_ASKS, ...HELPDESK_PRIVACY_WRITES_THAT_ASK, ...SITE_WRITES_THAT_ASK, ...PPC_CONNECTION_DELETE_THAT_ASKS, ...EMAIL_WEBHOOK_DELETE_THAT_ASKS, ...SEO_WRITES_THAT_ASK, ...MEMORY_PAGE_WRITES_THAT_ASK, ...MISSION_CONTROL_WRITES_THAT_ASK, ...PROJECTS_PERSON_WRITES_THAT_ASK, ...PROJECTS_WAVE_2_OTHER_WRITES_THAT_ASK, ...PROJECTS_SHARE_AND_DELETE_THAT_ASK, ...MEET_DISCUSSIONS_WRITES_THAT_ASK, ...WEBINAR_EDIT_THAT_ASKS, ...MEET_CALENDAR_SENDS_THAT_ASK, ...BOOKING_CALENDAR_WRITES_THAT_ASK, ...MARKETING_IDENTITY_WRITES_THAT_ASK, ...REFERRAL_WRITES_THAT_ASK, ...DASHBOARD_PAGE_WRITES_THAT_ASK, ...ANALYTICS_DESKTOP_WRITES_THAT_ASK, ...DEPARTMENT_APPROVALS_THAT_ASK, ...EMAIL_W23_SENDS_THAT_ASK, ...DESIGN_LAYER_REMOVES_THAT_ASK].sort(),
+    [...MEMORY_WRITES_THAT_ASK, ...FORM_CAPTURE_WRITES_THAT_ASK, ...INDEXING_WRITES_THAT_ASK, ...SECRETS_REVEAL_THAT_ASKS, ...AB_TEST_WRITES_THAT_ASK, ...MOBILE_WRITES_THAT_ASK, ...PPC_OVERRIDE_THAT_ASKS, ...LEAD_EMAIL_WRITES_THAT_ASK, ...CHECKS_RERUN_THAT_ASKS, ...EMAIL_SERVICE_WRITES_THAT_ASK, ...TESTIMONIAL_RERECORD_THAT_ASKS, ...LOA_SEND_THAT_ASKS, ...CONFIRM_ON_PHONE_THAT_ASKS, ...CONTACT_RESTORE_THAT_ASKS, ...HELPDESK_PRIVACY_WRITES_THAT_ASK, ...SITE_WRITES_THAT_ASK, ...PPC_CONNECTION_DELETE_THAT_ASKS, ...EMAIL_WEBHOOK_DELETE_THAT_ASKS, ...SEO_WRITES_THAT_ASK, ...MEMORY_PAGE_WRITES_THAT_ASK, ...MISSION_CONTROL_WRITES_THAT_ASK, ...PROJECTS_PERSON_WRITES_THAT_ASK, ...PROJECTS_WAVE_2_OTHER_WRITES_THAT_ASK, ...PROJECTS_SHARE_AND_DELETE_THAT_ASK, ...MEET_DISCUSSIONS_WRITES_THAT_ASK, ...WEBINAR_EDIT_THAT_ASKS, ...MEET_CALENDAR_SENDS_THAT_ASK, ...BOOKING_CALENDAR_WRITES_THAT_ASK, ...MARKETING_IDENTITY_WRITES_THAT_ASK, ...REFERRAL_WRITES_THAT_ASK, ...DASHBOARD_PAGE_WRITES_THAT_ASK, ...ANALYTICS_DESKTOP_WRITES_THAT_ASK, ...DEPARTMENT_APPROVALS_THAT_ASK, ...EMAIL_W23_SENDS_THAT_ASK].sort(),
   );
 });
 
@@ -1355,31 +1349,40 @@ test('the two email sends of email waves 2 and 3 ask on a direct call and throug
   }
 });
 
-test('the Creative Studio\'s layer removes ask on a direct call and through a batch, a reads-only folder denies them, and the steps that build a design are not on the set', () => {
+/**
+ * The Creative Studio's two new layer removes (2026-11-21, S54; builder #2397, MCP #629): design_layers_delete (many
+ * layers at once) and design_layer_folder_delete (a layer folder, and with keep_layers false its layers too). They are
+ * gated exactly as the one-layer remove, design_layer_delete, is, and no more: on the ask list (and so the INSTALL.md
+ * block, the Codex prompts and a hiveku-sync folder) right after it, with its method, and on whichever hook map it is
+ * on, which today is none. Both are contracted in test/pending-tools.mjs until the tool index carries them.
+ */
+const NEW_LAYER_REMOVES = ['design_layers_delete', 'design_layer_folder_delete'];
+
+test('the two new layer removes are gated exactly as design_layer_delete is: right after it on the ask list, with its method, and the same answer from the hook', () => {
+  const asked = JSON.parse(readFileSync(new URL('../data/permission-critical-tools.json', import.meta.url), 'utf8')).tools;
+  const names = asked.map((t) => t.name);
+  const at = names.indexOf('design_layer_delete');
+  assert.notEqual(at, -1, 'design_layer_delete is on the ask list');
+  assert.deepEqual(names.slice(at + 1, at + 1 + NEW_LAYER_REMOVES.length), NEW_LAYER_REMOVES, 'right after design_layer_delete');
+  const install = readFileSync(new URL('../INSTALL.md', import.meta.url), 'utf8');
+  const one = install.indexOf('"mcp__plugin_hiveku_hk__design_layer_delete",');
+  assert.notEqual(one, -1, 'design_layer_delete is in the INSTALL.md ask block');
+  const after = install.slice(one).split('\n').slice(1, 1 + NEW_LAYER_REMOVES.length).map((line) => line.trim());
+  assert.deepEqual(after, NEW_LAYER_REMOVES.map((name) => `"mcp__plugin_hiveku_hk__${name}",`), 'right after it in INSTALL.md');
   const cwd = folderWith(undefined);
   const readsOnly = folderWith({ version: 1, mode: 'reads-only' });
-  for (const name of DESIGN_LAYER_REMOVES_THAT_ASK) {
-    const direct = decideWithGuardrails({ ...payload(name, cwd), tool_input: { id: 'x', layer_ids: ['a', 'b'], folder_id: 'f', keep_layers: false } });
-    assert.equal(direct?.hookSpecificOutput?.permissionDecision, 'ask', name);
-    assert.match(direct.hookSpecificOutput.permissionDecisionReason, new RegExp(`^${name} `), name);
-    const batch = decideForPayload({ tool_name: `${HIVEKU_TOOL_PREFIX}hiveku_batch`, tool_input: { calls: [{ tool: name, args: { id: 'x' } }] }, cwd });
+  const input = { id: 'x', layer_id: 'a', layer_ids: ['a', 'b'], folder_id: 'f', keep_layers: false };
+  const answer = (name, folder) => decision(decideWithGuardrails({ ...payload(name, folder), tool_input: input }));
+  for (const name of NEW_LAYER_REMOVES) {
+    assert.equal(asked.find((t) => t.name === name).method, asked[at].method, `${name} has design_layer_delete's method`);
+    assert.equal(ALWAYS_ASK_WRITES.has(name), ALWAYS_ASK_WRITES.has('design_layer_delete'), `${name}: ALWAYS_ASK_WRITES as design_layer_delete`);
+    assert.equal(LIVE_CHANGE_WRITES.has(name), LIVE_CHANGE_WRITES.has('design_layer_delete'), `${name}: LIVE_CHANGE_WRITES as design_layer_delete`);
+    assert.equal(answer(name, cwd), answer('design_layer_delete', cwd), `${name}: the hook answers a direct call as for design_layer_delete`);
+    assert.equal(answer(name, readsOnly), 'deny', `${name} under reads-only`);
+    const batch = decideForPayload({ tool_name: `${HIVEKU_TOOL_PREFIX}hiveku_batch`, tool_input: { calls: [{ tool: name, args: input }] }, cwd });
     assert.equal(batch?.hookSpecificOutput?.permissionDecision, 'ask', `${name} in a batch`);
     assert.equal(isAutoApprovable(name, {}), false, name);
     assert.equal(isReadOnlyTool(name), false, `${name} must not be on the generated read list`);
-    assert.equal(decision(decideWithGuardrails(payload(name, readsOnly))), 'deny', `${name} under reads-only`);
-    assert.doesNotMatch(ALWAYS_ASK_WRITES.get(name), /[\u2013\u2014]/, `${name}: no dashes in a reason the person reads`);
-    assert.match(ALWAYS_ASK_WRITES.get(name), /version history brings/, `${name}: the reason says how the layers come back`);
-  }
-  assert.match(ALWAYS_ASK_WRITES.get('design_layers_delete'), /many layers of a design at once/);
-  assert.match(ALWAYS_ASK_WRITES.get('design_layer_folder_delete'), /with keep_layers false every layer in it too/);
-  // Each remove is on the ask list too, the three together right after the one-layer remove's place.
-  const asked = JSON.parse(readFileSync(new URL('../data/permission-critical-tools.json', import.meta.url), 'utf8')).tools.map((t) => t.name);
-  const at = asked.indexOf('design_layer_delete');
-  assert.deepEqual(asked.slice(at, at + 3), DESIGN_LAYER_REMOVES_THAT_ASK, 'on the ask list, together');
-  // The steps that add, change, move, order or duplicate layers, and the folder make and rename, are everyday changes.
-  for (const name of ['design_layer_add', 'design_layer_update', 'design_layer_move', 'design_layers_update', 'design_layers_arrange', 'design_layer_folder', 'design_layers_list', 'design_state_get', 'design_update']) {
-    assert.equal(ALWAYS_ASK_WRITES.has(name), false, `${name} must not ask on every call`);
-    assert.equal(LIVE_CHANGE_WRITES.has(name), false, `${name} must not ask on every call`);
   }
 });
 
