@@ -602,6 +602,13 @@
  *     SOCIAL-STRATEGY     social_post_strategy_check, social_post_strategy_update. Landed 2026-11-15 (MCP #571, live
  *                         at 7149d474ebf2; the 0.27.282 index carries both, the check on the read-only list and the
  *                         write not); entries deleted.
+ *
+ *   The Creative Studio's layer tools for agents (2026-11-21, S54; builder #2397, MCP #629): the two new removes,
+ *   many layers at once (DELETE .../layers/bulk) and a layer folder with or without its layers (DELETE
+ *   .../layer-folders/:folderId). Both ask from this release on, before the MCP release serves them, on the ask list
+ *   right after design_layer_delete and on ALWAYS_ASK_WRITES (lib/tool-safety.mjs) with it. Release step, after the
+ *   MCP deploy: regenerate the index from the live server, then delete these entries (tool-names.test.mjs forces it).
+ *     S54-LAYER-DELETES   design_layers_delete, design_layer_folder_delete.
  */
 const SEO_SINCE = '2026-08-30';
 const seo = (batch) => ({ since: SEO_SINCE, batch });
@@ -872,4 +879,9 @@ export const PENDING_TOOLS = new Map([
   ['outbound_campaign_email_accounts_detach', { since: '2026-11-13', batch: 'BUCKET-C-OUTBOUND' }],
   // SOCIAL-STRATEGY (2026-11-15, MCP #571, served since 2026-11-15): social_post_strategy_check and
   // social_post_strategy_update are served and indexed (the 0.27.282 index carries both). Entries deleted.
+  // S54-LAYER-DELETES (2026-11-21, MCP #629, builder #2397): the two layer removes, on the ask list and ALWAYS_ASK_WRITES
+  // from this plugin release, before the MCP release serves them. Delete these once the tool index is regenerated after
+  // #629 deploys (the tool-names test will force the cleanup).
+  ['design_layers_delete', { since: '2026-11-21', batch: 'S54-LAYER-DELETES' }],
+  ['design_layer_folder_delete', { since: '2026-11-21', batch: 'S54-LAYER-DELETES' }],
 ]);

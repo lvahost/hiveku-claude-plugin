@@ -6,7 +6,7 @@
     "mcp__hiveku__"
   ],
   "plugin_version": "0.27.298",
-  "count": 738,
+  "count": 740,
   "tools": [
     {
       "name": "deploy_site",
@@ -2302,6 +2302,16 @@
       "name": "design_layer_delete",
       "method": "DELETE",
       "why_gated": "removes one layer of a design; a version of the design is kept before the first of a run of removes, and its version history brings it back"
+    },
+    {
+      "name": "design_layers_delete",
+      "method": "DELETE",
+      "why_gated": "removes many layers of a design at once; a version of the design is kept before the first of a run of removes, and its version history brings them back"
+    },
+    {
+      "name": "design_layer_folder_delete",
+      "method": "DELETE",
+      "why_gated": "removes a layer folder of a design; with keep_layers false it removes the folder's layers too, after keeping a version of the design, and its version history brings them back"
     },
     {
       "name": "media_delete",
