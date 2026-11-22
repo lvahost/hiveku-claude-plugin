@@ -19,6 +19,10 @@ const ISOLATED = path.join(ROOT, 'test', 'isolated.mjs');
 // This file's job is to name the forbidden patterns, and these two are what the rules below keep everyone else on.
 const THE_RULES_THEMSELVES = new Set(['test/test-isolation.test.mjs', 'test/isolated.mjs', 'test/no-keychain-preload.mjs']);
 const A = '3f2504e0-4f89-11d3-9a0c-0305e82c3301';
+/** The keyring tool lib/credentials.mjs calls to read the master key, by platform: the login keychain on macOS, the
+ * Secret Service on Linux. Elsewhere it calls none, so the two tests that look for that call skip there. */
+const KEYRING_CALL = { darwin: ['security', 'find-generic-password'], linux: ['secret-tool', 'lookup'] }[process.platform];
+const escapeRegExp = (text) => text.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&');
 
 const read = (rel) => readFileSync(path.join(ROOT, rel), 'utf8');
 
@@ -283,6 +287,10 @@ function loggingStubTool(dir, log) {
 }
 
 test('under the test runner the real keychain tool refuses: a test without the fake fails instead of reaching it', async (t) => {
+  if (!KEYRING_CALL) {
+    t.skip(`no keyring tool on ${process.platform}`);
+    return;
+  }
   const dir = mkdtempSync(path.join(tmpdir(), 'hk-isolation-runner-'));
   t.after(() => rmSync(dir, { recursive: true, force: true }));
   const log = path.join(dir, 'calls.log');
@@ -305,7 +313,7 @@ test('under the test runner the real keychain tool refuses: a test without the f
   const unmarked = nodeScript(script, { HOME: dir, PATH: `${bin}${path.delimiter}/usr/bin:/bin` });
   assert.equal(unmarked.status, 0, unmarked.stderr);
   assert.match(unmarked.stdout, /reached the end/);
-  assert.match(readFileSync(log, 'utf8'), /security find-generic-password/);
+  assert.match(readFileSync(log, 'utf8'), new RegExp(`${KEYRING_CALL[0]} ${KEYRING_CALL[1]}`));
 });
 
 test('with the preload, a spawned plugin process reaches no keychain tool even when the stubs are gone from its PATH', async (t) => {
@@ -330,6 +338,10 @@ test('with the preload, a spawned plugin process reaches no keychain tool even w
 });
 
 test('without the preload, a spawned process stops at the PATH stub, never the real tool, and the store stays plain', async (t) => {
+  if (!KEYRING_CALL) {
+    t.skip(`no keyring tool on ${process.platform}`);
+    return;
+  }
   const dir = mkdtempSync(path.join(tmpdir(), 'hk-isolation-stub-'));
   t.after(() => rmSync(dir, { recursive: true, force: true }));
   const data = path.join(dir, 'data');
@@ -345,7 +357,7 @@ test('without the preload, a spawned process stops at the PATH stub, never the r
   const store = JSON.parse(readFileSync(path.join(data, 'credentials.json'), 'utf8'));
   assert.equal(store.enc, undefined, 'no keyring: the store stays a plain file');
   assert.equal(store.accounts[A].key, 'hvk_stubbed');
-  assert.match(readFileSync(STUB_LOG, 'utf8'), new RegExp(`${path.join(STUB_BIN, 'security').replace(/[/.]/g, '\\$&')} find-generic-password`), 'the stub ran, and the real tool did not');
+  assert.match(readFileSync(STUB_LOG, 'utf8'), new RegExp(`${escapeRegExp(path.join(STUB_BIN, KEYRING_CALL[0]))} ${KEYRING_CALL[1]}`), 'the stub ran, and the real tool did not');
 });
 
 test('the real keychain calls live in one place, reached only through the seam', () => {
