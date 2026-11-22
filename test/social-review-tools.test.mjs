@@ -213,6 +213,8 @@ test('2. the skill reads the stored review first, asks the person before a run, 
     'a `fresh` review already answers, so show it and run nothing',
     'For a missing review, or one that is not `fresh`, ask the person first',
     'run it only on their yes, one post per yes, never on their behalf',
+    "A new review of a post whose review is current (`again: true`) runs only on the person's word and carries `expected_ran_at`, the `ran_at` of the review you read",
+    'a 409 `state_changed` means it changed since: read it again and ask the person again, never resend it by itself',
     `after a timeout or a 524, read \`${REVIEW_GET}\` and never send it twice`,
     'Nothing a review says blocks a post',
     'it is a second opinion beside your own grade, never a gate on what the person chooses',
@@ -244,6 +246,10 @@ test('2. the publishing reference reads first, asks second, runs third, follows 
     '"Review all our posts" is one yes per post, never a loop.',
     `3. On the person's yes, \`${REVIEW}({ post_id })\``,
     'Send `again: true` only when the person asks for a new review',
+    // The stale-read guard: a new review names the review it replaces, and a changed one is read and asked again.
+    'With `again: true`, also send `expected_ran_at`: the `ran_at` of the stored review you read with',
+    `\`${REVIEW_GET}\` (null when there was none)`,
+    'the answer is 409 `state_changed` and nothing is charged: read it again and ask the person before running again; never resend it by itself.',
     `\`${REVIEW_GET}({ post_id, only: 'run' })\``,
     'A started review cannot be stopped',
     '5. A 524, a timeout or a dropped answer reads as still running.',
@@ -266,6 +272,7 @@ test('2. the publishing reference reads first, asks second, runs third, follows 
     '200 `ran: false`',
     '402: the account may not run AI',
     '500 `could_not_start` or `review_failed`',
+    'A send with `again: true` can also answer 409 `state_changed` (step 3): nothing was charged.',
   ], 'the answers, in the server\'s order');
   assert.ok(fold(ref.slice(0, ref.indexOf('## The calendar'))).includes('before Review with AI'), 'the reference\'s load line names Review with AI');
   // The hard fails a review names are anti-fluff.md section 4's seven.
