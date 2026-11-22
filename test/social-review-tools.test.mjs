@@ -184,7 +184,8 @@ test('1. all three are contracted pending tools in one batch until the tool inde
     assert.equal(PENDING_TOOLS.get(name)?.batch, 'SOCIAL-REVIEW', `${name} is not contracted in test/pending-tools.mjs`);
   }
   const header = fold(read('test/pending-tools.mjs'));
-  assert.match(header, /SOCIAL-REVIEW social_post_strategy_review, social_post_strategy_review_get, social_analytics_who_for\./);
+  // The batch line pads its name into a column, so the gap is one or more spaces.
+  assert.match(header, /SOCIAL-REVIEW +social_post_strategy_review, social_post_strategy_review_get, social_analytics_who_for\./);
   assert.match(header, /the two reads join the read-only list, the review does not/);
 });
 
