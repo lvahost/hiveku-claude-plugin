@@ -1349,6 +1349,43 @@ test('the two email sends of email waves 2 and 3 ask on a direct call and throug
   }
 });
 
+/**
+ * The Creative Studio's two new layer removes (2026-11-21, S54; builder #2397, MCP #629): design_layers_delete (many
+ * layers at once) and design_layer_folder_delete (a layer folder, and with keep_layers false its layers too). They are
+ * gated exactly as the one-layer remove, design_layer_delete, is, and no more: on the ask list (and so the INSTALL.md
+ * block, the Codex prompts and a hiveku-sync folder) right after it, with its method, and on whichever hook map it is
+ * on, which today is none. Both are contracted in test/pending-tools.mjs until the tool index carries them.
+ */
+const NEW_LAYER_REMOVES = ['design_layers_delete', 'design_layer_folder_delete'];
+
+test('the two new layer removes are gated exactly as design_layer_delete is: right after it on the ask list, with its method, and the same answer from the hook', () => {
+  const asked = JSON.parse(readFileSync(new URL('../data/permission-critical-tools.json', import.meta.url), 'utf8')).tools;
+  const names = asked.map((t) => t.name);
+  const at = names.indexOf('design_layer_delete');
+  assert.notEqual(at, -1, 'design_layer_delete is on the ask list');
+  assert.deepEqual(names.slice(at + 1, at + 1 + NEW_LAYER_REMOVES.length), NEW_LAYER_REMOVES, 'right after design_layer_delete');
+  const install = readFileSync(new URL('../INSTALL.md', import.meta.url), 'utf8');
+  const one = install.indexOf('"mcp__plugin_hiveku_hk__design_layer_delete",');
+  assert.notEqual(one, -1, 'design_layer_delete is in the INSTALL.md ask block');
+  const after = install.slice(one).split('\n').slice(1, 1 + NEW_LAYER_REMOVES.length).map((line) => line.trim());
+  assert.deepEqual(after, NEW_LAYER_REMOVES.map((name) => `"mcp__plugin_hiveku_hk__${name}",`), 'right after it in INSTALL.md');
+  const cwd = folderWith(undefined);
+  const readsOnly = folderWith({ version: 1, mode: 'reads-only' });
+  const input = { id: 'x', layer_id: 'a', layer_ids: ['a', 'b'], folder_id: 'f', keep_layers: false };
+  const answer = (name, folder) => decision(decideWithGuardrails({ ...payload(name, folder), tool_input: input }));
+  for (const name of NEW_LAYER_REMOVES) {
+    assert.equal(asked.find((t) => t.name === name).method, asked[at].method, `${name} has design_layer_delete's method`);
+    assert.equal(ALWAYS_ASK_WRITES.has(name), ALWAYS_ASK_WRITES.has('design_layer_delete'), `${name}: ALWAYS_ASK_WRITES as design_layer_delete`);
+    assert.equal(LIVE_CHANGE_WRITES.has(name), LIVE_CHANGE_WRITES.has('design_layer_delete'), `${name}: LIVE_CHANGE_WRITES as design_layer_delete`);
+    assert.equal(answer(name, cwd), answer('design_layer_delete', cwd), `${name}: the hook answers a direct call as for design_layer_delete`);
+    assert.equal(answer(name, readsOnly), 'deny', `${name} under reads-only`);
+    const batch = decideForPayload({ tool_name: `${HIVEKU_TOOL_PREFIX}hiveku_batch`, tool_input: { calls: [{ tool: name, args: input }] }, cwd });
+    assert.equal(batch?.hookSpecificOutput?.permissionDecision, 'ask', `${name} in a batch`);
+    assert.equal(isAutoApprovable(name, {}), false, name);
+    assert.equal(isReadOnlyTool(name), false, `${name} must not be on the generated read list`);
+  }
+});
+
 test('the department agents\' approval cards ask on a direct call and through a batch, and a reads-only folder denies them', () => {
   const cwd = folderWith(undefined);
   const readsOnly = folderWith({ version: 1, mode: 'reads-only' });
