@@ -6,7 +6,7 @@
     "mcp__hiveku__"
   ],
   "plugin_version": "0.27.302",
-  "count": 741,
+  "count": 745,
   "tools": [
     {
       "name": "deploy_site",
@@ -849,6 +849,16 @@
       "why_gated": "sends real mail now on the account's own marketing domain lane, the same as email_campaign_test_send"
     },
     {
+      "name": "marketing_template_test_send",
+      "method": "POST",
+      "why_gated": "sends a real test of a marketing template to the one address the call names, from noreply@ the account's own sending domain with [TEST] before the subject; an email that went cannot be taken back"
+    },
+    {
+      "name": "email_send_test",
+      "method": "POST",
+      "why_gated": "sends a real email now, with the subject and words the call gives, to up to 10 addresses it names, from Hiveku's platform address or one on a domain the account has verified; an email that went cannot be taken back"
+    },
+    {
       "name": "email_send",
       "method": "POST",
       "why_gated": "sends a real email through the account's Email Service as one of its API keys; with a production key it is delivered, and it cannot be taken back"
@@ -919,6 +929,11 @@
       "why_gated": "sends an estimate to a client"
     },
     {
+      "name": "accounting_invoice_send",
+      "method": "POST",
+      "why_gated": "emails or texts an invoice with its pay link to the customer, or to up to 10 addresses the call names, and marks a draft invoice sent; without confirm: true it only previews, but the model fills that in, not a person"
+    },
+    {
       "name": "helpdesk_ticket_send_reply",
       "method": "POST",
       "why_gated": "replies to a customer"
@@ -957,6 +972,11 @@
       "name": "marketing_report_send",
       "method": "POST",
       "why_gated": "emails a report to a client"
+    },
+    {
+      "name": "survey_send",
+      "method": "POST",
+      "why_gated": "sends a survey or review request for real, by email or text, to up to 200 contacts or email addresses the call names, each with a link to answer it; a message that went cannot be taken back"
     },
     {
       "name": "ppc_budget_update",
