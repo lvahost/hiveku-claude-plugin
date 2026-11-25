@@ -15,8 +15,8 @@
  * What this file holds:
  *   1. The review asks on every direct call and through a batch, whatever the settings allow, and the real hook
  *      process says so; a reads-only folder denies it; it is on the ask list and INSTALL.md's ask block. The two
- *      reads are on no ask list and no ask map. All three are contracted in test/pending-tools.mjs until the tool
- *      index carries them.
+ *      reads are on no ask list and no ask map. All three are on the live tool index since MCP #624 (2026-11-25),
+ *      none is pending, and the two reads are on the read-only list while the review is not.
  *   2. The texts: read the stored review first; a fresh review needs no new run; ask the person first and never run
  *      it on their behalf; never send it twice after a timeout; nothing it says blocks a post. The audit and the
  *      analyst read a stored review as a second opinion, after their own score, and grade afresh; the analyst never
@@ -171,7 +171,7 @@ test('1. the ask list and INSTALL.md name Review with AI, and neither read', () 
   assert.match(fold(read('INSTALL.md')), /Review with AI of a social post, which spends AI credit too \(`social_post_strategy_review`\), whatever your settings allow/);
 });
 
-test('1. the two reads are on no ask map, so the read-only list pre-approves them once the index carries them', () => {
+test('1. the two reads are on no ask map, so the read-only list pre-approves them', () => {
   const cwd = folderWith(undefined);
   for (const name of READS) {
     assert.equal(LIVE_CHANGE_WRITES.has(name) || ALWAYS_ASK_WRITES.has(name) || NEVER_AUTO_APPROVE.has(name), false, `${name} is on an ask map`);
@@ -179,14 +179,18 @@ test('1. the two reads are on no ask map, so the read-only list pre-approves the
   }
 });
 
-test('1. all three are contracted pending tools in one batch until the tool index carries them', () => {
+test('1. all three are on the live tool index and none is pending; only the two reads are on the read-only list', () => {
+  const indexed = new Set(JSON.parse(read('lib/tool-index.json')).tools.map((tool) => tool.name));
+  const readOnly = new Set(JSON.parse(read('lib/readonly-tools.json')).tools);
   for (const name of [REVIEW, REVIEW_GET, WHO_FOR]) {
-    assert.equal(PENDING_TOOLS.get(name)?.batch, 'SOCIAL-REVIEW', `${name} is not contracted in test/pending-tools.mjs`);
+    assert.ok(indexed.has(name), `${name} is not on lib/tool-index.json`);
+    assert.equal(PENDING_TOOLS.has(name), false, `${name} is still pending in test/pending-tools.mjs`);
   }
+  for (const name of READS) assert.ok(readOnly.has(name), `${name} is not on lib/readonly-tools.json`);
+  assert.equal(readOnly.has(REVIEW), false, `${REVIEW} is on lib/readonly-tools.json: nothing may pre-approve it`);
   const header = fold(read('test/pending-tools.mjs'));
-  // The batch line pads its name into a column, so the gap is one or more spaces.
-  assert.match(header, /SOCIAL-REVIEW +social_post_strategy_review, social_post_strategy_review_get, social_analytics_who_for\./);
-  assert.match(header, /the two reads join the read-only list, the review does not/);
+  // The batch line pads its name into a column, and its Landed line follows on the next comment line.
+  assert.match(header, /SOCIAL-REVIEW +social_post_strategy_review, social_post_strategy_review_get, social_analytics_who_for\.[ *]+Landed 2026-11-25/);
 });
 
 // ── 2. The texts ─────────────────────────────────────────────────────────────

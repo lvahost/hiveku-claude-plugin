@@ -614,6 +614,8 @@
  *   the read-only list from the live server (the two reads join the read-only list, the review does not), then delete
  *   these entries.
  *     SOCIAL-REVIEW       social_post_strategy_review, social_post_strategy_review_get, social_analytics_who_for.
+ *                         Landed 2026-11-25 (MCP #624, live at c74d2cd15008; the 0.27.301 index carries all three,
+ *                         the two reads on the read-only list and the review not); entries deleted.
  */
 const SEO_SINCE = '2026-08-30';
 const seo = (batch) => ({ since: SEO_SINCE, batch });
@@ -884,11 +886,6 @@ export const PENDING_TOOLS = new Map([
   ['outbound_campaign_email_accounts_detach', { since: '2026-11-13', batch: 'BUCKET-C-OUTBOUND' }],
   // SOCIAL-STRATEGY (2026-11-15, MCP #571, served since 2026-11-15): social_post_strategy_check and
   // social_post_strategy_update are served and indexed (the 0.27.282 index carries both). Entries deleted.
-  // SOCIAL-REVIEW (2026-11-21, MCP feature/social-review-tools): Review with AI (on the ask list and LIVE_CHANGE_WRITES)
-  // and its two reads, named by the social skill, its references, the social audit and the social analyst before the
-  // MCP release serves them. Delete these once the index regenerated after that release carries them (the tool-names
-  // test forces the cleanup).
-  ['social_post_strategy_review', { since: '2026-11-21', batch: 'SOCIAL-REVIEW' }],
-  ['social_post_strategy_review_get', { since: '2026-11-21', batch: 'SOCIAL-REVIEW' }],
-  ['social_analytics_who_for', { since: '2026-11-21', batch: 'SOCIAL-REVIEW' }],
+  // SOCIAL-REVIEW (2026-11-21): Landed 2026-11-25 (MCP #624, live at c74d2cd15008; the 0.27.301 index carries all three,
+  // the two reads on the read-only list and the review not). Entries deleted.
 ]);
