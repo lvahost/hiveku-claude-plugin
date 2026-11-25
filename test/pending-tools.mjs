@@ -624,6 +624,8 @@
  *   Release step, after the MCP deploy: regenerate the index from the live server, then delete these entries
  *   (tool-names.test.mjs forces it).
  *     S54-LAYER-DELETES   design_layers_delete, design_layer_folder_delete.
+ *                         Landed 2026-11-25 (MCP #629, live at 0ea293150ff6; the 0.27.303 index carries both, neither
+ *                         on the read-only list); entries deleted.
  */
 const SEO_SINCE = '2026-08-30';
 const seo = (batch) => ({ since: SEO_SINCE, batch });
@@ -896,9 +898,6 @@ export const PENDING_TOOLS = new Map([
   // social_post_strategy_update are served and indexed (the 0.27.282 index carries both). Entries deleted.
   // SOCIAL-REVIEW (2026-11-21): Landed 2026-11-25 (MCP #624, live at c74d2cd15008; the 0.27.301 index carries all three,
   // the two reads on the read-only list and the review not). Entries deleted.
-  // S54-LAYER-DELETES (2026-11-21, MCP #629, builder #2397): the two layer removes, on the ask list right after
-  // design_layer_delete from this plugin release, before the MCP release serves them. Delete these once the tool index
-  // is regenerated after #629 deploys (the tool-names test will force the cleanup).
-  ['design_layers_delete', { since: '2026-11-21', batch: 'S54-LAYER-DELETES' }],
-  ['design_layer_folder_delete', { since: '2026-11-21', batch: 'S54-LAYER-DELETES' }],
+  // S54-LAYER-DELETES (2026-11-21, MCP #629, builder #2397): Landed 2026-11-25 (MCP #629, live at 0ea293150ff6; the
+  // 0.27.303 index carries both). Entries deleted.
 ]);
