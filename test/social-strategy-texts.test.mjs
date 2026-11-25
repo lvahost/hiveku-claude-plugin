@@ -24,6 +24,9 @@
  *      sentence about the check never says it scores, except to say it does not.
  *   4. Each stage's step: the six steps and three sources, the stage id the server keeps, and the sixth step
  *      (Already a customer) in the stage tables and the stage: tag lists.
+ *   2b. Review with AI (2026-11-21: social_post_strategy_review, charged in the name of the person behind the key) runs
+ *      only when the person asks: every unit that names it says in that same unit that the person is asked or gives
+ *      their yes, and nothing there takes it back. test/social-review-tools.test.mjs pins the rest of its words.
  *   5. The Social team's own agent has neither tool, no stage update and no customer_journey_stage_list: every line
  *      naming those in the references scripts/gen-social-playbooks.mjs copies into that agent's playbook carries the
  *      generator's plugin-only tag, and what it keeps says what a stage with no step means. Since HK-1824 the agent
@@ -52,8 +55,12 @@ const CHECK = 'social_post_strategy_check';
 const WRITE = 'social_post_strategy_update';
 const STAGE_WRITE = 'customer_journey_stage_update';
 const PLUGIN_ONLY = '<!-- plugin-only -->';
-/** What the Social team's agent cannot use: the generator's translation table maps no customer_journey_stage_list. */
-const AGENT_LACKS = ['customer_journey_stage_list'];
+/**
+ * What the Social team's agent cannot use: the generator's translation table maps no customer_journey_stage_list, and
+ * none of the three Review with AI tools (2026-11-21).
+ */
+const REVIEW = 'social_post_strategy_review';
+const AGENT_LACKS = ['customer_journey_stage_list', REVIEW, 'social_post_strategy_review_get', 'social_analytics_who_for'];
 /**
  * Settings the agent's own tools now carry (HK-1824): its post create and update take the grid row as
  * before_after_item_id, and its posts keep the stage id. The lines naming them stay tagged in the references (they sit
@@ -327,6 +334,25 @@ test('2. no text tells an agent to set a person\'s picks without asking', () => 
   assert.ok(writes >= 8, `only ${writes} unit(s) name ${WRITE} - the walker is broken, or the texts lost it`);
   assert.ok(stageWrites >= 2, `only ${stageWrites} unit(s) set a stage's step - the walker is broken, or the texts lost it`);
   assert.deepEqual(offenders, [], 'these units change who a post is for, or a stage\'s step, without asking the person');
+});
+
+test('2b. no text runs Review with AI without asking the person first', () => {
+  // The bare name only: social_post_strategy_review_get, the free read, is not the charged run.
+  const namesReview = new RegExp(`\\b${REVIEW}\\b`);
+  const offenders = [];
+  let units = 0;
+  for (const rel of proseFiles()) {
+    for (const u of unitsOf(read(rel))) {
+      if (/^#{1,6} /.test(u.text.trim())) continue;
+      // A list of the tools an agent must never call tells no one to run them.
+      const text = fold(u.text).replace(TOOLS_IT_LACKS, ' ');
+      if (!namesReview.test(text)) continue;
+      units++;
+      if (!ASKS_THE_PERSON.test(text) || DENIES_ASKING.test(text)) offenders.push(`${rel}:${u.line}`);
+    }
+  }
+  assert.ok(units >= 6, `only ${units} unit(s) name ${REVIEW} - the walker is broken, or the texts lost it`);
+  assert.deepEqual(offenders, [], 'these units run Review with AI, which is charged, without asking the person first');
 });
 
 test('3. a text naming the check never claims it scores, blocks, costs or calls AI', () => {

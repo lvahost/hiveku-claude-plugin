@@ -717,6 +717,7 @@ Put this in `.claude/settings.json` (per project) or `~/.claude/settings.json` (
       "mcp__plugin_hiveku_hk__social_accounts_import_gbp",
       "mcp__plugin_hiveku_hk__social_post_send_for_approval",
       "mcp__plugin_hiveku_hk__social_posts_bulk_create",
+      "mcp__plugin_hiveku_hk__social_post_strategy_review",
       "mcp__plugin_hiveku_hk__webflow_site_publish",
       "mcp__plugin_hiveku_hk__webflow_cms_item_publish",
       "mcp__plugin_hiveku_hk__webflow_cms_item_unpublish",
@@ -889,7 +890,8 @@ making a failed one again (each adds 50 cents a day to the account's bill: `proj
 temporary environment's passcode or settings or turning it off (`project_vcs_temp_env_password_set`,
 `project_vcs_temp_env_settings_set`, `project_vcs_temp_env_delete`), and on Content's SEO plan saving a post's search phrase, which can
 start billed rank checks (`seo_plan_phrase_set`), and the suggestions that spend AI credit
-(`seo_plan_suggest_phrases`, `seo_plan_suggest_links`), whatever
+(`seo_plan_suggest_phrases`, `seo_plan_suggest_links`), and Review with AI of a social post, which
+spends AI credit too (`social_post_strategy_review`), whatever
 your settings allow, so those prompt even on a machine with an older copy.
 
 Switching ads on or restarting them covers every enable, a bulk status edit, a LinkedIn

@@ -734,7 +734,8 @@ test('the social skill teaches the repurpose links social_repurpose_source retur
   const medium = classifierSrc.indexOf("else if (med === 'social') channel = 'Organic Social';");
   assert.ok(hint > 0 && medium > hint, 'classify-source.ts no longer reads the known source before the medium - repurpose.md section 3 must change');
   for (const slug of ['linkedin', 'facebook', 'instagram', 'twitter', 'tiktok']) {
-    assert.match(classifierSrc, new RegExp(`re: /[^\\n]*${slug}[^\\n]*channel: 'Organic Social'`), `classify-source.ts no longer labels ${slug} Organic Social`);
+    // A row's matcher is a regex literal or a helper call (wordsAndSites([...], [...])), so no slash after `re: `.
+    assert.match(classifierSrc, new RegExp(`re: [^\\n]*${slug}[^\\n]*channel: 'Organic Social'`), `classify-source.ts no longer labels ${slug} Organic Social`);
   }
   assert.match(classifierSrc, /google[^\n]*channel: 'Organic Search'/, 'classify-source.ts no longer routes a google source to Organic Search - the GBP note must change');
 });

@@ -603,6 +603,20 @@
  *                         at 7149d474ebf2; the 0.27.282 index carries both, the check on the read-only list and the
  *                         write not); entries deleted.
  *
+ *   Social review (2026-11-21): Review with AI of a saved social post, and who the posts were for.
+ *   social_post_strategy_review (POST: the Social team scores a saved post, which spends the account's AI credit in
+ *   the name of the person behind the key; its description says ASK THE PERSON FIRST), social_post_strategy_review_get
+ *   (GET: the stored review, whether it is current, the live run and the last failure) and social_analytics_who_for
+ *   (GET: posts by ICP and by stage, published and coming up, and the gaps). The review is on the ask list and
+ *   LIVE_CHANGE_WRITES from this release, before the MCP release serves it, because the MCP's build fails until both
+ *   lists name it. The MCP serves the review to a person's own key alone (accountKeyOnly), and the index is read with
+ *   a person's key, so the index will carry all three. Release step, after the MCP deploy: regenerate the index and
+ *   the read-only list from the live server (the two reads join the read-only list, the review does not), then delete
+ *   these entries.
+ *     SOCIAL-REVIEW       social_post_strategy_review, social_post_strategy_review_get, social_analytics_who_for.
+ *                         Landed 2026-11-25 (MCP #624, live at c74d2cd15008; the 0.27.301 index carries all three,
+ *                         the two reads on the read-only list and the review not); entries deleted.
+ *
  *   The Creative Studio's layer tools for agents (2026-11-21, S54; builder #2397, MCP #629): the two new removes,
  *   many layers at once (DELETE .../layers/bulk) and a layer folder with or without its layers (DELETE
  *   .../layer-folders/:folderId). Both ask from this release on, before the MCP release serves them, on the ask list
@@ -880,6 +894,8 @@ export const PENDING_TOOLS = new Map([
   ['outbound_campaign_email_accounts_detach', { since: '2026-11-13', batch: 'BUCKET-C-OUTBOUND' }],
   // SOCIAL-STRATEGY (2026-11-15, MCP #571, served since 2026-11-15): social_post_strategy_check and
   // social_post_strategy_update are served and indexed (the 0.27.282 index carries both). Entries deleted.
+  // SOCIAL-REVIEW (2026-11-21): Landed 2026-11-25 (MCP #624, live at c74d2cd15008; the 0.27.301 index carries all three,
+  // the two reads on the read-only list and the review not). Entries deleted.
   // S54-LAYER-DELETES (2026-11-21, MCP #629, builder #2397): the two layer removes, on the ask list right after
   // design_layer_delete from this plugin release, before the MCP release serves them. Delete these once the tool index
   // is regenerated after #629 deploys (the tool-names test will force the cleanup).
