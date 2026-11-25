@@ -1320,11 +1320,60 @@ const DEPARTMENT_APPROVALS_THAT_ASK = [
  */
 const EMAIL_W23_SENDS_THAT_ASK = ['email_sequence_connection_turn_on', 'marketing_form_confirm_signups_set'];
 
-test('the always-ask set is exactly the memory, form-capture and indexing writes, the secrets reveal, the A/B test writes, the mobile app writes, the PPC override, the lead-email change, a checks rerun, the Email Service setup writes, the record-again ask, the LOA email, the Confirm on your phone start and cancel, the help desk privacy writes, the site inbox delete and move, the ad account connection delete, an email webhook\'s delete, the SEO page\'s erases and overwrites, the Memory page\'s writes, a person\'s Mission Control claim, release and decision, a person\'s Projects leave and comment delete, the other Projects wave 2 writes, a project\'s share, unshare and delete and a task\'s delete, the Meet and Discussions sends, shares and deletes, a webinar\'s edit, the Meet calendar sends, and the brand guide narrators and a journey\'s published version, and the Referrals sends, pauses, archives and edits, and the department agents\' approval cards, and the two email sends of email waves 2 and 3', () => {
+/**
+ * HK-2031 (2026-11-25): four sends that each reach people outside the team in one call, which the desktop app has asked
+ * before since desktop PR #770 and the plugin let run unasked: a test email with the call's own words, an invoice and
+ * its pay link, a survey or review request, and a real test of a marketing template. Each sits on the ask list right
+ * after the send it is closest to (the key here), and on ALWAYS_ASK_WRITES.
+ */
+const HK2031_SENDS_THAT_ASK = new Map([
+  ['marketing_template_test_send', 'workflow_email_step_test_send'],
+  ['email_send_test', 'marketing_template_test_send'],
+  ['accounting_invoice_send', 'crm_estimate_send'],
+  ['survey_send', 'marketing_report_send'],
+]);
+
+test('the always-ask set is exactly the memory, form-capture and indexing writes, the secrets reveal, the A/B test writes, the mobile app writes, the PPC override, the lead-email change, a checks rerun, the Email Service setup writes, the record-again ask, the LOA email, the Confirm on your phone start and cancel, the help desk privacy writes, the site inbox delete and move, the ad account connection delete, an email webhook\'s delete, the SEO page\'s erases and overwrites, the Memory page\'s writes, a person\'s Mission Control claim, release and decision, a person\'s Projects leave and comment delete, the other Projects wave 2 writes, a project\'s share, unshare and delete and a task\'s delete, the Meet and Discussions sends, shares and deletes, a webinar\'s edit, the Meet calendar sends, and the brand guide narrators and a journey\'s published version, and the Referrals sends, pauses, archives and edits, and the department agents\' approval cards, and the two email sends of email waves 2 and 3, and the four sends of HK-2031', () => {
   assert.deepEqual(
     [...ALWAYS_ASK_WRITES.keys()].sort(),
-    [...MEMORY_WRITES_THAT_ASK, ...FORM_CAPTURE_WRITES_THAT_ASK, ...INDEXING_WRITES_THAT_ASK, ...SECRETS_REVEAL_THAT_ASKS, ...AB_TEST_WRITES_THAT_ASK, ...MOBILE_WRITES_THAT_ASK, ...PPC_OVERRIDE_THAT_ASKS, ...LEAD_EMAIL_WRITES_THAT_ASK, ...CHECKS_RERUN_THAT_ASKS, ...EMAIL_SERVICE_WRITES_THAT_ASK, ...TESTIMONIAL_RERECORD_THAT_ASKS, ...LOA_SEND_THAT_ASKS, ...CONFIRM_ON_PHONE_THAT_ASKS, ...CONTACT_RESTORE_THAT_ASKS, ...HELPDESK_PRIVACY_WRITES_THAT_ASK, ...SITE_WRITES_THAT_ASK, ...PPC_CONNECTION_DELETE_THAT_ASKS, ...EMAIL_WEBHOOK_DELETE_THAT_ASKS, ...SEO_WRITES_THAT_ASK, ...MEMORY_PAGE_WRITES_THAT_ASK, ...MISSION_CONTROL_WRITES_THAT_ASK, ...PROJECTS_PERSON_WRITES_THAT_ASK, ...PROJECTS_WAVE_2_OTHER_WRITES_THAT_ASK, ...PROJECTS_SHARE_AND_DELETE_THAT_ASK, ...MEET_DISCUSSIONS_WRITES_THAT_ASK, ...WEBINAR_EDIT_THAT_ASKS, ...MEET_CALENDAR_SENDS_THAT_ASK, ...BOOKING_CALENDAR_WRITES_THAT_ASK, ...MARKETING_IDENTITY_WRITES_THAT_ASK, ...REFERRAL_WRITES_THAT_ASK, ...DASHBOARD_PAGE_WRITES_THAT_ASK, ...ANALYTICS_DESKTOP_WRITES_THAT_ASK, ...DEPARTMENT_APPROVALS_THAT_ASK, ...EMAIL_W23_SENDS_THAT_ASK].sort(),
+    [...MEMORY_WRITES_THAT_ASK, ...FORM_CAPTURE_WRITES_THAT_ASK, ...INDEXING_WRITES_THAT_ASK, ...SECRETS_REVEAL_THAT_ASKS, ...AB_TEST_WRITES_THAT_ASK, ...MOBILE_WRITES_THAT_ASK, ...PPC_OVERRIDE_THAT_ASKS, ...LEAD_EMAIL_WRITES_THAT_ASK, ...CHECKS_RERUN_THAT_ASKS, ...EMAIL_SERVICE_WRITES_THAT_ASK, ...TESTIMONIAL_RERECORD_THAT_ASKS, ...LOA_SEND_THAT_ASKS, ...CONFIRM_ON_PHONE_THAT_ASKS, ...CONTACT_RESTORE_THAT_ASKS, ...HELPDESK_PRIVACY_WRITES_THAT_ASK, ...SITE_WRITES_THAT_ASK, ...PPC_CONNECTION_DELETE_THAT_ASKS, ...EMAIL_WEBHOOK_DELETE_THAT_ASKS, ...SEO_WRITES_THAT_ASK, ...MEMORY_PAGE_WRITES_THAT_ASK, ...MISSION_CONTROL_WRITES_THAT_ASK, ...PROJECTS_PERSON_WRITES_THAT_ASK, ...PROJECTS_WAVE_2_OTHER_WRITES_THAT_ASK, ...PROJECTS_SHARE_AND_DELETE_THAT_ASK, ...MEET_DISCUSSIONS_WRITES_THAT_ASK, ...WEBINAR_EDIT_THAT_ASKS, ...MEET_CALENDAR_SENDS_THAT_ASK, ...BOOKING_CALENDAR_WRITES_THAT_ASK, ...MARKETING_IDENTITY_WRITES_THAT_ASK, ...REFERRAL_WRITES_THAT_ASK, ...DASHBOARD_PAGE_WRITES_THAT_ASK, ...ANALYTICS_DESKTOP_WRITES_THAT_ASK, ...DEPARTMENT_APPROVALS_THAT_ASK, ...EMAIL_W23_SENDS_THAT_ASK, ...HK2031_SENDS_THAT_ASK.keys()].sort(),
   );
+});
+
+test('the four sends of HK-2031 are on every list: the ask list and INSTALL.md beside the send each is closest to, and the hook asks on a direct call and through a batch, a reads-only folder denies them', () => {
+  const asked = JSON.parse(readFileSync(new URL('../data/permission-critical-tools.json', import.meta.url), 'utf8')).tools;
+  const names = asked.map((t) => t.name);
+  const install = readFileSync(new URL('../INSTALL.md', import.meta.url), 'utf8');
+  const cwd = folderWith(undefined);
+  const readsOnly = folderWith({ version: 1, mode: 'reads-only' });
+  const input = { template_id: 'x', to: 'person@example.org', invoice_id: 'x', survey_id: 'x', emails: ['person@example.org'] };
+  for (const [name, after] of HK2031_SENDS_THAT_ASK) {
+    assert.equal(names.filter((each) => each === name).length, 1, `${name} is on the ask list once`);
+    assert.equal(names[names.indexOf(after) + 1], name, `${name} right after ${after} on the ask list`);
+    const entry = asked.find((t) => t.name === name);
+    assert.equal(entry.method, 'POST', `${name} is a POST`);
+    assert.doesNotMatch(entry.why_gated, /[–—]/, `${name}: no dashes in why_gated`);
+    const line = (tool) => install.indexOf(`"mcp__plugin_hiveku_hk__${tool}",`);
+    assert.notEqual(line(name), -1, `${name} is in the INSTALL.md ask block`);
+    assert.equal(install.slice(line(after)).split('\n')[1].trim(), `"mcp__plugin_hiveku_hk__${name}",`, `${name} right after ${after} in INSTALL.md`);
+    assert.ok(ALWAYS_ASK_WRITES.has(name), `${name} is on ALWAYS_ASK_WRITES`);
+    assert.equal(LIVE_CHANGE_WRITES.has(name), false, `${name} is on one hook map only`);
+    const direct = decideWithGuardrails({ ...payload(name, cwd), tool_input: input });
+    assert.equal(direct?.hookSpecificOutput?.permissionDecision, 'ask', name);
+    assert.match(direct.hookSpecificOutput.permissionDecisionReason, new RegExp(`^${name} `), name);
+    const batch = decideForPayload({ tool_name: `${HIVEKU_TOOL_PREFIX}hiveku_batch`, tool_input: { calls: [{ tool: name, args: input }] }, cwd });
+    assert.equal(batch?.hookSpecificOutput?.permissionDecision, 'ask', `${name} in a batch`);
+    assert.equal(isAutoApprovable(name, {}), false, name);
+    assert.equal(isReadOnlyTool(name), false, `${name} must not be on the generated read list`);
+    assert.equal(decision(decideWithGuardrails(payload(name, readsOnly))), 'deny', `${name} under reads-only`);
+    assert.doesNotMatch(ALWAYS_ASK_WRITES.get(name), /[–—]/, `${name}: no dashes in a reason the person reads`);
+  }
+  // What each reaches, in the words the person reads.
+  assert.match(ALWAYS_ASK_WRITES.get('email_send_test'), /to up to 10 addresses it names/);
+  assert.match(ALWAYS_ASK_WRITES.get('accounting_invoice_send'), /invoice with its pay link/);
+  assert.match(ALWAYS_ASK_WRITES.get('accounting_invoice_send'), /the model fills that in, not a person/);
+  assert.match(ALWAYS_ASK_WRITES.get('survey_send'), /to up to 200 contacts or email addresses/);
+  assert.match(ALWAYS_ASK_WRITES.get('marketing_template_test_send'), /to the one address the call names/);
 });
 
 test('the two email sends of email waves 2 and 3 ask on a direct call and through a batch, a reads-only folder denies them, and the live changes and reads that came with them are not on the set', () => {
