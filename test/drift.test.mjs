@@ -14,7 +14,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { discoverBoundDir, resolveDirArg } from '../scripts/lib/bound-dir.mjs';
+import { HIVEKU_OWN_ACCOUNT_ID, discoverBoundDir, resolveDirArg } from '../scripts/lib/bound-dir.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const SCRIPT = path.join(HERE, '..', 'scripts', 'check-drift.mjs');
@@ -48,6 +48,24 @@ test('discovery is deterministic when several accounts are bound', () => {
     fs.writeFileSync(path.join(d, 'account.json'), '{}');
   }
   assert.match(discoverBoundDir(home), /alpha$/);
+});
+
+test("discovery takes Hiveku's own account over a customer's that sorts first", () => {
+  // 0.27.304's tool index was read through a customer's key: the first bound
+  // folder alphabetically was a customer's, and Hiveku's own sorted later.
+  const home = tmpHome();
+  const bind = (name, accountId) => {
+    const d = path.join(home, 'Hiveku-Accounts', name, '.hiveku');
+    fs.mkdirSync(d, { recursive: true });
+    fs.writeFileSync(path.join(d, 'account.json'), JSON.stringify({ account_id: accountId }));
+  };
+  bind('3rd-degree-customer-7ff75723', '7ff75723-0000-4000-8000-000000000001');
+  bind('hiveku-inc.-b1614719', HIVEKU_OWN_ACCOUNT_ID.toUpperCase());
+  bind('zeta-customer-11111111', '11111111-0000-4000-8000-000000000001');
+  assert.match(discoverBoundDir(home), /hiveku-inc\.-b1614719$/);
+  // An unreadable account.json is still a binding, never Hiveku's own.
+  fs.writeFileSync(path.join(home, 'Hiveku-Accounts', 'hiveku-inc.-b1614719', '.hiveku', 'account.json'), '{not json');
+  assert.match(discoverBoundDir(home), /3rd-degree-customer-7ff75723$/);
 });
 
 test('an explicit --dir always beats discovery', () => {
