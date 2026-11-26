@@ -20,16 +20,37 @@ import path from 'node:path';
 
 export const ACCOUNTS_ROOT_NAME = 'Hiveku-Accounts';
 
+/**
+ * Hiveku's own account. ★ Build machinery asks the server through Hiveku's own
+ * key when that folder is bound, never a customer's: a staff machine binds
+ * customer folders too, and the first one alphabetically was a customer's
+ * (2026-11-26: 0.27.304's tool index was read through 3rd-degree-screening's
+ * key). Only a machine without Hiveku's own folder falls back to the first one.
+ */
+export const HIVEKU_OWN_ACCOUNT_ID = 'b1614719-6f04-4647-a842-74936fcb9c28';
+
+function boundAccountId(dir) {
+  try {
+    const id = JSON.parse(fs.readFileSync(path.join(dir, '.hiveku', 'account.json'), 'utf8'))?.account_id;
+    return typeof id === 'string' ? id.toLowerCase() : null;
+  } catch {
+    return null;
+  }
+}
+
 export function discoverBoundDir(homeDir = os.homedir()) {
   const root = path.join(homeDir, ACCOUNTS_ROOT_NAME);
   let entries;
   try { entries = fs.readdirSync(root, { withFileTypes: true }); } catch { return null; }
+  let first = null;
   for (const e of entries.sort((a, b) => a.name.localeCompare(b.name))) {
     if (!e.isDirectory()) continue;
     const dir = path.join(root, e.name);
-    if (fs.existsSync(path.join(dir, '.hiveku', 'account.json'))) return dir;
+    if (!fs.existsSync(path.join(dir, '.hiveku', 'account.json'))) continue;
+    if (boundAccountId(dir) === HIVEKU_OWN_ACCOUNT_ID) return dir;
+    first ??= dir;
   }
-  return null;
+  return first;
 }
 
 /** `--dir <path>` if given, else a discovered one, else null. */
