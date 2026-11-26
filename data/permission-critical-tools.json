@@ -5,8 +5,8 @@
     "mcp__plugin_hiveku_hk__",
     "mcp__hiveku__"
   ],
-  "plugin_version": "0.27.308",
-  "count": 745,
+  "plugin_version": "0.27.309",
+  "count": 747,
   "tools": [
     {
       "name": "deploy_site",
@@ -2482,6 +2482,16 @@
       "name": "social_linkedin_comment_delete",
       "method": "DELETE",
       "why_gated": "removes a live LinkedIn comment from the platform; gone for the audience with no restore"
+    },
+    {
+      "name": "social_comment_reply_delete",
+      "method": "DELETE",
+      "why_gated": "deletes a public reply the account sent to a Facebook or Instagram comment; it is gone for everyone at once, with no undo"
+    },
+    {
+      "name": "social_comment_reply_edit",
+      "method": "PATCH",
+      "why_gated": "rewrites a public reply the account sent to a Facebook comment; everyone sees the new words at once, marked as edited, and the old words cannot be put back"
     },
     {
       "name": "social_post_reject",

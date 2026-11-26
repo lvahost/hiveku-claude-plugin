@@ -191,6 +191,10 @@ const LIVE_CHANGE_NAMES = [
   // 2026-11-21 (SOCIAL-REVIEW, served since MCP #624 on 2026-11-25): Review with AI of a saved social post spends the
   // account's AI credit.
   'social_post_strategy_review',
+  // 2026-11-26 (HK-2293, batch HK-2293 in test/pending-tools.mjs until the index carries them): take back, or change
+  // the words of, a public reply Hiveku sent to a Facebook or Instagram comment.
+  'social_comment_reply_delete',
+  'social_comment_reply_edit',
   'account_timezone_set',
   'helpdesk_assistant_knowledge_sources_update',
   // 2026-11-11 (HK-1504): the help desk away message answers every customer who emails in while its window is on.
