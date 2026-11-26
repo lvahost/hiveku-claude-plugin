@@ -707,6 +707,8 @@ Put this in `.claude/settings.json` (per project) or `~/.claude/settings.json` (
       "mcp__plugin_hiveku_hk__social_linkedin_comment_add",
       "mcp__plugin_hiveku_hk__social_linkedin_reaction_add",
       "mcp__plugin_hiveku_hk__social_linkedin_comment_delete",
+      "mcp__plugin_hiveku_hk__social_comment_reply_delete",
+      "mcp__plugin_hiveku_hk__social_comment_reply_edit",
       "mcp__plugin_hiveku_hk__social_post_reject",
       "mcp__plugin_hiveku_hk__social_pillar_delete",
       "mcp__plugin_hiveku_hk__social_hashtags_delete",
