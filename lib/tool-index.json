@@ -1269,14 +1269,14 @@
       "dept": "ai",
       "method": null,
       "timeoutMs": null,
-      "description": "Utility tool for ai_keyword_data_search_volume to get list of availible locations and languages"
+      "description": "Utility tool for ai_keyword_data_search_volume to get list of availible locations and languages Trim rows: _fields keeps the named keys of each item (dotted for nested, e.g. keyword_info.search_volume); _max_bytes caps the size, dropping items from the end; the search costs the same."
     },
     {
       "name": "ai_optimization_keyword_data_search_volume",
       "dept": "ai",
       "method": null,
       "timeoutMs": null,
-      "description": "Estimated monthly AI search volume for a list of keywords: how often each one comes up in what people ask AI assistants. Each row of items has keyword and ai_search_volume. include_monthly: true adds ai_monthly_searches, the volume month by month; it makes each row several times larger, so ask for it only when you need the trend. One answer usually holds all 1,000 rows (fewer for long keywords or ones without volume, as few as about 400; about 100 to 125 with include_monthly), kept under about 100 KB; any that do not fit are left out (reason size), to ask for in another call. Send at most 1,000 keywords per call (a longer list is refused before anything is asked or counted); each call counts as one research call toward this month's research. Keywords without a row in items are listed in keywords_left_out as { keyword, reason }, the ones sent in the order sent, then blanks, up to about 20 KB of names (keywords_left_out_count has them all): size (it has a row, but the answer was full: ask again for just those keywords, or leave include_monthly off; each ask is another research call); not_returned (sent, but no row came back, for example a keyword made only of symbols); or blank. The answer also has keywords_requested, rows_returned (rows in items), truncated (true when any keyword has no row in items), keywords_without_data (a row but no volume) and a note saying what was left out and why. A request that takes longer than 60 seconds is stopped and answered as an error; it was sent once, so it may still count toward this month's research. location_name: a place such as 'United States' (the default) or 'United Kingdom'. language_code: a two-letter code such as 'en' (required)."
+      "description": "Estimated monthly AI search volume for a list of keywords: how often each one comes up in what people ask AI assistants. Each row of items has keyword and ai_search_volume. include_monthly: true adds ai_monthly_searches, the volume month by month; it makes each row several times larger, so ask for it only when you need the trend. One answer usually holds all 1,000 rows (fewer for long keywords or ones without volume, as few as about 400; about 100 to 125 with include_monthly), kept under about 100 KB; any that do not fit are left out (reason size), to ask for in another call. Send at most 1,000 keywords per call (a longer list is refused before anything is asked or counted); each call counts as one research call toward this month's research. Keywords without a row in items are listed in keywords_left_out as { keyword, reason }, the ones sent in the order sent, then blanks, up to about 20 KB of names (keywords_left_out_count has them all): size (it has a row, but the answer was full: ask again for just those keywords, or leave include_monthly off; each ask is another research call); not_returned (sent, but no row came back, for example a keyword made only of symbols); or blank. The answer also has keywords_requested, rows_returned (rows in items), truncated (true when any keyword has no row in items), keywords_without_data (a row but no volume) and a note saying what was left out and why. A request that takes longer than 60 seconds is stopped and answered as an error; it was sent once, so it may still count toward this month's research. location_name: a place such as 'United States' (the default) or 'United Kingdom'. language_code: a two-letter code such as 'en' (required). Trim rows: _fields keeps the named keys of each item (dotted for nested, e.g. keyword_info.search_volume); _max_bytes caps the size, dropping items from the end; the search costs the same."
     },
     {
       "name": "analytics_channel_scorecard",
@@ -1528,140 +1528,140 @@
       "dept": "backlinks",
       "method": null,
       "timeoutMs": null,
-      "description": "This endpoint will provide you with a detailed overview of anchors used when linking to the specified website with relevant backlink data for each of them"
+      "description": "This endpoint will provide you with a detailed overview of anchors used when linking to the specified website with relevant backlink data for each of them Trim rows: _fields keeps the named keys of each item (dotted for nested, e.g. keyword_info.search_volume); _max_bytes caps the size, dropping items from the end; the search costs the same."
     },
     {
       "name": "backlinks_available_filters",
       "dept": "backlinks",
       "method": null,
       "timeoutMs": null,
-      "description": "Here you will find all the necessary information about filters that can be used with DataForSEO Backlinks API endpoints. Please, keep in mind that filters are associated with a certain object in the result array, and should be specified accordingly."
+      "description": "Here you will find all the necessary information about filters that can be used with DataForSEO Backlinks API endpoints. Please, keep in mind that filters are associated with a certain object in the result array, and should be specified accordingly. Trim rows: _fields keeps the named keys of each item (dotted for nested, e.g. keyword_info.search_volume); _max_bytes caps the size, dropping items from the end; the search costs the same."
     },
     {
       "name": "backlinks_backlinks",
       "dept": "backlinks",
       "method": null,
       "timeoutMs": null,
-      "description": "This endpoint will provide you with a list of backlinks and relevant data for the specified domain, subdomain, or webpage"
+      "description": "This endpoint will provide you with a list of backlinks and relevant data for the specified domain, subdomain, or webpage Trim rows: _fields keeps the named keys of each item (dotted for nested, e.g. keyword_info.search_volume); _max_bytes caps the size, dropping items from the end; the search costs the same."
     },
     {
       "name": "backlinks_bulk_backlinks",
       "dept": "backlinks",
       "method": null,
       "timeoutMs": null,
-      "description": "This endpoint will provide you with the number of backlinks pointing to domains, subdomains, and pages specified in the targets array. The returned numbers correspond to all live backlinks, that is, total number of referring links with all attributes (e.g., nofollow, noreferrer, ugc, sponsored etc) that were found during the latest check. Note that if you indicate a domain as a target, you will get results for the root domain (domain with all of its subdomains), e.g. dataforseo.com and app.dataforseo.com"
+      "description": "This endpoint will provide you with the number of backlinks pointing to domains, subdomains, and pages specified in the targets array. The returned numbers correspond to all live backlinks, that is, total number of referring links with all attributes (e.g., nofollow, noreferrer, ugc, sponsored etc) that were found during the latest check. Note that if you indicate a domain as a target, you will get results for the root domain (domain with all of its subdomains), e.g. dataforseo.com and app.dataforseo.com Trim rows: _fields keeps the named keys of each item (dotted for nested, e.g. keyword_info.search_volume); _max_bytes caps the size, dropping items from the end; the search costs the same."
     },
     {
       "name": "backlinks_bulk_new_lost_backlinks",
       "dept": "backlinks",
       "method": null,
       "timeoutMs": null,
-      "description": "This endpoint will provide you with the number of referring domains pointing to domains, subdomains, and pages specified in the targets array. The returned numbers are based on all live referring domains, that is, total number of domains pointing to the target with any type of backlinks (e.g., nofollow, noreferrer, ugc, sponsored etc) that were found during the latest check. Note that if you indicate a domain as a target, you will get result for the root domain (domain with all of its subdomains), e.g. dataforseo.com and app.dataforseo.com"
+      "description": "This endpoint will provide you with the number of referring domains pointing to domains, subdomains, and pages specified in the targets array. The returned numbers are based on all live referring domains, that is, total number of domains pointing to the target with any type of backlinks (e.g., nofollow, noreferrer, ugc, sponsored etc) that were found during the latest check. Note that if you indicate a domain as a target, you will get result for the root domain (domain with all of its subdomains), e.g. dataforseo.com and app.dataforseo.com Trim rows: _fields keeps the named keys of each item (dotted for nested, e.g. keyword_info.search_volume); _max_bytes caps the size, dropping items from the end; the search costs the same."
     },
     {
       "name": "backlinks_bulk_new_lost_referring_domains",
       "dept": "backlinks",
       "method": null,
       "timeoutMs": null,
-      "description": "This endpoint will provide you with the number of referring domains pointing to the domains, subdomains and pages specified in the targets array. Note that if you indicate a domain as a target, you will get result for the root domain (domain with all of its subdomains), e.g. dataforseo.com and app.dataforseo.com"
+      "description": "This endpoint will provide you with the number of referring domains pointing to the domains, subdomains and pages specified in the targets array. Note that if you indicate a domain as a target, you will get result for the root domain (domain with all of its subdomains), e.g. dataforseo.com and app.dataforseo.com Trim rows: _fields keeps the named keys of each item (dotted for nested, e.g. keyword_info.search_volume); _max_bytes caps the size, dropping items from the end; the search costs the same."
     },
     {
       "name": "backlinks_bulk_pages_summary",
       "dept": "backlinks",
       "method": null,
       "timeoutMs": null,
-      "description": "This endpoint will provide you with a comprehensive overview of backlinks and related data for a bulk of up to 1000 pages, domains, or subdomains. If you indicate a single page as a target, you will get comprehensive summary data on all backlinks for that page."
+      "description": "This endpoint will provide you with a comprehensive overview of backlinks and related data for a bulk of up to 1000 pages, domains, or subdomains. If you indicate a single page as a target, you will get comprehensive summary data on all backlinks for that page. Trim rows: _fields keeps the named keys of each item (dotted for nested, e.g. keyword_info.search_volume); _max_bytes caps the size, dropping items from the end; the search costs the same."
     },
     {
       "name": "backlinks_bulk_ranks",
       "dept": "backlinks",
       "method": null,
       "timeoutMs": null,
-      "description": "This endpoint will provide you with rank scores of the domains, subdomains, and pages specified in the targets array. The score is based on the number of referring domains pointing to the specified domains, subdomains, or pages. The rank values represent real-time data for the date of the request and range from 0 (no backlinks detected) to 1,000 (highest rank). A similar scoring system is used in Google’s Page Rank algorithm"
+      "description": "This endpoint will provide you with rank scores of the domains, subdomains, and pages specified in the targets array. The score is based on the number of referring domains pointing to the specified domains, subdomains, or pages. The rank values represent real-time data for the date of the request and range from 0 (no backlinks detected) to 1,000 (highest rank). A similar scoring system is used in Google’s Page Rank algorithm Trim rows: _fields keeps the named keys of each item (dotted for nested, e.g. keyword_info.search_volume); _max_bytes caps the size, dropping items from the end; the search costs the same."
     },
     {
       "name": "backlinks_bulk_referring_domains",
       "dept": "backlinks",
       "method": null,
       "timeoutMs": null,
-      "description": "This endpoint will provide you with the number of referring domains pointing to domains, subdomains, and pages specified in the targets array. The returned numbers are based on all live referring domains, that is, total number of domains pointing to the target with any type of backlinks (e.g., nofollow, noreferrer, ugc, sponsored etc) that were found during the latest check. Note that if you indicate a domain as a target, you will get result for the root domain (domain with all of its subdomains), e.g. dataforseo.com and app.dataforseo.com"
+      "description": "This endpoint will provide you with the number of referring domains pointing to domains, subdomains, and pages specified in the targets array. The returned numbers are based on all live referring domains, that is, total number of domains pointing to the target with any type of backlinks (e.g., nofollow, noreferrer, ugc, sponsored etc) that were found during the latest check. Note that if you indicate a domain as a target, you will get result for the root domain (domain with all of its subdomains), e.g. dataforseo.com and app.dataforseo.com Trim rows: _fields keeps the named keys of each item (dotted for nested, e.g. keyword_info.search_volume); _max_bytes caps the size, dropping items from the end; the search costs the same."
     },
     {
       "name": "backlinks_bulk_spam_score",
       "dept": "backlinks",
       "method": null,
       "timeoutMs": null,
-      "description": "This endpoint will provide you with spam scores of the domains, subdomains, and pages you specified in the targets array. Spam Score is DataForSEO’s proprietary metric that indicates how “spammy” your target is on a scale from 0 to 100"
+      "description": "This endpoint will provide you with spam scores of the domains, subdomains, and pages you specified in the targets array. Spam Score is DataForSEO’s proprietary metric that indicates how “spammy” your target is on a scale from 0 to 100 Trim rows: _fields keeps the named keys of each item (dotted for nested, e.g. keyword_info.search_volume); _max_bytes caps the size, dropping items from the end; the search costs the same."
     },
     {
       "name": "backlinks_competitors",
       "dept": "backlinks",
       "method": null,
       "timeoutMs": null,
-      "description": "This endpoint will provide you with a list of competitors that share some part of the backlink profile with a target website, along with a number of backlink intersections and the rank of every competing website"
+      "description": "This endpoint will provide you with a list of competitors that share some part of the backlink profile with a target website, along with a number of backlink intersections and the rank of every competing website Trim rows: _fields keeps the named keys of each item (dotted for nested, e.g. keyword_info.search_volume); _max_bytes caps the size, dropping items from the end; the search costs the same."
     },
     {
       "name": "backlinks_domain_intersection",
       "dept": "backlinks",
       "method": null,
       "timeoutMs": null,
-      "description": "This endpoint will provide you with the list of domains pointing to the specified websites. This endpoint is especially useful for creating a Link Gap feature that shows what domains link to your competitors but do not link out to your website"
+      "description": "This endpoint will provide you with the list of domains pointing to the specified websites. This endpoint is especially useful for creating a Link Gap feature that shows what domains link to your competitors but do not link out to your website Trim rows: _fields keeps the named keys of each item (dotted for nested, e.g. keyword_info.search_volume); _max_bytes caps the size, dropping items from the end; the search costs the same."
     },
     {
       "name": "backlinks_domain_pages",
       "dept": "backlinks",
       "method": null,
       "timeoutMs": null,
-      "description": "This endpoint will provide you with a detailed overview of domain pages with backlink data for each page"
+      "description": "This endpoint will provide you with a detailed overview of domain pages with backlink data for each page Trim rows: _fields keeps the named keys of each item (dotted for nested, e.g. keyword_info.search_volume); _max_bytes caps the size, dropping items from the end; the search costs the same."
     },
     {
       "name": "backlinks_domain_pages_summary",
       "dept": "backlinks",
       "method": null,
       "timeoutMs": null,
-      "description": "This endpoint will provide you with detailed summary data on all backlinks and related metrics for each page of the target domain or subdomain you specify. If you indicate a single page as a target, you will get comprehensive summary data on all backlinks for that page"
+      "description": "This endpoint will provide you with detailed summary data on all backlinks and related metrics for each page of the target domain or subdomain you specify. If you indicate a single page as a target, you will get comprehensive summary data on all backlinks for that page Trim rows: _fields keeps the named keys of each item (dotted for nested, e.g. keyword_info.search_volume); _max_bytes caps the size, dropping items from the end; the search costs the same."
     },
     {
       "name": "backlinks_page_intersection",
       "dept": "backlinks",
       "method": null,
       "timeoutMs": null,
-      "description": "This endpoint will provide you with the list of domains pointing to the specified websites. This endpoint is especially useful for creating a Link Gap feature that shows what domains link to your competitors but do not link out to your website"
+      "description": "This endpoint will provide you with the list of domains pointing to the specified websites. This endpoint is especially useful for creating a Link Gap feature that shows what domains link to your competitors but do not link out to your website Trim rows: _fields keeps the named keys of each item (dotted for nested, e.g. keyword_info.search_volume); _max_bytes caps the size, dropping items from the end; the search costs the same."
     },
     {
       "name": "backlinks_referring_domains",
       "dept": "backlinks",
       "method": null,
       "timeoutMs": null,
-      "description": "This endpoint will provide you with a detailed overview of referring domains pointing to the target you specify"
+      "description": "This endpoint will provide you with a detailed overview of referring domains pointing to the target you specify Trim rows: _fields keeps the named keys of each item (dotted for nested, e.g. keyword_info.search_volume); _max_bytes caps the size, dropping items from the end; the search costs the same."
     },
     {
       "name": "backlinks_referring_networks",
       "dept": "backlinks",
       "method": null,
       "timeoutMs": null,
-      "description": "This endpoint will provide you with a detailed overview of referring domains pointing to the target you specify"
+      "description": "This endpoint will provide you with a detailed overview of referring domains pointing to the target you specify Trim rows: _fields keeps the named keys of each item (dotted for nested, e.g. keyword_info.search_volume); _max_bytes caps the size, dropping items from the end; the search costs the same."
     },
     {
       "name": "backlinks_summary",
       "dept": "backlinks",
       "method": null,
       "timeoutMs": null,
-      "description": "This endpoint will provide you with an overview of backlinks data available for a given domain, subdomain, or webpage"
+      "description": "This endpoint will provide you with an overview of backlinks data available for a given domain, subdomain, or webpage Trim rows: _fields keeps the named keys of each item (dotted for nested, e.g. keyword_info.search_volume); _max_bytes caps the size, dropping items from the end; the search costs the same."
     },
     {
       "name": "backlinks_timeseries_new_lost_summary",
       "dept": "backlinks",
       "method": null,
       "timeoutMs": null,
-      "description": "This endpoint will provide you with the number of new and lost backlinks and referring domains for the domain specified in the target field. The results will be provided for a period between the two indicated dates, and metrics will be grouped by the time range that you define: day, week, month, or year. Data from this endpoint will be especially helpful for building time-series graphs of new and lost backlinks and referring domains."
+      "description": "This endpoint will provide you with the number of new and lost backlinks and referring domains for the domain specified in the target field. The results will be provided for a period between the two indicated dates, and metrics will be grouped by the time range that you define: day, week, month, or year. Data from this endpoint will be especially helpful for building time-series graphs of new and lost backlinks and referring domains. Trim rows: _fields keeps the named keys of each item (dotted for nested, e.g. keyword_info.search_volume); _max_bytes caps the size, dropping items from the end; the search costs the same."
     },
     {
       "name": "backlinks_timeseries_summary",
       "dept": "backlinks",
       "method": null,
       "timeoutMs": null,
-      "description": "This endpoint will provide you with an overview of backlink data for the target domain available during a period between the two indicated dates. Backlink metrics will be grouped by the time range that you define: day, week, month, or year. Data from this endpoint will be especially helpful for building time-series graphs of daily, weekly, monthly, and yearly link-building progress"
+      "description": "This endpoint will provide you with an overview of backlink data for the target domain available during a period between the two indicated dates. Backlink metrics will be grouped by the time range that you define: day, week, month, or year. Data from this endpoint will be especially helpful for building time-series graphs of daily, weekly, monthly, and yearly link-building progress Trim rows: _fields keeps the named keys of each item (dotted for nested, e.g. keyword_info.search_volume); _max_bytes caps the size, dropping items from the end; the search costs the same."
     },
     {
       "name": "before_after_grid_create",
@@ -1948,7 +1948,7 @@
       "dept": "business",
       "method": null,
       "timeoutMs": null,
-      "description": "Business Listings Search API provides results containing information about business entities listed on Google Maps in the specified categories. You will receive the address, contacts, rating, working hours, and other relevant data"
+      "description": "Business Listings Search API provides results containing information about business entities listed on Google Maps in the specified categories. You will receive the address, contacts, rating, working hours, and other relevant data Trim rows: _fields keeps the named keys of each item (dotted for nested, e.g. keyword_info.search_volume); _max_bytes caps the size, dropping items from the end; the search costs the same."
     },
     {
       "name": "calendar_booking_get",
@@ -2466,21 +2466,21 @@
       "dept": "content",
       "method": null,
       "timeoutMs": null,
-      "description": "This endpoint will provide you with data on all citations of the target keyword for the indicated date range"
+      "description": "This endpoint will provide you with data on all citations of the target keyword for the indicated date range Trim rows: _fields keeps the named keys of each item (dotted for nested, e.g. keyword_info.search_volume); _max_bytes caps the size, dropping items from the end; the search costs the same."
     },
     {
       "name": "content_analysis_search",
       "dept": "content",
       "method": null,
       "timeoutMs": null,
-      "description": "This endpoint will provide you with detailed citation data available for the target keyword"
+      "description": "This endpoint will provide you with detailed citation data available for the target keyword Trim rows: _fields keeps the named keys of each item (dotted for nested, e.g. keyword_info.search_volume); _max_bytes caps the size, dropping items from the end; the search costs the same."
     },
     {
       "name": "content_analysis_summary",
       "dept": "content",
       "method": null,
       "timeoutMs": null,
-      "description": "This endpoint will provide you with an overview of citation data available for the target keyword"
+      "description": "This endpoint will provide you with an overview of citation data available for the target keyword Trim rows: _fields keeps the named keys of each item (dotted for nested, e.g. keyword_info.search_volume); _max_bytes caps the size, dropping items from the end; the search costs the same."
     },
     {
       "name": "content_analytics_get",
@@ -5364,140 +5364,140 @@
       "dept": "dataforseo",
       "method": null,
       "timeoutMs": null,
-      "description": "Here you will find all the necessary information about filters that can be used with DataForSEO Labs API endpoints. Please, keep in mind that filters are associated with a certain object in the result array, and should be specified accordingly."
+      "description": "Here you will find all the necessary information about filters that can be used with DataForSEO Labs API endpoints. Please, keep in mind that filters are associated with a certain object in the result array, and should be specified accordingly. Trim rows: _fields keeps the named keys of each item (dotted for nested, e.g. keyword_info.search_volume); _max_bytes caps the size, dropping items from the end; the search costs the same."
     },
     {
       "name": "dataforseo_labs_bulk_keyword_difficulty",
       "dept": "dataforseo",
       "method": null,
       "timeoutMs": null,
-      "description": "This endpoint will provide you with the Keyword Difficulty metric for a maximum of 1,000 keywords in one API request. Keyword Difficulty stands for the relative difficulty of ranking in the first top-10 organic results for the related keyword. Keyword Difficulty in DataForSEO API responses indicates the chance of getting in top-10 organic results for a keyword on a logarithmic scale from 0 to 100."
+      "description": "This endpoint will provide you with the Keyword Difficulty metric for a maximum of 1,000 keywords in one API request. Keyword Difficulty stands for the relative difficulty of ranking in the first top-10 organic results for the related keyword. Keyword Difficulty in DataForSEO API responses indicates the chance of getting in top-10 organic results for a keyword on a logarithmic scale from 0 to 100. Trim rows: _fields keeps the named keys of each item (dotted for nested, e.g. keyword_info.search_volume); _max_bytes caps the size, dropping items from the end; the search costs the same."
     },
     {
       "name": "dataforseo_labs_bulk_traffic_estimation",
       "dept": "dataforseo",
       "method": null,
       "timeoutMs": null,
-      "description": "This endpoint will provide you with estimated monthly traffic volumes for up to 1,000 domains, subdomains, or webpages. Along with organic search traffic estimations, you will also get separate values for paid search, featured snippet, and local pack results."
+      "description": "This endpoint will provide you with estimated monthly traffic volumes for up to 1,000 domains, subdomains, or webpages. Along with organic search traffic estimations, you will also get separate values for paid search, featured snippet, and local pack results. Trim rows: _fields keeps the named keys of each item (dotted for nested, e.g. keyword_info.search_volume); _max_bytes caps the size, dropping items from the end; the search costs the same."
     },
     {
       "name": "dataforseo_labs_google_competitors_domain",
       "dept": "dataforseo",
       "method": null,
       "timeoutMs": null,
-      "description": "This endpoint will provide you with a full overview of ranking and traffic data of the competitor domains from organic and paid search. In addition to that, you will get the metrics specific to the keywords both competitor domains and your domain rank for within the same SERP."
+      "description": "This endpoint will provide you with a full overview of ranking and traffic data of the competitor domains from organic and paid search. In addition to that, you will get the metrics specific to the keywords both competitor domains and your domain rank for within the same SERP. Trim rows: _fields keeps the named keys of each item (dotted for nested, e.g. keyword_info.search_volume); _max_bytes caps the size, dropping items from the end; the search costs the same."
     },
     {
       "name": "dataforseo_labs_google_domain_intersection",
       "dept": "dataforseo",
       "method": null,
       "timeoutMs": null,
-      "description": "This endpoint will provide you with the keywords for which both specified domains rank within the same SERP. You will get search volume, competition, cost-per-click and impressions data on each intersecting keyword. Along with that, you will get data on the first and second domain's SERP element discovered for this keyword, as well as the estimated traffic volume and cost of ad traffic."
+      "description": "This endpoint will provide you with the keywords for which both specified domains rank within the same SERP. You will get search volume, competition, cost-per-click and impressions data on each intersecting keyword. Along with that, you will get data on the first and second domain's SERP element discovered for this keyword, as well as the estimated traffic volume and cost of ad traffic. Trim rows: _fields keeps the named keys of each item (dotted for nested, e.g. keyword_info.search_volume); _max_bytes caps the size, dropping items from the end; the search costs the same."
     },
     {
       "name": "dataforseo_labs_google_domain_rank_overview",
       "dept": "dataforseo",
       "method": null,
       "timeoutMs": null,
-      "description": "This endpoint will provide you with ranking and traffic data from organic and paid search for the specified domain. You will be able to review the domain ranking distribution in SERPs as well as estimated monthly traffic volume for both organic and paid results."
+      "description": "This endpoint will provide you with ranking and traffic data from organic and paid search for the specified domain. You will be able to review the domain ranking distribution in SERPs as well as estimated monthly traffic volume for both organic and paid results. Trim rows: _fields keeps the named keys of each item (dotted for nested, e.g. keyword_info.search_volume); _max_bytes caps the size, dropping items from the end; the search costs the same."
     },
     {
       "name": "dataforseo_labs_google_historical_keyword_data",
       "dept": "dataforseo",
       "method": null,
       "timeoutMs": null,
-      "description": "This endpoint provides Google historical keyword data for specified keywords, including search volume, cost-per-click, competition values for paid search, monthly searches, and search volume trends. You can get historical keyword data since August, 2021, depending on keywords along with location and language combination"
+      "description": "This endpoint provides Google historical keyword data for specified keywords, including search volume, cost-per-click, competition values for paid search, monthly searches, and search volume trends. You can get historical keyword data since August, 2021, depending on keywords along with location and language combination Trim rows: _fields keeps the named keys of each item (dotted for nested, e.g. keyword_info.search_volume); _max_bytes caps the size, dropping items from the end; the search costs the same."
     },
     {
       "name": "dataforseo_labs_google_historical_rank_overview",
       "dept": "dataforseo",
       "method": null,
       "timeoutMs": null,
-      "description": "This endpoint will provide you with historical data on rankings and traffic of the specified domain, such as domain ranking distribution in SERPs and estimated monthly traffic volume for both organic and paid results"
+      "description": "This endpoint will provide you with historical data on rankings and traffic of the specified domain, such as domain ranking distribution in SERPs and estimated monthly traffic volume for both organic and paid results Trim rows: _fields keeps the named keys of each item (dotted for nested, e.g. keyword_info.search_volume); _max_bytes caps the size, dropping items from the end; the search costs the same."
     },
     {
       "name": "dataforseo_labs_google_historical_serp",
       "dept": "dataforseo",
       "method": null,
       "timeoutMs": null,
-      "description": "This endpoint will provide you with Google SERPs collected within the specified time frame. You will also receive a complete overview of featured snippets and other extra elements that were present within the specified dates. The data will allow you to analyze the dynamics of keyword rankings over time for the specified keyword and location."
+      "description": "This endpoint will provide you with Google SERPs collected within the specified time frame. You will also receive a complete overview of featured snippets and other extra elements that were present within the specified dates. The data will allow you to analyze the dynamics of keyword rankings over time for the specified keyword and location. Trim rows: _fields keeps the named keys of each item (dotted for nested, e.g. keyword_info.search_volume); _max_bytes caps the size, dropping items from the end; the search costs the same."
     },
     {
       "name": "dataforseo_labs_google_keyword_ideas",
       "dept": "dataforseo",
       "method": null,
       "timeoutMs": null,
-      "description": "The Keyword Ideas provides search terms that are relevant to the product or service categories of the specified keywords. The algorithm selects the keywords which fall into the same categories as the seed keywords specified in a POST array. As a result, you will get a list of relevant keyword ideas for up to 200 seed keywords. Along with each keyword idea, you will get its search volume rate for the last month, search volume trend for the previous 12 months, as well as current cost-per-click and competition values. Moreover, this endpoint supplies minimum, maximum and average values of daily impressions, clicks and CPC for each result."
+      "description": "The Keyword Ideas provides search terms that are relevant to the product or service categories of the specified keywords. The algorithm selects the keywords which fall into the same categories as the seed keywords specified in a POST array. As a result, you will get a list of relevant keyword ideas for up to 200 seed keywords. Along with each keyword idea, you will get its search volume rate for the last month, search volume trend for the previous 12 months, as well as current cost-per-click and competition values. Moreover, this endpoint supplies minimum, maximum and average values of daily impressions, clicks and CPC for each result. Trim rows: _fields keeps the named keys of each item (dotted for nested, e.g. keyword_info.search_volume); _max_bytes caps the size, dropping items from the end; the search costs the same."
     },
     {
       "name": "dataforseo_labs_google_keyword_overview",
       "dept": "dataforseo",
       "method": null,
       "timeoutMs": null,
-      "description": "This endpoint provides Google keyword data for specified keywords. For each keyword, you will receive current cost-per-click, competition values for paid search, search volume, search intent, monthly searches"
+      "description": "This endpoint provides Google keyword data for specified keywords. For each keyword, you will receive current cost-per-click, competition values for paid search, search volume, search intent, monthly searches Trim rows: _fields keeps the named keys of each item (dotted for nested, e.g. keyword_info.search_volume); _max_bytes caps the size, dropping items from the end; the search costs the same."
     },
     {
       "name": "dataforseo_labs_google_keyword_suggestions",
       "dept": "dataforseo",
       "method": null,
       "timeoutMs": null,
-      "description": "The Keyword Suggestions provides search queries that include the specified seed keyword. The algorithm is based on the full-text search for the specified keyword and therefore returns only those search terms that contain the keyword you set in the POST array with additional words before, after, or within the specified key phrase. Returned keyword suggestions can contain the words from the specified key phrase in a sequence different from the one you specify. As a result, you will get a list of long-tail keywords with each keyword in the list matching the specified search term. Along with each suggested keyword, you will get its search volume rate for the last month, search volume trend for the previous 12 months, as well as current cost-per-click and competition values. Moreover, this endpoint supplies minimum, maximum and average values of daily impressions, clicks and CPC for each result."
+      "description": "The Keyword Suggestions provides search queries that include the specified seed keyword. The algorithm is based on the full-text search for the specified keyword and therefore returns only those search terms that contain the keyword you set in the POST array with additional words before, after, or within the specified key phrase. Returned keyword suggestions can contain the words from the specified key phrase in a sequence different from the one you specify. As a result, you will get a list of long-tail keywords with each keyword in the list matching the specified search term. Along with each suggested keyword, you will get its search volume rate for the last month, search volume trend for the previous 12 months, as well as current cost-per-click and competition values. Moreover, this endpoint supplies minimum, maximum and average values of daily impressions, clicks and CPC for each result. Trim rows: _fields keeps the named keys of each item (dotted for nested, e.g. keyword_info.search_volume); _max_bytes caps the size, dropping items from the end; the search costs the same."
     },
     {
       "name": "dataforseo_labs_google_keywords_for_site",
       "dept": "dataforseo",
       "method": null,
       "timeoutMs": null,
-      "description": "The Keywords For Site endpoint will provide you with a list of keywords relevant to the target domain. Each keyword is supplied with relevant, search volume data for the last month, cost-per-click, competition"
+      "description": "The Keywords For Site endpoint will provide you with a list of keywords relevant to the target domain. Each keyword is supplied with relevant, search volume data for the last month, cost-per-click, competition Trim rows: _fields keeps the named keys of each item (dotted for nested, e.g. keyword_info.search_volume); _max_bytes caps the size, dropping items from the end; the search costs the same."
     },
     {
       "name": "dataforseo_labs_google_page_intersection",
       "dept": "dataforseo",
       "method": null,
       "timeoutMs": null,
-      "description": "This endpoint will provide you with the keywords for which specified pages rank within the same SERP. You will get search volume, competition, cost-per-click and impressions data on each intersecting keyword. Along with that, you will get data on SERP elements that specified pages rank for in search results, as well as the estimated traffic volume and cost of ad traffic. Page Intersection endpoint supports organic, paid, local pack and featured snippet results. Find keywords several webpages rank for: If you would like to get the keywords several pages rank for, you need to specify webpages only in the pages object. This way, you will receive intersected ranked keywords for the specified URLs. Find keywords your competitors rank for but you do not: If you would like to receive all keywords several pages rank for, but particular pages do not, you need to use the exclude_pages array as well. This way you will receive the keywords for which the URLs from the pages object rank for, but the URLs from the exclude_pages array do not"
+      "description": "This endpoint will provide you with the keywords for which specified pages rank within the same SERP. You will get search volume, competition, cost-per-click and impressions data on each intersecting keyword. Along with that, you will get data on SERP elements that specified pages rank for in search results, as well as the estimated traffic volume and cost of ad traffic. Page Intersection endpoint supports organic, paid, local pack and featured snippet results. Find keywords several webpages rank for: If you would like to get the keywords several pages rank for, you need to specify webpages only in the pages object. This way, you will receive intersected ranked keywords for the specified URLs. Find keywords your competitors rank for but you do not: If you would like to receive all keywords several pages rank for, but particular pages do not, you need to use the exclude_pages array as well. This way you will receive the keywords for which the URLs from the pages object rank for, but the URLs from the exclude_pages array do not Trim rows: _fields keeps the named keys of each item (dotted for nested, e.g. keyword_info.search_volume); _max_bytes caps the size, dropping items from the end; the search costs the same."
     },
     {
       "name": "dataforseo_labs_google_ranked_keywords",
       "dept": "dataforseo",
       "method": null,
       "timeoutMs": null,
-      "description": "This endpoint will provide you with the list of keywords that any domain or webpage is ranking for. You will also get SERP elements related to the keyword position, as well as impressions, monthly searches and other data relevant to the returned keywords."
+      "description": "This endpoint will provide you with the list of keywords that any domain or webpage is ranking for. You will also get SERP elements related to the keyword position, as well as impressions, monthly searches and other data relevant to the returned keywords. Trim rows: _fields keeps the named keys of each item (dotted for nested, e.g. keyword_info.search_volume); _max_bytes caps the size, dropping items from the end; the search costs the same."
     },
     {
       "name": "dataforseo_labs_google_related_keywords",
       "dept": "dataforseo",
       "method": null,
       "timeoutMs": null,
-      "description": "The Related Keywords endpoint provides keywords appearing in the \"searches related to\" SERP element You can get up to 4680 keyword ideas by specifying the search depth. Each related keyword comes with the list of relevant product categories, search volume rate for the last month, search volume trend for the previous 12 months, as well as current cost-per-click and competition values. Moreover, this endpoint supplies minimum, maximum and average values of daily impressions, clicks and CPC for each result. Datasource: DataForSEO SERPs Database Search algorithm: depth-first search for queries appearing in the \"search related to\" element of SERP for the specified seed keyword."
+      "description": "The Related Keywords endpoint provides keywords appearing in the \"searches related to\" SERP element You can get up to 4680 keyword ideas by specifying the search depth. Each related keyword comes with the list of relevant product categories, search volume rate for the last month, search volume trend for the previous 12 months, as well as current cost-per-click and competition values. Moreover, this endpoint supplies minimum, maximum and average values of daily impressions, clicks and CPC for each result. Datasource: DataForSEO SERPs Database Search algorithm: depth-first search for queries appearing in the \"search related to\" element of SERP for the specified seed keyword. Trim rows: _fields keeps the named keys of each item (dotted for nested, e.g. keyword_info.search_volume); _max_bytes caps the size, dropping items from the end; the search costs the same."
     },
     {
       "name": "dataforseo_labs_google_serp_competitors",
       "dept": "dataforseo",
       "method": null,
       "timeoutMs": null,
-      "description": "This endpoint will provide you with a list of domains ranking for the keywords you specify. You will also get SERP rankings, rating, estimated traffic volume, and visibility values the provided domains gain from the specified keywords."
+      "description": "This endpoint will provide you with a list of domains ranking for the keywords you specify. You will also get SERP rankings, rating, estimated traffic volume, and visibility values the provided domains gain from the specified keywords. Trim rows: _fields keeps the named keys of each item (dotted for nested, e.g. keyword_info.search_volume); _max_bytes caps the size, dropping items from the end; the search costs the same."
     },
     {
       "name": "dataforseo_labs_google_subdomains",
       "dept": "dataforseo",
       "method": null,
       "timeoutMs": null,
-      "description": "This endpoint will provide you with a list of subdomains of the specified domain, along with the ranking distribution across organic and paid search. In addition to that, you will also get the estimated traffic volume of subdomains based on search volume."
+      "description": "This endpoint will provide you with a list of subdomains of the specified domain, along with the ranking distribution across organic and paid search. In addition to that, you will also get the estimated traffic volume of subdomains based on search volume. Trim rows: _fields keeps the named keys of each item (dotted for nested, e.g. keyword_info.search_volume); _max_bytes caps the size, dropping items from the end; the search costs the same."
     },
     {
       "name": "dataforseo_labs_google_top_searches",
       "dept": "dataforseo",
       "method": null,
       "timeoutMs": null,
-      "description": "The Top Searches endpoint of DataForSEO Labs API can provide you with over 7 billion keywords from the DataForSEO Keyword Database. Each keyword in the API response is provided with a set of relevant keyword data with Google Ads metrics"
+      "description": "The Top Searches endpoint of DataForSEO Labs API can provide you with over 7 billion keywords from the DataForSEO Keyword Database. Each keyword in the API response is provided with a set of relevant keyword data with Google Ads metrics Trim rows: _fields keeps the named keys of each item (dotted for nested, e.g. keyword_info.search_volume); _max_bytes caps the size, dropping items from the end; the search costs the same."
     },
     {
       "name": "dataforseo_labs_search_intent",
       "dept": "dataforseo",
       "method": null,
       "timeoutMs": null,
-      "description": "This endpoint will provide you with search intent data for up to 1,000 keywords. For each keyword that you specify when setting a task, the API will return the keyword's search intent and intent probability. Besides the highest probable search intent, the results will also provide you with other likely search intent(s) and their probability. Based on keyword data and search results data, our system has been trained to detect four types of search intent: informational, navigational, commercial, transactional."
+      "description": "This endpoint will provide you with search intent data for up to 1,000 keywords. For each keyword that you specify when setting a task, the API will return the keyword's search intent and intent probability. Besides the highest probable search intent, the results will also provide you with other likely search intent(s) and their probability. Based on keyword data and search results data, our system has been trained to detect four types of search intent: informational, navigational, commercial, transactional. Trim rows: _fields keeps the named keys of each item (dotted for nested, e.g. keyword_info.search_volume); _max_bytes caps the size, dropping items from the end; the search costs the same."
     },
     {
       "name": "delete_task",
@@ -6330,28 +6330,28 @@
       "dept": "domain",
       "method": null,
       "timeoutMs": null,
-      "description": "Here you will find all the necessary information about filters that can be used with DataForSEO Technologies API endpoints. Please, keep in mind that filters are associated with a certain object in the result array, and should be specified accordingly."
+      "description": "Here you will find all the necessary information about filters that can be used with DataForSEO Technologies API endpoints. Please, keep in mind that filters are associated with a certain object in the result array, and should be specified accordingly. Trim rows: _fields keeps the named keys of each item (dotted for nested, e.g. keyword_info.search_volume); _max_bytes caps the size, dropping items from the end; the search costs the same."
     },
     {
       "name": "domain_analytics_technologies_domain_technologies",
       "dept": "domain",
       "method": null,
       "timeoutMs": null,
-      "description": "Using this endpoint you will get a list of technologies used in a particular domain"
+      "description": "Using this endpoint you will get a list of technologies used in a particular domain Trim rows: _fields keeps the named keys of each item (dotted for nested, e.g. keyword_info.search_volume); _max_bytes caps the size, dropping items from the end; the search costs the same."
     },
     {
       "name": "domain_analytics_whois_available_filters",
       "dept": "domain",
       "method": null,
       "timeoutMs": null,
-      "description": "Here you will find all the necessary information about filters that can be used with DataForSEO WHOIS API endpoints. Please, keep in mind that filters are associated with a certain object in the result array, and should be specified accordingly."
+      "description": "Here you will find all the necessary information about filters that can be used with DataForSEO WHOIS API endpoints. Please, keep in mind that filters are associated with a certain object in the result array, and should be specified accordingly. Trim rows: _fields keeps the named keys of each item (dotted for nested, e.g. keyword_info.search_volume); _max_bytes caps the size, dropping items from the end; the search costs the same."
     },
     {
       "name": "domain_analytics_whois_overview",
       "dept": "domain",
       "method": null,
       "timeoutMs": null,
-      "description": "This endpoint will provide you with Whois data enriched with backlink stats, and ranking and traffic info from organic and paid search results. Using this endpoint you will be able to get all these data for the domains matching the parameters you specify in the request"
+      "description": "This endpoint will provide you with Whois data enriched with backlink stats, and ranking and traffic info from organic and paid search results. Using this endpoint you will be able to get all these data for the domains matching the parameters you specify in the request Trim rows: _fields keeps the named keys of each item (dotted for nested, e.g. keyword_info.search_volume); _max_bytes caps the size, dropping items from the end; the search costs the same."
     },
     {
       "name": "email_api_key_create",
@@ -8542,7 +8542,7 @@
       "dept": "hiveku",
       "method": "PROXY",
       "timeoutMs": null,
-      "description": "Return the EXACT parameter schema for one or more tools - the signature, not the prose. Use it the moment you are unsure what a tool takes, and ALWAYS before retrying a call that failed on argument shape. hiveku_find_tools and hiveku_docs_search return descriptions; neither returns a signature, so the only way to learn a parameter name was to guess and read the error. Guessing produced query for sql, template_slug for slug, variables for overrides, projectId for project_id, a string array where an object array was required - each costing a call and a retry. Per tool you get: name, method, path, description, required[], properties (the real JSON Schema, including nested item shapes), and forwarded_as. ★ forwarded_as is the field that exists nowhere else. It maps each declared argument to where it actually goes - body, query or path - so it states positively what is accepted and, by omission, what is not. An argument absent from it is DROPPED BY THE PROXY before the request leaves, which is why a call can fail complaining about a field you believe you just set. forwarded_as can also read `response_shaping`: the reserved arguments _fields, _max_bytes and _dedupe, which every proxy tool accepts, which this server consumes and never sends to Hiveku, and whose signatures are listed in `properties` beside the tool's own. _fields is the largest token saver on the platform and is otherwise undocumented. Pass `names` (up to 20 exact tool names) or `search` (a substring, max 20 results). A tool this key cannot call comes back as { name, available:false, reason } rather than being omitted - an omission reads as 'no such tool' and sends you hunting for a name that exists. This covers EVERY tool the server serves, not just the Olympus routes: the DataForSEO vendor tools (backlinks_*, dataforseo_labs_*, serp_*, on_page_*, business_data_*, content_analysis_*, keywords_data_*, domain_analytics_*), the Crawl4AI tools and the department-chat tools all report method:'PROXY' with their real schema and shaping_supported:false, because they bypass the Olympus proxy. A tool answered CLIENT-side (hiveku_find_tools reads the plugin's on-disk catalogue and never reaches this server) comes back available:false with a reason saying so - it exists and you can call it directly. Only a genuinely unknown name lands in not_found. Response shape: { tools: [{ name, available, method, path, description, required, properties, forwarded_as, shaping_supported }], count, not_found[] }."
+      "description": "Return the EXACT parameter schema for one or more tools - the signature, not the prose. Use it the moment you are unsure what a tool takes, and ALWAYS before retrying a call that failed on argument shape. hiveku_find_tools and hiveku_docs_search return descriptions; neither returns a signature, so the only way to learn a parameter name was to guess and read the error. Guessing produced query for sql, template_slug for slug, variables for overrides, projectId for project_id, a string array where an object array was required - each costing a call and a retry. Per tool you get: name, method, path, description, required[], properties (the real JSON Schema, including nested item shapes), and forwarded_as. ★ forwarded_as is the field that exists nowhere else. It maps each declared argument to where it actually goes - body, query or path - so it states positively what is accepted and, by omission, what is not. An argument absent from it is DROPPED BY THE PROXY before the request leaves, which is why a call can fail complaining about a field you believe you just set. forwarded_as can also read `response_shaping`: the reserved arguments _fields, _max_bytes and _dedupe, which every proxy tool accepts, which this server consumes and never sends to Hiveku, and whose signatures are listed in `properties` beside the tool's own. The DataForSEO tools take _fields and _max_bytes too, on the rows of their items. _fields is the largest token saver on the platform and is otherwise undocumented. Pass `names` (up to 20 exact tool names) or `search` (a substring, max 20 results). A tool this key cannot call comes back as { name, available:false, reason } rather than being omitted - an omission reads as 'no such tool' and sends you hunting for a name that exists. This covers EVERY tool the server serves, not just the Olympus routes: the DataForSEO vendor tools (backlinks_*, dataforseo_labs_*, serp_*, on_page_*, business_data_*, content_analysis_*, keywords_data_*, domain_analytics_*), the Crawl4AI tools and the department-chat tools all report method:'PROXY' with their real schema; the vendor tools report shaping_supported:true, the Crawl4AI and department-chat tools false, because they bypass the Olympus proxy. A tool answered CLIENT-side (hiveku_find_tools reads the plugin's on-disk catalogue and never reaches this server) comes back available:false with a reason saying so - it exists and you can call it directly. Only a genuinely unknown name lands in not_found. Response shape: { tools: [{ name, available, method, path, description, required, properties, forwarded_as, shaping_supported }], count, not_found[] }."
     },
     {
       "name": "html",
@@ -8829,42 +8829,42 @@
       "dept": "keywords",
       "method": null,
       "timeoutMs": null,
-      "description": "This endpoint will provide you with the demographic breakdown (by age and gender) of keyword popularity per each specified term based on DataForSEO Trends data"
+      "description": "This endpoint will provide you with the demographic breakdown (by age and gender) of keyword popularity per each specified term based on DataForSEO Trends data Trim rows: _fields keeps the named keys of each item (dotted for nested, e.g. keyword_info.search_volume); _max_bytes caps the size, dropping items from the end; the search costs the same."
     },
     {
       "name": "keywords_data_dataforseo_trends_explore",
       "dept": "keywords",
       "method": null,
       "timeoutMs": null,
-      "description": "This endpoint will provide you with the keyword popularity data from DataForSEO Trends. You can check keyword trends for Google Search, Google News, and Google Shopping"
+      "description": "This endpoint will provide you with the keyword popularity data from DataForSEO Trends. You can check keyword trends for Google Search, Google News, and Google Shopping Trim rows: _fields keeps the named keys of each item (dotted for nested, e.g. keyword_info.search_volume); _max_bytes caps the size, dropping items from the end; the search costs the same."
     },
     {
       "name": "keywords_data_dataforseo_trends_subregion_interests",
       "dept": "keywords",
       "method": null,
       "timeoutMs": null,
-      "description": "This endpoint will provide you with location-specific keyword popularity data from DataForSEO Trends"
+      "description": "This endpoint will provide you with location-specific keyword popularity data from DataForSEO Trends Trim rows: _fields keeps the named keys of each item (dotted for nested, e.g. keyword_info.search_volume); _max_bytes caps the size, dropping items from the end; the search costs the same."
     },
     {
       "name": "keywords_data_google_ads_search_volume",
       "dept": "keywords",
       "method": null,
       "timeoutMs": null,
-      "description": "Average monthly Google searches for a list of keywords, from Google Ads keyword data. Each row of items has keyword, search_volume, cpc, competition (LOW, MEDIUM or HIGH), competition_index (0 to 100), low_top_of_page_bid and high_top_of_page_bid, and spell when the keyword was answered under a corrected spelling. include_monthly: true adds monthly_searches, the volume month by month; it makes each row several times larger, so ask for it only when you need the trend. One answer holds roughly 250 to 480 rows, fewer for longer keywords (about 90 to 110 with include_monthly), kept under about 100 KB; the rest are left out (reason size), so a long list takes more than one call. Send at most 1,000 keywords per call (a longer list is refused before anything is asked or counted); each call counts as one research call toward this month's research. Keywords without a row in items are listed in keywords_left_out as { keyword, reason }, the ones sent in the order sent, then blanks, up to about 20 KB of names (keywords_left_out_count has them all): size (it has a row, but the answer was full: ask again for just those keywords, or leave include_monthly off; each ask is another research call); not_returned (sent, but no row came back, for example a keyword made only of symbols); or blank. The answer also has keywords_requested, rows_returned (rows in items), truncated (true when any keyword has no row in items), keywords_without_data (a row but no volume) and a note saying what was left out and why. A request that takes longer than 60 seconds is stopped and answered as an error; it was sent once, so it may still count toward this month's research. location_name: a place such as 'United States' or 'Texas,United States' (optional). language_code: a two-letter code such as 'en' (optional)."
+      "description": "Average monthly Google searches for a list of keywords, from Google Ads keyword data. Each row of items has keyword, search_volume, cpc, competition (LOW, MEDIUM or HIGH), competition_index (0 to 100), low_top_of_page_bid and high_top_of_page_bid, and spell when the keyword was answered under a corrected spelling. include_monthly: true adds monthly_searches, the volume month by month; it makes each row several times larger, so ask for it only when you need the trend. One answer holds roughly 250 to 480 rows, fewer for longer keywords (about 90 to 110 with include_monthly), kept under about 100 KB; the rest are left out (reason size), so a long list takes more than one call. Send at most 1,000 keywords per call (a longer list is refused before anything is asked or counted); each call counts as one research call toward this month's research. Keywords without a row in items are listed in keywords_left_out as { keyword, reason }, the ones sent in the order sent, then blanks, up to about 20 KB of names (keywords_left_out_count has them all): size (it has a row, but the answer was full: ask again for just those keywords, or leave include_monthly off; each ask is another research call); not_returned (sent, but no row came back, for example a keyword made only of symbols); or blank. The answer also has keywords_requested, rows_returned (rows in items), truncated (true when any keyword has no row in items), keywords_without_data (a row but no volume) and a note saying what was left out and why. A request that takes longer than 60 seconds is stopped and answered as an error; it was sent once, so it may still count toward this month's research. location_name: a place such as 'United States' or 'Texas,United States' (optional). language_code: a two-letter code such as 'en' (optional). Trim rows: _fields keeps the named keys of each item (dotted for nested, e.g. keyword_info.search_volume); _max_bytes caps the size, dropping items from the end; the search costs the same."
     },
     {
       "name": "keywords_data_google_trends_categories",
       "dept": "keywords",
       "method": null,
       "timeoutMs": null,
-      "description": "This endpoint will provide you list of Google Trends Categories"
+      "description": "This endpoint will provide you list of Google Trends Categories Trim rows: _fields keeps the named keys of each item (dotted for nested, e.g. keyword_info.search_volume); _max_bytes caps the size, dropping items from the end; the search costs the same."
     },
     {
       "name": "keywords_data_google_trends_explore",
       "dept": "keywords",
       "method": null,
       "timeoutMs": null,
-      "description": "This endpoint will provide you with the keyword popularity data from the ‘Explore’ feature of Google Trends. You can check keyword trends for Google Search, Google News, Google Images, Google Shopping, and YouTube"
+      "description": "This endpoint will provide you with the keyword popularity data from the ‘Explore’ feature of Google Trends. You can check keyword trends for Google Search, Google News, Google Images, Google Shopping, and YouTube Trim rows: _fields keeps the named keys of each item (dotted for nested, e.g. keyword_info.search_volume); _max_bytes caps the size, dropping items from the end; the search costs the same."
     },
     {
       "name": "list_departments",
@@ -10817,14 +10817,14 @@
       "dept": "on",
       "method": null,
       "timeoutMs": null,
-      "description": "This endpoint allows parsing the content on any page you specify and will return the structured content of the target page, including link URLs, anchors, headings, and textual content."
+      "description": "This endpoint allows parsing the content on any page you specify and will return the structured content of the target page, including link URLs, anchors, headings, and textual content. Trim rows: _fields keeps the named keys of each item (dotted for nested, e.g. keyword_info.search_volume); _max_bytes caps the size, dropping items from the end; the search costs the same."
     },
     {
       "name": "on_page_instant_pages",
       "dept": "on",
       "method": null,
       "timeoutMs": null,
-      "description": "Using this function you will get page-specific data with detailed information on how well a particular page is optimized for organic search"
+      "description": "Using this function you will get page-specific data with detailed information on how well a particular page is optimized for organic search Trim rows: _fields keeps the named keys of each item (dotted for nested, e.g. keyword_info.search_volume); _max_bytes caps the size, dropping items from the end; the search costs the same."
     },
     {
       "name": "onboarding_create_pm_task",
@@ -17663,49 +17663,49 @@
       "dept": "serp",
       "method": null,
       "timeoutMs": null,
-      "description": "Utility tool for serp_organic_live_advanced to get list of availible locations."
+      "description": "Utility tool for serp_organic_live_advanced to get list of availible locations. Trim rows: _fields keeps the named keys of each item (dotted for nested, e.g. keyword_info.search_volume); _max_bytes caps the size, dropping items from the end; the search costs the same."
     },
     {
       "name": "serp_organic_live_advanced",
       "dept": "serp",
       "method": null,
       "timeoutMs": null,
-      "description": "Get organic search results for a keyword in specified search engine"
+      "description": "Get organic search results for a keyword in specified search engine Trim rows: _fields keeps the named keys of each item (dotted for nested, e.g. keyword_info.search_volume); _max_bytes caps the size, dropping items from the end; the search costs the same."
     },
     {
       "name": "serp_youtube_locations",
       "dept": "serp",
       "method": null,
       "timeoutMs": null,
-      "description": "Utility tool to get list of available locations for: serp_youtube_organic_live_advanced, serp_youtube_video_info_live_advanced, serp_youtube_video_comments_live_advanced, serp_youtube_video_subtitles_live_advanced."
+      "description": "Utility tool to get list of available locations for: serp_youtube_organic_live_advanced, serp_youtube_video_info_live_advanced, serp_youtube_video_comments_live_advanced, serp_youtube_video_subtitles_live_advanced. Trim rows: _fields keeps the named keys of each item (dotted for nested, e.g. keyword_info.search_volume); _max_bytes caps the size, dropping items from the end; the search costs the same."
     },
     {
       "name": "serp_youtube_organic_live_advanced",
       "dept": "serp",
       "method": null,
       "timeoutMs": null,
-      "description": "provides top 20 blocks of youtube search engine results for a keyword"
+      "description": "provides top 20 blocks of youtube search engine results for a keyword Trim rows: _fields keeps the named keys of each item (dotted for nested, e.g. keyword_info.search_volume); _max_bytes caps the size, dropping items from the end; the search costs the same."
     },
     {
       "name": "serp_youtube_video_comments_live_advanced",
       "dept": "serp",
       "method": null,
       "timeoutMs": null,
-      "description": "provides data on the video comments you specify"
+      "description": "provides data on the video comments you specify Trim rows: _fields keeps the named keys of each item (dotted for nested, e.g. keyword_info.search_volume); _max_bytes caps the size, dropping items from the end; the search costs the same."
     },
     {
       "name": "serp_youtube_video_info_live_advanced",
       "dept": "serp",
       "method": null,
       "timeoutMs": null,
-      "description": "provides data on the video you specify"
+      "description": "provides data on the video you specify Trim rows: _fields keeps the named keys of each item (dotted for nested, e.g. keyword_info.search_volume); _max_bytes caps the size, dropping items from the end; the search costs the same."
     },
     {
       "name": "serp_youtube_video_subtitles_live_advanced",
       "dept": "serp",
       "method": null,
       "timeoutMs": null,
-      "description": "provides data on the video subtitles you specify"
+      "description": "provides data on the video subtitles you specify Trim rows: _fields keeps the named keys of each item (dotted for nested, e.g. keyword_info.search_volume); _max_bytes caps the size, dropping items from the end; the search costs the same."
     },
     {
       "name": "shopify_admin",
