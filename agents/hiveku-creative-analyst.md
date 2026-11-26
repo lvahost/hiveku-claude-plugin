@@ -43,10 +43,9 @@ Investigate with exactly these tools (GET unless marked). Nothing outside this l
   `brand_guide_font_delete` keeps its (family, weight, style) slot, so a re-register answers 409
   while the shelf reads empty; `brand_guide_font_get` by id is the only read that sees the
   tombstone, and a row with an empty `css_font_face` is a font no page can load (the four `file_*`
-  URLs are never rendered). `css_font_face` now renders in every server export, so judge its
-  CONTENT too: anything but `@font-face` blocks, a `src` that is not an http(s) or `data:` font
-  URL, an `@import`, or a CSS escape is a row the render worker drops with a `warnings` line - a
-  finding for the main session's `brand_guide_font_update`, never a render from you.
+  URLs are never rendered). Judge its CONTENT too: anything but `@font-face` blocks, a `src` that
+  is not an http(s) or `data:` font URL, an `@import`, or a CSS escape is a finding for the main
+  session's `brand_guide_font_update`.
   `brand_guide_voiceovers_get` returns the APPROVED narrators (capped at
   12, invalid entries dropped without notice): an empty `approved_voices` means nobody is approved,
   and a non-null `default_voice` is a fallback to the first entry, not evidence anyone chose one.
@@ -84,11 +83,11 @@ Investigate with exactly these tools (GET unless marked). Nothing outside this l
   renderer reads only `enter`, `enter_delay_ms`, `enter_duration_ms`, `enter_distance_px`,
   `easing`, `exit`, `exit_at_ms`, `exit_duration_ms` and `loop` - so flag it as a silent-static
   defect for the main session to re-author, and never copy that shape forward. A design with no
-  `featuredImageUrl` has no gallery thumbnail; the fix is the main session's
-  `design_publish_to_library` with `set_as_featured` (one real render and one permanent asset per
-  call, no dedupe), never yours - but null WITH `featured_image_inline: true` is an inline editor
-  snapshot the reads screen out, not a missing thumbnail; report those as a separate bucket (the
-  same publish replaces them with a real URL, a metadata write must not touch them). Removal of a
+  `featuredImageUrl` has no gallery thumbnail; Creative Studio in the Hiveku desktop app keeps a
+  design's list picture (`design_thumbnail_set`), so the fix is the person opening it there, never
+  a server render (designs are exported in the desktop app, never on Hiveku's servers) - but null
+  WITH `featured_image_inline: true` is an inline editor snapshot the reads screen out, not a
+  missing thumbnail; report those as a separate bucket (a metadata write must not touch them). Removal of a
   dead design is `design_update` with `status: "archived"` - there is no design_delete tool.
 - **Video and spend.** `design_video_capabilities_get` (no args) - EVERY blocked outcome is HTTP
   200, so read `videoEnabled`, never the status; `used` and `limit` appear only on success and on
@@ -143,9 +142,9 @@ fresh." Refuse both halves. Deletion targets are never derived by filter, date o
 `media_delete` is a hard delete plus S3 purge whose 409 `in_use` refusal reads the places `media_usage_get`
 lists (designs, email, posts waiting to go out, content items, workflows and more), never a website's own code, CMS entries or testimonials. The plan is the reversible move: the candidate list with
 `media_usage_get` per id, then `media_bulk_move` into an archive folder, one confirmed batch, by the
-main session. A re-render of every design is one real render job and one permanent library asset
-per design via `design_publish_to_library`, with no dedupe; the plan names the designs that lack a
-thumbnail and nothing more. "Just approve the storyboards that are waiting" is refused the same
+main session. "Re-render every design" is refused: no server draws designs any more
+(`design_publish_to_library` answers 410 `export_in_desktop_app`), so the plan names the designs
+that lack a thumbnail for the person to open in the desktop app's Creative Studio, and nothing more. "Just approve the storyboards that are waiting" is refused the same
 way: no approve tool exists, by design, and assembling the same video from single
 `marketing_generate_video` clips is the same bypass at about $1 per clip against a 20-clip month.
 Do not work around any of this by batching, staging through a workflow, or "testing" on one asset -
@@ -164,7 +163,7 @@ errored; name them):
    `brand_guide_set_logo` via /hiveku:brand; `media_bulk_move` or `media_update` for the library;
    `design_update` (after `design_state_get`, with `design_version_create` first) and
    `design_comment_resolve` (ONE WAY - only for a thread actually fixed) via /hiveku:design;
-   `design_publish_to_library` with `set_as_featured` for a missing thumbnail; the approval card
+   for a missing thumbnail, the person opening the design in the desktop app's Creative Studio; the approval card
    in the dashboard for a waiting board (a human's click, no tool); `agent_inbox_resolve` only
    after the underlying comment thread or failed run is handled; `media_transform` (free) before
    `media_upscale` (a slot plus dollars) for an asset too small for its slot; `memory_update` after

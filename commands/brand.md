@@ -35,17 +35,11 @@ downstream.
      fields you supply, and clearing a slot takes an explicit `null`. Nothing DRAWS a logo: it
      comes from the client's files, always.
    - Fonts: [CONFIRM] `brand_guide_font_create({ guide_id, font_family, display_name, ... })`.
-     `css_font_face` is the ONLY field that renders, and it now renders in every server export
-     (`design_export_image`, `design_export_mp4`, `design_publish_to_library`, the storyboard's
-     final cut - not `design_video_rerender`), matched on `font_family` against the canvas, so the
-     upload step is load-bearing. What it must contain, because the render worker screens it
-     structurally and drops anything else: nothing but `@font-face { ... }` blocks (no `@import`,
-     no selectors, no other at-rules), every `src` target an http(s) URL with no embedded
-     credentials or a `data:` font URL (`font/...`, `application/font...`,
-     `application/octet-stream`), no CSS escape sequences, no empty `url()`, at most 512KB per
-     entry and 40 faces per render. The create and update routes store the string verbatim with no
-     validation, so a bad rule is a 201 that fails silently at render: the layer falls back to the
-     default stack and the only signal is a line in the export's `warnings`. A row with file URLs
+     `css_font_face` is the ONLY field that renders. Keep it to nothing but `@font-face { ... }`
+     blocks (no `@import`, no selectors, no other at-rules), every `src` target an http(s) URL with
+     no embedded credentials or a `data:` font URL, no CSS escape sequences and no empty `url()`.
+     The create and update routes store the string verbatim with no validation, so a bad rule is a
+     201 that fails silently wherever the font is used. A row with file URLs
      alone registers a font no page can load, and `upload_status` reads 'ready' regardless. Omit
      `weight` rather than pass a word ("bold" becomes NaN and 500s). `brand_guide_font_update`
      whitelists display_name, the file URLs, css_font_face, is_variable, variable_axes, and
@@ -58,11 +52,11 @@ downstream.
    template pull and generation is on-brand. If a generic palette comes back, fix the guide, do not
    repaint canvases. There is NO `brand_guide_set_active` tool: with multiple guides, activation is
    dashboard-side - tell the client where it lives, and never create another guide to route around
-   it. A registered custom font is proven the same way, with a real render: one small design set in
-   that family, `design_export_image({ id, canvas_json, width, height })`, then READ `warnings` on
-   the response before looking at the PNG - a dropped font names itself there (and the reason: too
-   large, a blocked URL, not @font-face-only), and the fix is `brand_guide_font_update` with a valid
-   `css_font_face`. Optional smoke check on imagery: one `generate_image` (brand-aware by default)
+   it. A registered custom font is proven by the person: designs are drawn and exported in the
+   Hiveku desktop app, never on Hiveku's servers, so make one small design set in that family, hand
+   back its `dashboardUrl`, and ask the person to open it in Creative Studio. A family that does not
+   draw there is fixed with `brand_guide_font_update` and a valid `css_font_face`, not on the
+   canvas. Optional smoke check on imagery: one `generate_image` (brand-aware by default)
    and read `brand_applied` - `brand_skipped_reason: 'no_active_brand_guide'` is the activation
    problem above, reported by the generator itself.
 5. **Persist in the guide.** The palette, the type pairing, the logos and the logo rules live in the
