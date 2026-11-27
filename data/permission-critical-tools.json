@@ -5,8 +5,8 @@
     "mcp__plugin_hiveku_hk__",
     "mcp__hiveku__"
   ],
-  "plugin_version": "0.27.313",
-  "count": 748,
+  "plugin_version": "0.27.314",
+  "count": 752,
   "tools": [
     {
       "name": "deploy_site",
@@ -1964,6 +1964,11 @@
       "why_gated": "edits the live Google Business Profile customers see - name/address/category edits can trigger re-verification"
     },
     {
+      "name": "seo_gbp_google_updates_resolve",
+      "method": "POST",
+      "why_gated": "keeps or undoes Google's own changes to a live Google Business Profile listing, field by field; customers see the result at once, and a name, address, category or service-area change can make Google re-verify the listing"
+    },
+    {
       "name": "seo_gbp_attributes_update",
       "method": "POST",
       "why_gated": "changes the live listing's attributes - alters how the business appears in filtered local searches"
@@ -3689,6 +3694,11 @@
       "why_gated": "merges one ticket into another and closes the first; the messages move and the merge is not undone"
     },
     {
+      "name": "helpdesk_ticket_delete",
+      "method": "POST",
+      "why_gated": "deletes a resolved or closed help desk ticket for good: it leaves the inbox, every list and the help desk reports, and no screen brings it back"
+    },
+    {
       "name": "helpdesk_ticket_set_status",
       "method": "PATCH",
       "why_gated": "changes a ticket's status, which starts the account's help desk workflows, such as those for a resolved ticket"
@@ -3712,6 +3722,16 @@
       "name": "accounting_vendor_delete",
       "method": "DELETE",
       "why_gated": "retires a vendor, even one with open unpaid bills"
+    },
+    {
+      "name": "accounting_invoice_delete",
+      "method": "DELETE",
+      "why_gated": "deletes a never sent draft customer invoice for good: it leaves the invoices and what the client owes, its pay link stops working, and its number is never used again"
+    },
+    {
+      "name": "accounting_invoice_void",
+      "method": "POST",
+      "why_gated": "voids a customer invoice for good, with no undo: it no longer counts as owed, its pay link stops working, and the hours it billed go back to unbilled"
     },
     {
       "name": "brand_guide_update",

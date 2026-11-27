@@ -637,6 +637,21 @@
  *     HK-2293             social_comment_reply_delete, social_comment_reply_edit.
  *                         Landed 2026-11-27 (MCP #687, live at 95f6f5d6f33d; the 0.27.311 index carries both, neither
  *                         on the read-only list); entries deleted.
+ *
+ *   Four writes held on MCP branches until the plugins ask for them (2026-11-27). Each MCP description says ASK THE
+ *   PERSON FIRST, and the MCP's build fails until the ask list and a hook map name it (ask-first-tools-in-plugin.test.ts),
+ *   so all four are on the ask list from this release, before the MCP release serves them:
+ *     HK-2194             seo_gbp_google_updates_resolve (POST /api/olympus/seo/gbp, action google_updates_resolve:
+ *                         keeps or undoes Google's own changes to a live Business Profile listing; a TWO-STEP CONFIRM
+ *                         with a preview_hash). LIVE_CHANGE_WRITES. MCP feature/hk-2194-gbp-resolve-tool.
+ *     HK-2177             accounting_invoice_delete (DELETE /api/olympus/accounting/invoices/:id: a never sent draft)
+ *                         and accounting_invoice_void (POST .../invoices/:id/void). ALWAYS_ASK_WRITES. A person's own key
+ *                         only (accountKeyOnly). MCP feature/hk-2177-invoice-write-tools.
+ *     HK-2179             helpdesk_ticket_delete (POST /api/olympus/helpdesk/tickets/:id/delete: a resolved or closed
+ *                         ticket). ALWAYS_ASK_WRITES. A person's own key only. MCP feature/hk-2179-ticket-delete-tool,
+ *                         which also lands a help desk agent-turn policy change in its own order.
+ *   Release step, after each MCP deploy: regenerate the index from the live server, then delete that batch's entries
+ *   (tool-names.test.mjs forces it).
  */
 const SEO_SINCE = '2026-08-30';
 const seo = (batch) => ({ since: SEO_SINCE, batch });
@@ -913,4 +928,11 @@ export const PENDING_TOOLS = new Map([
   // 0.27.303 index carries both). Entries deleted.
   // HK-2293 (2026-11-26): Landed 2026-11-27 (MCP #687, live at 95f6f5d6f33d; the 0.27.311 index carries both, neither
   // on the read-only list). Entries deleted.
+  // HK-2194, HK-2177, HK-2179 (2026-11-27): the four held MCP writes, on the ask list and a hook map before the MCP
+  // releases serve them. Delete each batch once lib/tool-index.json is regenerated from the live server after its MCP
+  // deploy (tool-names.test.mjs forces it).
+  ['seo_gbp_google_updates_resolve', { since: '2026-11-27', batch: 'HK-2194' }],
+  ['accounting_invoice_delete', { since: '2026-11-27', batch: 'HK-2177' }],
+  ['accounting_invoice_void', { since: '2026-11-27', batch: 'HK-2177' }],
+  ['helpdesk_ticket_delete', { since: '2026-11-27', batch: 'HK-2179' }],
 ]);

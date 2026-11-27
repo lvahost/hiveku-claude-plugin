@@ -85,11 +85,12 @@ tier, and why, then wait for the confirmation before calling `deploy_site`.
    per-deployment field set for a single point-in-time check. Read `data.warnings[]` on the
    response.
 
-6. VERIFY. The pipeline itself requests the live URL (homepage + sample routes) through the CDN and
-   FAILS the deploy on 403/404/5xx, so a success is a deploy that is actually serving. Two things it
-   cannot tell you: page routes under reserved CDN prefixes are excluded from that smoke check by
-   design, and a 401 from an intentional auth gate counts as a pass. Load the pages you changed
-   yourself and spot-check - in a browser, or `curl -I` / `curl -A 'Hiveku-Session/1.0'`. A 202 with
+6. VERIFY. A deploy that reports ready is not proof the site serves. After it, the homepage and a few
+   routes are checked through the CDN in the background, and that check only logs: it does not fail
+   or undo the deploy, and it does not check the images or files a page links. Page routes under
+   reserved CDN prefixes are left out of it by design, and a 401 from an intentional auth gate counts
+   as a pass. So load the pages and files you changed yourself (`fetch_url`, a browser, or `curl -I` /
+   `curl -A 'Hiveku-Session/1.0'`). A 202 with
    an empty body, or a 403 with `x-hiveku-firewall: blocked`, from a bare terminal GET or a WebFetch
    is the edge firewall refusing an unidentified client, not a failed deploy; a 403 without that
    header comes from the site itself. The pipeline's own smoke client is exempt.
@@ -99,7 +100,7 @@ tier, and why, then wait for the confirmation before calling `deploy_site`.
    means a CMS item lacks the value, not that the code is wrong: check the items first and repair
    them through the CMS tools (`hiveku-web-agency/references/build-and-deploy.md`, Rule 29a), then
    test-build, and deploy again on the person's yes.
-   "Deployed, but the live site FAILS verification" means the
+   A ready deploy whose live URL answers 403/404/5xx means the
    artifacts shipped and the SERVING PATH is broken → `deploy_doctor({ project_id, environment })`
    and relay its CRITICAL findings' `fix` text verbatim. Do NOT blindly retry: a retry re-ships the
    same artifacts down the same broken path and costs another propagation window. A deployed change

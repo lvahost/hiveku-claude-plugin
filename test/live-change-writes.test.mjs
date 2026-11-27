@@ -303,6 +303,9 @@ const LIVE_CHANGE_NAMES = [
   'seo_gbp_post_create',
   'seo_gbp_post_update',
   'seo_gbp_post_delete',
+  // 2026-11-27 (HK-2194, batch HK-2194 in test/pending-tools.mjs until the index carries it): keep or undo Google's own
+  // changes to a live Business Profile listing, a two-step confirm whose confirm the model fills in.
+  'seo_gbp_google_updates_resolve',
   'seo_rankings_refresh',
   'seo_rankings_bulk_add',
   'seo_rankings_ai_backfill',
