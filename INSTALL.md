@@ -297,6 +297,7 @@ Put this in `.claude/settings.json` (per project) or `~/.claude/settings.json` (
       "mcp__plugin_hiveku_hk__customer_avatar_public_link_set",
       "mcp__plugin_hiveku_hk__account_timezone_set",
       "mcp__plugin_hiveku_hk__account_memory_append",
+      "mcp__plugin_hiveku_hk__account_memory_draft_propose",
       "mcp__plugin_hiveku_hk__memory_update",
       "mcp__plugin_hiveku_hk__memory_delete",
       "mcp__plugin_hiveku_hk__memory_restore_version",

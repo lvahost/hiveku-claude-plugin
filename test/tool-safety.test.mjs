@@ -1064,6 +1064,8 @@ const MEMORY_PAGE_WRITES_THAT_ASK = [
   'account_memory_save',
   'account_memory_restore',
   'account_memory_suggest',
+  // HK-2152: any key of the account may propose (not app-only), so it is not in the app-key-only reason check below.
+  'account_memory_draft_propose',
   'account_memory_suggestion_keep',
   'account_memory_suggestions_remove',
   'account_memory_suggestions_restore',
