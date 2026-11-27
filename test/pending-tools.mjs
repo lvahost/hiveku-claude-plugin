@@ -626,6 +626,15 @@
  *     S54-LAYER-DELETES   design_layers_delete, design_layer_folder_delete.
  *                         Landed 2026-11-25 (MCP #629, live at 0ea293150ff6; the 0.27.303 index carries both, neither
  *                         on the read-only list); entries deleted.
+ *
+ *   Taking back or changing a reply Hiveku sent (2026-11-26, HK-2293; builder and MCP
+ *   fix/hk2293-social-reply-delete-e3): social_comment_reply_delete (DELETE: deletes a public reply this account sent to
+ *   a Facebook or Instagram comment) and social_comment_reply_edit (PATCH: rewrites the words of one on Facebook). Each
+ *   is a TWO-STEP CONFIRM whose confirm the model fills in, so both are on the ask list and LIVE_CHANGE_WRITES from this
+ *   release, before the MCP release serves them. Any key of the account may call them, so the index will carry both.
+ *   Release step, after the MCP deploy: regenerate the index from the live server, then delete these entries
+ *   (tool-names.test.mjs forces it).
+ *     HK-2293             social_comment_reply_delete, social_comment_reply_edit.
  */
 const SEO_SINCE = '2026-08-30';
 const seo = (batch) => ({ since: SEO_SINCE, batch });
@@ -900,4 +909,9 @@ export const PENDING_TOOLS = new Map([
   // the two reads on the read-only list and the review not). Entries deleted.
   // S54-LAYER-DELETES (2026-11-21, MCP #629, builder #2397): Landed 2026-11-25 (MCP #629, live at 0ea293150ff6; the
   // 0.27.303 index carries both). Entries deleted.
+  // HK-2293 (2026-11-26): delete or edit a reply Hiveku sent to a Facebook or Instagram comment, on the ask list and
+  // LIVE_CHANGE_WRITES before the MCP release serves them. Delete both once lib/tool-index.json is regenerated from the
+  // live server after that MCP deploy (tool-names.test.mjs forces it).
+  ['social_comment_reply_delete', { since: '2026-11-26', batch: 'HK-2293' }],
+  ['social_comment_reply_edit', { since: '2026-11-26', batch: 'HK-2293' }],
 ]);
