@@ -6,7 +6,7 @@
     "mcp__hiveku__"
   ],
   "plugin_version": "0.27.316",
-  "count": 753,
+  "count": 754,
   "tools": [
     {
       "name": "deploy_site",
@@ -1142,6 +1142,11 @@
       "name": "ppc_bing_url_tracking_set",
       "method": "POST",
       "why_gated": "rewrites the tracking template, URL suffix or UTM auto-tagging on live Microsoft campaigns with no editorial review; an account template reaches every campaign without its own, so a wrong one breaks click URLs and attribution everywhere"
+    },
+    {
+      "name": "ppc_bing_automated_extensions_set",
+      "method": "POST",
+      "why_gated": "switches Microsoft's automated extensions (callouts, snippets, sitelinks and the rest Microsoft writes from the site) off or back on for every live ad on the account; its confirm is filled in by the model, so the preview asks too"
     },
     {
       "name": "ppc_bing_ad_extension_update",

@@ -652,6 +652,17 @@
  *                         which also lands a help desk agent-turn policy change in its own order.
  *   Release step, after each MCP deploy: regenerate the index from the live server, then delete that batch's entries
  *   (tool-names.test.mjs forces it).
+ *
+ *   Microsoft Ads automated extensions (2026-11-27, HK-2106; MCP feature/hk-2106-ms-automated-extensions):
+ *     HK-2106             ppc_bing_automated_extensions_set (POST /api/olympus/ppc/platform-ops, action
+ *                         bing_automated_extensions_set: switches Microsoft's automated extension groups off or back on
+ *                         for the whole ad account; a preview, then the same call with confirm: true and the preview's
+ *                         hash). LIVE_CHANGE_WRITES, beside ppc_bing_url_tracking_set. Its MCP description does not say
+ *                         ASK THE PERSON FIRST, so the MCP's build cannot catch a missing entry: the MCP merge waits
+ *                         for this release. Its read, ppc_bing_automated_extensions_get, joins the read-only list
+ *                         with the index.
+ *   Release step, after the MCP deploy: regenerate the index from the live server, then delete this entry
+ *   (tool-names.test.mjs forces it).
  */
 const SEO_SINCE = '2026-08-30';
 const seo = (batch) => ({ since: SEO_SINCE, batch });
@@ -940,4 +951,8 @@ export const PENDING_TOOLS = new Map([
   // list from this release, before the MCP release serves it. Delete it once lib/tool-index.json is regenerated from
   // the live server after that MCP deploy (tool-names.test.mjs forces it).
   ['account_memory_draft_propose', { since: '2026-11-27', batch: 'HK-2152' }],
+  // HK-2106 (2026-11-27): Microsoft's automated extensions switch, on the ask list and LIVE_CHANGE_WRITES before the MCP
+  // release serves it. Delete it once lib/tool-index.json is regenerated from the live server after that MCP deploy
+  // (tool-names.test.mjs forces it). Its read, ppc_bing_automated_extensions_get, joins the read-only list then.
+  ['ppc_bing_automated_extensions_set', { since: '2026-11-27', batch: 'HK-2106' }],
 ]);

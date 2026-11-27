@@ -43,6 +43,7 @@ const LIVE_CHANGE_NAMES = [
   'ppc_google_campaign_ai_settings_set',
   'ppc_bing_campaign_ai_settings_set',
   'ppc_bing_url_tracking_set',
+  'ppc_bing_automated_extensions_set', // HK-2106: account-level, preview then confirm
   // Live ad text, negatives and extensions.
   'ppc_google_ad_text_update',
   'ppc_google_ads_text_replace',
