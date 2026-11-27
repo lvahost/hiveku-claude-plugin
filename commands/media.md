@@ -154,8 +154,8 @@ VIDEO - three separate lanes. Pick the lane before you spend anything.
      registering it in the library) - a write in read clothing, not a free peek. Lost the id too:
      `design_render_jobs_list` filters by status / kind / design_project_id.
 
-3. MOTION GRAPHICS (text/layout/branded cards): the design lane below - `design_export_mp4`, no
-   generation cost. Prefer it for text-heavy promos.
+3. MOTION GRAPHICS (text/layout/branded cards): the design lane below - the person makes the MP4
+   with Download in the desktop app, no generation cost. Prefer it for text-heavy promos.
 
 Shape by destination: 9:16 → Stories/Reels/TikTok/Shorts; 16:9 → YouTube/X/LinkedIn/site heroes.
 Ceilings at post time: Shorts 3 minutes, Reels 15 minutes and 300 MB (over 3 minutes a reel is not
@@ -169,7 +169,7 @@ graphics, carousels, ad variations):
   grouped by category. Each template carries a ready-to-use `canvasData` payload.
 - `design_create({ title, designType, artboard: { width, height, background }, initialCanvasData:
   <the template's canvasData> })` - only `title` is required. Returns `id` + `dashboardUrl`; hand the
-  user that URL so they can keep editing in the browser.
+  user that URL so they can keep editing.
 - Read before you write: `design_state_get({ id })` returns a compact element-by-element summary
   (position/size/style/text/animation) instead of raw Fabric JSON; pass `page_id` on a multi-page
   design (the response's `pages` roster + `activePageId` say what exists). Then `design_update({
@@ -195,27 +195,23 @@ graphics, carousels, ad variations):
   (`design_versions_list` to see them). There is no design_delete tool, deliberately:
   `design_update({ id, status: 'archived' })` is the removal verb, and hard deletion stays in the
   dashboard.
-- Show the result: `design_export_image({ id, canvas_json, width, height })` returns an S3 PNG URL -
-  put it in the reply so the user sees it inline. `design_export_mp4({ id, canvas_json, width,
-  height, duration_seconds })` returns `mp4Url`; follow it with `design_update({ id, previewVideoUrl
-  })` so the gallery gets an autoplay thumbnail (`previewVideoUrl` only takes effect when
-  `canvasData` is NOT in the same call).
-- Both exports are SYNCHRONOUS (image ~5-15s typical, the tool waits 100s; mp4 up to 280s), both
-  REQUIRE the full Fabric `canvas_json` plus width/height in the body - they do NOT render a stored
-  design from its id alone - and both refuse early on an empty canvas. Both render the account's
-  custom brand fonts (rows with a `css_font_face`) and both return `warnings?`: a font that could not
-  load degraded to the fallback stack, so a 200 with a font warning is a brand-wrong render - fix the
-  font row via /hiveku:brand, then re-export.
-- Look at it before you hand it off: download the exported PNG and view it, judge hierarchy,
-  contrast, margins, and brand tokens against the brief, fix and re-export - hard cap two to three
-  passes, then name what remains (the hiveku-creative-agency skill's `references/self-review.md`
-  has the loop).
-- The finished static deliverable: `design_publish_to_library({ id, set_as_featured: true })` reads
-  the canvas straight from the DB, renders the settled frame, and creates a PERMANENT media asset.
-  `set_as_featured` is THE thumbnail path - agent-created designs have no gallery thumbnail without
-  it. Nothing dedupes and a timeout may still land the render, so call it ONCE and never retry
-  blindly; `design_export_image` + `media_library_register_external_url` is the lane when you need a
-  specific frame instead.
+- There is no server preview or export of a design any more. Check it from `design_state_get`:
+  judge hierarchy, contrast, margins, text that cannot fit its box, and brand tokens against the
+  brief, fix and read again - hard cap two to three passes, then name what remains (the
+  hiveku-creative-agency skill's `references/self-review.md` has the loop) and ask the person to
+  look at it in Creative Studio.
+- Designs are exported in the Hiveku desktop app, never on Hiveku's servers: the person opens the
+  design in Creative Studio in the latest desktop app and chooses Download (PNG, JPG, WEBP, SVG, PDF
+  or MP4); Save to Media library then keeps the file in the library, titled after the
+  design. A picture is tagged `creative-studio` and `export` - find it with
+  `media_library_list({ tags: 'export', search: '<design title>' })`; an MP4 has no tags - use
+  `media_library_list({ media_type: 'video', search: '<design title>' })`. Creative Studio also
+  keeps the design's list picture (`design_thumbnail_set`).
+  Once a saved MP4 is in the library, `design_update({ id, previewVideoUrl })` gives the gallery an
+  autoplay thumbnail (`previewVideoUrl` only takes effect when `canvasData` is NOT in the same call).
+- `design_export_image`, `design_export_mp4`, `design_publish_to_library` and `design_video_rerender`
+  answer 410 `export_in_desktop_app` every time and draw, store and charge nothing: tell the person
+  what the error says, and never call, retry or loop them.
 - A new design starts from a template of the same size (`design_templates_list`); `design_list` /
   `design_get` find an earlier design to restyle only when the person names it. The deeper canvas
   round-trip (comments, versions, self-review) is /hiveku:design.

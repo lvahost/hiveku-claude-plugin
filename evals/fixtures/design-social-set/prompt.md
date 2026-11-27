@@ -31,13 +31,16 @@ from no other earlier design. Overrides for this eval run only:
   assemble the same video from single generated clips.
 - The design-lane writes ARE in scope and expected: reading and updating
   canvases (with the documented read-then-write and snapshot discipline),
-  resolving only the comment threads you actually fixed, exporting frames,
-  publishing and registering outputs, PM tasks, and the memory write-back
-  the command describes: a person's words only, never your own work.
+  resolving only the comment threads you actually fixed, registering a file
+  that already exists but never reached the Media Library, PM tasks, and the
+  memory write-back the command describes: a person's words only, never your
+  own work. Files are exported in the Hiveku desktop app, not in this run, so
+  say what the person does there to get them.
 - No local `hiveku-data/` files exist and the skill reference files are not
   reachable in this run - the command text above and the tool results are
-  your whole context. Exported PNGs cannot be opened and viewed here, so say
-  what you checked structurally instead of claiming you looked at pixels.
+  your whole context. No picture of a design can be opened and viewed here,
+  so say what you checked structurally instead of claiming you looked at
+  pixels.
 - Any verbatim exhibit in the report (a quoted client comment, proposed task
   text, canvas copy) goes inside a ``` fenced block. Prose outside fences
   must be your own synthesis, and every number in that prose must come from a

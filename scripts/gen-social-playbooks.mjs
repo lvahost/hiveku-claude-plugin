@@ -147,7 +147,7 @@ const TRANSLATION = [
   ['media_library_register_external_url', 'media_library_register_external_url'],
   ['media_update', 'media_library_update'],
   ['generate_image', 'generate_image (pass register_in_media_library=True)'],
-  ['design_publish_to_library', 'design_project_publish'],
+  ['design_publish_to_library', 'design_project_publish (it only answers export_in_desktop_app: designs are exported in the Hiveku desktop app)'],
   ['design_list', 'design_project_list'],
   ['design_get', 'design_project_get'],
   ['pm_tasks_create', 'pm_task_create'],
