@@ -86,7 +86,9 @@ const TOOL_NAME_CONST = /^[ \t]*(?:export[ \t]+)?const[ \t]+([A-Z][A-Z0-9_]*)[ \
 const STR = String.raw`(?:'(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*")`;
 // Both key styles: `description: '...'` / `method: 'GET'` and `"description": "..."` / `"method": "GET"`.
 const DESC = new RegExp(String.raw`"?description"?:\s*(${STR}(?:\s*\+\s*${STR})*)`);
-const METHOD = /"?method"?:\s*['"]([A-Z]+)['"]/;
+// Not inside a longer name: crm_contacts_import_file_presign's description quotes its answer's
+// `upload_method: "PUT"` before the mapping's `method: 'POST'`.
+const METHOD = /(?<![\w$])"?method"?:\s*['"]([A-Z]+)['"]/;
 const STR_G = new RegExp(STR, 'g');
 
 /**
