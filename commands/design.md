@@ -96,8 +96,8 @@ MOTION addendum - the animation vocabulary the renderer actually reads:
   while every tool reports success. The old `{ preset, delay_ms, duration_ms }` shape is dead - the
   renderer never read it; flag it where found, never copy it forward.
 - The MP4 is made in the desktop app: the person plays the design in Creative Studio and chooses
-  Download, which draws the MP4 on their computer (every visible page in one video by default; no
-  GIF). Check the timing first from `design_state_get` (`canvasAnimation` and each layer's
+  Download, which draws the MP4 on their computer (every visible page in one video by default).
+  Check the timing first from `design_state_get` (`canvasAnimation` and each layer's
   `animation`). Once the person has saved the MP4 to the Media library, `design_update({ id,
   previewVideoUrl })` gives the gallery its autoplay thumbnail (`previewVideoUrl` only takes effect
   when `canvasData` is NOT in the same call).

@@ -202,7 +202,7 @@ graphics, carousels, ad variations):
   look at it in Creative Studio.
 - Designs are exported in the Hiveku desktop app, never on Hiveku's servers: the person opens the
   design in Creative Studio in the latest desktop app and chooses Download (PNG, JPG, WEBP, SVG, PDF
-  or MP4; no GIF); Save to Media library then keeps the file in the library, titled after the
+  or MP4); Save to Media library then keeps the file in the library, titled after the
   design. A picture is tagged `creative-studio` and `export` - find it with
   `media_library_list({ tags: 'export', search: '<design title>' })`; an MP4 has no tags - use
   `media_library_list({ media_type: 'video', search: '<design title>' })`. Creative Studio also
