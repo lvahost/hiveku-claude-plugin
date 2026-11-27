@@ -1,5 +1,6 @@
 ---
 description: Remove this directory's Hiveku account binding.
+disable-model-invocation: true
 allowed-tools: ["Bash(\"${CLAUDE_PLUGIN_ROOT}/bin/hiveku\" unbind:*)"]
 ---
 

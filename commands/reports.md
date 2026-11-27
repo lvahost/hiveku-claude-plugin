@@ -1,5 +1,6 @@
 ---
 description: Every Agent Feedback report (problems and feature requests) across EVERY connected account, read-only - what was reported, who filed it, where each one stands, when and how it closed, and which answers are waiting to be passed on.
+disable-model-invocation: true
 allowed-tools: ["Bash(\"${CLAUDE_PLUGIN_ROOT}/bin/hiveku\" reports:*)"]
 ---
 

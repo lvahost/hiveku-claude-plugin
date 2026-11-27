@@ -1,5 +1,6 @@
 ---
 description: Sync this account's memory, rules, and skills into local files, filed by the agent that owns each one.
+disable-model-invocation: true
 allowed-tools: ["Bash(\"${CLAUDE_PLUGIN_ROOT}/bin/hiveku\" knowledge:*)"]
 ---
 

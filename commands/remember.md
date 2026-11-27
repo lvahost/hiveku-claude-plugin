@@ -108,8 +108,8 @@ the person before creating a rule, skill, shortcut or specialist that names no a
 
 `memory_create({ type: "skill", name: "discovery-call-prep", content, reason })` creates it; on a 409
 read the existing entry, check `memory_log_list` for it as in step 2b, and use `memory_update` with the
-full merged body, a `reason` and `expected_version`. Then run `/hiveku:knowledge pull` to mirror it
-locally.
+full merged body, a `reason` and `expected_version`. Then ask the person to run `/hiveku:knowledge pull`
+to mirror it locally: only the person can start that command.
 
 To see what changed in this account's memory recently, and who changed it, run
 `/hiveku:memory-changes`.

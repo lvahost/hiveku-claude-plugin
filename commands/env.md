@@ -1,5 +1,6 @@
 ---
 description: Set up this site's environment secrets for local dev (pull from Hiveku), or add/change one.
+disable-model-invocation: true
 argument-hint: "[nothing to set up local dev | a KEY to add/update]"
 ---
 

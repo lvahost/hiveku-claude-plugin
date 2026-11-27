@@ -1,5 +1,6 @@
 ---
 description: Update the Hiveku plugin to the latest version.
+disable-model-invocation: true
 allowed-tools: ["Bash(\"${CLAUDE_PLUGIN_ROOT}/bin/hiveku\" update:*)"]
 ---
 

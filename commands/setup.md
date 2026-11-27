@@ -1,5 +1,6 @@
 ---
 description: Create and bind one folder per connected account - the first-run workspace setup.
+disable-model-invocation: true
 allowed-tools: ["Bash(\"${CLAUDE_PLUGIN_ROOT}/bin/hiveku\" setup:*)"]
 ---
 

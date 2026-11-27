@@ -1,5 +1,6 @@
 ---
 description: Bind this directory to one Hiveku account, so Hiveku tools operate on that account here.
+disable-model-invocation: true
 allowed-tools: ["Bash(\"${CLAUDE_PLUGIN_ROOT}/bin/hiveku\" bind:*)", "Bash(\"${CLAUDE_PLUGIN_ROOT}/bin/hiveku\" status:*)"]
 ---
 

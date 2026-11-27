@@ -1,5 +1,6 @@
 ---
 description: Portfolio sweep across EVERY connected account - reachability, scope, and urgent inbox items per client, read-only. The Monday-morning view before opening any single client's folder.
+disable-model-invocation: true
 allowed-tools: ["Bash(\"${CLAUDE_PLUGIN_ROOT}/bin/hiveku\" fleet:*)"]
 ---
 
