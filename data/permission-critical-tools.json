@@ -5,8 +5,8 @@
     "mcp__plugin_hiveku_hk__",
     "mcp__hiveku__"
   ],
-  "plugin_version": "0.27.315",
-  "count": 752,
+  "plugin_version": "0.27.316",
+  "count": 753,
   "tools": [
     {
       "name": "deploy_site",
@@ -677,6 +677,11 @@
       "name": "account_memory_append",
       "method": "POST",
       "why_gated": "suggests a line for the account memory: until an owner reviews it on the dashboard, every department agent reads it at the start of each conversation (marked as not reviewed), so a wrong or planted line steers every department at once"
+    },
+    {
+      "name": "account_memory_draft_propose",
+      "method": "POST",
+      "why_gated": "proposes a whole new About your business: one draft per account waits for an owner or admin in the Hiveku app, and a newer proposal replaces the one waiting. Nothing in About your business changes until a person saves it"
     },
     {
       "name": "memory_update",
