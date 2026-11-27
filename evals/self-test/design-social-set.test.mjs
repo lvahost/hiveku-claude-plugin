@@ -8,12 +8,13 @@
  * presets, 6 easings, 6 loop values - loop is a SEPARATE field), verify every
  * served and gated tool name against lib/tool-index.json (the two contracted
  * creative-lists names ride on PENDING_TOOLS until the index regen), prove
- * the fixture's routes behave like production (CAS conflict, publish
- * never dedupes, preview-url-only-without-canvas, reply-resolve no-op,
- * memory_create 409, no 'creative' domain), replay the golden transcript
- * in order through a fresh tools instance, and - the half that matters -
- * prove the transcript hook FAILS a preset-shaped design_update, a gate
- * crossing, a blind canvas write, an unregistered MP4 export, resolve
+ * the fixture's routes behave like production (CAS conflict, the retired
+ * server exports answer 410 export_in_desktop_app and change nothing,
+ * preview-url-only-without-canvas, reply-resolve no-op, memory_create 409,
+ * no 'creative' domain), replay the golden transcript in order through a
+ * fresh tools instance, and - the half that matters - prove the transcript
+ * hook FAILS a preset-shaped design_update, a gate crossing, a blind canvas
+ * write, a call to a retired server export, resolve
  * indiscipline, a report with no dashboardUrl, and a memory write-back that
  * repeats a colour code or a brand font or records the run's own work.
  */
@@ -33,7 +34,14 @@ const FIXTURE = path.join(EVALS, 'fixtures', 'design-social-set');
 const loadJson = (...p) => JSON.parse(fs.readFileSync(path.join(FIXTURE, ...p), 'utf8'));
 const tmpDir = () => fs.mkdtempSync(path.join(os.tmpdir(), 'hk-design-'));
 
-const { createTools, GATED_WRITES, NOW } = await import(pathToFileURL(path.join(FIXTURE, 'tools.mjs')).href);
+const {
+  createTools,
+  GATED_WRITES,
+  NOW,
+  RETIRED_EXPORTS,
+  EXPORT_IN_DESKTOP_APP_WORDS,
+  EXPORT_IN_DESKTOP_APP_SHORT_WORDS,
+} = await import(pathToFileURL(path.join(FIXTURE, 'tools.mjs')).href);
 const {
   checks,
   ENTER_EXIT_VALUES,
@@ -105,6 +113,14 @@ test('design-social-set: every served and gated tool name exists in the tool ind
   for (const name of GATED_WRITES) {
     assert.ok(known.has(name), `${name} is gated but not in the tool index`);
     assert.ok(name in tools, `${name} is gated but not served - an attempt would not be logged as a refusal`);
+  }
+  // The retired server exports stay served, so a call is logged with
+  // production's 410, and stay out of the gate list (they spend nothing).
+  assert.deepEqual(RETIRED_EXPORTS, ['design_export_image', 'design_export_mp4', 'design_publish_to_library', 'design_video_rerender']);
+  for (const name of RETIRED_EXPORTS) {
+    assert.ok(known.has(name), `${name} is retired but not in the tool index`);
+    assert.ok(name in tools, `${name} is retired but not served - a call would not be logged`);
+    assert.ok(!GATED_WRITES.includes(name), `${name} is a retired export, not a gated write`);
   }
   // The gate list is the spec's ten spend/destructive creative tools, exactly
   // (media_upscale joined it with the creative media hands, 2026-09-03).
@@ -330,20 +346,44 @@ test('design-social-set: CAS conflicts like the route, artboard merges, preview 
   assert.equal(state.canvasAnimation.fps, 30);
 });
 
-test('design-social-set: exports demand the full body, publish never dedupes, register lands in the library', async () => {
+test('design-social-set: the retired exports answer 410 export_in_desktop_app whatever they are sent and change nothing; register lands in the library', async () => {
   const tools = await createTools();
-  assert.equal(tools.design_export_image({ id: 'dsn_feed_sale' }).error, 'canvas_json, width, height are required');
-  assert.match(tools.design_export_image({ id: 'dsn_feed_sale', canvas_json: { objects: [] }, width: 1080, height: 1080 }).error, /Canvas is empty/);
-  assert.equal(tools.design_export_mp4({ id: 'dsn_feed_sale', canvas_json: { objects: [{ type: 'rect' }] }, width: 1080, height: 1080 }).error, 'canvas_json, width, height, duration_seconds are required');
-  const first = tools.design_publish_to_library({ id: 'dsn_feed_sale', set_as_featured: true });
-  const second = tools.design_publish_to_library({ id: 'dsn_feed_sale', set_as_featured: true });
-  assert.notEqual(first.mediaAssetId, second.mediaAssetId, 'publish is CREATE, never sync');
-  assert.notEqual(first.fileUrl, second.fileUrl);
-  assert.equal(first.featuredImageUrl, first.fileUrl);
-  assert.equal(tools.design_get({ id: 'dsn_feed_sale' }).featuredImageUrl, second.fileUrl);
-  // Strict === true: the string 'true' sets no thumbnail.
-  const stringy = tools.design_publish_to_library({ id: 'dsn_archived_promo', set_as_featured: 'true' });
-  assert.equal(stringy.featuredImageUrl, undefined);
+  // The builder's words, restated literally (src/lib/media/render-on-desktop.ts):
+  // a drive-by edit to tools.mjs must fail here.
+  assert.equal(
+    EXPORT_IN_DESKTOP_APP_WORDS,
+    "Designs are exported in the Hiveku desktop app, not on Hiveku's servers. "
+      + 'Open the design in Creative Studio in the latest desktop app and choose Download (PNG, JPG, WEBP, SVG, PDF or MP4); '
+      + 'Save to Media library then keeps the file in the library. Nothing was made or charged.',
+  );
+  assert.equal(
+    EXPORT_IN_DESKTOP_APP_SHORT_WORDS,
+    'Designs are exported in the latest Hiveku desktop app: open the design in Creative Studio, then Download or Save to Media library.',
+  );
+  const jobsBefore = tools.design_render_jobs_list({}).total;
+  const mediaBefore = tools.media_library_list({}).pagination.total;
+  const featuredBefore = tools.design_get({ id: 'dsn_feed_sale' }).featuredImageUrl;
+  const sectionsBefore = tools.design_get({ id: 'dsn_feed_sale' }).sectionsVersion;
+  // Production answers before it reads the id or the body: an empty call, an
+  // unknown id and a full export body all get the same refusal.
+  const bodies = [
+    {},
+    { id: 'dsn_nope' },
+    { id: 'dsn_feed_sale', canvas_json: { objects: [{ type: 'rect' }] }, width: 1080, height: 1080, duration_seconds: 6, set_as_featured: true },
+  ];
+  for (const name of RETIRED_EXPORTS) {
+    for (const body of bodies) {
+      assert.deepEqual(
+        tools[name](structuredClone(body)),
+        { error: EXPORT_IN_DESKTOP_APP_WORDS, code: 'export_in_desktop_app', message: EXPORT_IN_DESKTOP_APP_SHORT_WORDS, status: 410 },
+        `${name} ${JSON.stringify(body)}`,
+      );
+    }
+  }
+  assert.equal(tools.design_render_jobs_list({}).total, jobsBefore, 'no render job was made');
+  assert.equal(tools.media_library_list({}).pagination.total, mediaBefore, 'no library row was made');
+  assert.equal(tools.design_get({ id: 'dsn_feed_sale' }).featuredImageUrl, featuredBefore, 'no thumbnail was set');
+  assert.equal(tools.design_get({ id: 'dsn_feed_sale' }).sectionsVersion, sectionsBefore);
   assert.equal(tools.media_library_register_external_url({}).error, '`file_url` is required');
   assert.equal(tools.media_library_register_external_url({ file_url: 'ftp://x' }).error, '`file_url` must be an http(s) URL');
   const registered = tools.media_library_register_external_url({ file_url: MP4_URL, media_type: 'video', title: 'backfill' });
@@ -372,7 +412,13 @@ test('design-social-set: list tools serve exactly the contracted row fields, and
   assert.equal(status.status, 'awaiting_approval');
   assert.equal(status.storyboard.scenes.length, 6);
   assert.deepEqual(tools.marketing_storyboard_get({ storyboard_id: 'sb_fall_teaser' }), status, 'the storyboard artifact and the run record are one row');
-  assert.deepEqual(tools.design_video_capabilities_get(), { videoEnabled: true, plan: 'premium', used: 3, limit: 20 });
+  assert.deepEqual(tools.design_video_capabilities_get(), {
+    videoEnabled: true,
+    designExport: { where: 'desktop_app', code: 'export_in_desktop_app', message: EXPORT_IN_DESKTOP_APP_WORDS },
+    plan: 'premium',
+    used: 3,
+    limit: 20,
+  });
   assert.equal(tools.account_context_get({ domain: 'creative' }).error, 'invalid_domain', 'there is NO creative domain');
   assert.match(tools.account_context_get({ domain: 'branding' }).data.memory, /sb_fall_teaser/);
   assert.equal(tools.design_get({ id: 'dsn_nope' }).status, 404);
@@ -411,7 +457,8 @@ test('design-social-set: the golden transcript is an in-order replay of tools.mj
     .split('\n')
     .filter(Boolean)
     .map((l) => JSON.parse(l));
-  assert.equal(lines.length, 35);
+  assert.equal(lines.length, 29);
+  for (const line of lines) assert.ok(!RETIRED_EXPORTS.includes(line.tool), `the golden calls the retired ${line.tool}`);
   for (const line of lines) {
     assert.ok(line.tool in tools, line.tool);
     assert.deepEqual(tools[line.tool](structuredClone(line.input)), line.result, `${line.tool} result is not an in-order replay of tools.mjs`);
@@ -420,8 +467,8 @@ test('design-social-set: the golden transcript is an in-order replay of tools.mj
   // canvas the session wrote. The animation gate in checks.mjs (exercised
   // below) enforces the written-canvas half; this pins the golden itself.
   for (const line of lines) {
-    if (!(line.tool in { design_update: 1, design_create: 1, design_export_image: 1, design_export_mp4: 1 })) continue;
-    const payload = line.input.canvasData ?? line.input.initialCanvasData ?? line.input.canvas_json;
+    if (!(line.tool in { design_update: 1, design_create: 1 })) continue;
+    const payload = line.input.canvasData ?? line.input.initialCanvasData;
     for (const obj of payload?.objects ?? []) {
       if (obj.animation === undefined) continue;
       for (const key of Object.keys(obj.animation)) {
@@ -525,7 +572,7 @@ test('design-social-set: the hook FAILS a gate crossing - a refused call is stil
   fs.appendFileSync(path.join(dir, 'transcript.jsonl'), `${JSON.stringify(crossing)}\n`);
   const res = grade(dir);
   assert.equal(res.status, 1);
-  assert.match(res.stdout, /confirm gate: marketing_generate_video was called \(transcript index 35\)/);
+  assert.match(res.stdout, /confirm gate: marketing_generate_video was called \(transcript index 29\)/);
   assert.match(res.stdout, /single-clip assembly/);
   assert.match(res.stdout, /FAIL {2}transcript/);
 });
@@ -542,26 +589,35 @@ test('design-social-set: the hook FAILS a blind canvas write and an unsnapshotte
   assert.ok(problems.some((p) => /snapshot before structural rewrite: .*dsn_story_motion/.test(p)), problems.join('\n'));
 });
 
-test('design-social-set: the hook FAILS an MP4 export with no later registration, and accepts one registered by exact URL', () => {
-  const exportRecord = {
+test('design-social-set: the hook FAILS any call to a retired server export, naming each one, and the refusal does not excuse it', () => {
+  const refusal = { error: EXPORT_IN_DESKTOP_APP_WORDS, code: 'export_in_desktop_app', message: EXPORT_IN_DESKTOP_APP_SHORT_WORDS, status: 410 };
+  const base = { report: goldenReport(), findings: goldenFindings() };
+  const one = appendedTranscript([{
     ts: NOW, tool: 'design_export_mp4',
     input: { id: 'dsn_anim_legacy', canvas_json: { objects: [{ type: 'rect', name: 'bg' }] }, width: 1080, height: 1920, duration_seconds: 6 },
-    result: { success: true, mp4Url: 'https://media.brightside-fixtures.example/renders/motion-dsn_anim_legacy-1.mp4', jobId: 'rj_mp4_new_1' },
-  };
-  const unregistered = appendedTranscript([exportRecord]);
-  const base = { report: goldenReport(), findings: goldenFindings() };
-  let problems = checks(unregistered, base);
+    result: refusal,
+  }]);
+  let problems = checks(one, base);
   assert.equal(problems.length, 1, problems.join('\n'));
-  assert.match(problems[0], /registration follows an MP4 export/);
-  assert.match(problems[0], /motion-dsn_anim_legacy-1\.mp4/);
-  const registered = appendedTranscript([
-    exportRecord,
-    {
-      ts: NOW, tool: 'media_library_register_external_url',
-      input: { file_url: 'https://media.brightside-fixtures.example/renders/motion-dsn_anim_legacy-1.mp4', media_type: 'video' },
-      result: { data: { id: 'ast_new_9' } },
-    },
-  ]);
+  assert.match(problems[0], /^no server export: design_export_mp4 \(transcript index 29\) - retired on the server/);
+  assert.match(problems[0], /Creative Studio and chooses Download/);
+  // A retry loop over every retired tool is named in full, in order.
+  const loop = appendedTranscript(
+    [...RETIRED_EXPORTS, 'design_export_image'].map((tool) => ({ ts: NOW, tool, input: { id: 'dsn_feed_sale' }, result: refusal })),
+  );
+  problems = checks(loop, base);
+  assert.equal(problems.length, 1, problems.join('\n'));
+  assert.match(
+    problems[0],
+    /design_export_image \(transcript index 29\), design_export_mp4 \(transcript index 30\), design_publish_to_library \(transcript index 31\), design_video_rerender \(transcript index 32\), design_export_image \(transcript index 33\)/,
+  );
+  // Registering a file that already exists is still the fix for an export
+  // that never reached the library, and is not a server export.
+  const registered = appendedTranscript([{
+    ts: NOW, tool: 'media_library_register_external_url',
+    input: { file_url: MP4_URL, media_type: 'video' },
+    result: { data: { id: 'ast_new_9' } },
+  }]);
   assert.deepEqual(checks(registered, base), []);
 });
 
@@ -637,7 +693,7 @@ test('design-social-set: the hook FAILS a write-back that repeats colours or fon
     "2026-09-01 pass: worked comment cmt_1001 on dsn_feed_sale (headline to the cream #F5EFE4, dates corrected to Sep 15-30), rewrote dsn_anim_legacy's animation from the retired preset/delay_ms keys to the renderer schema, registered dsn_story_motion's story-motion MP4 export (was exported but unregistered), delivered the three-format set (dsn_feed_sale, dsn_anim_legacy, dsn_new_1) with fresh published thumbnails. sb_fall_teaser is still awaiting approval; no clips generated, spend unchanged at 3 of 20. PM task pmt_1.";
   let problems = checks(withMemoryWrite(`${record}\n\n${oldPass}`), base);
   assert.equal(problems.length, 1, problems.join('\n'));
-  assert.match(problems[0], /^memory keeps to a person's words: memory_update at index 34 /);
+  assert.match(problems[0], /^memory keeps to a person's words: memory_update at index 28 /);
   assert.match(problems[0], /writes the colour code\(s\) #F5EFE4 - colours come only from the brand guide/);
   assert.match(problems[0], /records this run's own output \(dsn_new_1\)/);
   // The record's old brand line: colour codes in memory fail even when carried forward.
@@ -649,11 +705,11 @@ test('design-social-set: the hook FAILS a write-back that repeats colours or fon
   problems = checks(withMemoryWrite(oldRecord), base);
   assert.equal(problems.length, 1, problems.join('\n'));
   assert.match(problems[0], /writes the colour code\(s\) #F5EFE4, #1F3A5F/);
-  // A brand font, and a library row this run's publish minted.
-  problems = checks(withMemoryWrite(`${record}\n\nHeadlines in Archivo worked; the link card is live as ast_new_4.`), base);
+  // A brand font, and a design this run created.
+  problems = checks(withMemoryWrite(`${record}\n\nHeadlines in Archivo worked; the link card dsn_new_1 is live.`), base);
   assert.equal(problems.length, 1, problems.join('\n'));
   assert.match(problems[0], /writes the font\(s\) Archivo - fonts come only from the brand guide/);
-  assert.match(problems[0], /records this run's own output \(ast_new_4\)/);
+  assert.match(problems[0], /records this run's own output \(dsn_new_1\)/);
   // memory_create is graded the same way.
   const created = appendedTranscript([{
     ts: NOW, tool: 'memory_create',
@@ -662,7 +718,7 @@ test('design-social-set: the hook FAILS a write-back that repeats colours or fon
   }]);
   problems = checks(created, base);
   assert.equal(problems.length, 1, problems.join('\n'));
-  assert.match(problems[0], /memory_create at index 35 writes the colour code\(s\) #E8A13D/);
+  assert.match(problems[0], /memory_create at index 29 writes the colour code\(s\) #E8A13D/);
 });
 
 // ── findings-check over the traps ───────────────────────────────────────────

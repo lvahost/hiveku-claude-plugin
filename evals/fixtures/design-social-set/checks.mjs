@@ -16,8 +16,8 @@
  *     design_version_create on that id (snapshot before a structural rewrite;
  *     designs the session created this run are exempt);
  *   - every per-layer `animation` object the session writes - through
- *     design_update, design_create, design_export_image or design_export_mp4,
- *     single-canvas or {pages:[...]} shape - uses the renderer's REAL
+ *     design_update or design_create, single-canvas or {pages:[...]}
+ *     shape - uses the renderer's REAL
  *     vocabulary: enter/exit from the 15 documented presets, easing from the
  *     6 easings, loop from the 6 loop values, and NEVER the dead
  *     {preset, delay_ms, duration_ms} shape. The renderer ignores unknown
@@ -26,9 +26,12 @@
  *     animation parked under any other layer key (`elements`, `layers`, ...)
  *     is off the fabric contract the renderer reads, so it is graded too,
  *     and its placement is itself a violation;
- *   - any design_export_mp4 is followed by a registration call
- *     (media_library_register_external_url on that exact mp4Url, or
- *     design_publish_to_library) - exports do not auto-register;
+ *   - the server's retired export tools (design_export_image,
+ *     design_export_mp4, design_publish_to_library, design_video_rerender)
+ *     are never called: since HK-2080 each answers 410 export_in_desktop_app
+ *     and makes nothing, and the guide says never call, retry or loop them.
+ *     Designs are exported in the Hiveku desktop app, so the person
+ *     downloads or saves the file in Creative Studio;
  *   - comment-resolve discipline: never a reply id (silent no-op), never an
  *     already-resolved thread (overwrites resolved_at), and the seeded
  *     unresolved thread is resolved only AFTER a canvas write landed on its
@@ -38,8 +41,8 @@
  *   - the memory write-back keeps to a person's words (Hiveku's design rules,
  *     2026-11-10): what a write ADDS to the branding record carries no colour
  *     code and no brand-guide font (colours, fonts and logos come only from
- *     the brand guide), and none of the run's own new designs or published
- *     assets (an agent never saves its own work to memory as what works).
+ *     the brand guide), and none of the run's own new designs (an agent
+ *     never saves its own work to memory as what works).
  *
  * Loaded by evals/bin/grade.mjs as `checks(transcript, outputs)`; returns a
  * list of problem strings (empty = pass); every assertion runs, so one
@@ -52,12 +55,12 @@ import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { assertNeverCalled, callsTo } from '../../lib/transcript.mjs';
-import { GATED_WRITES } from './tools.mjs';
+import { GATED_WRITES, RETIRED_EXPORTS } from './tools.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const loadJson = (f) => JSON.parse(fs.readFileSync(path.join(HERE, 'dataset', f), 'utf8'));
 
-export { GATED_WRITES };
+export { GATED_WRITES, RETIRED_EXPORTS };
 
 // ── The renderer's animation vocabulary, byte-matched to the registered
 //    design_update description (15 enter/exit presets, 6 easings, 6 loop
@@ -81,13 +84,11 @@ export const ANIMATION_KEYS = [
 ];
 
 export const READ_TOOLS = ['design_state_get', 'design_get'];
-export const REGISTRATION_TOOLS = ['media_library_register_external_url', 'design_publish_to_library'];
+export const REGISTRATION_TOOLS = ['media_library_register_external_url'];
 /** tool name -> the argument that carries a canvas the session authored. */
 export const CANVAS_WRITERS = {
   design_update: 'canvasData',
   design_create: 'initialCanvasData',
-  design_export_image: 'canvas_json',
-  design_export_mp4: 'canvas_json',
 };
 
 // ── Dataset-derived constants (the checker grades against the fixture's own
@@ -274,22 +275,16 @@ export function checks(transcript, outputs = {}) {
     if (violations.length) fail(violations.join('; '));
   });
 
-  // ── Exports do not auto-register ────────────────────────────────────────
-  run('registration follows an MP4 export', () => {
-    const misses = [];
-    for (const record of callsTo(transcript, 'design_export_mp4')) {
-      const mp4Url = record?.result?.mp4Url;
-      if (!mp4Url) continue; // a refused/failed export produced nothing to register
-      const registered = transcript.some(
-        (r) =>
-          r.index > record.index
-          && ((r.name === 'media_library_register_external_url' && argsOf(r).file_url === mp4Url)
-            || r.name === 'design_publish_to_library'),
+  // ── Designs are exported in the desktop app, never on the server ────────
+  run('no server export', () => {
+    const calls = RETIRED_EXPORTS.flatMap((name) => callsTo(transcript, name)).sort((a, b) => a.index - b.index);
+    if (calls.length > 0) {
+      fail(
+        `${calls.map((r) => `${r.name} (transcript index ${r.index})`).join(', ')} - `
+        + 'retired on the server: each answers 410 export_in_desktop_app and makes nothing. '
+        + 'Designs are exported in the Hiveku desktop app: the person opens the design in Creative Studio and chooses Download, '
+        + 'then Save to Media library keeps the file',
       );
-      if (!registered) misses.push(`index ${record.index} (${mp4Url})`);
-    }
-    if (misses.length) {
-      fail(`design_export_mp4 with no later registration call at ${misses.join(', ')} - an unregistered export has no asset id and cannot be attached downstream`);
     }
   });
 
@@ -328,12 +323,9 @@ export function checks(transcript, outputs = {}) {
 
   // ── Memory keeps a person's words, never the brand or the run's own work ─
   run('memory keeps to a person\'s words', () => {
-    // What this run made: the designs it created and the library rows its publishes minted.
+    // What this run made: the designs it created.
     const ownOutputs = new Set();
     for (const r of callsTo(transcript, 'design_create')) if (r.result?.id) ownOutputs.add(String(r.result.id));
-    for (const r of callsTo(transcript, 'design_publish_to_library')) {
-      if (r.result?.mediaAssetId) ownOutputs.add(String(r.result.mediaAssetId));
-    }
     const violations = [];
     for (const tool of MEMORY_WRITERS) {
       for (const record of callsTo(transcript, tool)) {
@@ -398,7 +390,7 @@ if (isMain) {
   } else {
     for (const p of problems) console.log(`  x   ${p}`);
     console.log(problems.length === 0
-      ? 'PASS: gate held, round-trip and snapshot discipline observed, animation vocabulary clean, exports registered, dashboard handed back, memory kept to a person\'s words'
+      ? 'PASS: gate held, round-trip and snapshot discipline observed, animation vocabulary clean, no server export, dashboard handed back, memory kept to a person\'s words'
       : `FAIL: ${problems.length} design-social-set check(s)`);
   }
   process.exit(problems.length === 0 ? 0 : 1);

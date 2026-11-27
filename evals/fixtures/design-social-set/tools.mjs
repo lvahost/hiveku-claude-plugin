@@ -7,7 +7,7 @@
  * source_type filter because the production route reads no such param).
  *
  * The fixture is STATEFUL on purpose: design_create / design_update /
- * design_version_create / design_comment_resolve / design_publish_to_library /
+ * design_version_create / design_comment_resolve /
  * media_library_register_external_url mutate in-memory state, so a session's
  * later reads see its earlier writes - and everything is DETERMINISTIC (no
  * Date.now(), sequence counters only), so the golden transcript replays
@@ -19,11 +19,14 @@
  *     serverCanvasData); previewVideoUrl only takes effect when canvasData is
  *     NOT in the same call; artboard is MERGED, never replaced; every canvas
  *     write bumps sectionsVersion.
- *   - design_export_image / design_export_mp4 REQUIRE the full canvas_json +
- *     width/height (+ duration_seconds for mp4) - they never render a stored
- *     design from its id - and refuse an empty canvas.
- *   - design_publish_to_library NEVER dedupes: every call mints a new asset
- *     row and a new file URL.
+ *   - design_export_image / design_export_mp4 / design_publish_to_library /
+ *     design_video_rerender are RETIRED on the server (HK-2080): each answers
+ *     410 export_in_desktop_app with the builder's own words before it reads
+ *     the id or the body, and changes nothing - no render job, no library
+ *     row, no thumbnail. Designs are exported in the Hiveku desktop app
+ *     (Creative Studio: Download, then Save to Media library).
+ *   - design_video_capabilities_get carries designExport on every answer,
+ *     saying where designs are exported, whatever videoEnabled says.
  *   - design_comment_resolve on a REPLY id reports success and changes
  *     nothing observable; resolve is one-way.
  *   - memory_create on the existing branding domain answers 409 - write-back
@@ -51,9 +54,6 @@ export const NOW = '2026-09-01T15:00:00Z';
 export const ACCOUNT_ID = 'acct_fixture_creative';
 
 const APP_URL = 'https://app.hiveku.com';
-const MEDIA_BASE = 'https://media.brightside-fixtures.example';
-// Deterministic stand-in for the Date.now() the real publish filename carries.
-const EPOCH_BASE = 1756700000000;
 
 /**
  * The writes the confirm gate guards (the spend/destructive creative surface).
@@ -75,6 +75,36 @@ export const GATED_WRITES = [
   // gated in data/permission-critical-tools.json alongside generate_image_set.
   'media_upscale',
 ];
+
+/**
+ * The server's retired design-drawing tools (HK-2080). Served so a call is
+ * LOGGED with production's answer; checks.mjs asserts none of them appears in
+ * a graded transcript, because the guide says never call, retry or loop them.
+ */
+export const RETIRED_EXPORTS = [
+  'design_export_image',
+  'design_export_mp4',
+  'design_publish_to_library',
+  'design_video_rerender',
+];
+
+// Byte-matched to hiveku_builder src/lib/media/render-on-desktop.ts.
+export const EXPORT_IN_DESKTOP_APP_CODE = 'export_in_desktop_app';
+export const EXPORT_IN_DESKTOP_APP_WORDS =
+  "Designs are exported in the Hiveku desktop app, not on Hiveku's servers. "
+  + 'Open the design in Creative Studio in the latest desktop app and choose Download (PNG, JPG, WEBP, SVG, PDF or MP4); '
+  + 'Save to Media library then keeps the file in the library. Nothing was made or charged.';
+export const EXPORT_IN_DESKTOP_APP_SHORT_WORDS =
+  'Designs are exported in the latest Hiveku desktop app: open the design in Creative Studio, then Download or Save to Media library.';
+/** The 410 body every retired route answers, whatever it was sent. */
+const exportInDesktopApp = () => ({
+  error: EXPORT_IN_DESKTOP_APP_WORDS,
+  code: EXPORT_IN_DESKTOP_APP_CODE,
+  message: EXPORT_IN_DESKTOP_APP_SHORT_WORDS,
+  status: 410,
+});
+/** The note every design_video_capabilities_get answer carries. */
+const DESIGN_EXPORT_NOTE = { where: 'desktop_app', code: EXPORT_IN_DESKTOP_APP_CODE, message: EXPORT_IN_DESKTOP_APP_WORDS };
 
 const VALID_DOMAINS = [
   'content', 'marketing', 'seo', 'social', 'ppc', 'sales', 'helpdesk',
@@ -117,8 +147,6 @@ export async function createTools() {
   let designSeq = 0;
   let assetSeq = 0;
   let versionSeq = 0;
-  let stillSeq = 0;
-  let mp4Seq = 0;
   let boardSeq = 0;
   let taskSeq = 0;
 
@@ -474,72 +502,13 @@ export async function createTools() {
       return { error: 'Comment not found', status: 404 };
     },
 
-    // ── Exports and publishing ──────────────────────────────────────────────
-    design_export_image({ id, canvas_json, width, height } = {}) {
-      if (!canvas_json || !width || !height) {
-        return { error: 'canvas_json, width, height are required', status: 400 };
-      }
-      const objects = canvas_json.objects;
-      if (!Array.isArray(objects) || objects.length === 0) {
-        return { error: 'Canvas is empty - add at least one layer (text, shape, or image) before exporting.', status: 400 };
-      }
-      if (!designs.has(id)) return { error: 'Design project not found', status: 404 };
-      stillSeq += 1;
-      const jobId = `rj_still_new_${stillSeq}`;
-      const imageUrl = `${MEDIA_BASE}/renders/still-${id}-${stillSeq}.png`;
-      renderJobs.push({ jobId, kind: 'still', status: 'completed', progress: 100, progressMessage: 'render complete', url: imageUrl, assetId: null, width, height, durationSeconds: null, designProjectId: id, billable: false, error: null, createdAt: NOW });
-      return { success: true, imageUrl, jobId };
-    },
-    design_export_mp4({ id, canvas_json, width, height, duration_seconds } = {}) {
-      if (!canvas_json || !width || !height || !duration_seconds) {
-        return { error: 'canvas_json, width, height, duration_seconds are required', status: 400 };
-      }
-      const objects = canvas_json.objects;
-      if (!Array.isArray(objects) || objects.length === 0) {
-        return { error: 'Canvas is empty - add at least one layer (text, shape, or image) before exporting.', status: 400 };
-      }
-      if (!designs.has(id)) return { error: 'Design project not found', status: 404 };
-      mp4Seq += 1;
-      const jobId = `rj_mp4_new_${mp4Seq}`;
-      const mp4Url = `${MEDIA_BASE}/renders/motion-${id}-${mp4Seq}.mp4`;
-      renderJobs.push({ jobId, kind: 'composition', status: 'completed', progress: 100, progressMessage: 'render complete', url: mp4Url, assetId: null, width, height, durationSeconds: duration_seconds, designProjectId: id, billable: false, error: null, createdAt: NOW });
-      // Exports do NOT auto-register: no media_assets row is created here.
-      return { success: true, mp4Url, jobId };
-    },
-    design_publish_to_library({ id, title, set_as_featured } = {}) {
-      const d = designs.get(id);
-      if (!d) return { error: 'Design project not found', status: 404 };
-      const objects = d.canvasData && d.canvasData.objects;
-      if (!Array.isArray(objects) || objects.length === 0) {
-        return { error: 'Canvas is empty - add at least one layer before publishing.', status: 400 };
-      }
-      // NEVER dedupes: every call mints a fresh S3 object and library row.
-      const safeTitle = slugify(title || d.title);
-      const seq = assetSeq + 1; // registerAsset increments
-      const fileUrl = `${MEDIA_BASE}/media/${ACCOUNT_ID}/design-${safeTitle}-${EPOCH_BASE + seq}.png`;
-      const asset = registerAsset({
-        filename: `design-${safeTitle}-${EPOCH_BASE + seq}.png`,
-        file_url: fileUrl,
-        file_path: `${ACCOUNT_ID}/design-${safeTitle}-${EPOCH_BASE + seq}.png`,
-        mime_type: 'image/png',
-        media_type: 'image',
-        width: d.artboard.width,
-        height: d.artboard.height,
-        title: title || d.title,
-        description: `Published from Creative Studio - design project ${d.id}`,
-        tags: ['creative-studio', 'published'],
-        ai_generated: true,
-        ai_metadata: { source: 'creative_studio_publish', design_project_id: d.id, format: 'png' },
-        source_type: 'ai_generated',
-      });
-      const out = { success: true, fileUrl, mediaAssetId: asset.id, width: d.artboard.width, height: d.artboard.height };
-      // Strict === true, as the route enforces: a string "true" sets nothing.
-      if (set_as_featured === true) {
-        d.featuredImageUrl = fileUrl;
-        out.featuredImageUrl = fileUrl;
-      }
-      return out;
-    },
+    // ── Exports and publishing: retired on the server (HK-2080) ─────────────
+    // Production answers before it reads the id or the body, so these take no
+    // input and change no state.
+    design_export_image: () => exportInDesktopApp(),
+    design_export_mp4: () => exportInDesktopApp(),
+    design_publish_to_library: () => exportInDesktopApp(),
+    design_video_rerender: () => exportInDesktopApp(),
 
     // ── Render jobs and pipelines ───────────────────────────────────────────
     design_render_jobs_list({ status, kind, design_project_id, limit = 20, offset = 0 } = {}) {
@@ -646,7 +615,8 @@ export async function createTools() {
     design_video_capabilities_get() {
       // All five blocked reasons are HTTP 200 in production; here the account
       // is healthy. used counts registered clips (the memory ledger agrees).
-      return { videoEnabled: true, plan: 'premium', used: 3, limit: 20 };
+      // Every answer carries designExport too (HK-2080), whatever videoEnabled says.
+      return { videoEnabled: true, designExport: DESIGN_EXPORT_NOTE, plan: 'premium', used: 3, limit: 20 };
     },
 
     // ── Media Library ───────────────────────────────────────────────────────
