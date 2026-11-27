@@ -1,5 +1,6 @@
 ---
 description: Something about Hiveku not working on this machine? Check the plugin, the sandbox settings and the data folder, and repair what it can.
+disable-model-invocation: true
 allowed-tools: ["Bash(\"${CLAUDE_PLUGIN_ROOT}/bin/hiveku\" doctor:*)"]
 ---
 

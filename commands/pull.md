@@ -1,5 +1,6 @@
 ---
 description: Pull this account's department data into hiveku-data/ as local files.
+disable-model-invocation: true
 allowed-tools: ["Bash(\"${CLAUDE_PLUGIN_ROOT}/bin/hiveku\" pull:*)"]
 ---
 

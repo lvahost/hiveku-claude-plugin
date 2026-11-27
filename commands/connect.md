@@ -1,5 +1,6 @@
 ---
 description: Connect your Hiveku accounts to this machine through the browser.
+disable-model-invocation: true
 allowed-tools: ["Bash(\"${CLAUDE_PLUGIN_ROOT}/bin/hiveku\" connect:*)", "Bash(\"${CLAUDE_PLUGIN_ROOT}/bin/hiveku\" accounts:*)"]
 ---
 
