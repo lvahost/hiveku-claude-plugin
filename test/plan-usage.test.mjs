@@ -67,7 +67,8 @@ import { writeBinding } from '../lib/binding.mjs';
 const PINS = {
   rules: '47c67705703688cccb9517b4487f80cc83f113a3f5ab621ee243d1feb3161460',
   limitLine: '4060de89cfddad4ff37857bd24c7776e23a32c565fdf9b14ca63dbaf401aad1b',
-  toolDescription: '05e8c63469e78af520d6414499eeff0088f4a9f6548e46dcc4417e63205a426c',
+  // HK-2399 (builder 8244e4d990): ACCOUNT_USAGE_TOOL_DESCRIPTION_SHA256 gained the deploys_today meter.
+  toolDescription: 'bed09cfd894858afb73213b30c2b72e83c085a21152eb26c75a453f4e0fc25f5',
 };
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
