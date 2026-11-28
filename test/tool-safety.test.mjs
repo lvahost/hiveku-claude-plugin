@@ -1400,6 +1400,9 @@ test('the three held removes of HK-2177 and HK-2179 are on every list: the ask l
   const cwd = folderWith(undefined);
   const readsOnly = folderWith({ version: 1, mode: 'reads-only' });
   const input = { invoice_id: 'x', id: 'x', reason: 'Made while testing' };
+  const indexed = new Set(
+    JSON.parse(readFileSync(new URL('../lib/tool-index.json', import.meta.url), 'utf8')).tools.map((t) => t.name),
+  );
   for (const [name, { after, method }] of HELD_REMOVES_THAT_ASK) {
     assert.equal(names.filter((each) => each === name).length, 1, `${name} is on the ask list once`);
     assert.equal(names[names.indexOf(after) + 1], name, `${name} right after ${after} on the ask list`);
@@ -1409,7 +1412,9 @@ test('the three held removes of HK-2177 and HK-2179 are on every list: the ask l
     const line = (tool) => install.indexOf(`"mcp__plugin_hiveku_hk__${tool}",`);
     assert.notEqual(line(name), -1, `${name} is in the INSTALL.md ask block`);
     assert.equal(install.slice(line(after)).split('\n')[1].trim(), `"mcp__plugin_hiveku_hk__${name}",`, `${name} right after ${after} in INSTALL.md`);
-    assert.ok(PENDING_TOOLS.has(name), `${name} waits in PENDING_TOOLS until the index carries it`);
+    // Served (HK-2177 since MCP #724, 0.27.323): in the index and out of PENDING_TOOLS. Still held (HK-2179): the
+    // other way round. Exactly one, so a rename on either side still fails.
+    assert.notEqual(indexed.has(name), PENDING_TOOLS.has(name), `${name} is in the index or waits in PENDING_TOOLS, not both`);
     assert.ok(ALWAYS_ASK_WRITES.has(name), `${name} is on ALWAYS_ASK_WRITES`);
     assert.equal(LIVE_CHANGE_WRITES.has(name), false, `${name} is on one hook map only`);
     const direct = decideWithGuardrails({ ...payload(name, cwd), tool_input: input });
