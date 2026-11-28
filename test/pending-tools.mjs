@@ -941,11 +941,7 @@ export const PENDING_TOOLS = new Map([
   ['helpdesk_ticket_delete', { since: '2026-11-27', batch: 'HK-2179' }],
   // HK-2152 (2026-11-27): account_memory_draft_propose landed 2026-11-28 (MCP #722, live at debef345e8ec; the 0.27.324
   // index carries it). Entry deleted.
-  // GV-1B (2026-11-28): global variables' picks, on the ask list and LIVE_CHANGE_WRITES before the MCP release serves
-  // them (#707). Delete both once lib/tool-index.json is regenerated from the live server after that MCP deploy
-  // (tool-names.test.mjs forces it).
-  ['env_group_pick', { since: '2026-11-28', batch: 'GV-1B' }],
-  ['env_group_unpick', { since: '2026-11-28', batch: 'GV-1B' }],
+  // GV-1B (2026-11-28): env_group_pick and env_group_unpick landed in lib/tool-index.json (MCP #707, 0.27.328). Entries deleted.
   // WEBFLOW-4 (2026-11-28): direct live CMS writes added in the Webflow parity wave, on the ask list and
   // LIVE_CHANGE_WRITES before the MCP release serves them. Delete once lib/tool-index.json is regenerated
   // after that MCP deploy (tool-names.test.mjs forces it).
