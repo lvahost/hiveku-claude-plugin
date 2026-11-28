@@ -929,9 +929,6 @@ export const PENDING_TOOLS = new Map([
   // Delete it once lib/tool-index.json is regenerated from the live server after its MCP deploy (tool-names.test.mjs
   // forces it).
   ['helpdesk_ticket_delete', { since: '2026-11-27', batch: 'HK-2179' }],
-  // HK-2152 (2026-11-27, builder and MCP fix/hk2152-memory-draft-e3): account_memory_draft_propose (POST: any key of the
-  // account proposes a whole About your business; one draft waits for an owner or admin in the Hiveku app). On the ask
-  // list from this release, before the MCP release serves it. Delete it once lib/tool-index.json is regenerated from
-  // the live server after that MCP deploy (tool-names.test.mjs forces it).
-  ['account_memory_draft_propose', { since: '2026-11-27', batch: 'HK-2152' }],
+  // HK-2152 (2026-11-27): account_memory_draft_propose landed 2026-11-28 (MCP #722, live at debef345e8ec; the 0.27.324
+  // index carries it). Entry deleted.
 ]);
