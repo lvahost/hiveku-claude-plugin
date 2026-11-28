@@ -5,8 +5,8 @@
     "mcp__plugin_hiveku_hk__",
     "mcp__hiveku__"
   ],
-  "plugin_version": "0.27.329",
-  "count": 766,
+  "plugin_version": "0.27.330",
+  "count": 769,
   "tools": [
     {
       "name": "deploy_site",
@@ -382,6 +382,21 @@
       "name": "env_group_unpick",
       "method": "DELETE",
       "why_gated": "stops a site using variables it picked from an account environment group: the site loses those values in its running functions at once, which can break code that reads them"
+    },
+    {
+      "name": "env_group_copy_from_site",
+      "method": "POST",
+      "why_gated": "copies a site's stored variables into an account environment group on the server: every site using the group gets them in its running functions at once, and with replace: true it overwrites a value the group already holds, which nobody can see to compare"
+    },
+    {
+      "name": "project_secrets_copy_from_group",
+      "method": "POST",
+      "why_gated": "copies variables of an account environment group into a site's own variables on the server: the change is synced into the running site at once, and with replace: true it overwrites a value the site already holds, which nobody can see to compare"
+    },
+    {
+      "name": "project_secrets_copy_between_environments",
+      "method": "POST",
+      "why_gated": "copies a site's stored variables from one environment to another on the server, into production too: the change is synced into the running site at once, and with replace: true it overwrites a value already stored there, which nobody can see to compare"
     },
     {
       "name": "project_ab_test_create",
