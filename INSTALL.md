@@ -871,7 +871,8 @@ Put this in `.claude/settings.json` (per project) or `~/.claude/settings.json` (
       "mcp__plugin_hiveku_hk__dashboards_page_data_tally_add_remove",
       "mcp__plugin_hiveku_hk__dashboards_page_data_tally_settings_save",
       "mcp__plugin_hiveku_hk__dashboards_page_data_tally_start_from_zero",
-      "mcp__plugin_hiveku_hk__dashboards_page_data_workflow_writer_stop"
+      "mcp__plugin_hiveku_hk__dashboards_page_data_workflow_writer_stop",
+      "mcp__plugin_hiveku_hk__crm_activity_recording_finalize"
     ]
   }
 }
