@@ -663,6 +663,16 @@
  *                         with the index.
  *   Release step, after the MCP deploy: regenerate the index from the live server, then delete this entry
  *   (tool-names.test.mjs forces it).
+ *
+ *   Global variables, step 1b (2026-11-28; MCP #707 and builder #2526, feature/global-variable-picks): a site uses
+ *   single variables of an account environment group instead of the whole group.
+ *     GV-1B               env_group_pick (POST /api/olympus/env-groups/:groupId/picks { project_id, keys }: the site
+ *                         gets those names, every tier the group stores them for, synced into its running functions
+ *                         in the call) and env_group_unpick (DELETE, same route and body: the site loses them at
+ *                         once). LIVE_CHANGE_WRITES and the ask list, after env_group_unlink, like env_group_link and
+ *                         env_group_unlink. The MCP merge waits for this release (review Q2-2).
+ *   Release step, after the MCP deploy: regenerate the index from the live server, then delete these entries
+ *   (tool-names.test.mjs forces it).
  */
 const SEO_SINCE = '2026-08-30';
 const seo = (batch) => ({ since: SEO_SINCE, batch });
@@ -955,4 +965,9 @@ export const PENDING_TOOLS = new Map([
   // release serves it. Delete it once lib/tool-index.json is regenerated from the live server after that MCP deploy
   // (tool-names.test.mjs forces it). Its read, ppc_bing_automated_extensions_get, joins the read-only list then.
   ['ppc_bing_automated_extensions_set', { since: '2026-11-27', batch: 'HK-2106' }],
+  // GV-1B (2026-11-28): global variables' picks, on the ask list and LIVE_CHANGE_WRITES before the MCP release serves
+  // them (#707). Delete both once lib/tool-index.json is regenerated from the live server after that MCP deploy
+  // (tool-names.test.mjs forces it).
+  ['env_group_pick', { since: '2026-11-28', batch: 'GV-1B' }],
+  ['env_group_unpick', { since: '2026-11-28', batch: 'GV-1B' }],
 ]);
