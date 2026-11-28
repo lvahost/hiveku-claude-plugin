@@ -638,29 +638,12 @@
  *                         Landed 2026-11-27 (MCP #687, live at 95f6f5d6f33d; the 0.27.311 index carries both, neither
  *                         on the read-only list); entries deleted.
  *
- *   Four writes held on MCP branches until the plugins ask for them (2026-11-27). Each MCP description says ASK THE
- *   PERSON FIRST, and the MCP's build fails until the ask list and a hook map name it (ask-first-tools-in-plugin.test.ts),
- *   so all four are on the ask list from this release, before the MCP release serves them:
- *     HK-2194             seo_gbp_google_updates_resolve (POST /api/olympus/seo/gbp, action google_updates_resolve:
- *                         keeps or undoes Google's own changes to a live Business Profile listing; a TWO-STEP CONFIRM
- *                         with a preview_hash). LIVE_CHANGE_WRITES. MCP feature/hk-2194-gbp-resolve-tool.
- *     HK-2177             accounting_invoice_delete (DELETE /api/olympus/accounting/invoices/:id: a never sent draft)
- *                         and accounting_invoice_void (POST .../invoices/:id/void). ALWAYS_ASK_WRITES. A person's own key
- *                         only (accountKeyOnly). MCP feature/hk-2177-invoice-write-tools.
+ *   A write held on an MCP branch until the plugins ask for it (2026-11-27). Its MCP description says ASK THE PERSON
+ *   FIRST, and the MCP's build fails until the ask list and a hook map name it (ask-first-tools-in-plugin.test.ts), so
+ *   it is on the ask list from this release, before the MCP release serves it:
  *     HK-2179             helpdesk_ticket_delete (POST /api/olympus/helpdesk/tickets/:id/delete: a resolved or closed
  *                         ticket). ALWAYS_ASK_WRITES. A person's own key only. MCP feature/hk-2179-ticket-delete-tool,
  *                         which also lands a help desk agent-turn policy change in its own order.
- *   Release step, after each MCP deploy: regenerate the index from the live server, then delete that batch's entries
- *   (tool-names.test.mjs forces it).
- *
- *   Microsoft Ads automated extensions (2026-11-27, HK-2106; MCP feature/hk-2106-ms-automated-extensions):
- *     HK-2106             ppc_bing_automated_extensions_set (POST /api/olympus/ppc/platform-ops, action
- *                         bing_automated_extensions_set: switches Microsoft's automated extension groups off or back on
- *                         for the whole ad account; a preview, then the same call with confirm: true and the preview's
- *                         hash). LIVE_CHANGE_WRITES, beside ppc_bing_url_tracking_set. Its MCP description does not say
- *                         ASK THE PERSON FIRST, so the MCP's build cannot catch a missing entry: the MCP merge waits
- *                         for this release. Its read, ppc_bing_automated_extensions_get, joins the read-only list
- *                         with the index.
  *   Release step, after the MCP deploy: regenerate the index from the live server, then delete this entry
  *   (tool-names.test.mjs forces it).
  *
@@ -949,22 +932,18 @@ export const PENDING_TOOLS = new Map([
   // 0.27.303 index carries both). Entries deleted.
   // HK-2293 (2026-11-26): Landed 2026-11-27 (MCP #687, live at 95f6f5d6f33d; the 0.27.311 index carries both, neither
   // on the read-only list). Entries deleted.
-  // HK-2194, HK-2177, HK-2179 (2026-11-27): the four held MCP writes, on the ask list and a hook map before the MCP
-  // releases serve them. Delete each batch once lib/tool-index.json is regenerated from the live server after its MCP
-  // deploy (tool-names.test.mjs forces it).
-  ['seo_gbp_google_updates_resolve', { since: '2026-11-27', batch: 'HK-2194' }],
-  ['accounting_invoice_delete', { since: '2026-11-27', batch: 'HK-2177' }],
-  ['accounting_invoice_void', { since: '2026-11-27', batch: 'HK-2177' }],
+  // HK-2194, HK-2177, HK-2106 (2026-11-27): Landed 2026-11-28 (MCP #724, live at 1463160bcff5; the 0.27.323 index
+  // carries all five tools, ppc_bing_automated_extensions_get on the read-only list and the four writes not). Entries
+  // deleted.
+  // HK-2179 (2026-11-27): the held help desk write, on the ask list and a hook map before the MCP release serves it.
+  // Delete it once lib/tool-index.json is regenerated from the live server after its MCP deploy (tool-names.test.mjs
+  // forces it).
   ['helpdesk_ticket_delete', { since: '2026-11-27', batch: 'HK-2179' }],
   // HK-2152 (2026-11-27, builder and MCP fix/hk2152-memory-draft-e3): account_memory_draft_propose (POST: any key of the
   // account proposes a whole About your business; one draft waits for an owner or admin in the Hiveku app). On the ask
   // list from this release, before the MCP release serves it. Delete it once lib/tool-index.json is regenerated from
   // the live server after that MCP deploy (tool-names.test.mjs forces it).
   ['account_memory_draft_propose', { since: '2026-11-27', batch: 'HK-2152' }],
-  // HK-2106 (2026-11-27): Microsoft's automated extensions switch, on the ask list and LIVE_CHANGE_WRITES before the MCP
-  // release serves it. Delete it once lib/tool-index.json is regenerated from the live server after that MCP deploy
-  // (tool-names.test.mjs forces it). Its read, ppc_bing_automated_extensions_get, joins the read-only list then.
-  ['ppc_bing_automated_extensions_set', { since: '2026-11-27', batch: 'HK-2106' }],
   // GV-1B (2026-11-28): global variables' picks, on the ask list and LIVE_CHANGE_WRITES before the MCP release serves
   // them (#707). Delete both once lib/tool-index.json is regenerated from the live server after that MCP deploy
   // (tool-names.test.mjs forces it).
