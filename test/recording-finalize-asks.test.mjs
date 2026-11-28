@@ -8,8 +8,9 @@ import { PENDING_TOOLS } from './pending-tools.mjs';
 /**
  * HK-1922 (2026-11-28): crm_activity_recording_finalize saves an uploaded recording on its activity, where it stays in
  * the account's storage until the activity is deleted. Its MCP description does not say ASK THE PERSON FIRST, so the
- * MCP's own build cannot catch a missing entry: this plugin names it on every list before MCP #719 serves it. Step 1,
- * crm_activity_recording_presign, stays default.
+ * MCP's own build cannot catch a missing entry: this plugin named it on every list (0.27.320) before MCP #719 served it,
+ * and 0.27.321 regenerated the index from the live server once it did. Step 1, crm_activity_recording_presign, stays
+ * default.
  */
 const NAME = 'crm_activity_recording_finalize';
 
@@ -29,6 +30,8 @@ test('the recording finalize is on the ask list and INSTALL.md, at the end of ea
   assert.match(install, /"mcp__plugin_hiveku_hk__dashboards_page_data_workflow_writer_stop",\n\s*"mcp__plugin_hiveku_hk__crm_activity_recording_finalize"\n\s*\]/);
 });
 
-test('the recording finalize waits in PENDING_TOOLS until the index is regenerated after MCP #719', () => {
-  assert.deepEqual(PENDING_TOOLS.get(NAME), { since: '2026-11-28', batch: 'HK-1922' });
+test('the recording finalize is served: in the index regenerated after MCP #719, out of PENDING_TOOLS', () => {
+  const index = JSON.parse(readFileSync(new URL('../lib/tool-index.json', import.meta.url), 'utf8'));
+  assert.equal(index.tools.filter((t) => t.name === NAME).length, 1, 'served once');
+  assert.equal(PENDING_TOOLS.has(NAME), false);
 });

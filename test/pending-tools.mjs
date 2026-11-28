@@ -663,16 +663,6 @@
  *                         with the index.
  *   Release step, after the MCP deploy: regenerate the index from the live server, then delete this entry
  *   (tool-names.test.mjs forces it).
- *
- *   CRM activity recording uploads (2026-11-28, HK-1922; MCP #719, feature/hk-1922-recording-uploads):
- *     HK-1922             crm_activity_recording_finalize (POST /api/olympus/crm/activities/:activityId/recording/
- *                         finalize: step 2 of an upload, saves the uploaded file on its activity, where it stays in the
- *                         account's storage until the activity is deleted). ALWAYS_ASK_WRITES, after
- *                         crm_activities_bulk_create; step 1, crm_activity_recording_presign, stays default. Its MCP
- *                         description does not say ASK THE PERSON FIRST, so the MCP's build cannot catch a missing
- *                         entry: the MCP merge waits for this release.
- *   Release step, after the MCP deploy: regenerate the index from the live server, then delete this entry
- *   (tool-names.test.mjs forces it).
  */
 const SEO_SINCE = '2026-08-30';
 const seo = (batch) => ({ since: SEO_SINCE, batch });
@@ -965,8 +955,4 @@ export const PENDING_TOOLS = new Map([
   // release serves it. Delete it once lib/tool-index.json is regenerated from the live server after that MCP deploy
   // (tool-names.test.mjs forces it). Its read, ppc_bing_automated_extensions_get, joins the read-only list then.
   ['ppc_bing_automated_extensions_set', { since: '2026-11-27', batch: 'HK-2106' }],
-  // HK-1922 (2026-11-28): the recording upload's finalize, on the ask list and ALWAYS_ASK_WRITES before the MCP release
-  // serves it. Delete it once lib/tool-index.json is regenerated from the live server after that MCP deploy
-  // (tool-names.test.mjs forces it).
-  ['crm_activity_recording_finalize', { since: '2026-11-28', batch: 'HK-1922' }],
 ]);
