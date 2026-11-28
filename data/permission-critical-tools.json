@@ -5,8 +5,8 @@
     "mcp__plugin_hiveku_hk__",
     "mcp__hiveku__"
   ],
-  "plugin_version": "0.27.325",
-  "count": 755,
+  "plugin_version": "0.27.326",
+  "count": 757,
   "tools": [
     {
       "name": "deploy_site",
@@ -372,6 +372,16 @@
       "name": "env_group_unlink",
       "method": "DELETE",
       "why_gated": "unlinks an account environment group from a site: the site loses the group's variables in its running functions at once, which can break code that reads them"
+    },
+    {
+      "name": "env_group_pick",
+      "method": "POST",
+      "why_gated": "gives a site some variables of an account environment group: those names join the site's environment in every tier the group stores them for, synced into its running functions at once, and the site's own variables still win"
+    },
+    {
+      "name": "env_group_unpick",
+      "method": "DELETE",
+      "why_gated": "stops a site using variables it picked from an account environment group: the site loses those values in its running functions at once, which can break code that reads them"
     },
     {
       "name": "project_ab_test_create",

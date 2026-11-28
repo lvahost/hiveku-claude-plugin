@@ -191,6 +191,8 @@ Put this in `.claude/settings.json` (per project) or `~/.claude/settings.json` (
       "mcp__plugin_hiveku_hk__env_group_set",
       "mcp__plugin_hiveku_hk__env_group_link",
       "mcp__plugin_hiveku_hk__env_group_unlink",
+      "mcp__plugin_hiveku_hk__env_group_pick",
+      "mcp__plugin_hiveku_hk__env_group_unpick",
       "mcp__plugin_hiveku_hk__project_ab_test_create",
       "mcp__plugin_hiveku_hk__project_ab_test_update",
       "mcp__plugin_hiveku_hk__project_ab_test_action",

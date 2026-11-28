@@ -215,6 +215,9 @@ const LIVE_CHANGE_NAMES = [
   'env_group_set',
   'env_group_link',
   'env_group_unlink',
+  // 2026-11-28: global variables, step 1b (MCP #707): a site picks single variables of a group.
+  'env_group_pick',
+  'env_group_unpick',
   // 2026-11-10: the site's database, and its app's sign-in, storage, row security and server functions.
   'database_execute',
   'database_provision',
