@@ -6,7 +6,7 @@
     "mcp__hiveku__"
   ],
   "plugin_version": "0.27.319",
-  "count": 754,
+  "count": 755,
   "tools": [
     {
       "name": "deploy_site",
@@ -3777,6 +3777,11 @@
       "name": "marketing_template_copy_to_account",
       "method": "POST",
       "why_gated": "writes into another client's account: copies this marketing template there as a new template, with that client's footer. Nothing is sent, but the copy sits in their account for their team to see and use"
+    },
+    {
+      "name": "crm_activity_recording_finalize",
+      "method": "POST",
+      "why_gated": "saves an uploaded recording file on a CRM activity for good: it stays in the account's storage and counts toward the plan's storage until the activity is deleted"
     }
   ]
 }

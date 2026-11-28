@@ -1302,6 +1302,7 @@ const DEPARTMENT_APPROVALS_THAT_ASK = [
   'crm_companies_bulk_create',
   'crm_deals_bulk_create',
   'crm_activities_bulk_create',
+  'crm_activity_recording_finalize', // HK-1922: step 2 of a recording upload
   'crm_unenroll_sequence',
   'crm_pause_sequence_enrollment',
   'crm_resume_sequence_enrollment',
