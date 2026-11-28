@@ -218,6 +218,10 @@ const LIVE_CHANGE_NAMES = [
   // 2026-11-28: global variables, step 1b (MCP #707): a site picks single variables of a group.
   'env_group_pick',
   'env_group_unpick',
+  // 2026-11-28: key hand-off step 2: the server copies a stored value into a group, a site or another environment.
+  'env_group_copy_from_site',
+  'project_secrets_copy_from_group',
+  'project_secrets_copy_between_environments',
   // 2026-11-10: the site's database, and its app's sign-in, storage, row security and server functions.
   'database_execute',
   'database_provision',

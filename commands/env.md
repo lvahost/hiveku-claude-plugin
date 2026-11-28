@@ -45,6 +45,15 @@ and you hear only which names were saved where. Never pass a value the person ga
 Otherwise tell them the variable's name and ask them to add it in the Hiveku app under the site's Settings >
 Environment variables.
 
+**A key several sites use, or one Hiveku already stores:** a key several sites use belongs in the account's global
+variables (an environment group), with a note on each name saying what it is for. Choose a stored key by its name
+and note: values are never returned, to you or anyone. When the copy tools are among your tools, the server copies a
+stored value without it reaching you: `env_group_copy_from_site` puts this site's value into a group, then
+`env_group_link` or `env_group_pick` gives it to other sites; `project_secrets_copy_from_group` copies a group's value
+into this site, and `project_secrets_copy_between_environments` copies between this site's environments. A
+Production value stays in Production: Hiveku refuses to copy or move it into another environment, so the person adds
+it for that environment on the card above, or in the site's Settings > Environment variables.
+
 **Add or change a secret ("$ARGUMENTS"):** call `project_secrets_set({ project_id: <the project_id>, secrets: { KEY: value }, tier })`
 (this CONFIRMS - it updates Hiveku + auto-syncs the deployed Lambdas) only with `generate` or with a value you
 already have that the person did not type (a URL, a setting). A key, token or password the person types goes through

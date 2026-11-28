@@ -656,6 +656,21 @@
  *                         env_group_unlink. The MCP merge waits for this release (review Q2-2).
  *   Release step, after the MCP deploy: regenerate the index from the live server, then delete these entries
  *   (tool-names.test.mjs forces it).
+ *
+ *   Key hand-off, step 2 (2026-11-28; MCP feature/copy-values-production-stays, after the builder's copy routes): the
+ *   server copies a stored value from one place and environment to another, so an agent shares a key without ever
+ *   seeing it. All three are POSTs, and each fails with 409 target_exists unless replace: true, which overwrites a
+ *   value nobody can see to compare. A copy out of Production is refused on the server.
+ *     CV-2                env_group_copy_from_site (POST /api/olympus/env-groups/:groupId/copy-from-site: a site's own
+ *                         values into a group, synced to every site using the group),
+ *                         project_secrets_copy_from_group (POST
+ *                         /api/olympus/builder/projects/:projectId/secrets/copy-from-group: a group's values into the
+ *                         site's own variables) and project_secrets_copy_between_environments (POST
+ *                         /api/olympus/builder/projects/:projectId/secrets/copy: between one site's environments).
+ *                         LIVE_CHANGE_WRITES and the ask list, after env_group_unpick, in this order. The MCP merge
+ *                         waits for this release.
+ *   Release step, after the MCP deploy: regenerate the index from the live server, then delete these entries
+ *   (tool-names.test.mjs forces it).
  */
 const SEO_SINCE = '2026-08-30';
 const seo = (batch) => ({ since: SEO_SINCE, batch });
@@ -949,4 +964,10 @@ export const PENDING_TOOLS = new Map([
   ['webflow_cms_item_update_live', { since: '2026-11-28', batch: 'WEBFLOW-4' }],
   ['webflow_cms_item_update_live_bulk', { since: '2026-11-28', batch: 'WEBFLOW-4' }],
   ['webflow_site_plan_get', { since: '2026-11-28', batch: 'WEBFLOW-4' }],
+  // CV-2 (2026-11-28): the key hand-off's server-side copies, on the ask list and LIVE_CHANGE_WRITES before the MCP
+  // release serves them. Delete all three once lib/tool-index.json is regenerated from the live server after that MCP
+  // deploy (tool-names.test.mjs forces it).
+  ['env_group_copy_from_site', { since: '2026-11-28', batch: 'CV-2' }],
+  ['project_secrets_copy_from_group', { since: '2026-11-28', batch: 'CV-2' }],
+  ['project_secrets_copy_between_environments', { since: '2026-11-28', batch: 'CV-2' }],
 ]);

@@ -190,6 +190,14 @@ the memory_* tools.
   app); otherwise tell the person the variable's name and ask them to add it in the Hiveku app under the site's
   Settings > Environment variables. A value an automation uses goes under Automations > More > Environment
   variables, and an app's or a connection's secret follows its own steps (references/integrations.md).
+- **A key several sites use, or one Hiveku already stores:** a key several sites use belongs in the account's global
+  variables (an environment group), with a note on each name saying what it is for. Choose a stored key by its name
+  and note (`env_group_get`, or `project_secrets_list` with `metadata_only: true`): values are never returned, to you
+  or anyone. To share a stored key, have the server copy it, never through you, when the copy tools are among your
+  tools: `env_group_copy_from_site` puts a site's value into a group, then `env_group_link` or `env_group_pick` gives
+  it to other sites; `project_secrets_copy_from_group` and `project_secrets_copy_between_environments` copy into one
+  site. A Production value stays in Production: Hiveku refuses to copy or move it into another environment, so the
+  person adds it for that environment on the Add a key card (`secure_value_request`) or in the app.
 - **The proxy sends only the arguments a tool DECLARES.** Anything outside a tool's own
   `inputSchema` (or its `bodyParams` allowlist, where one has one) is dropped before the request
   leaves. A real-sounding but undeclared field returns **200 with that field unset and no error** -

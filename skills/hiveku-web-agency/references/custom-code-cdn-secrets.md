@@ -70,6 +70,13 @@ Scheduled jobs the site needs (nightly rebuilds, data refresh):
   `sensitive_keys` IS set, not missing) and `project_secrets_set` for keys the site's server
   code needs. Config only; never hardcode a feature flag as an env var, and never put a
   secret value in a commit, log, or report.
+- A key the person must type goes on the Add a key card (`secure_value_request`, when it
+  is among your tools), never through the chat. A key several sites use belongs in the
+  account's global variables, with a note on each name saying what it is for. A key
+  Hiveku already stores is copied on the server, never through you, when the copy tools
+  are among your tools (`env_group_copy_from_site`, `project_secrets_copy_from_group`,
+  `project_secrets_copy_between_environments`), and a Production value is never copied
+  into another environment: the person adds it there.
 - **A secrets write BOUNCES the live preview machine** (stop -> updateMachine -> start,
   about 11s of downtime) so the dev server sees the new values. Setting five secrets in a
   loop restarts the client's preview five times. Batch them: pass
