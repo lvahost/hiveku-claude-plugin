@@ -110,6 +110,9 @@ locale.
 | `webflow_cms_item_update_bulk` | LIVE | - |
 | `webflow_cms_item_delete` | LIVE | confirm |
 | `webflow_cms_item_delete_bulk` | LIVE | confirm |
+| `webflow_cms_item_create_live` | INCOMING | confirm |
+| `webflow_cms_item_update_live` | INCOMING | confirm |
+| `webflow_cms_item_update_live_bulk` | INCOMING | confirm |
 | `webflow_cms_item_publish` | LIVE | confirm |
 | `webflow_cms_item_unpublish` | LIVE | confirm |
 | `webflow_cms_item_unpublish_bulk` | LIVE | confirm |
@@ -121,14 +124,14 @@ locale.
 | `webflow_asset_folder_list` | LIVE | - |
 | `webflow_asset_folder_create` | LIVE | - |
 | `webflow_script_list` | LIVE | OAuth |
-| `webflow_script_register_hosted` | LIVE | OAuth |
-| `webflow_script_register_inline` | LIVE | OAuth |
+| `webflow_script_register_hosted` | LIVE | OAuth, confirm |
+| `webflow_script_register_inline` | LIVE | OAuth, confirm |
 | `webflow_site_customcode_get` | LIVE | OAuth |
 | `webflow_site_customcode_set` | LIVE | OAuth, confirm |
 | `webflow_site_customcode_delete` | LIVE | OAuth, confirm |
 | `webflow_customcode_blocks_list` | LIVE | OAuth |
 | `webflow_hiveku_snippet_install` | LIVE | OAuth, confirm |
-| `webflow_hiveku_snippet_remove` | LIVE | OAuth |
+| `webflow_hiveku_snippet_remove` | LIVE | OAuth, confirm |
 | `webflow_google_tag_list` | LIVE | - |
 | `webflow_google_tag_upsert` | LIVE | confirm |
 | `webflow_google_tag_delete` | LIVE | confirm |
@@ -151,8 +154,8 @@ locale.
 | `webflow_ecommerce_settings_get` | LIVE | - |
 | `webflow_product_list` | LIVE | - |
 | `webflow_product_get` | LIVE | - |
-| `webflow_product_create` | LIVE | - |
-| `webflow_product_update` | LIVE | - |
+| `webflow_product_create` | LIVE | confirm |
+| `webflow_product_update` | LIVE | confirm |
 | `webflow_sku_create` | LIVE | - |
 | `webflow_sku_update` | LIVE | - |
 | `webflow_order_list` | LIVE | - |
@@ -162,7 +165,7 @@ locale.
 | `webflow_order_unfulfill` | LIVE | - |
 | `webflow_order_refund` | LIVE | confirm |
 | `webflow_inventory_get` | LIVE | - |
-| `webflow_inventory_update` | LIVE | - |
+| `webflow_inventory_update` | LIVE | confirm |
 | `webflow_redirect_list` | LIVE | Enterprise |
 | `webflow_redirect_create` | LIVE | Enterprise, confirm |
 | `webflow_redirect_update` | LIVE | Enterprise |
@@ -174,6 +177,7 @@ locale.
 | `webflow_wellknown_create` | LIVE | Enterprise, confirm |
 | `webflow_wellknown_delete` | LIVE | Enterprise, confirm |
 | `webflow_activity_log_list` | LIVE | Enterprise |
+| `webflow_site_plan_get` | INCOMING | Enterprise |
 
 Webhooks in that table are for FOREIGN URLs only. Hiveku registers its own receiver on
 the site's connection (thirteen `webflow*Trigger` workflow nodes fire from it, verified,

@@ -389,6 +389,17 @@ const LIVE_CHANGE_NAMES = [
   'outbound_lead_subsequence_push',
   'outbound_blocklist_remove',
   'outbound_campaign_email_accounts_detach',
+  // Webflow parity wave (2026-11-28): live CMS writes, irreversible script registrations, snippet removal,
+  // and ecommerce catalog/inventory writes.
+  'webflow_cms_item_create_live',
+  'webflow_cms_item_update_live',
+  'webflow_cms_item_update_live_bulk',
+  'webflow_script_register_inline',
+  'webflow_script_register_hosted',
+  'webflow_hiveku_snippet_remove',
+  'webflow_product_create',
+  'webflow_product_update',
+  'webflow_inventory_update',
 ];
 
 function folderWith(guardrails) {

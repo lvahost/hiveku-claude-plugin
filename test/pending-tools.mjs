@@ -946,4 +946,11 @@ export const PENDING_TOOLS = new Map([
   // (tool-names.test.mjs forces it).
   ['env_group_pick', { since: '2026-11-28', batch: 'GV-1B' }],
   ['env_group_unpick', { since: '2026-11-28', batch: 'GV-1B' }],
+  // WEBFLOW-4 (2026-11-28): direct live CMS writes added in the Webflow parity wave, on the ask list and
+  // LIVE_CHANGE_WRITES before the MCP release serves them. Delete once lib/tool-index.json is regenerated
+  // after that MCP deploy (tool-names.test.mjs forces it).
+  ['webflow_cms_item_create_live', { since: '2026-11-28', batch: 'WEBFLOW-4' }],
+  ['webflow_cms_item_update_live', { since: '2026-11-28', batch: 'WEBFLOW-4' }],
+  ['webflow_cms_item_update_live_bulk', { since: '2026-11-28', batch: 'WEBFLOW-4' }],
+  ['webflow_site_plan_get', { since: '2026-11-28', batch: 'WEBFLOW-4' }],
 ]);
