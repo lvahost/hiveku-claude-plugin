@@ -9,7 +9,10 @@
  *     they were, both records keep its rows, it is not reported deleted, and
  *     no other entry takes its file name;
  *   - not pushed: nothing here sends a memory write;
- *   - said once, in one WARNING line.
+ *   - said once, in one WARNING line that is true with or without a copy here
+ *     and says nothing in Hiveku changed;
+ *   - in the status file the pull writes: in `left_without_text` and
+ *     `changed_remote`, never counted in `in_sync`.
  * A row whose text is "" is a real empty entry and is written as before.
  *
  * An in-process MCP server that records every tool call's arguments.
@@ -123,9 +126,16 @@ test('a row without its text is not written, a row whose text is empty is, and t
   assert.ok(blank.endsWith('---\n\n'), 'an empty entry is written with nothing after its front matter');
   assert.equal(result.written, 2);
   assert.deepEqual(result.withoutText, ['tone']);
-  assert.deepEqual(lines.filter((l) => /without its text|without their text/.test(l)), ['  WARNING: left tone as it was: Hiveku sent it without its text.']);
+  assert.deepEqual(lines.filter((l) => /without its text|without their text/.test(l)), [
+    '  WARNING: did not update tone: Hiveku sent it without its text. Nothing in Hiveku changed, and any copy here is as it was. Pull again to get it.',
+  ]);
   const shared = await record(opts.rootDir, '.hiveku/knowledge-manifest.json');
   assert.equal(shared.entries['_rule:tone'], undefined, 'a row never written is never recorded as written');
+  // The status file this pull wrote: the left row is not current here, and is never counted in sync.
+  const status = await record(opts.rootDir, '.hiveku/knowledge-status.json');
+  assert.equal(status.in_sync, 2, 'the two rows written, not the one left');
+  assert.deepEqual(status.left_without_text, ['_rule:tone']);
+  assert.deepEqual(status.changed_remote, ['_rule:tone'], 'a reader that trusts the file reads it again live');
   assert.ok(!calls.some((c) => /^memory_(create|update|delete|bulk)/.test(c.name)), 'nothing is sent back');
 });
 
@@ -149,7 +159,12 @@ test("the file and skill copy an earlier pull wrote for a row now sent without i
   assert.deepEqual(result.moved, []);
   assert.equal(result.written, 0);
   assert.deepEqual(result.withoutText.sort(), ['_account:soul', 'discovery-call', 'tone']);
-  assert.ok(lines.includes('  WARNING: left 3 entries as they were: Hiveku sent them without their text (tone, discovery-call, _account:soul).'), lines.join('\n'));
+  assert.ok(
+    lines.includes(
+      '  WARNING: did not update 3 entries: Hiveku sent them without their text (tone, discovery-call, _account:soul). Nothing in Hiveku changed, and any copies here are as they were. Pull again to get them.',
+    ),
+    lines.join('\n'),
+  );
 
   const shared = await record(opts.rootDir, '.hiveku/knowledge-manifest.json');
   const state = await record(opts.rootDir, '.hiveku/knowledge-plugin.json');
@@ -157,6 +172,9 @@ test("the file and skill copy an earlier pull wrote for a row now sent without i
   assert.deepEqual(state.entries, stateBefore.entries, "this plugin's record keeps every row as it was");
   const status = await record(opts.rootDir, '.hiveku/knowledge-status.json');
   assert.deepEqual(status.deleted_remote, []);
+  assert.equal(status.in_sync, 0, 'nothing left without its text is in sync');
+  assert.deepEqual([...status.left_without_text].sort(), ['_account:soul', '_rule:tone', '_skill:discovery-call']);
+  assert.deepEqual([...status.changed_remote].sort(), ['_account:soul', '_rule:tone', '_skill:discovery-call']);
 
   // A status check sees the copies as in sync, not missing or deleted.
   const check = await knowledgeStatus(opts);
@@ -169,6 +187,8 @@ test("the file and skill copy an earlier pull wrote for a row now sent without i
   const again = await pullKnowledge(opts);
   assert.ok((await read(opts.rootDir, 'rules/sales/tone.md')).endsWith('Warm, and brief.'));
   assert.deepEqual(again.withoutText, []);
+  const current = await record(opts.rootDir, '.hiveku/knowledge-status.json');
+  assert.deepEqual([current.in_sync, current.left_without_text, current.changed_remote], [3, [], []]);
 });
 
 test('no other entry takes the name of a file held for a row sent without its text', async () => {
@@ -194,10 +214,16 @@ test('no other entry takes the name of a file held for a row sent without its te
   assert.equal(shared.entries['_rule:x-two'].file, 'rules/sales/x-2.md');
 });
 
-test('the line names one entry, or counts several', () => {
+test('the line names one entry, or counts several, and is true with no copy here', () => {
   assert.equal(leftAsItWasLine([]), null);
-  assert.equal(leftAsItWasLine(['tone']), 'left tone as it was: Hiveku sent it without its text.');
-  assert.equal(leftAsItWasLine(['a', 'b']), 'left 2 entries as they were: Hiveku sent them without their text (a, b).');
+  assert.equal(
+    leftAsItWasLine(['tone']),
+    'did not update tone: Hiveku sent it without its text. Nothing in Hiveku changed, and any copy here is as it was. Pull again to get it.',
+  );
+  assert.equal(
+    leftAsItWasLine(['a', 'b', 'c']),
+    'did not update 3 entries: Hiveku sent them without their text (a, b, c). Nothing in Hiveku changed, and any copies here are as they were. Pull again to get them.',
+  );
   const many = Array.from({ length: 13 }, (_, i) => `r${i + 1}`);
-  assert.match(leftAsItWasLine(many), /^left 13 entries as they were: .*\(r1, .*, r10 and 3 more\)\.$/);
+  assert.match(leftAsItWasLine(many), /^did not update 13 entries: .*\(r1, .*, r10 and 3 more\)\. Nothing in Hiveku changed, .* Pull again to get them\.$/);
 });
