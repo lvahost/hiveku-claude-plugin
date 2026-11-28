@@ -5,8 +5,8 @@
     "mcp__plugin_hiveku_hk__",
     "mcp__hiveku__"
   ],
-  "plugin_version": "0.27.326",
-  "count": 757,
+  "plugin_version": "0.27.327",
+  "count": 766,
   "tools": [
     {
       "name": "deploy_site",
@@ -2649,9 +2649,34 @@
       "why_gated": "deletes up to 100 staged Webflow CMS items and their live copies in one call; the Data API has no restore, and webflow_cms_item_unpublish_bulk is the reversible alternative"
     },
     {
+      "name": "webflow_cms_item_create_live",
+      "method": "POST",
+      "why_gated": "creates and publishes a new Webflow CMS item directly to the live site immediately without a site publish"
+    },
+    {
+      "name": "webflow_cms_item_update_live",
+      "method": "POST",
+      "why_gated": "updates the live copy of a Webflow CMS item immediately; visitors see the change without a site publish"
+    },
+    {
+      "name": "webflow_cms_item_update_live_bulk",
+      "method": "POST",
+      "why_gated": "updates the live copies of up to 100 Webflow CMS items immediately in one call without a site publish"
+    },
+    {
       "name": "webflow_asset_delete",
       "method": "POST",
       "why_gated": "deletes an asset from the Webflow site; every page and CMS item that references it shows a broken file, and the Data API has no restore"
+    },
+    {
+      "name": "webflow_script_register_inline",
+      "method": "POST",
+      "why_gated": "permanently registers an inline JavaScript script on the Webflow site; the Data API has no unregister endpoint so the script stays in script_list for the life of the site"
+    },
+    {
+      "name": "webflow_script_register_hosted",
+      "method": "POST",
+      "why_gated": "permanently registers an externally hosted script URL and SRI hash on the Webflow site; the Data API has no unregister endpoint so the script stays in script_list for the life of the site"
     },
     {
       "name": "webflow_site_customcode_set",
@@ -2667,6 +2692,11 @@
       "name": "webflow_hiveku_snippet_install",
       "method": "POST",
       "why_gated": "installs the Hiveku tracking loader in the header of every page, collecting visitor analytics site-wide from the next publish; the registered script it creates can never be unregistered through the Data API"
+    },
+    {
+      "name": "webflow_hiveku_snippet_remove",
+      "method": "POST",
+      "why_gated": "removes the Hiveku analytics or annotation bridge snippet from every page of the Webflow site on the next publish"
     },
     {
       "name": "webflow_google_tag_upsert",
@@ -2707,6 +2737,21 @@
       "name": "webflow_order_refund",
       "method": "POST",
       "why_gated": "refunds a Webflow ecommerce order through Stripe and sets its status to refunded; real money moves and the Data API cannot reverse it"
+    },
+    {
+      "name": "webflow_product_create",
+      "method": "POST",
+      "why_gated": "creates a new product and SKU in the Webflow ecommerce store, which can go live immediately when publish_status is live"
+    },
+    {
+      "name": "webflow_product_update",
+      "method": "POST",
+      "why_gated": "updates a Webflow ecommerce product, which can change the live storefront immediately when publish_status is live"
+    },
+    {
+      "name": "webflow_inventory_update",
+      "method": "POST",
+      "why_gated": "changes live inventory counts or stock type for a Webflow SKU immediately without a site publish; setting zero marks the item sold out at once"
     },
     {
       "name": "webflow_redirect_create",
